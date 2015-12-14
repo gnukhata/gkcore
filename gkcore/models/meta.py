@@ -12,7 +12,7 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 def dbconnect():
-	stmt = 'postgresql+psycopg2://gkadmin:gk123@localhost:5432/gnukhata'
+	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
 	engine = create_engine(stmt, echo=False)
 	return engine
