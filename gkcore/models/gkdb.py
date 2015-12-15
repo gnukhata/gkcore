@@ -109,3 +109,51 @@ class accounts(Base):
 		self.accountcode = accountcode
 		self.accountname = accountname
 		self.groupcode = groupcode
+class Projects(Base):
+	__tablename__ = 'projects'
+	projectcode = Column(Integer, primary_key=True)
+	projectname = Column(UnicodeText)
+	sanctionedamount = Column(Numeric(13,2))
+	def __init__(self, projectcode, projectname,sanctionedamount):
+		self.projectcode = projectcode
+		self.projectname = projectname
+		self.sanctionedamount = sanctionedamount
+
+class Users(Base):
+	__tablename__ = 'users'
+	userid = Column(Integer, primary_key=True)
+	username = Column(Text)
+	userpassword = Column(Text)
+	userrole = Column(Integer)
+	userquestion = Column(Text)
+	useranswer = Column(Text)
+
+	def __init__(self, username, userpassword, userrole,userquestion,useranswer):
+		self.userid = None
+		self.username = username
+		self.userpassword = userpassword
+		self.userrole = userrole
+		self.userquestion = userquestion
+		self.useranswer = useranswer
+
+
+class BankRecon(Base):
+	__tablename__ = "bankrecon"
+	reconcode = Column(Integer,primary_key = True)
+	vouchercode = Column(Integer,ForeignKey("voucher_master.vouchercode"))
+	reffdate = Column(TIMESTAMP)
+	accountname = Column(String(40))
+	dramount = Column(Numeric(13,2))
+	cramount = Column(Numeric(13,2))
+	clearancedate = Column(TIMESTAMP)
+	memo = Column(Text)
+	def __init__(self,reconcode,vouchercode,reffdate,accountname,dramount,cramount,clearancedate,memo):
+		self.reconcode = reconcode
+		self.vouchercode = vouchercode
+		self.reffdate = reffdate
+		self.accountname = accountname
+		self.dramount = dramount
+		self.cramount = cramount
+		self.clearancedate = clearancedate
+		self.memo = memo
+
