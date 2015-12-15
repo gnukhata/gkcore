@@ -2,6 +2,9 @@
 
 
 """
+Copyright (C) 2014 2015 2016 Digital Freedom Foundation
+
+
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -28,6 +31,7 @@ Contributor:
 import datetime
 
 from gkcore.models.meta import Base
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import (
     Column,
     Index,
@@ -37,6 +41,8 @@ from sqlalchemy import (
     UnicodeText, #<- will provide Unicode text field
 DateTime	 #<- time abstraction field
     )
+from sqlalchemy.sql.schema import PrimaryKeyConstraint, ForeignKey
+from sqlalchemy.orm import relationship
 
 class organisation(Base):
 	__tablename__ = 'organisation'
@@ -82,3 +88,24 @@ class organisation(Base):
 		self.orgfcradate = orgfcradate
 		self.roflag = roflag
 		self.booksclosedflag = booksclosedflag
+
+class groupsubgroups(Base):
+	__tablename__ = 'groupsubgroups'
+	groupcode = Column(Integer,primary_key=True)
+	groupname = Column(UnicodeText,  nullable=False)
+	subgroupof = Column(Integer)
+	def __init__(self,groupcode,groupname,subgroupof):
+		self.groupcode = groupcode
+		self.groupname = groupname
+		self.subgroupof = subgroupof
+
+
+class accounts(Base):
+	__tablename__ = 'accounts'
+	accountcode = Column( Integer, primary_key=True )
+	accountname = Column(UnicodeText, nullable=False)
+	groupcode  = Column(Integer, ForeignKey('groupsubgroups.groupcode'))
+	def __init__(self,accountcode,accountname,groupcode):
+		self.accountcode = accountcode
+		self.accountname = accountname
+		self.groupcode = groupcode
