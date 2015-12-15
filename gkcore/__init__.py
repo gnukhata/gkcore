@@ -1,5 +1,5 @@
 
-'''
+"""
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -22,11 +22,11 @@ Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-"""
 
 
-"""Main entry point
-"""
+
+Main entry point"""
+
 from pyramid.config import Configurator
 
 
