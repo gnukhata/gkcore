@@ -31,7 +31,8 @@ Contributor:
 import datetime
 
 from gkcore.models.meta import Base
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, JSON
+
 from sqlalchemy import (
     Column,
     Index,
@@ -43,6 +44,7 @@ DateTime	 #<- time abstraction field
     )
 from sqlalchemy.sql.schema import PrimaryKeyConstraint, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 
 class organisation(Base):
 	__tablename__ = 'organisation'
@@ -127,6 +129,36 @@ class Projects(Base):
 		self.sanctionedamount = sanctionedamount
 		self.orgcode = orgcode
 
+class vouchers(Base):
+	__tablename__ = "vouchers"
+	vouchercode = Column(Integer,primary_key=True)
+	vouchernumber = Column(UnicodeText, nullable=False)
+	voucherdate = Column(DateTime,nullable=False)
+	entrydate = Column(DateTime,nullable=False)
+	narration = Column(UnicodeText)
+	drs = Column(JSONB,nullable=False)
+	crs = Column(JSONB,nullable=False)
+	prjdrs = Column(JSONB)
+	prjcrs = Column(JSONB)
+	typeflag = Column(UnicodeText)
+	delflag = Column(BOOLEAN,nullable=False)
+	orgcode = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,vouchercode,vouchernumber,voucherdate,entrydate,narration,drs,crs,prjdrs,prjcrs,typeflag,delflag,orgcode):
+		self.vouchercode = vouchercode
+		self.vouchernumber = vouchernumber
+		self.voucherdate = voucherdate
+		self.entrydate = entrydate
+		self.narration = narration
+		self.drs = drs
+		self.crs = crs
+		self.prjdrs = prjdrs
+		self.prjcrs = prjcrs
+		
+		self.typeflag = typeflag
+		self.delflag = delflag
+		self.orgcode = orgcode
+
+
 class Users(Base):
 	__tablename__ = 'users'
 	userid = Column(Integer, primary_key=True)
@@ -149,12 +181,12 @@ class Users(Base):
 class BankRecon(Base):
 	__tablename__ = "bankrecon"
 	reconcode = Column(Integer,primary_key = True)
-	vouchercode = Column(Integer,ForeignKey("voucher_master.vouchercode"))
-	reffdate = Column(TIMESTAMP)
-	accountname = Column(String(40))
+	vouchercode = Column(Integer,ForeignKey("vouchers.vouchercode"))
+	reffdate = Column(DateTime)
+	accountname = Column(UnicodeText)
 	dramount = Column(Numeric(13,2))
 	cramount = Column(Numeric(13,2))
-	clearancedate = Column(TIMESTAMP)
+	clearancedate = Column(DateTime)
 	memo = Column(Text)
 	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
 	def __init__(self,reconcode,vouchercode,reffdate,accountname,dramount,cramount,clearancedate,memo,orgcode):
