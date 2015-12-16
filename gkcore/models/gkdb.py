@@ -94,10 +94,13 @@ class groupsubgroups(Base):
 	groupcode = Column(Integer,primary_key=True)
 	groupname = Column(UnicodeText,  nullable=False)
 	subgroupof = Column(Integer)
-	def __init__(self,groupcode,groupname,subgroupof):
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,groupcode,groupname,subgroupof, orgcode):
 		self.groupcode = groupcode
 		self.groupname = groupname
 		self.subgroupof = subgroupof
+		self.orgcode = orgcode
+
 
 
 class accounts(Base):
@@ -105,19 +108,24 @@ class accounts(Base):
 	accountcode = Column( Integer, primary_key=True )
 	accountname = Column(UnicodeText, nullable=False)
 	groupcode  = Column(Integer, ForeignKey('groupsubgroups.groupcode'))
-	def __init__(self,accountcode,accountname,groupcode):
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,accountcode,accountname,groupcode, orgcode):
 		self.accountcode = accountcode
 		self.accountname = accountname
 		self.groupcode = groupcode
+		self.orgcode = orgcode
+
 class Projects(Base):
 	__tablename__ = 'projects'
 	projectcode = Column(Integer, primary_key=True)
 	projectname = Column(UnicodeText)
 	sanctionedamount = Column(Numeric(13,2))
-	def __init__(self, projectcode, projectname,sanctionedamount):
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self, projectcode, projectname,sanctionedamount, orgcode):
 		self.projectcode = projectcode
 		self.projectname = projectname
 		self.sanctionedamount = sanctionedamount
+		self.orgcode = orgcode
 
 class Users(Base):
 	__tablename__ = 'users'
@@ -127,14 +135,15 @@ class Users(Base):
 	userrole = Column(Integer)
 	userquestion = Column(Text)
 	useranswer = Column(Text)
-
-	def __init__(self, username, userpassword, userrole,userquestion,useranswer):
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self, username, userpassword, userrole,userquestion,useranswer,orgcode):
 		self.userid = None
 		self.username = username
 		self.userpassword = userpassword
 		self.userrole = userrole
 		self.userquestion = userquestion
 		self.useranswer = useranswer
+		self.orgcode = orgcode
 
 
 class BankRecon(Base):
@@ -147,7 +156,8 @@ class BankRecon(Base):
 	cramount = Column(Numeric(13,2))
 	clearancedate = Column(TIMESTAMP)
 	memo = Column(Text)
-	def __init__(self,reconcode,vouchercode,reffdate,accountname,dramount,cramount,clearancedate,memo):
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,reconcode,vouchercode,reffdate,accountname,dramount,cramount,clearancedate,memo,orgcode):
 		self.reconcode = reconcode
 		self.vouchercode = vouchercode
 		self.reffdate = reffdate
@@ -156,4 +166,5 @@ class BankRecon(Base):
 		self.cramount = cramount
 		self.clearancedate = clearancedate
 		self.memo = memo
+		self.orgcode = orgcode
 
