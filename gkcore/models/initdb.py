@@ -1,5 +1,6 @@
 
 """
+Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -28,4 +29,6 @@ from gkcore.models.meta import dbconnect, Base
 
 
 meta = Base.metadata
-meta.create_all(dbconnect())
+eng = dbconnect()
+meta.create_all(eng)
+eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")

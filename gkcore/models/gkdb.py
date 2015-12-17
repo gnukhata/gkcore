@@ -2,6 +2,9 @@
 
 
 """
+Copyright (C) 2014 2015 2016 Digital Freedom Foundation
+
+
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -28,6 +31,8 @@ Contributor:
 import datetime
 
 from gkcore.models.meta import Base
+from sqlalchemy.dialects.postgresql import JSONB, JSON
+
 from sqlalchemy import (
     Column,
     Index,
@@ -37,6 +42,9 @@ from sqlalchemy import (
     UnicodeText, #<- will provide Unicode text field
 DateTime	 #<- time abstraction field
     )
+from sqlalchemy.sql.schema import PrimaryKeyConstraint, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 
 class organisation(Base):
 	__tablename__ = 'organisation'
@@ -82,3 +90,113 @@ class organisation(Base):
 		self.orgfcradate = orgfcradate
 		self.roflag = roflag
 		self.booksclosedflag = booksclosedflag
+
+class groupsubgroups(Base):
+	__tablename__ = 'groupsubgroups'
+	groupcode = Column(Integer,primary_key=True)
+	groupname = Column(UnicodeText,  nullable=False)
+	subgroupof = Column(Integer)
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,groupcode,groupname,subgroupof, orgcode):
+		self.groupcode = groupcode
+		self.groupname = groupname
+		self.subgroupof = subgroupof
+		self.orgcode = orgcode
+
+
+
+class accounts(Base):
+	__tablename__ = 'accounts'
+	accountcode = Column( Integer, primary_key=True )
+	accountname = Column(UnicodeText, nullable=False)
+	groupcode  = Column(Integer, ForeignKey('groupsubgroups.groupcode'))
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,accountcode,accountname,groupcode, orgcode):
+		self.accountcode = accountcode
+		self.accountname = accountname
+		self.groupcode = groupcode
+		self.orgcode = orgcode
+
+class Projects(Base):
+	__tablename__ = 'projects'
+	projectcode = Column(Integer, primary_key=True)
+	projectname = Column(UnicodeText)
+	sanctionedamount = Column(Numeric(13,2))
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self, projectcode, projectname,sanctionedamount, orgcode):
+		self.projectcode = projectcode
+		self.projectname = projectname
+		self.sanctionedamount = sanctionedamount
+		self.orgcode = orgcode
+
+class vouchers(Base):
+	__tablename__ = "vouchers"
+	vouchercode = Column(Integer,primary_key=True)
+	vouchernumber = Column(UnicodeText, nullable=False)
+	voucherdate = Column(DateTime,nullable=False)
+	entrydate = Column(DateTime,nullable=False)
+	narration = Column(UnicodeText)
+	drs = Column(JSONB,nullable=False)
+	crs = Column(JSONB,nullable=False)
+	prjdrs = Column(JSONB)
+	prjcrs = Column(JSONB)
+	typeflag = Column(UnicodeText)
+	delflag = Column(BOOLEAN,nullable=False)
+	orgcode = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,vouchercode,vouchernumber,voucherdate,entrydate,narration,drs,crs,prjdrs,prjcrs,typeflag,delflag,orgcode):
+		self.vouchercode = vouchercode
+		self.vouchernumber = vouchernumber
+		self.voucherdate = voucherdate
+		self.entrydate = entrydate
+		self.narration = narration
+		self.drs = drs
+		self.crs = crs
+		self.prjdrs = prjdrs
+		self.prjcrs = prjcrs
+		
+		self.typeflag = typeflag
+		self.delflag = delflag
+		self.orgcode = orgcode
+
+
+class Users(Base):
+	__tablename__ = 'users'
+	userid = Column(Integer, primary_key=True)
+	username = Column(Text)
+	userpassword = Column(Text)
+	userrole = Column(Integer)
+	userquestion = Column(Text)
+	useranswer = Column(Text)
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self, username, userpassword, userrole,userquestion,useranswer,orgcode):
+		self.userid = None
+		self.username = username
+		self.userpassword = userpassword
+		self.userrole = userrole
+		self.userquestion = userquestion
+		self.useranswer = useranswer
+		self.orgcode = orgcode
+
+
+class BankRecon(Base):
+	__tablename__ = "bankrecon"
+	reconcode = Column(Integer,primary_key = True)
+	vouchercode = Column(Integer,ForeignKey("vouchers.vouchercode"))
+	reffdate = Column(DateTime)
+	accountname = Column(UnicodeText)
+	dramount = Column(Numeric(13,2))
+	cramount = Column(Numeric(13,2))
+	clearancedate = Column(DateTime)
+	memo = Column(Text)
+	orgcode  = Column(Integer, ForeignKey('organisation.orgcode'))
+	def __init__(self,reconcode,vouchercode,reffdate,accountname,dramount,cramount,clearancedate,memo,orgcode):
+		self.reconcode = reconcode
+		self.vouchercode = vouchercode
+		self.reffdate = reffdate
+		self.accountname = accountname
+		self.dramount = dramount
+		self.cramount = cramount
+		self.clearancedate = clearancedate
+		self.memo = memo
+		self.orgcode = orgcode
+
