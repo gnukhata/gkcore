@@ -25,8 +25,6 @@ Contributor:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
-from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy.orm import (
     scoped_session,
     sessionmaker,
@@ -36,7 +34,7 @@ from zope.sqlalchemy import ZopeTransactionExtension
 from sqlalchemy.engine import create_engine
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
-Base = declarative_base()
+
 
 def dbconnect():
 	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
