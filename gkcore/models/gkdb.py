@@ -40,12 +40,13 @@ from sqlalchemy import (
     Unicode,	 #<- will provide Unicode field
     UnicodeText, #<- will provide Unicode text field
 DateTime,
-MetaData	 #<- time abstraction field
+	 #<- time abstraction field
     )
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
+from gkcore.models.meta import meta
 
-metadata = MetaData()
+metadata = meta
 
 organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),
@@ -129,6 +130,6 @@ BankRecon=Table('bankrecon',metadata,
 	Column('cramount',Numeric(13,2)),
 	Column('clearancedate',DateTime),
 	Column('memo',Text),
-	orgcode  = Column(Integer, ForeignKey('organisation.orgcode')),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode')),
 	)
 	

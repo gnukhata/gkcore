@@ -25,19 +25,13 @@ Contributor:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
-from sqlalchemy.orm import (
-    scoped_session,
-    sessionmaker,
-    )
 
-from zope.sqlalchemy import ZopeTransactionExtension
-from sqlalchemy.engine import create_engine
-
-DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
-
-
+from sqlalchemy.engine import create_engine, Engine
+from sqlalchemy import MetaData
+meta = MetaData()
 def dbconnect():
 	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
+	#engine = Engine 
 	engine = create_engine(stmt, echo=False)
 	return engine
