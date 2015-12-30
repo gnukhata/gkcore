@@ -25,9 +25,9 @@ Contributor:
 "Navin Karkera" <navin@dff.org.in>
 """
 
-from gkcore.models.meta import dbconnect, meta
-
+from meta import dbconnect
+from gkdb import metadata
 
 eng = dbconnect()
-meta.create_all(eng)
+metadata.create_all(eng)
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")

@@ -40,18 +40,21 @@ from sqlalchemy import (
     Unicode,	 #<- will provide Unicode field
     UnicodeText, #<- will provide Unicode text field
 DateTime,
+Date
 	 #<- time abstraction field
     )
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
-from gkcore.models.meta import meta
+from sqlalchemy import MetaData
 
-metadata = meta
+metadata = MetaData()
 
 organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),
 	Column('orgname',UnicodeText, nullable=False),
 	Column('orgtype',UnicodeText, nullable=False),
+	Column('yearstart',Date),
+	Column('yearend',Date),
 	Column('orgcity',UnicodeText),
 	Column('orgaddr',UnicodeText),
 	Column('orgpincode',Unicode(30)),
