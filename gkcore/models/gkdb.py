@@ -40,10 +40,12 @@ from sqlalchemy import (
     Unicode,	 #<- will provide Unicode field
     UnicodeText, #<- will provide Unicode text field
 DateTime,
-MetaData	 #<- time abstraction field
+Date
+	 #<- time abstraction field
     )
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
+from sqlalchemy import MetaData
 
 metadata = MetaData()
 
@@ -51,6 +53,8 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),
 	Column('orgname',UnicodeText, nullable=False),
 	Column('orgtype',UnicodeText, nullable=False),
+	Column('yearstart',Date),
+	Column('yearend',Date),
 	Column('orgcity',UnicodeText),
 	Column('orgaddr',UnicodeText),
 	Column('orgpincode',Unicode(30)),
@@ -129,6 +133,6 @@ BankRecon=Table('bankrecon',metadata,
 	Column('cramount',Numeric(13,2)),
 	Column('clearancedate',DateTime),
 	Column('memo',Text),
-	orgcode  = Column(Integer, ForeignKey('organisation.orgcode')),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode')),
 	)
 	
