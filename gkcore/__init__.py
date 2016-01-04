@@ -29,7 +29,7 @@ Contributor:
 Main entry point"""
 
 from pyramid.config import Configurator
-from gkcore.models.meta import dbconnect, meta
+from gkcore.models.meta import dbconnect
 
 
 eng = dbconnect()
