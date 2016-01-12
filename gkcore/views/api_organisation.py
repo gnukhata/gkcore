@@ -54,16 +54,27 @@ class api_organisation(object):
 		
 	@view(renderer='json', accept='text/json')
 	def collection_post(self):
-		result = self.request.json_body
-		con.execute(gkdb.organisation.insert(),[result])
-
+		dataset = self.request.json_body
+		result = con.execute(gkdb.organisation.insert(),[dataset])
 		print result
-		return True	
+		return result.rowcount
 	
-	def get(self,):
+	def get(self):
 		result = con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
 		orgDetails = []
 		row = result.fetchone()
 		orgDetails.append({"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	})
 		return orgDetails 
-		
+	
+	def collection_put(self):
+		dataset = self.request.json_body
+		result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
+		print result.rowcount
+		return result.rowcount
+
+	def collection_delete(self):
+		dataset = self.request.json_body
+		result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==dataset["orgcode"]))
+		print result.rowcount
+		return result.rowcount
+	 	
