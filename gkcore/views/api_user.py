@@ -26,46 +26,32 @@ Contributor:
 
 """
 
-from cornice.resource import resource, view 
+
 from gkcore import eng
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
+from pyramid.request import Request
+from pyramid.response import Response
+from pyramid.view import view_defaults,  view_config
+
 con = Connection
 con = eng.connect()
 
-@resource(collection_path='/user/{orgcode}',path='/user/{orgcode}/{userid}/{username}/{actiontype}')
+
+@view_defaults(route_name='users')
 class api_user(object):
 	def __init__(self,request):
+		self.request = Request
 		self.request = request
 
-	def collection_get(self):
-		result = con.execute(select([gkdb.Users]).where(gkdb.Users.c.orgcode==self.request.matchdict["orgcode"]))
-		users = []
-		for row in result:
-			users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"]})
-		print users
-		return users
-		
-	@view(renderer='json', accept='text/json')
-	def collection_post(self):
-		result = self.request.json_body
-		result["orgcode"]=self.request.matchdict["orgcode"]
-		con.execute(gkdb.Users.insert(),[result])
-
-		print result
-		return True
-	
-	def get(self):
-		if self.request.matchdict["actiontype"]=="login":
-			#write login code here and return token
-			pass
-		else:
-			#auth check and role check
-			result = con.execute(select([gkdb.Users]).where(and_(gkdb.Users.c.orgcode==self.request.matchdict["orgcode"],gkdb.Users.c.username == self.request.matchdict["username"])))
-			row = result.fetchone()
-			userdetails = {"userid":row["userid"],"userpassword":row["userpassword"],"userrole":row["userrole"],"userquestion":row["userquestion"],"useranswer":row["useranswer"]}
-			return userdetails
-								
+	@view_config(request_method='POST')
+	def addUser(self):
+		ud = self.request.json_body
+		print "this is ud:",ud
+		return "all right "
+	@view_config(route_name='user', request_method='GET',renderer='json')
+	def getUser(self):
+		return {"name":"admin","status":"administrator"}
