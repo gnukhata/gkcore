@@ -36,6 +36,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
+from sqlalchemy import and_
 con = Connection
 con = eng.connect()
 
@@ -54,10 +55,24 @@ class api_organisation(object):
 		
 	@view(renderer='json', accept='text/json')
 	def collection_post(self):
-		dataset = self.request.json_body
-		result = con.execute(gkdb.organisation.insert(),[dataset])
-		print result
-		return result.rowcount
+		
+		try:
+			dataset = self.request.json_body
+			result = con.execute(gkdb.organisation.insert(),[dataset])
+			try:
+				orgcode = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==dataset["orgname"],gkdb.organisation.c.orgtype==dataset["orgtype"],gkdb.organisation.c.yearstart==dataset["yearstart"],gkdb.organisation.c.yearend==dataset["yearend"])))
+				user = {"username":"admin", "userrole":-1,"userpassword":"admin"}
+				row = orgcode.fetchone()
+				user["orgcode"] = row["orgcode"] 
+				result1= con.execute(gkdb.Users.insert(),[user])
+				
+				return True
+			except:
+				result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==row["orgcode"]))
+				return False
+		except:
+			return False
+		
 	
 	def get(self):
 		result = con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
@@ -67,12 +82,14 @@ class api_organisation(object):
 		return orgDetails 
 	
 	def collection_put(self):
+		#auth check
 		dataset = self.request.json_body
 		result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
 		print result.rowcount
 		return result.rowcount
 
 	def collection_delete(self):
+		#auth check
 		dataset = self.request.json_body
 		result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==dataset["orgcode"]))
 		print result.rowcount
