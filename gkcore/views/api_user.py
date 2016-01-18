@@ -55,4 +55,11 @@ class api_user(object):
 		return {"status":"saved"}
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
-		return {"name":"admin","status":"administrator"}
+		result = con.execute(select([gkdb.Users]).where(gkdb.Users.c.orgcode==self.request.matchdict["orgcode"]))
+		users = []
+		for row in result:
+			users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"]})
+		print users
+		return users
+
+
