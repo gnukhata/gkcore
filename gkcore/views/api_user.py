@@ -47,11 +47,12 @@ class api_user(object):
 		self.request = Request
 		self.request = request
 
-	@view_config(request_method='POST')
+	@view_config(request_method='POST',renderer='json')
 	def addUser(self):
-		ud = self.request.json_body
-		print "this is ud:",ud
-		return "all right "
+		result = self.request.json_body
+		print result
+		con.execute(gkdb.Users.insert(),[result])
+		return {"status":"saved"}
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
 		return {"name":"admin","status":"administrator"}
