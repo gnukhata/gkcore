@@ -44,12 +44,12 @@ con = eng.connect()
 class api_organisation(object):
 	def __init__(self,request):
 		self.request = request
-
+	@view(renderer='json')
 	def collection_get(self):
 		result = con.execute(select([gkdb.organisation.c.orgcode, gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]))
 		orgs = []
 		for row in result:
-			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":row["yearstart"], "yearend":row["yearend"]})
+			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"])})
 		print orgs
 		return orgs
 		
