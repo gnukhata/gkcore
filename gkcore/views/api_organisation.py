@@ -65,7 +65,8 @@ class api_organisation(object):
 				row = orgcode.fetchone()
 				user["orgcode"] = row["orgcode"] 
 				result1= con.execute(gkdb.Users.insert(),[user])
-				
+				groups = []
+				groups.append({"groupname":"Corpus","orgcode":row[0]}
 				return True
 			except:
 				result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==row["orgcode"]))
