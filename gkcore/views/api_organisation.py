@@ -44,12 +44,12 @@ con = eng.connect()
 class api_organisation(object):
 	def __init__(self,request):
 		self.request = request
-
+	@view(renderer='json')
 	def collection_get(self):
 		result = con.execute(select([gkdb.organisation.c.orgcode, gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]))
 		orgs = []
 		for row in result:
-			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":row["yearstart"], "yearend":row["yearend"]})
+			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"])})
 		print orgs
 		return orgs
 		
@@ -58,35 +58,29 @@ class api_organisation(object):
 		
 		try:
 			dataset = self.request.json_body
+			print dataset
 			result = con.execute(gkdb.organisation.insert(),[dataset])
-			try:
-				orgcode = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==dataset["orgname"],gkdb.organisation.c.orgtype==dataset["orgtype"],gkdb.organisation.c.yearstart==dataset["yearstart"],gkdb.organisation.c.yearend==dataset["yearend"])))
-				user = {"username":"admin", "userrole":-1,"userpassword":"admin"}
-				row = orgcode.fetchone()
-				user["orgcode"] = row["orgcode"] 
-				result1= con.execute(gkdb.Users.insert(),[user])
-				
-				return True
-			except:
-				result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==row["orgcode"]))
-				return False
+			print result.rowcount
+			return result.rowcount
 		except:
 			return False
 		
 	
 	def get(self):
 		result = con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
-		orgDetails = []
 		row = result.fetchone()
-		orgDetails.append({"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	})
+		orgDetails={"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	}
 		return orgDetails 
 	
 	def collection_put(self):
 		#auth check
-		dataset = self.request.json_body
-		result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
-		print result.rowcount
-		return result.rowcount
+		try:
+			dataset = self.request.json_body
+			result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
+			print result.rowcount
+			return result.rowcount
+		except:
+			return False
 
 	def collection_delete(self):
 		#auth check

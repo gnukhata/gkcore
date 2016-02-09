@@ -36,47 +36,48 @@ from sqlalchemy import and_
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
+from sqlalchemy.ext.baked import Result
 
 con = Connection
 con = eng.connect()
 
 
-@view_defaults(route_name='users')
-class api_user(object):
+@view_defaults(route_name='accounts')
+class api_account(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
-	def addUser(self):
+	def addAccount(self):
 		try:
 			dataset = self.request.json_body
 			print dataset
-			result = con.execute(gkdb.users.insert(),[dataset])
+			result = con.execute(gkdb.accounts.insert(),[dataset])
 			return result.rowcount
 		except:
 			return False
-	@view_config(route_name='user', request_method='GET',renderer='json')
-	def getUser(self):
-		result = con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.matchdict["userid"] ))
+	@view_config(route_name='account', request_method='GET',renderer='json')
+	def getAccount(self):
+		result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
 		row = result.fetchone()
-		User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
-		print User
-		return User
+		accs={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
+		print accs
+		return accs
+	@view_config(request_method='GET', renderer ='json')
+	def getAllAccounts(self):
+		result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==self.request.matchdict["orgcode"]))
+		accs = []
+		for row in result:
+			accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
+		print accs
+		return accs
 	@view_config(request_method='PUT', renderer='json')
-	def editUser(self):
+	def editAccount(self):
 		try:
 			dataset = self.request.json_body
-			result = con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+			result = con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
 			print result.rowcount
 			return result.rowcount
 		except:
 			return False
-	@view_config(request_method='GET', renderer ='json')
-	def getAllUsers(self):
-		result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid]).where(gkdb.users.c.orgcode==self.request.matchdict["orgcode"]))
-		accs = []
-		for row in result:
-			accs.append({"userid":row["userid"], "username":row["username"]})
-		print accs
-		return accs
