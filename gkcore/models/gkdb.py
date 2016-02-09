@@ -43,7 +43,7 @@ DateTime,
 Date
 	 #<- time abstraction field
     )
-from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 from sqlalchemy import MetaData
 
@@ -73,6 +73,7 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgfcradate',UnicodeText),
 	Column('roflag',Integer),
 	Column('booksclosedflag',Integer),
+	UniqueConstraint('orgname','orgtype','yearstart','yearend')
 	) 
 
 
@@ -81,6 +82,7 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	Column('groupname',UnicodeText,  nullable=False),
 	Column('subgroupof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	UniqueConstraint('orgcode','groupname')
 	)
 	
 
@@ -90,6 +92,8 @@ accounts = Table('accounts', metadata,
 	Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
 	Column('openingbal', Numeric(13,2)),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	UniqueConstraint('orgcode','accountname')
+	
 	)
 	
 projects = Table('projects', metadata,
@@ -97,6 +101,7 @@ projects = Table('projects', metadata,
 	Column('projectname',UnicodeText, nullable=False),
 	Column('sanctionedamount',Numeric(13,2)),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	UniqueConstraint('orgcode','projectname')
 	)
 vouchers=Table('vouchers', metadata,
 	Column('vouchercode',Integer,primary_key=True),
@@ -122,6 +127,7 @@ users=Table('users', metadata,
 	Column('userquestion',Text, nullable=False),
 	Column('useranswer',Text, nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	UniqueConstraint('orgcode','username')
 	)
 	
 
