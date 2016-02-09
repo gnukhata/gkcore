@@ -57,9 +57,8 @@ class api_account(object):
 	@view_config(route_name='account', request_method='GET',renderer='json')
 	def getAccount(self):
 		result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
-		accs = []
-		for row in result:
-			accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]})
+		row = result.fetchone()
+		accs={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
 		print accs
 		return accs
 	@view_config(request_method='GET', renderer ='json')

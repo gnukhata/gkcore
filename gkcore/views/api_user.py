@@ -49,14 +49,17 @@ class api_user(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addUser(self):
-		result = self.request.json_body
-		print result
-		con.execute(gkdb.users.insert(),[result])
-		return {"status":1}
+		try:
+			dataset = self.request.json_body
+			print dataset
+			result = con.execute(gkdb.users.insert(),[dataset])
+			return result.rowcount
+		except:
+			return False
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
 		result = con.execute(select([gkdb.users]).where(gkdb.users.c.orgcode==self.request.matchdict["orgcode"] and gkdb.users.c.userid == self.request.matchdict["userid"] ))
-		row = result.fetchone
+		row = result.fetchone()
 		User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
 		print User
 		return User
