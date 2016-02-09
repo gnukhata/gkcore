@@ -39,5 +39,7 @@ def main(global_config, **settings):
     config.include("cornice")
     config.add_route("users",'/users')
     config.add_route('user','/user/{orgcode}/{uid}')
+    config.add_route("accounts",'/accounts')
+    config.add_route("account",'/account/')
     config.scan("gkcore.views")
     return config.make_wsgi_app()

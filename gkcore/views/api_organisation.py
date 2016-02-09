@@ -58,19 +58,10 @@ class api_organisation(object):
 		
 		try:
 			dataset = self.request.json_body
+			print dataset
 			result = con.execute(gkdb.organisation.insert(),[dataset])
-			try:
-				orgcode = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==dataset["orgname"],gkdb.organisation.c.orgtype==dataset["orgtype"],gkdb.organisation.c.yearstart==dataset["yearstart"],gkdb.organisation.c.yearend==dataset["yearend"])))
-				user = {"username":"admin", "userrole":-1,"userpassword":"admin"}
-				row = orgcode.fetchone()
-				user["orgcode"] = row["orgcode"] 
-				result1= con.execute(gkdb.Users.insert(),[user])
-				groups = []
-				groups.append({"groupname":"Corpus","orgcode":row[0]}
-				return True
-			except:
-				result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==row["orgcode"]))
-				return False
+			print result.rowcount
+			return result.rowcount
 		except:
 			return False
 		

@@ -25,8 +25,7 @@ Contributor:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
-
-from sqlalchemy.engine import create_engine, Engine
+from sqlalchemy.engine import create_engine
 def dbconnect():
 	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
