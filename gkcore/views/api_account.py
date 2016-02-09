@@ -50,10 +50,13 @@ class api_account(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addAccount(self):
-		result = self.request.json_body
-		print result
-		con.execute(gkdb.accounts.insert(),[result])
-		return {"status":1}
+		try:
+			dataset = self.request.json_body
+			print dataset
+			result = con.execute(gkdb.accounts.insert(),[dataset])
+			return result.rowcount
+		except:
+			return False
 	@view_config(route_name='account', request_method='GET',renderer='json')
 	def getAccount(self):
 		result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
@@ -69,3 +72,12 @@ class api_account(object):
 			accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
 		print accs
 		return accs
+	@view_config(request_method='PUT', renderer='json')
+	def editAccount(self):
+		try:
+			dataset = self.request.json_body
+			result = con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+			print result.rowcount
+			return result.rowcount
+		except:
+			return False

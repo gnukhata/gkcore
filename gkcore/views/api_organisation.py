@@ -74,10 +74,13 @@ class api_organisation(object):
 	
 	def collection_put(self):
 		#auth check
-		dataset = self.request.json_body
-		result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
-		print result.rowcount
-		return result.rowcount
+		try:
+			dataset = self.request.json_body
+			result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
+			print result.rowcount
+			return result.rowcount
+		except:
+			return False
 
 	def collection_delete(self):
 		#auth check

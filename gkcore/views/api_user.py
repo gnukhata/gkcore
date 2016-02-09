@@ -58,10 +58,25 @@ class api_user(object):
 			return False
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
-		result = con.execute(select([gkdb.users]).where(gkdb.users.c.orgcode==self.request.matchdict["orgcode"] and gkdb.users.c.userid == self.request.matchdict["userid"] ))
+		result = con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.matchdict["userid"] ))
 		row = result.fetchone()
 		User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
 		print User
 		return User
-
-
+	@view_config(request_method='PUT', renderer='json')
+	def editUser(self):
+		try:
+			dataset = self.request.json_body
+			result = con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+			print result.rowcount
+			return result.rowcount
+		except:
+			return False
+	@view_config(request_method='GET', renderer ='json')
+	def getAllUsers(self):
+		result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid]).where(gkdb.users.c.orgcode==self.request.matchdict["orgcode"]))
+		accs = []
+		for row in result:
+			accs.append({"userid":row["userid"], "username":row["username"]})
+		print accs
+		return accs
