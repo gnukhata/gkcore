@@ -37,6 +37,8 @@ eng = dbconnect()
 def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.include("cornice")
+    config.add_route("organisation","/organisation/{orgcode}")
+    config.add_route("organisations","/organisations")
     config.add_route("users",'/users/{orgcode}')
     config.add_route('user','/user/{userid}')
     config.add_route("accounts",'/accounts/{orgcode}')

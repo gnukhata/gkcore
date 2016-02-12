@@ -30,7 +30,7 @@ Contributor:
 """
 
 
-from cornice.resource import resource, view 
+from pyramid.view import view_defaults,  view_config
 from gkcore import eng
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
@@ -40,21 +40,21 @@ from sqlalchemy import and_
 con = Connection
 con = eng.connect()
 
-@resource(collection_path='/organisation',path='/organisation/{orgcode}')
+@view_defaults(route_name='organisations')
 class api_organisation(object):
 	def __init__(self,request):
 		self.request = request
-	@view(renderer='json')
-	def collection_get(self):
+	@view_config(request_method='GET', renderer ='json')
+	def getOrgs(self):
 		result = con.execute(select([gkdb.organisation.c.orgcode, gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]))
 		orgs = []
 		for row in result:
-			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"])})
+			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"]})
 		print orgs
 		return orgs
 		
-	@view(renderer='json', accept='text/json')
-	def collection_post(self):
+	@view_config(request_method='POST',renderer='json')
+	def postOrg(self):
 		
 		try:
 			dataset = self.request.json_body
@@ -65,14 +65,14 @@ class api_organisation(object):
 		except:
 			return False
 		
-	
-	def get(self):
+	@view_config(route_name='organisation', request_method='GET',renderer='json')
+	def getOrg(self):
 		result = con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
 		row = result.fetchone()
-		orgDetails={"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	}
+		orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	}
 		return orgDetails 
-	
-	def collection_put(self):
+	@view_config(request_method='PUT', renderer='json')
+	def putOrg(self):
 		#auth check
 		try:
 			dataset = self.request.json_body
@@ -81,8 +81,8 @@ class api_organisation(object):
 			return result.rowcount
 		except:
 			return False
-
-	def collection_delete(self):
+	@view_config(request_method='DELETE', renderer='json')
+	def deleteOrg(self):
 		#auth check
 		dataset = self.request.json_body
 		result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==dataset["orgcode"]))
