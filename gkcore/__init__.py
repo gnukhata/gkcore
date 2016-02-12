@@ -41,5 +41,6 @@ def main(global_config, **settings):
     config.add_route('user','/user/{userid}')
     config.add_route("accounts",'/accounts/{orgcode}')
     config.add_route("account",'/account/{accountcode}')
+    config.add_route("login",'/login')
     config.scan("gkcore.views")
     return config.make_wsgi_app()
