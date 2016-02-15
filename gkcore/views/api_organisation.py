@@ -44,6 +44,7 @@ con = eng.connect()
 class api_organisation(object):
 	def __init__(self,request):
 		self.request = request
+		
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		result = con.execute(select([gkdb.organisation.c.orgcode, gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]))
@@ -52,6 +53,15 @@ class api_organisation(object):
 			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"]})
 		print orgs
 		return orgs
+	
+	@view_config(route_name='orgyears', request_method='GET', renderer ='json')
+	def getYears(self):
+		result = con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgname==self.request.matchdict["orgname"] and gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"]))
+		years = []
+		for row in result:
+			years.append({"yearstart":str(row["yearstart"]), "yearend":str(row["yearend"])})
+		print years
+		return years
 		
 	@view_config(request_method='POST',renderer='json')
 	def postOrg(self):
