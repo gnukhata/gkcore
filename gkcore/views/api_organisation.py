@@ -33,7 +33,7 @@ Contributor:
 from pyramid.view import view_defaults,  view_config
 from gkcore import eng
 from gkcore.models import gkdb
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, distinct
 import json 
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -47,16 +47,16 @@ class api_organisation(object):
 		
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
-		result = con.execute(select([gkdb.organisation.c.orgcode, gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]))
+		result = con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).distinct())
 		orgs = []
 		for row in result:
-			orgs.append({"orgcode":row["orgcode"], "orgname":row["orgname"], "orgtype":row["orgtype"]})
+			orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
 		print orgs
 		return orgs
 	
 	@view_config(route_name='orgyears', request_method='GET', renderer ='json')
 	def getYears(self):
-		result = con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgname==self.request.matchdict["orgname"] and gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"]))
+		result = con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"])))
 		years = []
 		for row in result:
 			years.append({"yearstart":str(row["yearstart"]), "yearend":str(row["yearend"])})
