@@ -47,7 +47,10 @@ from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 from sqlalchemy import MetaData
 
+
 metadata = MetaData()
+signature = Table('signature', metadata,
+	Column('secretcode',UnicodeText, primary_key=True))
 
 organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),

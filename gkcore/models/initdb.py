@@ -27,7 +27,17 @@ Contributor:
 
 from meta import dbconnect
 from gkdb import metadata
+import datetime
+from time import strftime
+
 
 eng = dbconnect()
 metadata.create_all(eng)
+curtime=datetime.datetime.now()
+str_time=str(curtime.microsecond)
+new_microsecond=str_time[0:2]		
+
+secret = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
+
+eng.execute("insert into signature values(%s)"%secret)
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
