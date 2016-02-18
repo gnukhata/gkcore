@@ -33,7 +33,10 @@ from gkcore.models.meta import dbconnect
 from pyramid.events import NewRequest
 
 eng = dbconnect()
-
+resultset = eng.execute("select * from signature")
+row = resultset.fetchone()
+secret = row[0]
+#print secret
 def add_cors_headers_response_callback(event):
     def cors_headers(request, response):
         response.headers.update({

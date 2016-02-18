@@ -12,6 +12,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import jwt
+import gkcore
 con= Connection
 con= eng.connect()
 
@@ -21,7 +22,15 @@ def gkLogin(request):
 	result = con.execute(select([gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.username==dataset["username"] and gkdb.users.c.userpassword== dataset["userpassword"] and gkdb.users.c.orgcode==dataset["orgcode"]) )
 	if result.rowcount == 1:
 		record = result.fetchone()
-		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},"wbc@IITB~39",algorithm='HS256')
+		
+		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 		return {"status":"ok","token":token }
 	else:
 		return {"status":"invalid"}
+
+def authCheck(token):
+	try:
+		tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
+		return True
+	except:
+		return False
