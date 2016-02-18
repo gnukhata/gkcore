@@ -27,3 +27,10 @@ def gkLogin(request):
 		return {"status":"ok","token":token }
 	else:
 		return {"status":"invalid"}
+
+def authCheck(token):
+	try:
+		tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
+		return True
+	except:
+		return False
