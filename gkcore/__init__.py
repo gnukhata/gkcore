@@ -50,7 +50,7 @@ def add_cors_headers_response_callback(event):
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
-    config.add_route("orgid","/organisation/{orgname}/{orgtype}/{yearstart}/{yearend}}")
+    config.add_route("orgid","/organisation/{orgname}/{orgtype}/{yearstart}/{yearend}")
     config.add_route("organisation","/organisation/{orgcode}")
     config.add_route("organisations","/organisations")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
