@@ -37,6 +37,8 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 import jwt
+import gkcore
+from gkcore.views.api_login import authCheck
 
 con = Connection
 con = eng.connect()
@@ -75,9 +77,8 @@ class api_user(object):
 			return False
 	@view_config(request_method='GET', renderer ='json')
 	def getAllUsers(self):
-		token = self.request.headers["nav"]
-		print token
-		print jwt.decode(token, 'wbc@IITB~39', algorithms=['HS256'])
+		token = self.request.headers["gktoken"]
+		print authCheck(token)
 		result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid]).where(gkdb.users.c.orgcode==self.request.matchdict["orgcode"]))
 		accs = []
 		for row in result:
