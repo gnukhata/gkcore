@@ -98,4 +98,11 @@ class api_organisation(object):
 		result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==dataset["orgcode"]))
 		print result.rowcount
 		return result.rowcount
+	
+	@view_config(route_name='orgid', request_method='GET',renderer='json')
+	def getOrgCode(self):
+		result = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype==self.request.matchdict["orgtype"], gkdb.organisation.c.yearstart==self.request.matchdict["yearstart"], gkdb.organisation.c.yearend==self.request.matchdict["yearend"])))
+		row = result.fetchone()
+		orgcode={"orgcode":row["orgcode"]}
+		return orgcode 
 	 	

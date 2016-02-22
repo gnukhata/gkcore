@@ -76,7 +76,8 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgfcradate',UnicodeText),
 	Column('roflag',Integer),
 	Column('booksclosedflag',Integer),
-	UniqueConstraint('orgname','orgtype','yearstart','yearend')
+	UniqueConstraint('orgname','orgtype','yearstart'),
+	UniqueConstraint('orgname','orgtype','yearend')
 	) 
 
 

@@ -51,7 +51,7 @@ setup(name='gkcore',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['cornice', 'waitress'],
+      install_requires=['waitress'],
       entry_points = """\
       [paste.app_factory]
       main=gkcore:main
