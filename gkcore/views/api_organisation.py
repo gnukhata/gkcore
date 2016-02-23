@@ -83,7 +83,7 @@ class api_organisation(object):
 					userdata["userrole"] = -1
 					result = con.execute(gkdb.users.insert(),[userdata])
 					if result.rowcount==1:
-						result = con.execute(select([gkdb.users.c.userid]).where(gkdb.users.c.username==userdata["username"] and gkdb.users.c.userpassword== userdata["userpassword"] and gkdb.users.c.orgcode==userdata["orgcode"]) )
+						result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==userdata["username"], gkdb.users.c.userpassword== userdata["userpassword"], gkdb.users.c.orgcode==userdata["orgcode"])) )
 						if result.rowcount == 1:
 							record = result.fetchone()
 							
