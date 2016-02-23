@@ -45,7 +45,7 @@ con= eng.connect()
 @view_config(route_name='login',request_method='POST',renderer='json')
 def gkLogin(request):
 	dataset = request.json_body
-	result = con.execute(select([gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.username==dataset["username"] and gkdb.users.c.userpassword== dataset["userpassword"] and gkdb.users.c.orgcode==dataset["orgcode"]) )
+	result = con.execute(select([gkdb.users.c.userid]).where(gkdb.users.c.username==dataset["username"] and gkdb.users.c.userpassword== dataset["userpassword"] and gkdb.users.c.orgcode==dataset["orgcode"]) )
 	if result.rowcount == 1:
 		record = result.fetchone()
 		
