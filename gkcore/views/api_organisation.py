@@ -37,6 +37,8 @@ from sqlalchemy.sql import select, distinct
 import json 
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
+import jwt
+import gkcore
 con = Connection
 con = eng.connect()
 
@@ -69,9 +71,32 @@ class api_organisation(object):
 		try:
 			dataset = self.request.json_body
 			print dataset
-			result = con.execute(gkdb.organisation.insert(),[dataset])
+			orgdata = dataset["orgdetails"]
+			userdata = dataset["userdetails"]
+			result = con.execute(gkdb.organisation.insert(),[orgdata])
 			print result.rowcount
-			return result.rowcount
+			if result.rowcount==1:
+				try:
+					code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
+					orgcode = code.fetchone()
+					userdata["orgcode"] = orgcode["orgcode"]
+					userdata["userrole"] = -1
+					result = con.execute(gkdb.users.insert(),[userdata])
+					if result.rowcount==1:
+						result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==userdata["username"], gkdb.users.c.userpassword== userdata["userpassword"], gkdb.users.c.orgcode==userdata["orgcode"])) )
+						if result.rowcount == 1:
+							record = result.fetchone()
+							
+							token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+							return {"status":"ok","token":token }
+						else:
+							return {"status":"invalid"}
+					else:
+							return False
+				except:
+					result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==userdata["orgcode"]))
+			else:
+				return False
 		except:
 			return False
 		
