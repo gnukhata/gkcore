@@ -78,7 +78,7 @@ class api_user(object):
 			return False
 	@view_config(request_method='GET', renderer ='json')
 	def getAllGroups(self):
-		result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.users.c.orgcode==self.request.matchdict["orgcode"], gkdb.groupsubgroups.c.subgroupof==null)))
+		result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==self.request.matchdict["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
 		grps = []
 		for row in result:
 			grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
@@ -92,3 +92,4 @@ class api_user(object):
 		for row in result:
 			subs.append({"subgroupname":row["groupname"], "groupcode":row["groupcode"]})
 		print subs
+		return subs
