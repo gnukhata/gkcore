@@ -37,6 +37,7 @@ resultset = eng.execute("select * from signature")
 row = resultset.fetchone()
 secret = row[0]
 #print secret
+enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3}
 def add_cors_headers_response_callback(event):
     def cors_headers(request, response):
         response.headers.update({

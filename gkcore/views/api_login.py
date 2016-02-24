@@ -44,6 +44,15 @@ con= eng.connect()
 
 @view_config(route_name='login',request_method='POST',renderer='json')
 def gkLogin(request):
+	"""
+	purpose: take org code, username and password and authenticate the user.
+	Return true if username and password matches or false otherwise.
+	description:
+	The function takes the orgcode and matches the username and password.
+	if it is correct then the user is authorised and a jwt object is created.
+	The object will have the userid and orgcode and this will be sent back as a response.
+	Else the function will not issue any token.
+	"""
 	dataset = request.json_body
 	result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 	if result.rowcount == 1:
@@ -55,8 +64,14 @@ def gkLogin(request):
 		return {"status":"invalid"}
 
 def authCheck(token):
+	"""
+	Purpose: on every request check if userid and orgcode are valid combinations
+	"""
+	
 	try:
 		tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
-		return True
+		tokendict["auth"] = True
+		return tokendict
 	except:
-		return False
+		tokendict = {"auth":False}
+		return tokendict
