@@ -61,7 +61,7 @@ def main(global_config, **settings):
     config.add_route("account",'/account/{accountcode}')
     config.add_route("login",'/login')
     config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
-    config.add_route("groupsubgroups","/groupsubgroups/{orgcode}")
+    config.add_route("groupsubgroups","/groupsubgroups")
     config.add_route("groupDetails","/groupDetails/{groupcode}")
     config.scan("gkcore.views")
     config.add_subscriber(add_cors_headers_response_callback, NewRequest)

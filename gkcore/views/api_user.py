@@ -52,7 +52,10 @@ class api_user(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addUser(self):
-		token = self.request.headers["gktoken"]
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
@@ -75,7 +78,10 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
-		token = self.request.headers["gktoken"]
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
@@ -91,7 +97,10 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='PUT', renderer='json')
 	def editUser(self):
-		token = self.request.headers["gktoken"]
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
@@ -111,7 +120,10 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='GET', renderer ='json')
 	def getAllUsers(self):
-		token = self.request.headers["gktoken"]
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:

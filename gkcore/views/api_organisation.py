@@ -108,21 +108,41 @@ class api_organisation(object):
 		return orgDetails 
 	@view_config(request_method='PUT', renderer='json')
 	def putOrg(self):
-		#auth check
-		try:
-			dataset = self.request.json_body
-			result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
-			print result.rowcount
-			return result.rowcount
-		except:
-			return False
+		token = self.request.headers['gktoken']
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+		    try:
+				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				dataset = self.request.json_body
+				if userRole[0]==-1:
+					result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
+					print result.rowcount
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
+		    except:
+				return {"gkstatus":  enumdict["ConnectionFailed"]}
 	@view_config(request_method='DELETE', renderer='json')
 	def deleteOrg(self):
-		#auth check
-		dataset = self.request.json_body
-		result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==dataset["orgcode"]))
-		print result.rowcount
-		return result.rowcount
+		token = self.request.headers['gktoken']
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+		    try:
+				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				if userRole[0]==-1:
+					result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+					print result.rowcount
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
+		    except:
+				return {"gkstatus":  enumdict["ConnectionFailed"]}
 	
 	@view_config(route_name='orgid', request_method='GET',renderer='json')
 	def getOrgCode(self):

@@ -27,7 +27,7 @@ Contributor:
 """
 
 
-from gkcore import eng
+from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json 
@@ -54,42 +54,116 @@ class api_user(object):
 	@view_config(request_method='POST',renderer='json')
 	def addSubgroup(self):
 		try:
-			dataset = self.request.json_body
-			print dataset
-			result = con.execute(gkdb.groupsubgroups.insert(),[dataset])
-			return result.rowcount
+			token = self.request.headers["gktoken"]
 		except:
-			return False
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body
+				dataset["orgcode"] = authDetails["orgcode"]
+				result = con.execute(gkdb.groupsubgroups.insert(),[dataset])
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 	@view_config(route_name='groupsubgroup', request_method='GET',renderer='json')
 	def getGroupSubgroup(self):
-		resultset = eng.execute("select g.groupname, sg.groupname as subgroupname from groupsubgroups as g, groupsubgroups as sg where g.groupcode=sg.subgroupof and g.groupcode="+self.request.matchdict["groupcode"])
-		row = resultset.fetchone()
-		dict = {"groupname":row["groupname"],"subgroupname":row["subgroupname"]}
-		print dict
-		return dict
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				resultset = eng.execute("select g.groupname, sg.groupname as subgroupname from groupsubgroups as g, groupsubgroups as sg where g.groupcode=sg.subgroupof and g.groupcode="+self.request.matchdict["groupcode"])
+				grpsubs = []
+				for row in resultset:
+					grpsubs.append({"groupname":row["groupname"],"subgroupname":row["subgroupname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='PUT', renderer='json')
 	def editSubgroup(self):
 		try:
-			dataset = self.request.json_body
-			result = con.execute(gkdb.groupsubgroups.update().where(and_(gkdb.groupsubgroups.c.groupname==dataset["groupname"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])).values(dataset))
-			print result.rowcount
-			return result.rowcount
+			token = self.request.headers["gktoken"]
 		except:
-			return False
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body
+				dataset["orgcode"]=authDetails["orgcode"]
+				result = con.execute(gkdb.groupsubgroups.update().where(and_(gkdb.groupsubgroups.c.groupname==dataset["groupname"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])).values(dataset))
+				print result.rowcount
+				return {"gkstatus": gkcore.enumdict["Success"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='GET', renderer ='json')
 	def getAllGroups(self):
-		result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==self.request.matchdict["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
-		grps = []
-		for row in result:
-			grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-		print grps
-		return grps
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+		    try:
+				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
+				grps = []
+				for row in result:
+					grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
+				print grps
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps}
+		    except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	
 	@view_config(route_name="groupDetails", request_method='GET', renderer ='json')
 	def getSubgroupsByGroup(self):
-		result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.subgroupof==self.request.matchdict["groupcode"])))
-		subs = []
-		for row in result:
-			subs.append({"subgroupname":row["groupname"], "groupcode":row["groupcode"]})
-		print subs
-		return subs
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+		    try:
+				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.subgroupof==self.request.matchdict["groupcode"])))
+				subs = []
+				for row in result:
+					subs.append({"subgroupname":row["groupname"], "groupcode":row["groupcode"]})
+				print subs
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subs}
+		    except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+    		
+	@view_config(request_method='DELETE', renderer ='json')
+	def deleteSubgroup(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+		    try:
+				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				dataset = self.request.json_body
+				if userRole[0]==-1:
+					result = con.execute(gkdb.groupsubgroups.delete().where(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"]))
+					print result.rowcount
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
+		    except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+
