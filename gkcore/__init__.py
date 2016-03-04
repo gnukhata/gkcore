@@ -37,7 +37,7 @@ resultset = eng.execute("select * from signature")
 row = resultset.fetchone()
 secret = row[0]
 #print secret
-enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3}
+enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4}
 def add_cors_headers_response_callback(event):
     def cors_headers(request, response):
         response.headers.update({
@@ -55,13 +55,13 @@ def main(global_config, **settings):
     config.add_route("organisation","/organisation/{orgcode}")
     config.add_route("organisations","/organisations")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
-    config.add_route("users",'/users/{orgcode}')
-    config.add_route('user','/user/{userid}')
+    config.add_route("users",'/users')
+    config.add_route('user','/user')
     config.add_route("accounts",'/accounts/{orgcode}')
     config.add_route("account",'/account/{accountcode}')
     config.add_route("login",'/login')
     config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
-    config.add_route("groupsubgroups","/groupsubgroups/{orgcode}")
+    config.add_route("groupsubgroups","/groupsubgroups")
     config.add_route("groupDetails","/groupDetails/{groupcode}")
     config.scan("gkcore.views")
     config.add_subscriber(add_cors_headers_response_callback, NewRequest)
