@@ -57,7 +57,7 @@ def main(global_config, **settings):
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
     config.add_route("users",'/users')
     config.add_route('user','/user')
-    config.add_route("accounts",'/accounts/{orgcode}')
+    config.add_route("accounts",'/accounts')
     config.add_route("account",'/account/{accountcode}')
     config.add_route("login",'/login')
     config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")

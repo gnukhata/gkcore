@@ -27,7 +27,8 @@ Contributor:
 """
 
 
-from gkcore import eng
+from gkcore import eng, enumdict
+from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json 
@@ -51,33 +52,93 @@ class api_account(object):
 	@view_config(request_method='POST',renderer='json')
 	def addAccount(self):
 		try:
-			dataset = self.request.json_body
-			print dataset
-			result = con.execute(gkdb.accounts.insert(),[dataset])
-			return result.rowcount
+			token = self.request.headers["gktoken"]
 		except:
-			return False
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body
+				dataset["orgcode"] = authDetails["orgcode"]
+				result = con.execute(gkdb.accounts.insert(),[dataset])
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+	
 	@view_config(route_name='account', request_method='GET',renderer='json')
 	def getAccount(self):
-		result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
-		row = result.fetchone()
-		accs={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
-		print accs
-		return accs
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
+				row = result.fetchone()
+				acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":acc}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+	
 	@view_config(request_method='GET', renderer ='json')
 	def getAllAccounts(self):
-		result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==self.request.matchdict["orgcode"]))
-		accs = []
-		for row in result:
-			accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
-		print accs
-		return accs
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]))
+				accs = []
+				for row in result:
+					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":accs}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+	
 	@view_config(request_method='PUT', renderer='json')
 	def editAccount(self):
 		try:
-			dataset = self.request.json_body
-			result = con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
-			print result.rowcount
-			return result.rowcount
+			token = self.request.headers["gktoken"]
 		except:
-			return False
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body
+				result = con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+	
+	@view_config(request_method='DELETE', renderer ='json')
+	def deleteAccount(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				dataset = self.request.json_body
+				if userRole[0]==-1:
+					result = con.execute(gkdb.accounts.delete().where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
