@@ -122,7 +122,7 @@ class api_account(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 	
 	@view_config(request_method='DELETE', renderer ='json')
-	def deleteSubgroup(self):
+	def deleteAccount(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
