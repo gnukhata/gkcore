@@ -79,7 +79,9 @@ class api_user(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				resultset = eng.execute("select g.groupname, sg.groupname as subgroupname from groupsubgroups as g, groupsubgroups as sg where g.groupcode=sg.subgroupof and g.groupcode="+self.request.matchdict["groupcode"])
+				g = gkdb.groupsubgroups.alias("g")
+				sg = gkdb.groupsubgroups.alias("sg")
+				resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(and_(g.c.groupcode==sg.c.subgroupof,g.c.groupcode==self.request.matchdict["groupcode"])))
 				grpsubs = []
 				for row in resultset:
 					grpsubs.append({"groupname":row["groupname"],"subgroupname":row["subgroupname"]})
