@@ -64,6 +64,8 @@ class api_account(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = con.execute(gkdb.accounts.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 	

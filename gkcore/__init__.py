@@ -31,6 +31,9 @@ Main entry point"""
 from pyramid.config import Configurator
 from gkcore.models.meta import dbconnect
 from pyramid.events import NewRequest
+from webob import request
+from webob.request import Request
+from wsgicors import CORS
 
 eng = dbconnect()
 resultset = eng.execute("select * from signature")
@@ -38,31 +41,21 @@ row = resultset.fetchone()
 secret = row[0]
 #print secret
 enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4}
-def add_cors_headers_response_callback(event):
-    def cors_headers(request, response):
-        response.headers.update({
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST,GET,DELETE,PUT,OPTIONS',
-        'Access-Control-Allow-Headers': 'Origin, Content-Type, Accept, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Max-Age': '1728000',
-        })
-    event.request.add_response_callback(cors_headers)
 
 def main(global_config, **settings):
-    config = Configurator(settings=settings)
-    config.add_route("orgid","/organisation/{orgname}/{orgtype}/{yearstart}/{yearend}")
-    config.add_route("organisation","/organisation/{orgcode}")
-    config.add_route("organisations","/organisations")
-    config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
-    config.add_route("users",'/users')
-    config.add_route('user','/user')
-    config.add_route("accounts",'/accounts')
-    config.add_route("account",'/account/{accountcode}')
-    config.add_route("login",'/login')
-    config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
-    config.add_route("groupsubgroups","/groupsubgroups")
-    config.add_route("groupDetails","/groupDetails/{groupcode}")
-    config.scan("gkcore.views")
-    config.add_subscriber(add_cors_headers_response_callback, NewRequest)
-    return config.make_wsgi_app()
+	config = Configurator(settings=settings)
+	config.add_route("orgid","/organisation/{orgname}/{orgtype}/{yearstart}/{yearend}")
+	config.add_route("organisation","/organisation/{orgcode}")
+	config.add_route("organisations","/organisations")
+	config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
+	config.add_route("users",'/users')
+	config.add_route('user','/user')
+	config.add_route("accounts",'/accounts')
+	config.add_route("account",'/account/{accountcode}')
+	config.add_route("login",'/login')
+	config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
+	config.add_route("groupsubgroups","/groupsubgroups")
+	config.add_route("groupDetails","/groupDetails/{groupcode}")
+	config.scan("gkcore.views")
+	
+	return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
