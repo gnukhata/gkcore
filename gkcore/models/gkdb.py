@@ -85,7 +85,7 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	Column('groupcode',Integer,primary_key=True),
 	Column('groupname',UnicodeText,  nullable=False),
 	Column('subgroupof',Integer),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','groupname')
 	)
 	
@@ -95,7 +95,7 @@ accounts = Table('accounts', metadata,
 	Column('accountname',UnicodeText, nullable=False),
 	Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
 	Column('openingbal', Numeric(13,2)),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','accountname')
 	
 	)
@@ -104,7 +104,7 @@ projects = Table('projects', metadata,
 	Column('projectcode',Integer, primary_key=True),
 	Column('projectname',UnicodeText, nullable=False),
 	Column('sanctionedamount',Numeric(13,2)),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','projectname')
 	)
 vouchers=Table('vouchers', metadata,
@@ -119,7 +119,7 @@ vouchers=Table('vouchers', metadata,
 	Column('prjcrs',JSONB),
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('delflag',BOOLEAN,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	)
 	
 	
@@ -130,7 +130,7 @@ users=Table('users', metadata,
 	Column('userrole',Integer, nullable=False),
 	Column('userquestion',Text, nullable=False),
 	Column('useranswer',Text, nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','username')
 	)
 	
@@ -144,6 +144,6 @@ bankRecon=Table('bankrecon',metadata,
 	Column('cramount',Numeric(13,2)),
 	Column('clearancedate',DateTime),
 	Column('memo',Text),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	)
 	
