@@ -79,14 +79,7 @@ class api_organisation(object):
 				try:
 					code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
 					orgcode = code.fetchone()
-					
-					if orgdata["orgtype"] == "Profit Making":
-						result = con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Capital","orgcode":orgcode["orgcode"]}) 
-					else:
-						result = con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
-					
-					
-					
+										
 					currentassets= {"groupname":"Current Assets","orgcode":orgcode["orgcode"]}
 					result = con.execute(gkdb.groupsubgroups.insert(),currentassets)
 					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
@@ -137,6 +130,28 @@ class api_organisation(object):
 					
 					reserves= {"groupname":"Reserves","orgcode":orgcode["orgcode"]}
 					result = con.execute(gkdb.groupsubgroups.insert(),reserves)
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					if orgdata["orgtype"] == "Profit Making":
+						result = con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Capital","orgcode":orgcode["orgcode"]}) 
+												
+						result = con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+						
+					else:
+						result = con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
+						
+						result = con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Inventory",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+					
+					
 					
 					userdata["orgcode"] = orgcode["orgcode"]
 					userdata["userrole"] = -1
