@@ -33,7 +33,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_, exc 
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config

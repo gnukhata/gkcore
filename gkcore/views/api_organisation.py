@@ -79,6 +79,77 @@ class api_organisation(object):
 				try:
 					code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
 					orgcode = code.fetchone()
+										
+					currentassets= {"groupname":"Current Assets","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),currentassets)
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Bank","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Cash","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Inventory","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Loans & Advance","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Debtors","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+					
+					currentliability= {"groupname":"Current Liabilities","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),currentliability)
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liability",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
+	
+					directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),directexpense)
+										
+					directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),directincome)
+					
+					fixedassets= {"groupname":"Fixed Assets","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),fixedassets)
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Fixed Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Building","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Furniture","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Land","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Plant & Machinery","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+					
+					indirectexpense= {"groupname":"Indirect Expense","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),indirectexpense)
+					
+					indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),indirectincome)
+					
+					investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),investment)
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Investment",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Investment in Bank Deposits","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Investment in Shares & Debentures","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}, ])
+					
+					loansasset= {"groupname":"Loans(Asset)","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),loansasset)
+					
+					loansliab= {"groupname":"Loans(Liability)","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),loansliab)
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Loans(Liability)",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Secured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Unsecured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+					
+					reserves= {"groupname":"Reserves","orgcode":orgcode["orgcode"]}
+					result = con.execute(gkdb.groupsubgroups.insert(),reserves)
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					if orgdata["orgtype"] == "Profit Making":
+						result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Capital","orgcode":orgcode["orgcode"]},{"groupname":"Miscellaneous Expenses(Asset)","orgcode":orgcode["orgcode"]}]) 
+																						
+						result = con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+						
+					else:
+						result = con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
+						
+						result = con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Inventory",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+					
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					grpcode = result.fetchone()
+					result = con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+					
+					
+					
 					userdata["orgcode"] = orgcode["orgcode"]
 					userdata["userrole"] = -1
 					result = con.execute(gkdb.users.insert(),[userdata])
