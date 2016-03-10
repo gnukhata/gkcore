@@ -76,10 +76,10 @@ class api_organisation(object):
 			result = con.execute(gkdb.organisation.insert(),[orgdata])
 			print result.rowcount
 			if result.rowcount==1:
+				code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
+				orgcode = code.fetchone()
 				try:
-					code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
-					orgcode = code.fetchone()
-										
+															
 					currentassets= {"groupname":"Current Assets","orgcode":orgcode["orgcode"]}
 					result = con.execute(gkdb.groupsubgroups.insert(),currentassets)
 					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
@@ -88,7 +88,7 @@ class api_organisation(object):
 					
 					currentliability= {"groupname":"Current Liabilities","orgcode":orgcode["orgcode"]}
 					result = con.execute(gkdb.groupsubgroups.insert(),currentliability)
-					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liability",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liabilities",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
 					grpcode = result.fetchone()
 					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
 	
@@ -112,7 +112,7 @@ class api_organisation(object):
 					
 					investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
 					result = con.execute(gkdb.groupsubgroups.insert(),investment)
-					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Investment",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Investments",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
 					grpcode = result.fetchone()
 					result = con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Investment in Bank Deposits","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Investment in Shares & Debentures","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}, ])
 					
