@@ -165,7 +165,7 @@ class api_organisation(object):
 					else:
 							return False
 				except:
-					result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==userdata["orgcode"]))
+					result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==orgcode["orgcode"]))
 			else:
 				return False
 		except:
