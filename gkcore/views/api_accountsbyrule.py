@@ -69,3 +69,85 @@ class api_accountsbyrule(object):
 				return{"gkstatus":enumdict["Success"],"gkresult": contraList}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			
+	@view_config(request_param="type=journal", renderer='json')
+	def journal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				journalAccs = eng.execute("select accountname , accountcode from accounts where groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+				journalList = []
+				for contraRow in journalAccs:
+					journalList.append({"accountname":contraRow["accountname"], "accountcode":contraRow["accountcode"]})
+				return{"gkstatus":enumdict["Success"],"gkresult": journalList}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			
+	@view_config(request_param="type=payment", renderer='json')
+	def payment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				if self.request.params['side']=="Dr":
+					try:	
+						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d)"%(authDetails["orgcode"],authDetails["orgcode"]))
+						list = []
+						for row in accs:
+							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
+						return{"gkstatus":enumdict["Success"],"gkresult": list}
+					except:
+						return {"gkstatus":enumdict["ConnectionFailed"]}
+				if self.request.params['side']=="Cr":
+					try:	
+						accs = eng.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+						list = []
+						for row in accs:
+							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
+						return{"gkstatus":enumdict["Success"],"gkresult": list}
+					except:
+						return {"gkstatus":enumdict["ConnectionFailed"]}	
+			except:
+					return {"gkstatus":enumdict["ConnectionFailed"]}
+	@view_config(request_param="type=receipt", renderer='json')
+	def receipt(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				if self.request.params['side']=="Cr":
+					try:	
+						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d)"%(authDetails["orgcode"],authDetails["orgcode"]))
+						list = []
+						for row in accs:
+							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
+						return{"gkstatus":enumdict["Success"],"gkresult": list}
+					except:
+						return {"gkstatus":enumdict["ConnectionFailed"]}
+				if self.request.params['side']=="Dr":
+					try:	
+						accs = eng.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+						list = []
+						for row in accs:
+							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
+						return{"gkstatus":enumdict["Success"],"gkresult": list}
+					except:
+						return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+					return {"gkstatus":enumdict["ConnectionFailed"]}	
