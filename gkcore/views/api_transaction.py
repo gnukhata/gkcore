@@ -35,7 +35,7 @@ from gkcore.models.gkdb import vouchers, accounts
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_ , between
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -117,7 +117,7 @@ class api_transaction(object):
 		else:
 			try:
 				voucherType = self.request.params["vouchertype"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchertype==voucherType)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchertype==voucherType,vouchers.c.delflag==False)))
 				voucherRecords = []
 				
 				for voucher in vouchersData:
@@ -155,7 +155,7 @@ class api_transaction(object):
 		else:
 			try:
 				voucherNo = self.request.params["voucherno"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchernumber==voucherNo)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchernumber==voucherNo,vouchers.c.delflag==False)))
 				voucherRecords = []
 				
 				for voucher in vouchersData:
@@ -226,3 +226,42 @@ class api_transaction(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
+	@view_config(request_method='GET',request_param='searchby=date', renderer='json')
+	def searchByDate(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				fromDate = self.request.params["from"]
+				toDate = self.request.params["to"]
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)))
+				voucherRecords = []
+				
+				for voucher in vouchersData:
+					rawDr = dict(voucher["drs"])
+					rawCr = dict(voucher["crs"])
+					finalDR = {}
+					finalCR = {}	
+					for d in rawDr.keys():
+						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
+						account = accname.fetchone()
+						finalDR[account["accountname"]] = rawDr[d]
+					print finalDR
+					
+					for c in rawCr.keys():
+						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
+						account = accname.fetchone()
+						finalCR[account["accountname"]] = rawCr[c]
+					print finalCR
+					
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+				
