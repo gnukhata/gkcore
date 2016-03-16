@@ -52,7 +52,22 @@ class api_transaction(object):
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
-	def addVoucher(self):
-		voucherData = self.request.json_body
-		result = con.execute(vouchers.insert(),data=voucherData )
-		return result.rowcount
+	def addvoucher(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body
+				print dataset
+				dataset["orgcode"] = authDetails["orgcode"]
+				result = con.execute(vouchers.insert(),[dataset])
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	

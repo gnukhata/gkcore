@@ -54,7 +54,7 @@ class api_account(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
