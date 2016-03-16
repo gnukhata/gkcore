@@ -74,7 +74,7 @@ class api_account(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -83,16 +83,16 @@ class api_account(object):
 				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
 				row = result.fetchone()
 				acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":acc}
+				return {"gkstatus": enumdict["Success"], "gkresult":acc}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				return {"gkstatus":enumdict["ConnectionFailed"] }
 	
 	@view_config(request_method='GET', renderer ='json')
 	def getAllAccounts(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -102,16 +102,16 @@ class api_account(object):
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":accs}
+				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				return {"gkstatus":enumdict["ConnectionFailed"] }
 	
 	@view_config(request_method='PUT', renderer='json')
 	def editAccount(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -128,7 +128,7 @@ class api_account(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -143,4 +143,4 @@ class api_account(object):
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				return {"gkstatus":enumdict["ConnectionFailed"] }
