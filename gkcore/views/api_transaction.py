@@ -31,7 +31,7 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import vouchers
+from gkcore.models.gkdb import vouchers, accounts
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
@@ -84,8 +84,23 @@ class api_transaction(object):
 				voucherCode = self.request.params["code"]
 				result = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode==authDetails["orgcode"], vouchers.c.vouchercode==voucherCode )) )
 				row = result.fetchone()
+				rawDr = dict(row["drs"])
+				rawCr = dict(row["crs"])
+				finalDR = {}
+				finalCR = {}
+				for d in rawDr.keys():
+					accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
+					account = accname.fetchone()
+					finalDR[account["accountname"]] = rawDr[d]
+				print finalDR
 				
-				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":str(row["voucherdate"]),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
+				for c in rawCr.keys():
+					accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
+					account = accname.fetchone()
+					finalCR[account["accountname"]] = rawCr[c]
+				print finalCR
+				
+				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":str(row["voucherdate"]),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
