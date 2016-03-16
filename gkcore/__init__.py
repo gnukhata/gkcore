@@ -48,6 +48,7 @@ def main(global_config, **settings):
 	config.add_route("organisation","/organisation/{orgcode}")
 	config.add_route("organisations","/organisations")
 	config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
+	config.add_route("transaction","/transaction")
 	config.add_route("users",'/users')
 	config.add_route('user','/user')
 	config.add_route("accounts",'/accounts')
