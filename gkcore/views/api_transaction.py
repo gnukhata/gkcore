@@ -52,6 +52,7 @@ class api_transaction(object):
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
-	def addVoucher(self,request):
+	def addVoucher(self):
 		voucherData = self.request.json_body
-		result = con.execute(vouchers.insert(voucherData) )
+		result = con.execute(vouchers.insert(),data=voucherData )
+		return result.rowcount
