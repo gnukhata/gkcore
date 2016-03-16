@@ -70,4 +70,22 @@ class api_transaction(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	
+	@view_config(request_method='GET',renderer='json')
+	def getVoucher(self):
+		try:
+			token = self.request.headers['gktoken']
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				voucherCode = self.request.params["code"]
+				result = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode==authDetails["orgcode"], vouchers.c.vouchercode==voucherCode )) )
+				row = result.fetchone()
+				
+				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":str(row["voucherdate"]),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
+				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
