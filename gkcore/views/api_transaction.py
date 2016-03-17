@@ -52,7 +52,7 @@ class api_transaction(object):
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
-	def addvoucher(self):
+	def addVoucher(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -302,4 +302,20 @@ class api_transaction(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-				
+
+	@view_config(request_method='PUT', renderer='json')
+	def updateVoucher(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				dataset = self.request.json_body()
+				result = con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
