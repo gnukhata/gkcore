@@ -314,7 +314,7 @@ class api_transaction(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				dataset = self.request.json_body()
+				dataset = self.request.json_body
 				result = con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
@@ -331,5 +331,6 @@ class api_transaction(object):
 		else:
 			try:
 				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(self.request.params["vouchercode"])))
+				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
