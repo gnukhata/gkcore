@@ -74,10 +74,11 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgregdate',UnicodeText),
 	Column('orgfcrano',UnicodeText),
 	Column('orgfcradate',UnicodeText),
-	Column('roflag',Integer),
-	Column('booksclosedflag',Integer),
+	Column('roflag',Integer, default=0),
+	Column('booksclosedflag',Integer,default=0),
 	UniqueConstraint('orgname','orgtype','yearstart'),
-	UniqueConstraint('orgname','orgtype','yearend')
+	UniqueConstraint('orgname','orgtype','yearend'),
+	Index("orgindex", "orgname","yearstart","yearend")
 	) 
 
 
@@ -86,7 +87,8 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	Column('groupname',UnicodeText,  nullable=False),
 	Column('subgroupof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','groupname')
+	UniqueConstraint('orgcode','groupname'),
+	Index("grpindex","orgcode","groupname")
 	)
 	
 
@@ -94,16 +96,16 @@ accounts = Table('accounts', metadata,
 	Column('accountcode',Integer, primary_key=True ),
 	Column('accountname',UnicodeText, nullable=False),
 	Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
-	Column('openingbal', Numeric(13,2)),
+	Column('openingbal', Numeric(13,2),default=0.00),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','accountname')
-	
+	UniqueConstraint('orgcode','accountname'),
+	Index("accindex","orgcode","accountname")
 	)
 	
 projects = Table('projects', metadata,
 	Column('projectcode',Integer, primary_key=True),
 	Column('projectname',UnicodeText, nullable=False),
-	Column('sanctionedamount',Numeric(13,2)),
+	Column('sanctionedamount',Numeric(13,2),default=0.00),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','projectname')
 	)
@@ -111,15 +113,19 @@ vouchers=Table('vouchers', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
 	Column('voucherdate',DateTime,nullable=False),
-	Column('entrydate',DateTime,nullable=False),
+	Column('entrydate',DateTime,nullable=False,default=datetime.datetime.now().date()),
 	Column('narration',UnicodeText),
 	Column('drs',JSONB,nullable=False),
 	Column('crs',JSONB,nullable=False),
 	Column('prjdrs',JSONB),
 	Column('prjcrs',JSONB),
 	Column('vouchertype',UnicodeText, nullable=False),
-	Column('delflag',BOOLEAN,nullable=False),
+	Column('delflag',BOOLEAN,default=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Index("voucher_orgcodeindex","orgcode"),
+	Index("voucher_entrydate","entrydate"),
+	Index("voucher_vno","vouchernumber"),
+	Index("voucher_vdate","voucherdate")
 	)
 	
 	
@@ -131,7 +137,8 @@ users=Table('users', metadata,
 	Column('userquestion',Text, nullable=False),
 	Column('useranswer',Text, nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','username')
+	UniqueConstraint('orgcode','username'),
+	Index("userindex","orgcode","username")
 	)
 	
 
