@@ -319,3 +319,17 @@ class api_transaction(object):
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+	@view_config(request_method='DELETE',renderer='json')
+	def deleteVoucher(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(self.request.params["vouchercode"])))
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
