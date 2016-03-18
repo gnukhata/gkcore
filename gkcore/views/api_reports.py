@@ -154,3 +154,28 @@ class api_reports(object):
 			currentBalance = ttlCrBalance - ttlDrBalance
 			balType = "Cr"
 		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
+	@view_config(request_param='trialbalance')
+	def trialBalance(self):
+		
+		""" 
+		There are 3 types of trial balance:
+		1 is net
+		2 is gross
+		3 is extended
+	"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				if int(self.request.params["tbtype"])  == 1:
+					accountCodeData = con.execute(select([accounts.c.accountcode]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+					accountCodeRecords = accountCodeData.fetchall()
+					
+
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}	
