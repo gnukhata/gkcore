@@ -38,7 +38,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
-
+from datetime import datetime
 con = Connection
 con = eng.connect()
 
@@ -53,8 +53,104 @@ class api_reports(object):
 	def calculateBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
 		#first we will get the groupname for the provided account.
 		#note that the given account may be associated with a subgroup for which we must get the group.
+		groupName = ""
+		openingBalance = 0.00
+		balanceBrought = 0.00
+		currentBalance = 0.00
+		ttlCrBalance = 0.00
+		ttlDrBalance = 0.00
+		openingBalanceType = ""
+		ttlDrUptoFrom = 0.00
+		ttlCrUptoFrom = 0.00
+		balType = ""
+		{"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountname ="+accountName+"and orgcode = orgCode ))")
 		groupRecord = groupData.fetchone()
 		groupName = groupRecord["groupname"]
 		#now similarly we will get the opening balance for this account.
-		
+		obData = con.execute(select([accountName.c.openingbalance]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)) )
+		ob = obData.fetchone()
+		oepningBalance = ob["openingbalance"]
+		financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
+		calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
+		calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
+		if financialYearStartDate == calculateFromDate:
+			if openingBalance == 0:
+				balanceBrought = 0
+			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+				balanceBrought = abs(openingBalance)
+				openingBalanceType = "Cr"
+				balType = "Cr"
+
+			if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+				balanceBrought = openingBalance
+				openingBalanceType = "Dr"
+				balType = "Dr"
+
+			if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+				balanceBrought = abs(openingBalance)
+				openingBalanceType = "Dr"
+				balType = "Dr"
+
+			if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+				balanceBrought = openingBalance
+				openingBalanceType = "Cr"
+				balType = "Cr"
+		else:
+			#account code to be retrieved from account name
+			accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
+			accountRow = accountCodeData.fetchone()
+			accountcode = accountRow["accountcode"]
+			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+			tdrRow = tdrfrm.fetchone()
+			tcrRow= tcrfrm.fetchone()
+			ttlCrUptoFrom = tcrRow['total']
+			ttlDrUptoFrom = tdrRow['total']
+			if ttlCrUptoFrom == None:
+				ttlCrUptoFrom = 0.00
+			if ttlDrUptoFrom == None:
+				ttlDrUptoFrom = 0.00
+			
+			if openingBalance == 0:
+				balanceBrought = 0.00
+			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+				ttlCrUptoFrom = ttlCrUptoFrom +abs(openingBalance)
+			if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+				ttlDrUptoFrom = ttlDrUptoFrom +openingBalance
+			if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+				ttlDrUptoFrom = ttlDrUptoFrom+ abs(openingBalance)
+			if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+				ttlCrUptoFrom = ttlCrUptoFrom + openingBalance
+			if ttlDrUptoFrom >	ttlCrUptoFrom:
+				balanceBrought = ttlDrUptoFrom - ttlCrUptoFrom
+				balType = "Dr"
+				openingBalanceType = "Dr"				
+			if ttlCrUptoFrom >	ttlDrUptoFrom:
+				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
+				balType = "Cr"
+				openingBalanceType = "Cr"
+		accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
+		accountRow = accountCodeData.fetchone()
+		accountcode = accountRow["accountcode"]
+		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+		tdrRow = tdrfrm.fetchone()
+		tcrRow= tcrfrm.fetchone()
+		ttlDrBalance = tdrRow['total']
+		ttlCrBalance = tcrRow['total']
+		if ttlCrBalance == None:
+			ttlCrBalance = 0.00
+		if ttlDrBalance == None:
+			ttlDrBalance = 0.00
+		if balType =="Dr":
+			ttlDrBalance = ttlDrBalance + balanceBrought
+		if balType =="Cr":
+			ttlCrBalance = ttlCrBalance + balanceBrought
+		if ttlDrBalance > ttlCrBalance :
+			currentBalance = ttlDrBalance - ttlCrBalance
+			balType = "Dr"
+		if ttlCrBalance > ttlDrBalance :
+			currentBalance = ttlCrBalance - ttlDrBalance
+			balType = "Cr"
+		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
