@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -30,7 +30,7 @@ Contributor:
 from gkcore import eng
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 from pyramid.request import Request
@@ -53,21 +53,24 @@ def gkLogin(request):
 	The object will have the userid and orgcode and this will be sent back as a response.
 	Else the function will not issue any token.
 	"""
-	dataset = request.json_body
-	result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
-	if result.rowcount == 1:
-		record = result.fetchone()
-		
-		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-		return {"status":"ok","token":token }
-	else:
-		return {"status":"invalid"}
+    try:
+        dataset = request.json_body
+    	result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+    	if result.rowcount == 1:
+    		record = result.fetchone()
+
+    		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+    		return {"gkstatus":enumdict["Success"],"token":token }
+    	else:
+    		return {"gkstatus":enumdict["UnauthorisedAccess"]}
+    except:
+        return {"gkstatus":enumdict["ConnectionFailed"]}
 
 def authCheck(token):
 	"""
 	Purpose: on every request check if userid and orgcode are valid combinations
 	"""
-	
+
 	try:
 		tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
 		tokendict["auth"] = True
