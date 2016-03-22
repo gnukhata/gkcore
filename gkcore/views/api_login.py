@@ -27,7 +27,7 @@ Contributor:
 
 
 #login function
-from gkcore import eng
+from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
