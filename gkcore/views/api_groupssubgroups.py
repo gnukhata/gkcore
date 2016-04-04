@@ -182,7 +182,7 @@ class api_user(object):
 		if str(typeRow["orgtype"]) == "Not For Profit":
 			groupBalanceTable.append("CORPUS & LIABILITIES")
 			for groupRow in groups:
-				if groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Reserves" or groupRow["groupname"] == "Corpus" or groupRow["groupname"] == "Loans (Liability)":
+				if groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Reserves" or groupRow["groupname"] == "Corpus" or groupRow["groupname"] == "Loans(Liability)":
 					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
 					balCountRow = groupBalance.fetchone()
 					balCountRow = [balCountRow[0], balCountRow[1]]
@@ -194,7 +194,7 @@ class api_user(object):
 			groupBalanceTable.append({"Total":liabilityTotal})
 			groupBalanceTable.append("PROPERTY & ASSETS")
 			for groupRow in groups:
-				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans (Asset)":
+				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans(Asset)":
 					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
 					balCountRow = groupBalance.fetchone()
 					balCountRow = [balCountRow[0], balCountRow[1]]
@@ -209,7 +209,7 @@ class api_user(object):
 		if str(typeRow["orgtype"]) == "Profit Making":
 			groupBalanceTable.append("CAPITAL & LIABILITIES")
 			for groupRow in groups:
-				if groupRow["groupname"] == "Capital" or groupRow["groupname"] ==  "Reserves" or groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Loans (Liability)":
+				if groupRow["groupname"] == "Capital" or groupRow["groupname"] ==  "Reserves" or groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Loans(Liability)":
 					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
 					balCountRow = groupBalance.fetchone()
 					balCountRow = [balCountRow[0], balCountRow[1]]
@@ -221,7 +221,7 @@ class api_user(object):
 			groupBalanceTable.append({"Total":liabilityTotal})
 			groupBalanceTable.append("PROPERTY & ASSETS")
 			for groupRow in groups:
-				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans (Asset)":
+				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans(Asset)":
 					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
 					balCountRow = groupBalance.fetchone()
 					balCountRow = [balCountRow[0], balCountRow[1]]
