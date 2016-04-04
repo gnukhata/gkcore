@@ -70,10 +70,11 @@ def authCheck(token):
                 """
                 Purpose: on every request check if userid and orgcode are valid combinations
                 """
-
                 try:
                     tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
                     tokendict["auth"] = True
+                    tokendict["orgcode"]=int(tokendict["orgcode"])
+                    tokendict["userid"]=int(tokendict["userid"])
                     return tokendict
                 except:
                     tokendict = {"auth":False}

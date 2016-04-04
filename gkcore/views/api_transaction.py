@@ -21,7 +21,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -33,7 +33,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import vouchers, accounts
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , between
 from pyramid.request import Request
@@ -63,7 +63,6 @@ class api_transaction(object):
 		else:
 			try:
 				dataset = self.request.json_body
-				print dataset
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = con.execute(vouchers.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
@@ -92,19 +91,17 @@ class api_transaction(object):
 					accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 					account = accname.fetchone()
 					finalDR[account["accountname"]] = rawDr[d]
-				print finalDR
-				
+
 				for c in rawCr.keys():
 					accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 					account = accname.fetchone()
 					finalCR[account["accountname"]] = rawCr[c]
-				print finalCR
-				
+
 				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":str(row["voucherdate"]),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-			
+
 	@view_config(request_method='GET',request_param='searchby=type', renderer='json')
 	def searchByType(self):
 		try:
@@ -119,30 +116,28 @@ class api_transaction(object):
 				voucherType = self.request.params["vouchertype"]
 				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchertype==voucherType,vouchers.c.delflag==False)))
 				voucherRecords = []
-				
+
 				for voucher in vouchersData:
 					rawDr = dict(voucher["drs"])
 					rawCr = dict(voucher["crs"])
 					finalDR = {}
-					finalCR = {}	
+					finalCR = {}
 					for d in rawDr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 						account = accname.fetchone()
 						finalDR[account["accountname"]] = rawDr[d]
-					print finalDR
-					
+
 					for c in rawCr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
-					print finalCR
-					
+
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-				
+
 	@view_config(request_method='GET',request_param='searchby=vnum', renderer='json')
 	def searchByVoucherNumber(self):
 		try:
@@ -157,24 +152,22 @@ class api_transaction(object):
 				voucherNo = self.request.params["voucherno"]
 				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchernumber==voucherNo,vouchers.c.delflag==False)))
 				voucherRecords = []
-				
+
 				for voucher in vouchersData:
 					rawDr = dict(voucher["drs"])
 					rawCr = dict(voucher["crs"])
 					finalDR = {}
-					finalCR = {}	
+					finalCR = {}
 					for d in rawDr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 						account = accname.fetchone()
 						finalDR[account["accountname"]] = rawDr[d]
-					print finalDR
-					
+
 					for c in rawCr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
-					print finalCR
-					
+
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
@@ -192,36 +185,32 @@ class api_transaction(object):
 		else:
 			try:
 				voucherAmount = self.request.params["total"]
-				print voucherAmount
 				vouchersData = con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)))
 				voucherRecords = []
-				
+
 				for vr in vouchersData:
 					total = 0.00
 					drs = dict(vr["drs"])
 					for d in drs.keys():
 						total = total + float(drs[d])
-					print total
 					if total==float(voucherAmount):
 						voucherDetailsData = con.execute(select([vouchers]).where(vouchers.c.vouchercode == vr["vouchercode"]))
 						voucher = voucherDetailsData.fetchone()
 						rawDr = dict(voucher["drs"])
 						rawCr = dict(voucher["crs"])
 						finalDR = {}
-						finalCR = {}	
+						finalCR = {}
 						for d in rawDr.keys():
 							accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 							account = accname.fetchone()
 							finalDR[account["accountname"]] = rawDr[d]
-						print finalDR
-						
+
 						for c in rawCr.keys():
 							accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 							account = accname.fetchone()
 							finalCR[account["accountname"]] = rawCr[c]
-						print finalCR
 						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
-				
+
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -241,30 +230,28 @@ class api_transaction(object):
 				toDate = self.request.params["to"]
 				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)))
 				voucherRecords = []
-				
+
 				for voucher in vouchersData:
 					rawDr = dict(voucher["drs"])
 					rawCr = dict(voucher["crs"])
 					finalDR = {}
-					finalCR = {}	
+					finalCR = {}
 					for d in rawDr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 						account = accname.fetchone()
 						finalDR[account["accountname"]] = rawDr[d]
-					print finalDR
-					
+
 					for c in rawCr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
-					print finalCR
-					
+
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-				
+
 	@view_config(request_method='GET',request_param='searchby=narration', renderer='json')
 	def searchByNarration(self):
 		try:
@@ -279,24 +266,22 @@ class api_transaction(object):
 				voucherNarration = self.request.params["nartext"]
 				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.narration.like("%"+voucherNarration+"%"),vouchers.c.delflag==False)))
 				voucherRecords = []
-				
+
 				for voucher in vouchersData:
 					rawDr = dict(voucher["drs"])
 					rawCr = dict(voucher["crs"])
 					finalDR = {}
-					finalCR = {}	
+					finalCR = {}
 					for d in rawDr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
 						account = accname.fetchone()
 						finalDR[account["accountname"]] = rawDr[d]
-					print finalDR
-					
+
 					for c in rawCr.keys():
 						accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
-					print finalCR
-					
+
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":str(voucher["voucherdate"]),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
