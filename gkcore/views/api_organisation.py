@@ -54,7 +54,6 @@ class api_organisation(object):
 			orgs = []
 			for row in result:
 				orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
-				print orgs
 			return {"gkstatus":enumdict["Success"], "gkdata":orgs}
 		except:
 			return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -66,7 +65,6 @@ class api_organisation(object):
 			years = []
 			for row in result:
 				years.append({"yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcode":row["orgcode"]})
-			print years
 			return {"gkstatus":enumdict["Success"],"gkdata":years}
 		except:
 			return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -76,11 +74,9 @@ class api_organisation(object):
 
 		try:
 			dataset = self.request.json_body
-			print dataset
 			orgdata = dataset["orgdetails"]
 			userdata = dataset["userdetails"]
 			result = con.execute(gkdb.organisation.insert(),[orgdata])
-			print result.rowcount
 			if result.rowcount==1:
 				code = con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
 				orgcode = code.fetchone()
@@ -201,7 +197,6 @@ class api_organisation(object):
 				dataset = self.request.json_body
 				if userRole[0]==-1:
 					result = con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
-					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
@@ -220,7 +215,6 @@ class api_organisation(object):
 				userRole = user.fetchone()
 				if userRole[0]==-1:
 					result = con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
-					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}

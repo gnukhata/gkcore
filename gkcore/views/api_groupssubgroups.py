@@ -107,7 +107,6 @@ class api_user(object):
 				dataset = self.request.json_body
 				dataset["orgcode"]=authDetails["orgcode"]
 				result = con.execute(gkdb.groupsubgroups.update().where(and_(gkdb.groupsubgroups.c.groupname==dataset["groupname"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])).values(dataset))
-				print result.rowcount
 				return {"gkstatus": gkcore.enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -121,15 +120,15 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
-				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
-				grps = []
-				for row in result:
-					grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-				grpbal = self.getGroupBalance(authDetails["orgcode"], grps)
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			#try:
+			result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
+			grps = []
+			for row in result:
+				grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
+			grpbal = self.getGroupBalance(authDetails["orgcode"], grps)
+			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
+			#except:
+				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 
 	@view_config(route_name="groupDetails", request_method='GET', renderer ='json')
 	def getSubgroupsByGroup(self):
@@ -146,7 +145,6 @@ class api_user(object):
 				subs = []
 				for row in result:
 					subs.append({"subgroupname":row["groupname"], "groupcode":row["groupcode"]})
-				print subs
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subs}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -167,13 +165,12 @@ class api_user(object):
 				dataset = self.request.json_body
 				if userRole[0]==-1:
 					result = con.execute(gkdb.groupsubgroups.delete().where(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"]))
-					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			
+
 	def getGroupBalance(self,orgcode,groups):
 		typeData = con.execute(select([gkdb.organisation.c.orgtype]).where(gkdb.organisation.c.orgcode ==orgcode))
 		typeRow = typeData.fetchone()
@@ -181,7 +178,7 @@ class api_user(object):
 		assetsTotal = 0.00
 		difference = 0.00
 		groupBalanceTable = []
-		
+
 		if str(typeRow["orgtype"]) == "Not For Profit":
 			groupBalanceTable.append("CORPUS & LIABILITIES")
 			for groupRow in groups:
