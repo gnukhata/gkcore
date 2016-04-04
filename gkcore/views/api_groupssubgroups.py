@@ -126,8 +126,8 @@ class api_user(object):
 				grps = []
 				for row in result:
 					grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-				print grps
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps}
+				grpbal = self.getGroupBalance(authDetails["orgcode"], grps)
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 
@@ -173,3 +173,67 @@ class api_user(object):
 					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			
+	def getGroupBalance(self,orgcode,groups):
+		typeData = con.execute(select([gkdb.organisation.c.orgtype]).where(gkdb.organisation.c.orgcode ==orgcode))
+		typeRow = typeData.fetchone()
+		liabilityTotal = 0.00
+		assetsTotal = 0.00
+		difference = 0.00
+		groupBalanceTable = []
+		
+		if str(typeRow["orgtype"]) == "Not For Profit":
+			groupBalanceTable.append("CORPUS & LIABILITIES")
+			for groupRow in groups:
+				if groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Reserves" or groupRow["groupname"] == "Corpus" or groupRow["groupname"] == "Loans (Liability)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					liabilityDict = {"groupname":groupRow["groupname"],"numberofaccounts":float(balCountRow[0]),"groupbalance":float(balCountRow[1])}
+					groupBalanceTable.append(liabilityDict)
+					liabilityTotal = liabilityTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":liabilityTotal})
+			groupBalanceTable.append("PROPERTY & ASSETS")
+			for groupRow in groups:
+				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans (Asset)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					AssetDict = {"groupname":groupRow["groupname"],"numberofaccounts":float(balCountRow[0]),"groupbalance":float(balCountRow[1])}
+					groupBalanceTable.append(AssetDict)
+					assetsTotal = assetsTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":assetsTotal})
+			difference = assetsTotal - liabilityTotal
+			groupBalanceTable.append({"Difference in balance": difference })
+		if str(typeRow["orgtype"]) == "Profit Making":
+			groupBalanceTable.append("CAPITAL & LIABILITIES")
+			for groupRow in groups:
+				if groupRow["groupname"] == "Capital" or groupRow["groupname"] ==  "Reserves" or groupRow["groupname"] == "Current Liabilities" or groupRow["groupname"] == "Loans (Liability)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					liabilityDict = {"groupname":groupRow["groupname"],"numberofaccounts":float(balCountRow[0]),"groupbalance":float(balCountRow[1])}
+					groupBalanceTable.append(liabilityDict)
+					liabilityTotal = liabilityTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":liabilityTotal})
+			groupBalanceTable.append("PROPERTY & ASSETS")
+			for groupRow in groups:
+				if groupRow["groupname"] == "Fixed Assets" or groupRow["groupname"] == "Current Assets" or groupRow["groupname"] == "Investments" or groupRow["groupname"] == "Loans (Asset)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow["groupname"],orgcode,groupRow["groupname"]))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					AssetDict = {"groupname":groupRow["groupname"],"numberofaccounts":float(balCountRow[0]),"groupbalance":float(balCountRow[1])}
+					groupBalanceTable.append(AssetDict)
+					assetsTotal = assetsTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":assetsTotal})
+			difference = assetsTotal - liabilityTotal
+			groupBalanceTable.append({"Difference in balance": difference })
+		return groupBalanceTable
