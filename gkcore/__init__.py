@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -55,9 +55,10 @@ def main(global_config, **settings):
 	config.add_route("account",'/account/{accountcode}')
 	config.add_route("accountsbyrule",'/accountsbyrule')
 	config.add_route("login",'/login')
+	config.add_route("groupallsubgroup","/groupallsubgroup/{groupcode}")
 	config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
 	config.add_route("groupsubgroups","/groupsubgroups")
 	config.add_route("groupDetails","/groupDetails/{groupcode}")
 	config.scan("gkcore.views")
-	
+
 	return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
