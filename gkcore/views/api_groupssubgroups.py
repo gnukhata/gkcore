@@ -32,7 +32,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , alias
+from sqlalchemy import and_ , alias, or_
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -73,8 +73,8 @@ class api_user(object):
 					return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-	@view_config(route_name='groupsubgroup', request_method='GET',renderer='json')
-	def getGroupSubgroup(self):
+	@view_config(route_name='groupallsubgroup', request_method='GET',renderer='json')
+	def getGroupAllSubgroup(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -91,6 +91,30 @@ class api_user(object):
 				for row in resultset:
 					grpsubs.append({"groupname":row["groupname"],"subgroupname":row["subgroupname"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+
+	@view_config(route_name='groupsubgroup', request_method='GET',renderer='json')
+	def getGroupSubgroup(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				print "grpcode: ",self.request.matchdict["groupcode"]
+
+				g = gkdb.groupsubgroups.alias("g")
+				sg = gkdb.groupsubgroups.alias("sg")
+
+				resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
+				row = resultset.fetchone()
+				grpsub={"groupname":row["groupname"],"subgroupname":row["subgroupname"]}
+				print grpsub
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsub}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='PUT', renderer='json')
