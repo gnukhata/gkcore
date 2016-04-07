@@ -229,7 +229,7 @@ class api_user(object):
 					groupBalanceTable.append(AssetDict)
 					assetsTotal = assetsTotal + float(balCountRow[1])
 			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
-			difference = assetsTotal - liabilityTotal
+			difference = abs(assetsTotal - liabilityTotal)
 			groupBalanceTable.append({"Difference in balance": difference })
 		if str(typeRow["orgtype"]) == "Profit Making":
 			groupBalanceTable.append("CAPITAL & LIABILITIES")
@@ -256,6 +256,6 @@ class api_user(object):
 					groupBalanceTable.append(AssetDict)
 					assetsTotal = assetsTotal + float(balCountRow[1])
 			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
-			difference = assetsTotal - liabilityTotal
+			difference = abs(assetsTotal - liabilityTotal)
 			groupBalanceTable.append({"Difference in balance": difference })
 		return groupBalanceTable
