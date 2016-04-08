@@ -119,12 +119,15 @@ vouchers=Table('vouchers', metadata,
 	Column('crs',JSONB,nullable=False),
 	Column('prjdrs',JSONB),
 	Column('prjcrs',JSONB),
+	Column('attachment',UnicodeText),
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('delflag',BOOLEAN,default=False),
+	Column('projectcode',Integer, ForeignKey('projects.projectcode',ondelete="CASCADE"), nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
 	Index("voucher_vno","vouchernumber"),
+	Index("voucher_attachment","attachment"),
 	Index("voucher_vdate","voucherdate")
 	)
 	
