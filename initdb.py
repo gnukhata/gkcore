@@ -20,19 +20,25 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
 
 
 Contributor: 
-"Krishnakant Mane" <kk@gmail.com>
+"Krishnakant Mane" <kk@dff.org.in>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
 
-from meta import dbconnect
-from gkdb import metadata
+from gkcore.models.meta import dbconnect
+from gkcore.models.gkdb import metadata
 import datetime
 from time import strftime
 
-
+"""
+This module is used only once per installation.
+It will use the sqlalchemy's create_all function to convert all python based table spects to real sql tables.
+Refer to gkdb.py in models package for structure of all tables expressed in the alchemy expression language.
+After creating all tables, it will also create the signature based on timestamp and store in the database.
+"""  
 eng = dbconnect()
 metadata.create_all(eng)
+print "database created successfully"
 curtime=datetime.datetime.now()
 str_time=str(curtime.microsecond)
 new_microsecond=str_time[0:2]		
@@ -41,3 +47,5 @@ secret = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime
 
 eng.execute("insert into signature values(%s)"%secret)
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
+
+print "secret signature generated"

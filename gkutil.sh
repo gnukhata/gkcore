@@ -1,5 +1,12 @@
 #!/bin/bash
+#this file is part of GNUKhata which is a free 
+#accounting software
+#distributed under the terms of GNU General Public License #version 3.
 
+#this file will create the user gkadmin  
+#and add sufficient privileges
+#this script will also create the database gkdata
+#author Ishan Masdekar <imasdekar@openmailbox.og>
 sudo useradd gkadmin
 echo 'Created user gkadmin'
 
