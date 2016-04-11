@@ -25,8 +25,12 @@ Contributor:
 "Navin Karkera" <navin@dff.org.in>
 
 """
-
-
+#imports contain sqlalchemy modules,
+#enumdict containing status messages,
+#eng for executing raw sql,
+#gkdb from models for all the alchemy expressed tables.
+#view_default for setting default route
+#view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
@@ -38,19 +42,43 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
+"""
+purpose:
+This class is the resource to create, update, read and delete accounts.
 
+connection rules:
+con is used for executing sql expression language based queries,
+while eng is used for raw sql execution.
+routing mechanism:
+@view_defaults is used for setting the default route for crud on the given resource class.
+if specific route is to be attached to a certain method, or for giving get, post, put, delete methods to default route, the view_config decorator is used.
+For other predicates view_config is generally used.
+"""
 con = Connection
 con = eng.connect()
-
-
+"""
+default route to be attached to this resource.
+refer to the __init__.py of main gkcore package for details on routing url
+""" 
 @view_defaults(route_name='accounts')
 class api_account(object):
+	#constructor will initialise request.
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
 	def addAccount(self):
+		"""
+		purpose:
+		Adds an account under either a group or it's subgroup.
+		Request_method is post which means adding a resource.
+		returns a json object containing success result as true if account is created.
+		Alchemy expression language will be used for inserting into accounts table.
+		The data is fetched from request.json_body.
+		Expects accountname,groupsubgroupcode and opening balance.
+		Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+		"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
