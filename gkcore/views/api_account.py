@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -31,9 +31,9 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc 
+from sqlalchemy import and_, exc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -68,7 +68,7 @@ class api_account(object):
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-	
+
 	@view_config(route_name='account', request_method='GET',renderer='json')
 	def getAccount(self):
 		try:
@@ -82,11 +82,11 @@ class api_account(object):
 			try:
 				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
 				row = result.fetchone()
-				acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":row["openingbal"],"groupcode":row["groupcode"]}
+				acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"]}
 				return {"gkstatus": enumdict["Success"], "gkresult":acc}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-	
+
 	@view_config(request_method='GET', renderer ='json')
 	def getAllAccounts(self):
 		try:
@@ -105,7 +105,7 @@ class api_account(object):
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-	
+
 	@view_config(request_method='PUT', renderer='json')
 	def editAccount(self):
 		try:
@@ -122,7 +122,7 @@ class api_account(object):
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-	
+
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteAccount(self):
 		try:

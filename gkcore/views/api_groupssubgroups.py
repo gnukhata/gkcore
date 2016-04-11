@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -30,9 +30,9 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , alias
+from sqlalchemy import and_ , alias, or_
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -65,11 +65,16 @@ class api_user(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = con.execute(gkdb.groupsubgroups.insert(),[dataset])
-				return {"gkstatus":enumdict["Success"]}
+				if result.rowcount==1:
+					result = con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname==dataset["groupname"])))
+					row = result.fetchone()
+					return {"gkstatus":enumdict["Success"],"gkresult":row["groupcode"]}
+				else:
+					return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-	@view_config(route_name='groupsubgroup', request_method='GET',renderer='json')
-	def getGroupSubgroup(self):
+	@view_config(route_name='groupallsubgroup', request_method='GET',renderer='json')
+	def getGroupAllSubgroup(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -88,6 +93,30 @@ class api_user(object):
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+
+	@view_config(route_name='groupsubgroup', request_method='GET',renderer='json')
+	def getGroupSubgroup(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				print "grpcode: ",self.request.matchdict["groupcode"]
+
+				g = gkdb.groupsubgroups.alias("g")
+				sg = gkdb.groupsubgroups.alias("sg")
+
+				resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
+				row = resultset.fetchone()
+				grpsub={"groupname":row["groupname"],"subgroupname":row["subgroupname"]}
+				print grpsub
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsub}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 	@view_config(request_method='PUT', renderer='json')
 	def editSubgroup(self):
 		try:
@@ -102,7 +131,6 @@ class api_user(object):
 				dataset = self.request.json_body
 				dataset["orgcode"]=authDetails["orgcode"]
 				result = con.execute(gkdb.groupsubgroups.update().where(and_(gkdb.groupsubgroups.c.groupname==dataset["groupname"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])).values(dataset))
-				print result.rowcount
 				return {"gkstatus": gkcore.enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -116,16 +144,16 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-		    try:
-				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
-				grps = []
-				for row in result:
-					grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-				print grps
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps}
-		    except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-	
+			#try:
+			result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
+			grps = []
+			for row in result:
+				grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
+			grpbal = self.getGroupBalance(authDetails["orgcode"])
+			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
+			#except:
+				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+
 	@view_config(route_name="groupDetails", request_method='GET', renderer ='json')
 	def getSubgroupsByGroup(self):
 		try:
@@ -136,16 +164,15 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-		    try:
+			try:
 				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.subgroupof==self.request.matchdict["groupcode"])))
 				subs = []
 				for row in result:
 					subs.append({"subgroupname":row["groupname"], "groupcode":row["groupcode"]})
-				print subs
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subs}
-		    except:
+			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-    		
+
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteSubgroup(self):
 		try:
@@ -156,16 +183,79 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-		    try:
+			try:
 				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
 					result = con.execute(gkdb.groupsubgroups.delete().where(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"]))
-					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
-		    except:
+			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 
+	def getGroupBalance(self,orgcode):
+		typeData = con.execute(select([gkdb.organisation.c.orgtype]).where(gkdb.organisation.c.orgcode ==orgcode))
+		typeRow = typeData.fetchone()
+		liabilityTotal = 0.00
+		assetsTotal = 0.00
+		difference = 0.00
+		groupBalanceTable = []
+		profitgroups = ["Capital","Reserves","Loans(Liability)","Current Liabilities","Fixed Assets","Investments","Loans(Asset)","Current Assets","Miscellaneous Expenses(Asset)"]
+		nonprofitgroups = ["Corpus","Reserves","Loans(Liability)","Current Liabilities","Fixed Assets","Investments","Loans(Asset)","Current Assets"]
+		if str(typeRow["orgtype"]) == "Not For Profit":
+			groupBalanceTable.append("CORPUS & LIABILITIES")
+			for groupRow in nonprofitgroups:
+				if groupRow == "Current Liabilities" or groupRow == "Reserves" or groupRow == "Corpus" or groupRow == "Loans(Liability)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow,orgcode,groupRow))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					liabilityDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
+					groupBalanceTable.append(liabilityDict)
+					liabilityTotal = liabilityTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":"%.2f"%liabilityTotal})
+			groupBalanceTable.append("PROPERTY & ASSETS")
+			for groupRow in nonprofitgroups:
+				if groupRow == "Fixed Assets" or groupRow == "Current Assets" or groupRow == "Investments" or groupRow == "Loans(Asset)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow,orgcode,groupRow))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					AssetDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
+					groupBalanceTable.append(AssetDict)
+					assetsTotal = assetsTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
+			difference = abs(assetsTotal - liabilityTotal)
+			groupBalanceTable.append({"Difference in balance": difference })
+		if str(typeRow["orgtype"]) == "Profit Making":
+			groupBalanceTable.append("CAPITAL & LIABILITIES")
+			for groupRow in profitgroups:
+				if groupRow == "Capital" or groupRow ==  "Reserves" or groupRow == "Current Liabilities" or groupRow == "Loans(Liability)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow,orgcode,groupRow))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					liabilityDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
+					groupBalanceTable.append(liabilityDict)
+					liabilityTotal = liabilityTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":"%.2f"%liabilityTotal})
+			groupBalanceTable.append("PROPERTY & ASSETS")
+			for groupRow in profitgroups:
+				if groupRow == "Fixed Assets" or groupRow == "Current Assets" or groupRow == "Investments" or groupRow == "Loans(Asset)" or groupRow == "Miscellaneous Expenses(Asset)":
+					groupBalance = eng.execute("select count(accountname) as NumberOfAccounts, sum(openingbal) as groupBalance from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode,orgcode,groupRow,orgcode,groupRow))
+					balCountRow = groupBalance.fetchone()
+					balCountRow = [balCountRow[0], balCountRow[1]]
+					if balCountRow[1] == None:
+						balCountRow[1] = 0.00
+					AssetDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
+					groupBalanceTable.append(AssetDict)
+					assetsTotal = assetsTotal + float(balCountRow[1])
+			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
+			difference = abs(assetsTotal - liabilityTotal)
+			groupBalanceTable.append({"Difference in balance": difference })
+		return groupBalanceTable
