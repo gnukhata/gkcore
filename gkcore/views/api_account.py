@@ -99,6 +99,19 @@ class api_account(object):
 
 	@view_config(route_name='account', request_method='GET',renderer='json')
 	def getAccount(self):
+		"""
+		Purpose:
+		Returns an account given it's account code.
+		Returns a json object containing:
+		*accountcode
+		*accountname
+		*openingbal as float
+		*groupsubgroupcode
+		The request_method is  get meaning retriving data.
+		The route_name has been override here to make a special call which does not come under view_default. 
+		parameter will be taken from request.matchdict in a get request.
+		Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+		"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
