@@ -50,9 +50,10 @@ class api_reports(object):
 		self.request = request
 
 	#calculateBalance is a private method so we won't expose it as REST method.
-	def calculateBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
+	def calculatevidBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
 		#first we will get the groupname for the provided account.
 		#note that the given account may be associated with a subgroup for which we must get the group.
+		#we will be initializing all function level variables here.
 		groupName = ""
 		openingBalance = 0.00
 		balanceBrought = 0.00
