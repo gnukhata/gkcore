@@ -43,7 +43,7 @@ con = Connection
 con = eng.connect()
 
 
-@view_defaults(route_name='reports' , request_method='GET')
+@view_defaults(route_name='report' , request_method='GET')
 class api_reports(object):
 	def __init__(self,request):
 		self.request = Request
