@@ -28,6 +28,10 @@ Contributor:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
+"""
+This module contains the sqlalchemy expression based table definitions.
+They will be converted to real sql statements and tables will be subsequently created by create_all function in initdb.py.
+"""
 import datetime
 from sqlalchemy.dialects.postgresql import JSONB, JSON
 
@@ -123,7 +127,7 @@ vouchers=Table('vouchers', metadata,
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('lockflag',BOOLEAN,default=False),
 	Column('delflag',BOOLEAN,default=False),
-	Column('projectcode',Integer, ForeignKey('projects.projectcode',ondelete="CASCADE"), nullable=False),
+	Column('projectcode',Integer, ForeignKey('projects.projectcode',ondelete="CASCADE")),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
