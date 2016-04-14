@@ -26,7 +26,13 @@ Contributor:
 
 
 
-Main entry point"""
+Main entry point:
+This package initializer module is run when the application is served.
+The module contains enum dict containing all gnukahta success and failure messages.
+It also contains all the routes which are connected to respective resources.
+To trace the link of the routes we look at the name of a route and then see where it appeares in any of the @view_defaults or @view_config decorator of any resource.
+This module also scanns for the secret from the database which is then used for jwt authentication.
+"""
 
 from pyramid.config import Configurator
 from gkcore.models.meta import dbconnect
@@ -34,12 +40,15 @@ from pyramid.events import NewRequest
 from webob import request
 from webob.request import Request
 from wsgicors import CORS
+try:
+	eng = dbconnect()
+	resultset = eng.execute("select * from signature")
+	row = resultset.fetchone()
+	secret = row[0]
+	#print secret
+except:
+	secret = ""
 
-eng = dbconnect()
-resultset = eng.execute("select * from signature")
-row = resultset.fetchone()
-secret = row[0]
-#print secret
 enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4}
 
 def main(global_config, **settings):
