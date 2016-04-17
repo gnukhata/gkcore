@@ -97,6 +97,8 @@ class api_transaction(object):
 					account = accname.fetchone()
 					finalCR[account["accountname"]] = rawCr[c]
 
+				if row["narration"]=="null":
+					row["narration"] =""
 				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
 			except:
@@ -132,6 +134,8 @@ class api_transaction(object):
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
 
+					if voucher["narration"]=="null":
+						voucher["narration"]=""
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
@@ -168,6 +172,8 @@ class api_transaction(object):
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
 
+					if voucher["narration"]=="null":
+						voucher["narration"]=""
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
@@ -209,6 +215,9 @@ class api_transaction(object):
 							accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
 							account = accname.fetchone()
 							finalCR[account["accountname"]] = rawCr[c]
+
+						if voucher["narration"]=="null":
+							voucher["narration"]=""
 						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
@@ -246,6 +255,8 @@ class api_transaction(object):
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
 
+					if voucher["narration"]=="null":
+						voucher["narration"]=""
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
@@ -282,6 +293,8 @@ class api_transaction(object):
 						account = accname.fetchone()
 						finalCR[account["accountname"]] = rawCr[c]
 
+					if voucher["narration"]=="null":
+						voucher["narration"]=""
 					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
