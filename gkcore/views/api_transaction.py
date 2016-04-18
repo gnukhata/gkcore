@@ -33,6 +33,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import vouchers, accounts
 from sqlalchemy.sql import select
+from sqlalchemy import func
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , between
@@ -99,7 +100,7 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"]}
+				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -116,7 +117,7 @@ class api_transaction(object):
 		else:
 			try:
 				voucherType = self.request.params["vouchertype"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchertype==voucherType,vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -136,7 +137,7 @@ class api_transaction(object):
 
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -154,7 +155,7 @@ class api_transaction(object):
 		else:
 			try:
 				voucherNo = self.request.params["voucherno"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.vouchernumber==voucherNo,vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -174,7 +175,7 @@ class api_transaction(object):
 
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -218,7 +219,7 @@ class api_transaction(object):
 
 						if voucher["narration"]=="null":
 							voucher["narration"]=""
-						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
@@ -257,7 +258,7 @@ class api_transaction(object):
 
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -275,7 +276,7 @@ class api_transaction(object):
 		else:
 			try:
 				voucherNarration = self.request.params["nartext"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.narration.like("%"+voucherNarration+"%"),vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -295,7 +296,7 @@ class api_transaction(object):
 
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
