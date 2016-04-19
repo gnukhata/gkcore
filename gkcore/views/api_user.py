@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -30,7 +30,7 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from pyramid.request import Request
@@ -43,6 +43,17 @@ from gkcore.views.api_login import authCheck
 con = Connection
 con = eng.connect()
 
+
+def getUserRole(userid):
+	try:
+		uid=userid
+		user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == uid ))
+		row = user.fetchone()
+		User = {"userrole":row["userrole"]}
+
+		return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+	except:
+		return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 
 @view_defaults(route_name='users')
 class api_user(object):
