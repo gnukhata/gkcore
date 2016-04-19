@@ -40,7 +40,7 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from sqlalchemy.sql.expression import null
-
+from sqlalchemy.sql.expression import null
 con = Connection
 con = eng.connect()
 

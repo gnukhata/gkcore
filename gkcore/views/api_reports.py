@@ -33,11 +33,11 @@ from gkcore.models.gkdb import accounts, vouchers, groupsubgroups
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc 
+from sqlalchemy import and_ , alias, or_, exc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
-from sqlalchemy.ext.baked import Result
+
 from datetime import datetime
 con = Connection
 con = eng.connect()
@@ -104,8 +104,14 @@ class api_reports(object):
 		balType = ""
 		{"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountname ="+accountName+"and orgcode = orgCode ))")
-		groupRecord = groupData.fetchone()
-		groupName = groupRecord["groupname"]
+		#groupRecord = groupData.fetchone()
+		#groupName = groupRecord["groupname"]
+		g = gkdb.groupsubgroups.alias("g")
+		sg = gkdb.groupsubgroups.alias("sg")
+
+		resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
+		row = resultset.fetchone()
+
 		#now similarly we will get the opening balance for this account.
 		obData = con.execute(select([accountName.c.openingbalance]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)) )
 		ob = obData.fetchone()
