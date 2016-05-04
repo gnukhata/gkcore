@@ -165,7 +165,7 @@ class api_project(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_method='DELETE', renderer ='json')
-	def deleteAccount(self):
+	def deleteproject(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
