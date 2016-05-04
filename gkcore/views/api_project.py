@@ -106,7 +106,7 @@ class api_project(object):
 		*projectcode
 		*projectname
 		*sanctionedamount as float
-		
+
 		The request_method is  get meaning retriving data.
 		The route_name has been override here to make a special call which does not come under view_default.
 		parameter will be taken from request.matchdict in a get request.
@@ -183,5 +183,7 @@ class api_project(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }

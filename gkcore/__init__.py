@@ -49,7 +49,7 @@ try:
 except:
 	secret = ""
 
-enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4}
+enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4, "ActionDisallowed":5}
 
 def main(global_config, **settings):
 	config = Configurator(settings=settings)

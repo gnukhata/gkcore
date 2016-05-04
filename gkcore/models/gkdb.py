@@ -23,7 +23,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -83,7 +83,7 @@ organisation = Table( 'organisation' , metadata,
 	UniqueConstraint('orgname','orgtype','yearstart'),
 	UniqueConstraint('orgname','orgtype','yearend'),
 	Index("orgindex", "orgname","yearstart","yearend")
-	) 
+	)
 
 
 groupsubgroups = Table('groupsubgroups', metadata,
@@ -94,7 +94,7 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	UniqueConstraint('orgcode','groupname'),
 	Index("grpindex","orgcode","groupname")
 	)
-	
+
 
 accounts = Table('accounts', metadata,
 	Column('accountcode',Integer, primary_key=True ),
@@ -105,7 +105,7 @@ accounts = Table('accounts', metadata,
 	UniqueConstraint('orgcode','accountname'),
 	Index("accindex","orgcode","accountname")
 	)
-	
+
 projects = Table('projects', metadata,
 	Column('projectcode',Integer, primary_key=True),
 	Column('projectname',UnicodeText, nullable=False),
@@ -127,7 +127,7 @@ vouchers=Table('vouchers', metadata,
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('lockflag',BOOLEAN,default=False),
 	Column('delflag',BOOLEAN,default=False),
-	Column('projectcode',Integer, ForeignKey('projects.projectcode',ondelete="CASCADE")),
+	Column('projectcode',Integer, ForeignKey('projects.projectcode')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
@@ -135,8 +135,8 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_attachment","attachment"),
 	Index("voucher_vdate","voucherdate")
 	)
-	
-	
+
+
 users=Table('users', metadata,
 	Column('userid',Integer, primary_key=True),
 	Column('username',Text, nullable=False),
@@ -148,7 +148,7 @@ users=Table('users', metadata,
 	UniqueConstraint('orgcode','username'),
 	Index("userindex","orgcode","username")
 	)
-	
+
 
 bankRecon=Table('bankrecon',metadata,
 	Column('reconcode',Integer,primary_key = True),
@@ -161,4 +161,3 @@ bankRecon=Table('bankrecon',metadata,
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	)
-	
