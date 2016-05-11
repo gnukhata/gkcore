@@ -121,7 +121,7 @@ accounts = Table('accounts', metadata,
 	Index("accindex","orgcode","accountname")
 	)
 """ table for storing projects for one organisation.
-This means that it has one foreign key, namely the org code of the organisation to which it belongs """.
+This means that it has one foreign key, namely the org code of the organisation to which it belongs. """
 projects = Table('projects', metadata,
 	Column('projectcode',Integer, primary_key=True),
 	Column('projectname',UnicodeText, nullable=False),
@@ -188,3 +188,21 @@ bankRecon=Table('bankrecon',metadata,
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	)
+
+voucherbin=Table('voucherbin', metadata,
+    Column('vouchercode',Integer,primary_key=True),
+    Column('vouchernumber',UnicodeText, nullable=False),
+    Column('voucherdate',DateTime,nullable=False),
+    Column('narration',UnicodeText),
+    Column('drs',JSONB,nullable=False),
+    Column('crs',JSONB,nullable=False),
+    Column('attachment',UnicodeText),
+    Column('vouchertype',UnicodeText, nullable=False),
+    Column('projectname',UnicodeText, ForeignKey('projects.projectcode')),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Index("binvoucher_orgcodeindex","orgcode"),
+    Index("binvoucher_vno","vouchernumber"),
+    Index("binvoucher_attachment","attachment"),
+    Index("binvoucher_vdate","voucherdate")
+    )
+
