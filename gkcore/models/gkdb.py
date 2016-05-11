@@ -51,10 +51,17 @@ from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 from sqlalchemy import MetaData
 
-
+#metadata is the module that converts Python code into real sql statements, specially for creating tables.
 metadata = MetaData()
+""" table for secret code that is used to decode json objects.
+This will be generated during the database setup.
+"""
 signature = Table('signature', metadata,
 	Column('secretcode',UnicodeText, primary_key=True))
+""" organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
+Also stores other details like the pan or sales tax number.
+Every time a new organisation is created or recreated for it's new financial year, a new record is added.
+""" 
 
 organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),
@@ -85,6 +92,9 @@ organisation = Table( 'organisation' , metadata,
 	Index("orgindex", "orgname","yearstart","yearend")
 	)
 
+""" the table for groups and subgroups.
+Note that the groupcode is used as an internal (self referencing) foreign key named subgroupof.
+So every group is either a parent group or subgroup who will have the groupcode as foreign key in subgroup off to which this subgroup belongs.This essentially means a group can be a subgroup of a parent group who's groupcode is in it's subgroupof field."""
 
 groupsubgroups = Table('groupsubgroups', metadata,
 	Column('groupcode',Integer,primary_key=True),
@@ -95,6 +105,11 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	Index("grpindex","orgcode","groupname")
 	)
 
+""" table to store accounts.
+Every account belongs to either a group or subgroup.
+For one organisation in a single financial year, an account name can never be duplicated.
+So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
+the groupcode to with it belongs."""
 
 accounts = Table('accounts', metadata,
 	Column('accountcode',Integer, primary_key=True ),
@@ -105,7 +120,8 @@ accounts = Table('accounts', metadata,
 	UniqueConstraint('orgcode','accountname'),
 	Index("accindex","orgcode","accountname")
 	)
-
+""" table for storing projects for one organisation.
+This means that it has one foreign key, namely the org code of the organisation to which it belongs """.
 projects = Table('projects', metadata,
 	Column('projectcode',Integer, primary_key=True),
 	Column('projectname',UnicodeText, nullable=False),
@@ -113,6 +129,13 @@ projects = Table('projects', metadata,
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','projectname')
 	)
+""" table to store vouchers.
+This table has one foreign key from organisation to which it belongs and has the project code to which it belongs.
+Additionally this table has 2 json fields named Drs and Crs.
+These are the fields which actually store the dr or cr amounts which their respective account codes of the accounts which are used in those transactions.
+Key is the account code and value is the amount.
+This helps us to store multiple Drs and Crs because there can be many key-value pares in the dictionary field.
+Apart from this orgcode is there as the foreign key """
 vouchers=Table('vouchers', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
@@ -136,7 +159,9 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vdate","voucherdate")
 	)
 
-
+""" table to store users for an organization.
+So orgcode is foreign key like other tables.
+In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """ 
 users=Table('users', metadata,
 	Column('userid',Integer, primary_key=True),
 	Column('username',Text, nullable=False),
@@ -149,7 +174,9 @@ users=Table('users', metadata,
 	Index("userindex","orgcode","username")
 	)
 
-
+""" the table for storing bank reconciliation data.
+Every row will have voucher code for which the transaction is being checked against bank record.
+"""
 bankRecon=Table('bankrecon',metadata,
 	Column('reconcode',Integer,primary_key = True),
 	Column('vouchercode',Integer,ForeignKey("vouchers.vouchercode", ondelete="CASCADE"), nullable=False),
