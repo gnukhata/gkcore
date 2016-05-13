@@ -47,14 +47,34 @@ con = Connection
 con = eng.connect()
 
 
+
 @view_defaults(route_name='transaction')
 class api_transaction(object):
+	"""
+	This class is the resource to create, update, read and delete vouchers (transactions)	connection rules:
+	con is used for executing sql expression language based queries,
+	while eng is used for raw sql execution.
+	routing mechanism:
+	@view_defaults is used for setting the default route for crud on the given resource class.
+	if specific route is to be attached to a certain method, overriding view_default, , or for giving get, post, put, delete methods to default route, the view_config decorator is used.
+	For other predicates view_config is generally used.
+	If there are more than one methods with get as the request_method, then other predicates like request_param will be used for routing request to that method.
+	"""
 	def __init__(self,request):
+		"""
+		Initialising the request object which gets the data from client.
+		"""
 		self.request = Request
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
 	def addVoucher(self):
+		"""
+		Purpose:
+		adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
+		Description:
+		
+		""" 
 		try:
 			token = self.request.headers["gktoken"]
 		except:
