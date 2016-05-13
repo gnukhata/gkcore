@@ -69,7 +69,7 @@ class api_transaction(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addVoucher(self):
-				"""
+		"""
 		Purpose:
 		adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
 		Description:
@@ -105,7 +105,14 @@ class api_transaction(object):
 			try:
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
+				drs = dataset["drs"]
+				crs = dataset["crs"]				
 				result = con.execute(vouchers.insert(),[dataset])
+				for drkeys in drs.keys():
+					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+				for crkeys in crs:
+					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+				
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
