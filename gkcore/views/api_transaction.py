@@ -501,9 +501,9 @@ class api_transaction(object):
 				DrData = voucherRow["drs"]
 				CrData = voucherRow["crs"]
 				for drKey in DrData.keys():
-					eng.execute("update accounts set vouchercount = vouchercount -1 where vouchercode = %d"%(int(drKey)))
+					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
 				for crKey in CrData.keys():
-					eng.execute("update accounts set vouchercount = vouchercount -1 where vouchercode = %d"%(int(crKey)))
+					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
