@@ -194,7 +194,112 @@ class api_reports(object):
 			currentBalance = ttlCrBalance - ttlDrBalance
 			balType = "Cr"
 		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
-	@view_config(request_param='trialbalance')
+
+
+    @view_config(request_param='type=ledger')
+    def ledger(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                orgcode = authDetails["orgcode"]
+                accountCode = self.request.params["accountode"]
+                calculateFrom = self.request.params["calculatefrom"]
+                calculateTo = self.request.params["calculateto"]
+                projectCode =self.request.params["projectcode"]
+                financialStart = self.request.params["financialstart"]
+                calbalDict = calculateBalance(accountCode,financialStart,calculateFrom,calculateTo)
+                vouchergrid = []
+                bal=0.00
+                if projectCode == "" and calbalDict["balbrought"]>0:
+                    openingrow={"vouchercode":"","vouchernumber":"","voucherdate":"","particulars":"Opening Balance","balance":"","narration":""}
+                    if calbalDict["openbaltype"] =="Dr":
+                        openingrow["Dr"] = calbalDict["balbrought"]
+                        openingrow["Cr"] = ""
+                        bal = calbalDict["balbrought"]
+                    if calbalDict["openbaltype"] =="Cr":
+                        openingrow["Dr"] = ""
+                        openingrow["Cr"] = calbalDict["balbrought"]
+                        bal = -calbalDict["balbrought"]
+                    vouchergrid.append(openingrow)
+                if projectCode == "":
+                    tranactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s';"%(accountCode,accountCode))
+                else:
+                    tranactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s' and projectcode=%d;"%(accountCode,accountCode,projectCode))
+
+                transactions = transactionsRecord.fetchall()
+
+
+                for transaction in transactions:
+                    ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":transaction["voucherdate"],"narration":transaction["narration"]}
+                    if transaction["drs"].has_key(accountCode):
+                        ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
+                        ledgerRecord["Cr"] = ""
+                        par=[]
+                        for cr in transaction["crs"].keys():
+                            accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+                            accountname = accountnameRow.fetchone()
+                            par.append(accountname)
+                        ledgerRecord["particulars"] = format("\n".join(par))
+                        bal = bal + transaction["drs"][accountCode]
+
+                    if transaction["crs"].has_key(accountCode):
+                        ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
+                        ledgerRecord["Dr"] = ""
+                        par=[]
+                        for dr in transaction["drs"].keys():
+                            accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+                            accountname = accountnameRow.fetchone()
+                            par.append(accountname)
+                        ledgerRecord["particulars"] = format("\n".join(par))
+                        bal = bal - transaction["crs"][accountCode]
+                    if bal>0:
+                        ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
+                    elif bal<0:
+                        ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
+                    else :
+                        ledgerRecord["balance"] = 0.00
+                    vouchergrid.append(ledgerRecord)
+                ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Total of Transactions","Dr":calbalDict["totaldrbal"],"Cr":calbalDict["totalcrbal"],"balance":""}
+                vouchergrid.append(ledgerRecord)
+                ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":calculateTo,"narration":"", "particulars":"Closing Balance C/F","balance":""}
+                if calbalDict["baltype"] == "Cr":
+                    ledgerRecord["Dr"] = calbalDict["curbal"]
+                if calbalDict["baltype"] == "Dr":
+                    ledgerRecord["Cr"] = calbalDict["curbal"]
+                vouchergrid.append(ledgerRecord)
+
+                ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Grand Total","balance":""}
+                if projectCode == "" and calbalDict["balbrought"]>0
+                    if calbalDict["openbaltype"] =="Dr":
+                        calbalDict["totaldrbal"] +=  calbalDict["balbrought"]
+
+                    if calbalDict["openbaltype"] =="Cr":
+                        calbalDict["totalcrbal"] +=  calbalDict["balbrought"]
+
+                    if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+                        ledgerRecord["Dr"] = calbalDict["totaldrbal"]
+                        ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+
+                    if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+                        ledgerRecord["Dr"] = calbalDict["totalcrbal"]
+                        ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+                else:
+                    if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+                        ledgerRecord["Dr"] = calbalDict["totaldrbal"]
+                        ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+
+                    if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+                        ledgerRecord["Dr"] = calbalDict["totalcrbal"]
+                        ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+                vouchergrid.append(ledgerRecord)
+
+    @view_config(request_param='trialbalance')
 	def trialBalance(self):
 
 		"""
