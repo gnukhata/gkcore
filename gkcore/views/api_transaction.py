@@ -119,6 +119,11 @@ class api_transaction(object):
 	@view_config(request_method='GET',renderer='json')
 	def getVoucher(self):
 		try:
+			"""
+			Purpose:
+			gets a single voucher given it's voucher code.
+			Returns a json dictionary containing that voucher.
+			"""
 			token = self.request.headers['gktoken']
 		except:
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -495,7 +500,7 @@ class api_transaction(object):
 				CrData = voucherRow["crs"]
 				for drKey in DrData.keys():
 					eng.execute("update accounts set vouchercount = vouchercount -1 where vouchercode = %d"%(int(drKey)))
-				for crKey = CrData.keys():
+				for crKey in CrData.keys():
 					eng.execute("update accounts set vouchercount = vouchercount -1 where vouchercode = %d"%(int(crKey)))
 				return {"gkstatus":enumdict["Success"]}
 			except:
