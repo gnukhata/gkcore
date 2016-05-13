@@ -69,12 +69,31 @@ class api_transaction(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addVoucher(self):
-		"""
+				"""
 		Purpose:
 		adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
 		Description:
-		
+		Adds a voucher into the voucher table.
+		Method uses the route given in view_default while post in request_method of view_config implies create.
+		The method gets request which has json_body containing:
+		*voucher number
+		*entry date (default as current date )
+		* voucher date,
+		* narration
+		* Drs json object containing dr accounts as keys and their respective Dr amount as values.
+		* project Drs (currently null) as well as project Crs.
+		* project name if any,
+		* voucher type,
+		* attachment (to be implemented)
+		* lockflag default False,
+		* del flag default False
+		After voucher is added using insert query, the vouchercount for given accounts will be incremented by 1.
+		since there will be at least 2 accounts in a transaction (minimum 1 each for Dr and Cr),
+		We will run a loop on the dictionary for accountcode and amounts both for Dr and Cr dicts.
+		And for each account code we will fire update query.
+		As usual the checking for jwt in request headers will be first done only then the code will procede.
 		""" 
+
 		try:
 			token = self.request.headers["gktoken"]
 		except:
