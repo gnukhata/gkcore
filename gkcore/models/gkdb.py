@@ -28,6 +28,7 @@ Contributor:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
+
 """
 This module contains the sqlalchemy expression based table definitions.
 They will be converted to real sql statements and tables will be subsequently created by create_all function in initdb.py.
@@ -116,6 +117,7 @@ accounts = Table('accounts', metadata,
 	Column('accountname',UnicodeText, nullable=False),
 	Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
 	Column('openingbal', Numeric(13,2),default=0.00),
+	Column('vouchercount', Integer ,default=0),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','accountname'),
 	Index("accindex","orgcode","accountname")
@@ -198,7 +200,7 @@ voucherbin=Table('voucherbin', metadata,
     Column('crs',JSONB,nullable=False),
     Column('attachment',UnicodeText),
     Column('vouchertype',UnicodeText, nullable=False),
-    Column('projectname',UnicodeText, ForeignKey('projects.projectcode')),
+    Column('projectname',UnicodeText, nullable=True),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Index("binvoucher_orgcodeindex","orgcode"),
     Index("binvoucher_vno","vouchernumber"),

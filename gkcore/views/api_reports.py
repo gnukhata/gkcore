@@ -33,15 +33,31 @@ from gkcore.models.gkdb import accounts, vouchers, groupsubgroups
 from sqlalchemy.sql import select
 import json 
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc 
+from sqlalchemy import and_ , alias, or_, exc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
-from sqlalchemy.ext.baked import Result
+
 from datetime import datetime
 con = Connection
 con = eng.connect()
 
+"""
+purpose:
+This class is the resource to generate reports,
+Such as Trial Balance, Ledger, Cash flowe, Balance sheet etc.
+
+connection rules:
+con is used for executing sql expression language based queries,
+while eng is used for raw sql execution.
+routing mechanism:
+@view_defaults is used for setting the default route for crud on the given resource class.
+if specific route is to be attached to a certain method, or for giving get, post, put, delete methods to default route, the view_config decorator is used.
+For other predicates view_config is generally used.
+This class has single route with only get as method.
+Depending on the request_param, different methods will be called on the route given in view_default.
+  
+"""
 
 @view_defaults(route_name='report' , request_method='GET')
 class api_reports(object):
@@ -50,10 +66,32 @@ class api_reports(object):
 		self.request = request
 
 	#calculateBalance is a private method so we won't expose it as REST method.
-	def calculatevidBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
-		#first we will get the groupname for the provided account.
-		#note that the given account may be associated with a subgroup for which we must get the group.
-		#we will be initializing all function level variables here.
+	def calculateBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
+		"""
+		purpose:
+		This is a private method which will return
+		*groupname for the provided account
+		*opening balance for the range
+		*opening balance type
+		*closing balance for the selected range
+		*closing balance type
+		*Total Dr for the range
+		* total Cr for the range.
+		Input parameters are:
+		*Orgcode
+		*accountname
+		*financialfrom
+		*calculatefrom
+		*calculateto
+		
+		first we will get the groupname for the provided account.
+		note that the given account may be associated with a subgroup for which we must get the group.
+		Then we get the opening balance and if it is not 0 then decide if it is a Dr or Cr balance based on the group.
+		Then the Total Dr and Cr is calculated.
+		If the calculate from is ahead of financial start, then the entire process is repeated.
+		This function is called by all reports in this resource.
+		we will be initializing all function level variables here.
+		"""
 		groupName = ""
 		openingBalance = 0.00
 		balanceBrought = 0.00
@@ -66,8 +104,14 @@ class api_reports(object):
 		balType = ""
 		{"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountname ="+accountName+"and orgcode = orgCode ))")
-		groupRecord = groupData.fetchone()
-		groupName = groupRecord["groupname"]
+		#groupRecord = groupData.fetchone()
+		#groupName = groupRecord["groupname"]
+		g = gkdb.groupsubgroups.alias("g")
+		sg = gkdb.groupsubgroups.alias("sg")
+
+		resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
+		row = resultset.fetchone()
+
 		#now similarly we will get the opening balance for this account.
 		obData = con.execute(select([accountName.c.openingbalance]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)) )
 		ob = obData.fetchone()

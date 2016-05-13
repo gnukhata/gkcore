@@ -47,14 +47,53 @@ con = Connection
 con = eng.connect()
 
 
+
 @view_defaults(route_name='transaction')
 class api_transaction(object):
+	"""
+	This class is the resource to create, update, read and delete vouchers (transactions)	connection rules:
+	con is used for executing sql expression language based queries,
+	while eng is used for raw sql execution.
+	routing mechanism:
+	@view_defaults is used for setting the default route for crud on the given resource class.
+	if specific route is to be attached to a certain method, overriding view_default, , or for giving get, post, put, delete methods to default route, the view_config decorator is used.
+	For other predicates view_config is generally used.
+	If there are more than one methods with get as the request_method, then other predicates like request_param will be used for routing request to that method.
+	"""
 	def __init__(self,request):
+		"""
+		Initialising the request object which gets the data from client.
+		"""
 		self.request = Request
 		self.request = request
 
 	@view_config(request_method='POST',renderer='json')
 	def addVoucher(self):
+		"""
+		Purpose:
+		adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
+		Description:
+		Adds a voucher into the voucher table.
+		Method uses the route given in view_default while post in request_method of view_config implies create.
+		The method gets request which has json_body containing:
+		*voucher number
+		*entry date (default as current date )
+		* voucher date,
+		* narration
+		* Drs json object containing dr accounts as keys and their respective Dr amount as values.
+		* project Drs (currently null) as well as project Crs.
+		* project name if any,
+		* voucher type,
+		* attachment (to be implemented)
+		* lockflag default False,
+		* del flag default False
+		After voucher is added using insert query, the vouchercount for given accounts will be incremented by 1.
+		since there will be at least 2 accounts in a transaction (minimum 1 each for Dr and Cr),
+		We will run a loop on the dictionary for accountcode and amounts both for Dr and Cr dicts.
+		And for each account code we will fire update query.
+		As usual the checking for jwt in request headers will be first done only then the code will procede.
+		""" 
+
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -66,7 +105,14 @@ class api_transaction(object):
 			try:
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
+				drs = dataset["drs"]
+				crs = dataset["crs"]				
 				result = con.execute(vouchers.insert(),[dataset])
+				for drkeys in drs.keys():
+					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+				for crkeys in crs:
+					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+				
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
