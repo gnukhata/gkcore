@@ -110,9 +110,8 @@ class api_transaction(object):
 				result = con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
-				for crkeys in crs:
+				for crkeys in crs.keys():
 					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
-				
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -120,6 +119,11 @@ class api_transaction(object):
 	@view_config(request_method='GET',renderer='json')
 	def getVoucher(self):
 		try:
+			"""
+			Purpose:
+			gets a single voucher given it's voucher code.
+			Returns a json dictionary containing that voucher.
+			"""
 			token = self.request.headers['gktoken']
 		except:
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -472,6 +476,14 @@ class api_transaction(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 	@view_config(request_method='DELETE',renderer='json')
 	def deleteVoucher(self):
+		"""
+		Purpose:
+		Deletes a voucher given it's voucher code.
+		Returns success if deletion is successful.
+		Purpose:
+		This function deletes a given voucher with it's vouchercode as input.
+		After deleting the voucher, the vouchercount for the involved accounts on Dr and Cr side is decremented by 1.
+		"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -481,7 +493,17 @@ class api_transaction(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(self.request.params["vouchercode"])))
+				dataset  = self.request.json_body
+				vcode = dataset["vouchercode"]
+				voucherdata = con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
+				voucherRow = voucherdata.fetchone()
+				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(vcode)))
+				DrData = voucherRow["drs"]
+				CrData = voucherRow["crs"]
+				for drKey in DrData.keys():
+					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
+				for crKey in CrData.keys():
+					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
