@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -29,9 +29,9 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups 
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , alias, or_, exc
 from pyramid.request import Request
@@ -56,7 +56,7 @@ if specific route is to be attached to a certain method, or for giving get, post
 For other predicates view_config is generally used.
 This class has single route with only get as method.
 Depending on the request_param, different methods will be called on the route given in view_default.
-  
+
 """
 
 @view_defaults(route_name='report' , request_method='GET')
@@ -66,7 +66,7 @@ class api_reports(object):
 		self.request = request
 
 	#calculateBalance is a private method so we won't expose it as REST method.
-	def calculateBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
+	def calculateBalance(self,accountCode,financialStart,calculateFrom,calculateTo):
 		"""
 		purpose:
 		This is a private method which will return
@@ -78,12 +78,11 @@ class api_reports(object):
 		*Total Dr for the range
 		* total Cr for the range.
 		Input parameters are:
-		*Orgcode
-		*accountname
+		*accountcode
 		*financialfrom
 		*calculatefrom
 		*calculateto
-		
+
 		first we will get the groupname for the provided account.
 		note that the given account may be associated with a subgroup for which we must get the group.
 		Then we get the opening balance and if it is not 0 then decide if it is a Dr or Cr balance based on the group.
@@ -103,7 +102,7 @@ class api_reports(object):
 		ttlCrUptoFrom = 0.00
 		balType = ""
 		{"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
-		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountname ="+accountName+"and orgcode = orgCode ))")
+		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountcode ="+accountCode+"))")
 		#groupRecord = groupData.fetchone()
 		#groupName = groupRecord["groupname"]
 		g = gkdb.groupsubgroups.alias("g")
@@ -113,7 +112,7 @@ class api_reports(object):
 		row = resultset.fetchone()
 
 		#now similarly we will get the opening balance for this account.
-		obData = con.execute(select([accountName.c.openingbalance]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)) )
+		obData = con.execute(select([account.c.openingbalance]).where(accounts.c.accountname == accountCode) )
 		ob = obData.fetchone()
 		oepningBalance = ob["openingbalance"]
 		financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
@@ -143,11 +142,10 @@ class api_reports(object):
 				balType = "Cr"
 		else:
 			#account code to be retrieved from account name
-			accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
-			accountRow = accountCodeData.fetchone()
-			accountcode = accountRow["accountcode"]
-			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
-			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+
+
+			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountCode,financialStart,calculateFrom))
+			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountCode,financialStart,calculateFrom))
 			tdrRow = tdrfrm.fetchone()
 			tcrRow= tcrfrm.fetchone()
 			ttlCrUptoFrom = tcrRow['total']
@@ -156,7 +154,7 @@ class api_reports(object):
 				ttlCrUptoFrom = 0.00
 			if ttlDrUptoFrom == None:
 				ttlDrUptoFrom = 0.00
-			
+
 			if openingBalance == 0:
 				balanceBrought = 0.00
 			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
@@ -170,16 +168,13 @@ class api_reports(object):
 			if ttlDrUptoFrom >	ttlCrUptoFrom:
 				balanceBrought = ttlDrUptoFrom - ttlCrUptoFrom
 				balType = "Dr"
-				openingBalanceType = "Dr"				
+				openingBalanceType = "Dr"
 			if ttlCrUptoFrom >	ttlDrUptoFrom:
 				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
 				balType = "Cr"
 				openingBalanceType = "Cr"
-		accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
-		accountRow = accountCodeData.fetchone()
-		accountcode = accountRow["accountcode"]
-		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
-		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountCode,financialStart,calculateFrom))
+		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountCode,financialStart,calculateFrom))
 		tdrRow = tdrfrm.fetchone()
 		tcrRow= tcrfrm.fetchone()
 		ttlDrBalance = tdrRow['total']
@@ -201,8 +196,8 @@ class api_reports(object):
 		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 	@view_config(request_param='trialbalance')
 	def trialBalance(self):
-		
-		""" 
+
+		"""
 		There are 3 types of trial balance:
 		1 is net
 		2 is gross
@@ -220,7 +215,7 @@ class api_reports(object):
 				if int(self.request.params["tbtype"])  == 1:
 					accountCodeData = con.execute(select([accounts.c.accountcode]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 					accountCodeRecords = accountCodeData.fetchall()
-					
+
 
 			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}	
+				return {"gkstatus":enumdict["ConnectionFailed"]}
