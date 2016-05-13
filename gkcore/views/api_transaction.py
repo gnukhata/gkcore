@@ -493,9 +493,11 @@ class api_transaction(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				voucherdata = con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(self.request.params["vouchercode"])))
+				dataset  = self.request.json_body
+				vcode = dataset["vouchercode"]
+				voucherdata = con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
 				voucherRow = voucherdata.fetchone()
-				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(self.request.params["vouchercode"])))
+				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(vcode)))
 				DrData = voucherRow["drs"]
 				CrData = voucherRow["crs"]
 				for drKey in DrData.keys():
