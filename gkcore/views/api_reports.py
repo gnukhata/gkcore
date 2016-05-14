@@ -228,7 +228,7 @@ class api_reports(object):
 
 
 				for transaction in transactions:
-					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":transaction["voucherdate"],"narration":transaction["narration"]}
+					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"]),"narration":transaction["narration"]}
 					if transaction["drs"].has_key(accountCode):
 						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
 						ledgerRecord["Cr"] = ""
@@ -236,9 +236,10 @@ class api_reports(object):
 						for cr in transaction["crs"].keys():
 							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 							accountname = accountnameRow.fetchone()
-							par.append(accountname)
+							par.append(str(accountname))
+
 						ledgerRecord["particulars"] = format("\n".join(par))
-						bal = bal + transaction["drs"][accountCode]
+						bal = bal + float(transaction["drs"][accountCode])
 
 					if transaction["crs"].has_key(accountCode):
 						ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
@@ -247,10 +248,10 @@ class api_reports(object):
 						for dr in transaction["drs"].keys():
 							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 							accountname = accountnameRow.fetchone()
-							par.append(accountname)
-						print par
+							par.append(str(accountname))
+
 						ledgerRecord["particulars"] = format("\n".join(par))
-						bal = bal - transaction["crs"][accountCode]
+						bal = bal - float(transaction["crs"][accountCode])
 					if bal>0:
 						ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
 					elif bal<0:
@@ -258,11 +259,14 @@ class api_reports(object):
 					else :
 						ledgerRecord["balance"] = 0.00
 					vouchergrid.append(ledgerRecord)
+				print "cxxxxx: ",calbalDict["totalcrbal"]
+				print "dxxxxx: ",calbalDict["totaldrbal"]
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Total of Transactions","Dr":calbalDict["totaldrbal"],"Cr":calbalDict["totalcrbal"],"balance":""}
 				vouchergrid.append(ledgerRecord)
-				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":calculateTo,"narration":"", "particulars":"Closing Balance C/F","balance":""}
+				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":str(calculateTo),"narration":"", "particulars":"Closing Balance C/F","balance":""}
 				if calbalDict["baltype"] == "Cr":
 					ledgerRecord["Dr"] = calbalDict["curbal"]
+
 				if calbalDict["baltype"] == "Dr":
 					ledgerRecord["Cr"] = calbalDict["curbal"]
 				vouchergrid.append(ledgerRecord)
@@ -282,6 +286,7 @@ class api_reports(object):
 					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
 						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
 						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+					vouchergrid.append(ledgerRecord)
 				else:
 					if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
 						ledgerRecord["Dr"] = calbalDict["totaldrbal"]
@@ -290,7 +295,7 @@ class api_reports(object):
 					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
 						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
 						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
-				vouchergrid.append(ledgerRecord)
+					vouchergrid.append(ledgerRecord)
 				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
 			#except:
 				#return {"gkstatus":enumdict["ConnectionFailed"]}
