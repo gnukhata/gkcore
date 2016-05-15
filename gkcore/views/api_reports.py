@@ -101,12 +101,12 @@ class api_reports(object):
 		ttlDrUptoFrom = 0.00
 		ttlCrUptoFrom = 0.00
 		balType = ""
-
-		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = '%s') or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = '%s'));"%(accountCode,accountCode))
+		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(accountCode,accountCode))
 		groupRecord = groupData.fetchone()
 		groupName = groupRecord["groupname"]
-
+		print "group is %s"%(groupName)
 		#now similarly we will get the opening balance for this account.
+
 		obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
 		ob = obData.fetchone()
 		oepningBalance = ob["openingbal"]
@@ -116,6 +116,7 @@ class api_reports(object):
 		if financialYearStartDate == calculateFromDate:
 			if openingBalance == 0:
 				balanceBrought = 0
+
 			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
 				balanceBrought = abs(openingBalance)
 				openingBalanceType = "Cr"
@@ -136,7 +137,6 @@ class api_reports(object):
 				openingBalanceType = "Cr"
 				balType = "Cr"
 		else:
-			#account code to be retrieved from account name
 			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
 			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
 			tdrRow = tdrfrm.fetchone()
@@ -166,8 +166,8 @@ class api_reports(object):
 				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
 				balType = "Cr"
 				openingBalanceType = "Cr"
-		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
-		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
+		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
+		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
 		tdrRow = tdrfrm.fetchone()
 		tcrRow= tcrfrm.fetchone()
 		ttlDrBalance = tdrRow['total']
