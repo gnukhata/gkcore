@@ -101,7 +101,7 @@ class api_reports(object):
 		ttlDrUptoFrom = 0.00
 		ttlCrUptoFrom = 0.00
 		balType = ""
-		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(accountCode,accountCode))
+		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
 		groupRecord = groupData.fetchone()
 		groupName = groupRecord["groupname"]
 		print "group is %s"%(groupName)
