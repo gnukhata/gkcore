@@ -190,6 +190,23 @@ class api_reports(object):
 
 	@view_config(request_param='type=ledger', renderer='json')
 	def ledger(self):
+		"""
+		Purpose:
+		Creates a grid containing complete ledger.
+		Takes calculatefrom,calculateto and accountcode.
+		Returns success as status and the grid containing ledger.
+		description:
+		this function returns a grid containing ledger.
+		The first row contains opening balance of the account.
+		subsequent rows contain all the transactions for an account given it's account code.
+		Further, it gives the closing balance at the end of all cr and dr transactions.
+		If the closing balance is Dr then the amount will be shown at the cr side and other way round.
+		Then finally grand total is displayed.
+		This method is called when the report url is called with type=ledger request_param.
+		The columns  in the grid include:
+		*Date,Particular,voucher Number, Dr,Cr and balance at end of transaction.
+		"""
+		
 		try:
 			token = self.request.headers["gktoken"]
 		except:
