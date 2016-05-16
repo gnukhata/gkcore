@@ -19,7 +19,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -29,9 +29,9 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups 
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups
 from sqlalchemy.sql import select
-import json 
+import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , alias, or_, exc
 from pyramid.request import Request
@@ -56,7 +56,7 @@ if specific route is to be attached to a certain method, or for giving get, post
 For other predicates view_config is generally used.
 This class has single route with only get as method.
 Depending on the request_param, different methods will be called on the route given in view_default.
-  
+
 """
 
 @view_defaults(route_name='report' , request_method='GET')
@@ -65,8 +65,7 @@ class api_reports(object):
 		self.request = Request
 		self.request = request
 
-	#calculateBalance is a private method so we won't expose it as REST method.
-	def calculateBalance(self,orgCode,accountName,financialStart,calculateFrom,calculateTo):
+	def calculateBalance(self,accountCode,financialStart,calculateFrom,calculateTo):
 		"""
 		purpose:
 		This is a private method which will return
@@ -83,7 +82,7 @@ class api_reports(object):
 		*financialfrom
 		*calculatefrom
 		*calculateto
-		
+
 		first we will get the groupname for the provided account.
 		note that the given account may be associated with a subgroup for which we must get the group.
 		Then we get the opening balance and if it is not 0 then decide if it is a Dr or Cr balance based on the group.
@@ -102,26 +101,22 @@ class api_reports(object):
 		ttlDrUptoFrom = 0.00
 		ttlCrUptoFrom = 0.00
 		balType = ""
-		{"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
-		groupData = eng.execute("select groupname from groupsubgroups where groupcode = (select subgroupof from groupsubgroups where groupcode=(select groupcode from accounts where accountname ="+accountName+"and orgcode = orgCode ))")
-		#groupRecord = groupData.fetchone()
-		#groupName = groupRecord["groupname"]
-		g = gkdb.groupsubgroups.alias("g")
-		sg = gkdb.groupsubgroups.alias("sg")
-
-		resultset = con.execute(select([(g.c.groupname).label('groupname'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
-		row = resultset.fetchone()
-
+		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
+		groupRecord = groupData.fetchone()
+		groupName = groupRecord["groupname"]
+		print "group is %s"%(groupName)
 		#now similarly we will get the opening balance for this account.
-		obData = con.execute(select([accountName.c.openingbalance]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)) )
+
+		obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
 		ob = obData.fetchone()
-		oepningBalance = ob["openingbalance"]
+		oepningBalance = ob["openingbal"]
 		financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
 		calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
 		calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
 		if financialYearStartDate == calculateFromDate:
 			if openingBalance == 0:
 				balanceBrought = 0
+
 			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
 				balanceBrought = abs(openingBalance)
 				openingBalanceType = "Cr"
@@ -142,12 +137,8 @@ class api_reports(object):
 				openingBalanceType = "Cr"
 				balType = "Cr"
 		else:
-			#account code to be retrieved from account name
-			accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
-			accountRow = accountCodeData.fetchone()
-			accountcode = accountRow["accountcode"]
-			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
-			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
+			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
 			tdrRow = tdrfrm.fetchone()
 			tcrRow= tcrfrm.fetchone()
 			ttlCrUptoFrom = tcrRow['total']
@@ -156,7 +147,7 @@ class api_reports(object):
 				ttlCrUptoFrom = 0.00
 			if ttlDrUptoFrom == None:
 				ttlDrUptoFrom = 0.00
-			
+
 			if openingBalance == 0:
 				balanceBrought = 0.00
 			if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
@@ -170,16 +161,13 @@ class api_reports(object):
 			if ttlDrUptoFrom >	ttlCrUptoFrom:
 				balanceBrought = ttlDrUptoFrom - ttlCrUptoFrom
 				balType = "Dr"
-				openingBalanceType = "Dr"				
+				openingBalanceType = "Dr"
 			if ttlCrUptoFrom >	ttlDrUptoFrom:
 				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
 				balType = "Cr"
 				openingBalanceType = "Cr"
-		accountCodeData = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accountName, accounts.c.orgcode == orgCode)))
-		accountRow = accountCodeData.fetchone()
-		accountcode = accountRow["accountcode"]
-		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
-		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(accountcode,financialStart,calculateFrom))
+		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
+		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
 		tdrRow = tdrfrm.fetchone()
 		tcrRow= tcrfrm.fetchone()
 		ttlDrBalance = tdrRow['total']
@@ -199,10 +187,140 @@ class api_reports(object):
 			currentBalance = ttlCrBalance - ttlDrBalance
 			balType = "Cr"
 		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
+
+	@view_config(request_param='type=ledger', renderer='json')
+	def ledger(self):
+		"""
+		Purpose:
+		Creates a grid containing complete ledger.
+		Takes calculatefrom,calculateto and accountcode.
+		Returns success as status and the grid containing ledger.
+		description:
+		this function returns a grid containing ledger.
+		The first row contains opening balance of the account.
+		subsequent rows contain all the transactions for an account given it's account code.
+		Further, it gives the closing balance at the end of all cr and dr transactions.
+		If the closing balance is Dr then the amount will be shown at the cr side and other way round.
+		Then finally grand total is displayed.
+		This method is called when the report url is called with type=ledger request_param.
+		The columns  in the grid include:
+		*Date,Particular,voucher Number, Dr,Cr and balance at end of transaction.
+		"""
+		
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+				orgcode = authDetails["orgcode"]
+				accountCode = self.request.params["accountcode"]
+				calculateFrom = self.request.params["calculatefrom"]
+				calculateTo = self.request.params["calculateto"]
+				projectCode =self.request.params["projectcode"]
+				financialStart = self.request.params["financialstart"]
+				calbalDict = self.calculateBalance(accountCode,financialStart,calculateFrom,calculateTo)
+				vouchergrid = []
+				bal=0.00
+				if projectCode == "" and calbalDict["balbrought"]>0:
+					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":"","particulars":"Opening Balance","balance":"","narration":""}
+					if calbalDict["openbaltype"] =="Dr":
+						openingrow["Dr"] = calbalDict["balbrought"]
+						openingrow["Cr"] = ""
+						bal = calbalDict["balbrought"]
+					if calbalDict["openbaltype"] =="Cr":
+						openingrow["Dr"] = ""
+						openingrow["Cr"] = calbalDict["balbrought"]
+						bal = -calbalDict["balbrought"]
+					vouchergrid.append(openingrow)
+				if projectCode == "":
+					transactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s';"%(accountCode,accountCode))
+				else:
+					transactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s' and projectcode=%d;"%(accountCode,accountCode,projectCode))
+
+				transactions = transactionsRecords.fetchall()
+
+
+				for transaction in transactions:
+					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"]),"narration":transaction["narration"]}
+					if transaction["drs"].has_key(accountCode):
+						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
+						ledgerRecord["Cr"] = ""
+						par=[]
+						for cr in transaction["crs"].keys():
+							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+							accountname = accountnameRow.fetchone()
+							par.append(str(accountname))
+
+						ledgerRecord["particulars"] = format("\n".join(par))
+						bal = bal + float(transaction["drs"][accountCode])
+
+					if transaction["crs"].has_key(accountCode):
+						ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
+						ledgerRecord["Dr"] = ""
+						par=[]
+						for dr in transaction["drs"].keys():
+							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+							accountname = accountnameRow.fetchone()
+							par.append(str(accountname))
+
+						ledgerRecord["particulars"] = format("\n".join(par))
+						bal = bal - float(transaction["crs"][accountCode])
+					if bal>0:
+						ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
+					elif bal<0:
+						ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
+					else :
+						ledgerRecord["balance"] = 0.00
+					vouchergrid.append(ledgerRecord)
+				print "cxxxxx: ",calbalDict["totalcrbal"]
+				print "dxxxxx: ",calbalDict["totaldrbal"]
+				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Total of Transactions","Dr":calbalDict["totaldrbal"],"Cr":calbalDict["totalcrbal"],"balance":""}
+				vouchergrid.append(ledgerRecord)
+				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":str(calculateTo),"narration":"", "particulars":"Closing Balance C/F","balance":""}
+				if calbalDict["baltype"] == "Cr":
+					ledgerRecord["Dr"] = calbalDict["curbal"]
+
+				if calbalDict["baltype"] == "Dr":
+					ledgerRecord["Cr"] = calbalDict["curbal"]
+				vouchergrid.append(ledgerRecord)
+
+				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Grand Total","balance":""}
+				if projectCode == "" and calbalDict["balbrought"]>0:
+					if calbalDict["openbaltype"] =="Dr":
+						calbalDict["totaldrbal"] +=  calbalDict["balbrought"]
+
+					if calbalDict["openbaltype"] =="Cr":
+						calbalDict["totalcrbal"] +=  calbalDict["balbrought"]
+
+					if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+						ledgerRecord["Dr"] = calbalDict["totaldrbal"]
+						ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+
+					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
+						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+					vouchergrid.append(ledgerRecord)
+				else:
+					if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+						ledgerRecord["Dr"] = calbalDict["totaldrbal"]
+						ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+
+					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
+						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+					vouchergrid.append(ledgerRecord)
+				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
+
 	@view_config(request_param='trialbalance')
 	def trialBalance(self):
-		
-		""" 
+
+		"""
 		There are 3 types of trial balance:
 		1 is net
 		2 is gross
@@ -220,7 +338,7 @@ class api_reports(object):
 				if int(self.request.params["tbtype"])  == 1:
 					accountCodeData = con.execute(select([accounts.c.accountcode]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 					accountCodeRecords = accountCodeData.fetchall()
-					
+
 
 			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}	
+				return {"gkstatus":enumdict["ConnectionFailed"]}
