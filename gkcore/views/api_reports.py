@@ -109,7 +109,7 @@ class api_reports(object):
 
 		obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
 		ob = obData.fetchone()
-		oepningBalance = ob["openingbal"]
+		openingBalance = float(ob["openingbal"])
 		financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
 		calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
 		calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
@@ -177,16 +177,16 @@ class api_reports(object):
 		if ttlDrBalance == None:
 			ttlDrBalance = 0.00
 		if balType =="Dr":
-			ttlDrBalance = ttlDrBalance + balanceBrought
+			ttlDrBalance = ttlDrBalance + float(balanceBrought)
 		if balType =="Cr":
-			ttlCrBalance = ttlCrBalance + balanceBrought
+			ttlCrBalance = ttlCrBalance + float(balanceBrought)
 		if ttlDrBalance > ttlCrBalance :
 			currentBalance = ttlDrBalance - ttlCrBalance
 			balType = "Dr"
 		if ttlCrBalance > ttlDrBalance :
 			currentBalance = ttlCrBalance - ttlDrBalance
 			balType = "Cr"
-		return {"balbrought":balanceBrought,"curbal":currentBalance,"totalcrbal":ttlCrBalance,"totaldrbal":ttlDrBalance,"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
+		return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 
 	@view_config(request_param='type=ledger', renderer='json')
 	def ledger(self):
@@ -228,13 +228,13 @@ class api_reports(object):
 				if projectCode == "" and calbalDict["balbrought"]>0:
 					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":"","particulars":"Opening Balance","balance":"","narration":""}
 					if calbalDict["openbaltype"] =="Dr":
-						openingrow["Dr"] = calbalDict["balbrought"]
+						openingrow["Dr"] = "%.2f"%float(calbalDict["balbrought"])
 						openingrow["Cr"] = ""
-						bal = calbalDict["balbrought"]
+						bal = float(calbalDict["balbrought"])
 					if calbalDict["openbaltype"] =="Cr":
 						openingrow["Dr"] = ""
-						openingrow["Cr"] = calbalDict["balbrought"]
-						bal = -calbalDict["balbrought"]
+						openingrow["Cr"] = "%.2f"%float(calbalDict["balbrought"])
+						bal = float(-calbalDict["balbrought"])
 					vouchergrid.append(openingrow)
 				if projectCode == "":
 					transactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s';"%(accountCode,accountCode))
@@ -274,48 +274,52 @@ class api_reports(object):
 					elif bal<0:
 						ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
 					else :
-						ledgerRecord["balance"] = 0.00
+						ledgerRecord["balance"] = "%.2f"%(0.00)
 					vouchergrid.append(ledgerRecord)
-				print "cxxxxx: ",calbalDict["totalcrbal"]
-				print "dxxxxx: ",calbalDict["totaldrbal"]
-				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Total of Transactions","Dr":calbalDict["totaldrbal"],"Cr":calbalDict["totalcrbal"],"balance":""}
+				if calbalDict["openbaltype"] == "Cr":
+					calbalDict["totalcrbal"] -= calbalDict["balbrought"]
+				if calbalDict["openbaltype"] == "Dr":
+					calbalDict["totaldrbal"] -= calbalDict["balbrought"] 
+				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":"Total of Transactions","balance":""}
 				vouchergrid.append(ledgerRecord)
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":str(calculateTo),"narration":"", "particulars":"Closing Balance C/F","balance":""}
+				print calbalDict["baltype"]
 				if calbalDict["baltype"] == "Cr":
-					ledgerRecord["Dr"] = calbalDict["curbal"]
+					ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
 
 				if calbalDict["baltype"] == "Dr":
-					ledgerRecord["Cr"] = calbalDict["curbal"]
+					ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
 				vouchergrid.append(ledgerRecord)
 
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Grand Total","balance":""}
 				if projectCode == "" and calbalDict["balbrought"]>0:
 					if calbalDict["openbaltype"] =="Dr":
-						calbalDict["totaldrbal"] +=  calbalDict["balbrought"]
+						calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
 
 					if calbalDict["openbaltype"] =="Cr":
-						calbalDict["totalcrbal"] +=  calbalDict["balbrought"]
+						calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
 
 					if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
-						ledgerRecord["Dr"] = calbalDict["totaldrbal"]
-						ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+						ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
 
 					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
-						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
-						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
+						ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
 					vouchergrid.append(ledgerRecord)
 				else:
 					if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
-						ledgerRecord["Dr"] = calbalDict["totaldrbal"]
-						ledgerRecord["Cr"] = calbalDict["totaldrbal"]
+						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+						ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
 
 					if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
-						ledgerRecord["Dr"] = calbalDict["totalcrbal"]
-						ledgerRecord["Cr"] = calbalDict["totalcrbal"]
+						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
+						ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
 					vouchergrid.append(ledgerRecord)
 				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
 			#except:
 				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
 		try:
@@ -337,8 +341,10 @@ class api_reports(object):
 				totalCr = 0.00
 				for account in accountRecords:
 					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					if calbalData["baltype"]=="":
+						continue
 					srno += 1
-					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["groupname"],"srno":srno}
+					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"srno":srno}
 					if calbalData["baltype"] == "Dr":
 						ntbRow["Dr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["Cr"] = ""
