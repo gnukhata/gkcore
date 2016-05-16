@@ -332,13 +332,13 @@ class api_reports(object):
 				ntbGrid = []
 				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
-				srno = 1
+				srno = 0
 				totalDr = 0.00
 				totalCr = 0.00
 				for account in accountRecords:
-					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"]}
 					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
-					ntbRow["groupname"] = calbalData["groupname"]
+					srno += 1
+					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["groupname"],"srno":srno}
 					if calbalData["baltype"] == "Dr":
 						ntbRow["Dr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["Cr"] = ""
@@ -347,10 +347,8 @@ class api_reports(object):
 						ntbRow["Dr"] = ""
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						totalCr = totalCr + calbalData["curbal"]
-					srno += 1
-					ntbRow["srno"] = srno
 					ntbGrid.append(ntbRow)
 				ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
-				
+				return {"gkstatus":enumdict["Success"],"gkresult":ntbGrid}
 			except:
-				return {}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
