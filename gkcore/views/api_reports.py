@@ -316,16 +316,8 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
 			#except:
 				#return {"gkstatus":enumdict["ConnectionFailed"]}
-
-	@view_config(request_param='trialbalance')
-	def trialBalance(self):
-
-		"""
-		There are 3 types of trial balance:
-		1 is net
-		2 is gross
-		3 is extended
-	"""
+	@view_config(request_param='type=nettrialbalance', renderer='json')
+	def netTrialBalance(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -335,10 +327,30 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				if int(self.request.params["tbtype"])  == 1:
-					accountCodeData = con.execute(select([accounts.c.accountcode]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
-					accountCodeRecords = accountCodeData.fetchall()
-
-
+				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountRecords = accountData.fetchall()
+				ntbGrid = []
+				financialStart = self.request.params["financialstart"]
+				calculateTo =  self.request.params["calculateto"]
+				srno = 1
+				totalDr = 0.00
+				totalCr = 0.00
+				for account in accountRecords:
+					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"]}
+					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					ntbRow["groupname"] = calbalData["groupname"]
+					if calbalData["baltype"] == "Dr":
+						ntbRow["Dr"] = "%.2f"%(calbalData["curbal"])
+						ntbRow["Cr"] = ""
+						totalDr = totalDr + calbalData["curbal"]
+					if calbalData["baltype"] == "Cr":
+						ntbRow["Dr"] = ""
+						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
+						totalCr = totalCr + calbalData["curbal"]
+					srno += 1
+					ntbRow["srno"] = srno
+					ntbGrid.append(ntbRow)
+				ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
+				
 			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {}
