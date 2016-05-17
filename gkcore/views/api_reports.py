@@ -286,9 +286,11 @@ class api_reports(object):
 				print calbalDict["baltype"]
 				if calbalDict["baltype"] == "Cr":
 					ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
+					ledgerRecord["Cr"] = ""
 
 				if calbalDict["baltype"] == "Dr":
 					ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
+					ledgerRecord["Dr"] = ""
 				vouchergrid.append(ledgerRecord)
 
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Grand Total","balance":""}
@@ -367,15 +369,15 @@ class api_reports(object):
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						totalCr = totalCr + calbalData["curbal"]
 					ntbGrid.append(ntbRow)	
-				ntbGrid.append({"accountname":"Total","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
+				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr) })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
-					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalCr": "%.2f"%(baldiff),"TotalDr":"" })
-					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr": "%.2f"%(baldiff),"Dr":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
 				if totalDr < totalCr:
 					baldiff = totalCr - totalDr
-					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalDr": "%.2f"%(baldiff),"TotalCr":"" })
-					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalCr),"TotalDr":"%.2f"%(totalCr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalCr),"Dr":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":ntbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -417,11 +419,19 @@ class api_reports(object):
 					if float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
 					srno += 1
-					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData"totaldrbal"),"Cr balance":"%.2f"%(calbalData["totalCrbal"]),"srno":srno }
-					totalDr += "%.2f"%(calbalData["totaldrbal"])
-					totalCr += "%.2f"%(calbalData["totalCrbal"])
+					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData["totaldrbal"]),"Cr balance":"%.2f"%(calbalData["totalcrbal"]),"srno":srno }
+					totalDr += calbalData["totaldrbal"]
+					totalCr += calbalData["totalcrbal"]
 					gtbGrid.append(gtbRow)
 				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr Balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"" })
+				if totalDr > totalCr:
+					baldiff = totalDr - totalCr
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr Balance": "%.2f"%(baldiff),"Dr Balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalDr),"Dr Balance":"%.2f"%(totalDr) })
+				if totalDr < totalCr:
+					baldiff = totalCr - totalDr
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr Balance": "%.2f"%(baldiff),"Cr Balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalCr),"Dr Balance":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
