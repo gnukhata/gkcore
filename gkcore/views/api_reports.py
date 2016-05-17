@@ -286,9 +286,11 @@ class api_reports(object):
 				print calbalDict["baltype"]
 				if calbalDict["baltype"] == "Cr":
 					ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
+					ledgerRecord["Cr"] = ""
 
 				if calbalDict["baltype"] == "Dr":
 					ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
+					ledgerRecord["Dr"] = ""
 				vouchergrid.append(ledgerRecord)
 
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":"Grand Total","balance":""}
@@ -367,15 +369,69 @@ class api_reports(object):
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						totalCr = totalCr + calbalData["curbal"]
 					ntbGrid.append(ntbRow)	
-				ntbGrid.append({"accountname":"Total","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
+				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr) })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
-					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalCr": "%.2f"%(baldiff),"TotalDr":"" })
-					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr": "%.2f"%(baldiff),"Dr":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
 				if totalDr < totalCr:
 					baldiff = totalCr - totalDr
-					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalDr": "%.2f"%(baldiff),"TotalCr":"" })
-					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalCr),"TotalDr":"%.2f"%(totalCr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalCr),"Dr":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":ntbGrid}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='type=grosstrialbalance', renderer='json')
+	def grossTrialBalance(self):
+		"""
+		Purpose:
+		Returns a grid containing gross trial balance for all accounts started from financial start till the end date provided by the user.
+		Description:
+		This method has type=nettrialbalance as request_param in view_config.
+		the method takes financial start and calculateto as parameters.
+		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
+		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
+		Then all dR balances and all Cr balances are added to get total balance for each side.
+		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		All rows in the ntbGrid are dictionaries.
+		"""
+		
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountRecords = accountData.fetchall()
+				gtbGrid = []
+				financialStart = self.request.params["financialstart"]
+				calculateTo =  self.request.params["calculateto"]
+				srno = 0
+				totalDr = 0.00
+				totalCr = 0.00
+				for account in accountRecords:
+					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					if float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
+						continue
+					srno += 1
+					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData["totaldrbal"]),"Cr balance":"%.2f"%(calbalData["totalcrbal"]),"srno":srno }
+					totalDr += calbalData["totaldrbal"]
+					totalCr += calbalData["totalcrbal"]
+					gtbGrid.append(gtbRow)
+				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr Balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"" })
+				if totalDr > totalCr:
+					baldiff = totalDr - totalCr
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr Balance": "%.2f"%(baldiff),"Dr Balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalDr),"Dr Balance":"%.2f"%(totalDr) })
+				if totalDr < totalCr:
+					baldiff = totalCr - totalDr
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr Balance": "%.2f"%(baldiff),"Cr Balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalCr),"Dr Balance":"%.2f"%(totalCr) })
+				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
