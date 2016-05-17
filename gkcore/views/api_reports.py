@@ -322,6 +322,19 @@ class api_reports(object):
 			
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
+		"""
+		Purpose:
+		Returns a grid containing net trial balance for all accounts started from financial start till the end date provided by the user.
+		Description:
+		This method has type=nettrialbalance as request_param in view_config.
+		the method takes financial start and calculateto as parameters.
+		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
+		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
+		Then all dR balances and all Cr balances are added to get total balance for each side.
+		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		All rows in the ntbGrid are dictionaries.
+		"""
+		
 		try:
 			token = self.request.headers["gktoken"]
 		except:
