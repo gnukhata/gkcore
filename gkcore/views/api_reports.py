@@ -215,7 +215,7 @@ class api_reports(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				orgcode = authDetails["orgcode"]
 				accountCode = self.request.params["accountcode"]
 				calculateFrom = self.request.params["calculatefrom"]
@@ -237,9 +237,9 @@ class api_reports(object):
 						bal = float(-calbalDict["balbrought"])
 					vouchergrid.append(openingrow)
 				if projectCode == "":
-					transactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s';"%(accountCode,accountCode))
+					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, accountCode,accountCode))
 				else:
-					transactionsRecords = eng.execute("select * from vouchers where drs ? '%s' or crs ? '%s' and projectcode=%d;"%(accountCode,accountCode,projectCode))
+					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo,projectCode,accountCode,accountCode))
 
 				transactions = transactionsRecords.fetchall()
 
@@ -317,8 +317,8 @@ class api_reports(object):
 						ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
 					vouchergrid.append(ledgerRecord)
 				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
-			#except:
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
@@ -353,8 +353,16 @@ class api_reports(object):
 						ntbRow["Dr"] = ""
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						totalCr = totalCr + calbalData["curbal"]
-					ntbGrid.append(ntbRow)
-				ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
+					ntbGrid.append(ntbRow)	
+				ntbGrid.append({"accountname":"Total","groupname":"","srno":"","TotalDr": "%.2f"%(totalDr),"TotalCr":"%.2f"%(totalCr) })
+				if totalDr > totalCr:
+					baldiff = totalDr - totalCr
+					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalCr": "%.2f"%(baldiff),"TotalDr":"" })
+					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
+				if totalDr < totalCr:
+					baldiff = totalCr - totalDr
+					ntbGrid.append({"accountname":"Difference in Trial balance","groupname":"","srno":"","TotalDr": "%.2f"%(baldiff),"TotalCr":"" })
+					ntbGrid.append({"accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalCr),"TotalDr":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":ntbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
