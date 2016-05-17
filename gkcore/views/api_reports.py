@@ -384,7 +384,7 @@ class api_reports(object):
 	def grossTrialBalance(self):
 		"""
 		Purpose:
-		Returns a grid containing net trial balance for all accounts started from financial start till the end date provided by the user.
+		Returns a grid containing gross trial balance for all accounts started from financial start till the end date provided by the user.
 		Description:
 		This method has type=nettrialbalance as request_param in view_config.
 		the method takes financial start and calculateto as parameters.
@@ -406,7 +406,7 @@ class api_reports(object):
 			try:
 				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
-				ntbGrid = []
+				gtbGrid = []
 				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
 				srno = 0
@@ -414,3 +414,14 @@ class api_reports(object):
 				totalCr = 0.00
 				for account in accountRecords:
 					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					if float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
+						continue
+					srno += 1
+					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData"totaldrbal"),"Cr balance":"%.2f"%(calbalData["totalCrbal"]),"srno":srno }
+					totalDr += "%.2f"%(calbalData["totaldrbal"])
+					totalCr += "%.2f"%(calbalData["totalCrbal"])
+					gtbGrid.append(gtbRow)
+				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr Balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"" })
+				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
