@@ -436,8 +436,8 @@ class api_reports(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(request_param='type=grosstrialbalance', renderer='json')
-	def grossTrialBalance(self):
+	@view_config(request_param='type=extendedtrialbalance', renderer='json')
+	def extendedTrialBalance(self):
 		"""
 		Purpose:
 		Returns a grid containing gross trial balance for all accounts started from financial start till the end date provided by the user.
@@ -462,11 +462,47 @@ class api_reports(object):
 			try:
 				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
-				gtbGrid = []
+				extbGrid = []
 				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
 				srno = 0
 				totalDr = 0.00
 				totalCr = 0.00
+				totalDrBal = 0.00
+				totalCrBal = 0.00
+				difftb = 0.00
 				for account in accountRecords:
 					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
+						continue
+					srno += 1
+					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"openingbalance":calbalData["balbrought"], "totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
+					
+					totalDr += calbalData["totaldrbal"]
+					totalCr +=  calbalData["totalcrbal"] 
+					if calbalData["baltype"]=="Dr":
+						extbrow["curbaldr"] = "%.2f"%(calbalData["curbal"])
+						extbrow["curbalcr"] = ""
+						totalDrBal += calbalData["curbal"]
+					if calbalData["baltype"]=="Cr":
+						extbrow["curbaldr"] = ""
+						extbrow["curbalcr"] = calbalData["curbal"]
+						totalCrBal += calbalData["curbal"]
+					extbGrid.append(extbrow)
+				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal)}
+				extbGrid.append()
+				
+				if totalDrBal>totalCrBal:
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":""}
+					extbrow["curbalcr"] = "%.2f"%(totalDrBal - totalCrBal)
+					extbrow["curbaldr"] =""
+					extbGrid.append()
+				if totalCrBal>totalDrBal:
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":""}
+					extbrow["curbaldr"] = "%.2f"%(totalDrBal - totalCrBal)
+					extbrow["curbalcr"] =""
+					extbGrid.append()
+				
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
