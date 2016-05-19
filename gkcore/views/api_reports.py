@@ -476,7 +476,7 @@ class api_reports(object):
 					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
 					srno += 1
-					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"openingbalance":calbalData["balbrought"], "totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
+					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"openingbalance":"%.2f(%s) "% (calbalData["balbrought"],calbalData["openingbaltype"]), "totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
 					
 					totalDr += calbalData["totaldrbal"]
 					totalCr +=  calbalData["totalcrbal"] 
@@ -502,7 +502,7 @@ class api_reports(object):
 					extbrow["curbaldr"] = "%.2f"%(totalDrBal - totalCrBal)
 					extbrow["curbalcr"] =""
 					extbGrid.append()
-				
+				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
