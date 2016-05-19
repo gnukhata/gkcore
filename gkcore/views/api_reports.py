@@ -490,7 +490,7 @@ class api_reports(object):
 						totalDrBal += calbalData["curbal"]
 					if calbalData["baltype"]=="Cr":
 						extbrow["curbaldr"] = ""
-						extbrow["curbalcr"] = calbalData["curbal"]
+						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
 					extbGrid.append(extbrow)
 				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal)}
