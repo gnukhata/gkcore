@@ -149,3 +149,27 @@ class api_user(object):
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+
+	@view_config(request_method='DELETE', renderer ='json')
+	def deleteuser(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				dataset = self.request.json_body
+				if userRole[0]==-1:
+					result = con.execute(gkdb.users.delete().where(gkdb.users.c.userid==dataset["userid"]))
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
