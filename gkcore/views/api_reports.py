@@ -206,7 +206,7 @@ class api_reports(object):
 		The columns  in the grid include:
 		*Date,Particular,voucher Number, Dr,Cr and balance at end of transaction.
 		"""
-		
+
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -279,7 +279,7 @@ class api_reports(object):
 				if calbalDict["openbaltype"] == "Cr":
 					calbalDict["totalcrbal"] -= calbalDict["balbrought"]
 				if calbalDict["openbaltype"] == "Dr":
-					calbalDict["totaldrbal"] -= calbalDict["balbrought"] 
+					calbalDict["totaldrbal"] -= calbalDict["balbrought"]
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":"Total of Transactions","balance":""}
 				vouchergrid.append(ledgerRecord)
 				ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":str(calculateTo),"narration":"", "particulars":"Closing Balance C/F","balance":""}
@@ -321,7 +321,7 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-			
+
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
 		"""
@@ -336,7 +336,7 @@ class api_reports(object):
 		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
 		All rows in the ntbGrid are dictionaries.
 		"""
-		
+
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -368,7 +368,7 @@ class api_reports(object):
 						ntbRow["Dr"] = ""
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						totalCr = totalCr + calbalData["curbal"]
-					ntbGrid.append(ntbRow)	
+					ntbGrid.append(ntbRow)
 				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr) })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
@@ -396,7 +396,7 @@ class api_reports(object):
 		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
 		All rows in the ntbGrid are dictionaries.
 		"""
-		
+
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -433,5 +433,79 @@ class api_reports(object):
 					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr Balance": "%.2f"%(baldiff),"Cr Balance":"" })
 					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalCr),"Dr Balance":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='type=extendedtrialbalance', renderer='json')
+	def extendedTrialBalance(self):
+		"""
+		Purpose:
+		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
+		Description:
+		This method has type=nettrialbalance as request_param in view_config.
+		the method takes financial start and calculateto as parameters.
+		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
+		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
+		Then all dR balances and all Cr balances are added to get total balance for each side.
+		After this all closing balances are added either on Dr or Cr side depending on the baltype.
+		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		All rows in the extbGrid are dictionaries.
+		"""
+
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountRecords = accountData.fetchall()
+				extbGrid = []
+				financialStart = self.request.params["financialstart"]
+				calculateTo =  self.request.params["calculateto"]
+				srno = 0
+				totalDr = 0.00
+				totalCr = 0.00
+				totalDrBal = 0.00
+				totalCrBal = 0.00
+				difftb = 0.00
+				for account in accountRecords:
+					calbalData = self.calculateBalance(account["accountcode"], financialStart, financialStart, calculateTo)
+					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
+						continue
+					srno += 1
+					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
+					if calbalData["balbrought"] > 0:
+						extbrow["openingbalance"]="%.2f(%s)"% (calbalData["balbrought"],calbalData["openbaltype"])
+					else:
+						extbrow["openingbalance"] = "0.00"
+					totalDr += calbalData["totaldrbal"]
+					totalCr +=  calbalData["totalcrbal"]
+					if calbalData["baltype"]=="Dr":
+						extbrow["curbaldr"] = "%.2f"%(calbalData["curbal"])
+						extbrow["curbalcr"] = ""
+						totalDrBal += calbalData["curbal"]
+					if calbalData["baltype"]=="Cr":
+						extbrow["curbaldr"] = ""
+						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
+						totalCrBal += calbalData["curbal"]
+					extbGrid.append(extbrow)
+				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""}
+				extbGrid.append(extbrow)
+
+				if totalDrBal>totalCrBal:
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
+					extbrow["curbalcr"] = "%.2f"%(totalDrBal - totalCrBal)
+					extbrow["curbaldr"] =""
+					extbGrid.append(extbrow)
+				if totalCrBal>totalDrBal:
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
+					extbrow["curbaldr"] = "%.2f"%(totalDrBal - totalCrBal)
+					extbrow["curbalcr"] =""
+					extbGrid.append(extbrow)
+				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
