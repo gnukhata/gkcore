@@ -440,15 +440,16 @@ class api_reports(object):
 	def extendedTrialBalance(self):
 		"""
 		Purpose:
-		Returns a grid containing gross trial balance for all accounts started from financial start till the end date provided by the user.
+		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
 		Description:
 		This method has type=nettrialbalance as request_param in view_config.
 		the method takes financial start and calculateto as parameters.
 		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
 		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
 		Then all dR balances and all Cr balances are added to get total balance for each side.
+		After this all closing balances are added either on Dr or Cr side depending on the baltype.
 		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
-		All rows in the ntbGrid are dictionaries.
+		All rows in the extbGrid are dictionaries.
 		"""
 
 		try:
@@ -476,8 +477,11 @@ class api_reports(object):
 					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
 					srno += 1
-					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"openingbalance":"%.2f(%s) "% (calbalData["balbrought"],calbalData["openbaltype"]), "totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
-
+					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
+					if calbalData["balbrought"] > 0:
+						extbrow["openingbalance"]="%.2f(%s)"% (calbalData["balbrought"],calbalData["openbaltype"])
+					else:
+						extbrow["openingbalance"] = "0.00"
 					totalDr += calbalData["totaldrbal"]
 					totalCr +=  calbalData["totalcrbal"]
 					if calbalData["baltype"]=="Dr":
