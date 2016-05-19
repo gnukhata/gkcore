@@ -92,7 +92,7 @@ class api_transaction(object):
 		We will run a loop on the dictionary for accountcode and amounts both for Dr and Cr dicts.
 		And for each account code we will fire update query.
 		As usual the checking for jwt in request headers will be first done only then the code will procede.
-		""" 
+		"""
 
 		try:
 			token = self.request.headers["gktoken"]
@@ -106,7 +106,7 @@ class api_transaction(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				drs = dataset["drs"]
-				crs = dataset["crs"]				
+				crs = dataset["crs"]
 				result = con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
@@ -153,7 +153,7 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
+				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher,"userrole":urole["userrole"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
