@@ -493,16 +493,16 @@ class api_reports(object):
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
 					extbGrid.append(extbrow)
-				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal)}
+				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""}
 				extbGrid.append(extbrow)
 
 				if totalDrBal>totalCrBal:
-					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":""}
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
 					extbrow["curbalcr"] = "%.2f"%(totalDrBal - totalCrBal)
 					extbrow["curbaldr"] =""
 					extbGrid.append(extbrow)
 				if totalCrBal>totalDrBal:
-					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":""}
+					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
 					extbrow["curbaldr"] = "%.2f"%(totalDrBal - totalCrBal)
 					extbrow["curbalcr"] =""
 					extbGrid.append(extbrow)
