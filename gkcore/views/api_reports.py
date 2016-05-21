@@ -380,7 +380,7 @@ class api_reports(object):
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
 					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr": "%.2f"%(baldiff),"Dr":"" })
-					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","TotalCr": "%.2f"%(totalDr),"TotalDr":"%.2f"%(totalDr) })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalDr),"Dr":"%.2f"%(totalDr) })
 				if totalDr < totalCr:
 					baldiff = totalCr - totalDr
 					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"" })
@@ -430,15 +430,15 @@ class api_reports(object):
 					totalDr += calbalData["totaldrbal"]
 					totalCr += calbalData["totalcrbal"]
 					gtbGrid.append(gtbRow)
-				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr Balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"" })
+				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"" })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
-					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr Balance": "%.2f"%(baldiff),"Dr Balance":"" })
-					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalDr),"Dr Balance":"%.2f"%(totalDr) })
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr balance": "%.2f"%(baldiff),"Dr balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr balance": "%.2f"%(totalDr),"Dr balance":"%.2f"%(totalDr) })
 				if totalDr < totalCr:
 					baldiff = totalCr - totalDr
-					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr Balance": "%.2f"%(baldiff),"Cr Balance":"" })
-					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr Balance": "%.2f"%(totalCr),"Dr Balance":"%.2f"%(totalCr) })
+					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr balance": "%.2f"%(baldiff),"Cr balance":"" })
+					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr balance": "%.2f"%(totalCr),"Dr balance":"%.2f"%(totalCr) })
 				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -467,7 +467,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
 				extbGrid = []
@@ -484,6 +484,10 @@ class api_reports(object):
 					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
 					srno += 1
+					if calbalData["openbaltype"] == "Cr":
+						calbalData["totalcrbal"] -= calbalData["balbrought"]
+					if calbalData["openbaltype"] == "Dr":
+						calbalData["totaldrbal"] -= calbalData["balbrought"]
 					extbrow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"totaldr":"%.2f"%(calbalData["totaldrbal"]),"totalcr":"%.2f"%(calbalData["totalcrbal"]),"srno":srno}
 					if calbalData["balbrought"] > 0:
 						extbrow["openingbalance"]="%.2f(%s)"% (calbalData["balbrought"],calbalData["openbaltype"])
@@ -504,15 +508,11 @@ class api_reports(object):
 				extbGrid.append(extbrow)
 
 				if totalDrBal>totalCrBal:
-					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
-					extbrow["curbalcr"] = "%.2f"%(totalDrBal - totalCrBal)
-					extbrow["curbaldr"] =""
-					extbGrid.append(extbrow)
+					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbalcr":"%.2f"%(totalDrBal - totalCrBal),"curbaldr":""})
+					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalDrBal),"srno":""})
 				if totalCrBal>totalDrBal:
-					extbrow = {"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":""}
-					extbrow["curbaldr"] = "%.2f"%(totalDrBal - totalCrBal)
-					extbrow["curbalcr"] =""
-					extbGrid.append(extbrow)
+					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":""})
+					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""})
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
