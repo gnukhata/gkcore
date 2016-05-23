@@ -215,7 +215,7 @@ class api_reports(object):
   		if authDetails["auth"] == False:
   			return {"gkstatus": enumdict["UnauthorisedAccess"]}
   		else:
-  			#try:
+  			try:
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
   				orgcode = authDetails["orgcode"]
@@ -334,8 +334,8 @@ class api_reports(object):
   					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":""}
   					vouchergrid.append(ledgerRecord)
   				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
-  			#except:
-  				#return {"gkstatus":enumdict["ConnectionFailed"]}
+  			except:
+  				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
