@@ -29,7 +29,7 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -227,6 +227,14 @@ class api_reports(object):
   				calbalDict = self.calculateBalance(accountCode,financialStart,calculateFrom,calculateTo)
   				vouchergrid = []
   				bal=0.00
+				accnamerow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(accountCode)))
+				accname = accnamerow.fetchone()
+				headerrow = {"accountname":''.join(accname),"projectname":"","calculateto":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"calculatefrom":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y')}
+				if projectCode!="":
+					prjnamerow = con.execute(select([projects.c.projectname]).where(projects.c.projectcode==int(projectCode)))
+					prjname = prjnamerow.fetchone()
+					headerrow["projectname"]=''.join(prjname)
+
   				if projectCode == "" and calbalDict["balbrought"]>0:
   					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"particulars":["Opening Balance"],"balance":"","narration":"","status":""}
   					if calbalDict["openbaltype"] =="Dr":
@@ -325,7 +333,7 @@ class api_reports(object):
   				else:
   					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":""}
   					vouchergrid.append(ledgerRecord)
-  				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"]}
+  				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
   			except:
   				return {"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -467,7 +475,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
 				extbGrid = []
@@ -514,5 +522,5 @@ class api_reports(object):
 					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":""})
 					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""})
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
-			#except:
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
