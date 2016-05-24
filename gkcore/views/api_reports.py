@@ -452,7 +452,7 @@ class api_reports(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=extendedtrialbalance', renderer='json')
-	def cashFlow(self):
+	def extendedtrialbalance(self):
 		"""
 		Purpose:
 		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
@@ -553,26 +553,58 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				calculateForm = self.request.params["calculatefrom"]
+				calculateFrom = self.request.params["calculatefrom"]
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
-				cbAccountsData = eng.execute("select accountcode, openingbalance, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				cbAccountsData = eng.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
 				cbAccounts = cbAccountsData.fetchall()
 				receiptcf = []
-				transactionsgrid = []
+				paymentcf = []
+				rctransactionsgrid = []
+				closinggrid = []
 				rcaccountcodes = []
-				receiptcf.append({"toby":"To","particulars":"Opening balance","amount":""})
+				pyaccountcodes = []
+				rctotal = 0.00
+				pytotal = 0.00
+				receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":""})
+				closinggrid.append({"toby":"By","particulars":"Closing balance","amount":"","accountcode":""})
 				for cbAccount in cbAccounts:
-					if cbAccount["openingbalance"]!=0.00:
-						receiptcf.append({"toby":"","particulars":str(cbAccount["accountname"]),"amount":cbAccount["openingbalance"]})
-					transanctionsRecords = eng.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and vouchertype != 'contra' and (drs ? '%s');"%(calculateFrom, calculateTo, accountCode))
-					transanctions = transanctionsRecords.fetchall()
-					for transanction in transactions:
-						for cr in transanction["crs"]:
-							if cr not in rcaccountcodes:
+					opacc = self.calculateBalance(cbAccount["accountcode"], financialStart, calculateFrom, calculateTo)
+					if opacc["balbrought"]!=0.00:
+						receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["balbrought"])+"(%s)"%(opacc["openbaltype"]),"accountcode":cbAccount["accountcode"]})
+						if opacc["openbaltype"]=="Dr":
+							rctotal += float(opacc["balbrought"])
+						if opacc["openbaltype"]=="Cr":
+							rctotal -= float(opacc["balbrought"])
+					if opacc["curbal"]!=0.00:
+						closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"])+"(%s)"%(opacc["baltype"]),"accountcode":cbAccount["accountcode"]})
+						if opacc["baltype"]=="Dr":
+							pytotal += float(opacc["curbal"])
+						if opacc["baltype"]=="Cr":
+							pytotal -= float(opacc["curbal"])
+					transactionsRecords = eng.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and vouchertype != 'contra' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
+					transactions = transactionsRecords.fetchall()
+					for transaction in transactions:
+						for cr in transaction["crs"]:
+							if cr not in rcaccountcodes and int(cr) != int(cbAccount["accountcode"]):
 								rcaccountcodes.append(cr)
-								calbaldata = self.calculateBalance(cr, financialStart, calculateFrom, calculateTo)
-								
-								
+								rccalbaldata = self.calculateBalance(cr, financialStart, calculateFrom, calculateTo)
+								rcaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
+								rcacc= ''.join(rcaccountname.fetchone())
+								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(rccalbaldata["totalcrbal"]),"accountcode":int(cr)})
+								rctotal += float(rccalbaldata["totalcrbal"])
+						for dr in transaction["drs"]:
+							if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
+								pyaccountcodes.append(dr)
+								pycalbaldata = self.calculateBalance(dr, financialStart, calculateFrom, calculateTo)
+								pyaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
+								pyacc= ''.join(pyaccountname.fetchone())
+								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(pycalbaldata["totaldrbal"]),"accountcode":int(dr)})
+								pytotal += float(pycalbaldata["totaldrbal"])
+				receiptcf.extend(rctransactionsgrid)
+				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
+				paymentcf.extend(closinggrid)
+				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":""})
+				return {"gkstatus":enumdict["Success"],"rcgkresult":receiptcf,"pygkresult":paymentcf}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
