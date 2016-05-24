@@ -452,7 +452,7 @@ class api_reports(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=extendedtrialbalance', renderer='json')
-	def extendedtrialbalance(self):
+	def extendedTrialBalance(self):
 		"""
 		Purpose:
 		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
