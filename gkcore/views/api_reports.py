@@ -452,7 +452,7 @@ class api_reports(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=extendedtrialbalance', renderer='json')
-	def extendedTrialBalance(self):
+	def cashFlow(self):
 		"""
 		Purpose:
 		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
@@ -522,5 +522,57 @@ class api_reports(object):
 					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":""})
 					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""})
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
+
+
+	@view_config(request_param='type=cashflow', renderer='json')
+	def cashflow(self):
+		"""
+		Purpose:
+		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
+		Description:
+		This method has type=nettrialbalance as request_param in view_config.
+		the method takes financial start and calculateto as parameters.
+		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
+		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
+		Then all dR balances and all Cr balances are added to get total balance for each side.
+		After this all closing balances are added either on Dr or Cr side depending on the baltype.
+		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		All rows in the extbGrid are dictionaries.
+		"""
+
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				calculateForm = self.request.params["calculatefrom"]
+				calculateTo = self.request.params["calculateto"]
+				financialStart = self.request.params["financialstart"]
+				cbAccountsData = eng.execute("select accountcode, openingbalance, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				cbAccounts = cbAccountsData.fetchall()
+				receiptcf = []
+				transactionsgrid = []
+				rcaccountcodes = []
+				receiptcf.append({"toby":"To","particulars":"Opening balance","amount":""})
+				for cbAccount in cbAccounts:
+					if cbAccount["openingbalance"]!=0.00:
+						receiptcf.append({"toby":"","particulars":str(cbAccount["accountname"]),"amount":cbAccount["openingbalance"]})
+					transanctionsRecords = eng.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and vouchertype != 'contra' and (drs ? '%s');"%(calculateFrom, calculateTo, accountCode))
+					transanctions = transanctionsRecords.fetchall()
+					for transanction in transactions:
+						for cr in transanction["crs"]:
+							if cr not in rcaccountcodes:
+								rcaccountcodes.append(cr)
+								calbaldata = self.calculateBalance(cr, financialStart, calculateFrom, calculateTo)
+								
+								
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
