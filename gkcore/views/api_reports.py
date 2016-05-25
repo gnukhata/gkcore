@@ -29,7 +29,7 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -38,7 +38,9 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_user import getUserRole
-from datetime import datetime
+from datetime import datetime,date
+import calendar
+from monthdelta import monthdelta
 con = Connection
 con = eng.connect()
 
@@ -187,6 +189,68 @@ class api_reports(object):
 			currentBalance = ttlCrBalance - ttlDrBalance
 			balType = "Cr"
 		return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
+
+	@view_config(request_param='type=monthlyledger', renderer='json')
+	def monthlyLedger(self):
+		"""
+		Purpose:
+		Gets the list of all months with their respective closing balance for the given account.
+		takes accountcode as input parameter.
+		description:
+		This function is used to produce a monthly ledger report for a given account.
+		This is a useful report from which the accountant can choose
+		a month for which the entire ledger can be displayed.
+		In this report just the closing balance at end of every month is displayed.
+		Takes accountcode as input parameter.
+		This function is called when type=monthlyledger is passed to the /reports url.
+		accountcode is extracted from json_body from request.
+		Orgcode is procured from the jwt header.
+		The list returned is a grid containing set of dictionaries.
+		For each month calculatebalance will be called to get the closing balnace for that range.
+		each dictionary will have 2 keys with their respective values,
+		month and balance will be the 2 key value pares.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				orgcode = authDetails["orgcode"]
+				accountCode = self.request.params["accountcode"]
+				accNameData= con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode== accountCode))
+				row = accNameData.fetchone()
+				accname = row["accountname"]
+				finStartData = con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==orgcode))
+				finRow = finStartData.fetchone()
+				financialStart = finRow['yearstart']
+				finEndData = con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+				finEndrow = finEndData.fetchone()
+				financialEnd = finEndrow['yearend']
+				monthCounter = 1
+				startMonthDate = financialStart
+				endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
+				monthlyBal = []
+				while endMonthDate <= financialEnd:
+					monthClBal =  self.calculateBalance(accountCode, str(financialStart), str(financialStart), str(endMonthDate)) 
+					if (monthClBal["baltype"] == "Dr"):
+						clBal = {"month": startMonthDate.month, "Dr": "%.2f"%float(monthClBal["curbal"]), "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate)}
+						monthlyBal.append(clBal)
+					if (monthClBal["baltype"] == "Cr"):
+						clBal = {"month": startMonthDate.month, "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate)}
+						monthlyBal.append(clBal)
+					startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
+					endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
+					monthCounter  +=1
+				return {"gkstatus":enumdict["Success"], "gkresult": monthlyBal, "accountcode":accountCode}
+
+			except Exception as E:
+				print E
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
 
 	@view_config(request_param='type=ledger', renderer='json')
   	def ledger(self):
