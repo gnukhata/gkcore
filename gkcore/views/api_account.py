@@ -59,7 +59,7 @@ con = eng.connect()
 """
 default route to be attached to this resource.
 refer to the __init__.py of main gkcore package for details on routing url
-""" 
+"""
 @view_defaults(route_name='accounts')
 class api_account(object):
 	#constructor will initialise request.
@@ -108,7 +108,7 @@ class api_account(object):
 		*openingbal as float
 		*groupsubgroupcode
 		The request_method is  get meaning retriving data.
-		The route_name has been override here to make a special call which does not come under view_default. 
+		The route_name has been override here to make a special call which does not come under view_default.
 		parameter will be taken from request.matchdict in a get request.
 		Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
 		"""
@@ -144,6 +144,27 @@ class api_account(object):
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+
+	@view_config(request_method='GET',request_param='find=exists', renderer ='json')
+	def accountExists(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				accountname = self.request.params["accountname"]
+				result = eng.execute("select count(accountname) as acc from accounts where accountname='%s' and orgcode = %d"%(accountname,authDetails["orgcode"]))
+				acccount = result.fetchone()
+				if acccount["acc"]>0:
+					return {"gkstatus": enumdict["DuplicateEntry"]}
+				else:
+					return {"gkstatus": enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 
