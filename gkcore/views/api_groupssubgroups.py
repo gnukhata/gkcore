@@ -144,15 +144,15 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
-			result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
-			grps = []
-			for row in result:
-				grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-			grpbal = self.getGroupBalance(authDetails["orgcode"])
-			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
-			#except:
-				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			try:
+				result = con.execute(select([gkdb.groupsubgroups.c.groupname,gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.subgroupof==null())))
+				grps = []
+				for row in result:
+					grps.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
+				grpbal = self.getGroupBalance(authDetails["orgcode"])
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grps, "baltbl":grpbal}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 
 	@view_config(route_name="groupDetails", request_method='GET', renderer ='json')
 	def getSubgroupsByGroup(self):

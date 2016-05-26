@@ -672,3 +672,64 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"rcgkresult":receiptcf,"pygkresult":paymentcf}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='type=projectstatement', renderer='json')
+	def projectStatement(self):
+		"""
+		Purpose:
+		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
+		Description:
+		This method has type=nettrialbalance as request_param in view_config.
+		the method takes financial start and calculateto as parameters.
+		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
+		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
+		Then all dR balances and all Cr balances are added to get total balance for each side.
+		After this all closing balances are added either on Dr or Cr side depending on the baltype.
+		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		All rows in the extbGrid are dictionaries.
+		"""
+
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				calculateTo = self.request.params["calculateto"]
+				financialStart = self.request.params["financialstart"]
+				projectCode= self.request.params["projectcode"]
+				totalDr = 0.00
+				totalCr = 0.00
+				grpaccsdata = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				grpaccs = grpaccsdata.fetchall()
+				srno = 1
+				projectStatement = []
+				for accountRow in grpaccs:
+					group = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
+					groupRow = group.fetchone()
+					drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					drresultRow = drresult.fetchone()
+					crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					crresultRow = crresult.fetchone()
+					statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
+					if drresultRow["total"]==None:
+						statementRow["totalout"] = '%.2f'%float(0.00)
+					else:
+						statementRow["totalout"] = '%.2f'%float(drresultRow["total"])
+						totalDr = totalDr + drresultRow["total"]
+					if crresultRow["total"]==None:
+						statementRow["totalin"] = '%.2f'%float(0.00)
+					else:
+						statementRow["totalin"] = '%.2f'%float(crresultRow["total"])
+						totalCr = totalCr + crresultRow["total"]
+					if float(statementRow["totalout"]) == 0 and float(statementRow["totalin"]) == 0:
+						continue
+					srno = srno +1
+					projectStatement.append(statementRow)
+				projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
+				return {"gkstatus":enumdict["Success"],"gkresult":projectStatement}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
