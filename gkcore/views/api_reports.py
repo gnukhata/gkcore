@@ -112,6 +112,8 @@ class api_reports(object):
 		obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
 		ob = obData.fetchone()
 		openingBalance = float(ob["openingbal"])
+		financialStart = str(financialStart)
+		calculateFrom= str(calculateFrom)
 		financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
 		calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
 		calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
