@@ -964,7 +964,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				orgcode = authDetails["orgcode"]
 				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
@@ -1033,7 +1033,7 @@ class api_reports(object):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
 						applicationgroupWiseTotal -= accountDetails["balbrought"]
-				applicationsTotal += groupWiseTotal
+				applicationsTotal += applicationgroupWiseTotal
 				balanceSheet.append({"sourcesgroupname":"Loans(Liability)","sourceamount":sourcegroupWiseTotal,"appgroupname":"Investments","applicationamount":applicationgroupWiseTotal})
 
 
@@ -1087,7 +1087,7 @@ class api_reports(object):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
 						applicationgroupWiseTotal -= accountDetails["balbrought"]
-				applicationsTotal += groupWiseTotal
+				applicationsTotal += applicationgroupWiseTotal
 				balanceSheet.append({"sourcesgroupname":"Reserves","sourceamount":sourcegroupWiseTotal,"appgroupname":"Loans(Asset)","applicationamount":applicationgroupWiseTotal})
 
 
@@ -1114,5 +1114,5 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"gkresult":balanceSheet}
 
 
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
