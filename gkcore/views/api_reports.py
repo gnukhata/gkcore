@@ -944,8 +944,10 @@ class api_reports(object):
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["curbal"]
+						print groupWiseTotal
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal -= accountDetails["curbal"]
+						print groupWiseTotal
 				applicationsTotal += groupWiseTotal
 				balanceSheet.append({"groupname":"Loans(Asset)", "amount":"%.2f"%(groupWiseTotal)})
 
@@ -1152,7 +1154,7 @@ class api_reports(object):
 				sourcesTotal += sourcegroupWiseTotal
 
 				#Calculate grouptotal for group Loans(Asset)
-				applicationgroupWiseTotall = 0.00
+				applicationgroupWiseTotal = 0.00
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
@@ -1176,6 +1178,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						applicationgroupWiseTotal -= accountDetails["curbal"]
 				applicationsTotal += applicationgroupWiseTotal
+
 
 				if (expenseTotal > incomeTotal):
 					balanceSheet.append({"sourcesgroupname":"Loss for the Year","sourceamount":"%.2f"%(profit),"appgroupname":"Miscellaneous Expenses(Asset)","applicationamount":"%.2f"%(applicationgroupWiseTotal)})
