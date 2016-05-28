@@ -736,7 +736,7 @@ class api_reports(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(request_param="type=balancesheet",renderer="json")
+	@view_config(request_param="type=verticalbalancesheet",renderer="json")
 	def balanceSheet(self):
 		"""
 		Purpose:
@@ -750,7 +750,7 @@ class api_reports(object):
 		end date is extracted from the request_params
 		The accountcode is extracted from the database under  groupcode for groups relevent to balance sheet (meaning all groups except income and expence groups).
 		the  groupbalance will be initialized to 0.0 for each group.
-		this accountcode is sent to the calculateBalance function along with financialstart, enddate
+		this accountcode is sent to the calculateBalance function along with financialstart, calculateTo
 		the function will return the closing balance related to each account which will be later added or subtracted according to the accounting rules from the group balance
 		the above statements will be running in a loop for each group.
 		Later all the group balances for sources and application will be added
@@ -772,8 +772,8 @@ class api_reports(object):
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
-				endDate = self.request.params["endDate"]
-				endDate = endDate
+				calculateTo = self.request.params["calculateto"]
+				calculateTo = calculateTo
 				balanceSheet=[]
 				sourcesTotal = 0.00
 				applicationsTotal = 0.00
@@ -791,7 +791,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -805,7 +805,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -820,7 +820,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -835,7 +835,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -854,7 +854,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -869,7 +869,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -884,7 +884,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -899,7 +899,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -914,7 +914,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -949,7 +949,7 @@ class api_reports(object):
 		end date is extracted from the request_params
 		The accountcode is extracted from the database under  groupcode for groups relevent to balance sheet (meaning all groups except income and expence groups).
 		the  groupbalance will be initialized to 0.0 for each group.
-		this accountcode is sent to the calculateBalance function along with financialstart, enddate
+		this accountcode is sent to the calculateBalance function along with financialstart, calculateTo
 		the function will return the closing balance related to each account which will be later added or subtracted according to the accounting rules from the group balance
 		the above statements will be running in a loop for each group.
 		Later all the group balances for sources and application will be added
@@ -970,8 +970,8 @@ class api_reports(object):
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
-				endDate = self.request.params["endDate"]
-				endDate = endDate
+				calculateTo = self.request.params["calculateTo"]
+				calculateTo = calculateTo
 				balanceSheet=[]
 				sourcegroupWiseTotal = 0.00
 				applicationgroupWiseTotal = 0.00
@@ -990,7 +990,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						sourcegroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1001,7 +1001,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1015,7 +1015,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						sourcegroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1028,7 +1028,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1042,7 +1042,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						sourcegroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1055,7 +1055,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1069,7 +1069,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Cr"):
 						sourcegroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1082,7 +1082,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1096,7 +1096,7 @@ class api_reports(object):
 				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, endDate)
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
 					if (accountDetails["baltype"]=="Dr"):
 						applicationgroupWiseTotal += accountDetails["balbrought"]
 					if (accountDetails["baltype"]=="Cr"):
