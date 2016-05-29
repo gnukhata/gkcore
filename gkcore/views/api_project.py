@@ -139,7 +139,7 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.projects.c.projectname,gkdb.projects.c.projectcode,gkdb.projects.c.sanctionedamount]).where(gkdb.projects.c.orgcode==authDetails["orgcode"]))
+				result = con.execute(select([gkdb.projects.c.projectname,gkdb.projects.c.projectcode,gkdb.projects.c.sanctionedamount]).where(gkdb.projects.c.orgcode==authDetails["orgcode"]).order_by(gkdb.projects.c.projectname))
 				prjs = []
 				for row in result:
 					prjs.append({"projectcode":row["projectcode"], "projectname":row["projectname"], "sanctionedamount":"%.2f"%float(row["sanctionedamount"])})

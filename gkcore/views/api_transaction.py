@@ -172,7 +172,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherType = self.request.params["vouchertype"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -233,7 +233,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherNo = self.request.params["voucherno"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -290,7 +290,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherAmount = self.request.params["total"]
-				vouchersData = con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for vr in vouchersData:
@@ -356,7 +356,7 @@ class api_transaction(object):
 				urole = ur["gkresult"]
 				fromDate = self.request.params["from"]
 				toDate = self.request.params["to"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -414,7 +414,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherNarration = self.request.params["nartext"]
-				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)))
+				vouchersData = con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
