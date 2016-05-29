@@ -142,7 +142,7 @@ class api_user(object):
 		else:
 			try:
 				#there is only one possibility for a catch which is failed connection to db.
-				result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]))
+				result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
 				users = []
 				for row in result:
 					users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"]})

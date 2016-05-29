@@ -50,7 +50,7 @@ class api_organisation(object):
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
-			result = con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).distinct())
+			result = con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
 			orgs = []
 			for row in result:
 				orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})

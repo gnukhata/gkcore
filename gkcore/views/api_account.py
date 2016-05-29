@@ -139,7 +139,7 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]))
+				result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})

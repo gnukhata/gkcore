@@ -319,9 +319,9 @@ class api_reports(object):
   						bal = float(-calbalDict["balbrought"])
   					vouchergrid.append(openingrow)
   				if projectCode == "":
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, accountCode,accountCode))
+  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
   				else:
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
   				transactions = transactionsRecords.fetchall()
 
