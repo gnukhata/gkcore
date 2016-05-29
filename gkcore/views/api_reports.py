@@ -788,13 +788,14 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				orgcode = authDetails["orgcode"]
 				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
 				calculateTo = self.request.params["calculateto"]
+				balancetype = int(self.request.params["baltype"])
 				calculateTo = calculateTo
 				sbalanceSheet=[]
 				abalanceSheet=[]
@@ -1004,22 +1005,24 @@ class api_reports(object):
 				if applicationsTotal>sourcesTotal:
 					sbalanceSheet.append({"groupname":"Difference", "amount":"%.2f"%(difference)})
 					sbalanceSheet.append({"groupname":"Total", "amount":"%.2f"%(applicationsTotal)})
-				if len(sbalanceSheet)>len(abalanceSheet):
-					emptyno = len(sbalanceSheet)-len(abalanceSheet)
-					for i in range(0,emptyno):
-						abalanceSheet.insert(-1,{"groupname":"", "amount":"."})
-				if len(sbalanceSheet)<len(abalanceSheet):
-					emptyno = len(abalanceSheet)-len(sbalanceSheet)
-					for i in range(0,emptyno):
-						sbalanceSheet.insert(-1,{"groupname":"", "amount":"."})
+				if balancetype == 1:
+					if len(sbalanceSheet)>len(abalanceSheet):
+						emptyno = len(sbalanceSheet)-len(abalanceSheet)
+						for i in range(0,emptyno):
+							abalanceSheet.insert(-1,{"groupname":"", "amount":"."})
+					if len(sbalanceSheet)<len(abalanceSheet):
+						emptyno = len(abalanceSheet)-len(sbalanceSheet)
+						for i in range(0,emptyno):
+							sbalanceSheet.insert(-1,{"groupname":"", "amount":"."})
+
 
 
 
 				return {"gkstatus":enumdict["Success"],"gkresult":{"leftlist":sbalanceSheet,"rightlist":abalanceSheet}}
 
 
-			#except:
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 
