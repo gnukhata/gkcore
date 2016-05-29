@@ -1015,11 +1015,7 @@ class api_reports(object):
 						for i in range(0,emptyno):
 							sbalanceSheet.insert(-1,{"groupname":"", "amount":"."})
 
-
-
-
 				return {"gkstatus":enumdict["Success"],"gkresult":{"leftlist":sbalanceSheet,"rightlist":abalanceSheet}}
-
 
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -1242,6 +1238,141 @@ class api_reports(object):
 				balanceSheet.append({"sourcesgroupname":"Difference","sourceamount":"%.2f"%(difference),"appgroupname":"","applicationamount":""})
 
 				return {"gkstatus":enumdict["Success"],"gkresult":balanceSheet}
+
+
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
+
+	@view_config(request_param="type=profitloss", renderer = "json")
+	def profitLoss(self):
+		"""
+		This method returns a grid containing the profit and loss statement of the organisation.
+		The profit and loss statement has all the direct and indirect expenses and the direct and indirect incomes.
+		If the incomes are greater than the expenses, the organisation is in profit
+		Purpose:
+		the method takes the orgcode and the calculateto as the input parameters and returns a grid containing the list of all accounts under the group of direct and indirect income and, direct and indirect expenses along with their respective balances. It also return the gross and net profit/loss made by the company.
+		Description:
+		the function generates the profit and loss statement of the organisation.
+		this function is called when the type=profitloss is passed to the /report url.
+		the orgcode is extracted from the header
+		calculateTo date is extracted from the request_params
+		the accountcodes under the groups direct income and direct expense are extracted from the database.
+		then these codes are sent to the calculateBalance function which returns their current balances.
+		the total of these balances give the gross profit/loss of the organisation.
+		then the accountcodes under the indirect income and indirect expense are extracted from the database.
+		and sent to the calculateBalance function along with the financial start and the calculateto date.
+		the total of balances of these accounts along with the gross profit/loss gives the net profit/loss of the organisation
+		this list of two dictionaries conatining each account, its respective balance as one dictionary and  gross profit/loss along with the amount and net profit/loss along with the amount also as dictionary is returned.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				orgcode = authDetails["orgcode"]
+				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+				financialstartRow = financialstart.fetchone()
+				financialStart = financialstartRow["yearstart"]
+				orgtype = financialstartRow["orgtype"]
+				calculateTo = self.request.params["calculateto"]
+				calculateTo = calculateTo
+				expense = []
+				income = []
+				incomeTotal = 0.00
+				expenseTotal = 0.00
+				difference = 0.00
+				profit = ""
+				loss = ""
+				if (orgtype == "Profit Maknig"):
+					profit = "Profit"
+					loss = "Loss"
+				if (orgtype == "Not For Profit"):
+					profit = "Surplus"
+					loss = "Deficit"
+
+				expense.append({"toby":"To,","accountname":"DIRECT EXPENSE", "amount":"", "accountcode":""})
+				income.append({"toby":"By,","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
+
+				#Calculate all expense(Direct Expense)
+				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense'));"%(orgcode, orgcode, orgcode))
+				accountCodes = accountcodeData.fetchall()
+				for accountRow in accountCodes:
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if (accountDetails["baltype"]=="Dr"):
+						expenseTotal += accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Cr"):
+						expenseTotal -= accountDetails["curbal"]
+					expense.append({"toby":"To,","accountname":accountRow["accountname"], "amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
+
+				#Calculate all income(Direct and Indirect Income)
+				accountcodeData = eng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income'));"%(orgcode, orgcode, orgcode))
+				accountCodes = accountcodeData.fetchall()
+				for accountRow in accountCodes:
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if (accountDetails["baltype"]=="Cr"):
+						incomeTotal += accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Dr"):
+						incomeTotal -= accountDetails["curbal"]
+					income.append({"toby":"By,","accountname":accountRow["accountname"], "amount":"%.2f"%float(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
+
+				if(expenseTotal > incomeTotal):
+					difference = expenseTotal - incomeTotal
+					income.append({"toby":"By,","accountname":"Gross "+loss+" C/F","amount":difference, "accountcode":""})
+					expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":difference, "accountcode":""})
+					expenseTotal = 0.00
+					expenseTotal = difference
+					incomeTotal = 0.00
+
+				if(expenseTotal < incomeTotal):
+					difference = incomeTotal - expenseTotal
+					expense.append({"toby":"To,","accountname":"Gross "+profit+" C/F","amount":"%.2f"%(difference), "accountcode":""})
+					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%(difference), "accountcode":""})
+					incomeTotal = 0.00
+					incomeTotal = difference
+					expenseTotal = 0.00
+
+
+				expense.append({"toby":"To,","accountname":"INDIRECT EXPENSE", "amount":"", "accountcode":""})
+				income.append({"toby":"By,","accountname":"INDIRECT INCOME","amount":"", "accountcode":""})
+
+				difference = 0.00
+				#Calculate all expense(Indirect Expense)
+				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
+				accountCodes = accountcodeData.fetchall()
+				for accountRow in accountCodes:
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if (accountDetails["baltype"]=="Dr"):
+						expenseTotal += accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Cr"):
+						expenseTotal -= accountDetails["curbal"]
+					expense.append({"toby":"To,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]),"accountcode":accountRow["accountcode"]})
+
+				#Calculate all income(Indirect Income)
+				accountcodeData = eng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income'));"%(orgcode, orgcode, orgcode))
+				accountCodes = accountcodeData.fetchall()
+				for accountRow in accountCodes:
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if (accountDetails["baltype"]=="Cr"):
+						incomeTotal += accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Dr"):
+						incomeTotal -= accountDetails["curbal"]
+					income.append({"toby":"By,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
+
+				if(expenseTotal > incomeTotal):
+					difference = expenseTotal - incomeTotal
+					income.append({"toby":"By,","accountname":"Net "+loss+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
+
+				if(expenseTotal < incomeTotal):
+					difference = incomeTotal - expenseTotal
+					expense.append({"toby":"To,","accountname":"Net "+profit+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
+
+				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
 
 			except:
