@@ -624,7 +624,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				calculateFrom = self.request.params["calculatefrom"]
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
@@ -682,12 +682,20 @@ class api_reports(object):
 								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr)})
 								pytotal += float(drresultRow["total"])
 				receiptcf.extend(rctransactionsgrid)
-				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
 				paymentcf.extend(closinggrid)
+				if len(receiptcf)>len(paymentcf):
+					emptyno = len(receiptcf)-len(paymentcf)
+					for i in range(0,emptyno):
+						paymentcf.append({"toby":"","particulars":"","amount":".","accountcode":""})
+				if len(receiptcf)<len(paymentcf):
+					emptyno = len(paymentcf)-len(receiptcf)
+					for i in range(0,emptyno):
+						receiptcf.append({"toby":"","particulars":"","amount":".","accountcode":""})
+				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
 				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":""})
 				return {"gkstatus":enumdict["Success"],"rcgkresult":receiptcf,"pygkresult":paymentcf}
-			#except:
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=projectstatement', renderer='json')
 	def projectStatement(self):
@@ -750,7 +758,7 @@ class api_reports(object):
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(request_param="type=verticalbalancesheet",renderer="json")
+	@view_config(request_param="type=balancesheet",renderer="json")
 	def balanceSheet(self):
 		"""
 		Purpose:
@@ -780,7 +788,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				orgcode = authDetails["orgcode"]
 				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
@@ -788,11 +796,12 @@ class api_reports(object):
 				orgtype = financialstartRow["orgtype"]
 				calculateTo = self.request.params["calculateto"]
 				calculateTo = calculateTo
-				balanceSheet=[]
+				sbalanceSheet=[]
+				abalanceSheet=[]
 				sourcesTotal = 0.00
 				applicationsTotal = 0.00
 				difference = 0.00
-				balanceSheet.append({"groupname":"Sources:","amount":""})
+				sbalanceSheet.append({"groupname":"Sources:","amount":""})
 				capital_Corpus = ""
 				if orgtype == "Profit Making":
 					capital_Corpus = "Capital"
@@ -812,7 +821,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal -= accountDetails["balbrought"]
 				sourcesTotal += groupWiseTotal
-				balanceSheet.append({"groupname":capital_Corpus, "amount":"%.2f"%(groupWiseTotal)})
+				sbalanceSheet.append({"groupname":capital_Corpus, "amount":"%.2f"%(groupWiseTotal)})
 
 
 				#Calculate grouptotal for group Loans(Liability)
@@ -826,7 +835,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal -= accountDetails["curbal"]
 				sourcesTotal += groupWiseTotal
-				balanceSheet.append({"groupname": "Loans(Liability)", "amount":"%.2f"%(groupWiseTotal)})
+				sbalanceSheet.append({"groupname": "Loans(Liability)", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				print "Current Liabilities"
@@ -841,7 +850,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal -= accountDetails["curbal"]
 				sourcesTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Current Liabilities", "amount":"%.2f"%(groupWiseTotal)})
+				sbalanceSheet.append({"groupname":"Current Liabilities", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				print "Reserves"
@@ -887,22 +896,28 @@ class api_reports(object):
 				if (expenseTotal > incomeTotal):
 					profit = expenseTotal - incomeTotal
 					groupWiseTotal -= profit
-					balanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
-					balanceSheet.append({"groupname":"Loss for the Year:","amount":"%.2f"%(profit)})
+					sbalanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
+					if orgtype == "Profit Making":
+						sbalanceSheet.append({"groupname":"Loss for the Year:","amount":"%.2f"%(profit)})
+					else:
+						sbalanceSheet.append({"groupname":"Deficit for the Year:","amount":"%.2f"%(profit)})
 				if (expenseTotal < incomeTotal):
 					profit = incomeTotal - expenseTotal
 					groupWiseTotal += profit
-					balanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
-					balanceSheet.append({"groupname":"Profit for the Year:","amount":"%.2f"%(profit)})
+					sbalanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
+					if orgtype == "Profit Making":
+						sbalanceSheet.append({"groupname":"Profit for the Year:","amount":"%.2f"%(profit)})
+					else:
+						sbalanceSheet.append({"groupname":"Surplus for the Year:","amount":"%.2f"%(profit)})
 				if (expenseTotal == incomeTotal):
-					balanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
+					sbalanceSheet.append({"groupname":"Reserves", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				sourcesTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Total", "amount":"%.2f"%(sourcesTotal)})
+				sbalanceSheet.append({"groupname":"Total", "amount":"%.2f"%(sourcesTotal)})
 
 				#Applications:
-				balanceSheet.append({"groupname":"Applications:","amount":""})
+				abalanceSheet.append({"groupname":"Applications:","amount":""})
 
 
 				#Calculate grouptotal for group "Fixed Assets"
@@ -916,7 +931,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal -= accountDetails["curbal"]
 				applicationsTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Fixed Assets", "amount":"%.2f"%(groupWiseTotal)})
+				abalanceSheet.append({"groupname":"Fixed Assets", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				print "Investments"
@@ -931,7 +946,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal -= accountDetails["curbal"]
 				applicationsTotal += groupWiseTotal
-				balanceSheet.append({"groupname": "Investments", "amount":"%.2f"%(groupWiseTotal)})
+				abalanceSheet.append({"groupname": "Investments", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				print "Current Assets"
@@ -946,7 +961,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal -= accountDetails["curbal"]
 				applicationsTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Current Assets", "amount":"%.2f"%(groupWiseTotal)})
+				abalanceSheet.append({"groupname":"Current Assets", "amount":"%.2f"%(groupWiseTotal)})
 
 
 				print "Loans(Asset)"
@@ -963,33 +978,48 @@ class api_reports(object):
 						groupWiseTotal -= accountDetails["curbal"]
 						print groupWiseTotal
 				applicationsTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Loans(Asset)", "amount":"%.2f"%(groupWiseTotal)})
+				abalanceSheet.append({"groupname":"Loans(Asset)", "amount":"%.2f"%(groupWiseTotal)})
 
 
-				print "Miscellaneous"
-				#Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
-				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
-				accountCodes = accountcodeData.fetchall()
-				for accountRow in accountCodes:
-					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
-					if (accountDetails["baltype"]=="Dr"):
-						groupWiseTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr"):
-						groupWiseTotal -= accountDetails["curbal"]
-				applicationsTotal += groupWiseTotal
-				balanceSheet.append({"groupname":"Miscellaneous Expenses(Asset)", "amount":"%.2f"%(groupWiseTotal)})
+				if orgtype=="Profit Making":
+					print "Miscellaneous"
+					#Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
+					groupWiseTotal = 0.00
+					accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
+					accountCodes = accountcodeData.fetchall()
+					for accountRow in accountCodes:
+						accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						if (accountDetails["baltype"]=="Dr"):
+							groupWiseTotal += accountDetails["curbal"]
+						if (accountDetails["baltype"]=="Cr"):
+							groupWiseTotal -= accountDetails["curbal"]
+					applicationsTotal += groupWiseTotal
+					abalanceSheet.append({"groupname":"Miscellaneous Expenses(Asset)", "amount":"%.2f"%(groupWiseTotal)})
 
-				balanceSheet.append({"groupname":"Total", "amount":"%.2f"%(applicationsTotal)})
-
+				abalanceSheet.append({"groupname":"Total", "amount":"%.2f"%(applicationsTotal)})
 				difference = abs(sourcesTotal - applicationsTotal)
-				balanceSheet.append({"groupname":"Difference", "amount":"%.2f"%(difference)})
+				if sourcesTotal>applicationsTotal:
+					abalanceSheet.append({"groupname":"Difference", "amount":"%.2f"%(difference)})
+					abalanceSheet.append({"groupname":"Total", "amount":"%.2f"%(sourcesTotal)})
+				if applicationsTotal>sourcesTotal:
+					sbalanceSheet.append({"groupname":"Difference", "amount":"%.2f"%(difference)})
+					sbalanceSheet.append({"groupname":"Total", "amount":"%.2f"%(applicationsTotal)})
+				if len(sbalanceSheet)>len(abalanceSheet):
+					emptyno = len(sbalanceSheet)-len(abalanceSheet)
+					for i in range(0,emptyno):
+						abalanceSheet.insert(-1,{"groupname":"", "amount":"."})
+				if len(sbalanceSheet)<len(abalanceSheet):
+					emptyno = len(abalanceSheet)-len(sbalanceSheet)
+					for i in range(0,emptyno):
+						sbalanceSheet.insert(-1,{"groupname":"", "amount":"."})
 
-				return {"gkstatus":enumdict["Success"],"gkresult":balanceSheet}
 
 
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["Success"],"gkresult":{"leftlist":sbalanceSheet,"rightlist":abalanceSheet}}
+
+
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 
