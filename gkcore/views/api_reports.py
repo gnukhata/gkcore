@@ -170,8 +170,8 @@ class api_reports(object):
 				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
 				balType = "Cr"
 				openingBalanceType = "Cr"
-		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
-		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),calculateFrom, calculateTo))
+		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
+		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
 		tdrRow = tdrfrm.fetchone()
 		tcrRow= tcrfrm.fetchone()
 		ttlDrBalance = tdrRow['total']
@@ -302,8 +302,14 @@ class api_reports(object):
 					headerrow["projectname"]=''.join(prjname)
 
   				if projectCode == "" and calbalDict["balbrought"]>0:
-  					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"particulars":["Opening Balance"],"balance":"","narration":"","status":""}
-  					if calbalDict["openbaltype"] =="Dr":
+  					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"balance":"","narration":"","status":""}
+					vfrom = datetime.strptime(str(calculateFrom),"%Y-%m-%d")
+					fstart = datetime.strptime(str(financialStart),"%Y-%m-%d")
+					if vfrom==fstart:
+						openingrow["particulars"]=["Opening Balance"]
+					if vfrom>fstart:
+						openingrow["particulars"]=["Balance B/F"]
+					if calbalDict["openbaltype"] =="Dr":
   						openingrow["Dr"] = "%.2f"%float(calbalDict["balbrought"])
   						openingrow["Cr"] = ""
   						bal = float(calbalDict["balbrought"])
@@ -313,9 +319,9 @@ class api_reports(object):
   						bal = float(-calbalDict["balbrought"])
   					vouchergrid.append(openingrow)
   				if projectCode == "":
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, accountCode,accountCode))
+  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, accountCode,accountCode))
   				else:
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
   				transactions = transactionsRecords.fetchall()
 
@@ -618,7 +624,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				calculateFrom = self.request.params["calculatefrom"]
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
@@ -632,7 +638,13 @@ class api_reports(object):
 				pyaccountcodes = []
 				rctotal = 0.00
 				pytotal = 0.00
-				receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":""})
+				vfrom = datetime.strptime(str(calculateFrom),"%Y-%m-%d")
+				fstart = datetime.strptime(str(financialStart),"%Y-%m-%d")
+				if vfrom==fstart:
+					receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":""})
+				if vfrom>fstart:
+					receiptcf.append({"toby":"To","particulars":"Balance B/F","amount":"","accountcode":""})
+
 				closinggrid.append({"toby":"By","particulars":"Closing balance","amount":"","accountcode":""})
 				for cbAccount in cbAccounts:
 					opacc = self.calculateBalance(cbAccount["accountcode"], financialStart, calculateFrom, calculateTo)
@@ -648,32 +660,34 @@ class api_reports(object):
 							pytotal += float(opacc["curbal"])
 						if opacc["baltype"]=="Cr":
 							pytotal -= float(opacc["curbal"])
-					transactionsRecords = eng.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate < '%s' and vouchertype != 'contra' and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
+					transactionsRecords = eng.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
 					transactions = transactionsRecords.fetchall()
 					for transaction in transactions:
 						for cr in transaction["crs"]:
 							if cr not in rcaccountcodes and int(cr) != int(cbAccount["accountcode"]):
 								rcaccountcodes.append(cr)
-								rccalbaldata = self.calculateBalance(cr, financialStart, calculateFrom, calculateTo)
+								crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(cr),financialStart, calculateTo))
+								crresultRow = crresult.fetchone()
 								rcaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
 								rcacc= ''.join(rcaccountname.fetchone())
-								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(rccalbaldata["totalcrbal"]),"accountcode":int(cr)})
-								rctotal += float(rccalbaldata["totalcrbal"])
+								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr)})
+								rctotal += float(crresultRow["total"])
 						for dr in transaction["drs"]:
 							if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
 								pyaccountcodes.append(dr)
-								pycalbaldata = self.calculateBalance(dr, financialStart, calculateFrom, calculateTo)
+								drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(dr),financialStart, calculateTo))
+								drresultRow = drresult.fetchone()
 								pyaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
 								pyacc= ''.join(pyaccountname.fetchone())
-								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(pycalbaldata["totaldrbal"]),"accountcode":int(dr)})
-								pytotal += float(pycalbaldata["totaldrbal"])
+								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr)})
+								pytotal += float(drresultRow["total"])
 				receiptcf.extend(rctransactionsgrid)
 				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
 				paymentcf.extend(closinggrid)
 				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":""})
 				return {"gkstatus":enumdict["Success"],"rcgkresult":receiptcf,"pygkresult":paymentcf}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=projectstatement', renderer='json')
 	def projectStatement(self):
@@ -712,9 +726,9 @@ class api_reports(object):
 				for accountRow in grpaccs:
 					group = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
 					groupRow = group.fetchone()
-					drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
 					drresultRow = drresult.fetchone()
-					crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
 					crresultRow = crresult.fetchone()
 					statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
 					if drresultRow["total"]==None:
