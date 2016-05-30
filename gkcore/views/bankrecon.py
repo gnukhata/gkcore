@@ -33,7 +33,7 @@ Contributor:
 #view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models import gkdb
+from gkcore.models.gkdb import bankrecon,vouchers,accounts
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -42,18 +42,8 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
-"""
-purpose:
-This class is the resource to create, update, read and delete accounts.
+from datetime import datetime
 
-connection rules:
-con is used for executing sql expression language based queries,
-while eng is used for raw sql execution.
-routing mechanism:
-@view_defaults is used for setting the default route for crud on the given resource class.
-if specific route is to be attached to a certain method, or for giving get, post, put, delete methods to default route, the view_config decorator is used.
-For other predicates view_config is generally used.
-"""
 con = Connection
 con = eng.connect()
 """
@@ -85,3 +75,62 @@ class bankreconciliation(object):
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+
+	@view_config(request_method='GET', request_param='recon=uncleared',renderer='json')
+	def getUnclearedTransactions(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+				accountCode = self.request.params["accountcode"]
+				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
+				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
+				result = con.execute(select([bankrecon]).where(bankrecon.c.accountcode==accountCode))
+				recongrid=[]
+				for record in result:
+					if record["clearancedate"]!=None and record["clearancedate"]<calculateFrom:
+						continue
+					else:
+						voucherdata=con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+						voucher= voucherdata.fetchone()
+						if voucher==None:
+							continue
+						print "awidaijdoygfia: ",voucher
+						if voucher["drs"].has_key(str(record["accountcode"])):
+							print "ifffff,  ",voucher["drs"]
+							for cr in voucher["crs"].keys():
+	  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+	  							accountname = accountnameRow.fetchone()
+								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
+								if record["clearancedate"]==None:
+									reconRow["clearancedate"]=""
+								else:
+									reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+								if record["memo"]==None:
+									reconRow["memo"]=""
+								else:
+									reconRow["memo"]=record["memo"]
+								recongrid.append(reconRow)
+
+						if voucher["crs"].has_key(str(record["accountcode"])):
+							for dr in voucher["drs"].keys():
+	  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+	  							accountname = accountnameRow.fetchone()
+								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
+								if record["clearancedate"]==None:
+									reconRow["clearancedate"]=""
+								else:
+									reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+								if record["memo"]==None:
+									reconRow["memo"]=""
+								else:
+									reconRow["memo"]=record["memo"]
+								recongrid.append(reconRow)
+				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
+			#except:
+				#return{"gkstatus":enumdict["ConnectionFailed"]}
