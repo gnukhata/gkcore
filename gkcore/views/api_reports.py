@@ -1377,3 +1377,55 @@ class api_reports(object):
 
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
+	@view_config(request_param='type=groupaccounts', renderer='json')
+  	def groupAccounts(self):
+  		"""
+		this function is called when the type=groupaccounts is sent in the url /report
+		this function takes orgcode fom the token, groupcode and calculateto from params
+		then the function gets all the accountcode, accountname from the accounts table in the databsse using the groupcode and orgcode
+		then the accountcode is sent to the calculateBalance function along with the financialstart and calculateTo which in turn returns the baltype, groupname, and balance
+		the current balance(amount), accountname, accountcode is stored in a dictionary
+		a list is made using these dictionaries of all accounts.
+  		"""
+
+  		try:
+  			token = self.request.headers["gktoken"]
+  		except:
+  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+  		authDetails = authCheck(token)
+  		if authDetails["auth"] == False:
+  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+  		else:
+  			try:
+				orgcode = authDetails["orgcode"]
+				orgode = int(orgcode)
+  				groupCode = self.request.params["groupcode"]
+				groupCode = int(groupCode)
+  				calculateTo = self.request.params["calculateto"]
+  				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+				financialstartRow = financialstart.fetchone()
+				financialStart = financialstartRow["yearstart"]
+				orgtype = financialstartRow["orgtype"]
+				account = []
+
+				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupcode = %d or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupcode = %d));"%(orgcode, orgcode, groupCode,orgcode, groupCode))
+				accountCodes = accountcodeData.fetchall()
+				for accountRow in accountCodes:
+					accountTotal = 0.00
+					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if (accountDetails["baltype"]=="Dr" and (accountDetails["grpname"] == "Current Assets" or accountDetails["grpname"] == "Fixed Assets" or accountDetails["grpname"] == "Loans(Asset)" or accountDetails["grpname"] == "Miscellaneous Expenses(Asset)" or accountDetails["grpname"] == "Investments")):
+						accountTotal += accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Cr" and (accountDetails["grpname"] == "Current Assets" or accountDetails["grpname"] == "Fixed Assets" or accountDetails["grpname"] == "Loans(Asset)" or accountDetails["grpname"] == "Miscellaneous Expenses(Asset)" or accountDetails["grpname"] == "Investments")):
+						accountTotal -= accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Dr" and (accountDetails["grpname"] == "Current Liabilities" or accountDetails["grpname"] == "Capital" or accountDetails["grpname"] == "Loans(Liability)" or accountDetails["grpname"] == "Corpus" or accountDetails["grpname"] == "Reserves")):
+						accountTotal -= accountDetails["curbal"]
+					if (accountDetails["baltype"]=="Cr" and (accountDetails["grpname"] == "Current Liabilities" or accountDetails["grpname"] == "Capital" or accountDetails["grpname"] == "Loans(Liability)" or accountDetails["grpname"] == "Corpus" or accountDetails["grpname"] == "Reserves")):
+						accountTotal += accountDetails["curbal"]
+					account.append({"accountname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "accountcode":accountRow["accountcode"]})
+
+
+  				return {"gkstatus":enumdict["Success"], "account":account}
+  			except:
+  				return {"gkstatus":enumdict["ConnectionFailed"]}
