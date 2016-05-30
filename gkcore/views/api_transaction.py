@@ -32,7 +32,7 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.models.gkdb import vouchers, accounts
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon
 from sqlalchemy.sql import select
 from sqlalchemy import func
 import json
@@ -110,8 +110,20 @@ class api_transaction(object):
 				result = con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+					accgrpdata = con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
+					accgrp = accgrpdata.fetchone()
+					if accgrp["groupname"] == "Bank":
+						vouchercodedata = eng.execute("select max(vouchercode) as vcode from vouchers")
+						vouchercode =vouchercodedata.fetchone()
+						recoresult = con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
 				for crkeys in crs.keys():
 					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+					accgrpdata = con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
+					accgrp = accgrpdata.fetchone()
+					if accgrp["groupname"] == "Bank":
+						vouchercodedata = eng.execute("select max(vouchercode) as vcode from vouchers")
+						vouchercode =vouchercodedata.fetchone()
+						recoresult = con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}

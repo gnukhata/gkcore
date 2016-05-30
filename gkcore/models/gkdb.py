@@ -62,7 +62,7 @@ signature = Table('signature', metadata,
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
-""" 
+"""
 
 organisation = Table( 'organisation' , metadata,
 	Column('orgcode',Integer, primary_key=True),
@@ -163,7 +163,7 @@ vouchers=Table('vouchers', metadata,
 
 """ table to store users for an organization.
 So orgcode is foreign key like other tables.
-In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """ 
+In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """
 users=Table('users', metadata,
 	Column('userid',Integer, primary_key=True),
 	Column('username',Text, nullable=False),
@@ -179,16 +179,15 @@ users=Table('users', metadata,
 """ the table for storing bank reconciliation data.
 Every row will have voucher code for which the transaction is being checked against bank record.
 """
-bankRecon=Table('bankrecon',metadata,
+bankrecon=Table('bankrecon',metadata,
 	Column('reconcode',Integer,primary_key = True),
 	Column('vouchercode',Integer,ForeignKey("vouchers.vouchercode", ondelete="CASCADE"), nullable=False),
-	Column('reffdate',DateTime),
-	Column('accountname',UnicodeText),
-	Column('dramount',Numeric(13,2)),
-	Column('cramount',Numeric(13,2)),
+	Column('accountcode',Integer, ForeignKey("accounts.accountcode", ondelete="CASCADE"), nullable=False),
 	Column('clearancedate',DateTime),
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('vouchercode','accountcode'),
+    Index("bankrecoindex","clearancedate")
 	)
 
 voucherbin=Table('voucherbin', metadata,
@@ -207,4 +206,3 @@ voucherbin=Table('voucherbin', metadata,
     Index("binvoucher_attachment","attachment"),
     Index("binvoucher_vdate","voucherdate")
     )
-
