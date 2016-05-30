@@ -60,6 +60,7 @@ def main(global_config, **settings):
 	config.add_route("transaction","/transaction")
 	config.add_route("users",'/users')
 	config.add_route('user','/user')
+	config.add_route('bankrecon','/bankrecon')
 	config.add_route("accounts",'/accounts')
 	config.add_route("account",'/account/{accountcode}')
 	config.add_route("projects",'/projects')
