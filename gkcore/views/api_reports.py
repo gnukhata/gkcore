@@ -1289,21 +1289,23 @@ class api_reports(object):
 				difference = 0.00
 				profit = ""
 				loss = ""
-				if (orgtype == "Profit Maknig"):
+				if (orgtype == "Profit Making"):
 					profit = "Profit"
 					loss = "Loss"
 				if (orgtype == "Not For Profit"):
 					profit = "Surplus"
 					loss = "Deficit"
 
-				expense.append({"toby":"To,","accountname":"DIRECT EXPENSE", "amount":"", "accountcode":""})
-				income.append({"toby":"By,","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
+				expense.append({"toby":"","accountname":"DIRECT EXPENSE", "amount":"", "accountcode":""})
+				income.append({"toby":"","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
 
 				#Calculate all expense(Direct Expense)
 				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if accountDetails["curbal"]==0:
+						continue
 					if (accountDetails["baltype"]=="Dr"):
 						expenseTotal += accountDetails["curbal"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1315,6 +1317,8 @@ class api_reports(object):
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if accountDetails["curbal"]==0:
+						continue
 					if (accountDetails["baltype"]=="Cr"):
 						incomeTotal += accountDetails["curbal"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1324,7 +1328,16 @@ class api_reports(object):
 				if(expenseTotal > incomeTotal):
 					difference = expenseTotal - incomeTotal
 					income.append({"toby":"By,","accountname":"Gross "+loss+" C/F","amount":difference, "accountcode":""})
-					expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":difference, "accountcode":""})
+					if len(income)>len(expense):
+						emptyno = len(income)-len(expense)
+						for i in range(0,emptyno):
+							expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					if len(income)<len(expense):
+						emptyno = len(expense)-len(income)
+						for i in range(0,emptyno):
+							income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
+					income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
 					expenseTotal = 0.00
 					expenseTotal = difference
 					incomeTotal = 0.00
@@ -1332,21 +1345,35 @@ class api_reports(object):
 				if(expenseTotal < incomeTotal):
 					difference = incomeTotal - expenseTotal
 					expense.append({"toby":"To,","accountname":"Gross "+profit+" C/F","amount":"%.2f"%(difference), "accountcode":""})
-					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%(difference), "accountcode":""})
+					if len(income)>len(expense):
+						emptyno = len(income)-len(expense)
+						for i in range(0,emptyno):
+							expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					if len(income)<len(expense):
+						emptyno = len(expense)-len(income)
+						for i in range(0,emptyno):
+							income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
+					income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
 					incomeTotal = 0.00
 					incomeTotal = difference
 					expenseTotal = 0.00
 
 
-				expense.append({"toby":"To,","accountname":"INDIRECT EXPENSE", "amount":"", "accountcode":""})
-				income.append({"toby":"By,","accountname":"INDIRECT INCOME","amount":"", "accountcode":""})
-
+				expense.append({"toby":"","accountname":"INDIRECT EXPENSE", "amount":"", "accountcode":""})
+				income.append({"toby":"","accountname":"INDIRECT INCOME","amount":"", "accountcode":""})
+				if(expenseTotal > incomeTotal):
+					expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":difference, "accountcode":""})
+				if(expenseTotal < incomeTotal):
+					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%(difference), "accountcode":""})
 				difference = 0.00
 				#Calculate all expense(Indirect Expense)
 				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if accountDetails["curbal"]==0:
+						continue
 					if (accountDetails["baltype"]=="Dr"):
 						expenseTotal += accountDetails["curbal"]
 					if (accountDetails["baltype"]=="Cr"):
@@ -1358,6 +1385,8 @@ class api_reports(object):
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
+					if accountDetails["curbal"]==0:
+						continue
 					if (accountDetails["baltype"]=="Cr"):
 						incomeTotal += accountDetails["curbal"]
 					if (accountDetails["baltype"]=="Dr"):
@@ -1367,10 +1396,30 @@ class api_reports(object):
 				if(expenseTotal > incomeTotal):
 					difference = expenseTotal - incomeTotal
 					income.append({"toby":"By,","accountname":"Net "+loss+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
+					if len(income)>len(expense):
+						emptyno = len(income)-len(expense)
+						for i in range(0,emptyno):
+							expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					if len(income)<len(expense):
+						emptyno = len(expense)-len(income)
+						for i in range(0,emptyno):
+							income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
+					income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
 
 				if(expenseTotal < incomeTotal):
 					difference = incomeTotal - expenseTotal
 					expense.append({"toby":"To,","accountname":"Net "+profit+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
+					if len(income)>len(expense):
+						emptyno = len(income)-len(expense)
+						for i in range(0,emptyno):
+							expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					if len(income)<len(expense):
+						emptyno = len(expense)-len(income)
+						for i in range(0,emptyno):
+							income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
+					expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
+					income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
 
 				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
