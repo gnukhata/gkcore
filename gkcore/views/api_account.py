@@ -37,11 +37,12 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc,alias, or_
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
+from sqlalchemy.sql.expression import null
 """
 purpose:
 This class is the resource to create, update, read and delete accounts.
@@ -138,14 +139,23 @@ class api_account(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
-				result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
+			#try:
+				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
 				accs = []
-				for row in result:
-					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
+				for accrow in result:
+					g = gkdb.groupsubgroups.alias("g")
+					sg = gkdb.groupsubgroups.alias("sg")
+
+					resultset = con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
+					grprow = resultset.fetchone()
+					if grprow["groupcode"]==grprow["subgroupcode"]:
+						accs.append({"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"None"})
+					else:
+						accs.append({"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
+
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"] }
+			#except:
+			#	return {"gkstatus":enumdict["ConnectionFailed"] }
 
 	@view_config(request_method='GET',request_param='find=exists', renderer ='json')
 	def accountExists(self):
