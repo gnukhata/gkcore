@@ -139,9 +139,10 @@ class api_account(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
 				accs = []
+				srno=1
 				for accrow in result:
 					g = gkdb.groupsubgroups.alias("g")
 					sg = gkdb.groupsubgroups.alias("sg")
@@ -149,13 +150,13 @@ class api_account(object):
 					resultset = con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
 					grprow = resultset.fetchone()
 					if grprow["groupcode"]==grprow["subgroupcode"]:
-						accs.append({"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"None"})
+						accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":""})
 					else:
-						accs.append({"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
-
+						accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
+					srno = srno+1
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
-			#except:
-			#	return {"gkstatus":enumdict["ConnectionFailed"] }
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
 
 	@view_config(request_method='GET',request_param='find=exists', renderer ='json')
 	def accountExists(self):
