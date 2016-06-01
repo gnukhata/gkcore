@@ -31,7 +31,7 @@ Contributor:
 #gkdb from models for all the alchemy expressed tables.
 #view_default for setting default route
 #view_config for per method configurations predicates etc.
-from gkcore import eng, enumdict
+from gkcore import enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
@@ -43,6 +43,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
+from gkcore.models.meta import dbconnect
 """
 purpose:
 This class is the resource to create, update, read and delete accounts.
@@ -55,8 +56,6 @@ routing mechanism:
 if specific route is to be attached to a certain method, or for giving get, post, put, delete methods to default route, the view_config decorator is used.
 For other predicates view_config is generally used.
 """
-con = Connection
-con = eng.connect()
 """
 default route to be attached to this resource.
 refer to the __init__.py of main gkcore package for details on routing url
@@ -67,6 +66,9 @@ class api_account(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
+		self.myeng = dbconnect()
+		self.con = Connection
+		print "accounts initialized"
 
 	@view_config(request_method='POST',renderer='json')
 	def addAccount(self):
@@ -89,13 +91,17 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = self.myeng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = con.execute(gkdb.accounts.insert(),[dataset])
+				result = self.con.execute(gkdb.accounts.insert(),[dataset])
+				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
+				self.con.close()
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(route_name='account', request_method='GET',renderer='json')
@@ -122,11 +128,14 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
+				self.con = self.myeng.connect()
+				result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
 				row = result.fetchone()
 				acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"]}
+				self.con.close()
 				return {"gkstatus": enumdict["Success"], "gkresult":acc}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 
 	@view_config(request_method='GET', renderer ='json')
@@ -140,22 +149,25 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
+				self.con = self.myeng.connect()
+				result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
 				accs = []
 				srno=1
 				for accrow in result:
 					g = gkdb.groupsubgroups.alias("g")
 					sg = gkdb.groupsubgroups.alias("sg")
 
-					resultset = con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
+					resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
 					grprow = resultset.fetchone()
 					if grprow["groupcode"]==grprow["subgroupcode"]:
 						accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":""})
 					else:
 						accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
 					srno = srno+1
+				self.con.close()
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 
 	@view_config(request_method='GET',request_param='find=exists', renderer ='json')
@@ -170,7 +182,7 @@ class api_account(object):
 		else:
 			try:
 				accountname = self.request.params["accountname"]
-				result = eng.execute("select count(accountname) as acc from accounts where accountname='%s' and orgcode = %d"%(accountname,authDetails["orgcode"]))
+				result = self.myeng.execute("select count(accountname) as acc from accounts where accountname='%s' and orgcode = %d"%(accountname,authDetails["orgcode"]))
 				acccount = result.fetchone()
 				if acccount["acc"]>0:
 					return {"gkstatus": enumdict["DuplicateEntry"]}
@@ -190,10 +202,13 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = self.myeng.connect()
 				dataset = self.request.json_body
-				result = con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+				result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_method='DELETE', renderer ='json')
@@ -207,13 +222,17 @@ class api_account(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = self.myeng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
-					result = con.execute(gkdb.accounts.delete().where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
+					result = self.con.execute(gkdb.accounts.delete().where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
+					self.con.close()
 					return {"gkstatus":enumdict["Success"]}
 				else:
+					self.con.close()
 					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }

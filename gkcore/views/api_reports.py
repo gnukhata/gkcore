@@ -27,7 +27,7 @@ Contributor:
 """
 
 
-from gkcore import eng, enumdict
+from gkcore import enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation
 from sqlalchemy.sql import select
@@ -41,8 +41,8 @@ from gkcore.views.api_user import getUserRole
 from datetime import datetime,date
 import calendar
 from monthdelta import monthdelta
-con = Connection
-con = eng.connect()
+from gkcore.models.meta import dbconnect
+
 
 """
 purpose:
@@ -66,6 +66,9 @@ class api_reports(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
+		self.myeng = dbconnect()
+		self.con = Connection
+		print "report initialized"
 
 	def calculateBalance(self,accountCode,financialStart,calculateFrom,calculateTo):
 		"""
@@ -103,13 +106,13 @@ class api_reports(object):
 		ttlDrUptoFrom = 0.00
 		ttlCrUptoFrom = 0.00
 		balType = ""
-		groupData = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
+		groupData = self.myeng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
 		groupRecord = groupData.fetchone()
 		groupName = groupRecord["groupname"]
 		print "group is %s"%(groupName)
 		#now similarly we will get the opening balance for this account.
 
-		obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
+		obData = self.con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
 		ob = obData.fetchone()
 		openingBalance = float(ob["openingbal"])
 		financialStart = str(financialStart)
@@ -141,8 +144,8 @@ class api_reports(object):
 				openingBalanceType = "Cr"
 				balType = "Cr"
 		else:
-			tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
-			tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
+			tdrfrm = self.myeng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
+			tcrfrm = self.myeng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"%(int(accountCode),financialStart,calculateFrom))
 			tdrRow = tdrfrm.fetchone()
 			tcrRow= tcrfrm.fetchone()
 			ttlCrUptoFrom = tcrRow['total']
@@ -170,9 +173,9 @@ class api_reports(object):
 				balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
 				balType = "Cr"
 				openingBalanceType = "Cr"
-		tdrfrm = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
-		tcrfrm = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
+		tdrfrm = self.myeng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
 		tdrRow = tdrfrm.fetchone()
+		tcrfrm = self.myeng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"%(int(accountCode),calculateFrom, calculateTo))
 		tcrRow= tcrfrm.fetchone()
 		ttlDrBalance = tdrRow['total']
 		ttlCrBalance = tcrRow['total']
@@ -221,15 +224,17 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+
+				self.con = self.myeng.connect()
 				orgcode = authDetails["orgcode"]
 				accountCode = self.request.params["accountcode"]
-				accNameData= con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode== accountCode))
+				accNameData= self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode== accountCode))
 				row = accNameData.fetchone()
 				accname = row["accountname"]
-				finStartData = con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==orgcode))
+				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==orgcode))
 				finRow = finStartData.fetchone()
 				financialStart = finRow['yearstart']
-				finEndData = con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+				finEndData = self.con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
 				finEndrow = finEndData.fetchone()
 				financialEnd = finEndrow['yearend']
 				monthCounter = 1
@@ -247,10 +252,14 @@ class api_reports(object):
 					startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
 					endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
 					monthCounter  +=1
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"], "gkresult": monthlyBal, "accountcode":accountCode}
 
 			except Exception as E:
 				print E
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
@@ -281,7 +290,9 @@ class api_reports(object):
   		if authDetails["auth"] == False:
   			return {"gkstatus": enumdict["UnauthorisedAccess"]}
   		else:
-  			try:
+  			#try:
+
+				self.con = self.myeng.connect()
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
   				orgcode = authDetails["orgcode"]
@@ -293,11 +304,11 @@ class api_reports(object):
   				calbalDict = self.calculateBalance(accountCode,financialStart,calculateFrom,calculateTo)
   				vouchergrid = []
   				bal=0.00
-				accnamerow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(accountCode)))
+				accnamerow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(accountCode)))
 				accname = accnamerow.fetchone()
 				headerrow = {"accountname":''.join(accname),"projectname":"","calculateto":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"calculatefrom":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y')}
 				if projectCode!="":
-					prjnamerow = con.execute(select([projects.c.projectname]).where(projects.c.projectcode==int(projectCode)))
+					prjnamerow = self.con.execute(select([projects.c.projectname]).where(projects.c.projectcode==int(projectCode)))
 					prjname = prjnamerow.fetchone()
 					headerrow["projectname"]=''.join(prjname)
 
@@ -319,9 +330,9 @@ class api_reports(object):
   						bal = float(-calbalDict["balbrought"])
   					vouchergrid.append(openingrow)
   				if projectCode == "":
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
+  					transactionsRecords = self.myeng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
   				else:
-  					transactionsRecords = eng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+  					transactionsRecords = self.myeng.execute("select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
   				transactions = transactionsRecords.fetchall()
 
@@ -335,7 +346,7 @@ class api_reports(object):
   						drtotal += float(transaction["drs"][accountCode])
   						par=[]
   						for cr in transaction["crs"].keys():
-  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
   							accountname = accountnameRow.fetchone()
   							par.append(''.join(accountname))
   						ledgerRecord["particulars"] = par
@@ -347,7 +358,7 @@ class api_reports(object):
   						crtotal += float(transaction["crs"][accountCode])
   						par=[]
   						for dr in transaction["drs"].keys():
-  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
   							accountname = accountnameRow.fetchone()
   							par.append(''.join(accountname))
 
@@ -405,9 +416,13 @@ class api_reports(object):
   				else:
   					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":""}
   					vouchergrid.append(ledgerRecord)
+				self.con.close()
+
+
   				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
-  			except:
-  				return {"gkstatus":enumdict["ConnectionFailed"]}
+  			#except:
+				#self.con.close()
+  				#return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=nettrialbalance', renderer='json')
 	def netTrialBalance(self):
@@ -433,7 +448,9 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+
+				self.con = self.myeng.connect()
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
 				ntbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -465,8 +482,12 @@ class api_reports(object):
 					baldiff = totalCr - totalDr
 					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"" })
 					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalCr),"Dr":"%.2f"%(totalCr) })
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"],"gkresult":ntbGrid}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=grosstrialbalance', renderer='json')
@@ -493,7 +514,9 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+
+				self.con = self.myeng.connect()
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
 				gtbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -519,8 +542,12 @@ class api_reports(object):
 					baldiff = totalCr - totalDr
 					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr balance": "%.2f"%(baldiff),"Cr balance":"" })
 					gtbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr balance": "%.2f"%(totalCr),"Dr balance":"%.2f"%(totalCr) })
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"],"gkresult":gtbGrid}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=extendedtrialbalance', renderer='json')
@@ -548,7 +575,9 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				accountData = con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+
+				self.con = self.myeng.connect()
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
 				accountRecords = accountData.fetchall()
 				extbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -593,8 +622,12 @@ class api_reports(object):
 				if totalCrBal>totalDrBal:
 					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":""})
 					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""})
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
@@ -625,10 +658,12 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+
+				self.con = self.myeng.connect()
 				calculateFrom = self.request.params["calculatefrom"]
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
-				cbAccountsData = eng.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				cbAccountsData = self.myeng.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
 				cbAccounts = cbAccountsData.fetchall()
 				receiptcf = []
 				paymentcf = []
@@ -660,24 +695,24 @@ class api_reports(object):
 							pytotal += float(opacc["curbal"])
 						if opacc["baltype"]=="Cr":
 							pytotal -= float(opacc["curbal"])
-					transactionsRecords = eng.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
+					transactionsRecords = self.myeng.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
 					transactions = transactionsRecords.fetchall()
 					for transaction in transactions:
 						for cr in transaction["crs"]:
 							if cr not in rcaccountcodes and int(cr) != int(cbAccount["accountcode"]):
 								rcaccountcodes.append(cr)
-								crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(cr),financialStart, calculateTo))
+								crresult = self.myeng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(cr),financialStart, calculateTo))
 								crresultRow = crresult.fetchone()
-								rcaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
+								rcaccountname = self.myeng.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
 								rcacc= ''.join(rcaccountname.fetchone())
 								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr)})
 								rctotal += float(crresultRow["total"])
 						for dr in transaction["drs"]:
 							if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
 								pyaccountcodes.append(dr)
-								drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(dr),financialStart, calculateTo))
+								drresult = self.myeng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(dr),financialStart, calculateTo))
 								drresultRow = drresult.fetchone()
-								pyaccountname = eng.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
+								pyaccountname = self.myeng.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
 								pyacc= ''.join(pyaccountname.fetchone())
 								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr)})
 								pytotal += float(drresultRow["total"])
@@ -693,8 +728,12 @@ class api_reports(object):
 						receiptcf.append({"toby":"","particulars":"","amount":".","accountcode":""})
 				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
 				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":""})
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"],"rcgkresult":receiptcf,"pygkresult":paymentcf}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=projectstatement', renderer='json')
@@ -722,21 +761,23 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+
+				self.con = self.myeng.connect()
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
 				projectCode= self.request.params["projectcode"]
 				totalDr = 0.00
 				totalCr = 0.00
-				grpaccsdata = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				grpaccsdata = self.myeng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income'))"%(authDetails["orgcode"],authDetails["orgcode"]))
 				grpaccs = grpaccsdata.fetchall()
 				srno = 1
 				projectStatement = []
 				for accountRow in grpaccs:
-					group = eng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
+					group = self.myeng.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
 					groupRow = group.fetchone()
-					drresult = eng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					drresult = self.myeng.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
 					drresultRow = drresult.fetchone()
-					crresult = eng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
+					crresult = self.myeng.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
 					crresultRow = crresult.fetchone()
 					statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
 					if drresultRow["total"]==None:
@@ -754,8 +795,12 @@ class api_reports(object):
 					srno = srno +1
 					projectStatement.append(statementRow)
 				projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
+				self.con.close()
+
+
 				return {"gkstatus":enumdict["Success"],"gkresult":projectStatement}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param="type=balancesheet",renderer="json")
@@ -789,8 +834,10 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+
+				self.con = self.myeng.connect()
 				orgcode = authDetails["orgcode"]
-				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
@@ -812,7 +859,7 @@ class api_reports(object):
 
 
 				#Calculate grouptotal for group Capital/Corpus
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -827,7 +874,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Loans(Liability)
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -842,7 +889,7 @@ class api_reports(object):
 				print "Current Liabilities"
 				#Calculate grouptotal for group Current Liabilities
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -861,7 +908,7 @@ class api_reports(object):
 				expenseTotal = 0.00
 
 				#Calculate all income(Direct and Indirect Income)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -871,7 +918,7 @@ class api_reports(object):
 						incomeTotal -= accountDetails["curbal"]
 
 				#Calculate all expense(Direct and Indirect Expense)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -882,7 +929,7 @@ class api_reports(object):
 
 
 				#Calculate total of all accounts in Reserves except(Direct and Indirect Income, Expense)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -923,7 +970,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Fixed Assets"
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -938,7 +985,7 @@ class api_reports(object):
 				print "Investments"
 				#Calculate grouptotal for group "Investments"
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -953,7 +1000,7 @@ class api_reports(object):
 				print "Current Assets"
 				#Calculate grouptotal for group "Current Assets"
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -968,7 +1015,7 @@ class api_reports(object):
 				print "Loans(Asset)"
 				#Calculate grouptotal for group Loans(Asset)
 				groupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -986,7 +1033,7 @@ class api_reports(object):
 					print "Miscellaneous"
 					#Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
 					groupWiseTotal = 0.00
-					accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
+					accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
 					accountCodes = accountcodeData.fetchall()
 					for accountRow in accountCodes:
 						accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1014,10 +1061,13 @@ class api_reports(object):
 						emptyno = len(abalanceSheet)-len(sbalanceSheet)
 						for i in range(0,emptyno):
 							sbalanceSheet.insert(-1,{"groupname":"", "amount":"."})
+				self.con.close()
+
 
 				return {"gkstatus":enumdict["Success"],"gkresult":{"leftlist":sbalanceSheet,"rightlist":abalanceSheet}}
 
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
@@ -1052,8 +1102,9 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = self.myeng.connect()
 				orgcode = authDetails["orgcode"]
-				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
@@ -1074,7 +1125,7 @@ class api_reports(object):
 
 
 				#Calculate grouptotal for group Capital/Corpus
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1085,7 +1136,7 @@ class api_reports(object):
 				sourcesTotal += sourcegroupWiseTotal
 
 				#Calculate grouptotal for group "Fixed Assets"
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1099,7 +1150,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Loans(Liability)
 				sourcegroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1112,7 +1163,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Investments"
 				applicationgroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1126,7 +1177,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Current Liabilities
 				sourcegroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1139,7 +1190,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Current Assets"
 				applicationgroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1156,7 +1207,7 @@ class api_reports(object):
 				incomeTotal = 0.00
 				expenseTotal = 0.00
 				#Calculate all income(Direct and Indirect Income)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1166,7 +1217,7 @@ class api_reports(object):
 						incomeTotal -= accountDetails["curbal"]
 
 				#Calculate all expense(Direct and Indirect Expense)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1176,7 +1227,7 @@ class api_reports(object):
 						expenseTotal -= accountDetails["curbal"]
 
 				#Calculate total of all accounts in Reserves (except Direct and Indirect Income, Expense)
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1198,7 +1249,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Loans(Asset)
 				applicationgroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1212,7 +1263,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
 				applicationgroupWiseTotal = 0.00
-				accountcodeData = eng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1236,11 +1287,14 @@ class api_reports(object):
 				#Difference
 				difference = abs(sourcesTotal - applicationsTotal)
 				balanceSheet.append({"sourcesgroupname":"Difference","sourceamount":"%.2f"%(difference),"appgroupname":"","applicationamount":""})
+				self.con.close()
+
 
 				return {"gkstatus":enumdict["Success"],"gkresult":balanceSheet}
 
 
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
@@ -1275,8 +1329,10 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+
+				self.con = self.myeng.connect()
 				orgcode = authDetails["orgcode"]
-				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
@@ -1300,7 +1356,7 @@ class api_reports(object):
 				income.append({"toby":"","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
 
 				#Calculate all expense(Direct Expense)
-				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1313,7 +1369,7 @@ class api_reports(object):
 					expense.append({"toby":"To,","accountname":accountRow["accountname"], "amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
 
 				#Calculate all income(Direct and Indirect Income)
-				accountcodeData = eng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1368,7 +1424,7 @@ class api_reports(object):
 					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%(difference), "accountcode":""})
 				difference = 0.00
 				#Calculate all expense(Indirect Expense)
-				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1381,7 +1437,7 @@ class api_reports(object):
 					expense.append({"toby":"To,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]),"accountcode":accountRow["accountcode"]})
 
 				#Calculate all income(Indirect Income)
-				accountcodeData = eng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.myeng.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income'));"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1420,11 +1476,14 @@ class api_reports(object):
 							income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
 					expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
 					income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
+				self.con.close()
+
 
 				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
 
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
@@ -1448,18 +1507,20 @@ class api_reports(object):
   			return {"gkstatus": enumdict["UnauthorisedAccess"]}
   		else:
   			try:
+
+				self.con = self.myeng.connect()
 				orgcode = authDetails["orgcode"]
 				orgode = int(orgcode)
   				groupCode = self.request.params["groupcode"]
 				groupCode = int(groupCode)
   				calculateTo = self.request.params["calculateto"]
-  				financialstart = con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+  				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
 				financialStart = financialstartRow["yearstart"]
 				orgtype = financialstartRow["orgtype"]
 				account = []
 
-				accountcodeData = eng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupcode = %d or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupcode = %d));"%(orgcode, orgcode, groupCode,orgcode, groupCode))
+				accountcodeData = self.myeng.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupcode = %d or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupcode = %d));"%(orgcode, orgcode, groupCode,orgcode, groupCode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountTotal = 0.00
@@ -1474,7 +1535,10 @@ class api_reports(object):
 						accountTotal += accountDetails["curbal"]
 					account.append({"accountname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "accountcode":accountRow["accountcode"]})
 
+				self.con.close()
+
 
   				return {"gkstatus":enumdict["Success"], "account":account}
   			except:
+				self.con.close()
   				return {"gkstatus":enumdict["ConnectionFailed"]}

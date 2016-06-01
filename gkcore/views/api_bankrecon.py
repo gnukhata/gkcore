@@ -44,8 +44,7 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from datetime import datetime
 
-con = Connection
-con = eng.connect()
+
 """
 default route to be attached to this resource.
 refer to the __init__.py of main gkcore package for details on routing url
@@ -56,6 +55,7 @@ class bankreconciliation(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
+		self.con = Connection
 
 	@view_config(request_method='GET',renderer='json')
 	def banklist(self):
@@ -68,12 +68,15 @@ class bankreconciliation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"],gkdb.accounts.c.groupcode ==(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname=='Bank'))))).order_by(gkdb.accounts.c.accountname))
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"],gkdb.accounts.c.groupcode ==(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname=='Bank'))))).order_by(gkdb.accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
+				self.con.close()
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 
 	@view_config(request_method='GET', request_param='recon=uncleared',renderer='json')
@@ -86,17 +89,18 @@ class bankreconciliation(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
+				self.con = eng.connect()
 				accountCode = self.request.params["accountcode"]
 				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
-				result = con.execute(select([bankrecon]).where(bankrecon.c.accountcode==accountCode))
+				result = self.con.execute(select([bankrecon]).where(bankrecon.c.accountcode==accountCode))
 				recongrid=[]
 				for record in result:
 					if record["clearancedate"]!=None and record["clearancedate"]<calculateFrom:
 						continue
 					else:
-						voucherdata=con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+						voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
 						voucher= voucherdata.fetchone()
 						if voucher==None:
 							continue
@@ -104,7 +108,7 @@ class bankreconciliation(object):
 						if voucher["drs"].has_key(str(record["accountcode"])):
 							print "ifffff,  ",voucher["drs"]
 							for cr in voucher["crs"].keys():
-	  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+	  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 	  							accountname = accountnameRow.fetchone()
 								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
 								if record["clearancedate"]==None:
@@ -119,7 +123,7 @@ class bankreconciliation(object):
 
 						if voucher["crs"].has_key(str(record["accountcode"])):
 							for dr in voucher["drs"].keys():
-	  							accountnameRow = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+	  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 	  							accountname = accountnameRow.fetchone()
 								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
 								if record["clearancedate"]==None:
@@ -131,6 +135,8 @@ class bankreconciliation(object):
 								else:
 									reconRow["memo"]=record["memo"]
 								recongrid.append(reconRow)
+				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
-			#except:
-				#return{"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return{"gkstatus":enumdict["ConnectionFailed"]}

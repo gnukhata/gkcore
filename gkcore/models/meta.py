@@ -20,7 +20,7 @@ Copyright (C) 2014 2015 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 
-Contributor: 
+Contributor:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
@@ -29,6 +29,6 @@ from sqlalchemy.engine import create_engine
 def dbconnect():
 	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
-	#engine = Engine 
-	engine = create_engine(stmt, echo=False)
+	#engine = Engine
+	engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
 	return engine
