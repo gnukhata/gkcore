@@ -40,17 +40,18 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 
-con = Connection
-con = eng.connect()
+
 
 
 def getUserRole(userid):
 	try:
+		con = Connection
+		con = eng.connect()
 		uid=userid
 		user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == uid ))
 		row = user.fetchone()
 		User = {"userrole":row["userrole"]}
-
+		con.close();
 		return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
 	except:
 		return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -60,6 +61,7 @@ class api_user(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
+		self.con = Connection
 
 	@view_config(request_method='POST',renderer='json')
 	def addUser(self):
@@ -73,13 +75,14 @@ class api_user(object):
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = eng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1 or (userRole[0]==0 and dataset["userrole"]==1):
 					print dataset
 					dataset["orgcode"] = authDetails["orgcode"]
-					result = con.execute(gkdb.users.insert(),[dataset])
+					result = self.con.execute(gkdb.users.insert(),[dataset])
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
@@ -87,6 +90,8 @@ class api_user(object):
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 	@view_config(route_name='user', request_method='GET',renderer='json')
 	def getUser(self):
 		try:
@@ -99,13 +104,16 @@ class api_user(object):
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				row = result.fetchone()
 				User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
 				print User
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 	@view_config(request_method='PUT', renderer='json')
 	def editUser(self):
 		try:
@@ -118,17 +126,20 @@ class api_user(object):
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = eng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1 or authDetails["userid"]==dataset["userid"]:
-					result = con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
 					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 	@view_config(request_method='GET', renderer ='json')
 	def getAllUsers(self):
 		try:
@@ -141,14 +152,17 @@ class api_user(object):
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
-				result = con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
+				result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
 				users = []
 				for row in result:
 					users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteuser(self):
@@ -161,11 +175,12 @@ class api_user(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = eng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
-					result = con.execute(gkdb.users.delete().where(gkdb.users.c.userid==dataset["userid"]))
+					result = self.con.execute(gkdb.users.delete().where(gkdb.users.c.userid==dataset["userid"]))
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
@@ -173,3 +188,5 @@ class api_user(object):
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()

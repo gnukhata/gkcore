@@ -42,22 +42,20 @@ from sqlalchemy import and_
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-#con = Connection
-#con = eng.connect()
+
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
-		self.myeng = dbconnect()
 		self.con = Connection
 		print "Organisation initialized"
 
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
-			self.con=self.myeng.connect()
+			self.con=eng.connect()
 			result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
 			orgs = []
 			for row in result:
@@ -71,7 +69,7 @@ class api_organisation(object):
 	@view_config(route_name='orgyears', request_method='GET', renderer ='json')
 	def getYears(self):
 		try:
-			self.con = self.myeng.connect()
+			self.con = eng.connect()
 			result = self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend,gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"])))
 			years = []
 			for row in result:
@@ -86,7 +84,7 @@ class api_organisation(object):
 	def postOrg(self):
 
 		try:
-			self.con = self.myeng.connect()
+			self.con = eng.connect()
 			dataset = self.request.json_body
 			orgdata = dataset["orgdetails"]
 			userdata = dataset["userdetails"]
@@ -196,7 +194,7 @@ class api_organisation(object):
 	@view_config(route_name='organisation', request_method='GET',renderer='json')
 	def getOrg(self):
 		try:
-			self.con = self.myeng.connect()
+			self.con = eng.connect()
 			result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
 			row = result.fetchone()
 			orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	}
@@ -214,7 +212,7 @@ class api_organisation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				self.con = self.myeng.connect()
+				self.con = eng.connect()
 				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
@@ -236,7 +234,7 @@ class api_organisation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				self.con = self.myeng.connect()
+				self.con = eng.connect()
 				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
@@ -252,7 +250,7 @@ class api_organisation(object):
 	@view_config(route_name='orgid', request_method='GET',renderer='json')
 	def getOrgCode(self):
 		try:
-			self.con = self.myeng.connect()
+			self.con = eng.connect()
 			result = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype==self.request.matchdict["orgtype"], gkdb.organisation.c.yearstart==self.request.matchdict["yearstart"], gkdb.organisation.c.yearend==self.request.matchdict["yearend"])))
 			row = result.fetchone()
 			orgcode={"orgcode":row["orgcode"]}
@@ -271,7 +269,7 @@ class api_organisation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				self.con =self.myeng.connect()
+				self.con =eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
 				self.con.close()

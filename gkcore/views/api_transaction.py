@@ -111,19 +111,19 @@ class api_transaction(object):
 				crs = dataset["crs"]
 				result = self.con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
-					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
 					accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
 					accgrp = accgrpdata.fetchone()
 					if accgrp["groupname"] == "Bank":
-						vouchercodedata = eng.execute("select max(vouchercode) as vcode from vouchers")
+						vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
 						vouchercode =vouchercodedata.fetchone()
 						recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
 				for crkeys in crs.keys():
-					eng.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
 					accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
 					accgrp = accgrpdata.fetchone()
 					if accgrp["groupname"] == "Bank":
-						vouchercodedata = eng.execute("select max(vouchercode) as vcode from vouchers")
+						vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
 						vouchercode =vouchercodedata.fetchone()
 						recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
 				self.con.close()
@@ -535,13 +535,13 @@ class api_transaction(object):
 				vcode = dataset["vouchercode"]
 				voucherdata = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
 				voucherRow = voucherdata.fetchone()
-				eng.execute("update vouchers set delflag= true where vouchercode = %d"%(int(vcode)))
+				self.con.execute("update vouchers set delflag= true where vouchercode = %d"%(int(vcode)))
 				DrData = voucherRow["drs"]
 				CrData = voucherRow["crs"]
 				for drKey in DrData.keys():
-					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
+					self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
 				for crKey in CrData.keys():
-					eng.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
+					self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
 			except:

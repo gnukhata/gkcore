@@ -54,8 +54,7 @@ routing mechanism:
 if specific route is to be attached to a certain method, or for giving get, post, put, delete methods to default route, the view_config decorator is used.
 For other predicates view_config is generally used.
 """
-con = Connection
-con = eng.connect()
+
 """
 default route to be attached to this resource.
 refer to the __init__.py of main gkcore package for details on routing url
@@ -66,6 +65,7 @@ class api_project(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
+		self.con = Connection
 
 	@view_config(request_method='POST',renderer='json')
 	def addproject(self):
@@ -88,14 +88,17 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = con.execute(gkdb.projects.insert(),[dataset])
+				result = self.con.execute(gkdb.projects.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(route_name='project', request_method='GET',renderer='json')
 	def getproject(self):
@@ -121,12 +124,15 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.projects]).where(gkdb.projects.c.projectcode==self.request.matchdict["projectcode"]))
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.projects]).where(gkdb.projects.c.projectcode==self.request.matchdict["projectcode"]))
 				row = result.fetchone()
 				acc={"projectcode":row["projectcode"], "projectname":row["projectname"], "sanctionedamount":"%.2f"%float(row["sanctionedamount"])}
 				return {"gkstatus": enumdict["Success"], "gkresult":acc}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='GET', renderer ='json')
 	def getAllprojects(self):
@@ -139,13 +145,16 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				result = con.execute(select([gkdb.projects.c.projectname,gkdb.projects.c.projectcode,gkdb.projects.c.sanctionedamount]).where(gkdb.projects.c.orgcode==authDetails["orgcode"]).order_by(gkdb.projects.c.projectname))
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.projects.c.projectname,gkdb.projects.c.projectcode,gkdb.projects.c.sanctionedamount]).where(gkdb.projects.c.orgcode==authDetails["orgcode"]).order_by(gkdb.projects.c.projectname))
 				prjs = []
 				for row in result:
 					prjs.append({"projectcode":row["projectcode"], "projectname":row["projectname"], "sanctionedamount":"%.2f"%float(row["sanctionedamount"])})
 				return {"gkstatus": enumdict["Success"], "gkresult":prjs}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
 	def editproject(self):
@@ -158,11 +167,14 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = con.execute(gkdb.projects.update().where(gkdb.projects.c.projectcode==dataset["projectcode"]).values(dataset))
+				result = self.con.execute(gkdb.projects.update().where(gkdb.projects.c.projectcode==dataset["projectcode"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteproject(self):
@@ -175,11 +187,12 @@ class api_project(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				self.con = eng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
-					result = con.execute(gkdb.projects.delete().where(gkdb.projects.c.projectcode==dataset["projectcode"]))
+					result = self.con.execute(gkdb.projects.delete().where(gkdb.projects.c.projectcode==dataset["projectcode"]))
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					{"gkstatus":  enumdict["BadPrivilege"]}
@@ -187,3 +200,5 @@ class api_project(object):
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()

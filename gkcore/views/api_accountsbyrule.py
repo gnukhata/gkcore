@@ -41,8 +41,6 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 
-con = Connection
-con = eng.connect()
 
 
 @view_defaults(route_name='accountsbyrule',request_method='GET' )
@@ -50,7 +48,7 @@ class api_accountsbyrule(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
-
+		self.con = Connection
 	@view_config(request_param="type=contra", renderer='json')
 	def contra(self):
 		try:
@@ -62,13 +60,16 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				contraAccs = eng.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+				self.con = eng.connect()
+				contraAccs = self.con.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 				contraList = []
 				for contraRow in contraAccs:
 					contraList.append({"accountname":contraRow["accountname"], "accountcode":contraRow["accountcode"]})
 				return{"gkstatus":enumdict["Success"],"gkresult": contraList}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=journal", renderer='json')
 	def journal(self):
@@ -81,13 +82,16 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				journalAccs = eng.execute("select accountname , accountcode from accounts where groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+				self.con = eng.connect()
+				journalAccs = self.con.execute("select accountname , accountcode from accounts where groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 				journalList = []
 				for contraRow in journalAccs:
 					journalList.append({"accountname":contraRow["accountname"], "accountcode":contraRow["accountcode"]})
 				return{"gkstatus":enumdict["Success"],"gkresult": journalList}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=payment", renderer='json')
 	def payment(self):
@@ -100,9 +104,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -111,7 +116,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -119,7 +124,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 	@view_config(request_param="type=receipt", renderer='json')
 	def receipt(self):
 		try:
@@ -131,9 +138,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and groupcode not in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -142,7 +150,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -150,7 +158,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=sales", renderer='json')
 	def sales(self):
@@ -163,9 +173,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -174,7 +185,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -182,7 +193,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=purchase", renderer='json')
 	def purchase(self):
@@ -195,9 +208,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -206,7 +220,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -214,7 +228,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=salesreturn", renderer='json')
 	def salesreturn(self):
@@ -227,9 +243,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -238,7 +255,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -246,7 +263,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=purchasereturn", renderer='json')
 	def purchasereturn(self):
@@ -259,9 +278,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -270,7 +290,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -278,7 +298,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=debitnote", renderer='json')
 	def debitnote(self):
@@ -291,9 +313,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Profit & Loss','Income & Expenditure') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income') and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -302,7 +325,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Debtors')and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -310,7 +333,9 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_param="type=creditnote", renderer='json')
 	def creditnote(self):
@@ -323,9 +348,10 @@ class api_accountsbyrule(object):
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				self.con = eng.connect()
 				if self.request.params['side']=="Cr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Sundry Creditors for Purchase','Sundry Creditors for Expense') and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -334,7 +360,7 @@ class api_accountsbyrule(object):
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 				if self.request.params['side']=="Dr":
 					try:
-						accs = eng.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+						accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Opening Stock') and groupcode in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Indirect Expense')and orgcode = %d)  order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 						list = []
 						for row in accs:
 							list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -342,4 +368,6 @@ class api_accountsbyrule(object):
 					except:
 						return {"gkstatus":enumdict["ConnectionFailed"]}
 			except:
-					return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
