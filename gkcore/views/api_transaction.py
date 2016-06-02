@@ -32,7 +32,7 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon, voucherbin, projects
 from sqlalchemy.sql import select
 from sqlalchemy import func
 import json
@@ -529,20 +529,45 @@ class api_transaction(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				dataset  = self.request.json_body
 				vcode = dataset["vouchercode"]
 				voucherdata = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
 				voucherRow = voucherdata.fetchone()
-				self.con.execute("update vouchers set delflag= true where vouchercode = %d"%(int(vcode)))
+				self.con.execute("delete from vouchers  where vouchercode = %d"%(int(vcode)))
 				DrData = voucherRow["drs"]
 				CrData = voucherRow["crs"]
 				for drKey in DrData.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
 				for crKey in CrData.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
+				finalCrs = {}
+				finalDrs = {}
+				projectNameData = self.con.execute(select([projects.c.projectname]).where(projects.c.projectcode==voucherRow["projectcode"]))
+				prjNameRow = projectNameData.fetchone()
+				if prjNameRow == None:
+					projectName  = ""
+				else:
+					projectName = prjNameRow["projectname"]
+				for d in DrData.keys():
+					accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
+					account = accname.fetchone()
+					finalDrs[account["accountname"]] = DrData[d]
+
+				for c in CrData.keys():
+					accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
+					account = accname.fetchone()
+					finalCrs[account["accountname"]] = CrData[c]
+				voucherBinData = {"vouchercode":voucherRow["vouchercode"],"voucherdate":voucherRow["voucherdate"],"vouchernumber":voucherRow["vouchernumber"],"narration":voucherRow["narration"],"drs":finalDrs,"crs":finalCrs,"vouchertype":voucherRow["vouchertype"],"attachment":voucherRow["attachment"],"projectname":projectName,"orgcode":authDetails["orgcode"]}
+				print voucherBinData
+				bin = self.con.execute(voucherbin.insert(),[voucherBinData])
+
+
+
+
+
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
