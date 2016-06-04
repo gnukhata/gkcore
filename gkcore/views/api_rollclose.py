@@ -32,6 +32,7 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+from gkcore.views.api_reports import api_report, api_reports
 from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon, voucherbin, projects
 from sqlalchemy.sql import select
 from sqlalchemy import func
@@ -42,7 +43,8 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 
-from datetime import datetime
+import datetime.date
+
 @view_defaults(route_name="rollclose",request_method="get")
 class api_rollclose(object):
 	"""
@@ -84,6 +86,40 @@ class api_rollclose(object):
 		else:
 			try:
 				self.con = eng.connect()
+				orgCode = authDetails["orgcode"]
+				financialStartEnd = self.con.execute("select yearstart, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
+				startEndRow = financialStartEnd.fetchone()
+				startDate = startEndRow["yearstart"]
+				endDate = startEndRow["yearend"]
+				closingAccount = ""
+				closingAccountCode = 0
+				if startEndRow["orgtype"] == "Profit Making":
+					closingAccount = "Profit & Loss"
+					closeCodeData = self.con.execute("select accountcode from accounts where orgcode = %d and accountname = '%s'"%(orgCode,closingAccount))
+					codeRow = closeCodeData.fetchone()
+					closingAccountCode = int(codeRow["accountcode"])
+				else:
+					closingAccount = "Income & Expenditure"
+					closeCodeData = self.con.execute("select accountcode from accounts where orgcode = %d and accountname = '%s'"%(orgCode,closingAccount))
+					codeRow = closeCodeData.fetchone()
+					closingAccountCode = int(codeRow["accountcode"])
+				directIncomeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income', 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income'));"%(orgCode, orgCode, orgCode))
+				diRecords = directIncomeData.fetchall()
+				for di in diRecords:
+					if di["accountname"]  == "Profit & Loss" or di["accountname"] == "Income & Expenditure":
+						continue
+					r = api_reports()
+					cbRecord = r.calculateBalance(int(di["accountcode"]),startDate ,startDate ,endDate )
+					curtime=datetime.datetime.now()
+					str_time=str(curtime.microsecond)
+					new_microsecond=str_time[0:2]		
+					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
+					voucherDate = str(datetime.date.today())
+					entryDate = voucherDate
+					drs ={"accountcode":di["accountcode"],"amount":cbRecord["curbal"]}
+					crs = {"accountcode":closingAccountCode,"amount":cbRecord["curbal"]}
+					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
+
 				
 				self.con.close()
 			except Exception as E:
