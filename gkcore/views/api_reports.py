@@ -444,7 +444,7 @@ class api_reports(object):
 			try:
 
 				self.con = eng.connect()
-				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
 				accountRecords = accountData.fetchall()
 				ntbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -510,7 +510,7 @@ class api_reports(object):
 			try:
 
 				self.con = eng.connect()
-				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
 				accountRecords = accountData.fetchall()
 				gtbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -571,7 +571,7 @@ class api_reports(object):
 			try:
 
 				self.con = eng.connect()
-				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ) )
+				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
 				accountRecords = accountData.fetchall()
 				extbGrid = []
 				financialStart = self.request.params["financialstart"]
@@ -678,16 +678,18 @@ class api_reports(object):
 				for cbAccount in cbAccounts:
 					opacc = self.calculateBalance(cbAccount["accountcode"], financialStart, calculateFrom, calculateTo)
 					if opacc["balbrought"]!=0.00:
-						receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["balbrought"])+"(%s)"%(opacc["openbaltype"]),"accountcode":cbAccount["accountcode"]})
 						if opacc["openbaltype"]=="Dr":
+							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"]})
 							rctotal += float(opacc["balbrought"])
 						if opacc["openbaltype"]=="Cr":
+							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"]})
 							rctotal -= float(opacc["balbrought"])
 					if opacc["curbal"]!=0.00:
-						closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"])+"(%s)"%(opacc["baltype"]),"accountcode":cbAccount["accountcode"]})
 						if opacc["baltype"]=="Dr":
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
 							pytotal += float(opacc["curbal"])
 						if opacc["baltype"]=="Cr":
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
 							pytotal -= float(opacc["curbal"])
 					transactionsRecords = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
 					transactions = transactionsRecords.fetchall()
@@ -762,7 +764,7 @@ class api_reports(object):
 				projectCode= self.request.params["projectcode"]
 				totalDr = 0.00
 				totalCr = 0.00
-				grpaccsdata = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				grpaccsdata = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 				grpaccs = grpaccsdata.fetchall()
 				srno = 1
 				projectStatement = []
@@ -1432,7 +1434,7 @@ class api_reports(object):
 
 				if(expenseTotal > incomeTotal):
 					difference = expenseTotal - incomeTotal
-					income.append({"toby":"By,","accountname":"Gross "+loss+" C/F","amount":difference, "accountcode":""})
+					income.append({"toby":"By,","accountname":"Gross "+loss+" C/F","amount":"%.2f"%float(difference), "accountcode":""})
 					if len(income)>len(expense):
 						emptyno = len(income)-len(expense)
 						for i in range(0,emptyno):
@@ -1449,7 +1451,7 @@ class api_reports(object):
 
 				if(expenseTotal < incomeTotal):
 					difference = incomeTotal - expenseTotal
-					expense.append({"toby":"To,","accountname":"Gross "+profit+" C/F","amount":"%.2f"%(difference), "accountcode":""})
+					expense.append({"toby":"To,","accountname":"Gross "+profit+" C/F","amount":"%.2f"%float(difference), "accountcode":""})
 					if len(income)>len(expense):
 						emptyno = len(income)-len(expense)
 						for i in range(0,emptyno):
@@ -1468,9 +1470,9 @@ class api_reports(object):
 				expense.append({"toby":"","accountname":"INDIRECT EXPENSE", "amount":"", "accountcode":""})
 				income.append({"toby":"","accountname":"INDIRECT INCOME","amount":"", "accountcode":""})
 				if(expenseTotal > incomeTotal):
-					expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":difference, "accountcode":""})
+					expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":"%.2f"%float(difference), "accountcode":""})
 				if(expenseTotal < incomeTotal):
-					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%(difference), "accountcode":""})
+					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%float(difference), "accountcode":""})
 				difference = 0.00
 				#Calculate all expense(Indirect Expense)
 				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
