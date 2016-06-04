@@ -235,7 +235,7 @@ class api_user(object):
 					liabilityDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
 					groupBalanceTable.append(liabilityDict)
 					liabilityTotal = liabilityTotal + float(balCountRow[1])
-			groupBalanceTable.append({"Total":"%.2f"%liabilityTotal})
+			groupBalanceTable.append({"Total":"%.2f"%(liabilityTotal)})
 			groupBalanceTable.append("PROPERTY & ASSETS")
 			for groupRow in nonprofitgroups:
 				if groupRow == "Fixed Assets" or groupRow == "Current Assets" or groupRow == "Investments" or groupRow == "Loans(Asset)":
@@ -247,7 +247,7 @@ class api_user(object):
 					AssetDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
 					groupBalanceTable.append(AssetDict)
 					assetsTotal = assetsTotal + float(balCountRow[1])
-			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
+			groupBalanceTable.append({"Total":"%.2f"%(assetsTotal)})
 			difference = abs(assetsTotal - liabilityTotal)
 			groupBalanceTable.append({"Difference in balance": difference })
 		if str(typeRow["orgtype"]) == "Profit Making":
@@ -262,7 +262,7 @@ class api_user(object):
 					liabilityDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
 					groupBalanceTable.append(liabilityDict)
 					liabilityTotal = liabilityTotal + float(balCountRow[1])
-			groupBalanceTable.append({"Total":"%.2f"%liabilityTotal})
+			groupBalanceTable.append({"Total":"%.2f"%(liabilityTotal)})
 			groupBalanceTable.append("PROPERTY & ASSETS")
 			for groupRow in profitgroups:
 				if groupRow == "Fixed Assets" or groupRow == "Current Assets" or groupRow == "Investments" or groupRow == "Loans(Asset)" or groupRow == "Miscellaneous Expenses(Asset)":
@@ -274,7 +274,7 @@ class api_user(object):
 					AssetDict = {"groupname":groupRow,"numberofaccounts":int(balCountRow[0]),"groupbalance":"%.2f"%float(balCountRow[1])}
 					groupBalanceTable.append(AssetDict)
 					assetsTotal = assetsTotal + float(balCountRow[1])
-			groupBalanceTable.append({"Total":"%.2f"%assetsTotal})
+			groupBalanceTable.append({"Total":"%.2f"%(assetsTotal)})
 			difference = abs(assetsTotal - liabilityTotal)
-			groupBalanceTable.append({"Difference in balance": difference })
+			groupBalanceTable.append({"Difference in balance": "%.2f"%float(difference) })
 		return groupBalanceTable
