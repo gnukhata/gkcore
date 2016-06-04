@@ -71,6 +71,7 @@ def main(global_config, **settings):
 	config.add_route("groupsubgroups","/groupsubgroups")
 	config.add_route("groupDetails","/groupDetails/{groupcode}")
 	config.add_route("report","/report")
+	config.add_route("rollclose","/rollclose")
 	config.scan("gkcore.views")
 
 	return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
