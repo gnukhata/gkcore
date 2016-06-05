@@ -686,10 +686,10 @@ class api_reports(object):
 							rctotal -= float(opacc["balbrought"])
 					if opacc["curbal"]!=0.00:
 						if opacc["baltype"]=="Dr":
-							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
 							pytotal += float(opacc["curbal"])
 						if opacc["baltype"]=="Cr":
-							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
 							pytotal -= float(opacc["curbal"])
 					transactionsRecords = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
 					transactions = transactionsRecords.fetchall()
