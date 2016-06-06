@@ -191,18 +191,20 @@ class api_organisation(object):
 			self.con.close()
 			return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(route_name='organisation', request_method='GET',renderer='json')
+	@view_config(request_param='org=code', request_method='GET',renderer='json')
 	def getOrg(self):
 		try:
-			self.con = eng.connect()
-			result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==self.request.matchdict["orgcode"]))
-			row = result.fetchone()
-			orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":row["orgcity"], "orgaddr":row["orgaddr"], "orgpincode":row["orgpincode"], "orgstate":row["orgstate"], "orgcountry":row["orgcountry"], "orgtelno":row["orgtelno"], "orgfax":row["orgfax"], "orgwebsite":row["orgwebsite"], "orgemail":row["orgemail"], "orgpan":row["orgpan"], "orgmvat":row["orgmvat"], "orgstax":row["orgstax"], "orgregno":row["orgregno"], "orgregdate":row["orgregdate"], "orgfcrano":row["orgfcrano"], "orgfcradate":row["orgfcradate"], "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"]	}
-			self.con.close()
-			return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
+			token = self.request.headers["gktoken"]
 		except:
-			self.con.close()
-			return {"gkstatus":enumdict["ConnectionFailed"]}
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				return {"gkstatus":enumdict["Success"],"gkdata":authDetails["orgcode"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_method='PUT', renderer='json')
 	def putOrg(self):

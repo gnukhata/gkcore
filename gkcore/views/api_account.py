@@ -37,7 +37,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc,alias, or_
+from sqlalchemy import and_, exc,alias, or_, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -182,7 +182,7 @@ class api_account(object):
 			try:
 				self.con = eng.connect()
 				accountname = self.request.params["accountname"]
-				result = self.con.execute("select count(accountname) as acc from accounts where accountname='%s' and orgcode = %d"%(accountname,authDetails["orgcode"]))
+				result = self.con.execute(select([func.count(gkdb.accounts.c.accountname).label('acc')]).where(and_(gkdb.accounts.c.accountname==accountname,gkdb.accounts.c.orgcode==authDetails["orgcode"])))
 				acccount = result.fetchone()
 				if acccount["acc"]>0:
 					self.con.close()
