@@ -32,7 +32,7 @@ Contributor:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.views.api_reports import api_report, api_reports
+from gkcore.views.api_reports import api_reports
 from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon, voucherbin, projects
 from sqlalchemy.sql import select
 from sqlalchemy import func
@@ -120,7 +120,7 @@ class api_rollclose(object):
 					crs = {closingAccountCode:cbRecord["curbal"]}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-				directExpenseData =  self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense', 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income'));"%(orgCode, orgCode, orgCode))
+				directExpenseData =  self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense', 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense'));"%(orgCode, orgCode, orgCode))
 				deRecords = directExpenseData.fetchall()
 				for de in deRecords:
 					cbRecord = r.calculateBalance(int(de["accountcode"]),startDate ,startDate ,endDate )
@@ -134,8 +134,52 @@ class api_rollclose(object):
 					drs = {closingAccountCode:cbRecord["curbal"]}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-
+				plResult = r.calculateBalance(closingAccountCode, startDate, startDate, endDate)
 				
+				
+				groupCodeData = self.con.execute("select groupcode from groupsubgroups where groupname = 'Reserves' and orgcode = %d"(orgCode) )
+				gcRecord = groupCodeData.fetchone()
+				groupCode = gcRecord["groupcode"]
+				if plResult["baltype"]== "Cr" and startEndRow["orgtype"] == "Profit Making":
+					pAccount = {"accountname":"Profit For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+					ins = self.con.execute(accounts.insert(),[pAccount])
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
+					paccnumrow = paccnumdata.fetchone()
+					laccnumrow = laccnumdata.fetchone()
+					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+						pAccount = {"accountname":"Profit C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+						ins = self.con.execute(accounts.insert(),[pAccount])
+				if plResult["baltype"]== "Cr" and startEndRow["orgtype"] == "Not For Profit":
+					sAccount = {"accountname":"Surplus For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+					ins = self.con.execute(accounts.insert(),[sAccount])
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
+					paccnumrow = paccnumdata.fetchone()
+					laccnumrow = laccnumdata.fetchone()
+					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+						pAccount = {"accountname":"Surplus C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+						ins = self.con.execute(accounts.insert(),[pAccount])
+				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Profit Making":
+					lAccount = {"accountname":"Loss For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+					ins = self.con.execute(accounts.insert(),[lAccount])
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
+					paccnumrow = paccnumdata.fetchone()
+					laccnumrow = laccnumdata.fetchone()
+					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+						pAccount = {"accountname":"Loss C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+						ins = self.con.execute(accounts.insert(),[pAccount])
+				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Not For Profit":
+					dAccount = {"accountname":"Deficit For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+					ins = self.con.execute(accounts.insert(),[dAccount])
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
+					paccnumrow = paccnumdata.fetchone()
+					laccnumrow = laccnumdata.fetchone()
+					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+						pAccount = {"accountname":"Deficit C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
+						ins = self.con.execute(accounts.insert(),[pAccount])
 				self.con.close()
 			except Exception as E:
 				print E
