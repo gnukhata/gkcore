@@ -230,9 +230,15 @@ class api_account(object):
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
-					result = self.con.execute(gkdb.accounts.delete().where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
-					self.con.close()
-					return {"gkstatus":enumdict["Success"]}
+					vouchercountdata = self.con.execute(select([gkdb.accounts.c.vouchercount]).where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
+					vouchercountrow = vouchercountdata.fetchone()
+					if vouchercountrow["vouchercount"]!=0:
+						self.con.close()
+						return {"gkstatus":enumdict["ActionDisallowed"]}
+					else:
+						result = self.con.execute(gkdb.accounts.delete().where(gkdb.accounts.c.accountcode==dataset["accountcode"]))
+						self.con.close()
+						return {"gkstatus":enumdict["Success"]}
 				else:
 					self.con.close()
 					return {"gkstatus":  enumdict["BadPrivilege"]}

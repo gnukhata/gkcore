@@ -529,7 +529,7 @@ class api_transaction(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dataset  = self.request.json_body
 				vcode = dataset["vouchercode"]
@@ -562,12 +562,7 @@ class api_transaction(object):
 				voucherBinData = {"vouchercode":voucherRow["vouchercode"],"voucherdate":voucherRow["voucherdate"],"vouchernumber":voucherRow["vouchernumber"],"narration":voucherRow["narration"],"drs":finalDrs,"crs":finalCrs,"vouchertype":voucherRow["vouchertype"],"attachment":voucherRow["attachment"],"projectname":projectName,"orgcode":authDetails["orgcode"]}
 				print voucherBinData
 				bin = self.con.execute(voucherbin.insert(),[voucherBinData])
-
-
-
-
-
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
-			#except:
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
