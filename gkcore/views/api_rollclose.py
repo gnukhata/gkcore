@@ -116,9 +116,11 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					voucherDate = str(datetime.date.today())
 					entryDate = voucherDate
-					drs ={"accountcode":di["accountcode"],"amount":cbRecord["curbal"]}
-					crs = {"accountcode":closingAccountCode,"amount":cbRecord["curbal"]}
+					drs ={di["accountcode"]:cbRecord["curbal"]}
+					crs = {closingAccountCode:cbRecord["curbal"]}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
+					result = self.con.execute(vouchers.insert(),[cljv])
+				
 
 				
 				self.con.close()
