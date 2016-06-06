@@ -93,6 +93,7 @@ class api_rollclose(object):
 				endDate = startEndRow["yearend"]
 				closingAccount = ""
 				closingAccountCode = 0
+				r = api_reports()
 				if startEndRow["orgtype"] == "Profit Making":
 					closingAccount = "Profit & Loss"
 					closeCodeData = self.con.execute("select accountcode from accounts where orgcode = %d and accountname = '%s'"%(orgCode,closingAccount))
@@ -108,7 +109,6 @@ class api_rollclose(object):
 				for di in diRecords:
 					if di["accountname"]  == "Profit & Loss" or di["accountname"] == "Income & Expenditure":
 						continue
-					r = api_reports()
 					cbRecord = r.calculateBalance(int(di["accountcode"]),startDate ,startDate ,endDate )
 					curtime=datetime.datetime.now()
 					str_time=str(curtime.microsecond)
@@ -120,7 +120,20 @@ class api_rollclose(object):
 					crs = {closingAccountCode:cbRecord["curbal"]}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-				
+				directExpenseData =  self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense', 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income'));"%(orgCode, orgCode, orgCode))
+				deRecords = directExpenseData.fetchall()
+				for de in deRecords:
+					cbRecord = r.calculateBalance(int(de["accountcode"]),startDate ,startDate ,endDate )
+					curtime=datetime.datetime.now()
+					str_time=str(curtime.microsecond)
+					new_microsecond=str_time[0:2]		
+					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
+					voucherDate = str(datetime.date.today())
+					entryDate = voucherDate
+					crs ={de["accountcode"]:cbRecord["curbal"]}
+					drs = {closingAccountCode:cbRecord["curbal"]}
+					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
+					result = self.con.execute(vouchers.insert(),[cljv])
 
 				
 				self.con.close()
