@@ -150,6 +150,23 @@ class api_rollclose(object):
 					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
 						pAccount = {"accountname":"Profit C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
+					else:
+						if paccnumrow["account"]  > 0:
+							res = self.con.execute("update accounts set accountname = 'Profit C/F', openingbal = openingbal + %d where orgcode = %d and accountname = 'Profit B/F'"%(orgCode,int(plResult["balbrought"])))
+						if laccnumrow["account"] > 0:
+							lcfData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == orgCode,accounts.c.accountname == 'Loss B/F')))
+							lcfRow = lcfData.fetchone()
+							lcf = float(lcfRow["openingbal"])
+							if lcf > plResult["balbrought"]:
+								diff = lcf - plResult["balbrought"]
+								res = self.con.execute("update accounts set accountname = 'Loss C/F', openingbal = %d where orgcode = %d and accountname = 'Loss B/F'"%(orgCode,int(diff)))
+							elif lcf < plResult["balbrought"]:
+								diff = plResult["balbrought"]- lcf
+								res = self.con.execute("update accounts set accountname = 'Profit C/F', openingbal = %d where orgcode = %d and accountname = 'Loss B/F'"%(orgCode,int(diff)))
+							else:
+								res = self.con.execute("delete from accounts where orgcode = %d and accountname = 'Loss B/F'"%(orgCode))
+						
+						
 				if plResult["baltype"]== "Cr" and startEndRow["orgtype"] == "Not For Profit":
 					sAccount = {"accountname":"Surplus For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 					ins = self.con.execute(accounts.insert(),[sAccount])
@@ -160,6 +177,21 @@ class api_rollclose(object):
 					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
 						pAccount = {"accountname":"Surplus C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
+					else:
+						if paccnumrow["account"]  > 0:
+							res = self.con.execute("update accounts set accountname = 'Surplus C/F', openingbal = openingbal + %d where orgcode = %D and accountname = 'Surplus B/F'"%(orgCode,int(plResult["balbrought"])))
+						if laccnumrow["account"] > 0:
+							lcfData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == orgCode,accounts.c.accountname == 'Deficit B/F')))
+							lcfRow = lcfData.fetchone()
+							lcf = float(lcfRow["openingbal"])
+							if lcf > plResult["balbrought"]:
+								diff = lcf - plResult["balbrought"]
+								res = self.con.execute("update accounts set accountname = 'Deficit C/F', openingbal = %d where orgcode = %d and accountname = 'Deficit B/F'"%(orgCode,int(diff)))
+							elif lcf < plResult["balbrought"]:
+								diff = plResult["balbrought"]- lcf
+								res = self.con.execute("update accounts set accountname = 'Surplus C/F', openingbal = %d where orgcode = %d and accountname = 'Deficit B/F'"%(orgCode,int(diff)))
+							else:
+								res = self.con.execute("delete from accounts where orgcode = %d and accountname = 'Deficit B/F'"%(orgCode))
 				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Profit Making":
 					lAccount = {"accountname":"Loss For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 					ins = self.con.execute(accounts.insert(),[lAccount])
@@ -170,6 +202,9 @@ class api_rollclose(object):
 					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
 						pAccount = {"accountname":"Loss C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
+					else:
+						if laccnumrow["account"]  > 0:
+							res = self.con.execute("update accounts set accountname = 'Loss C/F', openingbal = openingbal + %d where orgcode = %D and accountname = 'Loss B/F'"%(orgCode,int(plResult["balbrought"])))
 				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Not For Profit":
 					dAccount = {"accountname":"Deficit For The Year","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 					ins = self.con.execute(accounts.insert(),[dAccount])
@@ -180,6 +215,9 @@ class api_rollclose(object):
 					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
 						pAccount = {"accountname":"Deficit C/F","groupcode":int(groupCode),"openingbal":plResult["balbrought"],"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
+					else:
+						if laccnumrow["account"]  > 0:
+							res = self.con.execute("update accounts set accountname = 'Deficit C/F', openingbal = openingbal + %d where orgcode = %D and accountname = 'Deficit B/F'"%(orgCode,int(plResult["balbrought"])))
 				self.con.close()
 			except Exception as E:
 				print E
