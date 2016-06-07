@@ -431,7 +431,10 @@ class api_rollclose(object):
 				newOrgCodeData = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname == newOrg["orgname"],organisation.c.orgtype == newOrg["orgtype"],organisation.c.yearstart == newOrg["yearstart"], organisation.c.yearend == newOrg["yearend"])))
 				newOrgRow = newOrgCodeData.fetchone()
 				newOrgCode = newOrgRow["orgcode"]
-				
+				oldGroups = self.con.execute("select groupname from groupsubgroup where subgroupof is null")
+				oldGroupRecords = oldGroups.fetchall()
+				for oldgrp in oldGroupRecords:
+					self.con.execute(groupsubgroups.insert(), {"groupname":oldg }oldgrp,"orgcode": newOrgCode)
 
 				
 				
