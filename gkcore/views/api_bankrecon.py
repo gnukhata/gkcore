@@ -35,9 +35,10 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import bankrecon,vouchers,accounts
 from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import null
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc,or_
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -73,11 +74,11 @@ class bankreconciliation(object):
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
-				self.con.close()
 				return {"gkstatus": enumdict["Success"], "gkresult":accs}
 			except:
-				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='GET', request_param='recon=uncleared',renderer='json')
 	def getUnclearedTransactions(self):
@@ -94,49 +95,132 @@ class bankreconciliation(object):
 				accountCode = self.request.params["accountcode"]
 				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
-				result = self.con.execute(select([bankrecon]).where(bankrecon.c.accountcode==accountCode))
-				recongrid=[]
-				for record in result:
-					if record["clearancedate"]!=None and record["clearancedate"]<calculateFrom:
-						continue
-					else:
-						voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
-						voucher= voucherdata.fetchone()
-						if voucher==None:
-							continue
-						print "awidaijdoygfia: ",voucher
-						if voucher["drs"].has_key(str(record["accountcode"])):
-							print "ifffff,  ",voucher["drs"]
-							for cr in voucher["crs"].keys():
-	  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
-	  							accountname = accountnameRow.fetchone()
-								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
-								if record["clearancedate"]==None:
-									reconRow["clearancedate"]=""
-								else:
-									reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
-								if record["memo"]==None:
-									reconRow["memo"]=""
-								else:
-									reconRow["memo"]=record["memo"]
-								recongrid.append(reconRow)
+				recongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
+				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
 
-						if voucher["crs"].has_key(str(record["accountcode"])):
-							for dr in voucher["drs"].keys():
-	  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
-	  							accountname = accountnameRow.fetchone()
-								reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
-								if record["clearancedate"]==None:
-									reconRow["clearancedate"]=""
-								else:
-									reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
-								if record["memo"]==None:
-									reconRow["memo"]=""
-								else:
-									reconRow["memo"]=record["memo"]
-								recongrid.append(reconRow)
+			except:
+				return{"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
 				self.con.close()
+
+	def showUnclearedTransactions(self,accountCode,calculateFrom,calculateTo):
+		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateFrom),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
+		recongrid=[]
+		for record in result:
+			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+			voucher= voucherdata.fetchone()
+			if voucher==None:
+				continue
+			if voucher["drs"].has_key(str(record["accountcode"])):
+				for cr in voucher["crs"].keys():
+					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+					accountname = accountnameRow.fetchone()
+					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
+					if record["clearancedate"]==None:
+						reconRow["clearancedate"]=""
+					else:
+						reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+					if record["memo"]==None:
+						reconRow["memo"]=""
+					else:
+						reconRow["memo"]=record["memo"]
+					recongrid.append(reconRow)
+
+			if voucher["crs"].has_key(str(record["accountcode"])):
+				for dr in voucher["drs"].keys():
+					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+					accountname = accountnameRow.fetchone()
+					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
+					if record["clearancedate"]==None:
+						reconRow["clearancedate"]=""
+					else:
+						reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+					if record["memo"]==None:
+						reconRow["memo"]=""
+					else:
+						reconRow["memo"]=record["memo"]
+					recongrid.append(reconRow)
+		return recongrid
+
+	@view_config(request_method='PUT',renderer='json')
+	def updateRecon(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				accountCode = dataset["accountcode"]
+				calculateFrom = datetime.strptime(str(dataset.pop("calculatefrom")),"%Y-%m-%d")
+				calculateTo = datetime.strptime(str(dataset.pop("calculateto")),"%Y-%m-%d")
+				result = self.con.execute(bankrecon.update().where(bankrecon.c.reconcode==dataset["reconcode"]).values(dataset))
+				recongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
+
 				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
 			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
 				self.con.close()
-				return{"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_method='GET', request_param='recon=cleared',renderer='json')
+	def getClearedTransactions(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				accountCode = self.request.params["accountcode"]
+				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
+				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
+				result = self.con.execute(select([bankrecon]).where(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate<=calculateFrom)))
+				recongrid=[]
+				for record in result:
+					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateFrom)))
+					voucher= voucherdata.fetchone()
+					if voucher==None:
+						continue
+					if voucher["drs"].has_key(str(record["accountcode"])):
+						for cr in voucher["crs"].keys():
+							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+							accountname = accountnameRow.fetchone()
+							reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
+							if record["clearancedate"]==None:
+								reconRow["clearancedate"]=""
+							else:
+								reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+							if record["memo"]==None:
+								reconRow["memo"]=""
+							else:
+								reconRow["memo"]=record["memo"]
+							recongrid.append(reconRow)
+
+					if voucher["crs"].has_key(str(record["accountcode"])):
+						for dr in voucher["drs"].keys():
+							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+							accountname = accountnameRow.fetchone()
+							reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
+							if record["clearancedate"]==None:
+								reconRow["clearancedate"]=""
+							else:
+								reconRow["clearancedate"]=datetime.strftime(record["clearancedate"],"%d-%m-%Y")
+							if record["memo"]==None:
+								reconRow["memo"]=""
+							else:
+								reconRow["memo"]=record["memo"]
+							recongrid.append(reconRow)
+				return recongrid
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+            
