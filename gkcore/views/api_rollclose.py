@@ -84,7 +84,7 @@ class api_rollclose(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				orgCode = int(authDetails["orgcode"])
 				financialStartEnd = self.con.execute("select yearstart, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
@@ -391,7 +391,8 @@ class api_rollclose(object):
 						result = self.con.execute(vouchers.insert(),[cljv])
 				result = self.con.execute(organisation.update().where(organisation.c.orgcode==orgCode).values({"booksclosedflag":1}))
 				self.con.close()
-			#except Exception as E:
+				return {"gkstatus": enumdict["Success"]}
+			except Exception as E:
 				#print E
-				#self.con.close()
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
