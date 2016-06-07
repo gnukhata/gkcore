@@ -657,7 +657,7 @@ class api_reports(object):
 				calculateFrom = self.request.params["calculatefrom"]
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
-				cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash'))"%(authDetails["orgcode"],authDetails["orgcode"]))
+				cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
 				cbAccounts = cbAccountsData.fetchall()
 				receiptcf = []
 				paymentcf = []
@@ -855,7 +855,7 @@ class api_reports(object):
 
 
 				#Calculate grouptotal for group Capital/Corpus
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s'));"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = '%s' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = '%s')) order by accountname;"%(orgcode, orgcode, capital_Corpus, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -876,7 +876,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Loans(Liability)
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Liability)')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -897,7 +897,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Current Liabilities
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Liabilities')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -946,7 +946,7 @@ class api_reports(object):
 
 
 				#Calculate total of all accounts in Reserves except(Direct and Indirect Income, Expense)
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Reserves')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -992,7 +992,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Fixed Assets"
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Fixed Assets')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -1013,7 +1013,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Investments"
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Investments')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -1034,7 +1034,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group "Current Assets"
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Current Assets')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -1055,7 +1055,7 @@ class api_reports(object):
 
 				#Calculate grouptotal for group Loans(Asset)
 				groupWiseTotal = 0.00
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Loans(Asset)')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				account = []
 				for accountRow in accountCodes:
@@ -1077,7 +1077,7 @@ class api_reports(object):
 				if orgtype=="Profit Making":
 					#Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
 					groupWiseTotal = 0.00
-					accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)'));"%(orgcode, orgcode, orgcode))
+					accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)' or subgroupof = (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Miscellaneous Expenses(Asset)')) order by accountname;"%(orgcode, orgcode, orgcode))
 					accountCodes = accountcodeData.fetchall()
 					account = []
 					for accountRow in accountCodes:
@@ -1407,7 +1407,7 @@ class api_reports(object):
 				income.append({"toby":"","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
 
 				#Calculate all expense(Direct Expense)
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1420,7 +1420,7 @@ class api_reports(object):
 					expense.append({"toby":"To,","accountname":accountRow["accountname"], "amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
 
 				#Calculate all income(Direct and Indirect Income)
-				accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1475,7 +1475,7 @@ class api_reports(object):
 					income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%float(difference), "accountcode":""})
 				difference = 0.00
 				#Calculate all expense(Indirect Expense)
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
@@ -1488,7 +1488,7 @@ class api_reports(object):
 					expense.append({"toby":"To,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]),"accountcode":accountRow["accountcode"]})
 
 				#Calculate all income(Indirect Income)
-				accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income'));"%(orgcode, orgcode, orgcode))
+				accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
 					accountDetails = self.calculateBalance(accountRow["accountcode"], financialStart, financialStart, calculateTo)
