@@ -43,7 +43,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 
-from datetime import datetime,date
+from datetime import datetime,date, timedelta
 
 @view_defaults(route_name="rollclose",request_method="GET")
 class api_rollclose(object):
@@ -390,6 +390,54 @@ class api_rollclose(object):
 						cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Deficit For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 						result = self.con.execute(vouchers.insert(),[cljv])
 				result = self.con.execute(organisation.update().where(organisation.c.orgcode==orgCode).values({"booksclosedflag":1}))
+				self.con.close()
+				return {"gkstatus": enumdict["Success"]}
+			except Exception as E:
+				#print E
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='task=rollover',renderer='json')
+	def rollOver(self):
+		"""
+		Purpose:
+		Creates a new organisation by adding new row in Organisation table,
+		And transfering all accounts from the old organisation to the newly created one.
+		Also updates organisation table and sets roflag to true for the old orgcode.
+		Returns success status if true.
+		description:
+		This method is called when the /rollclose route is invoked with task=rollover as parameter.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				orgCode = int(authDetails["orgcode"])
+				financialStartEnd = self.con.execute("select orgname, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
+				startEndRow = financialStartEnd.fetchone()
+				endDate = startEndRow["yearend"]
+				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(DAYS=1)
+				newYearEnd = date(endDate.year,endDate.month,endDate.day) + timedelta(years=1)
+				print newYearStart
+				print newYearEnd
+				newOrg = {"orgname":startEndRow["orgname"],"orgtype":startEndRow["orgtype"],"yearstart":newYearStart,"yearend":newYearEnd}
+				self.con.execute(organisation.insert( ),newOrg)
+				newOrgCodeData = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname == newOrg["orgname"],organisation.c.orgtype == newOrg["orgtype"],organisation.c.yearstart == newOrg["yearstart"], organisation.c.yearend == newOrg["yearend"])))
+				newOrgRow = newOrgCodeData.fetchone()
+				newOrgCode = newOrgRow["orgcode"]
+				
+
+				
+				
+
+
+
 				self.con.close()
 				return {"gkstatus": enumdict["Success"]}
 			except Exception as E:
