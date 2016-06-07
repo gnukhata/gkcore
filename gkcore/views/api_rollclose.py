@@ -117,8 +117,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					drs ={di["accountcode"]:cbRecord["curbal"]}
-					crs = {closingAccountCode:cbRecord["curbal"]}
+					drs ={di["accountcode"]:"%.2f"%(cbRecord["curbal"])}
+					crs = {closingAccountCode:"%.2f"%(cbRecord["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 				directExpenseData =  self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense', 'Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgCode, orgCode, orgCode))
@@ -133,8 +133,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					crs ={de["accountcode"]:cbRecord["curbal"]}
-					drs = {closingAccountCode:cbRecord["curbal"]}
+					crs ={de["accountcode"]:"%.2f"%(cbRecord["curbal"])}
+					drs = {closingAccountCode:"%.2f"%(cbRecord["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 				plResult = calculateBalance(self.con,closingAccountCode, startDate, startDate, endDate)
@@ -156,8 +156,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					drs ={closingAccountCode:plResult["curbal"]}
-					crs = {curreserve:plResult["curbal"]}
+					drs ={closingAccountCode:"%.2f"%(plResult["curbal"])}
+					crs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Profit & Loss","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
@@ -200,8 +200,8 @@ class api_rollclose(object):
 						voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 						entryDate = str(date.today())
 						voucherDate = endDate
-						drs ={curreserve:plResult["curbal"]}
-						crs = {finalreservecode:plResult["curbal"]}
+						drs ={curreserve:"%.2f"%(plResult["curbal"])}
+						crs = {finalreservecode:"%.2f"%(plResult["curbal"])}
 						cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Profit For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 						result = self.con.execute(vouchers.insert(),[cljv])
 
@@ -219,8 +219,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					drs ={closingAccountCode:plResult["curbal"]}
-					crs = {curreserve:plResult["curbal"]}
+					drs ={closingAccountCode:"%.2f"%(plResult["curbal"])}
+					crs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Income & Expenditure","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
@@ -263,8 +263,8 @@ class api_rollclose(object):
 						voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 						entryDate = str(date.today())
 						voucherDate = endDate
-						drs ={curreserve:plResult["curbal"]}
-						crs = {finalreservecode:plResult["curbal"]}
+						drs ={curreserve:"%.2f"%(plResult["curbal"])}
+						crs = {finalreservecode:"%.2f"%(plResult["curbal"])}
 						cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Surplus For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 						result = self.con.execute(vouchers.insert(),[cljv])
 				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Profit Making":
@@ -280,8 +280,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					crs ={closingAccountCode:plResult["curbal"]}
-					drs = {curreserve:plResult["curbal"]}
+					crs ={closingAccountCode:"%.2f"%(plResult["curbal"])}
+					drs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Profit & Loss","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
@@ -324,8 +324,8 @@ class api_rollclose(object):
 						voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 						entryDate = str(date.today())
 						voucherDate = endDate
-						crs ={curreserve:plResult["curbal"]}
-						drs = {finalreservecode:plResult["curbal"]}
+						crs ={curreserve:"%.2f"%(plResult["curbal"])}
+						drs = {finalreservecode:"%.2f"%(plResult["curbal"])}
 						cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Loss For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 						result = self.con.execute(vouchers.insert(),[cljv])
 				if plResult["baltype"]== "Dr" and startEndRow["orgtype"] == "Not For Profit":
@@ -341,8 +341,8 @@ class api_rollclose(object):
 					voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 					entryDate = str(date.today())
 					voucherDate = endDate
-					crs ={closingAccountCode:plResult["curbal"]}
-					drs = {curreserve:plResult["curbal"]}
+					crs ={closingAccountCode:"%.2f"%(plResult["curbal"])}
+					drs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Income & Expenditure","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
@@ -385,8 +385,8 @@ class api_rollclose(object):
 						voucherNumber  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
 						entryDate = str(date.today())
 						voucherDate = endDate
-						crs ={curreserve:plResult["curbal"]}
-						drs = {finalreservecode:plResult["curbal"]}
+						crs ={curreserve:"%.2f"%(plResult["curbal"])}
+						drs = {finalreservecode:"%.2f"%(plResult["curbal"])}
 						cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Deficit For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 						result = self.con.execute(vouchers.insert(),[cljv])
 				result = self.con.execute(organisation.update().where(organisation.c.orgcode==orgCode).values({"booksclosedflag":1}))
