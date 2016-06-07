@@ -33,7 +33,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import calculateBalance
-from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon, voucherbin, projects, organisation
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, projects, organisation
 from sqlalchemy.sql import select
 from sqlalchemy import func
 import json
@@ -109,6 +109,8 @@ class api_rollclose(object):
 					if di["accountname"]  == "Profit & Loss" or di["accountname"] == "Income & Expenditure":
 						continue
 					cbRecord = calculateBalance(self.con,int(di["accountcode"]),startDate ,startDate ,endDate )
+					if float(cbRecord["curbal"]) == 0:
+						continue
 					curtime=datetime.now()
 					str_time=str(curtime.microsecond)
 					new_microsecond=str_time[0:2]
@@ -123,6 +125,8 @@ class api_rollclose(object):
 				deRecords = directExpenseData.fetchall()
 				for de in deRecords:
 					cbRecord = calculateBalance(self.con,int(de["accountcode"]),startDate ,startDate ,endDate )
+					if float(cbRecord["curbal"]) == 0:
+						continue
 					curtime=datetime.now()
 					str_time=str(curtime.microsecond)
 					new_microsecond=str_time[0:2]
