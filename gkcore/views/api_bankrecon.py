@@ -33,10 +33,11 @@ Contributor:
 #view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import bankrecon,vouchers,accounts
+from gkcore.models.gkdb import bankrecon,vouchers,accounts,organisation
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import null
 import json
+from gkcore.views.api_reports import calculateBalance
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc,or_
 from pyramid.request import Request
@@ -96,7 +97,9 @@ class bankreconciliation(object):
 				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
 				recongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
-				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
+                finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.orgcode==authDetails["orgcode"]))
+				reconstmt= self.reconStatement(accountCode,calculateFrom,calculateTo,recongrid["uctotaldr"],recongrid["uctotalcr"],finStartData["yearstart"])
+				return {"gkstatus":enumdict["Success"],"gkresult":{"recongrid":recongrid["recongrid"],"reconstatement":reconstmt}}
 
 			except:
 				return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -106,6 +109,8 @@ class bankreconciliation(object):
 	def showUnclearedTransactions(self,accountCode,calculateFrom,calculateTo):
 		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateFrom),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
 		recongrid=[]
+		uctotaldr=0.00
+		uctotalcr=0.00
 		for record in result:
 			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
 			voucher= voucherdata.fetchone()
@@ -116,6 +121,7 @@ class bankreconciliation(object):
 					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 					accountname = accountnameRow.fetchone()
 					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
+					uctotaldr +=float(voucher["crs"][cr])
 					if record["clearancedate"]==None:
 						reconRow["clearancedate"]=""
 					else:
@@ -131,6 +137,7 @@ class bankreconciliation(object):
 					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 					accountname = accountnameRow.fetchone()
 					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
+					uctotalcr +=float(voucher["drs"][dr])
 					if record["clearancedate"]==None:
 						reconRow["clearancedate"]=""
 					else:
@@ -140,7 +147,7 @@ class bankreconciliation(object):
 					else:
 						reconRow["memo"]=record["memo"]
 					recongrid.append(reconRow)
-		return recongrid
+		return {"recongrid":recongrid,"uctotaldr":uctotaldr,"uctotalcr":uctotalcr}
 
 	@view_config(request_method='PUT',renderer='json')
 	def updateRecon(self):
@@ -223,4 +230,6 @@ class bankreconciliation(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
-            
+
+	def reconStatement(self,accountCode,calculateFrom,calculateTo,uctotaldr,uctotalcr,financialStart):
+        calbaldata = calculateBalance(self.con,int(di["accountcode"]),startDate ,startDate ,endDate )
