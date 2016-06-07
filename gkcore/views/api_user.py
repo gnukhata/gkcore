@@ -135,7 +135,7 @@ class api_user(object):
 					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					{"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":  enumdict["BadPrivilege"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
