@@ -441,9 +441,11 @@ class api_rollclose(object):
 					newGroupCode = newGroupCodeRow["groupcode"]
 					for osg in oldSubGroupsForGroupData:
 						res = self.con.execute(groupsubgroups.insert(),{"groupname":osg["groupname"],"subgroupof":newGroupCode,"orgcode":newOrgCode})
-					
-					
-				
+				oldGroupAccounts = self.con.execute("select accountname,groupname from accounts,groupsubgroups where account.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode")
+				for angn in oldGroupAccounts:
+					newCodeForGroup  = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == angn["groupname"], groupsubgroups.c.orgcode == newOrgCode )))
+					newGroupCodeRow = newCodeForGroup.fetchone() 
+					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
 
 
 
