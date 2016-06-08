@@ -97,8 +97,9 @@ class bankreconciliation(object):
 				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
 				recongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
-                finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.orgcode==authDetails["orgcode"]))
-				reconstmt= self.reconStatement(accountCode,calculateFrom,calculateTo,recongrid["uctotaldr"],recongrid["uctotalcr"],finStartData["yearstart"])
+				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==authDetails["orgcode"]))
+				finstartrow = finStartData.fetchone()
+				reconstmt= self.reconStatement(accountCode,str(self.request.params["calculatefrom"]),str(self.request.params["calculateto"]),recongrid["uctotaldr"],recongrid["uctotalcr"],str(finstartrow["yearstart"]))
 				return {"gkstatus":enumdict["Success"],"gkresult":{"recongrid":recongrid["recongrid"],"reconstatement":reconstmt}}
 
 			except:
@@ -107,7 +108,7 @@ class bankreconciliation(object):
 				self.con.close()
 
 	def showUnclearedTransactions(self,accountCode,calculateFrom,calculateTo):
-		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateFrom),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
+		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateTo),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
 		recongrid=[]
 		uctotaldr=0.00
 		uctotalcr=0.00
@@ -162,13 +163,15 @@ class bankreconciliation(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				accountCode = dataset["accountcode"]
+				accountCode = dataset.pop("accountcode")
 				calculateFrom = datetime.strptime(str(dataset.pop("calculatefrom")),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(dataset.pop("calculateto")),"%Y-%m-%d")
 				result = self.con.execute(bankrecon.update().where(bankrecon.c.reconcode==dataset["reconcode"]).values(dataset))
 				recongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
-
-				return {"gkstatus":enumdict["Success"],"gkresult":recongrid}
+				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==authDetails["orgcode"]))
+				finstartrow = finStartData.fetchone()
+				reconstmt= self.reconStatement(accountCode,str(self.request.json_body["calculatefrom"]),str(self.request.json_body["calculateto"]),recongrid["uctotaldr"],recongrid["uctotalcr"],str(finstartrow["yearstart"]))
+				return {"gkstatus":enumdict["Success"],"gkresult":{"reconstatement":reconstmt}}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
@@ -189,10 +192,10 @@ class bankreconciliation(object):
 				accountCode = self.request.params["accountcode"]
 				calculateFrom = datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d")
 				calculateTo = datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
-				result = self.con.execute(select([bankrecon]).where(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate<=calculateFrom)))
+				result = self.con.execute(select([bankrecon]).where(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate<=calculateTo)))
 				recongrid=[]
 				for record in result:
-					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateFrom)))
+					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
 					voucher= voucherdata.fetchone()
 					if voucher==None:
 						continue
@@ -232,4 +235,35 @@ class bankreconciliation(object):
 				self.con.close()
 
 	def reconStatement(self,accountCode,calculateFrom,calculateTo,uctotaldr,uctotalcr,financialStart):
-        calbaldata = calculateBalance(self.con,int(di["accountcode"]),startDate ,startDate ,endDate )
+		calbaldata = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo )
+		recostmt = [{"particulars":"RECONCILIATION STATEMENT","amount":"AMOUNT"}]
+		midTotal = 0.00
+		BankBal = 0.00
+		if calbaldata["baltype"]=="Dr" or calbaldata["curbal"]==0:
+			recostmt.append({"particulars":"Balance as per our book (Debit) on "+datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"amount":'%.2f'%(calbaldata["curbal"])})
+			recostmt.append({"particulars":"Add: Cheques issued but not presented","amount":'%.2f'%(uctotalcr)})
+			midTotal = calbaldata["curbal"]+uctotalcr
+			recostmt.append({"particulars":"","amount":'%.2f'%(abs(midTotal))})
+			recostmt.append({"particulars":"Less: Cheques deposited but not cleared","amount":'%.2f'%(uctotaldr)})
+			BankBal = midTotal - uctotaldr
+		elif calbaldata["baltype"]=="Cr":
+			recostmt.append({"particulars":"Balance as per our book (Credit) on "+datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"amount":'%.2f'%(calbaldata["curbal"])})
+			recostmt.append({"particulars":"Less: Cheques issued but not presented","amount":'%.2f'%(uctotalcr)})
+			midTotal = calbaldata["curbal"]-uctotalcr
+			if midTotal>=0:
+				recostmt.append({"particulars":"","amount":'%.2f'%(abs(midTotal))})
+				recostmt.append({"particulars":"Add: Cheques deposited but not cleared","amount":'%.2f'%(uctotaldr)})
+				BankBal = abs(midTotal) + uctotaldr
+			else:
+				recostmt.append({"particulars":"","amount":'%.2f'%(abs(midTotal))})
+				recostmt.append({"particulars":"Less: Cheques deposited but not cleared","amount":'%.2f'%(uctotaldr)})
+				BankBal = abs(midTotal) - uctotaldr
+		if BankBal < 0:
+			recostmt.append({"particulars":"Balance as per Bank (Debit)","amount":'%.2f'%(abs(BankBal))})
+
+		if BankBal > 0:
+			recostmt.append({"particulars":"Balance as per Bank (Credit)","amount":'%.2f'%(abs(BankBal))})
+
+		if BankBal == 0:
+			recostmt.append({"particulars":"Balance as per Bank","amount":'%.2f'%(abs(BankBal))})
+		return recostmt
