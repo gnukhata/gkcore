@@ -434,9 +434,15 @@ class api_rollclose(object):
 				oldGroups = self.con.execute("select groupname from groupsubgroup where subgroupof is null")
 				oldGroupRecords = oldGroups.fetchall()
 				for oldgrp in oldGroupRecords:
-					self.con.execute(groupsubgroups.insert(), {"groupname":oldg }oldgrp,"orgcode": newOrgCode)
-
-				
+					self.con.execute(groupsubgroups.insert(), {"groupname":oldgrp["groupname"],"orgcode": newOrgCode})
+					oldSubGroupsForGroupData = self.con.execute("select groupname from groupsubgroup where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = '%s' and orgcode = %d)"%(orgCode,oldgrp["groupname"],orgCode))
+					newgroupCodeData = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == oldgrp["groupname"], groupsubgroups.c.orgcode == newOrgCode)))
+					newGroupCodeRow = newgroupCodeData.fetchone()
+					newGroupCode = newGroupCodeRow["groupcode"]
+					for osg in oldSubGroupsForGroupData:
+						res = self.con.execute(groupsubgroups.insert(),{"groupname":osg["groupname"],"subgroupof":newGroupCode,"orgcode":newOrgCode})
+					
+					
 				
 
 
