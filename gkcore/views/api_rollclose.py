@@ -446,6 +446,19 @@ class api_rollclose(object):
 					newCodeForGroup  = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == angn["groupname"], groupsubgroups.c.orgcode == newOrgCode )))
 					newGroupCodeRow = newCodeForGroup.fetchone() 
 					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
+				csobData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == newOrgCode,accounts.c.accountname=="Closing Stock")))
+				csobRow = csobData.fetchone()
+				csob = csobRow["openingbal"]
+				if csob > 0:
+					self.con.execute("update accounts set openingbal = %f where accountname = 'Stock at the Beginning' and orgcode = %d"%(csob,newOrgCode))
+					self.con.execute("update accounts set openingbal = 0.00 where accountname = 'Closing Stock' and orgcode = %d"%(newOrgCode))
+					osCodeData = self.con.execute("select accountcode from accounts where accountname = 'Opening Stock' and orgcode = %d"%(newOrgCode))
+					osCodeRow = osCodeData.fetchone()
+					osCode = osCodeRow["accountcode"]
+					sabData = self.con.execute("select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"%(newOrgCode))
+					sabRow = sabData.fetchone()
+					sabCode = sabRow["accountcode"]
+				
 				ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(newOrgCode))
 				self.con.close()
 				return {"gkstatus": enumdict["Success"]}
