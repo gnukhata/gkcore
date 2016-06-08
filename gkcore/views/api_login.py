@@ -68,6 +68,27 @@ def gkLogin(request):
 	finally:
 		con.close()
 
+@view_config(route_name='login',request_method='GET',renderer='json')
+def getUserRole(request):
+	try:
+		token =request.headers["gktoken"]
+	except:
+		return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+	authDetails = authCheck(token)
+	if authDetails["auth"] == False:
+		return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+	else:
+		try:
+			con=eng.connect()
+			user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+			row = user.fetchone()
+			User = {"userrole":row["userrole"]}
+			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+		except:
+			return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+		finally:
+			con.close();
+
 def authCheck(token):
 				"""
 				Purpose: on every request check if userid and orgcode are valid combinations
