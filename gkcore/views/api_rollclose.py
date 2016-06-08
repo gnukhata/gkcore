@@ -441,14 +441,12 @@ class api_rollclose(object):
 					newGroupCode = newGroupCodeRow["groupcode"]
 					for osg in oldSubGroupsForGroupData:
 						res = self.con.execute(groupsubgroups.insert(),{"groupname":osg["groupname"],"subgroupof":newGroupCode,"orgcode":newOrgCode})
-				oldGroupAccounts = self.con.execute("select accountname,groupname from accounts,groupsubgroups where account.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode")
+				oldGroupAccounts = self.con.execute("select accountname,groupname from accounts,groupsubgroups where account.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"%(orgCode))
 				for angn in oldGroupAccounts:
 					newCodeForGroup  = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == angn["groupname"], groupsubgroups.c.orgcode == newOrgCode )))
 					newGroupCodeRow = newCodeForGroup.fetchone() 
 					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
-
-
-
+				ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(newOrgCode))
 				self.con.close()
 				return {"gkstatus": enumdict["Success"]}
 			except Exception as E:
