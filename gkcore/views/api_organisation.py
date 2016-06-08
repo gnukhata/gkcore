@@ -342,7 +342,7 @@ class api_organisation(object):
 				return {"gkstatus":  enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='orgcode', request_method='GET',renderer='json')
-	def getOrg(self):
+	def getOrgcode(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
