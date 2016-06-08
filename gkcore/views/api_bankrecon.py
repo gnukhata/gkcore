@@ -33,7 +33,7 @@ Contributor:
 #view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import bankrecon,vouchers,accounts,organisation
+from gkcore.models.gkdb import bankrecon,vouchers,accounts,organisation, groupsubgroups
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import null
 import json
@@ -71,7 +71,7 @@ class bankreconciliation(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([gkdb.accounts.c.accountname,gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"],gkdb.accounts.c.groupcode ==(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname=='Bank'))))).order_by(gkdb.accounts.c.accountname))
+				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname=='Bank'))))).order_by(accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
@@ -113,7 +113,7 @@ class bankreconciliation(object):
 		uctotaldr=0.00
 		uctotalcr=0.00
 		for record in result:
-			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
 			voucher= voucherdata.fetchone()
 			if voucher==None:
 				continue
@@ -195,7 +195,7 @@ class bankreconciliation(object):
 				result = self.con.execute(select([bankrecon]).where(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate<=calculateTo)))
 				recongrid=[]
 				for record in result:
-					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
 					voucher= voucherdata.fetchone()
 					if voucher==None:
 						continue
@@ -228,7 +228,11 @@ class bankreconciliation(object):
 							else:
 								reconRow["memo"]=record["memo"]
 							recongrid.append(reconRow)
-				return recongrid
+				unclearedrecongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
+				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==authDetails["orgcode"]))
+				finstartrow = finStartData.fetchone()
+				reconstmt= self.reconStatement(accountCode,str(self.request.params["calculatefrom"]),str(self.request.params["calculateto"]),unclearedrecongrid["uctotaldr"],unclearedrecongrid["uctotalcr"],str(finstartrow["yearstart"]))
+				return {"gkstatus":enumdict["Success"],"gkresult":{"recongrid":recongrid,"reconstatement":reconstmt}}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
