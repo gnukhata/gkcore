@@ -458,6 +458,10 @@ class api_rollclose(object):
 					sabData = self.con.execute("select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"%(newOrgCode))
 					sabRow = sabData.fetchone()
 					sabCode = sabRow["accountcode"]
+					drs = {sabCode:csob}
+					crs = {osCode:csob}
+					self.con.execute(vouchers.insert(), {"vouchernumber":"1","voucherdate":str(newYearStart),"entrydate":str(newYearStart),"narration":"jv for stock","drs":drs,"crs":crs,"orgcode": newOrgCode } )
+					
 				
 				ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(newOrgCode))
 				self.con.close()
