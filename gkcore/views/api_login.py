@@ -69,7 +69,7 @@ def gkLogin(request):
 		con.close()
 
 @view_config(route_name='login',request_method='GET',renderer='json')
-def getUserRole(request):
+def getuserorgdetails(request):
 	try:
 		token =request.headers["gktoken"]
 	except:
@@ -82,23 +82,24 @@ def getUserRole(request):
 			con=eng.connect()
 			user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 			row = user.fetchone()
-			User = {"userrole":row["userrole"]}
-			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+			flagsdata=con.execute(select([gkdb.organisation.c.booksclosedflag,gkdb.organisation.c.roflag]).where(gkdb.organisation.c.orgcode == authDetails["orgcode"] ))
+			flags = flagsdata.fetchone()
+			return {"gkstatus": gkcore.enumdict["Success"], "gkresult":{"userrole":int(row["userrole"]),"booksclosedflag":int(flags["booksclosedflag"]),"roflag":int(flags["roflag"])}}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 		finally:
 			con.close();
 
 def authCheck(token):
-				"""
-				Purpose: on every request check if userid and orgcode are valid combinations
-				"""
-				try:
-					tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
-					tokendict["auth"] = True
-					tokendict["orgcode"]=int(tokendict["orgcode"])
-					tokendict["userid"]=int(tokendict["userid"])
-					return tokendict
-				except:
-					tokendict = {"auth":False}
-					return tokendict
+	"""
+	Purpose: on every request check if userid and orgcode are valid combinations
+	"""
+	try:
+		tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
+		tokendict["auth"] = True
+		tokendict["orgcode"]=int(tokendict["orgcode"])
+		tokendict["userid"]=int(tokendict["userid"])
+		return tokendict
+	except:
+		tokendict = {"auth":False}
+		return tokendict
