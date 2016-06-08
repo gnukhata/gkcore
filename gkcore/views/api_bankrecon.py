@@ -113,7 +113,7 @@ class bankreconciliation(object):
 		uctotaldr=0.00
 		uctotalcr=0.00
 		for record in result:
-			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
 			voucher= voucherdata.fetchone()
 			if voucher==None:
 				continue
@@ -195,7 +195,7 @@ class bankreconciliation(object):
 				result = self.con.execute(select([bankrecon]).where(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate<=calculateTo)))
 				recongrid=[]
 				for record in result:
-					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)))
+					voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
 					voucher= voucherdata.fetchone()
 					if voucher==None:
 						continue
@@ -228,7 +228,11 @@ class bankreconciliation(object):
 							else:
 								reconRow["memo"]=record["memo"]
 							recongrid.append(reconRow)
-				return recongrid
+				unclearedrecongrid= self.showUnclearedTransactions(accountCode,calculateFrom,calculateTo)
+				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==authDetails["orgcode"]))
+				finstartrow = finStartData.fetchone()
+				reconstmt= self.reconStatement(accountCode,str(self.request.params["calculatefrom"]),str(self.request.params["calculateto"]),unclearedrecongrid["uctotaldr"],unclearedrecongrid["uctotalcr"],str(finstartrow["yearstart"]))
+				return {"gkstatus":enumdict["Success"],"gkresult":{"recongrid":recongrid,"reconstatement":reconstmt}}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
