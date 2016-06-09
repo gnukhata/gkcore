@@ -43,6 +43,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 
+from dateutil.relativedelta import relativedelta
 from datetime import datetime,date, timedelta
 
 @view_defaults(route_name="rollclose",request_method="GET")
@@ -419,11 +420,12 @@ class api_rollclose(object):
 			try:
 				self.con = eng.connect()
 				orgCode = int(authDetails["orgcode"])
-				financialStartEnd = self.con.execute("select orgname, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
+				financialStartEnd = self.con.execute("select orgname,yearstart, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
 				startEndRow = financialStartEnd.fetchone()
+				oldstartDate = startEndRow["yearstart"]
 				endDate = startEndRow["yearend"]
-				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(DAYS=1)
-				newYearEnd = date(endDate.year,endDate.month,endDate.day) + timedelta(years=1)
+				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(days=1)
+				newYearEnd = date(endDate.year,endDate.month,endDate.day) + relativedelta(years=1)
 				print newYearStart
 				print newYearEnd
 				newOrg = {"orgname":startEndRow["orgname"],"orgtype":startEndRow["orgtype"],"yearstart":newYearStart,"yearend":newYearEnd}
@@ -431,24 +433,39 @@ class api_rollclose(object):
 				newOrgCodeData = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname == newOrg["orgname"],organisation.c.orgtype == newOrg["orgtype"],organisation.c.yearstart == newOrg["yearstart"], organisation.c.yearend == newOrg["yearend"])))
 				newOrgRow = newOrgCodeData.fetchone()
 				newOrgCode = newOrgRow["orgcode"]
-				oldGroups = self.con.execute("select groupname from groupsubgroup where subgroupof is null")
+				oldGroups = self.con.execute("select groupname from groupsubgroups where subgroupof is null and orgcode = %d"%(orgCode))
 				oldGroupRecords = oldGroups.fetchall()
 				for oldgrp in oldGroupRecords:
 					self.con.execute(groupsubgroups.insert(), {"groupname":oldgrp["groupname"],"orgcode": newOrgCode})
-					oldSubGroupsForGroupData = self.con.execute("select groupname from groupsubgroup where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = '%s' and orgcode = %d)"%(orgCode,oldgrp["groupname"],orgCode))
+					oldSubGroupsForGroupData = self.con.execute("select groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = '%s' and orgcode = %d)"%(orgCode,oldgrp["groupname"],orgCode))
 					newgroupCodeData = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == oldgrp["groupname"], groupsubgroups.c.orgcode == newOrgCode)))
 					newGroupCodeRow = newgroupCodeData.fetchone()
 					newGroupCode = newGroupCodeRow["groupcode"]
 					for osg in oldSubGroupsForGroupData:
 						res = self.con.execute(groupsubgroups.insert(),{"groupname":osg["groupname"],"subgroupof":newGroupCode,"orgcode":newOrgCode})
-				oldGroupAccounts = self.con.execute("select accountname,groupname from accounts,groupsubgroups where account.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"%(orgCode))
+				oldGroupAccounts = self.con.execute("select accountname,accountcode,groupname from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"%(orgCode))
 				for angn in oldGroupAccounts:
 					newCodeForGroup  = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == angn["groupname"], groupsubgroups.c.orgcode == newOrgCode )))
-					newGroupCodeRow = newCodeForGroup.fetchone() 
-					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
+					newGroupCodeRow = newCodeForGroup.fetchone()
+					cbRecord = calculateBalance(self.con,angn["accountcode"],str(oldstartDate) ,str(oldstartDate) ,str(endDate) )
+					opnbal = 0.00
+					if(cbRecord["grpname"] == 'Current Assets' or cbRecord["grpname"] == 'Fixed Assets'or cbRecord["grpname"] == 'Investments' or cbRecord["grpname"] == 'Loans(Asset)' or cbRecord["grpname"] == 'Miscellaneous Expenses(Asset)'):
+						if cbRecord["baltype"]=="Cr":
+							opnbal = -cbRecord["curbal"]
+						else:
+							opnbal = cbRecord["curbal"]
+					if(cbRecord["grpname"] == 'Corpus' or cbRecord["grpname"] == 'Capital'or cbRecord["grpname"] == 'Current Liabilities' or cbRecord["grpname"] == 'Loans(Liability)'):
+						if cbRecord["baltype"]=="Dr":
+							opnbal = -cbRecord["curbal"]
+						else:
+							opnbal = cbRecord["curbal"]
+					if cbRecord["grpname"] =='Reserves':
+						opnbal = cbRecord["curbal"]
+					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"openingbal":float(opnbal),"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
 				csobData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == newOrgCode,accounts.c.accountname=="Closing Stock")))
 				csobRow = csobData.fetchone()
 				csob = csobRow["openingbal"]
+				print csob
 				if csob > 0:
 					self.con.execute("update accounts set openingbal = %f where accountname = 'Stock at the Beginning' and orgcode = %d"%(csob,newOrgCode))
 					self.con.execute("update accounts set openingbal = 0.00 where accountname = 'Closing Stock' and orgcode = %d"%(newOrgCode))
@@ -458,15 +475,15 @@ class api_rollclose(object):
 					sabData = self.con.execute("select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"%(newOrgCode))
 					sabRow = sabData.fetchone()
 					sabCode = sabRow["accountcode"]
-					drs = {sabCode:csob}
-					crs = {osCode:csob}
-					self.con.execute(vouchers.insert(), {"vouchernumber":"1","voucherdate":str(newYearStart),"entrydate":str(newYearStart),"narration":"jv for stock","drs":drs,"crs":crs,"orgcode": newOrgCode } )
-					
-				
-				ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(newOrgCode))
+					drs = {sabCode:"%.2f"%(csob)}
+					crs = {osCode:"%.2f"%(csob)}
+					self.con.execute(vouchers.insert(), {"vouchernumber":"1","voucherdate":str(newYearStart),"entrydate":str(newYearStart),"narration":"jv for stock","drs":drs,"crs":crs,"orgcode": newOrgCode,"vouchertype":"journal" } )
+
+
+				ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(orgCode))
 				self.con.close()
 				return {"gkstatus": enumdict["Success"]}
 			except Exception as E:
-				#print E
+				print E
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
