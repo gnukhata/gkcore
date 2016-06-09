@@ -33,7 +33,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import calculateBalance
-from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, projects, organisation
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, projects, organisation, users
 from sqlalchemy.sql import select
 from sqlalchemy import func
 import json
@@ -43,7 +43,6 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 
-from dateutil.relativedelta import relativedelta
 from datetime import datetime,date, timedelta
 
 @view_defaults(route_name="rollclose",request_method="GET")
@@ -433,6 +432,9 @@ class api_rollclose(object):
 				newOrgCodeData = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname == newOrg["orgname"],organisation.c.orgtype == newOrg["orgtype"],organisation.c.yearstart == newOrg["yearstart"], organisation.c.yearend == newOrg["yearend"])))
 				newOrgRow = newOrgCodeData.fetchone()
 				newOrgCode = newOrgRow["orgcode"]
+				oldUsers = self.con.execute("select username,userpassword,userrole,userquestion,useranswer from users where orgcode = %d"%(orgCode))
+				for olduser in oldUsers:
+					self.con.execute(users.insert(), {"username":olduser["username"],"userpassword":olduser["userpassword"],"userrole":olduser["userrole"],"useranswer":olduser["useranswer"],"userquestion":olduser["userquestion"],"orgcode": newOrgCode})
 				oldGroups = self.con.execute("select groupname from groupsubgroups where subgroupof is null and orgcode = %d"%(orgCode))
 				oldGroupRecords = oldGroups.fetchall()
 				for oldgrp in oldGroupRecords:
