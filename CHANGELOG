@@ -1,0 +1,99 @@
+[09-June-2016 Release 3.0 RC]
+* Complete revamp for the core API in REST.
+* Added feature to show monthly ledgers.
+* Inside ledger balance shown per transaction.
+* Group wise balances with account count while creating accounts
+* Improved bank reconciliation
+* Added voucher type in search criteria
+* Used json data type in CR and DR
+* Voucher table now has attachment field for a future feature
+* Big performance and speed improvements using alchemy connection pool.
+* Changed framework from twisted to Pyramid.
+
+[27-Jan-2016 Release 2.6.1]
+* Minor improvements and bug fixes.
+
+[3-Nov-2015 Release 2.6.0]
+* Added the core logic for transaction security.
+* System generated accounts will now also include Opening Stock and Stock at the Beginning.
+* Improved the functionality of closebooks and rollover to include management of stocks.
+* Minor improvements and bugs fixes.
+
+[28-Aug-2015 Release 2.5.0]
+* Implemented core functionality for advanced calculation of profit and loss as seperate
+  account heads along with facility of transferring closing stock as opening stock entry after rollover.
+* Brought more stability to bank recon rpcs.
+* Now no duplicate organisation can be created.
+* Minor bug fixes.
+
+[24-July-2015 Release 2.4.0]
+* Corrected Bank Reconciliation Statement.
+* Fundamental changes which refines the way closebooks and rollover works.
+* Organizations with same names with different types can be safely created.
+
+[06-June-2015 Release 2.3.2]
+* Perfected CloseBooks and Rollover.
+
+[15-May-2015 Release 2.3.1]
+* Further refined Rollover and Closebooks.
+* Corrected names of a few default accounts like Income and Expenditure.
+
+[28-March-2015 Release 2.3]
+* Added the stored procedure for remove user.
+* Added the rpc for remove user.
+* Added the stored procedures for getting and setting the security question and answer in case the
+  user forgets the login password.
+* Added the rpc for getting and setting the the security question and answer in case the user forgets
+  the login password.
+* Added the procedure for closebooks.
+* Added the rpc for closebooks.
+
+[3-March-2015 Release 2.2.1]
+* Fixed a crutial bug where some times after deleting an account, we could not ad any more accounts.
+* Update of Install file and adduser script for Fedora Distro.
+* Added minor typo corrections in group heads.
+
+[8-Nov-2014 Release 2.2.0]
+* Major enhancement in the functionality of Bank Reconciliation, it also dispalys
+  the reconciled transactions which are above the reconciliation period along with it's actual reconciliation date.
+* Added the functionality for getting Rollover status  and also added the set and get rollover status.
+* Added the logic for setting the roflag and booksclosedflag during rolover and closing of books.
+
+[18-Oct-2014 Release 2.1.3]
+* Solved regression where software was crashing while saving or skiping on initialsetup form
+* Procedure syntax cahnged in rpc_main
+* Added stored procedure and functionality for getting organization
+* Bank reconciliation now also has opening balance
+
+[8-Oct-2014 Release 2.1.2]
+* Changed the hashbang to python2
+* Altered update bank recon to have closing and grand total with total dr, cr.
+* Further improvements in bank reco now closing balance and cr dr can be seen and the particulars
+  are properly seen.
+* Added Stability in cash flow and negative amount can be seen
+* finaly corrected the issue where payment with 0 would some tiems show as -0
+
+
+[13-Sept-2014 Release 2.1.1]
+
+* Fixed a major bug in Bank reconciliation to make the viewclearedanduncleared transactions consistent.
+
+[19-Aug-2014 Release 2.1]
+
+*Added new api for getclearedunclearedtransactions
+*Added new rpc getreconciledtransactions in rpc_reports
+*Updated deletclearedrecon stored procedure
+
+[22-July-2014 Release 2.0.1]
+* Fixed database connection issue during rollover
+
+[7-Jul-2014 Release 2.0  ]
+* added a new rpc function for getting list of accounts
+* modified stored procedures to show all accounts on Dr and Cr side for Payment and reseapt respectively
+* performance enhancement by removing code for creating unnecessary tables
+* alteration to global attributes to find if projectwise accounting is available
+* made 3 level user access possible -1: admin 0: manager 1: user
+* added pid to a pidfile for start stop daemons
+* all settings are now taken from configuration file
+* major security enhancement where engine connects to postgres via unix sockets
+* added scripts to create user and grant privileges
