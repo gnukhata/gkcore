@@ -425,7 +425,7 @@ class api_rollclose(object):
 				oldstartDate = startEndRow["yearstart"]
 				endDate = startEndRow["yearend"]
 				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(days=1)
-				newYearEnd = date(endDate.year,endDate.month,endDate.day) + relativedelta(years=1)
+				newYearEnd = self.request.params["financialend"]
 				print newYearStart
 				print newYearEnd
 				newOrg = {"orgname":startEndRow["orgname"],"orgtype":startEndRow["orgtype"],"yearstart":newYearStart,"yearend":newYearEnd}
