@@ -307,7 +307,7 @@ class api_reports(object):
 					headerrow["projectname"]=''.join(prjname)
 
   				if projectCode == "" and calbalDict["balbrought"]>0:
-  					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"balance":"","narration":"","status":""}
+  					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"balance":"","narration":"","status":"", "vouchertype":""}
 					vfrom = datetime.strptime(str(calculateFrom),"%Y-%m-%d")
 					fstart = datetime.strptime(str(financialStart),"%Y-%m-%d")
 					if vfrom==fstart:
@@ -333,7 +333,7 @@ class api_reports(object):
   				crtotal = 0.00
   				drtotal = 0.00
   				for transaction in transactions:
-  					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"]}
+  					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"]}
   					if transaction["drs"].has_key(accountCode):
   						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
   						ledgerRecord["Cr"] = ""
@@ -370,9 +370,9 @@ class api_reports(object):
   						calbalDict["totalcrbal"] -= calbalDict["balbrought"]
   					if calbalDict["openbaltype"] == "Dr":
   						calbalDict["totaldrbal"] -= calbalDict["balbrought"]
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":["Total of Transactions"],"balance":"","status":""}
+  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":""}
   					vouchergrid.append(ledgerRecord)
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"narration":"", "particulars":["Closing Balance C/F"],"balance":"","status":""}
+  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"narration":"", "particulars":["Closing Balance C/F"],"balance":"","status":"", "vouchertype":""}
   					if calbalDict["baltype"] == "Cr":
   						ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
   						ledgerRecord["Cr"] = ""
@@ -382,7 +382,7 @@ class api_reports(object):
   						ledgerRecord["Dr"] = ""
   					vouchergrid.append(ledgerRecord)
 
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":""}
+  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":"", "vouchertype":""}
   					if projectCode == "" and calbalDict["balbrought"]>0:
   						if calbalDict["openbaltype"] =="Dr":
   							calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
@@ -408,7 +408,7 @@ class api_reports(object):
   							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
   						vouchergrid.append(ledgerRecord)
   				else:
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":""}
+  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":""}
   					vouchergrid.append(ledgerRecord)
 				self.con.close()
 
