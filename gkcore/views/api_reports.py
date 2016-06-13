@@ -1557,18 +1557,12 @@ class api_reports(object):
 				orgcode = int(orgcode)
 				user = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
 				userrole = user.fetchone()
-				finStartData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode==orgcode))
-				finRow = finStartData.fetchone()
-				financialStart = finRow['yearstart']
-				finEndData = self.con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
-				finEndrow = finEndData.fetchone()
-				financialEnd = finEndrow['yearend']
 				vouchers = []
 				if userrole[0] == -1:
-					voucherRow = self.con.execute(select([voucherbin]).where(and_(voucherbin.c.orgcode == orgcode, voucherbin.c.voucherdate > financialStart, voucherbin.c.voucherdate < financialEnd )))
+					voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode))
 					voucherData = voucherRow.fetchall()
 					for voucher in voucherData:
-						vouchers.append({"vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narrration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})
+						vouchers.append({"vouchercode": voucher["vouchercode"], "vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})
 					self.con.close()
 					return {"gkstatus":enumdict["Success"], "gkresult": vouchers}
 				else:
