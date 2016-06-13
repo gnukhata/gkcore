@@ -29,7 +29,7 @@ Contributor:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -442,7 +442,6 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con = eng.connect()
 				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
 				accountRecords = accountData.fetchall()
@@ -1537,18 +1536,13 @@ class api_reports(object):
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-"""
-	@view_config(request_param='type=groupaccounts', renderer='json')
-  	def groupAccounts(self):
-
-		this function is called when the type=groupaccounts is sent in the url /report
-		this function takes orgcode fom the token, groupcode and calculateto from params
-		then the function gets all the accountcode, accountname from the accounts table in the databsse using the groupcode and orgcode
-		then the accountcode is sent to the calculateBalance function along with the financialstart and calculateTo which in turn returns the baltype, groupname, and balance
-		the current balance(amount), accountname, accountcode is stored in a dictionary
-		a list is made using these dictionaries of all accounts.
-
-
+	@view_config(request_param='type=deletedvoucher', renderer='json')
+  	def getdeletedVoucher(self):
+		"""
+		this function is called when type=deletedvoucher is passed to the url /report
+		it returns a grid containing details of all the deleted vouchers
+		it first checks the userrole then fetches the data from voucherbin puts into a list.
+		"""
   		try:
   			token = self.request.headers["gktoken"]
   		except:
@@ -1558,39 +1552,22 @@ class api_reports(object):
   			return {"gkstatus": enumdict["UnauthorisedAccess"]}
   		else:
   			try:
-
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
-				orgode = int(orgcode)
-  				groupCode = self.request.params["groupcode"]
-				groupCode = int(groupCode)
-  				calculateTo = self.request.params["calculateto"]
-  				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
-				financialstartRow = financialstart.fetchone()
-				financialStart = financialstartRow["yearstart"]
-				orgtype = financialstartRow["orgtype"]
-				account = []
-
-				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupcode = %d or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupcode = %d));"%(orgcode, orgcode, groupCode,orgcode, groupCode))
-				accountCodes = accountcodeData.fetchall()
-				for accountRow in accountCodes:
-					accountTotal = 0.00
-					accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-					if (accountDetails["baltype"]=="Dr" and (accountDetails["grpname"] == "Current Assets" or accountDetails["grpname"] == "Fixed Assets" or accountDetails["grpname"] == "Loans(Asset)" or accountDetails["grpname"] == "Miscellaneous Expenses(Asset)" or accountDetails["grpname"] == "Investments")):
-						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr" and (accountDetails["grpname"] == "Current Assets" or accountDetails["grpname"] == "Fixed Assets" or accountDetails["grpname"] == "Loans(Asset)" or accountDetails["grpname"] == "Miscellaneous Expenses(Asset)" or accountDetails["grpname"] == "Investments")):
-						accountTotal -= accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr" and (accountDetails["grpname"] == "Current Liabilities" or accountDetails["grpname"] == "Capital" or accountDetails["grpname"] == "Loans(Liability)" or accountDetails["grpname"] == "Corpus" or accountDetails["grpname"] == "Reserves")):
-						accountTotal -= accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr" and (accountDetails["grpname"] == "Current Liabilities" or accountDetails["grpname"] == "Capital" or accountDetails["grpname"] == "Loans(Liability)" or accountDetails["grpname"] == "Corpus" or accountDetails["grpname"] == "Reserves")):
-						accountTotal += accountDetails["curbal"]
-					account.append({"accountname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "accountcode":accountRow["accountcode"]})
-
-				self.con.close()
-
-
-  				return {"gkstatus":enumdict["Success"], "account":account}
+				orgcode = int(orgcode)
+				user = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
+				userrole = user.fetchone()
+				vouchers = []
+				if userrole[0] == -1:
+					voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode))
+					voucherData = voucherRow.fetchall()
+					for voucher in voucherData:
+						vouchers.append({"vouchercode": voucher["vouchercode"], "vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})
+					self.con.close()
+					return {"gkstatus":enumdict["Success"], "gkresult": vouchers}
+				else:
+					self.con.close()
+					return {"gkstatus":enumdict["BadPrivilege"]}
   			except:
 				self.con.close()
   				return {"gkstatus":enumdict["ConnectionFailed"]}
-"""

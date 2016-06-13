@@ -79,7 +79,7 @@ def getuserorgdetails(request):
 		return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 	else:
 		try:
-			con=eng.connect()
+			con = eng.connect()
 			user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 			row = user.fetchone()
 			flagsdata=con.execute(select([gkdb.organisation.c.booksclosedflag,gkdb.organisation.c.roflag]).where(gkdb.organisation.c.orgcode == authDetails["orgcode"] ))
