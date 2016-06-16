@@ -500,7 +500,7 @@ class api_transaction(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
@@ -522,9 +522,9 @@ class api_transaction(object):
 							recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 	@view_config(request_method='DELETE',renderer='json')
 	def deleteVoucher(self):
 		"""
