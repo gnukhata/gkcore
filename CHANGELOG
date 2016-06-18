@@ -1,3 +1,9 @@
+[18-June-2016 Release 3.0RC]
+* Now vouchertype is also sent along with ledger details.
+* Added license and authors information.
+* Minor bug fixes.
+
+
 [09-June-2016 Release 3.0 RC]
 * Complete revamp for the core API in REST.
 * Added feature to show monthly ledgers.
