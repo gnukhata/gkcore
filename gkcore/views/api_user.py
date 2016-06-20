@@ -189,3 +189,19 @@ class api_user(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+	@view_config(route_name='forgotpassword', request_method='GET',renderer='json')
+	def getquestion(self):
+		try:
+				self.con = eng.connect()
+				orgcode = self.request.params["orgcode"]
+				username = self.request.params["username"]
+				result = self.con.execute(select([gkdb.users]).where(and_(gkdb.users.c.username==username, gkdb.users.c.orgcode==orgcode)))
+				print result
+				row = result.fetchone()
+				User = {"userid":row["userid"], "username":row["username"], "userquestion":row["userquestion"]}
+				print User
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
+		except:
+			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+		finally:
+			self.con.close()
