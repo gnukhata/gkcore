@@ -41,6 +41,8 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from datetime import datetime
+import base64
+from PIL import Image
 
 
 
@@ -107,6 +109,19 @@ class api_transaction(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				drs = dataset["drs"]
 				crs = dataset["crs"]
+				if dataset.has_key("attachment"):
+					try:
+						img_str = dataset.pop("attachment")
+						imgdata = base64.b64decode(img_str)
+						curtime=datetime.now()
+						str_time=str(curtime.microsecond)
+						new_microsecond=str_time[0:2]
+						filename  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond+ '.jpg'
+						dataset["attachment"] = filename
+						with open('../images/'+filename, 'wb') as f:
+							f.write(imgdata)
+					except:
+						print "Error while saving attachment"
 				result = self.con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
