@@ -844,7 +844,7 @@ class api_reports(object):
 				sourcesTotal = 0.00
 				applicationsTotal = 0.00
 				difference = 0.00
-				sbalanceSheet.append({"groupAccname":"Sources:","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":""})
+				sbalanceSheet.append({"groupAccname":"Sources:","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				capital_Corpus = ""
 				if orgtype == "Profit Making":
 					capital_Corpus = "Capital"
@@ -873,7 +873,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -882,20 +882,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				sourcesTotal += groupWiseTotal
-				sbalanceSheet.append({"groupAccname":capital_Corpus,"amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				sbalanceSheet.append({"groupAccname":capital_Corpus,"amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				sbalanceSheet += groupAccSubgroup
 
 
@@ -918,7 +918,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -927,20 +927,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				sourcesTotal += groupWiseTotal
-				sbalanceSheet.append({"groupAccname":"Loans(Liability)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				sbalanceSheet.append({"groupAccname":"Loans(Liability)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				sbalanceSheet += groupAccSubgroup
 
 
@@ -963,7 +963,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -972,20 +972,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				sourcesTotal += groupWiseTotal
-				sbalanceSheet.append({"groupAccname":"Current Liabilities","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				sbalanceSheet.append({"groupAccname":"Current Liabilities","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				sbalanceSheet += groupAccSubgroup
 
 
@@ -1010,7 +1010,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -1019,16 +1019,16 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				sourcesTotal += groupWiseTotal
@@ -1058,29 +1058,29 @@ class api_reports(object):
 				if (expenseTotal > incomeTotal):
 					profit = expenseTotal - incomeTotal
 					groupWiseTotal -= profit
-					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 					if orgtype == "Profit Making":
-						sbalanceSheet.append({"groupAccname":"Loss for the Year","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":"" , "accountof":""})
+						sbalanceSheet.append({"groupAccname":"Loss for the Year:","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2})
 					else:
-						sbalanceSheet.append({"groupAccname":"Deficit for the Year:","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":"" , "accountof":""})
+						sbalanceSheet.append({"groupAccname":"Deficit for the Year:","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2})
 
 				if (expenseTotal < incomeTotal):
 					profit = incomeTotal - expenseTotal
 					groupWiseTotal += profit
-					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 					if orgtype == "Profit Making":
-						sbalanceSheet.append({"groupAccname":"Profit for the Year","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":"" , "accountof":""})
+						sbalanceSheet.append({"groupAccname":"Profit for the Year","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2})
 					else:
-						sbalanceSheet.append({"groupAccname":"Surplus for the Year","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":"" , "accountof":""})
+						sbalanceSheet.append({"groupAccname":"Surplus for the Year","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2})
 				if (expenseTotal == incomeTotal):
-					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+					sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 				sbalanceSheet += groupAccSubgroup
 				sourcesTotal += groupWiseTotal
-				sbalanceSheet.append({"groupAccname":"Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":""})
+				sbalanceSheet.append({"groupAccname":"Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 				#Applications:
-				abalanceSheet.append({"groupAccname":"Applications:","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname":"Applications:","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 
 				#Calculate grouptotal for group "Fixed Assets"
@@ -1102,29 +1102,30 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
 					accounts = []
 					subgroupAccDataRow = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"%(orgcode, subgroup["groupcode"]))
 					subgroupAccData = subgroupAccDataRow.fetchall()
+
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails = calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				applicationsTotal += groupWiseTotal
-				abalanceSheet.append({"groupAccname":"Fixed Assets","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname":"Fixed Assets","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				abalanceSheet += groupAccSubgroup
 
 
@@ -1148,7 +1149,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -1157,20 +1158,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				applicationsTotal += groupWiseTotal
-				abalanceSheet.append({"groupAccname":"Investments","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname":"Investments","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				abalanceSheet += groupAccSubgroup
 
 
@@ -1193,7 +1194,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -1202,20 +1203,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				applicationsTotal += groupWiseTotal
-				abalanceSheet.append({"groupAccname": "Current Assets","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname": "Current Assets","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				abalanceSheet += groupAccSubgroup
 
 
@@ -1238,7 +1239,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
-					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+					groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 				for subgroup in subgroupData:
 					subgroupTotal = 0.00
@@ -1247,20 +1248,20 @@ class api_reports(object):
 					subgroupAccData = subgroupAccDataRow.fetchall()
 					for account in subgroupAccData:
 						accountTotal = 0.00
-						accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
-						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+						accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 					groupWiseTotal += subgroupTotal
-					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 					groupAccSubgroup += accounts
 
 				applicationsTotal += groupWiseTotal
-				abalanceSheet.append({"groupAccname":"Loans(Asset)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname":"Loans(Asset)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 				abalanceSheet += groupAccSubgroup
 
 
@@ -1284,7 +1285,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Cr"):
 							accountTotal -= accountDetails["curbal"]
 							groupWiseTotal -= accountDetails["curbal"]
-						groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode})
+						groupAccSubgroup.append({"groupAccname":accountRow["accountname"], "amount":"%.2f"%(accountTotal), "groupAcccode":accountRow["accountcode"], "subgroupof":"", "accountof":groupcode, "groupAccflag":1})
 
 					for subgroup in subgroupData:
 						subgroupTotal = 0.00
@@ -1293,41 +1294,41 @@ class api_reports(object):
 						subgroupAccData = subgroupAccDataRow.fetchall()
 						for account in subgroupAccData:
 							accountTotal = 0.00
-							accountDetails = accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+							accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 							if (accountDetails["baltype"]=="Dr"):
 								subgroupTotal += accountDetails["curbal"]
 								accountTotal += accountDetails["curbal"]
 							if (accountDetails["baltype"]=="Cr"):
 								subgroupTotal -= accountDetails["curbal"]
 								accountTotal -= accountDetails["curbal"]
-							accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":"" , "accountof":subgroup["groupcode"]})
+							accounts.append({"groupAccname":account["accountname"],"amount":"%.2f"%(accountTotal), "groupAcccode":account["accountcode"],"subgroupof":groupcode , "accountof":subgroup["groupcode"], "groupAccflag":2})
 						groupWiseTotal += subgroupTotal
-						groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":""})
+						groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":""})
 						groupAccSubgroup += accounts
 
 					applicationsTotal += groupWiseTotal
-					abalanceSheet.append({"groupAccname": "Miscellaneous Expenses(Asset)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":""})
+					abalanceSheet.append({"groupAccname": "Miscellaneous Expenses(Asset)","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":""})
 					abalanceSheet += groupAccSubgroup
 
-				abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":""})
+				abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				difference = abs(sourcesTotal - applicationsTotal)
 				if sourcesTotal>applicationsTotal:
-					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":""})
-					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":""})
+					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
+					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				if applicationsTotal>sourcesTotal:
-					sbalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":""})
-					sbalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":""})
+					sbalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
+					sbalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 
 				if balancetype == 1:
 					if len(sbalanceSheet)>len(abalanceSheet):
 						emptyno = len(sbalanceSheet)-len(abalanceSheet)
 						for i in range(0,emptyno):
-							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 					if len(sbalanceSheet)<len(abalanceSheet):
 						emptyno = len(abalanceSheet)-len(sbalanceSheet)
 						for i in range(0,emptyno):
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":{"leftlist":sbalanceSheet, "rightlist":abalanceSheet}}
@@ -1542,7 +1543,7 @@ class api_reports(object):
 
 
 				if (expenseTotal > incomeTotal):
-					balanceSheet.append({"sourcesgroupname":"Loss for the Year","sourceamount":"%.2f"%(profit),"appgroupname":"Miscellaneous Expenses(Asset)","applicationamount":"%.2f"%(applicationgroupWiseTotal)})
+					balanceSheet.append({"sourcesgroupname":"Loss for the Year:","sourceamount":"%.2f"%(profit),"appgroupname":"Miscellaneous Expenses(Asset)","applicationamount":"%.2f"%(applicationgroupWiseTotal)})
 				if (expenseTotal < incomeTotal):
 					balanceSheet.append({"sourcesgroupname":"Profit for the Year","sourceamount":"%.2f"%(profit),"appgroupname":"Miscellaneous Expenses(Asset)","applicationamount":"%.2f"%(applicationgroupWiseTotal)})
 				if (expenseTotal == incomeTotal):
