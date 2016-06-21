@@ -1325,24 +1325,27 @@ class api_reports(object):
 
 				abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				difference = abs(sourcesTotal - applicationsTotal)
+				print difference
 				if sourcesTotal>applicationsTotal:
+					print "difference"
 					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				if applicationsTotal>sourcesTotal:
+					print "difference"
 					sbalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 					sbalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
 
 				if balancetype == 1:
 					if orgtype=="Profit Making":
-						if profit!=0:
+						if difference!=0:
 							emptyno=2
 						else:
-							emptyno=3
+							emptyno=1
 						for i in range(0,emptyno):
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":""})
 					if orgtype=="Not For Profit":
-						if profit!=0:
+						if difference!=0:
 							emptyno=3
 						else:
 							emptyno=2
