@@ -856,9 +856,6 @@ class api_reports(object):
 					capital_Corpus = "Corpus"
 				groupWiseTotal = 0.00
 
-				sourcesList = [capital_Corpus, "Loans(Liability)", "Current Liabilities"]
-				applicationList = [""]
-
 				#Calculate grouptotal for group Capital/Corpus
 				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"%(orgcode, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
@@ -1335,14 +1332,14 @@ class api_reports(object):
 
 				if balancetype == 1:
 					if orgtype=="Profit Making":
-						if profit!=0:
+						if difference!=0:
 							emptyno=2
 						else:
-							emptyno=3
+							emptyno=0
 						for i in range(0,emptyno):
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":""})
 					if orgtype=="Not For Profit":
-						if profit!=0:
+						if difference!=0:
 							emptyno=3
 						else:
 							emptyno=2
