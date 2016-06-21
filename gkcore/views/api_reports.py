@@ -810,10 +810,14 @@ class api_reports(object):
 		This function is called when the type=balancesheet is passed to the /report url.
 		orgcode is extracted from the header
 		end date is extracted from the request_params
-		The accountcode is extracted from the database under  groupcode for groups relevent to balance sheet (meaning all groups except income and expence groups).
+		The accountcode is extracted from the database under  groupcode for groups relevent to balance sheet
 		the  groupbalance will be initialized to 0.0 for each group.
 		this accountcode is sent to the calculateBalance function along with financialstart, calculateTo
 		the function will return the closing balance related to each account which will be later added or subtracted according to the accounting rules from the group balance
+        Then the subgroups and their respective accounts will be fetched from the database and the detail will be sent to the calculatBalance function which will return the curbal.
+        the amount will be added or subtracted from the subgroup balance accordingly.
+        the above steps will be executed in loop to calculate balances of all subgroups.
+        these balances will be added/subtracted from the group balance accordingly. 
 		the above statements will be running in a loop for each group.
 		Later all the group balances for sources and application will be added
 		the difference in the amounts of sourcetotal and applicationtotal will be found
