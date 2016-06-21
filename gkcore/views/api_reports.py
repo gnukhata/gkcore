@@ -856,9 +856,6 @@ class api_reports(object):
 					capital_Corpus = "Corpus"
 				groupWiseTotal = 0.00
 
-				sourcesList = [capital_Corpus, "Loans(Liability)", "Current Liabilities"]
-				applicationList = [""]
-
 				#Calculate grouptotal for group Capital/Corpus
 				accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"%(orgcode, orgcode, capital_Corpus))
 				accountCodes = accountcodeData.fetchall()
@@ -1325,13 +1322,10 @@ class api_reports(object):
 
 				abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				difference = abs(sourcesTotal - applicationsTotal)
-				print difference
 				if sourcesTotal>applicationsTotal:
-					print "difference"
 					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 				if applicationsTotal>sourcesTotal:
-					print "difference"
 					sbalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 					sbalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(applicationsTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":""})
 
@@ -1341,7 +1335,7 @@ class api_reports(object):
 						if difference!=0:
 							emptyno=2
 						else:
-							emptyno=1
+							emptyno=0
 						for i in range(0,emptyno):
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":""})
 					if orgtype=="Not For Profit":
