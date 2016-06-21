@@ -109,19 +109,6 @@ class api_transaction(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				drs = dataset["drs"]
 				crs = dataset["crs"]
-				if dataset.has_key("attachment"):
-					try:
-						img_str = dataset.pop("attachment")
-						imgdata = base64.b64decode(img_str)
-						curtime=datetime.now()
-						str_time=str(curtime.microsecond)
-						new_microsecond=str_time[0:2]
-						filename  = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond+ '.jpg'
-						dataset["attachment"] = filename
-						with open('../images/'+filename, 'wb') as f:
-							f.write(imgdata)
-					except:
-						print "Error while saving attachment"
 				result = self.con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
@@ -165,7 +152,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherCode = self.request.params["code"]
-				result = self.con.execute(select([vouchers]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
+				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
 				row = result.fetchone()
 				rawDr = dict(row["drs"])
 				rawCr = dict(row["crs"])
@@ -183,7 +170,7 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"entrydate":str(row["entrydate"]),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
+				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher,"userrole":urole["userrole"]}
 			except:
@@ -205,7 +192,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherType = self.request.params["vouchertype"]
-				vouchersData = self.con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
+				vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -246,7 +233,7 @@ class api_transaction(object):
 
 
 
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
 			except:
@@ -269,7 +256,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherNo = self.request.params["voucherno"]
-				vouchersData = self.con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
+				vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -307,7 +294,7 @@ class api_transaction(object):
 						finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
 			except:
@@ -338,7 +325,7 @@ class api_transaction(object):
 					for d in drs.keys():
 						total = total + float(drs[d])
 					if total==float(voucherAmount):
-						voucherDetailsData = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == vr["vouchercode"]))
+						voucherDetailsData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(vouchers.c.vouchercode == vr["vouchercode"]))
 						voucher = voucherDetailsData.fetchone()
 						rawDr = dict(voucher["drs"])
 						rawCr = dict(voucher["crs"])
@@ -374,7 +361,7 @@ class api_transaction(object):
 							finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
 						if voucher["narration"]=="null":
 							voucher["narration"]=""
-						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
+						voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
@@ -398,7 +385,7 @@ class api_transaction(object):
 				urole = ur["gkresult"]
 				fromDate = self.request.params["from"]
 				toDate = self.request.params["to"]
-				vouchersData = self.con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
+				vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -436,7 +423,7 @@ class api_transaction(object):
 						finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
 			except:
@@ -459,7 +446,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherNarration = self.request.params["nartext"]
-				vouchersData = self.con.execute(select([vouchers]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
+				vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate))
 				voucherRecords = []
 
 				for voucher in vouchersData:
@@ -497,13 +484,33 @@ class api_transaction(object):
 						finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
 					if voucher["narration"]=="null":
 						voucher["narration"]=""
-					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"entrydate":str(voucher["entrydate"]),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
+					voucherRecords.append({"vouchercode":voucher["vouchercode"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
+	@view_config(request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				voucherCode = self.request.params["vouchercode"]
+				vouchersData = self.con.execute(select([vouchers.c.attachment]).where(and_(vouchers.c.vouchercode == voucherCode)))
+				attachment = vouchersData.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
 	def updateVoucher(self):
