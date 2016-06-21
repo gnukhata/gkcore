@@ -182,7 +182,7 @@ class api_user(object):
 					result = self.con.execute(gkdb.users.delete().where(gkdb.users.c.userid==dataset["userid"]))
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					{"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":  enumdict["BadPrivilege"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
@@ -196,11 +196,39 @@ class api_user(object):
 				orgcode = self.request.params["orgcode"]
 				username = self.request.params["username"]
 				result = self.con.execute(select([gkdb.users]).where(and_(gkdb.users.c.username==username, gkdb.users.c.orgcode==orgcode)))
-				print result
+				if result.rowcount > 0:
+					row = result.fetchone()
+					User = {"userquestion":row["userquestion"], "userid":row["userid"]}
+					return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
+				else:
+					return {"gkstatus":  enumdict["BadPrivilege"]}
+		except:
+			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+		finally:
+			self.con.close()
+	@view_config(route_name='forgotpassword', request_method='GET', request_param='type=securityanswer', renderer='json')
+	def verifyanswer(self):
+		try:
+				self.con = eng.connect()
+				userid = self.request.params["userid"]
+				useranswer = self.request.params["useranswer"]
+				result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid==userid))
 				row = result.fetchone()
-				User = {"userid":row["userid"], "username":row["username"], "userquestion":row["userquestion"]}
-				print User
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
+				if useranswer==row["useranswer"]:
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":  enumdict["BadPrivilege"]}
+		except:
+			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+		finally:
+			self.con.close()
+	@view_config(route_name='forgotpassword', request_method='PUT', renderer='json')
+	def verifypassword(self):
+		try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
 		except:
 			return  {"gkstatus":  enumdict["ConnectionFailed"]}
 		finally:
