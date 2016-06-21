@@ -153,7 +153,6 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
 	Index("voucher_vno","vouchernumber"),
-	Index("voucher_attachment","attachment"),
 	Index("voucher_vdate","voucherdate")
 	)
 
