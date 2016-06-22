@@ -193,12 +193,10 @@ voucherbin=Table('voucherbin', metadata,
     Column('narration',UnicodeText),
     Column('drs',JSONB,nullable=False),
     Column('crs',JSONB,nullable=False),
-    Column('attachment',UnicodeText),
     Column('vouchertype',UnicodeText, nullable=False),
     Column('projectname',UnicodeText, nullable=True),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Index("binvoucher_orgcodeindex","orgcode"),
     Index("binvoucher_vno","vouchernumber"),
-    Index("binvoucher_attachment","attachment"),
     Index("binvoucher_vdate","voucherdate")
     )
