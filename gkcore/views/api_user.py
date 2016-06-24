@@ -201,7 +201,7 @@ class api_user(object):
 					User = {"userquestion":row["userquestion"], "userid":row["userid"]}
 					return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
 				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
 			return  {"gkstatus":  enumdict["ConnectionFailed"]}
 		finally:
@@ -217,7 +217,7 @@ class api_user(object):
 				if useranswer==row["useranswer"]:
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
 			return  {"gkstatus":  enumdict["ConnectionFailed"]}
 		finally:
@@ -227,9 +227,13 @@ class api_user(object):
 		try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-				return {"gkstatus":enumdict["Success"]}
+				user = self.con.execute(select([gkdb.users]).where(and_(gkdb.users.c.userid==dataset["userid"], gkdb.users.c.useranswer==dataset["useranswer"])))
+				if user.rowcount > 0:
+					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
-			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+			return  {"gkstatus":enumdict["ConnectionFailed"]}
 		finally:
 			self.con.close()
