@@ -34,6 +34,7 @@ from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, bankrecon, vo
 from sqlalchemy.sql import select
 from sqlalchemy import func
 import json
+from gkcore.views.api_user import getUserRole
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , between, exc
 from pyramid.request import Request
@@ -503,10 +504,12 @@ class api_transaction(object):
 		else:
 			try:
 				self.con = eng.connect()
+				ur = getUserRole(authDetails["userid"])
+				urole = ur["gkresult"]
 				voucherCode = self.request.params["vouchercode"]
-				vouchersData = self.con.execute(select([vouchers.c.attachment]).where(and_(vouchers.c.vouchercode == voucherCode)))
+				vouchersData = self.con.execute(select([vouchers.c.attachment,vouchers.c.lockflag]).where(and_(vouchers.c.vouchercode == voucherCode)))
 				attachment = vouchersData.fetchone()
-				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"]}
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"lockflag":attachment["lockflag"],"userrole":urole["userrole"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
