@@ -532,29 +532,36 @@ class api_reports(object):
 				totalDr = 0.00
 				totalCr = 0.00
 				for account in accountRecords:
+					adverseflag = 0
 					calbalData = calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 					if calbalData["baltype"]=="":
 						continue
 					srno += 1
 					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"srno":srno}
 					if calbalData["baltype"] == "Dr":
+						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves'):
+							adverseflag = 1
 						ntbRow["Dr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["Cr"] = ""
+						ntbRow["advflag"] = adverseflag
 						totalDr = totalDr + calbalData["curbal"]
 					if calbalData["baltype"] == "Cr":
+						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)'):
+							adverseflag = 1
 						ntbRow["Dr"] = ""
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
+						ntbRow["advflag"] = adverseflag
 						totalCr = totalCr + calbalData["curbal"]
 					ntbGrid.append(ntbRow)
-				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr) })
+				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr), "advflag":"" })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
-					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr": "%.2f"%(baldiff),"Dr":"" })
-					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalDr),"Dr":"%.2f"%(totalDr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr": "%.2f"%(baldiff),"Dr":"", "advflag":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalDr),"Dr":"%.2f"%(totalDr), "advflag":""  })
 				if totalDr < totalCr:
 					baldiff = totalCr - totalDr
-					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"" })
-					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalCr),"Dr":"%.2f"%(totalCr) })
+					ntbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Dr": "%.2f"%(baldiff),"Cr":"", "advflag":"" })
+					ntbGrid.append({"accountcode":"","accountname":"","groupname":"","srno":"","Cr": "%.2f"%(totalCr),"Dr":"%.2f"%(totalCr), "advflag":"" })
 				self.con.close()
 
 
