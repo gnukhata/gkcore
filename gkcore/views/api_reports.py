@@ -674,6 +674,7 @@ class api_reports(object):
 				totalCrBal = 0.00
 				difftb = 0.00
 				for account in accountRecords:
+					adverseflag = 0
 					calbalData = calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
 					if float(calbalData["balbrought"]) == 0  and float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
@@ -690,26 +691,30 @@ class api_reports(object):
 					totalDr += calbalData["totaldrbal"]
 					totalCr +=  calbalData["totalcrbal"]
 					if calbalData["baltype"]=="Dr":
+						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves'):
+							adverseflag = 1
 						extbrow["curbaldr"] = "%.2f"%(calbalData["curbal"])
 						extbrow["curbalcr"] = ""
+						extbrow["advflag"] = adverseflag
 						totalDrBal += calbalData["curbal"]
 					if calbalData["baltype"]=="Cr":
+						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)'):
+							adverseflag = 1
 						extbrow["curbaldr"] = ""
+						extbrow["advflag"] = adverseflag
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
 					extbGrid.append(extbrow)
-				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""}
+				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
 
 				if totalDrBal>totalCrBal:
-					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbalcr":"%.2f"%(totalDrBal - totalCrBal),"curbaldr":""})
-					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalDrBal),"srno":""})
+					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbalcr":"%.2f"%(totalDrBal - totalCrBal),"curbaldr":"", "advflag":""})
+					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalDrBal),"srno":"", "advflag":""})
 				if totalCrBal>totalDrBal:
-					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":""})
-					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":""})
+					extbGrid.append({"accountcode": "","accountname":"Difference in Trial Balance","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","srno":"","curbaldr":"%.2f"%(totalCrBal - totalDrBal),"curbalcr":"", "advflag":""})
+					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""})
 				self.con.close()
-
-
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
 			except:
 				self.con.close()
