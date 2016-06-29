@@ -1186,7 +1186,7 @@ class api_reports(object):
 						expenseTotal -= accountDetails["curbal"]
 
 				#Calculate Profit/Loss for the year
-				profit = 0.00
+				profit = 0
 				if (expenseTotal > incomeTotal):
 					profit = expenseTotal - incomeTotal
 					groupWiseTotal -= profit
@@ -1479,19 +1479,26 @@ class api_reports(object):
 
 				if balancetype == 1:
 					if orgtype=="Profit Making":
-						if difference!=0:
-							emptyno=2
-						else:
-							emptyno=0
-						for i in range(0,emptyno):
+						if difference!=0 and profit==0:
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if difference!=0 and profit!=0:
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if difference==0 and profit==0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if difference==0 and profit!=0:
+							emptyno=0
 					if orgtype=="Not For Profit":
-						if difference!=0:
-							emptyno=3
-						else:
-							emptyno=2
-						for i in range(0,emptyno):
-							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
+						if difference!=0 and profit==0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if difference!=0 and profit!=0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if difference==0 and profit==0:
+							emptyno=0
+						if difference==0 and profit!=0:
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+
 
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":{"leftlist":sbalanceSheet, "rightlist":abalanceSheet}}
