@@ -249,7 +249,10 @@ class api_reports(object):
 						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
 						monthlyBal.append(clBal)
 					if (monthClBal["baltype"] == ""):
-						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
+						if (monthClBal["grpname"] == 'Corpus' or monthClBal["grpname"] == 'Capital' or monthClBal["grpname"] == 'Current Liabilities' or monthClBal["grpname"] == 'Loans(Liability)' or monthClBal["grpname"] == 'Reserves' or monthClBal["grpname"] == 'Indirect Income' or monthClBal["grpname"] == 'Direct Income'):
+							clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
+						if (monthClBal["grpname"] == 'Current Assets' or monthClBal["grpname"] == 'Fixed Assets'or monthClBal["grpname"] == 'Investments' or monthClBal["grpname"] == 'Loans(Asset)' or monthClBal["grpname"] == 'Miscellaneous Expenses(Asset)' or monthClBal["grpname"] == 'Indirect Expense' or monthClBal["grpname"] == 'Direct Expense'):
+							clBal = {"month": calendar.month_name[startMonthDate.month], "Dr":"%.2f"%float(monthClBal["curbal"]), "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
 						monthlyBal.append(clBal)
 					startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
 					endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
