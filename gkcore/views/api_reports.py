@@ -239,12 +239,17 @@ class api_reports(object):
 				endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
 				monthlyBal = []
 				while endMonthDate <= financialEnd:
+					count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<'%s' and voucherdate>'%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
+					count = count.fetchone()
 					monthClBal =  calculateBalance(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate))
 					if (monthClBal["baltype"] == "Dr"):
-						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "%.2f"%float(monthClBal["curbal"]), "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate)}
+						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "%.2f"%float(monthClBal["curbal"]), "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
 						monthlyBal.append(clBal)
 					if (monthClBal["baltype"] == "Cr"):
-						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate)}
+						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
+						monthlyBal.append(clBal)
+					if (monthClBal["baltype"] == ""):
+						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"]}
 						monthlyBal.append(clBal)
 					startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
 					endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
