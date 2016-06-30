@@ -566,6 +566,8 @@ class api_reports(object):
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["advflag"] = adverseflag
 						totalCr = totalCr + calbalData["curbal"]
+						ntbRow["ttlRunDr"] = "%.2f"%(totalDr)
+						ntbRow["ttlRunCr"] = "%.2f"%(totalCr)
 					ntbGrid.append(ntbRow)
 				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr), "advflag":"" })
 				if totalDr > totalCr:
@@ -608,7 +610,6 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con = eng.connect()
 				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
 				accountRecords = accountData.fetchall()
@@ -631,6 +632,8 @@ class api_reports(object):
 					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData["totaldrbal"]),"Cr balance":"%.2f"%(calbalData["totalcrbal"]),"srno":srno, "advflag":adverseflag }
 					totalDr += calbalData["totaldrbal"]
 					totalCr += calbalData["totalcrbal"]
+					gtbRow["ttlRunDr"] = "%.2f"%(totalDr)
+					gtbRow["ttlRunCr"] = "%.2f"%(totalCr)
 					gtbGrid.append(gtbRow)
 				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"", "advflag":"" })
 				if totalDr > totalCr:
@@ -718,6 +721,8 @@ class api_reports(object):
 						extbrow["advflag"] = adverseflag
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
+						extbrow["ttlRunDr"] = "%.2f"%(totalDrBal)
+						extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
 					extbGrid.append(extbrow)
 				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
