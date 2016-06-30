@@ -274,7 +274,7 @@ class api_reports(object):
 
 
 	@view_config(request_param='type=ledger', renderer='json')
-  	def ledger(self):
+	def ledger(self):
 		"""
 		Purpose:
 		Creates a grid containing complete ledger.
@@ -293,26 +293,26 @@ class api_reports(object):
 		"""
 
 		try:
-  			token = self.request.headers["gktoken"]
-  		except:
-  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-  		authDetails = authCheck(token)
-  		if authDetails["auth"] == False:
-  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-  		else:
-  			try:
+			token = self.request.headers["gktoken"]
+		except:
+		return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			try:
 				self.con = eng.connect()
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
-  				orgcode = authDetails["orgcode"]
-  				accountCode = self.request.params["accountcode"]
-  				calculateFrom = self.request.params["calculatefrom"]
-  				calculateTo = self.request.params["calculateto"]
-  				projectCode =self.request.params["projectcode"]
-  				financialStart = self.request.params["financialstart"]
-  				calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
-  				vouchergrid = []
-  				bal = 0.00
+				orgcode = authDetails["orgcode"]
+				accountCode = self.request.params["accountcode"]
+				calculateFrom = self.request.params["calculatefrom"]
+				calculateTo = self.request.params["calculateto"]
+				projectCode =self.request.params["projectcode"]
+				financialStart = self.request.params["financialstart"]
+				calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
+				vouchergrid = []
+				bal = 0.00
 				adverseflag = 0
 				accnamerow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(accountCode)))
 				accname = accnamerow.fetchone()
@@ -322,8 +322,8 @@ class api_reports(object):
 					prjname = prjnamerow.fetchone()
 					headerrow["projectname"]=''.join(prjname)
 
-  				if projectCode == "" and calbalDict["balbrought"]>0:
-  					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"balance":"","narration":"","status":"", "vouchertype":"", "advflag":""}
+				if projectCode == "" and calbalDict["balbrought"]>0:
+					openingrow={"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateFrom),"%Y-%m-%d").date(),'%d-%m-%Y'),"balance":"","narration":"","status":"", "vouchertype":"", "advflag":""}
 					vfrom = datetime.strptime(str(calculateFrom),"%Y-%m-%d")
 					fstart = datetime.strptime(str(financialStart),"%Y-%m-%d")
 					if vfrom==fstart:
@@ -331,56 +331,57 @@ class api_reports(object):
 					if vfrom>fstart:
 						openingrow["particulars"]=["Balance B/F"]
 					if calbalDict["openbaltype"] =="Dr":
-  						openingrow["Dr"] = "%.2f"%float(calbalDict["balbrought"])
-  						openingrow["Cr"] = ""
-  						bal = float(calbalDict["balbrought"])
-  					if calbalDict["openbaltype"] =="Cr":
-  						openingrow["Dr"] = ""
-  						openingrow["Cr"] = "%.2f"%float(calbalDict["balbrought"])
-  						bal = float(-calbalDict["balbrought"])
-  					vouchergrid.append(openingrow)
-  				if projectCode == "":
-  					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
-  				else:
-  					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+						openingrow["Dr"] = "%.2f"%float(calbalDict["balbrought"])
+						openingrow["Cr"] = ""
+						bal = float(calbalDict["balbrought"])
+					if calbalDict["openbaltype"] =="Cr":
+						openingrow["Dr"] = ""
+						openingrow["Cr"] = "%.2f"%float(calbalDict["balbrought"])
+						bal = float(-calbalDict["balbrought"])
+					vouchergrid.append(openingrow)
+				if projectCode == "":
+					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
+				else:
+					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
-  				transactions = transactionsRecords.fetchall()
+				transactions = transactionsRecords.fetchall()
 
-  				crtotal = 0.00
-  				drtotal = 0.00
-  				for transaction in transactions:
-  					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"], "advflag":""}
-  					if transaction["drs"].has_key(accountCode):
-  						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
-  						ledgerRecord["Cr"] = ""
-  						drtotal += float(transaction["drs"][accountCode])
-  						par=[]
-  						for cr in transaction["crs"].keys():
-  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
-  							accountname = accountnameRow.fetchone()
-  							par.append(''.join(accountname))
-  						ledgerRecord["particulars"] = par
-  						bal = bal + float(transaction["drs"][accountCode])
+				crtotal = 0.00
+				drtotal = 0.00
+				for transaction in transactions:
+					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"], "advflag":""}
+					if transaction["drs"].has_key(accountCode):
+						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
+						ledgerRecord["Cr"] = ""
+						drtotal += float(transaction["drs"][accountCode])
+						par=[]
+						for cr in transaction["crs"].keys():
+							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
+							accountname = accountnameRow.fetchone()
+							par.append(''.join(accountname))
+						ledgerRecord["particulars"] = par
+						bal = bal + float(transaction["drs"][accountCode])
 
-  					if transaction["crs"].has_key(accountCode):
-  						ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
-  						ledgerRecord["Dr"] = ""
-  						crtotal += float(transaction["crs"][accountCode])
-  						par=[]
-  						for dr in transaction["drs"].keys():
-  							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
-  							accountname = accountnameRow.fetchone()
-  							par.append(''.join(accountname))
-
-  						ledgerRecord["particulars"] = par
-  						bal = bal - float(transaction["crs"][accountCode])
-  					if bal>0:
-  						ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
-  					elif bal<0:
-  						ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
-  					else :
-  						ledgerRecord["balance"] = "%.2f"%(0.00)
-  					vouchergrid.append(ledgerRecord)
+					if transaction["crs"].has_key(accountCode):
+						ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
+						ledgerRecord["Dr"] = ""
+						crtotal += float(transaction["crs"][accountCode])
+						par=[]
+						for dr in transaction["drs"].keys():
+							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
+							accountname = accountnameRow.fetchone()
+							par.append(''.join(accountname))
+						ledgerRecord["particulars"] = par
+						bal = bal - float(transaction["crs"][accountCode])
+					if bal>0:
+						ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
+					elif bal<0:
+						ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
+					else :
+						ledgerRecord["balance"] = "%.2f"%(0.00)
+						ledgerRecord["ttlRunDr"] = "%.2f"%(drtotal)
+						ledgerRecord["ttlRunCr"] = "%.2f"%(crtotal)
+					vouchergrid.append(ledgerRecord)
   				if projectCode=="":
   					if calbalDict["openbaltype"] == "Cr":
   						calbalDict["totalcrbal"] -= calbalDict["balbrought"]
