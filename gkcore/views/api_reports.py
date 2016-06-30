@@ -311,6 +311,7 @@ class api_reports(object):
   				projectCode =self.request.params["projectcode"]
   				financialStart = self.request.params["financialstart"]
   				calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
+				print calbalDict
   				vouchergrid = []
   				bal = 0.00
 				adverseflag = 0
@@ -388,46 +389,44 @@ class api_reports(object):
   						calbalDict["totaldrbal"] -= calbalDict["balbrought"]
   					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
   					vouchergrid.append(ledgerRecord)
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"narration":"", "particulars":["Closing Balance C/F"],"balance":"","status":"", "vouchertype":""}
-  					if calbalDict["baltype"] == "Cr":
-						if (calbalDict["grpname"] == 'Current Assets' or calbalDict["grpname"] == 'Fixed Assets'or calbalDict["grpname"] == 'Investments' or calbalDict["grpname"] == 'Loans(Asset)' or calbalDict["grpname"] == 'Miscellaneous Expenses(Asset)'):
-							adverseflag = 1
-  						ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
-  						ledgerRecord["Cr"] = ""
 
-  					if calbalDict["baltype"] == "Dr":
-						if (calbalDict["grpname"] == 'Corpus' or calbalDict["grpname"] == 'Capital'or calbalDict["grpname"] == 'Current Liabilities' or calbalDict["grpname"] == 'Loans(Liability)' or calbalDict["grpname"] == 'Reserves'):
-							adverseflag = 1
-  						ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
-  						ledgerRecord["Dr"] = ""
-					ledgerRecord["advflag"] = adverseflag
-  					vouchergrid.append(ledgerRecord)
+					if calbalDict["curbal"]!=0:
+						ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"narration":"", "particulars":["Closing Balance C/F"],"balance":"","status":"", "vouchertype":""}
+	  					if calbalDict["baltype"] == "Cr":
+							if (calbalDict["grpname"] == 'Current Assets' or calbalDict["grpname"] == 'Fixed Assets'or calbalDict["grpname"] == 'Investments' or calbalDict["grpname"] == 'Loans(Asset)' or calbalDict["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalDict["curbal"]!=0:
+								adverseflag = 1
+							ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
+							ledgerRecord["Cr"] = ""
 
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":"", "vouchertype":"", "advflag":""}
-  					if projectCode == "" and calbalDict["balbrought"]>0:
-  						if calbalDict["openbaltype"] =="Dr":
-  							calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
+	  					if calbalDict["baltype"] == "Dr":
+							if (calbalDict["grpname"] == 'Corpus' or calbalDict["grpname"] == 'Capital'or calbalDict["grpname"] == 'Current Liabilities' or calbalDict["grpname"] == 'Loans(Liability)' or calbalDict["grpname"] == 'Reserves') and calbalDict["curbal"]!=0:
+								adverseflag = 1
+							ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
+							ledgerRecord["Dr"] = ""
+						ledgerRecord["advflag"] = adverseflag
+	  					vouchergrid.append(ledgerRecord)
 
-  						if calbalDict["openbaltype"] =="Cr":
-  							calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
+					if (calbalDict["curbal"]==0 and calbalDict["balbrought"]!=0) or calbalDict["curbal"]!=0 or calbalDict["balbrought"]!=0:
+	  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":"", "vouchertype":"", "advflag":""}
+	  					if projectCode == "" and calbalDict["balbrought"]>0:
+	  						if calbalDict["openbaltype"] =="Dr":
+	  							calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
 
-  						if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
-  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
-  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
+	  						if calbalDict["openbaltype"] =="Cr":
+	  							calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
 
-  						if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
-  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
-  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
-  						vouchergrid.append(ledgerRecord)
-  					else:
-  						if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
-  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
-  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
+	  						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
+	  						vouchergrid.append(ledgerRecord)
+	  					else:
+	  						if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+	  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+	  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
 
-  						if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
-  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
-  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
-  						vouchergrid.append(ledgerRecord)
+	  						if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+	  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
+	  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
+	  						vouchergrid.append(ledgerRecord)
   				else:
   					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
   					vouchergrid.append(ledgerRecord)
