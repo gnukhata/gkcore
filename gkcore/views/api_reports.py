@@ -239,7 +239,7 @@ class api_reports(object):
 				endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
 				monthlyBal = []
 				while endMonthDate <= financialEnd:
-					count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<'%s' and voucherdate>'%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
+					count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
 					count = count.fetchone()
 					adverseflag = 0
 					monthClBal =  calculateBalance(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate))
