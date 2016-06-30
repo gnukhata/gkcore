@@ -244,12 +244,12 @@ class api_reports(object):
 					adverseflag = 0
 					monthClBal =  calculateBalance(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate))
 					if (monthClBal["baltype"] == "Dr"):
-						if (monthClBal["grpname"] == 'Corpus' or monthClBal["grpname"] == 'Capital' or monthClBal["grpname"] == 'Current Liabilities' or monthClBal["grpname"] == 'Loans(Liability)' or monthClBal["grpname"] == 'Reserves' or monthClBal["grpname"] == 'Indirect Income' or monthClBal["grpname"] == 'Direct Income'):
+						if ((monthClBal["grpname"] == 'Corpus' or monthClBal["grpname"] == 'Capital' or monthClBal["grpname"] == 'Current Liabilities' or monthClBal["grpname"] == 'Loans(Liability)' or monthClBal["grpname"] == 'Reserves' or monthClBal["grpname"] == 'Indirect Income' or monthClBal["grpname"] == 'Direct Income') and monthClBal["curbal"]!=0) :
 							adverseflag = 1
 						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "%.2f"%float(monthClBal["curbal"]), "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"], "advflag":adverseflag}
 						monthlyBal.append(clBal)
 					if (monthClBal["baltype"] == "Cr"):
-						if (monthClBal["grpname"] == 'Current Assets' or monthClBal["grpname"] == 'Fixed Assets'or monthClBal["grpname"] == 'Investments' or monthClBal["grpname"] == 'Loans(Asset)' or monthClBal["grpname"] == 'Miscellaneous Expenses(Asset)' or monthClBal["grpname"] == 'Indirect Expense' or monthClBal["grpname"] == 'Direct Expense'):
+						if ((monthClBal["grpname"] == 'Current Assets' or monthClBal["grpname"] == 'Fixed Assets'or monthClBal["grpname"] == 'Investments' or monthClBal["grpname"] == 'Loans(Asset)' or monthClBal["grpname"] == 'Miscellaneous Expenses(Asset)' or monthClBal["grpname"] == 'Indirect Expense' or monthClBal["grpname"] == 'Direct Expense') and monthClBal["curbal"]!=0):
 							adverseflag = 1
 						clBal = {"month": calendar.month_name[startMonthDate.month], "Dr": "", "Cr":"%.2f"%float(monthClBal["curbal"]), "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"], "advflag":adverseflag}
 						monthlyBal.append(clBal)
