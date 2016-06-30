@@ -311,7 +311,6 @@ class api_reports(object):
   				projectCode =self.request.params["projectcode"]
   				financialStart = self.request.params["financialstart"]
   				calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
-				print calbalDict
   				vouchergrid = []
   				bal = 0.00
 				adverseflag = 0
@@ -553,14 +552,14 @@ class api_reports(object):
 					srno += 1
 					ntbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"srno":srno}
 					if calbalData["baltype"] == "Dr":
-						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves'):
+						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves') and calbalData["curbal"]!=0:
 							adverseflag = 1
 						ntbRow["Dr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["Cr"] = ""
 						ntbRow["advflag"] = adverseflag
 						totalDr = totalDr + calbalData["curbal"]
 					if calbalData["baltype"] == "Cr":
-						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)'):
+						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalData["curbal"]!=0:
 							adverseflag = 1
 						ntbRow["Dr"] = ""
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
@@ -624,9 +623,9 @@ class api_reports(object):
 					if float(calbalData["totaldrbal"])==0 and float(calbalData["totalcrbal"]) == 0:
 						continue
 					srno += 1
-					if (calbalData["baltype"] == "Dr") and (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves'):
+					if (calbalData["baltype"] == "Dr") and (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves') and calbalData["curbal"]!=0:
 						adverseflag = 1
-					if (calbalData["baltype"] == "Cr") and (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)'):
+					if (calbalData["baltype"] == "Cr") and (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalData["curbal"]!=0:
 						adverseflag = 1
 					gtbRow = {"accountcode": account["accountcode"],"accountname":account["accountname"],"groupname": calbalData["grpname"],"Dr balance":"%.2f"%(calbalData["totaldrbal"]),"Cr balance":"%.2f"%(calbalData["totalcrbal"]),"srno":srno, "advflag":adverseflag }
 					totalDr += calbalData["totaldrbal"]
@@ -705,14 +704,14 @@ class api_reports(object):
 					totalDr += calbalData["totaldrbal"]
 					totalCr +=  calbalData["totalcrbal"]
 					if calbalData["baltype"]=="Dr":
-						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves'):
+						if (calbalData["grpname"] == 'Corpus' or calbalData["grpname"] == 'Capital' or calbalData["grpname"] == 'Current Liabilities' or calbalData["grpname"] == 'Loans(Liability)' or calbalData["grpname"] == 'Reserves') and calbalData["curbal"]!=0:
 							adverseflag = 1
 						extbrow["curbaldr"] = "%.2f"%(calbalData["curbal"])
 						extbrow["curbalcr"] = ""
 						extbrow["advflag"] = adverseflag
 						totalDrBal += calbalData["curbal"]
 					if calbalData["baltype"]=="Cr":
-						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)'):
+						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalData["curbal"]!=0:
 							adverseflag = 1
 						extbrow["curbaldr"] = ""
 						extbrow["advflag"] = adverseflag
@@ -982,7 +981,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr"):
+					if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1000,7 +999,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Dr"):
+						if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1032,7 +1031,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr"):
+					if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1050,7 +1049,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Dr"):
+						if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1100,7 +1099,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Dr"):
+						if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1134,7 +1133,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr"):
+					if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1152,7 +1151,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Cr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Dr"):
+						if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1231,7 +1230,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr"):
+					if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1283,7 +1282,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr"):
+					if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1301,7 +1300,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Cr"):
+						if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1333,7 +1332,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr"):
+					if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1351,7 +1350,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Cr"):
+						if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1383,7 +1382,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Dr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Cr"):
+					if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 						adverseflag = 1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1401,7 +1400,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Cr"):
+						if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
@@ -1434,7 +1433,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Dr"):
 							groupWiseTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Cr"):
+						if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 							adverseflag = 1
 							accountTotal -= accountDetails["curbal"]
 							groupWiseTotal -= accountDetails["curbal"]
@@ -1452,7 +1451,7 @@ class api_reports(object):
 							if (accountDetails["baltype"]=="Dr"):
 								subgroupTotal += accountDetails["curbal"]
 								accountTotal += accountDetails["curbal"]
-							if (accountDetails["baltype"]=="Cr"):
+							if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 								adverseflag = 1
 								subgroupTotal -= accountDetails["curbal"]
 								accountTotal -= accountDetails["curbal"]
