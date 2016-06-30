@@ -295,7 +295,7 @@ class api_reports(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-		return {"gkstatus": enumdict["UnauthorisedAccess"]}
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -379,8 +379,8 @@ class api_reports(object):
 						ledgerRecord["balance"] = "%.2f(Cr)"%(abs(bal))
 					else :
 						ledgerRecord["balance"] = "%.2f"%(0.00)
-						ledgerRecord["ttlRunDr"] = "%.2f"%(drtotal)
-						ledgerRecord["ttlRunCr"] = "%.2f"%(crtotal)
+					ledgerRecord["ttlRunDr"] = "%.2f"%(drtotal)
+					ledgerRecord["ttlRunCr"] = "%.2f"%(crtotal)
 					vouchergrid.append(ledgerRecord)
   				if projectCode=="":
   					if calbalDict["openbaltype"] == "Cr":
