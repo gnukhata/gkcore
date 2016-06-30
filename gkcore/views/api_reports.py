@@ -285,6 +285,9 @@ class api_reports(object):
 		The first row contains opening balance of the account.
 		subsequent rows contain all the transactions for an account given it's account code.
 		Further, it gives the closing balance at the end of all cr and dr transactions.
+		in addition it also provides a flag to indicate if the balance is adverce.
+		In addition to all this, there are 2 other columns containing running total Dr and Cr,
+		this is used in Printing.
 		If the closing balance is Dr then the amount will be shown at the cr side and other way round.
 		Then finally grand total is displayed.
 		This method is called when the report url is called with type=ledger request_param.
@@ -524,6 +527,9 @@ class api_reports(object):
 		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
 		Then all dR balances and all Cr balances are added to get total balance for each side.
 		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		In addition to this data we have 2 other columns,
+		Total Running total for Dr and Cr useful for printing.
+		Same applies to the following methods in this class for gross and extended trial balances.
 		All rows in the ntbGrid are dictionaries.
 		"""
 
@@ -566,8 +572,8 @@ class api_reports(object):
 						ntbRow["Cr"] = "%.2f"%(calbalData["curbal"])
 						ntbRow["advflag"] = adverseflag
 						totalCr = totalCr + calbalData["curbal"]
-						ntbRow["ttlRunDr"] = "%.2f"%(totalDr)
-						ntbRow["ttlRunCr"] = "%.2f"%(totalCr)
+					ntbRow["ttlRunDr"] = "%.2f"%(totalDr)
+					ntbRow["ttlRunCr"] = "%.2f"%(totalCr)
 					ntbGrid.append(ntbRow)
 				ntbGrid.append({"accountcode":"","accountname":"Total","groupname":"","srno":"","Dr": "%.2f"%(totalDr),"Cr":"%.2f"%(totalCr), "advflag":"" })
 				if totalDr > totalCr:
@@ -721,8 +727,8 @@ class api_reports(object):
 						extbrow["advflag"] = adverseflag
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
-						extbrow["ttlRunDr"] = "%.2f"%(totalDrBal)
-						extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
+					extbrow["ttlRunDr"] = "%.2f"%(totalDrBal)
+					extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
 					extbGrid.append(extbrow)
 				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
