@@ -867,6 +867,7 @@ class api_reports(object):
 		Then all dR balances and all Cr balances are added to get total balance for each side.
 		After this all closing balances are added either on Dr or Cr side depending on the baltype.
 		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
+		In addition there will be running Cr and Dr totals for printing purpose.
 		All rows in the extbGrid are dictionaries.
 		"""
 
@@ -910,6 +911,8 @@ class api_reports(object):
 					if float(statementRow["totalout"]) == 0 and float(statementRow["totalin"]) == 0:
 						continue
 					srno = srno +1
+					statementRow["ttlRunDr"] = "%.2f"%(totalDr)
+					statementRow["ttlRunCr"] = "%.2f"%(totalCr)
 					projectStatement.append(statementRow)
 				projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
 				self.con.close()
