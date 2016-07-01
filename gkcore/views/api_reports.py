@@ -681,7 +681,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 
 				self.con = eng.connect()
 				accountData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode==authDetails["orgcode"] ).order_by(accounts.c.accountname) )
@@ -724,12 +724,12 @@ class api_reports(object):
 						extbrow["curbaldr"] = ""
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
-                    if calbalData["baltype"]=="":
-                        extbrow["curbaldr"]==""
-                        extbrow["curbalcr"]==""
+					if calbalData["baltype"]=="":
+						extbrow["curbaldr"]=""
+						extbrow["curbalcr"]=""
 					extbrow["ttlRunDr"] = "%.2f"%(totalDrBal)
 					extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
-                    extbrow["advflag"] = adverseflag
+					extbrow["advflag"] = adverseflag
 					extbGrid.append(extbrow)
 				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
@@ -742,9 +742,9 @@ class api_reports(object):
 					extbGrid.append({"accountcode": "","accountname":"","groupname":"","openingbalance":"", "totaldr":"","totalcr":"","curbaldr":"%.2f"%(totalCrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":extbGrid}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#self.con.close()
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 
@@ -955,7 +955,7 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-                self.con = eng.connect()
+				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
 				financialstartRow = financialstart.fetchone()
