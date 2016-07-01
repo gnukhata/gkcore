@@ -447,6 +447,7 @@ class api_rollclose(object):
 					newGroupCodeRow = newCodeForGroup.fetchone()
 					cbRecord = calculateBalance(self.con,angn["accountcode"],str(oldstartDate) ,str(oldstartDate) ,str(endDate) )
 					opnbal = 0.00
+					accname = angn["accountname"]
 					if(cbRecord["grpname"] == 'Current Assets' or cbRecord["grpname"] == 'Fixed Assets'or cbRecord["grpname"] == 'Investments' or cbRecord["grpname"] == 'Loans(Asset)' or cbRecord["grpname"] == 'Miscellaneous Expenses(Asset)'):
 						if cbRecord["baltype"]=="Cr":
 							opnbal = -cbRecord["curbal"]
@@ -459,7 +460,10 @@ class api_rollclose(object):
 							opnbal = cbRecord["curbal"]
 					if cbRecord["grpname"] =='Reserves':
 						opnbal = cbRecord["curbal"]
-					self.con.execute(accounts.insert(),{"accountname":angn["accountname"],"openingbal":float(opnbal),"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
+					if angn["accountname"] in ("Profit C/F","Loss C/F","Surplus C/F","Deficit C/F"):
+						accname =accname.replace("C/F","B/F")
+					print accname
+					self.con.execute(accounts.insert(),{"accountname":accname,"openingbal":float(opnbal),"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
 				csobData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == newOrgCode,accounts.c.accountname=="Closing Stock")))
 				csobRow = csobData.fetchone()
 				csob = csobRow["openingbal"]
