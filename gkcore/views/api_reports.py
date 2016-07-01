@@ -753,16 +753,21 @@ class api_reports(object):
 	def cashflow(self):
 		"""
 		Purpose:
-		Returns a grid containing extended trial balance for all accounts started from financial start till the end date provided by the user.
+		Returns a grid containing opening and closing balances of those accounts under the group of Cash or Bank
+		and also the total receipt and total payment (Cr and Dr) for the time period of theses accounts
 		Description:
-		This method has type=nettrialbalance as request_param in view_config.
-		the method takes financial start and calculateto as parameters.
-		Then it calls calculateBalance in a loop after retriving list of accountcode and account names.
-		For every iteration financialstart is passed twice to calculateBalance because in trial balance start date is always the financial start.
-		Then all dR balances and all Cr balances are added to get total balance for each side.
-		After this all closing balances are added either on Dr or Cr side depending on the baltype.
-		Finally if balances are different then that difference is calculated and shown on the lower side followed by a row containing grand total.
-		All rows in the extbGrid are dictionaries.
+		This method has type=cashflow as request_param in view_config.
+		the method takes financial start, calculatefrom and calculateto as parameters.
+		then it fetches all the accountcodes, their opening balances and accountnames from the database which are under the group of Cash or Bank
+		then a loop is ran for all these accounts and in the loop, the calculateBalance function is caaled for all these accounts
+		if the balbrought!=0 (balbrought returned from calculateBalance, this also becomes the opening balance for the period) then the dictionary containing accountdetails and balbrought amount is appended to the "receiptcf" list.
+		the balbrought amount is added or subtracted from the "rctotal" depending upon its openbaltype
+		if the curbal!=0 (curbal returned from calculateBalance, this also becomes the closing balance for the period) then a dictionary containing the accountdetails and curbal amount is appended to the "closinggrid" list
+		the curbal amount is added or subtracted from the "pytotal" depending upon its baltype
+		then, all the vouchers (Except contra and journal) are fetched from the database which contain these accountcodes in either their crs or drs
+		then a loop is ran for the accountcodes of the above fetched voucher crs to find the total receipts in the particular account. the same is done with drs to find the total payment done from that account.
+		then the dictionary containing the accountdetails along total receipts is appended in the "rctransactionsgrid" list and the dictionary containing accountdetails along with the total payments are appended in the "paymentcf" list
+		then these lists are joined to receiptcf & closing grid accordingly and returned as rcgkresult & pygkresult
 		"""
 
 		try:
