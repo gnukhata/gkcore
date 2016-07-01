@@ -767,6 +767,7 @@ class api_reports(object):
 		then, all the vouchers (Except contra and journal) are fetched from the database which contain these accountcodes in either their crs or drs
 		then a loop is ran for the accountcodes of the above fetched voucher crs to find the total receipts in the particular account. the same is done with drs to find the total payment done from that account.
 		then the dictionary containing the accountdetails along total receipts is appended in the "rctransactionsgrid" list and the dictionary containing accountdetails along with the total payments are appended in the "paymentcf" list
+		totalrunningreceipt (ttlRc) and totalrunningpayments(ttlPy) are calculated and added in the list for printing purpose.
 		then these lists are joined to receiptcf & closing grid accordingly and returned as rcgkresult & pygkresult
 		"""
 
@@ -794,29 +795,31 @@ class api_reports(object):
 				pyaccountcodes = []
 				rctotal = 0.00
 				pytotal = 0.00
+				ttlRc = 0.00
+				ttlPy = 0.00
 				vfrom = datetime.strptime(str(calculateFrom),"%Y-%m-%d")
 				fstart = datetime.strptime(str(financialStart),"%Y-%m-%d")
 				if vfrom==fstart:
-					receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":""})
+					receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":"", "ttlRc":""})
 				if vfrom>fstart:
-					receiptcf.append({"toby":"To","particulars":"Balance B/F","amount":"","accountcode":""})
+					receiptcf.append({"toby":"To","particulars":"Balance B/F","amount":"","accountcode":"", "ttlRc":""})
 
-				closinggrid.append({"toby":"By","particulars":"Closing balance","amount":"","accountcode":""})
+				closinggrid.append({"toby":"By","particulars":"Closing balance","amount":"","accountcode":"", "ttlPy":""})
 				for cbAccount in cbAccounts:
 					opacc = calculateBalance(self.con,cbAccount["accountcode"], financialStart, calculateFrom, calculateTo)
 					if opacc["balbrought"]!=0.00:
 						if opacc["openbaltype"]=="Dr":
-							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"]})
+							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"], "ttlRc":""})
 							rctotal += float(opacc["balbrought"])
 						if opacc["openbaltype"]=="Cr":
-							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"]})
+							receiptcf.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["balbrought"]),"accountcode":cbAccount["accountcode"], "ttlRc":""})
 							rctotal -= float(opacc["balbrought"])
 					if opacc["curbal"]!=0.00:
 						if opacc["baltype"]=="Dr":
-							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"], "ttlPy":""})
 							pytotal += float(opacc["curbal"])
 						if opacc["baltype"]=="Cr":
-							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"]})
+							closinggrid.append({"toby":"","particulars":''.join(cbAccount["accountname"]),"amount":"-"+"%.2f"%float(opacc["curbal"]),"accountcode":cbAccount["accountcode"], "ttlPy":""})
 							pytotal -= float(opacc["curbal"])
 					transactionsRecords = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"%(calculateFrom, calculateTo, cbAccount["accountcode"],cbAccount["accountcode"]))
 					transactions = transactionsRecords.fetchall()
@@ -828,7 +831,8 @@ class api_reports(object):
 								crresultRow = crresult.fetchone()
 								rcaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
 								rcacc= ''.join(rcaccountname.fetchone())
-								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr)})
+								ttlRc += float(crresultRow["total"])
+								rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRc": ttlRc})
 								rctotal += float(crresultRow["total"])
 						for dr in transaction["drs"]:
 							if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
@@ -837,20 +841,21 @@ class api_reports(object):
 								drresultRow = drresult.fetchone()
 								pyaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
 								pyacc= ''.join(pyaccountname.fetchone())
-								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr)})
+								ttlPy += float(drresultRow["total"])
+								paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlPy":ttlPy})
 								pytotal += float(drresultRow["total"])
 				receiptcf.extend(rctransactionsgrid)
 				paymentcf.extend(closinggrid)
 				if len(receiptcf)>len(paymentcf):
 					emptyno = len(receiptcf)-len(paymentcf)
 					for i in range(0,emptyno):
-						paymentcf.append({"toby":"","particulars":"","amount":".","accountcode":""})
+						paymentcf.append({"toby":"","particulars":"","amount":".","accountcode":"", "ttlPy":""})
 				if len(receiptcf)<len(paymentcf):
 					emptyno = len(paymentcf)-len(receiptcf)
 					for i in range(0,emptyno):
-						receiptcf.append({"toby":"","particulars":"","amount":".","accountcode":""})
-				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":""})
-				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":""})
+						receiptcf.append({"toby":"","particulars":"","amount":".","accountcode":"", "ttlRc":""})
+				receiptcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(rctotal),"accountcode":"", "ttlRc":""})
+				paymentcf.append({"toby":"","particulars":"Total","amount":"%.2f"%float(pytotal),"accountcode":"", "ttlPy":""})
 				self.con.close()
 
 
