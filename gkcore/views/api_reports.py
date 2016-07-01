@@ -100,7 +100,6 @@ def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
 	groupData = con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
 	groupRecord = groupData.fetchone()
 	groupName = groupRecord["groupname"]
-	print "group is %s"%(groupName)
 	#now similarly we will get the opening balance for this account.
 
 	obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
@@ -718,17 +717,19 @@ class api_reports(object):
 							adverseflag = 1
 						extbrow["curbaldr"] = "%.2f"%(calbalData["curbal"])
 						extbrow["curbalcr"] = ""
-						extbrow["advflag"] = adverseflag
 						totalDrBal += calbalData["curbal"]
 					if calbalData["baltype"]=="Cr":
 						if (calbalData["grpname"] == 'Current Assets' or calbalData["grpname"] == 'Fixed Assets'or calbalData["grpname"] == 'Investments' or calbalData["grpname"] == 'Loans(Asset)' or calbalData["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalData["curbal"]!=0:
 							adverseflag = 1
 						extbrow["curbaldr"] = ""
-						extbrow["advflag"] = adverseflag
 						extbrow["curbalcr"] = "%.2f"%(calbalData["curbal"])
 						totalCrBal += calbalData["curbal"]
+					if calbalData["baltype"]=="":
+						extbrow["curbaldr"]=""
+						extbrow["curbalcr"]=""
 					extbrow["ttlRunDr"] = "%.2f"%(totalDrBal)
 					extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
+					extbrow["advflag"] = adverseflag
 					extbGrid.append(extbrow)
 				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
@@ -878,7 +879,6 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con = eng.connect()
 				calculateTo = self.request.params["calculateto"]
 				financialStart = self.request.params["financialstart"]
@@ -955,7 +955,6 @@ class api_reports(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
@@ -1093,7 +1092,7 @@ class api_reports(object):
 					if (accountDetails["baltype"]=="Cr"):
 						groupWiseTotal += accountDetails["curbal"]
 						accountTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr"):
+					if (accountDetails["baltype"]=="Dr" and accountDetails["curbal"]!=0):
 						adverseflag =1
 						accountTotal -= accountDetails["curbal"]
 						groupWiseTotal -= accountDetails["curbal"]
@@ -1261,7 +1260,7 @@ class api_reports(object):
 						if (accountDetails["baltype"]=="Dr"):
 							subgroupTotal += accountDetails["curbal"]
 							accountTotal += accountDetails["curbal"]
-						if (accountDetails["baltype"]=="Cr"):
+						if (accountDetails["baltype"]=="Cr" and accountDetails["curbal"]!=0):
 							adverseflag =1
 							subgroupTotal -= accountDetails["curbal"]
 							accountTotal -= accountDetails["curbal"]
