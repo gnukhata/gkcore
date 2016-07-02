@@ -1788,7 +1788,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
@@ -1808,9 +1808,11 @@ class api_reports(object):
 				if (orgtype == "Profit Making"):
 					profit = "Profit"
 					loss = "Loss"
+					pnlAccountname = "Profit & Loss"
 				if (orgtype == "Not For Profit"):
 					profit = "Surplus"
 					loss = "Deficit"
+					pnlAccountname = "Income & Expenditure"
 
 				expense.append({"toby":"","accountname":"DIRECT EXPENSE", "amount":"", "accountcode":""})
 				income.append({"toby":"","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
@@ -1828,18 +1830,43 @@ class api_reports(object):
 						expenseTotal -= accountDetails["curbal"]
 					expense.append({"toby":"To,","accountname":accountRow["accountname"], "amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
 
-				#Calculate all income(Direct and Indirect Income)
+				#Calculate all income(Direct Income)
 				accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income')) order by accountname;"%(orgcode, orgcode, orgcode))
 				accountCodes = accountcodeData.fetchall()
 				for accountRow in accountCodes:
-					accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-					if accountDetails["curbal"]==0:
-						continue
-					if (accountDetails["baltype"]=="Cr"):
-						incomeTotal += accountDetails["curbal"]
-					if (accountDetails["baltype"]=="Dr"):
-						incomeTotal -= accountDetails["curbal"]
-					income.append({"toby":"By,","accountname":accountRow["accountname"], "amount":"%.2f"%float(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
+					if accountRow["accountname"]==pnlAccountname:
+						csAccountcode = self.con.execute("select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"%(orgcode))
+						csAccountcodeRow = csAccountcode.fetchone()
+						crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
+						crresultRow = crresult.fetchone()
+						drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
+						drresultRow = drresult.fetchone()
+						print type(crresultRow["total"])
+						print type(drresultRow["total"])
+						if crresultRow["total"]==None and drresultRow["total"]!=None:
+							crResult = 0.00
+							drResult = drresultRow["total"]
+						elif drresultRow["total"]==None and crresultRow["total"]!=None:
+							drResult = 0.00
+							crResult = crresultRow["total"]
+						elif drresultRow["total"]==None and crresultRow["total"]==None:
+							drResult = 0.00
+							crResult = 0.00
+						else:
+							drResult = drresultRow["total"]
+							crResult = crresultRow["total"]
+						totalCsAmt = drResult -  crResult
+						incomeTotal += totalCsAmt
+						income.append({"toby":"By", "accountname":"Closing Stock", "amount":"%.2f"%float(totalCsAmt), "accountcode":csAccountcodeRow["accountcode"]})
+					else:
+						accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+						if accountDetails["curbal"]==0:
+							continue
+						if (accountDetails["baltype"]=="Cr"):
+							incomeTotal += accountDetails["curbal"]
+						if (accountDetails["baltype"]=="Dr"):
+							incomeTotal -= accountDetails["curbal"]
+						income.append({"toby":"By,","accountname":accountRow["accountname"], "amount":"%.2f"%float(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
 
 				if(expenseTotal > incomeTotal):
 					difference = expenseTotal - incomeTotal
@@ -1942,9 +1969,9 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
 
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+				#self.con.close()
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=deletedvoucher', renderer='json')
   	def getdeletedVoucher(self):
