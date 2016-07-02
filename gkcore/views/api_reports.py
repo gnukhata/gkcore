@@ -1837,7 +1837,7 @@ class api_reports(object):
 					if accountRow["accountname"]==pnlAccountname:
 						csAccountcode = self.con.execute("select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"%(orgcode))
 						csAccountcodeRow = csAccountcode.fetchone()
-						crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
+						crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(accountRow["accountcode"]), int(csAccountcodeRow["accountcode"])))
 						crresultRow = crresult.fetchone()
 						drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
 						drresultRow = drresult.fetchone()
@@ -1855,7 +1855,8 @@ class api_reports(object):
 							crResult = crresultRow["total"]
 						totalCsAmt = drResult -  crResult
 						incomeTotal += totalCsAmt
-						income.append({"toby":"By", "accountname":"Closing Stock", "amount":"%.2f"%float(totalCsAmt), "accountcode":csAccountcodeRow["accountcode"]})
+						if totalCsAmt!=0:
+							income.append({"toby":"By", "accountname":"Closing Stock", "amount":"%.2f"%float(totalCsAmt), "accountcode":csAccountcodeRow["accountcode"]})
 					else:
 						accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
 						if accountDetails["curbal"]==0:
