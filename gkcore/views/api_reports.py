@@ -1841,8 +1841,6 @@ class api_reports(object):
 						crresultRow = crresult.fetchone()
 						drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
 						drresultRow = drresult.fetchone()
-						print type(crresultRow["total"])
-						print type(drresultRow["total"])
 						if crresultRow["total"]==None and drresultRow["total"]!=None:
 							crResult = 0.00
 							drResult = drresultRow["total"]
