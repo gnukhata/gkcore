@@ -1788,7 +1788,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
@@ -1968,9 +1968,9 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
 
-			#except:
-				#self.con.close()
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=deletedvoucher', renderer='json')
   	def getdeletedVoucher(self):
