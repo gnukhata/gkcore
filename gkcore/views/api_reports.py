@@ -731,7 +731,7 @@ class api_reports(object):
 					extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
 					extbrow["advflag"] = adverseflag
 					extbGrid.append(extbrow)
-				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
+				extbrow = {"accountcode": "","accountname":"Total","groupname":"","openingbalance":"", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
 
 				if totalDrBal>totalCrBal:
