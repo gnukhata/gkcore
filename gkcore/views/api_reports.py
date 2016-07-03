@@ -640,7 +640,7 @@ class api_reports(object):
 					gtbRow["ttlRunDr"] = "%.2f"%(totalDr)
 					gtbRow["ttlRunCr"] = "%.2f"%(totalCr)
 					gtbGrid.append(gtbRow)
-				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"", "advflag":"" })
+				gtbGrid.append({"accountcode":"","accountname":"Total","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"", "advflag":"" })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
 					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr balance": "%.2f"%(baldiff),"Dr balance":"", "advflag":"" })
@@ -1512,8 +1512,8 @@ class api_reports(object):
 							emptyno=0
 					if orgtype=="Not For Profit":
 						if difference!=0 and profit==0:
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference!=0 and profit!=0:
 							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference==0 and profit==0:
