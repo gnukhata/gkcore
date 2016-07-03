@@ -68,7 +68,7 @@ class api_user(object):
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		print authCheck(token)
+#		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -79,7 +79,7 @@ class api_user(object):
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1 or (userRole[0]==0 and dataset["userrole"]==1):
-					print dataset
+#					print dataset
 					dataset["orgcode"] = authDetails["orgcode"]
 					result = self.con.execute(gkdb.users.insert(),[dataset])
 					return {"gkstatus":enumdict["Success"]}
@@ -97,7 +97,7 @@ class api_user(object):
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-		print authCheck(token)
+#		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -119,7 +119,7 @@ class api_user(object):
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		print authCheck(token)
+#		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -145,7 +145,7 @@ class api_user(object):
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		print authCheck(token)
+#		print authCheck(token)
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
