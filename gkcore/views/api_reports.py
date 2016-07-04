@@ -640,7 +640,7 @@ class api_reports(object):
 					gtbRow["ttlRunDr"] = "%.2f"%(totalDr)
 					gtbRow["ttlRunCr"] = "%.2f"%(totalCr)
 					gtbGrid.append(gtbRow)
-				gtbGrid.append({"accountcode":"","accountname":"Total Balance","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"", "advflag":"" })
+				gtbGrid.append({"accountcode":"","accountname":"Total","groupname":"","Dr balance":"%.2f"%(totalDr),"Cr balance":"%.2f"%(totalCr),"srno":"", "advflag":"" })
 				if totalDr > totalCr:
 					baldiff = totalDr - totalCr
 					gtbGrid.append({"accountcode":"","accountname":"Difference in Trial balance","groupname":"","srno":"","Cr balance": "%.2f"%(baldiff),"Dr balance":"", "advflag":"" })
@@ -731,7 +731,7 @@ class api_reports(object):
 					extbrow["ttlRunCr"] = "%.2f"%(totalCrBal)
 					extbrow["advflag"] = adverseflag
 					extbGrid.append(extbrow)
-				extbrow = {"accountcode": "","accountname":"","groupname":"","openingbalance":"Total", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
+				extbrow = {"accountcode": "","accountname":"Total","groupname":"","openingbalance":"", "totaldr":"%.2f"%(totalDr),"totalcr":"%.2f"%(totalCr),"curbaldr":"%.2f"%(totalDrBal),"curbalcr":"%.2f"%(totalCrBal),"srno":"", "advflag":""}
 				extbGrid.append(extbrow)
 
 				if totalDrBal>totalCrBal:
@@ -1512,8 +1512,8 @@ class api_reports(object):
 							emptyno=0
 					if orgtype=="Not For Profit":
 						if difference!=0 and profit==0:
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
-							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference!=0 and profit!=0:
 							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference==0 and profit==0:
@@ -1788,7 +1788,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
@@ -1968,9 +1968,9 @@ class api_reports(object):
 				return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
 
-			#except:
-				#self.con.close()
-				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_param='type=deletedvoucher', renderer='json')
   	def getdeletedVoucher(self):
