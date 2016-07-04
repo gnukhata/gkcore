@@ -134,7 +134,7 @@ class api_rollclose(object):
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
 				plResult = calculateBalance(self.con,closingAccountCode, startDate, startDate, endDate)
-				print plResult["baltype"]
+#				print plResult["baltype"]
 				startEndRow["orgtype"]
 				groupCodeData = self.con.execute("select groupcode from groupsubgroups where groupname = 'Reserves' and orgcode = %d"%(orgCode) )
 				gcRecord = groupCodeData.fetchone()
@@ -421,8 +421,8 @@ class api_rollclose(object):
 				endDate = startEndRow["yearend"]
 				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(days=1)
 				newYearEnd = self.request.params["financialend"]
-				print newYearStart
-				print newYearEnd
+#				print newYearStart
+#				print newYearEnd
 				newOrg = {"orgname":startEndRow["orgname"],"orgtype":startEndRow["orgtype"],"yearstart":newYearStart,"yearend":newYearEnd}
 				self.con.execute(organisation.insert( ),newOrg)
 				newOrgCodeData = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname == newOrg["orgname"],organisation.c.orgtype == newOrg["orgtype"],organisation.c.yearstart == newOrg["yearstart"], organisation.c.yearend == newOrg["yearend"])))
