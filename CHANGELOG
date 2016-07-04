@@ -1,3 +1,12 @@
+[04-July-2016 Release 3.0]
+* Unique feature for attaching official documents with vouchers (invoices, bills etc).
+* Running Dr and Cr totals in printed reports like ledger, trial balance, cash flow and project statement.
+* Adverse balance indication.
+* Refined data structure output for both balance sheet.
+* Forgot Password system implemented.
+* api now returns the last voucher no. and date for the selected voucher type.
+* Minor bug fixes
+
 [18-June-2016 Release 3.0RC]
 * Now vouchertype is also sent along with ledger details.
 * Added license and authors information.
@@ -14,7 +23,6 @@
 * Used json data type in CR and DR
 * Voucher table now has attachment field for a future feature
 * Big performance and speed improvements using alchemy connection pool.
-* Changed framework from twisted to Pyramid.
 
 [27-Jan-2016 Release 2.6.1]
 * Minor improvements and bug fixes.
