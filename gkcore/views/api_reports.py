@@ -793,6 +793,7 @@ class api_reports(object):
 				closinggrid = []
 				rcaccountcodes = []
 				pyaccountcodes = []
+				bankcodes = []
 				rctotal = 0.00
 				pytotal = 0.00
 				ttlRunDr = 0.00
@@ -803,7 +804,8 @@ class api_reports(object):
 					receiptcf.append({"toby":"To","particulars":"Opening balance","amount":"","accountcode":"", "ttlRunDr":""})
 				if vfrom>fstart:
 					receiptcf.append({"toby":"To","particulars":"Balance B/F","amount":"","accountcode":"", "ttlRunDr":""})
-
+				for cbAccount in cbAccounts:
+					bankcodes.append(str(cbAccount["accountcode"]))
 				closinggrid.append({"toby":"By","particulars":"Closing balance","amount":"","accountcode":"", "ttlRunCr":""})
 				for cbAccount in cbAccounts:
 					opacc = calculateBalance(self.con,cbAccount["accountcode"], financialStart, calculateFrom, calculateTo)
@@ -827,7 +829,7 @@ class api_reports(object):
 						for cr in transaction["crs"]:
 							if cr not in rcaccountcodes and int(cr) != int(cbAccount["accountcode"]):
 								rcaccountcodes.append(cr)
-								crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(cr),financialStart, calculateTo))
+								crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ?| array%s);"%(int(cr),financialStart, calculateTo, str(bankcodes)))
 								crresultRow = crresult.fetchone()
 								rcaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
 								rcacc= ''.join(rcaccountname.fetchone())
@@ -837,7 +839,7 @@ class api_reports(object):
 						for dr in transaction["drs"]:
 							if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
 								pyaccountcodes.append(dr)
-								drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal')"%(int(dr),financialStart, calculateTo))
+								drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (crs ?| array%s)"%(int(dr),financialStart, calculateTo,str(bankcodes)))
 								drresultRow = drresult.fetchone()
 								pyaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
 								pyacc= ''.join(pyaccountname.fetchone())
