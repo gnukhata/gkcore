@@ -416,7 +416,11 @@ class api_reports(object):
 
 	  						if calbalDict["openbaltype"] =="Cr":
 	  							calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
+							if calbalDict["baltype"] == "Cr":
+								calbalDict["totaldrbal"] += float(calbalDict["curbal"])
 
+		  					if calbalDict["baltype"] == "Dr":
+								calbalDict["totalcrbal"] += float(calbalDict["curbal"])
 	  						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
 							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
 	  						vouchergrid.append(ledgerRecord)
