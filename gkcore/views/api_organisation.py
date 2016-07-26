@@ -32,6 +32,7 @@ from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, distinct
+from sqlalchemy import func
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -336,6 +337,26 @@ class api_organisation(object):
 			except:
 				self.con.close()
 				return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+	@view_config(request_method='GET',request_param="type=exists",renderer='json')
+	def Orgexists(self):
+		try:
+			self.con = eng.connect()
+			orgtype = self.request.params["orgtype"]
+			orgname= self.request.params["orgname"]
+			finstart = self.request.params["finstart"]
+			finend = self.request.params["finend"]
+			orgncount = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('orgcode')]).where(and_(gkdb.organisation.c.orgname==orgname,gkdb.organisation.c.orgtype==orgtype, gkdb.organisation.c.yearstart==finstart,gkdb.organisation.c.yearend==finend)))
+			org = orgncount.fetchone()
+			print org
+			if org["orgcode"] !=0:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			else:
+				return {"gkstatus":enumdict["Success"]}
+		except:
+			self.con.close()
+			return {"gkstatus":  enumdict["ConnectionFailed"]}
+
 
 	@view_config(request_param='orgcode', request_method='GET',renderer='json')
 	def getOrgcode(self):
