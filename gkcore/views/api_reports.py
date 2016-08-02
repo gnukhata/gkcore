@@ -1038,7 +1038,6 @@ class api_reports(object):
 					groupWiseTotal += subgroupTotal
 					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":"", "advflag":""})
 					groupAccSubgroup += accounts
-
 				sourcesTotal += groupWiseTotal
 				sbalanceSheet.append({"groupAccname":capital_Corpus,"amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":"", "advflag":""})
 				sbalanceSheet += groupAccSubgroup
@@ -1190,8 +1189,6 @@ class api_reports(object):
 					groupWiseTotal += subgroupTotal
 					groupAccSubgroup.append({"groupAccname":subgroup["groupname"],"amount":"%.2f"%(subgroupTotal), "groupAcccode":subgroup["groupcode"],"subgroupof":groupcode , "accountof":"", "groupAccflag":"", "advflag":""})
 					groupAccSubgroup += accounts
-
-				sourcesTotal += groupWiseTotal
 
 				#Calculate all income(Direct and Indirect Income)
 				accountcodeData = self.con.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
@@ -1507,20 +1504,34 @@ class api_reports(object):
 
 				if balancetype == 1:
 					if orgtype=="Profit Making":
-						if difference!=0 and profit==0:
+						if applicationsTotal>sourcesTotal and profit==0:
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
-						if difference!=0 and profit!=0:
+						if sourcesTotal>applicationsTotal and profit==0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if applicationsTotal>sourcesTotal and profit!=0:
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if sourcesTotal>applicationsTotal and profit!=0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference==0 and profit==0:
 							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference==0 and profit!=0:
 							emptyno=0
 					if orgtype=="Not For Profit":
-						if difference!=0 and profit==0:
+						if applicationsTotal>sourcesTotal and profit==0:
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
-						if difference!=0 and profit!=0:
+						if sourcesTotal>applicationsTotal and profit==0:
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if applicationsTotal>sourcesTotal and profit!=0:
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+							abalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
+						if sourcesTotal>applicationsTotal and profit!=0:
 							sbalanceSheet.insert(-1,{"groupAccname": "","amount":"", "groupAcccode":"","subgroupof":"","accountof":"", "groupAccflag":"","advflag":""})
 						if difference==0 and profit==0:
 							emptyno=0
