@@ -83,10 +83,14 @@ class api_rollclose(object):
 			try:
 				self.con = eng.connect()
 				orgCode = int(authDetails["orgcode"])
+				endDate = self.request.params["financialend"]
+				blacktransactionsdata = self.con.execute(select([func.count(vouchers.c.vouchercode).label('blackcount')]).where(and_(vouchers.c.voucherdate>endDate,vouchers.c.orgcode==orgCode)))
+				blacktransactions = blacktransactionsdata.fetchone()
+				if blacktransactions["blackcount"]>0:
+					return {"gkstatus":enumdict["ActionDisallowed"]}
 				financialStartEnd = self.con.execute("select yearstart, yearend, orgtype from organisation where orgcode = %d"%int(orgCode))
 				startEndRow = financialStartEnd.fetchone()
 				startDate = str(startEndRow["yearstart"])
-				endDate = str(startEndRow["yearend"])
 				closingAccount = ""
 				closingAccountCode = 0
 				if startEndRow["orgtype"] == "Profit Making":
@@ -389,7 +393,7 @@ class api_rollclose(object):
 				self.con.close()
 				return {"gkstatus": enumdict["Success"]}
 			except Exception as E:
-				#print E
+				print E
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -419,7 +423,7 @@ class api_rollclose(object):
 				startEndRow = financialStartEnd.fetchone()
 				oldstartDate = startEndRow["yearstart"]
 				endDate = startEndRow["yearend"]
-				newYearStart = date(endDate.year,endDate.month,endDate.day) + timedelta(days=1)
+				newYearStart = self.request.params["financialstart"]
 				newYearEnd = self.request.params["financialend"]
 #				print newYearStart
 #				print newYearEnd
