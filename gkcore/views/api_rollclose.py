@@ -481,8 +481,8 @@ class api_rollclose(object):
 					sabData = self.con.execute("select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"%(newOrgCode))
 					sabRow = sabData.fetchone()
 					sabCode = sabRow["accountcode"]
-					drs = {sabCode:"%.2f"%(csob)}
-					crs = {osCode:"%.2f"%(csob)}
+					crs = {sabCode:"%.2f"%(csob)}
+					drs = {osCode:"%.2f"%(csob)}
 					self.con.execute(vouchers.insert(), {"vouchernumber":"1","voucherdate":str(newYearStart),"entrydate":str(newYearStart),"narration":"jv for stock","drs":drs,"crs":crs,"orgcode": newOrgCode,"vouchertype":"journal" } )
 
 
