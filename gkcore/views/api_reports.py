@@ -1496,9 +1496,7 @@ class api_reports(object):
 				sourcesTotal = round(sourcesTotal,2)
 				applicationsTotal = round(applicationsTotal,2)
 				difference = abs(sourcesTotal - applicationsTotal)
-				print sourcesTotal
-				print applicationsTotal
-				print difference
+				
 				if sourcesTotal>applicationsTotal:
 					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
 					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
