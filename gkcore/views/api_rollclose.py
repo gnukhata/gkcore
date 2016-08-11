@@ -457,13 +457,11 @@ class api_rollclose(object):
 							opnbal = -cbRecord["curbal"]
 						else:
 							opnbal = cbRecord["curbal"]
-					if(cbRecord["grpname"] == 'Corpus' or cbRecord["grpname"] == 'Capital'or cbRecord["grpname"] == 'Current Liabilities' or cbRecord["grpname"] == 'Loans(Liability)'):
+					if(cbRecord["grpname"] == 'Corpus' or cbRecord["grpname"] == 'Capital'or cbRecord["grpname"] == 'Current Liabilities' or cbRecord["grpname"] == 'Loans(Liability)' or cbRecord["grpname"] =='Reserves'):
 						if cbRecord["baltype"]=="Dr":
 							opnbal = -cbRecord["curbal"]
 						else:
 							opnbal = cbRecord["curbal"]
-					if cbRecord["grpname"] =='Reserves':
-						opnbal = cbRecord["curbal"]
 					if angn["accountname"] in ("Profit C/F","Loss C/F","Surplus C/F","Deficit C/F"):
 						accname =accname.replace("C/F","B/F")
 					print accname
