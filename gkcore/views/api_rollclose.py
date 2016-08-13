@@ -160,11 +160,11 @@ class api_rollclose(object):
 					crs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Profit & Loss","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
-					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
 					paccnumrow = paccnumdata.fetchone()
 					laccnumrow = laccnumdata.fetchone()
-					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+					if paccnumrow["account"]==0 and laccnumrow["account"]==0:
 						pAccount = {"accountname":"Profit C/F","groupcode":int(groupCode),"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
 						finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit C/F")))
@@ -223,11 +223,11 @@ class api_rollclose(object):
 					crs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Income & Expenditure","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
-					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
 					paccnumrow = paccnumdata.fetchone()
 					laccnumrow = laccnumdata.fetchone()
-					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+					if paccnumrow["account"]==0 and laccnumrow["account"]==0:
 						pAccount = {"accountname":"Surplus C/F","groupcode":int(groupCode),"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
 						finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus C/F")))
@@ -284,11 +284,11 @@ class api_rollclose(object):
 					drs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Profit & Loss","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
-					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Profit B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss B/F")))
 					paccnumrow = paccnumdata.fetchone()
 					laccnumrow = laccnumdata.fetchone()
-					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+					if paccnumrow["account"]==0 and laccnumrow["account"]==0:
 						pAccount = {"accountname":"Loss C/F","groupcode":int(groupCode),"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
 						finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss C/F")))
@@ -296,7 +296,7 @@ class api_rollclose(object):
 						finalreservecode =  finalreserverow["accountcode"]
 					else:
 						if laccnumrow["account"]  > 0:
-							res = self.con.execute("update accounts set accountname = 'Loss C/F' where orgcode = %D and accountname = 'Loss B/F'"%(orgCode))
+							res = self.con.execute("update accounts set accountname = 'Loss C/F' where orgcode = %d and accountname = 'Loss B/F'"%(orgCode))
 							finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Loss C/F")))
 							finalreserverow = finalreservedata.fetchone()
 							finalreservecode =  finalreserverow["accountcode"]
@@ -345,11 +345,11 @@ class api_rollclose(object):
 					drs = {curreserve:"%.2f"%(plResult["curbal"])}
 					cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Income & Expenditure","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
 					result = self.con.execute(vouchers.insert(),[cljv])
-					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
-					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('acccount')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
+					paccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus B/F")))
+					laccnumdata = self.con.execute(select([func.count(accounts.c.accountcode).label('account')]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit B/F")))
 					paccnumrow = paccnumdata.fetchone()
 					laccnumrow = laccnumdata.fetchone()
-					if paccnumrow["acccount"]==0 or laccnumrow["acccount"]==0:
+					if paccnumrow["account"]==0 and laccnumrow["account"]==0:
 						pAccount = {"accountname":"Deficit C/F","groupcode":int(groupCode),"orgcode":orgCode}
 						ins = self.con.execute(accounts.insert(),[pAccount])
 						finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit C/F")))
@@ -357,7 +357,7 @@ class api_rollclose(object):
 						finalreservecode =  finalreserverow["accountcode"]
 					else:
 						if laccnumrow["account"]  > 0:
-							res = self.con.execute("update accounts set accountname = 'Deficit C/F' where orgcode = %D and accountname = 'Deficit B/F'"%(orgCode))
+							res = self.con.execute("update accounts set accountname = 'Deficit C/F' where orgcode = %d and accountname = 'Deficit B/F'"%(orgCode))
 							finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit C/F")))
 							finalreserverow = finalreservedata.fetchone()
 							finalreservecode =  finalreserverow["accountcode"]
@@ -366,12 +366,12 @@ class api_rollclose(object):
 							pcfRow = pcfData.fetchone()
 							pcf = float(pcfRow["openingbal"])
 							if pcf > plResult["curbal"]:
-								res = self.con.execute("update accounts set accountname = 'Surplus C/F', openingbal = %d where orgcode = %d and accountname = 'Surplus B/F'"%(orgCode))
+								res = self.con.execute("update accounts set accountname = 'Surplus C/F' where orgcode = %d and accountname = 'Surplus B/F'"%(orgCode))
 								finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Surplus C/F")))
 								finalreserverow = finalreservedata.fetchone()
 								finalreservecode =  finalreserverow["accountcode"]
 							elif pcf < plResult["curbal"]:
-								res = self.con.execute("update accounts set accountname = 'Deficit C/F', openingbal = %d where orgcode = %d and accountname = 'Surplus B/F'"%(orgCode))
+								res = self.con.execute("update accounts set accountname = 'Deficit C/F' where orgcode = %d and accountname = 'Surplus B/F'"%(orgCode))
 								finalreservedata = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.orgcode==orgCode,accounts.c.accountname=="Deficit C/F")))
 								finalreserverow = finalreservedata.fetchone()
 								finalreservecode =  finalreserverow["accountcode"]
@@ -464,12 +464,10 @@ class api_rollclose(object):
 							opnbal = cbRecord["curbal"]
 					if angn["accountname"] in ("Profit C/F","Loss C/F","Surplus C/F","Deficit C/F"):
 						accname =accname.replace("C/F","B/F")
-					print accname
 					self.con.execute(accounts.insert(),{"accountname":accname,"openingbal":float(opnbal),"groupcode": newGroupCodeRow["groupcode"],"orgcode": newOrgCode})
 				csobData = self.con.execute(select([accounts.c.openingbal]).where(and_(accounts.c.orgcode == newOrgCode,accounts.c.accountname=="Closing Stock")))
 				csobRow = csobData.fetchone()
 				csob = csobRow["openingbal"]
-				print csob
 				if csob > 0:
 					self.con.execute("update accounts set openingbal = %f where accountname = 'Stock at the Beginning' and orgcode = %d"%(csob,newOrgCode))
 					self.con.execute("update accounts set openingbal = 0.00 where accountname = 'Closing Stock' and orgcode = %d"%(newOrgCode))
