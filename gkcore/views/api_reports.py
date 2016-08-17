@@ -342,9 +342,9 @@ class api_reports(object):
 						bal = float(-calbalDict["balbrought"])
 					vouchergrid.append(openingrow)
 				if projectCode == "":
-					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode,accountCode))
+					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
 				else:
-					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+					transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
 				transactions = transactionsRecords.fetchall()
 
@@ -1496,7 +1496,7 @@ class api_reports(object):
 				sourcesTotal = round(sourcesTotal,2)
 				applicationsTotal = round(applicationsTotal,2)
 				difference = abs(sourcesTotal - applicationsTotal)
-				
+
 				if sourcesTotal>applicationsTotal:
 					abalanceSheet.append({"groupAccname": "Difference","amount":"%.2f"%(difference), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
 					abalanceSheet.append({"groupAccname": "Total","amount":"%.2f"%(sourcesTotal), "groupAcccode":"","subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
@@ -2015,7 +2015,7 @@ class api_reports(object):
 				userrole = user.fetchone()
 				vouchers = []
 				if userrole[0] == -1:
-					voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode))
+					voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(voucherbin.c.voucherdate,voucherbin.c.vouchercode))
 					voucherData = voucherRow.fetchall()
 					for voucher in voucherData:
 						vouchers.append({"vouchercode": voucher["vouchercode"], "vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})

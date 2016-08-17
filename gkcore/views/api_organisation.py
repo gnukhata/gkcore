@@ -32,7 +32,7 @@ from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, distinct
-from sqlalchemy import func
+from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -67,7 +67,7 @@ class api_organisation(object):
 	def getYears(self):
 		try:
 			self.con = eng.connect()
-			result = self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend,gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"])))
+			result = self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend,gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==self.request.matchdict["orgname"], gkdb.organisation.c.orgtype == self.request.matchdict["orgtype"])).order_by(desc(gkdb.organisation.c.yearend)))
 			years = []
 			for row in result:
 				years.append({"yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcode":row["orgcode"]})
