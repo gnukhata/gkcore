@@ -102,6 +102,25 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	Index("grpindex","orgcode","groupname")
 	)
 
+categorysubcategories = Table('categorysubcategories', metadata,
+	Column('categorycode',Integer,primary_key=True),
+	Column('categoryname',UnicodeText,  nullable=False),
+	Column('subcategoryof',Integer),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','categoryname'),
+	Index("catindex","orgcode","categoryname")
+	)
+
+categoryspecs = Table('categoryspecs',metadata,
+	Column('spcode',Integer, primary_key=True),
+	Column('attrname',UnicodeText, nullable=False),
+	Column('attrtype',UnicodeText,nullable=False),
+	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('categorycode','attrname'),
+	Index("catspecindex","orgcode","attrname")
+	)
+
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
