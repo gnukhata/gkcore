@@ -170,7 +170,7 @@ vouchers=Table('vouchers', metadata,
 	Column('prjdrs',JSONB),
 	Column('prjcrs',JSONB),
 	Column('attachment',JSON),
-    Column('attachmentcount',Integer,default=0),
+	Column('attachmentcount',Integer,default=0),
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('lockflag',BOOLEAN,default=False),
 	Column('delflag',BOOLEAN,default=False),
@@ -180,6 +180,21 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_entrydate","entrydate"),
 	Index("voucher_vno","vouchernumber"),
 	Index("voucher_vdate","voucherdate")
+	)
+
+stock = Table('stock',metadata,
+	Column('stockid',Integer,primary_key=True),
+	Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode',ondelete="CASCADE"),nullable=False),
+	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('invoiceno',UnicodeText,nullable=False),
+	Column('invoicedate',UnicodeText,nullable=False),
+	Column('challanno',UnicodeText),
+	Column('challandate',UnicodeText),
+	Index("stock_orgcodeindex","orgcode"),
+	Index("stock_productcodeindex","productcode"),
+	Index("stock_vouchercodeindex","vouchercode"),
+	Index("stock_invoicenoindex","invoiceno")
 	)
 
 """ table to store users for an organization.
