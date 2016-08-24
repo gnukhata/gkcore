@@ -84,6 +84,7 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgfcradate',UnicodeText),
 	Column('roflag',Integer, default=0),
 	Column('booksclosedflag',Integer,default=0),
+	Column('invflag',Integer,default=0),
 	UniqueConstraint('orgname','orgtype','yearstart'),
 	UniqueConstraint('orgname','orgtype','yearend'),
 	Index("orgindex", "orgname","yearstart","yearend")
@@ -114,7 +115,7 @@ categorysubcategories = Table('categorysubcategories', metadata,
 categoryspecs = Table('categoryspecs',metadata,
 	Column('spcode',Integer, primary_key=True),
 	Column('attrname',UnicodeText, nullable=False),
-	Column('attrtype',UnicodeText,nullable=False),
+	Column('attrtype',Integer,nullable=False),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('categorycode','attrname'),
@@ -126,6 +127,25 @@ product = Table('product',metadata,
 	Column('specs', JSONB),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	Index("product_orgcodeindex","orgcode"),
+	Index("product_categorycode","categorycode")
+	)
+
+customer = Table('customer',metadata,
+	Column('custid',Integer,primary_key=True),
+	Column('custname',UnicodeText),
+	Column('custaddr',UnicodeText),
+	Column('custphone',UnicodeText),
+	Column('custemail',UnicodeText),
+	Column('custfax',UnicodeText),
+	Column('custpan',UnicodeText),
+	Column('custtan',UnicodeText),
+	Column('custdoc',JSONB),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','custname','custemail'),
+	UniqueConstraint('orgcode','custpan'),
+	UniqueConstraint('orgcode','custtan'),
+	Index("customer_orgcodeindex","orgcode")
 	)
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
@@ -182,20 +202,64 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vdate","voucherdate")
 	)
 
-stock = Table('stock',metadata,
-	Column('stockid',Integer,primary_key=True),
+invoice = Table('invoice',metadata,
+	Column('invid',Integer,primary_key=True),
 	Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode',ondelete="CASCADE"),nullable=False),
-	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('invoiceno',UnicodeText,nullable=False),
 	Column('invoicedate',UnicodeText,nullable=False),
-	Column('challanno',UnicodeText),
-	Column('challandate',UnicodeText),
+	Index("invoice_orgcodeindex","orgcode"),
+	Index("invoice_vouchercodeindex","vouchercode"),
+	Index("invoice_invoicenoindex","invoiceno")
+	)
+
+delchal = Table('delchal',metadata,
+	Column('dcid',Integer,primary_key=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcno',UnicodeText,nullable=False),
+	Column('dcdate',UnicodeText,nullable=False),
+	UniqueConstraint('orgcode','dcno'),
+	Index("delchal_orgcodeindex","orgcode"),
+	Index("delchal_dcnoindex","dcno")
+	)
+
+dcinv = Table('dcinv',metadata,
+	Column('dcinvid',Integer,primary_key=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
+	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
+	Column('custid',Integer, ForeignKey('customer.custid',ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','dcid','invid'),
+	Index("deinv_orgcodeindex","orgcode"),
+	Index("deinv_dcidindex","dcid"),
+	Index("deinv_invidindex","invid"),
+	Index("deinv_custid","custid")
+	)
+
+godown = Table('godown',metadata,
+	Column('goid',Integer,primary_key=True),
+	Column('goname',UnicodeText),
+	Column('goaddr',UnicodeText),
+	Column('gocontact',UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	Index("godown_orgcodeindex","orgcode")
+	)
+
+stock = Table('stock',metadata,
+	Column('stockid',Integer,primary_key=True),
+	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcqty',JSONB),
+	Column('invqty',JSONB),
+	Column('inout',Integer,nullable=False),
+	Column('dcinvid',Integer, ForeignKey('dcinv.dcinvid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("stock_orgcodeindex","orgcode"),
 	Index("stock_productcodeindex","productcode"),
-	Index("stock_vouchercodeindex","vouchercode"),
-	Index("stock_invoicenoindex","invoiceno")
+	Index("stock_dcinvid","dcinvid"),
+	Index("stock_goid","goid")
 	)
+
 
 """ table to store users for an organization.
 So orgcode is foreign key like other tables.
