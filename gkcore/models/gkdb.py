@@ -143,7 +143,7 @@ The table is having a json field which has the keys matching the attributes from
 product = Table('product',metadata,
 	Column('productcode',Integer,primary_key=True),
 	Column('brand_manufacture',UnicodeText),
-	Column('specs', JSONB),
+	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	Index("product_orgcodeindex","orgcode"),
@@ -156,7 +156,7 @@ The reason to store this data is that we may need it in both invoice and deliver
 """ 
 customer = Table('customer',metadata,
 	Column('custid',Integer,primary_key=True),
-	Column('custname',UnicodeText),
+	Column('custname',UnicodeText,nullable=False),
 	Column('custaddr',UnicodeText),
 	Column('custphone',UnicodeText),
 	Column('custemail',UnicodeText),
