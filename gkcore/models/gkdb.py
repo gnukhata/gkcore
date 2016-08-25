@@ -84,6 +84,7 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgfcradate',UnicodeText),
 	Column('roflag',Integer, default=0),
 	Column('booksclosedflag',Integer,default=0),
+	Column('invflag',Integer,default=0),
 	UniqueConstraint('orgname','orgtype','yearstart'),
 	UniqueConstraint('orgname','orgtype','yearend'),
 	Index("orgindex", "orgname","yearstart","yearend")
@@ -101,7 +102,74 @@ groupsubgroups = Table('groupsubgroups', metadata,
 	UniqueConstraint('orgcode','groupname'),
 	Index("grpindex","orgcode","groupname")
 	)
+"""
+table for categories and subcategories.
+This table is for storing names of categories and their optional one or many subcategories.
+Note that subcategory might have it's own subcategories and so on.
+The way we achieve this multi level tree is by having categorycode which is primary key of the table.
+Now this key becomes foreign key in the same table under the name subcategoryof.
+So if a category has a value in subcategoryof wich matches another categorycode, then that category becomes the subcategory.
+"""    
 
+categorysubcategories = Table('categorysubcategories', metadata,
+	Column('categorycode',Integer,primary_key=True),
+	Column('categoryname',UnicodeText,  nullable=False),
+	Column('subcategoryof',Integer),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','categoryname'),
+	Index("catindex","orgcode","categoryname")
+	)
+"""
+This is the table for maintaining the ontology.
+Once you have defined the name of category,this table will store the attributes of that category, as in what features are there.
+this table not just stores the list of attributes of the category, but also the type, as in text, number, true false etc.
+Needless to say that the categorycode becomes a foreign key here.
+The type will be an enum, eg. 0= number, 1=text etc.
+"""
+categoryspecs = Table('categoryspecs',metadata,
+	Column('spcode',Integer, primary_key=True),
+	Column('attrname',UnicodeText, nullable=False),
+	Column('attrtype',Integer,nullable=False),
+	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('categorycode','attrname'),
+	Index("catspecindex","orgcode","attrname")
+	)
+"""
+This table is for product, based on a certain category.
+The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
+The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
+"""
+product = Table('product',metadata,
+	Column('productcode',Integer,primary_key=True),
+	Column('brand_manufacture',UnicodeText),
+	Column('specs', JSONB,nullable=False ),
+	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	Index("product_orgcodeindex","orgcode"),
+	Index("product_categorycode","categorycode")
+	)
+"""
+table for customers.
+We need this data when we sell goods.
+The reason to store this data is that we may need it in both invoice and delivery chalan.
+""" 
+customer = Table('customer',metadata,
+	Column('custid',Integer,primary_key=True),
+	Column('custname',UnicodeText,nullable=False),
+	Column('custaddr',UnicodeText),
+	Column('custphone',UnicodeText),
+	Column('custemail',UnicodeText),
+	Column('custfax',UnicodeText),
+	Column('custpan',UnicodeText),
+	Column('custtan',UnicodeText),
+	Column('custdoc',JSONB),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','custname','custemail'),
+	UniqueConstraint('orgcode','custpan'),
+	UniqueConstraint('orgcode','custtan'),
+	Index("customer_orgcodeindex","orgcode")
+	)
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
@@ -145,7 +213,7 @@ vouchers=Table('vouchers', metadata,
 	Column('prjdrs',JSONB),
 	Column('prjcrs',JSONB),
 	Column('attachment',JSON),
-    Column('attachmentcount',Integer,default=0),
+	Column('attachmentcount',Integer,default=0),
 	Column('vouchertype',UnicodeText, nullable=False),
 	Column('lockflag',BOOLEAN,default=False),
 	Column('delflag',BOOLEAN,default=False),
@@ -156,6 +224,96 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vno","vouchernumber"),
 	Index("voucher_vdate","voucherdate")
 	)
+"""
+Table for storing invoice records.
+Every row represents one invoice.
+Note that invoice is connected to a voucher.
+So the accounting part is thus connected with stock movement of that cost.
+"""
+invoice = Table('invoice',metadata,
+	Column('invid',Integer,primary_key=True),
+	Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode',ondelete="CASCADE"),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('invoiceno',UnicodeText,nullable=False),
+	Column('invoicedate',UnicodeText,nullable=False),
+	Index("invoice_orgcodeindex","orgcode"),
+	Index("invoice_vouchercodeindex","vouchercode"),
+	Index("invoice_invoicenoindex","invoiceno")
+	)
+"""
+Table for challan.
+This table stores the delivary challans issues when the goods move out.
+This is generally done when payment is due.
+The invoice table and this table will be linked in a subsequent table.
+This is done because one invoice may have several dc's attached and for one dc may have several invoices.
+In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
+Another invoice may be issued if the remaining two items are approved by the customer.
+"""
+delchal = Table('delchal',metadata,
+	Column('dcid',Integer,primary_key=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcno',UnicodeText,nullable=False),
+	Column('dcdate',UnicodeText,nullable=False),
+	UniqueConstraint('orgcode','dcno'),
+	Index("delchal_orgcodeindex","orgcode"),
+	Index("delchal_dcnoindex","dcno")
+	)
+"""
+The join table which has keys from both inv and dc table.
+As explained before, one invoice may have many dc and one dc can be partially passed for many invoices.
+"""
+dcinv = Table('dcinv',metadata,
+	Column('dcinvid',Integer,primary_key=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
+	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
+	Column('custid',Integer, ForeignKey('customer.custid',ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','dcid','invid'),
+	Index("deinv_orgcodeindex","orgcode"),
+	Index("deinv_dcidindex","dcid"),
+	Index("deinv_invidindex","invid"),
+	Index("deinv_custid","custid")
+	)
+"""
+Table for storing godown details.
+Basically one organization may have many godowns and we aught to know from which one goods have moved out.
+"""
+godown = Table('godown',metadata,
+	Column('goid',Integer,primary_key=True),
+	Column('goname',UnicodeText),
+	Column('goaddr',UnicodeText),
+	Column('gocontact',UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	Index("godown_orgcodeindex","orgcode")
+	)
+"""
+Table for stock.
+This table records movement of goods and can give details either on the basis of godown (breakup ) or total details.
+There are 2 json fields in this table.
+one is for the goods moving in or out against a dc and ther other is for invoice.
+Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
+So movements will be directly on invoice.
+This is always the case when we purchase goods.
+The other field is obviously for dc.
+The entry of quantity of items is exclusive either to dc or invoice.
+One exception to this case will be when x amount is shipped and x - n items are approved.
+The inout field is sel explainatory.
+"""
+stock = Table('stock',metadata,
+	Column('stockid',Integer,primary_key=True),
+	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcqty',JSONB),
+	Column('invqty',JSONB),
+	Column('inout',Integer,nullable=False),
+	Column('dcinvid',Integer, ForeignKey('dcinv.dcinvid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Index("stock_orgcodeindex","orgcode"),
+	Index("stock_productcodeindex","productcode"),
+	Index("stock_dcinvid","dcinvid"),
+	Index("stock_goid","goid")
+	)
+
 
 """ table to store users for an organization.
 So orgcode is foreign key like other tables.
