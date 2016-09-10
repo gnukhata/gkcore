@@ -109,7 +109,7 @@ Note that subcategory might have it's own subcategories and so on.
 The way we achieve this multi level tree is by having categorycode which is primary key of the table.
 Now this key becomes foreign key in the same table under the name subcategoryof.
 So if a category has a value in subcategoryof wich matches another categorycode, then that category becomes the subcategory.
-"""    
+"""
 
 categorysubcategories = Table('categorysubcategories', metadata,
 	Column('categorycode',Integer,primary_key=True),
@@ -153,7 +153,7 @@ product = Table('product',metadata,
 table for customers.
 We need this data when we sell goods.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
-""" 
+"""
 customer = Table('customer',metadata,
 	Column('custid',Integer,primary_key=True),
 	Column('custname',UnicodeText,nullable=False),
@@ -224,6 +224,26 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vno","vouchernumber"),
 	Index("voucher_vdate","voucherdate")
 	)
+
+
+purchaseorder = table( 'purchaseorder' , metadata,
+	column('orderno',Integer, primary_key=True),
+	column('podate', Date, nullable=False),
+	column('buycname', UnicodeText, nullable=False),
+	column('buyaddr', UnicodeText),
+	column('buycont', UnicodeText),
+    column('supcname', UnicodeText, nullable=False),
+    column('supaddr', UnicodeText),
+    column('supcont', UnicodeText),
+	column('srno',Integer),
+    column('discription', UnicodeText),
+    column('quantity', Integer)
+    column('ratepunit',JSON),
+    column('termopay', UnicodeText),
+    column('shipment', UnicodeText),
+    column('dodisptch',Date),
+    column('doarrival',Date, nullable=False),
+)
 """
 Table for storing invoice records.
 Every row represents one invoice.
