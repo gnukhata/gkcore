@@ -64,7 +64,31 @@ class TestAccount:
         result = requests.post("http://127.0.0.1:6543/accounts", data =json.dumps(gkdata),headers=self.header)
         assert result.json()["gkstatus"]==0
 
+    def test_delete_account(self):
+        gkdata = {"accountname":"State Bank Of India","openingbal":100,"groupcode":self.grpcode}
+        result = requests.get("http://127.0.0.1:6543/accounts", headers=self.header)
+        for record in result.json()["gkresult"]:
+            if record["accountname"] == "State Bank Of India":
+                self.acccode = record["accountcode"]
+                break
+        gkdata1={"accountcode":self.acccode}
+        result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata1), headers=self.header)
+        assert result.json()["gkstatus"]==0
+
+
     def test_update_account(self):
         gkdata = {"accountname":"YES Bank","openingbal":6,"accountcode":self.demoaccountcode}
         result = requests.put("http://127.0.0.1:6543/accounts", data =json.dumps(gkdata),headers=self.header)
+        assert result.json()["gkstatus"]==0
+
+    def test_get_single_account(self):
+        result = requests.get("http://127.0.0.1:6543/account/%s"%(self.demoaccountcode), headers=self.header)
+        assert result.json()["gkresult"]["openingbal"]=="5.00" and result.json()["gkresult"]["groupcode"] == self.grpcode
+
+    def test_account_already_exists(self):
+        result = requests.get("http://127.0.0.1:6543/accounts?find=exists&accountname=Bank Of India", headers=self.header)
+        assert result.json()["gkstatus"]==1
+
+    def test_get_all_accounts(self):
+        result = requests.get("http://127.0.0.1:6543/accounts", headers=self.header)
         assert result.json()["gkstatus"]==0
