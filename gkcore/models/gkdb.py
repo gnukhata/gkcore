@@ -114,6 +114,7 @@ So if a category has a value in subcategoryof wich matches another categorycode,
 categorysubcategories = Table('categorysubcategories', metadata,
 	Column('categorycode',Integer,primary_key=True),
 	Column('categoryname',UnicodeText,  nullable=False),
+    Column('tax',JSONB),
 	Column('subcategoryof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','categoryname'),
@@ -136,6 +137,19 @@ categoryspecs = Table('categoryspecs',metadata,
 	Index("catspecindex","orgcode","attrname")
 	)
 """
+This table is for unit of measurement for products.
+The unit of measurement has units, conversion rates and its resulting unit.
+"""
+unitofmeasurement = Table('unitofmeasurement',metadata,
+	Column('uomid',Integer,primary_key=True),
+	Column('unitname',UnicodeText,nullable=False),
+	Column('conversionrate', Integer),
+	Column('subunitof',Integer),
+    Column('frequency',Integer),
+    Index("unitofmeasurement_frequency","frequency"),
+    Index("unitofmeasurement_unitname","unitname")
+	)
+"""
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
@@ -145,6 +159,7 @@ product = Table('product',metadata,
 	Column('brand_manufacture',UnicodeText),
 	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	Index("product_orgcodeindex","orgcode"),
 	Index("product_categorycode","categorycode")
