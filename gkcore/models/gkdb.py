@@ -145,9 +145,9 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('unitname',UnicodeText,nullable=False),
 	Column('conversionrate', Integer),
 	Column('subunitof',Integer),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','unitname'),
-	Index("unitofmeasurement_orgcodeindex","orgcode","unitname"),
+    Column('frequency',Integer),
+    Index("unitofmeasurement_frequency","frequency"),
+    Index("unitofmeasurement_unitname","unitname")
 	)
 """
 This table is for product, based on a certain category.
@@ -159,6 +159,7 @@ product = Table('product',metadata,
 	Column('brand_manufacture',UnicodeText),
 	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	Index("product_orgcodeindex","orgcode"),
 	Index("product_categorycode","categorycode")
