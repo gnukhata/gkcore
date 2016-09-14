@@ -136,6 +136,19 @@ categoryspecs = Table('categoryspecs',metadata,
 	Index("catspecindex","orgcode","attrname")
 	)
 """
+This table is for unit of measurement for products.
+The unit of measurement has units, conversion rates and its resulting unit.
+"""
+unitofmeasurement = Table('unitofmeasurement',metadata,
+	Column('uomid',Integer,primary_key=True),
+	Column('unitname',UnicodeText,nullable=False),
+	Column('conversionrate', Integer),
+	Column('subunitof',Integer),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','unitname'),
+	Index("unitofmeasurement_orgcodeindex","orgcode","unitname"),
+	)
+"""
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
