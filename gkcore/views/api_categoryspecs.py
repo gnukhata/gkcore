@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models import gkdb.categoryspecs
+from gkcore.models.gkdb import categoryspecs
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -58,7 +58,7 @@ class api_categoryspecs(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.categoryspecs.insert(),[dataset])
+				result = self.con.execute(categoryspecs.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -80,11 +80,11 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				categorycode = self.request.params["categorycode"]
-				result = self.con.execute(select([gkdb.categoryspecs.c.attrname,gkdb.categoryspecs.c.spcode,gkdb.categoryspecs.c.attrtype]).where(gkdb.categoryspecs.c.categorycode==categorycode).order_by(gkdb.categoryspecs.c.attrname))
-				categoryspecs = []
+				result = self.con.execute(select([categoryspecs.c.attrname,categoryspecs.c.spcode,categoryspecs.c.attrtype]).where(categoryspecs.c.categorycode==categorycode).order_by(categoryspecs.c.attrname))
+				catspecs = []
 				for row in result:
-					categoryspecs.append({"attrname" : row["attrname"], "attrtype" : row["attrtype"], "spcode" : row["spcode"]})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":categoryspecs }
+					catspecs.append({"attrname" : row["attrname"], "attrtype" : row["attrtype"], "spcode" : row["spcode"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":catspecs }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
@@ -103,7 +103,7 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.categoryspecs.update().where(gkdb.categoryspecs.c.spcode==dataset["spcode"]).values(dataset))
+				result = self.con.execute(categoryspecs.update().where(categoryspecs.c.spcode==dataset["spcode"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -123,12 +123,12 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				productcountdata = self.con.execute(select([gkdb.categoryspecs.c.productcount]).where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
+				productcountdata = self.con.execute(select([categoryspecs.c.productcount]).where(categoryspecs.c.spcode==dataset["spcode"]))
 				productcountrow = productcountdata.fetchone()
 				if productcountrow["productcount"]!=0:
 					return {"gkstatus":enumdict["ActionDisallowed"]}
 				else:
-					result = self.con.execute(gkdb.categoryspecs.delete().where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
+					result = self.con.execute(categoryspecs.delete().where(categoryspecs.c.spcode==dataset["spcode"]))
 					return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
