@@ -64,6 +64,7 @@ def main(global_config, **settings):
     config.add_route("account",'/account/{accountcode}')
     config.add_route("projects",'/projects')
     config.add_route("project",'/project/{projectcode}')
+    config.add_route("customer",'/customer')
     config.add_route("accountsbyrule",'/accountsbyrule')
     config.add_route("login",'/login')
     config.add_route("groupallsubgroup","/groupallsubgroup/{groupcode}")
