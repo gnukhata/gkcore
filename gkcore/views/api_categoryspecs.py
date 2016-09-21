@@ -55,7 +55,7 @@ class api_categoryspecs(object):
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-                self.con = eng.connect()
+				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(gkdb.categoryspecs.insert(),[dataset])
@@ -67,7 +67,7 @@ class api_categoryspecs(object):
 			finally:
 				self.con.close()
 
-    @view_config(request_method='GET', renderer ='json')
+	@view_config(request_method='GET', renderer ='json')
 	def getAllcategoryspecs(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -79,7 +79,7 @@ class api_categoryspecs(object):
 		else:
 			try:
 				self.con = eng.connect()
-                categorycode = self.request.params["categorycode"]
+				categorycode = self.request.params["categorycode"]
 				result = self.con.execute(select([gkdb.categoryspecs.c.attrname,gkdb.categoryspecs.c.spcode,gkdb.categoryspecs.c.attrtype]).where(gkdb.categoryspecs.c.categorycode==categorycode).order_by(gkdb.categoryspecs.c.attrname))
 				categoryspecs = []
 				for row in result:
@@ -90,7 +90,7 @@ class api_categoryspecs(object):
 			finally:
 				self.con.close()
 
-    @view_config(request_method='PUT', renderer='json')
+	@view_config(request_method='PUT', renderer='json')
 	def editCategorySpecs(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -110,7 +110,7 @@ class api_categoryspecs(object):
 			finally:
 				self.con.close()
 
-    @view_config(request_method='DELETE', renderer ='json')
+	@view_config(request_method='DELETE', renderer ='json')
 	def deleteCategoryspecs(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -123,13 +123,13 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-                productcountdata = self.con.execute(select([gkdb.categoryspecs.c.productcount]).where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
-                productcountrow = productcountdata.fetchone()
-                if productcountrow["productcount"]!=0:
-                    return {"gkstatus":enumdict["ActionDisallowed"]}
-                else:
-    				result = self.con.execute(gkdb.categoryspecs.delete().where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
-    				return {"gkstatus":enumdict["Success"]}
+				productcountdata = self.con.execute(select([gkdb.categoryspecs.c.productcount]).where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
+				productcountrow = productcountdata.fetchone()
+				if productcountrow["productcount"]!=0:
+					return {"gkstatus":enumdict["ActionDisallowed"]}
+				else:
+					result = self.con.execute(gkdb.categoryspecs.delete().where(gkdb.categoryspecs.c.spcode==dataset["spcode"]))
+					return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:

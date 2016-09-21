@@ -33,17 +33,17 @@ import datetime
 from sqlalchemy.dialects.postgresql import JSONB, JSON
 
 from sqlalchemy import (
-    Table,
-    Column,
-    Index,
-    Integer,
-    Text,
-    Unicode,	 #<- will provide Unicode field
-    UnicodeText, #<- will provide Unicode text field
+	Table,
+	Column,
+	Index,
+	Integer,
+	Text,
+	Unicode,	 #<- will provide Unicode field
+	UnicodeText, #<- will provide Unicode text field
 DateTime,
 Date
 	 #<- time abstraction field
-    )
+	)
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
 from sqlalchemy import MetaData
@@ -114,7 +114,7 @@ So if a category has a value in subcategoryof wich matches another categorycode,
 categorysubcategories = Table('categorysubcategories', metadata,
 	Column('categorycode',Integer,primary_key=True),
 	Column('categoryname',UnicodeText,  nullable=False),
-    Column('tax',JSONB),
+	Column('tax',JSONB),
 	Column('subcategoryof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','categoryname'),
@@ -131,6 +131,7 @@ categoryspecs = Table('categoryspecs',metadata,
 	Column('spcode',Integer, primary_key=True),
 	Column('attrname',UnicodeText, nullable=False),
 	Column('attrtype',Integer,nullable=False),
+	Column('productcount', Integer ,default=0),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('categorycode','attrname'),
@@ -145,9 +146,9 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('unitname',UnicodeText,nullable=False),
 	Column('conversionrate', Integer),
 	Column('subunitof',Integer),
-    Column('frequency',Integer),
-    Index("unitofmeasurement_frequency","frequency"),
-    Index("unitofmeasurement_unitname","unitname")
+	Column('frequency',Integer),
+	Index("unitofmeasurement_frequency","frequency"),
+	Index("unitofmeasurement_unitname","unitname")
 	)
 """
 This table is for product, based on a certain category.
@@ -159,7 +160,7 @@ product = Table('product',metadata,
 	Column('brand_manufacture',UnicodeText),
 	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
-    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
+	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	Index("product_orgcodeindex","orgcode"),
 	Index("product_categorycode","categorycode")
@@ -247,21 +248,21 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('buyername', UnicodeText, nullable=False),
 	Column('buyeraddr', UnicodeText),
 	Column('buyercontact', UnicodeText),
-    Column('buyeremail', UnicodeText),
-    Column('suppliername', UnicodeText, nullable=False),
-    Column('supplieraddr', UnicodeText),
-    Column('suppliercontact', UnicodeText),
-    Column('supplieremail', UnicodeText),
-    Column('deliveryplaceaddr', UnicodeText),
-    Column('datedelivery',DateTime),
-    Column('deliverystaggered', Integer),
-    Column('description', UnicodeText),
-    Column('quantity', Integer),
-    Column('rateperunit',JSONB),
-    Column('termofpayment', UnicodeText),
-    Column('shipment', UnicodeText),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-    Index("purchaseorder_orgcodeindex","orgcode"),
+	Column('buyeremail', UnicodeText),
+	Column('suppliername', UnicodeText, nullable=False),
+	Column('supplieraddr', UnicodeText),
+	Column('suppliercontact', UnicodeText),
+	Column('supplieremail', UnicodeText),
+	Column('deliveryplaceaddr', UnicodeText),
+	Column('datedelivery',DateTime),
+	Column('deliverystaggered', Integer),
+	Column('description', UnicodeText),
+	Column('quantity', Integer),
+	Column('rateperunit',JSONB),
+	Column('termofpayment', UnicodeText),
+	Column('shipment', UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","podate"),
 )
 """
@@ -276,6 +277,7 @@ invoice = Table('invoice',metadata,
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('invoiceno',UnicodeText,nullable=False),
 	Column('invoicedate',UnicodeText,nullable=False),
+	Column('contents',JSONB),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_vouchercodeindex","vouchercode"),
 	Index("invoice_invoicenoindex","invoiceno")
@@ -380,21 +382,21 @@ bankrecon=Table('bankrecon',metadata,
 	Column('clearancedate',DateTime),
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('vouchercode','accountcode'),
-    Index("bankrecoindex","clearancedate")
+	UniqueConstraint('vouchercode','accountcode'),
+	Index("bankrecoindex","clearancedate")
 	)
 
 voucherbin=Table('voucherbin', metadata,
-    Column('vouchercode',Integer,primary_key=True),
-    Column('vouchernumber',UnicodeText, nullable=False),
-    Column('voucherdate',DateTime,nullable=False),
-    Column('narration',UnicodeText),
-    Column('drs',JSONB,nullable=False),
-    Column('crs',JSONB,nullable=False),
-    Column('vouchertype',UnicodeText, nullable=False),
-    Column('projectname',UnicodeText, nullable=True),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-    Index("binvoucher_orgcodeindex","orgcode"),
-    Index("binvoucher_vno","vouchernumber"),
-    Index("binvoucher_vdate","voucherdate")
-    )
+	Column('vouchercode',Integer,primary_key=True),
+	Column('vouchernumber',UnicodeText, nullable=False),
+	Column('voucherdate',DateTime,nullable=False),
+	Column('narration',UnicodeText),
+	Column('drs',JSONB,nullable=False),
+	Column('crs',JSONB,nullable=False),
+	Column('vouchertype',UnicodeText, nullable=False),
+	Column('projectname',UnicodeText, nullable=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Index("binvoucher_orgcodeindex","orgcode"),
+	Index("binvoucher_vno","vouchernumber"),
+	Index("binvoucher_vdate","voucherdate")
+	)
