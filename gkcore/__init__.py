@@ -75,6 +75,7 @@ def main(global_config, **settings):
     config.add_route("report","/report")
     config.add_route("rollclose","/rollclose")
     config.add_route("forgotpassword","/forgotpassword")
+    config.add_route("categories","/categories")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
