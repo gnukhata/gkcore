@@ -55,6 +55,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_route("organisation","/organisation")
     config.add_route("organisations","/organisations")
+    config.add_route("categoryspecs","/categoryspecs")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
     config.add_route("transaction","/transaction")
     config.add_route("users",'/users')
