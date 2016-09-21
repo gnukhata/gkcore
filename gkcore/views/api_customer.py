@@ -60,7 +60,7 @@ class api_customer(object):
 		else:
 			try:
 				self.con = eng.connect()
-                dataset = self.request.json_body
+				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(gkdb.customer.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
@@ -83,7 +83,7 @@ class api_customer(object):
 		else:
 			try:
 				self.con = eng.connect()
-                dataset = self.request.params
+				dataset = self.request.params
 				result = self.con.execute(select([gkdb.customer]).where(gkdb.customer.c.custid == dataset["custid"] ))
 				row = result.fetchone()
 				Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"], "custdoc":row["custdoc"]}
@@ -104,7 +104,7 @@ class api_customer(object):
 		else:
 			try:
 				self.con = eng.connect()
-                dataset = self.request.json_body
+				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(gkdb.customer.update().where(gkdb.customer.c.custid==dataset["custid"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
@@ -148,8 +148,8 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-                result = self.con.execute(gkdb.customer.delete().where(gkdb.customer.c.custid==dataset["custid"]))
-                return {"gkstatus":enumdict["Success"]}
+				result = self.con.execute(gkdb.customer.delete().where(gkdb.customer.c.custid==dataset["custid"]))
+				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
