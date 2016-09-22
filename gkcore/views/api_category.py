@@ -117,3 +117,24 @@ class category(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+	@view_config(request_method='GET',request_param="type=parent",renderer='json')
+	def getParent(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				subcategoryof = self.request.params('subcategoryof')
+				result = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.subcategoryof == subcategoryof) )
+				row = result.fetchone()
+				parentcategory = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
+				return{"gkstatus":enumdict["success"],"gkresult":parentcategory}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
