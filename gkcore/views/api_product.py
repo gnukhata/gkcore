@@ -36,7 +36,7 @@ from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_, exc
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
@@ -62,10 +62,10 @@ class api_product(object):
 		else:
 			try:
 				self.con=eng.connect()
-				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.brand_manufacture, gkdb.product.c.specs]).order_by(gkdb.product.c.brand_manufacture).distinct())
+				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode]).order_by(gkdb.product.c.productdesc))
 				products = []
 				for row in result:
-					products.append({"productcode": row["productcode"], "brand_manufacture":row["brand_manufacture"], "specs":row["specs"]})
+					products.append({"productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkdata":products}
 			except:
@@ -73,7 +73,7 @@ class api_product(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
-	@view_config(route_name='product', request_method='GET',renderer='json')
+	@view_config(request_param='qty=single', request_method='GET',renderer='json')
 	def getProduct(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -85,9 +85,9 @@ class api_product(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.matchdict["productcode"]))
+				result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
 				row = result.fetchone()
-				productDetails={"productcode": row["productcode"], "brand_manufacture": row["brand_manufacture"], "specs": row["specs"], "categorycode": row["categorycode"]}
+				productDetails={"productcode": row["productcode"], "productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkdata":productDetails}
 			except:
@@ -110,6 +110,9 @@ class api_product(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(gkdb.product.insert(),[dataset])
+				spec = dataset["specs"]
+				for sp in spec.keys():
+					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}

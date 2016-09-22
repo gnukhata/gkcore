@@ -157,11 +157,12 @@ The table is having a json field which has the keys matching the attributes from
 """
 product = Table('product',metadata,
 	Column('productcode',Integer,primary_key=True),
-	Column('brand_manufacture',UnicodeText),
+	Column('productdesc',UnicodeText),
 	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('categorycode','productdesc'),
 	Index("product_orgcodeindex","orgcode"),
 	Index("product_categorycode","categorycode")
 	)
