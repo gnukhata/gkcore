@@ -41,7 +41,7 @@ from gkcore.views.api_login import authCheck
 
 
 
-@view_defaults(route_name='customer')
+@view_defaults(route_name='customersupplier')
 class api_customer(object):
 	def __init__(self,request):
 		self.request = Request
@@ -62,7 +62,7 @@ class api_customer(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.customer.insert(),[dataset])
+				result = self.con.execute(gkdb.customerandsupplier.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -72,7 +72,7 @@ class api_customer(object):
 				self.con.close()
 
 	@view_config(request_param="qty=single", request_method='GET',renderer='json')
-	def getCustomer(self):
+	def getCustomerSupplier(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -84,16 +84,19 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.params
-				result = self.con.execute(select([gkdb.customer]).where(gkdb.customer.c.custid == dataset["custid"] ))
+				result = self.con.execute(select([gkdb.customerandsupplier]).where(gkdb.customerandsupplier.c.custid == dataset["custid"] ))
 				row = result.fetchone()
-				Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"], "custdoc":row["custdoc"]}
+				Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"], "custdoc":row["custdoc"], "csflag":row["csflag"]}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+
+
 	@view_config(request_method='PUT', renderer='json')
-	def editCustomer(self):
+	def editCustomerSupplier(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -106,13 +109,13 @@ class api_customer(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.customer.update().where(gkdb.customer.c.custid==dataset["custid"]).values(dataset))
+				result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-	@view_config(request_param="qty=all", request_method='GET', renderer ='json')
+	@view_config(request_param="qty=custall", request_method='GET', renderer ='json')
 	def getAllCustomers(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -125,7 +128,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
-				result = self.con.execute(select([gkdb.customer.c.custname,gkdb.customer.c.custid]).where(gkdb.customer.c.orgcode==authDetails["orgcode"]).order_by(gkdb.customer.c.custname))
+				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==0)).order_by(gkdb.customerandsupplier.c.custname))
 				customers = []
 				for row in result:
 					customers.append({"custid":row["custid"], "custname":row["custname"]})
@@ -134,6 +137,29 @@ class api_customer(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_param="qty=supall", request_method='GET', renderer ='json')
+	def getAllSuppliers(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+				self.con = eng.connect()
+				#there is only one possibility for a catch which is failed connection to db.
+				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==1)).order_by(gkdb.customerandsupplier.c.custname))
+				suppliers = []
+				for row in result:
+					suppliers.append({"custid":row["custid"], "custname":row["custname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":suppliers }
+			#except:
+			#	return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			#finally:
+			#	self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteCustomer(self):
@@ -148,7 +174,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.customer.delete().where(gkdb.customer.c.custid==dataset["custid"]))
+				result = self.con.execute(gkdb.customerandsupplier.delete().where(gkdb.customerandsupplier.c.custid==dataset["custid"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}

@@ -167,11 +167,12 @@ product = Table('product',metadata,
 	Index("product_categorycode","categorycode")
 	)
 """
-table for customers.
+Table for customers and suppliers.
 We need this data when we sell goods.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
+Here the csflag is 0 for customer and 1 for supplier
 """
-customer = Table('customer',metadata,
+customerandsupplier = Table('customerandsupplier',metadata,
 	Column('custid',Integer,primary_key=True),
 	Column('custname',UnicodeText,nullable=False),
 	Column('custaddr',UnicodeText),
@@ -181,11 +182,12 @@ customer = Table('customer',metadata,
 	Column('custpan',UnicodeText),
 	Column('custtan',UnicodeText),
 	Column('custdoc',JSONB),
+    Column('csflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','custname','custemail'),
 	UniqueConstraint('orgcode','custpan'),
 	UniqueConstraint('orgcode','custtan'),
-	Index("customer_orgcodeindex","orgcode")
+	Index("customer_supplier_orgcodeindex","orgcode")
 	)
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
@@ -310,7 +312,7 @@ dcinv = Table('dcinv',metadata,
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
 	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
-	Column('custid',Integer, ForeignKey('customer.custid',ondelete="CASCADE"), nullable=False),
+	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','dcid','invid'),
 	Index("deinv_orgcodeindex","orgcode"),
 	Index("deinv_dcidindex","dcid"),
