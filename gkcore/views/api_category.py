@@ -129,11 +129,11 @@ class category(object):
 		else:
 			try:
 				self.con = eng.connect()
-				subcategoryof = self.request.params('subcategoryof')
+				subcategoryof = self.request.params['subcategoryof']
 				result = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.categorycode  == subcategoryof) )
 				row = result.fetchone()
 				parentcategory = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
-				return{"gkstatus":enumdict["success"],"gkresult":parentcategory}
+				return{"gkstatus":enumdict["Success"],"gkresult":parentcategory}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
