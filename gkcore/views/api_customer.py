@@ -148,7 +148,7 @@ class api_customer(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
 				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==1)).order_by(gkdb.customerandsupplier.c.custname))
@@ -156,10 +156,10 @@ class api_customer(object):
 				for row in result:
 					suppliers.append({"custid":row["custid"], "custname":row["custname"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":suppliers }
-			#except:
-			#	return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
-			#	self.con.close()
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteCustomer(self):
