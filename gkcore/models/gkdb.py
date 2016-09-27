@@ -147,6 +147,7 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('conversionrate', Integer),
 	Column('subunitof',Integer),
 	Column('frequency',Integer),
+    UniqueConstraint('unitname'),
 	Index("unitofmeasurement_frequency","frequency"),
 	Index("unitofmeasurement_unitname","unitname")
 	)
@@ -162,7 +163,7 @@ product = Table('product',metadata,
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
 	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('categorycode','productdesc'),
+	UniqueConstraint('categorycode','productdesc'),
 	Index("product_orgcodeindex","orgcode"),
 	Index("product_categorycode","categorycode")
 	)
@@ -182,7 +183,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
 	Column('custpan',UnicodeText),
 	Column('custtan',UnicodeText),
 	Column('custdoc',JSONB),
-    Column('csflag',Integer,nullable=False),
+	Column('csflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','custname','custemail'),
 	UniqueConstraint('orgcode','custpan'),
@@ -329,6 +330,7 @@ godown = Table('godown',metadata,
 	Column('goaddr',UnicodeText),
 	Column('gocontact',UnicodeText),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','goname'),
 	Index("godown_orgcodeindex","orgcode")
 	)
 """
