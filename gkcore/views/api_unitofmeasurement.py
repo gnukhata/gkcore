@@ -31,25 +31,24 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
-import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 
 
 
-@view_defaults(route_name='customersupplier')
-class api_customer(object):
+@view_defaults(route_name='unitofmeasurement')
+class api_unitOfMeasurement(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
 		self.con = Connection
 
 	@view_config(request_method='POST',renderer='json')
-	def addCustomer(self):
+	def addUnitOfMeasurement(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -61,8 +60,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.customerandsupplier.insert(),[dataset])
+				result = self.con.execute(gkdb.unitofmeasurement.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -72,7 +70,7 @@ class api_customer(object):
 				self.con.close()
 
 	@view_config(request_param="qty=single", request_method='GET',renderer='json')
-	def getCustomerSupplier(self):
+	def getUnitOfMeasurement(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -84,10 +82,10 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.params
-				result = self.con.execute(select([gkdb.customerandsupplier]).where(gkdb.customerandsupplier.c.custid == dataset["custid"] ))
+				result = self.con.execute(select([gkdb.unitofmeasurement]).where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"] ))
 				row = result.fetchone()
-				Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"], "custdoc":row["custdoc"], "csflag":row["csflag"]}
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
+				unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":row["conversionrate"], "subunitof":row["subunitof"]}
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":unitofmeasurement}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
@@ -96,7 +94,7 @@ class api_customer(object):
 
 
 	@view_config(request_method='PUT', renderer='json')
-	def editCustomerSupplier(self):
+	def editunitofmeasurement(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -108,15 +106,14 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
+				result = self.con.execute(gkdb.unitofmeasurement.update().where(gkdb.unitofmeasurement.c.uomid==dataset["uomid"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-	@view_config(request_param="qty=custall", request_method='GET', renderer ='json')
-	def getAllCustomers(self):
+	@view_config(request_param="qty=all", request_method='GET', renderer ='json')
+	def getAllunitofmeasurements(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -128,41 +125,19 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
-				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==0)).order_by(gkdb.customerandsupplier.c.custname))
-				customers = []
+				result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname,gkdb.unitofmeasurement.c.uomid]).order_by(desc(gkdb.unitofmeasurement.c.frequency)))
+				unitofmeasurements = []
 				for row in result:
-					customers.append({"custid":row["custid"], "custname":row["custname"]})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":customers }
+					unitofmeasurements.append({"uomid":row["uomid"], "unitname":row["unitname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":unitofmeasurements }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
 
-	@view_config(request_param="qty=supall", request_method='GET', renderer ='json')
-	def getAllSuppliers(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"] == False:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				#there is only one possibility for a catch which is failed connection to db.
-				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==1)).order_by(gkdb.customerandsupplier.c.custname))
-				suppliers = []
-				for row in result:
-					suppliers.append({"custid":row["custid"], "custname":row["custname"]})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":suppliers }
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
-	def deleteCustomer(self):
+	def deleteunitofmeasurement(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -174,7 +149,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.customerandsupplier.delete().where(gkdb.customerandsupplier.c.custid==dataset["custid"]))
+				result = self.con.execute(gkdb.unitofmeasurement.delete().where(gkdb.unitofmeasurement.c.uomid==dataset["uomid"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
