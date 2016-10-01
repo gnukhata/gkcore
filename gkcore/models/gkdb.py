@@ -317,9 +317,11 @@ Another invoice may be issued if the remaining two items are approved by the cus
 """
 delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('dcno',UnicodeText,nullable=False),
 	Column('dcdate',UnicodeText,nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	UniqueConstraint('orgcode','dcno'),
 	Index("delchal_orgcodeindex","orgcode"),
 	Index("delchal_dcnoindex","dcno")
