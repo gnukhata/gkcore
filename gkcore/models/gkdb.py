@@ -269,6 +269,21 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","podate"),
 )
+
+"""
+Table for storing godown details.
+Basically one organization may have many godowns and we aught to know from which one goods have moved out.
+"""
+godown = Table('godown',metadata,
+	Column('goid',Integer,primary_key=True),
+	Column('goname',UnicodeText),
+	Column('goaddr',UnicodeText),
+	Column('gocontact',UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','goname'),
+	Index("godown_orgcodeindex","orgcode")
+	)
+
 """
 Table for storing invoice records.
 Every row represents one invoice.
@@ -319,19 +334,6 @@ dcinv = Table('dcinv',metadata,
 	Index("deinv_dcidindex","dcid"),
 	Index("deinv_invidindex","invid"),
 	Index("deinv_custid","custid")
-	)
-"""
-Table for storing godown details.
-Basically one organization may have many godowns and we aught to know from which one goods have moved out.
-"""
-godown = Table('godown',metadata,
-	Column('goid',Integer,primary_key=True),
-	Column('goname',UnicodeText),
-	Column('goaddr',UnicodeText),
-	Column('gocontact',UnicodeText),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','goname'),
-	Index("godown_orgcodeindex","orgcode")
 	)
 """
 Table for stock.
