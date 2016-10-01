@@ -245,7 +245,11 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vdate","voucherdate")
 	)
 
-
+"""
+table for purchase order.
+This may or may not link to a certain invoice.
+However if it is linked then we will have to compare the items with those in invoice.
+"""
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderno',UnicodeText, primary_key=True),
 	Column('podate', DateTime, nullable=False),
@@ -292,11 +296,12 @@ So the accounting part is thus connected with stock movement of that cost.
 """
 invoice = Table('invoice',metadata,
 	Column('invid',Integer,primary_key=True),
-	Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode',ondelete="CASCADE"),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('invoiceno',UnicodeText,nullable=False),
 	Column('invoicedate',UnicodeText,nullable=False),
 	Column('contents',JSONB),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_vouchercodeindex","vouchercode"),
 	Index("invoice_invoicenoindex","invoiceno")
