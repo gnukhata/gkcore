@@ -291,6 +291,10 @@ godown = Table('godown',metadata,
 """
 Table for storing invoice records.
 Every row represents one invoice.
+Apart from the number and date, we also have a json field called contents.
+This field is a nested dictionary.
+The key of this field is the productcode while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty).
 Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 """
@@ -303,7 +307,6 @@ invoice = Table('invoice',metadata,
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("invoice_orgcodeindex","orgcode"),
-	Index("invoice_vouchercodeindex","vouchercode"),
 	Index("invoice_invoicenoindex","invoiceno")
 	)
 """
