@@ -358,20 +358,20 @@ The inout field is sel explainatory.
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('dcqty',JSONB),
-	Column('invqty',JSONB),
+	Column('qty',Integer,nullable=False),
+	Column('dcinvid',nullable=False),
+	Column('dcinvflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
-	Column('dcinvid',Integer, ForeignKey('dcinv.dcinvid',ondelete="CASCADE")),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("stock_orgcodeindex","orgcode"),
 	Index("stock_productcodeindex","productcode"),
-	Index("stock_dcinvid","dcinvid"),
-	Index("stock_goid","goid")
+	Index("stock_dcinvid","dcinvid")
 	)
 
 
 """ table to store users for an organization.
+Table for storing users for a particular organisation.
 So orgcode is foreign key like other tables.
 In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """
 users=Table('users', metadata,
@@ -399,7 +399,10 @@ bankrecon=Table('bankrecon',metadata,
 	UniqueConstraint('vouchercode','accountcode'),
 	Index("bankrecoindex","clearancedate")
 	)
-
+"""
+This is the table which acts as a bin for deleted vouchers.
+While these vouchers can't be recovered, they are for investigation purpose if need be.
+""" 
 voucherbin=Table('voucherbin', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
