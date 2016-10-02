@@ -335,25 +335,23 @@ dcinv = Table('dcinv',metadata,
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
 	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
-	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','dcid','invid'),
 	Index("deinv_orgcodeindex","orgcode"),
 	Index("deinv_dcidindex","dcid"),
-	Index("deinv_invidindex","invid"),
-	Index("deinv_custid","custid")
+	Index("deinv_invidindex","invid")
 	)
 """
 Table for stock.
-This table records movement of goods and can give details either on the basis of godown (breakup ) or total details.
-There are 2 json fields in this table.
-one is for the goods moving in or out against a dc and ther other is for invoice.
+This table records movement of goods and can give details either on basis of productcode,
+invoice or dc (which ever is responsible for the movement ),
+or by godown using the goid.
+It has a field for product quantity.
+it also has a field called dcinvflag which can tell if this movement was due to dc or inv.
+This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
 This is always the case when we purchase goods.
-The other field is obviously for dc.
-The entry of quantity of items is exclusive either to dc or invoice.
-One exception to this case will be when x amount is shipped and x - n items are approved.
-The inout field is sel explainatory.
+The inout field is self explainatory.
 """
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
