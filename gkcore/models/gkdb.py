@@ -221,7 +221,7 @@ Additionally this table has 2 json fields named Drs and Crs.
 These are the fields which actually store the dr or cr amounts which their respective account codes of the accounts which are used in those transactions.
 Key is the account code and value is the amount.
 This helps us to store multiple Drs and Crs because there can be many key-value pares in the dictionary field.
-Apart from this orgcode is there as the foreign key """
+Apart from this orgcode is there as the foreign key.  We also connect the invoice table where sales or purchase happens.  So there is a nullable foreign key here. """
 vouchers=Table('vouchers', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
@@ -239,6 +239,7 @@ vouchers=Table('vouchers', metadata,
 	Column('delflag',BOOLEAN,default=False),
 	Column('projectcode',Integer, ForeignKey('projects.projectcode')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('invid',ForeignKey('invoice.invid')),
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
 	Index("voucher_vno","vouchernumber"),
@@ -360,7 +361,7 @@ stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
 	Column('qty',Integer,nullable=False),
-	Column('dcinvid',nullable=False),
+	Column('dcinvid', Integer,nullable=False),
 	Column('dcinvflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
