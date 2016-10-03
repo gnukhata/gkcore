@@ -141,10 +141,32 @@ class api_delchal(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
-					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"]})
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
+					custrow = custdata.fetchone()
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',route_param="qty=single", renderer ='json')
+	def getdelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
+				items = {}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -152,7 +174,7 @@ class api_delchal(object):
 				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
-	def deleteGodown(self):
+	def deleteDelchal(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -165,6 +187,7 @@ class api_delchal(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(delchal.delete().where(delchal.c.dcid==dataset["dcid"]))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dcidrow["dcid"],stock.c.dcinvflag==4)))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
