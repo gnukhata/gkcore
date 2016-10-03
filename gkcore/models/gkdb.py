@@ -45,7 +45,7 @@ Date
 	 #<- time abstraction field
 	)
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText
 from sqlalchemy import MetaData
 
 #metadata is the module that converts Python code into real sql statements, specially for creating tables.
@@ -144,7 +144,7 @@ The unit of measurement has units, conversion rates and its resulting unit.
 unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('uomid',Integer,primary_key=True),
 	Column('unitname',UnicodeText,nullable=False),
-	Column('conversionrate', Integer),
+	Column('conversionrate',Numeric(13,2),default=0.00), 
 	Column('subunitof',Integer),
 	Column('frequency',Integer),
     UniqueConstraint('unitname'),
@@ -221,7 +221,7 @@ Additionally this table has 2 json fields named Drs and Crs.
 These are the fields which actually store the dr or cr amounts which their respective account codes of the accounts which are used in those transactions.
 Key is the account code and value is the amount.
 This helps us to store multiple Drs and Crs because there can be many key-value pares in the dictionary field.
-Apart from this orgcode is there as the foreign key """
+Apart from this orgcode is there as the foreign key.  We also connect the invoice table where sales or purchase happens.  So there is a nullable foreign key here. """
 vouchers=Table('vouchers', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
@@ -239,13 +239,18 @@ vouchers=Table('vouchers', metadata,
 	Column('delflag',BOOLEAN,default=False),
 	Column('projectcode',Integer, ForeignKey('projects.projectcode')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('invid',ForeignKey('invoice.invid')),
 	Index("voucher_orgcodeindex","orgcode"),
 	Index("voucher_entrydate","entrydate"),
 	Index("voucher_vno","vouchernumber"),
 	Index("voucher_vdate","voucherdate")
 	)
 
-
+"""
+table for purchase order.
+This may or may not link to a certain invoice.
+However if it is linked then we will have to compare the items with those in invoice.
+"""
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderno',UnicodeText, primary_key=True),
 	Column('podate', DateTime, nullable=False),
@@ -269,57 +274,7 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","podate"),
 )
-"""
-Table for storing invoice records.
-Every row represents one invoice.
-Note that invoice is connected to a voucher.
-So the accounting part is thus connected with stock movement of that cost.
-"""
-invoice = Table('invoice',metadata,
-	Column('invid',Integer,primary_key=True),
-	Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode',ondelete="CASCADE"),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('invoiceno',UnicodeText,nullable=False),
-	Column('invoicedate',UnicodeText,nullable=False),
-	Column('contents',JSONB),
-	Index("invoice_orgcodeindex","orgcode"),
-	Index("invoice_vouchercodeindex","vouchercode"),
-	Index("invoice_invoicenoindex","invoiceno")
-	)
-"""
-Table for challan.
-This table stores the delivary challans issues when the goods move out.
-This is generally done when payment is due.
-The invoice table and this table will be linked in a subsequent table.
-This is done because one invoice may have several dc's attached and for one dc may have several invoices.
-In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
-Another invoice may be issued if the remaining two items are approved by the customer.
-"""
-delchal = Table('delchal',metadata,
-	Column('dcid',Integer,primary_key=True),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('dcno',UnicodeText,nullable=False),
-	Column('dcdate',UnicodeText,nullable=False),
-	UniqueConstraint('orgcode','dcno'),
-	Index("delchal_orgcodeindex","orgcode"),
-	Index("delchal_dcnoindex","dcno")
-	)
-"""
-The join table which has keys from both inv and dc table.
-As explained before, one invoice may have many dc and one dc can be partially passed for many invoices.
-"""
-dcinv = Table('dcinv',metadata,
-	Column('dcinvid',Integer,primary_key=True),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
-	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
-	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','dcid','invid'),
-	Index("deinv_orgcodeindex","orgcode"),
-	Index("deinv_dcidindex","dcid"),
-	Index("deinv_invidindex","invid"),
-	Index("deinv_custid","custid")
-	)
+
 """
 Table for storing godown details.
 Basically one organization may have many godowns and we aught to know from which one goods have moved out.
@@ -333,36 +288,93 @@ godown = Table('godown',metadata,
 	UniqueConstraint('orgcode','goname'),
 	Index("godown_orgcodeindex","orgcode")
 	)
+
+"""
+Table for storing invoice records.
+Every row represents one invoice.
+Apart from the number and date, we also have a json field called contents.
+This field is a nested dictionary.
+The key of this field is the productcode while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty).
+Note that invoice is connected to a voucher.
+So the accounting part is thus connected with stock movement of that cost.
+"""
+invoice = Table('invoice',metadata,
+	Column('invid',Integer,primary_key=True),
+	Column('invoiceno',UnicodeText,nullable=False),
+	Column('invoicedate',UnicodeText,nullable=False),
+	Column('contents',JSONB),
+	Column('orderno', UnicodeText,ForeignKey('purchaseorder.orderno')),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Index("invoice_orgcodeindex","orgcode"),
+	Index("invoice_invoicenoindex","invoiceno")
+	)
+"""
+Table for challan.
+This table stores the delivary challans issues when the goods move out.
+This is generally done when payment is due.
+The invoice table and this table will be linked in a subsequent table.
+This is done because one invoice may have several dc's attached and for one dc may have several invoices.
+In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
+Another invoice may be issued if the remaining two items are approved by the customer.
+"""
+delchal = Table('delchal',metadata,
+	Column('dcid',Integer,primary_key=True),
+	Column('dcno',UnicodeText,nullable=False),
+	Column('dcdate',UnicodeText,nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	UniqueConstraint('orgcode','dcno'),
+	Index("delchal_orgcodeindex","orgcode"),
+	Index("delchal_dcnoindex","dcno")
+	)
+"""
+The join table which has keys from both inv and dc table.
+As explained before, one invoice may have many dc and one dc can be partially passed for many invoices.
+"""
+dcinv = Table('dcinv',metadata,
+	Column('dcinvid',Integer,primary_key=True),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
+	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
+	UniqueConstraint('orgcode','dcid','invid'),
+	Index("deinv_orgcodeindex","orgcode"),
+	Index("deinv_dcidindex","dcid"),
+	Index("deinv_invidindex","invid")
+	)
 """
 Table for stock.
-This table records movement of goods and can give details either on the basis of godown (breakup ) or total details.
-There are 2 json fields in this table.
-one is for the goods moving in or out against a dc and ther other is for invoice.
+This table records movement of goods and can give details either on basis of productcode,
+invoice or dc (which ever is responsible for the movement ),
+or by godown using the goid.
+It has a field for product quantity.
+it also has a field called dcinvflag which can tell if this movement was due to dc or inv.
+This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
 This is always the case when we purchase goods.
-The other field is obviously for dc.
-The entry of quantity of items is exclusive either to dc or invoice.
-One exception to this case will be when x amount is shipped and x - n items are approved.
-The inout field is sel explainatory.
+The inout field is self explainatory.
 """
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('dcqty',JSONB),
-	Column('invqty',JSONB),
+	Column('qty',Integer,nullable=False),
+	Column('dcinvid', Integer,nullable=False),
+	Column('dcinvflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
-	Column('dcinvid',Integer, ForeignKey('dcinv.dcinvid',ondelete="CASCADE")),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("stock_orgcodeindex","orgcode"),
 	Index("stock_productcodeindex","productcode"),
-	Index("stock_dcinvid","dcinvid"),
-	Index("stock_goid","goid")
+	Index("stock_dcinvid","dcinvid")
 	)
 
 
 """ table to store users for an organization.
+Table for storing users for a particular organisation.
 So orgcode is foreign key like other tables.
 In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """
 users=Table('users', metadata,
@@ -390,7 +402,10 @@ bankrecon=Table('bankrecon',metadata,
 	UniqueConstraint('vouchercode','accountcode'),
 	Index("bankrecoindex","clearancedate")
 	)
-
+"""
+This is the table which acts as a bin for deleted vouchers.
+While these vouchers can't be recovered, they are for investigation purpose if need be.
+""" 
 voucherbin=Table('voucherbin', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
