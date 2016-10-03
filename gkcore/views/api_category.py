@@ -22,6 +22,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
 """
 #imports contain sqlalchemy modules,
 #enumdict containing status messages,
@@ -66,7 +67,7 @@ class category(object):
 		self.request = request
 		self.con = Connection
 		print "category initialized"
-	
+
 	@view_config(request_method='POST',renderer='json')
 	def addCategory(self):
 		try:
@@ -166,3 +167,45 @@ class category(object):
 			finally:
 				self.con.close()
 
+
+	@view_config(request_method='PUT', renderer='json')
+	def editCategory(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.categorysubcategories.update().where(gkdb.categorysubcategories.c.categorycode==dataset["categorycode"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+	@view_config(request_method='DELETE', renderer ='json')
+	def deleteCategory(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.categorysubcategories.delete().where(gkdb.categorysubcategories.c.categorycode==dataset["categorycode"]))
+				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
