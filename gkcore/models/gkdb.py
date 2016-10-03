@@ -45,7 +45,7 @@ Date
 	 #<- time abstraction field
 	)
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText
 from sqlalchemy import MetaData
 
 #metadata is the module that converts Python code into real sql statements, specially for creating tables.
@@ -304,6 +304,7 @@ invoice = Table('invoice',metadata,
 	Column('invoiceno',UnicodeText,nullable=False),
 	Column('invoicedate',UnicodeText,nullable=False),
 	Column('contents',JSONB),
+	Column('orderno', UnicodeText,ForeignKey('purchaseorder.orderno')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
