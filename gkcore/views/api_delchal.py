@@ -46,6 +46,13 @@ class api_delchal(object):
 		self.request = request
 		self.con = Connection
 
+	"""
+	create method for delchal resource.
+	stock table is also updated after delchal entry is made.
+		-delchal id goes in dcinvid column of stock table.
+		-dcinvflag column will be set to 4 for delivery challan entry.
+	If stock table insert fails then the delchal entry will be deleted.
+	"""
 	@view_config(request_method='POST',renderer='json')
 	def adddelchal(self):
 		try:
@@ -59,14 +66,29 @@ class api_delchal(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(delchal.insert(),[{"dcno":dataset["dcno"],"dcdate":dataset["dcdate"],"orgcode":dataset["orgcode"]}])
+				delchaldata = dataset["delchaldata"]
+				stockdata = dataset["stockdata"]
+				delchaldata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(delchal.insert(),[delchaldata])
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==dataset["dcno"])))
 					dcidrow = dciddata.fetchone()
-					result = self.con.execute(dcinv.insert(),[{"dcid":dcidrow["dcid"],"custid":dataset["custid"],"orgcode":dataset["orgcode"]}])
-
-				return {"gkstatus":enumdict["Success"]}
+					stockdata["dcinvid"] = dcidrow["dcid"]
+					stockdata["dcinvflag"] = 4
+					items = stockdata.pop("items")
+					try:
+						for key in items.keys():
+							stockdata["productcode"] = key
+							stockdata["qty"] = items[key]
+							result = self.con.execute(stock.insert(),[stockdata])
+					except:
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dcidrow["dcid"],stock.c.dcinvflag==4)))
+						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
+						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
@@ -87,8 +109,21 @@ class api_delchal(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(delchal.update().where(delchal.c.dcid==dataset["dcid"]).values(dataset))
-				return {"gkstatus":enumdict["Success"]}
+				delchaldata = dataset["delchaldata"]
+				stockdata = dataset["stockdata"]
+				delchaldata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(delchal.update().where(delchal.c.dcid==delchaldata["dcid"]).values(delchaldata))
+				if result.rowcount==1:
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==delchaldata["dcid"],stock.c.dcinvflag==4)))
+					items = stockdata.pop("items")
+					for key in items.keys():
+						stockdata["productcode"] = key
+						stockdata["qty"] = items[key]
+						result = self.con.execute(stock.insert(),[stockdata])
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
