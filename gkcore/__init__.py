@@ -54,6 +54,7 @@ enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFai
 def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_route("organisation","/organisation")
+    config.add_route("invoice","/invoice")
     config.add_route("organisations","/organisations")
     config.add_route("categoryspecs","/categoryspecs")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
