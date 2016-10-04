@@ -168,7 +168,7 @@ class api_invoice(object):
 				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.orderno,invoice.c.contents]).where(invoice.c.invid==dataset["invid"]))
 				row = result.fetchone()
 				items = row["contents"]
-                invoice = {}
+				invoice = {}
 				if row["custid"] == None:
 					result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
 					dcid = result.fetchone()
@@ -177,23 +177,23 @@ class api_invoice(object):
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
 					custname = result.fetchone()
 					invoice["invoiceno"]=row["invoiceno"]
-                    invoice["invid"]=row["invid"]
-                    invoice["dcid"]=dcid["dcid"]
-                    invoice["dcno"]=dcnocustid["dcno"]
-                    invoice["invoicedate"]=row["invoicedate"]
-                    invoice["custname"]=custname["custname"]
+					invoice["invid"]=row["invid"]
+					invoice["dcid"]=dcid["dcid"]
+					invoice["dcno"]=dcnocustid["dcno"]
+					invoice["invoicedate"]=row["invoicedate"]
+					invoice["custname"]=custname["custname"]
 				else:
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
 					invoice["invoiceno"]=row["invoiceno"]
-                    invoice["invid"]=row["invid"]
-                    invoice["invoicedate"]=row["invoicedate"]
-                    invoice["custname"]=custname["custname"]
-                for item in items.keys():
-                    result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
-                    productname = result.fetchone()
-                    items["item"]["productname"]= productname["productdesc"]
-                    invoice["contents"] = items
+					invoice["invid"]=row["invid"]
+					invoice["invoicedate"]=row["invoicedate"]
+					invoice["custname"]=custname["custname"]
+				for item in items.keys():
+					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
+					productname = result.fetchone()
+					items["item"]["productname"]= productname["productdesc"]
+					invoice["contents"] = items
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoice }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
