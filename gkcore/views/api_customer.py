@@ -128,7 +128,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
-				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==0)).order_by(gkdb.customerandsupplier.c.custname))
+				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==3)).order_by(gkdb.customerandsupplier.c.custname))
 				customers = []
 				for row in result:
 					customers.append({"custid":row["custid"], "custname":row["custname"]})
@@ -151,7 +151,7 @@ class api_customer(object):
 			try:
 				self.con = eng.connect()
 				#there is only one possibility for a catch which is failed connection to db.
-				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==1)).order_by(gkdb.customerandsupplier.c.custname))
+				result = self.con.execute(select([gkdb.customerandsupplier.c.custname,gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.csflag==19)).order_by(gkdb.customerandsupplier.c.custname))
 				suppliers = []
 				for row in result:
 					suppliers.append({"custid":row["custid"], "custname":row["custname"]})
