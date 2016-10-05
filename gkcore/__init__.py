@@ -79,6 +79,7 @@ def main(global_config, **settings):
     config.add_route("categories","/categories")
     config.add_route("products","/products")
     config.add_route("godown","/godown")
+    config.add_route("delchal","/delchal")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

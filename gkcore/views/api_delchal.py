@@ -1,0 +1,212 @@
+
+"""
+Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+  This file is part of GNUKhata:A modular,robust and Free Accounting System.
+
+  GNUKhata is Free Software; you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation; either version 3 of
+  the License, or (at your option) any later version.and old.stockflag = 's'
+
+  GNUKhata is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public
+  License along with GNUKhata (COPYING); if not, write to the
+  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
+
+
+Contributors:
+"Krishnakant Mane" <kk@gmail.com>
+"Ishan Masdekar " <imasdekar@dff.org.in>
+"Navin Karkera" <navin@dff.org.in>
+"""
+
+
+from gkcore import eng, enumdict
+from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product
+from sqlalchemy.sql import select
+import json
+from sqlalchemy.engine.base import Connection
+from sqlalchemy import and_, exc
+from pyramid.request import Request
+from pyramid.response import Response
+from pyramid.view import view_defaults,  view_config
+import jwt
+import gkcore
+from gkcore.views.api_login import authCheck
+
+@view_defaults(route_name='delchal')
+class api_delchal(object):
+	def __init__(self,request):
+		self.request = Request
+		self.request = request
+		self.con = Connection
+
+	"""
+	create method for delchal resource.
+	stock table is also updated after delchal entry is made.
+		-delchal id goes in dcinvid column of stock table.
+		-dcinvflag column will be set to 4 for delivery challan entry.
+	If stock table insert fails then the delchal entry will be deleted.
+	"""
+	@view_config(request_method='POST',renderer='json')
+	def adddelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				delchaldata = dataset["delchaldata"]
+				stockdata = dataset["stockdata"]
+				delchaldata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(delchal.insert(),[delchaldata])
+				if result.rowcount==1:
+					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"])))
+					dcidrow = dciddata.fetchone()
+					stockdata["dcinvid"] = dcidrow["dcid"]
+					stockdata["dcinvflag"] = 4
+					items = stockdata.pop("items")
+					try:
+						for key in items.keys():
+							stockdata["productcode"] = key
+							stockdata["qty"] = items[key]
+							result = self.con.execute(stock.insert(),[stockdata])
+					except:
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dcidrow["dcid"],stock.c.dcinvflag==4)))
+						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
+						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='PUT', renderer='json')
+	def editdelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				delchaldata = dataset["delchaldata"]
+				stockdata = dataset["stockdata"]
+				delchaldata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				stockdata["dcinvid"] = delchaldata["dcid"]
+				stockdata["dcinvflag"] = 4
+				result = self.con.execute(delchal.update().where(delchal.c.dcid==delchaldata["dcid"]).values(delchaldata))
+				if result.rowcount==1:
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==delchaldata["dcid"],stock.c.dcinvflag==4)))
+					items = stockdata.pop("items")
+					for key in items.keys():
+						stockdata["productcode"] = key
+						stockdata["qty"] = items[key]
+						result = self.con.execute(stock.insert(),[stockdata])
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',request_param="delchal=all", renderer ='json')
+	def getAlldelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				delchals = []
+				for row in result:
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
+					custrow = custdata.fetchone()
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',request_param="delchal=single", renderer ='json')
+	def getdelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
+				delchaldata = result.fetchone()
+				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==delchaldata["custid"]))
+				custname = custdata.fetchone()
+				godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid==delchaldata["goid"]))
+				goname = godata.fetchone()
+				items = {}
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout]).where(and_(stock.c.dcinvflag==4,stock.c.dcinvid==self.request.params["dcid"])))
+				for stockrow in stockdata:
+					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
+					productdesc = productdata.fetchone()
+					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
+					stockinout = stockrow["inout"]
+				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"custid":delchaldata["custid"],"custname":custname["custname"],"goid":delchaldata["goid"],"goname":goname["goname"]},
+				"stockdata":{"inout":stockinout,"items":items}}
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='DELETE', renderer ='json')
+	def deleteDelchal(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(delchal.delete().where(delchal.c.dcid==dataset["dcid"]))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["dcid"],stock.c.dcinvflag==4)))
+				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
