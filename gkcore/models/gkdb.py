@@ -144,7 +144,7 @@ The unit of measurement has units, conversion rates and its resulting unit.
 unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('uomid',Integer,primary_key=True),
 	Column('unitname',UnicodeText,nullable=False),
-	Column('conversionrate',Numeric(13,2),default=0.00), 
+	Column('conversionrate',Numeric(13,2),default=0.00),
 	Column('subunitof',Integer),
 	Column('frequency',Integer),
     UniqueConstraint('unitname'),
@@ -171,7 +171,7 @@ product = Table('product',metadata,
 Table for customers and suppliers.
 We need this data when we sell goods.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
-Here the csflag is 0 for customer and 1 for supplier
+Here the csflag is 3 for customer and 19 for supplier
 """
 customerandsupplier = Table('customerandsupplier',metadata,
 	Column('custid',Integer,primary_key=True),
@@ -405,7 +405,7 @@ bankrecon=Table('bankrecon',metadata,
 """
 This is the table which acts as a bin for deleted vouchers.
 While these vouchers can't be recovered, they are for investigation purpose if need be.
-""" 
+"""
 voucherbin=Table('voucherbin', metadata,
 	Column('vouchercode',Integer,primary_key=True),
 	Column('vouchernumber',UnicodeText, nullable=False),
