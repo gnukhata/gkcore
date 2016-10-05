@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -62,7 +62,7 @@ class api_invoice(object):
 				dcinvdataset={}
 				invdataset = dtset["invoice"]
 				stockdataset = dtset["stock"]
-				items = invdataset["items"]
+				items = invdataset["contents"]
 				invdataset["orgcode"] = authDetails["orgcode"]
 				stockdataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(invoice.insert(),[invdataset])
@@ -80,15 +80,18 @@ class api_invoice(object):
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				else:
 					try:
+						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
+						invoiceid = result.fetchone()
+						stockdataset["dcinvid"] = invoiceid["invid"]
 						for item in items.keys():
 							stockdataset["productcode"] = item
 							stockdataset["qty"] = items[item].values()[0]
-							stockdataset["stockflag"] = "9"
+							stockdataset["dcinvflag"] = "9"
 							result = self.con.execute(stock.insert(),[stockdataset])
 						return {"gkstatus":enumdict["Success"]}
 					except:
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invdataset["invid"],stock.c.stockflag==9)))
-						result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invoiceid["invid"],stock.c.dcinvflag==9)))
+						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -110,38 +113,42 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
+				dtset = self.request.json_body
 				dcinvdataset={}
 				invdataset = dtset["invoice"]
 				stockdataset = dtset["stock"]
-				items = invdataset["items"]
+				items = invdataset["contents"]
 				invdataset["orgcode"] = authDetails["orgcode"]
 				stockdataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invdataset["invid"],stock.c.stockflag==9)))
-				result = self.con.execute(invoice.insert(),[invdataset])
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invdataset["invid"],stock.c.dcinvflag==9)))
+				result = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
 				if invdataset.has_key("dcid"):
+					dcid = invdataset.pop("dcid")
+					result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+					invdataset["dcid"] = dcid
 					if result.rowcount == 1:
-						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
-						invoiceid = result.fetchone()
 						dcinvdataset["dcid"]=invdataset["dcid"]
-						dcinvdataset["invid"]=invoiceid["invid"]
 						dcinvdataset["orgcode"]=invdataset["orgcode"]
+						dcinvdataset["invid"]=invdataset["invid"]
 						result = self.con.execute(dcinv.insert(),[dcinvdataset])
-						if result.rowcount ==1:
-							return {"gkstatus":enumdict["Success"]}
+						return {"gkstatus":enumdict["Success"]}
 					else:
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				else:
 					try:
+						result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
+						invoiceid = result.fetchone()
+						stockdataset["dcinvid"] = invoiceid["invid"]
 						for item in items.keys():
 							stockdataset["productcode"] = item
 							stockdataset["qty"] = items[item].values()[0]
-							stockdataset["stockflag"] = "9"
+							stockdataset["dcinvflag"] = "9"
 							result = self.con.execute(stock.insert(),[stockdataset])
 						return {"gkstatus":enumdict["Success"]}
 					except:
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invdataset["invid"],stock.c.stockflag==9)))
-						result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invoiceid["invid"],stock.c.dcinvflag==9)))
+						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -164,11 +171,11 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				dataset = self.request.params
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.orderno,invoice.c.contents]).where(invoice.c.invid==dataset["invid"]))
+				dataset = self.request.params["invid"]
+				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
 				row = result.fetchone()
 				items = row["contents"]
-				invoice = {}
+				invc = {}
 				if row["custid"] == None:
 					result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
 					dcid = result.fetchone()
@@ -176,25 +183,25 @@ class api_invoice(object):
 					dcnocustid = result.fetchone()
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
 					custname = result.fetchone()
-					invoice["invoiceno"]=row["invoiceno"]
-					invoice["invid"]=row["invid"]
-					invoice["dcid"]=dcid["dcid"]
-					invoice["dcno"]=dcnocustid["dcno"]
-					invoice["invoicedate"]=row["invoicedate"]
-					invoice["custname"]=custname["custname"]
+					invc["invoiceno"]=row["invoiceno"]
+					invc["invid"]=row["invid"]
+					invc["dcid"]=dcid["dcid"]
+					invc["dcno"]=dcnocustid["dcno"]
+					invc["invoicedate"]=row["invoicedate"]
+					invc["custname"]=custname["custname"]
 				else:
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
-					invoice["invoiceno"]=row["invoiceno"]
-					invoice["invid"]=row["invid"]
-					invoice["invoicedate"]=row["invoicedate"]
-					invoice["custname"]=custname["custname"]
+					invc["invoiceno"]=row["invoiceno"]
+					invc["invid"]=row["invid"]
+					invc["invoicedate"]=row["invoicedate"]
+					invc["custname"]=custname["custname"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
 					productname = result.fetchone()
-					items["item"]["productname"]= productname["productdesc"]
-					invoice["contents"] = items
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoice }
+					items[item]["productname"]= productname["productdesc"]
+					invc["contents"] = items
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			finally:
@@ -228,8 +235,8 @@ class api_invoice(object):
 					else:
 						result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
-						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custid["custname"]})
-					return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			finally:
@@ -249,7 +256,7 @@ class api_invoice(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(invoice.delete().where(invoice.c.invid==dataset["invid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["invid"],stock.c.stockflag==9)))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["invid"],stock.c.dcinvflag==9)))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
