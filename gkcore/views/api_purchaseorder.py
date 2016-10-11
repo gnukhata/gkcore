@@ -59,6 +59,15 @@ class api_purchaseorder(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
+                """ self.con = eng.connect()
+                dtset = self.request.json_body
+                podataset = dtset["purchaseorder"]
+                productdataset = dtset["product"]
+                custdataset = dtset["customerandsupplier"]
+                podataset["orgcode"] = authDetails["orgcode"]
+                productdataset["orgcode"] = authDetails["orgcode"]
+                custdataset["orgcode"] = authDetails["orgcode"]
+                result = self.con.execute(gkdb.purchaseorder.insert(),[podataset])"""
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
@@ -87,7 +96,7 @@ class api_purchaseorder(object):
                 result = self.con.execute(select([gkdb.purchaseorder.c.orderno, gkdb.purchaseorder.c.podate, gkdb.purchaseorder.c.buyername, gkdb.purchaseorder.c.suppliername, gkdb.purchaseorder.c.datedelivery, gkdb.purchaseorder.c.quantity, gkdb.purchaseorder.c.termofpayment, gkdb.purchaseorder.c.orgcode]).order_by(gkdb.purchaseorder.c.podate))
                 purchaseorders = []
                 for row in result:
-                    products.append({"orderno": row["orderno"], "podate":row["podate"] , "buyername": row["buyername"], "suppliername": row["suppliername"], "datedelivery": row["datedelivery"], "quantity": row["quantity"], "termofpayment": row["termofpayment"], "orgcode": row["orgcode"] })
+                    products.append({"orderno": row["orderno"], "podate":row["podate"] , "maxdate":row["maxdate"], "buyername": row["buyername"], "custid": row["custid"], "datedelivery": row["datedelivery"], "quantity": row["quantity"], "termofpayment": row["termofpayment"], "orgcode": row["orgcode"] })
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkdata":purchaseorders}
             except:
@@ -108,7 +117,7 @@ class api_purchaseorder(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.purchaseorder]).where(gkdb.purchaseorder.c.orderno == self.request.params["orderno"]))
                 row = result.fetchone()
-                purchaseOrderDetails = {"orderno": row["orderno"], "podate": row["podate"], "buyername": row["buyername"], "buyeraddr": row["buyeraddr"], "buyeremail": row["buyeremail"], "buyercontact": row["buyercontact"], "suppliername": row["suppliername"], "supplieraddr": row["supplieraddr"], "supplieremail": row["supplieremail"], "suppliercontact": row["suppliercontact"], "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": row["datedelivery"], "modeofdelivery": row["modeofdelivery"],"rateoftax": row["rateoftax"],"descperunit": row["descperunit"],"deliverystaggered": row["deliverystaggered"], "description": row["description"], "quantity": row["quantity"], "rateperunit": row["rateperunit"], "termofpayment": row["termofpayment"], "shipment": row["shipment"], "orgcode": row["orgcode"]}
+                purchaseOrderDetails = {"orderno": row["orderno"], "podate": row["podate"], "maxdate": row["maxdate"],"buyername": row["buyername"], "buyeraddr": row["buyeraddr"],  "buyercontact": row["buyercontact"], "buyeremail": row["buyeremail"],  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": row["datedelivery"], "modeoftransport": row["modeoftransport"],"packagingperunit": row["packagingperunit"],"deliverystaggered": row["deliverystaggered"], "description": row["description"], "quantity": row["quantity"], "rateperunit": row["rateperunit"], "unitsperlot":row["unitsperlot"], "termofpayment": row["termofpayment"],  "shipment": row["shipment"], "orgcode": row["orgcode"],"custid": row["custid"],"productcode": row["productcode"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":purchaseOrderDetails}
             except:
