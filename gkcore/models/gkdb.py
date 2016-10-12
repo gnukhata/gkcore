@@ -267,7 +267,7 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('description', UnicodeText),
 	Column('quantity', Integer),
 	Column('rateperunit',JSONB),
-    Column('unitsperlot',JSONB)
+	Column('unitsperlot',JSONB),
 	Column('termofpayment', UnicodeText),
 	Column('shipment', UnicodeText),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
