@@ -338,6 +338,11 @@ class api_organisation(object):
 				userRole = user.fetchone()
 				if userRole[0]==-1:
 					result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+					if result.rowcount == 1:
+						result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
+						orgcount = result.fetchone()
+						if orgcount["ocount"]==0:
+							result = self.con.execute(gkdb.signature.delete())
 					self.con.close()
 					return {"gkstatus":enumdict["Success"]}
 				else:
