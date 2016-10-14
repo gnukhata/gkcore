@@ -45,7 +45,7 @@ Date
 	 #<- time abstraction field
 	)
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText, Integer
 from sqlalchemy import MetaData
 
 #metadata is the module that converts Python code into real sql statements, specially for creating tables.
@@ -254,15 +254,12 @@ However if it is linked then we will have to compare the items with those in inv
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderno',UnicodeText, primary_key=True),
 	Column('podate', DateTime, nullable=False),
-    Column('maxdate', DateTime, nullable=False),
-	Column('buyername', UnicodeText, nullable=False),
-	Column('buyeraddr', UnicodeText),
-	Column('buyercontact', UnicodeText),
-	Column('buyeremail', UnicodeText),
+	Column('maxdate', DateTime, nullable=False),
+	Column('csid',Integer),
 	Column('deliveryplaceaddr', UnicodeText),
 	Column('datedelivery',DateTime),
-    Column('modeoftransport', UnicodeText),
-    Column('packagingperunit',JSONB),
+	Column('modeoftransport', UnicodeText),
+	Column('packagingperunit',JSONB),
 	Column('deliverystaggered', Integer),
 	Column('description', UnicodeText),
 	Column('quantity', Integer),
