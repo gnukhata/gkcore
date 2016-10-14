@@ -58,7 +58,16 @@ def gkLogin(request):
 		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
 			record = result.fetchone()
-
+			result = con.execute(select([gkdb.signature]))
+			sign = result.fetchone()
+			if len(sign["secretcode"]) <= 15:
+				result = self.con.execute(gkdb.signature.delete())
+				if result.rowcount == 1:
+					key = RSA.generate(2560)
+					privatekey = key.exportKey('PEM')
+					sig = {"secretcode":privatekey}
+					gkcore.secret = privatekey
+					result = self.con.execute(gkdb.signature.insert(),[sig])
 			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 			return {"gkstatus":enumdict["Success"],"token":token }
 		else:
