@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
+from sqlalchemy.dialects.postgresql.json import JSONB
 
 """
 This module contains the sqlalchemy expression based table definitions.
@@ -255,21 +256,16 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderno',UnicodeText, primary_key=True),
 	Column('podate', DateTime, nullable=False),
 	Column('maxdate', DateTime, nullable=False),
-	Column('csid',Integer),
-	Column('deliveryplaceaddr', UnicodeText),
 	Column('datedelivery',DateTime),
+	Column('deliveryplaceaddr', UnicodeText),
+	Column('payterms',UnicodeText),
+	Column('schedule',UnicodeText),
 	Column('modeoftransport', UnicodeText),
-	Column('packagingperunit',JSONB),
-	Column('deliverystaggered', Integer),
-	Column('description', UnicodeText),
-	Column('quantity', Integer),
-	Column('rateperunit',JSONB),
-	Column('unitsperlot',JSONB),
-	Column('termofpayment', UnicodeText),
-	Column('shipment', UnicodeText),
+	Column('packaging',JSONB),
+	Column('tax',JSONB),
+	Column('productdetails', JSONB),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-    Column('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
-    Column('productcode',Integer,ForeignKey('product.productcode',ondelete="CASCADE"), nullable=False),
+	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","podate"),
 )
