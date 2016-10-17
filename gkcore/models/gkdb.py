@@ -267,7 +267,7 @@ invoice = Table('invoice',metadata,
 	Column('orderno', UnicodeText,ForeignKey('purchaseorder.orderno')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Column('orderno',UnicodeText, ForeignKey('purchaseorder.orderno',ondelete="CASCADE")),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_invoicenoindex","invoiceno")
 	)
@@ -286,7 +286,7 @@ delchal = Table('delchal',metadata,
 	Column('dcdate',UnicodeText,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Column('orderno',UnicodeText, ForeignKey('purchaseorder.orderno',ondelete="CASCADE")),
 	UniqueConstraint('orgcode','dcno'),
 	Index("delchal_orgcodeindex","orgcode"),
 	Index("delchal_dcnoindex","dcno")
@@ -322,14 +322,14 @@ stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
 	Column('qty',Integer,nullable=False),
-	Column('dcinvid', Integer,nullable=False),
-	Column('dcinvflag',Integer,nullable=False),
+	Column('dcinvtnid', Integer,nullable=False),
+	Column('dcinvtnflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("stock_orgcodeindex","orgcode"),
 	Index("stock_productcodeindex","productcode"),
-	Index("stock_dcinvid","dcinvid")
+	Index("stock_dcinvtnid","dcinvtnid")
 	)
 
 
@@ -422,17 +422,17 @@ godown = Table('godown',metadata,
 """
 
 transfernote = Table('transfernote',metadata,
-                     Column('transfernoteno',UnicodeText,primary_key=True),
-                     Column('transfernotedate', DateTime, nullable=False),
-                     Column('tronsportationmode', UnicodeText),
-                     Column('productdetails',JSONB, nullable = False),
-                     Column('nopkt',Integer),
-                     Column('recieved', Boolean),
-                     Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete="CASCADE"),nullable = False),
-                     Column('togodown',Integer,Foreignkey('godown.goid', ondelete = "CASCADE"),nullable = False),
-                     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-                     Index("transfernote_date",'transfernodate'),
-                     Index("transfernote_fromgodown",'fromgodown'),
-                     Index("transfernote_togodown",'transfernodate'),
-                     Index("transfernote_orgcode","orgcode")
-                     ) 
+	Column('transfernoteno',UnicodeText,primary_key=True),
+	Column('transfernotedate', DateTime, nullable=False),
+	Column('transportationmode', UnicodeText),
+	Column('productdetails',JSONB, nullable = False),
+	Column('nopkt',Integer),
+	Column('recieved', BOOLEAN),
+	Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete="CASCADE"),nullable = False),
+	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
+	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	Index("transfernote_date",'transfernotedate'),
+	Index("transfernote_fromgodown",'fromgodown'),
+	Index("transfernote_togodown",'togodown'),
+	Index("transfernote_orgcode","orgcode")
+) 
