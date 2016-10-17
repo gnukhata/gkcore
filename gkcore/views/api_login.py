@@ -37,6 +37,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
+from Crypto.PublicKey import RSA
 import jwt
 import gkcore
 con= Connection
@@ -60,14 +61,20 @@ def gkLogin(request):
 			record = result.fetchone()
 			result = con.execute(select([gkdb.signature]))
 			sign = result.fetchone()
-			if len(sign["secretcode"]) <= 15:
-				result = self.con.execute(gkdb.signature.delete())
+			if sign == None:
+				key = RSA.generate(2560)
+				privatekey = key.exportKey('PEM')
+				sig = {"secretcode":privatekey}
+				gkcore.secret = privatekey
+				result = con.execute(gkdb.signature.insert(),[sig])
+			elif len(sign["secretcode"]) <= 20:
+				result = con.execute(gkdb.signature.delete())
 				if result.rowcount == 1:
 					key = RSA.generate(2560)
 					privatekey = key.exportKey('PEM')
 					sig = {"secretcode":privatekey}
 					gkcore.secret = privatekey
-					result = self.con.execute(gkdb.signature.insert(),[sig])
+					result = con.execute(gkdb.signature.insert(),[sig])
 			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 			return {"gkstatus":enumdict["Success"],"token":token }
 		else:
