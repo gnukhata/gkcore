@@ -118,6 +118,33 @@ class category(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_method='GET',request_param="type=topcategories",renderer='json')
+	def getTopCategories(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode]).where(and_(gkdb.categorysubcategories.c.orgcode == authDetails["orgcode"],gkdb.categorysubcategories.c.subcategoryof  == null())).order_by(gkdb.categorysubcategories.c.categoryname))
+				topcategories = []
+				for row in result:
+					countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== row["categorycode"]))
+					countrow = countResult.fetchone()
+					subcount = countrow["subcount"]
+					topcategories.append({"categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcount":subcount})
+				return{"gkstatus":enumdict["Success"],"gkresult":topcategories}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+
 	@view_config(request_method='GET',request_param="type=parent",renderer='json')
 	def getParent(self):
 		try:
@@ -139,6 +166,7 @@ class category(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
 
 	@view_config(request_method='GET',request_param="type=children",renderer='json')
 	def getChildren(self):
@@ -162,6 +190,9 @@ class category(object):
 					categories.append({"categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
 
+			except exc.IntegrityError:
+				self.con.close()
+				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
