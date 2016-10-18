@@ -39,13 +39,6 @@ After creating all tables, it will also create the signature based on timestamp 
 eng = dbconnect()
 metadata.create_all(eng)
 print "database created successfully"
-curtime=datetime.datetime.now()
-str_time=str(curtime.microsecond)
-new_microsecond=str_time[0:2]
-
-secret = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + new_microsecond
-
-eng.execute("insert into signature values(%s)"%secret)
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
 eng.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
 eng.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")

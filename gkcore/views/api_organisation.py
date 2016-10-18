@@ -39,7 +39,7 @@ from sqlalchemy import and_
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-
+from Crypto.PublicKey import RSA
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
@@ -85,6 +85,14 @@ class api_organisation(object):
 			dataset = self.request.json_body
 			orgdata = dataset["orgdetails"]
 			userdata = dataset["userdetails"]
+			result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
+			orgcount = result.fetchone()
+			if orgcount["ocount"]==0:
+				key = RSA.generate(2560)
+				privatekey = key.exportKey('PEM')
+				sig = {"secretcode":privatekey}
+				gkcore.secret = privatekey
+				result = self.con.execute(gkdb.signature.insert(),[sig])
 			result = self.con.execute(gkdb.organisation.insert(),[orgdata])
 			if result.rowcount==1:
 				code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
@@ -330,6 +338,11 @@ class api_organisation(object):
 				userRole = user.fetchone()
 				if userRole[0]==-1:
 					result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+					if result.rowcount == 1:
+						result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
+						orgcount = result.fetchone()
+						if orgcount["ocount"]==0:
+							result = self.con.execute(gkdb.signature.delete())
 					self.con.close()
 					return {"gkstatus":enumdict["Success"]}
 				else:
