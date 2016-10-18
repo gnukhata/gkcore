@@ -42,128 +42,128 @@ from gkcore.models.meta import dbconnect
 
 @view_defaults(route_name='purchaseorder')
 class api_purchaseorder(object):
-    def __init__(self,request):
-        self.request = Request
-        self.request = request
-        self.con = Connection
-        print "Purchase order initialized"
+	def __init__(self,request):
+		self.request = Request
+		self.request = request
+		self.con = Connection
+		print "Purchase order initialized"
 
-    @view_config(request_method='POST',renderer='json')
-    def addPurchaseorder(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                """ self.con = eng.connect()
-                dtset = self.request.json_body
-                podataset = dtset["purchaseorder"]
-                productdataset = dtset["product"]
-                custdataset = dtset["customerandsupplier"]
-                podataset["orgcode"] = authDetails["orgcode"]
-                productdataset["orgcode"] = authDetails["orgcode"]
-                custdataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(gkdb.purchaseorder.insert(),[podataset])"""
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(gkdb.purchaseorder.insert(),[dataset])
-                return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-
-    @view_config(request_param='po=all',request_method='GET',renderer='json')
-    def getAllPurchaseorders(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(select([gkdb.purchaseorder.c.orderno, gkdb.purchaseorder.c.podate, gkdb.purchaseorder.c.buyername, gkdb.purchaseorder.c.suppliername, gkdb.purchaseorder.c.datedelivery, gkdb.purchaseorder.c.quantity, gkdb.purchaseorder.c.termofpayment, gkdb.purchaseorder.c.orgcode]).order_by(gkdb.purchaseorder.c.podate))
-                purchaseorders = []
-                for row in result:
-                    products.append({"orderno": row["orderno"], "podate":row["podate"] , "maxdate":row["maxdate"], "buyername": row["buyername"], "custid": row["custid"], "datedelivery": row["datedelivery"], "quantity": row["quantity"], "termofpayment": row["termofpayment"], "orgcode": row["orgcode"] })
-                self.con.close()
-                return {"gkstatus":enumdict["Success"], "gkdata":purchaseorders}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-
-    @view_config(request_param='po=single',request_method='GET',renderer='json')
-    def getPurchaseorder(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(select([gkdb.purchaseorder]).where(gkdb.purchaseorder.c.orderno == self.request.params["orderno"]))
-                row = result.fetchone()
-                purchaseOrderDetails = {"orderno": row["orderno"], "podate": row["podate"], "maxdate": row["maxdate"],"buyername": row["buyername"], "buyeraddr": row["buyeraddr"],  "buyercontact": row["buyercontact"], "buyeremail": row["buyeremail"],  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": row["datedelivery"], "modeoftransport": row["modeoftransport"],"packagingperunit": row["packagingperunit"],"deliverystaggered": row["deliverystaggered"], "description": row["description"], "quantity": row["quantity"], "rateperunit": row["rateperunit"], "unitsperlot":row["unitsperlot"], "termofpayment": row["termofpayment"],  "shipment": row["shipment"], "orgcode": row["orgcode"],"custid": row["custid"],"productcode": row["productcode"]}
-                self.con.close()
-                return {"gkstatus":enumdict["Success"],"gkdata":purchaseOrderDetails}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+	@view_config(request_method='POST',renderer='json')
+	def addPurchaseorder(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				""" self.con = eng.connect()
+				dtset = self.request.json_body
+				podataset = dtset["purchaseorder"]
+				productdataset = dtset["product"]
+				custdataset = dtset["customerandsupplier"]
+				podataset["orgcode"] = authDetails["orgcode"]
+				productdataset["orgcode"] = authDetails["orgcode"]
+				custdataset["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(gkdb.purchaseorder.insert(),[podataset])"""
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				dataset["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(gkdb.purchaseorder.insert(),[dataset])
+				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
-    @view_config(request_method='PUT',renderer='json')
-    def editPurchaseOrder(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(gkdb.purchaseorder.update().where(gkdb.purchaseorder.c.orderno == dataset["orderno"]).values(dataset))
-                return {"gkstatus":enumdict["Success"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+	@view_config(request_param='po=all',request_method='GET',renderer='json')
+	def getAllPurchaseorders(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.purchaseorder.c.orderno, gkdb.purchaseorder.c.podate, gkdb.purchaseorder.c.buyername, gkdb.purchaseorder.c.suppliername, gkdb.purchaseorder.c.datedelivery, gkdb.purchaseorder.c.quantity, gkdb.purchaseorder.c.termofpayment, gkdb.purchaseorder.c.orgcode]).order_by(gkdb.purchaseorder.c.podate))
+				purchaseorders = []
+				for row in result:
+					products.append({"orderno": row["orderno"], "podate":row["podate"] , "maxdate":row["maxdate"], "buyername": row["buyername"], "custid": row["custid"], "datedelivery": row["datedelivery"], "quantity": row["quantity"], "termofpayment": row["termofpayment"], "orgcode": row["orgcode"] })
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkdata":purchaseorders}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='po=single',request_method='GET',renderer='json')
+	def getPurchaseorder(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.purchaseorder]).where(gkdb.purchaseorder.c.orderno == self.request.params["orderno"]))
+				row = result.fetchone()
+				purchaseOrderDetails = {"orderno": row["orderno"], "podate": row["podate"], "maxdate": row["maxdate"],"buyername": row["buyername"], "buyeraddr": row["buyeraddr"],  "buyercontact": row["buyercontact"], "buyeremail": row["buyeremail"],  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": row["datedelivery"], "modeoftransport": row["modeoftransport"],"packagingperunit": row["packagingperunit"],"deliverystaggered": row["deliverystaggered"], "description": row["description"], "quantity": row["quantity"], "rateperunit": row["rateperunit"], "unitsperlot":row["unitsperlot"], "termofpayment": row["termofpayment"],  "shipment": row["shipment"], "orgcode": row["orgcode"],"custid": row["custid"],"productcode": row["productcode"]}
+				self.con.close()
+				return {"gkstatus":enumdict["Success"],"gkdata":purchaseOrderDetails}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
-    @view_config(request_method='DELETE',renderer='json')
-    def deletePurchaseOrder(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(gkdb.purchaseorder.delete().where(gkdb.purchaseorder.c.orderno == dataset["orderno"]))
-                return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+	@view_config(request_method='PUT',renderer='json')
+	def editPurchaseOrder(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.purchaseorder.update().where(gkdb.purchaseorder.c.orderno == dataset["orderno"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+
+	@view_config(request_method='DELETE',renderer='json')
+	def deletePurchaseOrder(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.purchaseorder.delete().where(gkdb.purchaseorder.c.orderno == dataset["orderno"]))
+				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
