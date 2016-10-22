@@ -90,7 +90,28 @@ class api_transfernote(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
 				
+	@view_config(request_method='PUT', renderer='json')
+	def editransfernote(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno==dataset["transfernoteno"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+	
 				
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteTransferNote(self):
