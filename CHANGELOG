@@ -1,3 +1,6 @@
+[18-Oct-2016 Release 3.0.1]
+* Now the signature generated is a 2560 bits RSA key.
+
 [04-July-2016 Release 3.0]
 * Unique feature for attaching official documents with vouchers (invoices, bills etc).
 * Running Dr and Cr totals in printed reports like ledger, trial balance, cash flow and project statement.
