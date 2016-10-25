@@ -33,6 +33,18 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     README = f.read()
 
+requires = [
+    'pyramid',
+    'psycopg2',
+    'WebOb',
+    'waitress',
+    'wsgicors',
+    'sqlalchemy',
+    'monthdelta',
+    'pyjwt',
+    'pycrypto',
+    'supervisor',
+]
 
 setup(name='gkcore',
       version=0.1,
@@ -51,7 +63,7 @@ setup(name='gkcore',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=['waitress'],
+      install_requires=requires,
       entry_points = """\
       [paste.app_factory]
       main=gkcore:main
