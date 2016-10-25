@@ -127,6 +127,9 @@ class api_transfernote(object):
 				dataset = self.request.json_body
 				tnno = dataset["transfernoteno"]
 				togodown = dataset["togodown"]
+				orgcode = dataset["orgcode"]
+				productdict = dataset["productdetails"]
+				productkey = productdict.keys()
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == tnno).value(recieved = True))
 				try:
 					for key in productkey:
@@ -140,7 +143,7 @@ class api_transfernote(object):
 						stockdata["orgcode"] = orgcode
 						pas = self.con.execute(stock.insert(),[stockdata])
 				except:
-					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
+					result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == tnno).value(recieved = False))
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				
 				return {"gkstatus":enumdict["Success"]}
