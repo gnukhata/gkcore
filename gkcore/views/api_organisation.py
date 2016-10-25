@@ -85,7 +85,6 @@ class api_organisation(object):
 			dataset = self.request.json_body
 			orgdata = dataset["orgdetails"]
 			userdata = dataset["userdetails"]
-			print "kjbkjbiugijbn;iuhijbiybvluhvpiybulyvulyvouyvulyv"
 			result = self.con.execute(select([gkdb.signature]))
 			sign = result.fetchone()
 			if sign == None:
