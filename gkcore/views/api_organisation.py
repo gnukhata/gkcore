@@ -369,7 +369,6 @@ class api_organisation(object):
 			finend = self.request.params["finend"]
 			orgncount = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('orgcode')]).where(and_(gkdb.organisation.c.orgname==orgname,gkdb.organisation.c.orgtype==orgtype, gkdb.organisation.c.yearstart==finstart,gkdb.organisation.c.yearend==finend)))
 			org = orgncount.fetchone()
-			print org
 			if org["orgcode"] !=0:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			else:
