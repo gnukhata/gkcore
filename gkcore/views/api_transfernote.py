@@ -77,9 +77,9 @@ class api_transfernote(object):
 						stockdata["inout"] = 1
 						stockdata["qty"] = productdict[key]
 						stockdata["orgcode"] = orgcode
-						print stockdata
 						pas = self.con.execute(stock.insert(),[stockdata])
 				except:
+					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
@@ -125,7 +125,24 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno==dataset["transfernoteno"]).values(dataset))
+				tnno = dataset["transfernoteno"]
+				togodown = dataset["togodown"]
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == tnno).value(recieved = True))
+				try:
+					for key in productkey:
+						stockdata = {}
+						stockdata["productcode"] = key
+						stockdata["dcinvtnid"] = tnno
+						stockdata["dcinvtnflag"] = 20
+						stockdata["goid"] = togodown
+						stockdata["inout"] = 0
+						stockdata["qty"] = productdict[key]
+						stockdata["orgcode"] = orgcode
+						pas = self.con.execute(stock.insert(),[stockdata])
+				except:
+					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
