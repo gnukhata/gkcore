@@ -85,14 +85,22 @@ class api_organisation(object):
 			dataset = self.request.json_body
 			orgdata = dataset["orgdetails"]
 			userdata = dataset["userdetails"]
-			result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
-			orgcount = result.fetchone()
-			if orgcount["ocount"]==0:
+			result = self.con.execute(select([gkdb.signature]))
+			sign = result.fetchone()
+			if sign == None:
 				key = RSA.generate(2560)
 				privatekey = key.exportKey('PEM')
 				sig = {"secretcode":privatekey}
 				gkcore.secret = privatekey
 				result = self.con.execute(gkdb.signature.insert(),[sig])
+			elif len(sign["secretcode"]) <= 20:
+				result = con.execute(gkdb.signature.delete())
+				if result.rowcount == 1:
+					key = RSA.generate(2560)
+					privatekey = key.exportKey('PEM')
+					sig = {"secretcode":privatekey}
+					gkcore.secret = privatekey
+					result = self.con.execute(gkdb.signature.insert(),[sig])
 			result = self.con.execute(gkdb.organisation.insert(),[orgdata])
 			if result.rowcount==1:
 				code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
