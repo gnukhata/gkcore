@@ -107,7 +107,6 @@ class api_user(object):
 				result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				row = result.fetchone()
 				User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
-				print User
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -131,7 +130,6 @@ class api_user(object):
 				dataset = self.request.json_body
 				if userRole[0]==-1 or authDetails["userid"]==dataset["userid"]:
 					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-					print result.rowcount
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
