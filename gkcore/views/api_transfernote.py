@@ -22,6 +22,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Prajkta Patkar"<prajkta.patkar007@gmail.com>
 """
 
 
@@ -35,6 +36,7 @@ from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ ,exc
+from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
@@ -45,6 +47,7 @@ class api_transfernote(object):
 		self.request = Request
 		self.request = request
 		self.con = Connection
+		print "transfernote initialized"
 		
 	@view_config(request_method='POST',renderer='json')
 	def createtn(self):
@@ -60,23 +63,18 @@ class api_transfernote(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				fromgodown = dataset["fromgodown"]
-				tnno = dataset["transfernoteno"]
-				orgcode = dataset["orgcode"]
-				productdict = dataset["productdetails"]
-				productkey = productdict.keys()
-				print productkey
 				result = self.con.execute(transfernote.insert(),[dataset])
+				productdict = dataset["productdetails"]
 				try:
-					for key in productkey:
+					for key in productdict.keys():
 						stockdata = {}
 						stockdata["productcode"] = key
-						stockdata["dcinvtnid"] = tnno
+						stockdata["dcinvtnid"] = dataset["transfernoteno"]
 						stockdata["dcinvtnflag"] = 20
-						stockdata["goid"] = fromgodown
+						stockdata["goid"] = dataset["fromgodown"]
 						stockdata["inout"] = 1
 						stockdata["qty"] = productdict[key]
-						stockdata["orgcode"] = orgcode
+						stockdata["orgcode"] = dataset["orgcode"]
 						pas = self.con.execute(stock.insert(),[stockdata])
 				except:
 					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
@@ -89,9 +87,10 @@ class api_transfernote(object):
 			finally:
 				self.con.close()
 				
-	@view_config(request_param="tn=all",request_method='GET',renderer='json')
+	@view_config(request_param='tn=all',request_method='GET',renderer='json')
 	def getAllTransferNote(self):
 		try:
+			#print transfernote all
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -101,12 +100,12 @@ class api_transfernote(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([transfernote.c.transfernoteno, transfernote.c.transfernotedate,transfernote.c.transportationmode,transfernote.c.productdetails,transfernote.c.nopkt, transfernote.c.recieved,transfernote.c.fromgodown,transfernote.c.togodown,transfernote.c.orgcode]).order_by(transfernote.c.transfernotedate))
-				transfernote = []
+				result = self.con.execute(select([transfernote]).order_by(transfernote.c.transfernotedate))
+				tn = []
 				for row in result:
-					tn.append({"TransferNote no": row["transfernoteno"], "TransferNote Date":row["transfernotedate"] , "Transportation Mode":row["transportationmode"], "Product Details": row["productdetails"], "No. of packets": row["nopkt"], "Recieved": row["recieved"], "From godown": row["fromgodown"], "To godown": row["togodown"], "OrgCode": row["orgcode"] })
+					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": row["fromgodown"], "togodown": row["togodown"], "orgcode": row["orgcode"] })
 				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkdata":transfernote}
+				return {"gkstatus":enumdict["Success"], "gkdata":tn}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -166,9 +165,12 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteno == dataset["transfernoteno"]))
-				#result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["dcid"],stock.c.dcinvflag==4)))
-				return {"gkstatus":enumdict["Success"]}
+				tnno = dataset["transfernoteno"]
+				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteno == tnno))
+				
+				if result.rowcount==1:
+					result = self.con.execute(stock.delete().where(stock.c.dcinvtnid == tnno))
+					return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
