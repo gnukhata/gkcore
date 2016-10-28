@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
+from sqlalchemy.dialects.postgresql.json import JSONB
 
 """
 This module contains the sqlalchemy expression based table definitions.
@@ -45,7 +46,7 @@ Date
 	 #<- time abstraction field
 	)
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
-from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText
+from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText, Integer
 from sqlalchemy import MetaData
 
 #metadata is the module that converts Python code into real sql statements, specially for creating tables.
@@ -246,48 +247,7 @@ vouchers=Table('vouchers', metadata,
 	Index("voucher_vdate","voucherdate")
 	)
 
-"""
-table for purchase order.
-This may or may not link to a certain invoice.
-However if it is linked then we will have to compare the items with those in invoice.
-"""
-purchaseorder = Table( 'purchaseorder' , metadata,
-	Column('orderno',UnicodeText, primary_key=True),
-	Column('podate', DateTime, nullable=False),
-	Column('buyername', UnicodeText, nullable=False),
-	Column('buyeraddr', UnicodeText),
-	Column('buyercontact', UnicodeText),
-	Column('buyeremail', UnicodeText),
-	Column('suppliername', UnicodeText, nullable=False),
-	Column('supplieraddr', UnicodeText),
-	Column('suppliercontact', UnicodeText),
-	Column('supplieremail', UnicodeText),
-	Column('deliveryplaceaddr', UnicodeText),
-	Column('datedelivery',DateTime),
-	Column('deliverystaggered', Integer),
-	Column('description', UnicodeText),
-	Column('quantity', Integer),
-	Column('rateperunit',JSONB),
-	Column('termofpayment', UnicodeText),
-	Column('shipment', UnicodeText),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Index("purchaseorder_orgcodeindex","orgcode"),
-	Index("purchaseorder_date","podate"),
-)
 
-"""
-Table for storing godown details.
-Basically one organization may have many godowns and we aught to know from which one goods have moved out.
-"""
-godown = Table('godown',metadata,
-	Column('goid',Integer,primary_key=True),
-	Column('goname',UnicodeText),
-	Column('goaddr',UnicodeText),
-	Column('gocontact',UnicodeText),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','goname'),
-	Index("godown_orgcodeindex","orgcode")
-	)
 
 """
 Table for storing invoice records.
@@ -307,7 +267,7 @@ invoice = Table('invoice',metadata,
 	Column('orderno', UnicodeText,ForeignKey('purchaseorder.orderno')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Column('orderno',UnicodeText, ForeignKey('purchaseorder.orderno',ondelete="CASCADE")),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_invoicenoindex","invoiceno")
 	)
@@ -326,7 +286,7 @@ delchal = Table('delchal',metadata,
 	Column('dcdate',UnicodeText,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+	Column('orderno',UnicodeText, ForeignKey('purchaseorder.orderno',ondelete="CASCADE")),
 	UniqueConstraint('orgcode','dcno'),
 	Index("delchal_orgcodeindex","orgcode"),
 	Index("delchal_dcnoindex","dcno")
@@ -362,14 +322,14 @@ stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
 	Column('qty',Integer,nullable=False),
-	Column('dcinvid', Integer,nullable=False),
-	Column('dcinvflag',Integer,nullable=False),
+	Column('dcinvtnid', Integer,nullable=False),
+	Column('dcinvtnflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
 	Index("stock_orgcodeindex","orgcode"),
 	Index("stock_productcodeindex","productcode"),
-	Index("stock_dcinvid","dcinvid")
+	Index("stock_dcinvtnid","dcinvtnid")
 	)
 
 
@@ -420,3 +380,59 @@ voucherbin=Table('voucherbin', metadata,
 	Index("binvoucher_vno","vouchernumber"),
 	Index("binvoucher_vdate","voucherdate")
 	)
+
+"""
+table for purchase order.
+This may or may not link to a certain invoice.
+However if it is linked then we will have to compare the items with those in invoice.
+"""
+purchaseorder = Table( 'purchaseorder' , metadata,
+    Column('orderno',UnicodeText, primary_key=True),
+    Column('podate', DateTime, nullable=False),
+    Column('maxdate', DateTime, nullable=False),
+    Column('datedelivery',DateTime),
+    Column('deliveryplaceaddr', UnicodeText),
+    Column('payterms',UnicodeText),
+    Column('schedule',UnicodeText),
+    Column('modeoftransport', UnicodeText),
+    Column('packaging',JSONB),
+    Column('tax',JSONB),
+    Column('productdetails', JSONB),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
+    Index("purchaseorder_orgcodeindex","orgcode"),
+    Index("purchaseorder_date","podate"),
+)
+
+"""
+Table for storing godown details.
+Basically one organization may have many godowns and we aught to know from which one goods have moved out.
+"""
+godown = Table('godown',metadata,
+    Column('goid',Integer,primary_key=True),
+    Column('goname',UnicodeText),
+    Column('goaddr',UnicodeText),
+    Column('gocontact',UnicodeText),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','goname'),
+    Index("godown_orgcodeindex","orgcode")
+    )
+
+""" Table for transferNote details.
+"""
+
+transfernote = Table('transfernote',metadata,
+	Column('transfernoteno',UnicodeText,primary_key=True),
+	Column('transfernotedate', DateTime, nullable=False),
+	Column('transportationmode', UnicodeText),
+	Column('productdetails',JSONB, nullable = False),
+	Column('nopkt',Integer),
+	Column('recieved', BOOLEAN),
+	Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete="CASCADE"),nullable = False),
+	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
+	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	Index("transfernote_date",'transfernotedate'),
+	Index("transfernote_fromgodown",'fromgodown'),
+	Index("transfernote_togodown",'togodown'),
+	Index("transfernote_orgcode","orgcode")
+) 
