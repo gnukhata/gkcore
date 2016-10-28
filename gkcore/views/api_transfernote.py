@@ -74,7 +74,7 @@ class api_transfernote(object):
 						stockdata["goid"] = dataset["fromgodown"]
 						stockdata["inout"] = 1
 						stockdata["qty"] = productdict[key]
-						stockdata["orgcode"] = dataset["orgcode"]
+						stockdata["orgcode"] = authDetails["orgcode"]
 						pas = self.con.execute(stock.insert(),[stockdata])
 				except:
 					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
@@ -135,7 +135,7 @@ class api_transfernote(object):
 					
 					if (productchanged == True):
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)))
-                        
+						print hello
 						for key in productdict.keys():	 
 							stockdata = {}
 							stockdata["productcode"] = key
@@ -144,19 +144,12 @@ class api_transfernote(object):
 							stockdata["goid"] = dataset["fromgodown"]
 							stockdata["inout"] = 1
 							stockdata["qty"] = productdict[key]
-							stockdata["orgcode"] = dataset["orgcode"]
+							stockdata["orgcode"] = authDetails["orgcode"]
 							pas = self.con.execute(stock.insert(),[stockdata])
 							
 							if dataset.has_key("togodown"):
-								for key in productdict.keys():
-									stockdata = {}
-									stockdata["productcode"] = key
-									stockdata["dcinvtnid"] = dataset["transfernoteno"]
-									stockdata["dcinvtnflag"] = 20
 									stockdata["goid"] = dataset["togodown"]
 									stockdata["inout"] = 0
-									stockdata["qty"] = productdict[key]
-									stockdata["orgcode"] = dataset["orgcode"]
 									pas = self.con.execute(stock.insert(),[stockdata])
 									
 								
