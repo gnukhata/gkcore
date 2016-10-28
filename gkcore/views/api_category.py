@@ -198,6 +198,27 @@ class category(object):
 			finally:
 				self.con.close()
 
+	@view_config(request_method='GET',request_param="type=single",renderer='json')
+	def getCategory(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				category_code = self.request.params['categorycode']
+				result = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.categorycode  == category_code) )
+				row = result.fetchone()
+				category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"tax":row["tax"]}
+				return{"gkstatus":enumdict["Success"],"gkresult":category}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
 	def editCategory(self):
