@@ -128,12 +128,12 @@ class api_transfernote(object):
 				print dataset
 				product = dataset["productdetails"]
 				productchanged = dataset["productchnaged"]
-				del dataet["productchanged"]
+				del dataset["productchanged"]
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == dataset["transfernoteno"]).values(dataset))
 #				try:
 				if (productchanged == True):
 						
-						result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid == tnno, stock.c.dcinvtnflag == 20)).values(product))
+						result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)).values(product))
 					
 				
 #				return {"gkstatus":enumdict["Success"]}		   
