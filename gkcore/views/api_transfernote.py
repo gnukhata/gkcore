@@ -126,25 +126,54 @@ class api_transfernote(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				print dataset
-				product = dataset["productdetails"]
-				productchanged = dataset["productchnaged"]
+				productdict = dataset["productdetails"]
+				productchanged = dataset["productchanged"]
+				
 				del dataset["productchanged"]
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == dataset["transfernoteno"]).values(dataset))
-#				try:
-				if (productchanged == True):
-						
-						result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)).values(product))
+				try:
 					
-				
-#				return {"gkstatus":enumdict["Success"]}		   
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					if (productchanged == True):
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)))
+                        
+						for key in productdict.keys():	 
+							stockdata = {}
+							stockdata["productcode"] = key
+							stockdata["dcinvtnid"] = dataset["transfernoteno"]
+							stockdata["dcinvtnflag"] = 20
+							stockdata["goid"] = dataset["fromgodown"]
+							stockdata["inout"] = 1
+							stockdata["qty"] = productdict[key]
+							stockdata["orgcode"] = dataset["orgcode"]
+							pas = self.con.execute(stock.insert(),[stockdata])
+							
+							if dataset.has_key("togodown"):
+								for key in productdict.keys():
+									stockdata = {}
+									stockdata["productcode"] = key
+									stockdata["dcinvtnid"] = dataset["transfernoteno"]
+									stockdata["dcinvtnflag"] = 20
+									stockdata["goid"] = dataset["togodown"]
+									stockdata["inout"] = 0
+									stockdata["qty"] = productdict[key]
+									stockdata["orgcode"] = dataset["orgcode"]
+									pas = self.con.execute(stock.insert(),[stockdata])
+									
+								
+				except:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					
+						
+					   			
+				return {"gkstatus":enumdict["Success"]}		   
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
 					
 
 				
-	@view_config(request_param='received = true',request_method='PUT', renderer='json')
+	@view_config(request_param='received=true',request_method='PUT', renderer='json')
 	def editransfernote(self):
 		try:
 			token = self.request.headers["gktoken"]
