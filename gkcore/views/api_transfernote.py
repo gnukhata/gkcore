@@ -125,11 +125,20 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
+				print dataset
+				product = dataset["productdetails"]
+				productchanged = dataset["productchnaged"]
+				del dataet["productchanged"]
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == dataset["transfernoteno"]).values(dataset))
+#				try:
+				if (productchanged == True):
+						
+						result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid == tnno, stock.c.dcinvtnflag == 20)).values(product))
+					
 				
-				return {"gkstatus":enumdict["Success"]}		   
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#				return {"gkstatus":enumdict["Success"]}		   
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
 					
