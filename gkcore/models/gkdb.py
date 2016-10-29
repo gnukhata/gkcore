@@ -167,6 +167,7 @@ users=Table('users', metadata,
 	Column('userrole',Integer, nullable=False),
 	Column('userquestion',Text, nullable=False),
 	Column('useranswer',Text, nullable=False),
+    Column('themename',UnicodeText,default=unicode("Default","utf-8")),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','username'),
 	Index("userindex","orgcode","username")
