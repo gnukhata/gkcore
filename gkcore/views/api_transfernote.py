@@ -74,7 +74,7 @@ class api_transfernote(object):
 						stockdata["goid"] = dataset["fromgodown"]
 						stockdata["inout"] = 1
 						stockdata["qty"] = productdict[key]
-						stockdata["orgcode"] = dataset["orgcode"]
+						stockdata["orgcode"] = authDetails["orgcode"]
 						pas = self.con.execute(stock.insert(),[stockdata])
 				except:
 					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
@@ -109,9 +109,64 @@ class api_transfernote(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
+			finally:
+				self.con.close()
 				
 	@view_config(request_method='PUT', renderer='json')
+	def updatetransfernote(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				print dataset
+				productdict = dataset["productdetails"]
+				productchanged = dataset["productchanged"]
+				
+				del dataset["productchanged"]
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == dataset["transfernoteno"]).values(dataset))
+				try:
+					
+					if (productchanged == True):
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)))
+						print hello
+						for key in productdict.keys():	 
+							stockdata = {}
+							stockdata["productcode"] = key
+							stockdata["dcinvtnid"] = dataset["transfernoteno"]
+							stockdata["dcinvtnflag"] = 20
+							stockdata["goid"] = dataset["fromgodown"]
+							stockdata["inout"] = 1
+							stockdata["qty"] = productdict[key]
+							stockdata["orgcode"] = authDetails["orgcode"]
+							pas = self.con.execute(stock.insert(),[stockdata])
+							
+							if dataset.has_key("togodown"):
+									stockdata["goid"] = dataset["togodown"]
+									stockdata["inout"] = 0
+									pas = self.con.execute(stock.insert(),[stockdata])
+									
+								
+				except:
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					
+						
+					   			
+				return {"gkstatus":enumdict["Success"]}		   
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+					
+
+				
+	@view_config(request_param='received=true',request_method='PUT', renderer='json')
 	def editransfernote(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -169,7 +224,7 @@ class api_transfernote(object):
 				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteno == tnno))
 				
 				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(stock.c.dcinvtnid == tnno))
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == tnno, stock.c.dcinvtnflag == 20)))
 					return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
