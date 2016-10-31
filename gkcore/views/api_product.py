@@ -48,7 +48,7 @@ class api_product(object):
 		self.request = Request
 		self.request = request
 		self.con = Connection
-		print "Product initialized"
+
 
 	@view_config(request_method='GET', renderer ='json')
 	def getAllProducts(self):
@@ -62,7 +62,7 @@ class api_product(object):
 		else:
 			try:
 				self.con=eng.connect()
-				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode]).order_by(gkdb.product.c.productdesc))
+				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 				products = []
 				for row in result:
 					products.append({"productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
@@ -87,7 +87,7 @@ class api_product(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
 				row = result.fetchone()
-				productDetails={"productcode": row["productcode"], "productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"]}
+				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
 			except:
