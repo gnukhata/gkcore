@@ -111,6 +111,7 @@ class api_transfernote(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
+                
 				
 	@view_config(request_method='PUT', renderer='json')
 	def updatetransfernote(self):
@@ -205,6 +206,12 @@ class api_transfernote(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+                
+                
+                
+                
+            
+
 	
 				
 	@view_config(request_method='DELETE', renderer ='json')

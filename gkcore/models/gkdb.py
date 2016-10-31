@@ -418,7 +418,7 @@ godown = Table('godown',metadata,
     Index("godown_orgcodeindex","orgcode")
     )
 
-""" Table for transferNote details.
+""" Table for transferNote details. 
 """
 
 transfernote = Table('transfernote',metadata,
@@ -438,12 +438,13 @@ transfernote = Table('transfernote',metadata,
 ) 
 
 
-
+""" Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records. 
+'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 20. """
 discrepancynote = Table ('discrepancynote' ,metadata,
      Column('discrepancyno',UnicodeText,primary_key= True),
      Column('discrepancydate',DateTime,nullable=False),
      Column('discrepancydetails',JSONB , nullable = False),
-     Column('dcinvpotnflag',Integer , nullable = False),
+     Column('dcinvpotnflag',Integer),
      Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
      Column('transfernoteno',UnicodeText,ForeignKey('transfernote.transfernoteno', ondelete="CASCADE"),nullable = False),
      Column('purchaseorderno',UnicodeText,ForeignKey('purchaseorder.orderno', ondelete="CASCADE"),nullable = False),
