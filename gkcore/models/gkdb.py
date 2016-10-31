@@ -440,7 +440,7 @@ transfernote = Table('transfernote',metadata,
 
 
 discrepancynote = Table ('discrepancynote' ,metadata,
-     Column('discrepancyno',UnicodeText,Primary_Key= True),
+     Column('discrepancyno',UnicodeText,primary_Key= True),
      Column('discrepancydate',DateTime,nullable=False),
      Column('discrepancydetails',JSONB , nullable = False),
      Column('dcinvpotnflag',Integer , nullable = False),
