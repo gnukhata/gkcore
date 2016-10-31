@@ -436,3 +436,20 @@ transfernote = Table('transfernote',metadata,
 	Index("transfernote_togodown",'togodown'),
 	Index("transfernote_orgcode","orgcode")
 ) 
+
+
+
+discrepancynote = Table ('discrepancynote' ,metadata,
+     Column('discrepancyno',UnicodeText,Primary_Key= True),
+     Column('discrepancydate',DateTime,nullable=False),
+     Column('discrepancydetails',JSONB , nullable = False),
+     Column('dcinvpotnflag',Integer , nullable = False),
+     Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
+     Column('transfernoteno',Integer,ForeignKey('transfernote.transfernoteno', ondelete="CASCADE"),nullable = False),
+     Column('purchaseorderno',Integer,ForeignKey('purchaseorder.orderno', ondelete="CASCADE"),nullable = False),
+     Column('delchalno',Integer,ForeignKey('delchal.dcid', ondelete="CASCADE"),nullable = False),
+     Column('invoiceno',Integer,ForeignKey('invoice.invid', ondelete="CASCADE"),nullable = False),
+     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+     Index("discrepancy_date",'discrepancydate'),
+     Index("discrepancy_details",'discrepancydetails')
+       )
