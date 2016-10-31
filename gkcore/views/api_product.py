@@ -67,7 +67,7 @@ class api_product(object):
 				for row in result:
 					products.append({"productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
 				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkdata":products}
+				return {"gkstatus":enumdict["Success"], "gkresult":products}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -89,7 +89,7 @@ class api_product(object):
 				row = result.fetchone()
 				productDetails={"productcode": row["productcode"], "productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"]}
 				self.con.close()
-				return {"gkstatus":enumdict["Success"],"gkdata":productDetails}
+				return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
