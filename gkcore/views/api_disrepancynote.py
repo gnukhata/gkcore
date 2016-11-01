@@ -43,7 +43,7 @@ from gkcore.models.meta import dbconnect
 
 
 @view_defaults(route_name='discrepancynote')
-class api_transfernote(object):
+class api_discrepancynote(object):
 	def __init__(self,request):
 		self.request = Request
 		self.request = request
@@ -95,14 +95,37 @@ class api_transfernote(object):
 					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] })
 					#print dn
 				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkresult":purchaseorders}
+				return {"gkstatus":enumdict["Success"], "gkresult":dn}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			
 			
 			
-			
+	@view_config(request_method='GET',request_param="dn=single",renderer='json')
+	def getDN(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				#dataset["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(select([discrepancynote]).where(discrepancynote.c.discrepancyno == self.request.params["discrepancyno"]))
+				row = result.fetchone()
+				discrepancynote = {"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] }
+				print discrepancynote
+				self.con.close()
+				return {"gkstatus":enumdict["Success"],"gkresult":discrepancynote}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
 			
 			
 	@view_config(request_method='PUT',renderer='json')
