@@ -30,7 +30,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import transfernote,delchal,invoice, stock
+from gkcore.models.gkdb import discrepancynote
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -60,51 +60,24 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				#result = self.con.execute(discrepancynote.insert(),[dataset])
-				dnproduct = dataset["discrepancydetails"]
-				try:
-					for key in dnproduct.keys():
-						result = self.con.execute(discrepancynote.insert(),[dataset])
-						dndata = {}
-						#dndata[discrepancyno]= dataset[discrepancynoteno]
-						#dndata[discrepancydate]= dataset[discrepancydate]
-						#dndata[]
-						
-						if dataset.has_key("delchalno"):
-							dndata["dcinvpotnflag"] = 4
-						 
-						elif dataset.has_key("invoiceno"):
-							dndata["dcinvpotnflag"] = 9
-							pas = self.con.execute(stock.insert(),[stockdata])
-						elif dataset.has_key("purchaseorderno"):
-							dndata["dcinvpotnflag"] = 16
-							pas = self.con.execute(stock.insert(),[stockdata])
-						elif dataset.has_key("transfernoteno"):
-							dndata["dcinvpotnflag"] = 20
-							
-						pas = self.con.execute(discrepancynote.insert(),[dndata])
-							
-				except:
-					# result = self.con.execute(discrepancynote.delete().where( discrepancynote.c.discrepancynoteno == dataset["discrepancynoteno"] ))
-					 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-					
-				
+				result = self.con.execute(discrepancynote.insert(),[dataset])
+			
 				return {"gkstatus":enumdict["Success"]}
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+			#except exc.IntegrityError:
+				#return {"gkstatus":enumdict["DuplicateEntry"]}
+			#except:
+				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			#finally:
+				#self.con.close()
 				
 				
 				
 	@view_config(request_param='dn=all',request_method='GET',renderer='json')
-	def getAllPurchaseorders(self):
+	def getAllDn(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -119,8 +92,8 @@ class api_transfernote(object):
 				dn = []
 				for row in result:
 					
-					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"transfernoteno":["transfernoteno"] })
-					#tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": row["fromgodown"], "togodown": row["togodown"], "orgcode": row["orgcode"] })
+					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] })
+				
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":purchaseorders}
 			except:
@@ -146,24 +119,7 @@ class api_transfernote(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(discrepancynote.update().where(discrepancynote.c.discrepancyno == dataset["discrepancyno"]).values(dataset))
-				try :
-					if dataset.has_key("delchalno"):
-							dataset["dcinvpotnflag"] = 4
-						 
-					elif dataset.has_key("invoiceno"):
-							dataset["dcinvpotnflag"] = 9
-							pas = self.con.execute(stock.insert(),[stockdata])
-					elif dataset.has_key("purchaseorderno"):
-							dataset["dcinvpotnflag"] = 16
-							pas = self.con.execute(stock.insert(),[stockdata])
-					elif dataset.has_key("transfernoteno"):
-							dndata["dcinvpotnflag"] = 20
-							
-					pas = self.con.execute(discrepancynote.insert(),[dndata])
-				except:
-					return {"gkstatus":enumdict["ConnectionFailed"]} 
-					
-					
+				
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
