@@ -144,7 +144,7 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(discrepancynote.delete().where(discrepancynote.c.discrepancynoteno == dataset["discrepancyno"]))
+				result = self.con.execute(discrepancynote.delete().where(discrepancynote.c.discrepancyno == dataset["discrepancyno"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
