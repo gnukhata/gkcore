@@ -60,19 +60,19 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(discrepancynote.insert(),[dataset])
 			
 				return {"gkstatus":enumdict["Success"]}
-			#except exc.IntegrityError:
-				#return {"gkstatus":enumdict["DuplicateEntry"]}
-			#except:
-				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
-				#self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 				
 				
 				
@@ -93,7 +93,7 @@ class api_transfernote(object):
 				for row in result:
 					
 					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] })
-				
+					#print dn
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":purchaseorders}
 			except:
