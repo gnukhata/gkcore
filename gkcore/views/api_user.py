@@ -253,7 +253,10 @@ class api_user(object):
 				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				self.con.execute("alter table users add column themename text default 'Default'")
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
 			finally:
 				self.con.close()
 	@view_config(route_name='user', request_method='GET', request_param='type=theme', renderer='json')
@@ -274,6 +277,11 @@ class api_user(object):
 #				print User
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				self.con = eng.connect()
+				self.con.execute("alter table users add column themename text default 'Default'")
+				result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				row = result.fetchone()
+#				print User
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 			finally:
 				self.con.close()
