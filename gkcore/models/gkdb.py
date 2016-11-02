@@ -418,7 +418,9 @@ godown = Table('godown',metadata,
     Index("godown_orgcodeindex","orgcode")
     )
 
-""" Table for transferNote details.
+""" Table for transferNote details. 
+    When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
+    
 """
 
 transfernote = Table('transfernote',metadata,
@@ -436,3 +438,18 @@ transfernote = Table('transfernote',metadata,
 	Index("transfernote_togodown",'togodown'),
 	Index("transfernote_orgcode","orgcode")
 ) 
+
+
+""" Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records. 
+'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 16. """
+discrepancynote = Table ('discrepancynote' ,metadata,
+     Column('discrepancyno',UnicodeText,primary_key= True),
+     Column('discrepancydate',DateTime,nullable=False),
+     Column('discrepancydetails',JSONB , nullable = False),
+     Column('dcinvpotncode',UnicodeText,nullable = False),
+     Column('dcinvpotnflag',Integer,nullable = False),
+     Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
+     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+     Index("discrepancy_date",'discrepancydate'),
+     Index("discrepancy_details",'discrepancydetails')
+       )
