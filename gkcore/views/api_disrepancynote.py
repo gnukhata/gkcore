@@ -112,21 +112,22 @@ class api_discrepancynote(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				print "OKAY"
 				self.con = eng.connect()
-				dataset = self.request.json_body
-                
-				#dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(select([discrepancynote]).where(discrepancynote.c.discrepancyno == self.request.params["discrepancyno"]))
+				
+				result = self.con.execute(select([discrepancynote]).where(and_(discrepancynote.c.discrepancyno == self.request.params["discrepancyno"],discrepancynote.c.orgcode==authDetails["orgcode"])))
+				
 				row = result.fetchone()
-				dscnote = {"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] }
-				print discnote
+				dscnote = {"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y'),"discrepancydetails": row["discrepancydetails"],"dcinvpotncode":row["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] }
+				print dscnote
 				self.con.close()
-				return {"gkstatus":enumdict["Success"],"gkresult":discrepancynote}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["Success"],"gkresult":dscnote}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 			
 			
