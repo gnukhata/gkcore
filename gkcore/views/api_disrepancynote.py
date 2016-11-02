@@ -50,6 +50,15 @@ class api_discrepancynote(object):
 		self.con = Connection
 		print "discrepancyote initialized"
 		
+		
+	"""
+	create method for discrepancynote resource.
+	orgcode is first authenticated, returns a json object containing success.
+	Inserts data into discrepancynote table. 
+	
+	
+	"""
+		
 	@view_config(request_method='POST',renderer='json')
 	def createdn(self):
 		try:
@@ -78,6 +87,7 @@ class api_discrepancynote(object):
 				
 	@view_config(request_param='dn=all',request_method='GET',renderer='json')
 	def getAllDn(self):
+		"""  shows all discrepancy notes oeder by dates			   """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -104,6 +114,8 @@ class api_discrepancynote(object):
 			
 	@view_config(request_method='GET',request_param="dn=single",renderer='json')
 	def getDN(self):
+	   
+		""" Searches discrepancy note according to discrepancyno received from self.request.params	and shows the whole data of about that particular discrepancynote		 """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -113,7 +125,7 @@ class api_discrepancynote(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				print "OKAY"
+			
 				self.con = eng.connect()
 				
 				result = self.con.execute(select([discrepancynote]).where(and_(discrepancynote.c.discrepancyno == self.request.params["discrepancyno"],discrepancynote.c.orgcode==authDetails["orgcode"])))

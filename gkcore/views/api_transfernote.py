@@ -48,6 +48,17 @@ class api_transfernote(object):
 		self.request = request
 		self.con = Connection
 		print "transfernote initialized"
+        
+        """
+    create method for discrepancynote resource.
+    orgcode is first authenticated, returns a json object containing success.
+    Inserts data into transfernote table. 
+        -transfernoteno goes in dcinvtnid column of stock table.
+        -dcinvflag column will be set to 20 for transfernote no entry.
+        - inout column will be set 1 , i.e. goods are out from the godown.
+
+    If stock table insert fails then the transfernote entry will be deleted. 
+    """
 		
 	@view_config(request_method='POST',renderer='json')
 	def createtn(self):

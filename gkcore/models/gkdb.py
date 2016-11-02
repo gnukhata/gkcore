@@ -419,6 +419,8 @@ godown = Table('godown',metadata,
     )
 
 """ Table for transferNote details. 
+    When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
+    
 """
 
 transfernote = Table('transfernote',metadata,
