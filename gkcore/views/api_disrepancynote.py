@@ -109,8 +109,36 @@ class api_discrepancynote(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
 			
-			
+	@view_config(request_param='browse',request_method='GET',renderer='json')
+	def browseDN(self):
+		"""  shows all discrepancy notes order by dates	and if there are many discrepancynotesthen it will show by discrepancyno		   """
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([discrepancynote.c.discrepancyno,discrepancynote.c.discrepancydate,discrepancynote.c.supplier]).order_by(discrepancynote.c.discrepancydate,discrepancynote.c.discrepancyno))
+				dn = []
+				for row in result:
+					
+					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') ,"supplier":row["supplier"] })
+					#print dn
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkresult":dn}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+				
+				
 			
 	@view_config(request_method='GET',request_param="dn=single",renderer='json')
 	def getDN(self):
@@ -141,7 +169,7 @@ class api_discrepancynote(object):
 			finally:
 				self.con.close()
 
-			
+	
 			
 	@view_config(request_method='PUT',renderer='json')
 	def editDiscrepancyNote(self):
