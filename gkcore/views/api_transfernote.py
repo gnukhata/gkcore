@@ -141,7 +141,7 @@ class api_transfernote(object):
 				tn = []
 				for row in result:
 					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": row["fromgodown"], "togodown": row["togodown"], "orgcode": row["orgcode"] })
-					print tn
+					#print tn
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkdata":tn}
 			except:
