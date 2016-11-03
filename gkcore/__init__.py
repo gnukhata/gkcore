@@ -84,6 +84,7 @@ def main(global_config, **settings):
     config.add_route("purchaseorder","/purchaseorder")    
     config.add_route("transfernote","/transfernote")
     config.add_route("discrepancynote","/discrepancynote")
+    config.add_route("tax","/tax")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

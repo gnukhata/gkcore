@@ -453,3 +453,18 @@ discrepancynote = Table ('discrepancynote' ,metadata,
      Index("discrepancy_date",'discrepancydate'),
      Index("discrepancy_details",'discrepancydetails')
        )
+
+
+"""table to store tax"""
+tax = Table('tax',metadata,
+    Column('taxid',Integer,primary_key=True),
+    Column('taxname',UnicodeText,nullable=False),
+    Column('taxrate',Numeric(5,2)),
+    Column('state',UnicodeText,nullable=True),
+    Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE"), nullable=True),
+    Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"), nullable=True),
+    UniqueConstraint('productcode','taxname'),
+    UniqueConstraint('categorycode','taxname'),
+    Index("taxindex","productcode","taxname"),
+    Index("tax_taxindex","categorycode","taxname")
+    )
