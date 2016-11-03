@@ -253,10 +253,13 @@ class api_user(object):
 				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
-				self.con.execute("alter table users add column themename text default 'Default'")
-				dataset = self.request.json_body
-				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
-				return {"gkstatus":enumdict["Success"]}
+				try:
+					self.con.execute("alter table users add column themename text default 'Default'")
+					dataset = self.request.json_body
+					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
+					return {"gkstatus":enumdict["Success"]}
+				except:
+					return  {"gkstatus":  enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 	@view_config(route_name='user', request_method='GET', request_param='type=theme', renderer='json')
@@ -277,11 +280,17 @@ class api_user(object):
 #				print User
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 			except:
-				self.con = eng.connect()
-				self.con.execute("alter table users add column themename text default 'Default'")
-				result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
-				row = result.fetchone()
-#				print User
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
+				try:
+					self.con = eng.connect()
+					self.con.execute("alter table users add column themename text default 'Default'")
+					result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
+					row = result.fetchone()
+	#				print User
+					if row.rowcount>0:
+						return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
+					else:
+						return  {"gkstatus":  enumdict["ConnectionFailed"]}
+				except:
+					return  {"gkstatus":  enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
