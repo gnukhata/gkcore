@@ -2,7 +2,7 @@
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models import gkdb
+from gkcore.models.gkdb import tax, stock
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -49,25 +49,35 @@ class api_tax(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+				
+	
+				
 	@view_config(request_method='GET',renderer='json')
-	def gettaxdata(self):
+	def getAllTax(self):
+		"""This method returns	all existing data about taxes """
 		try:
+			print "all tax"
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
-		if authDetails["auth"]==False:
+		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
-				print "creating taxdata"
-				result = self.con.execute(select([gkdb.tax]).where(gkdb.tax.c.taxid==self.request.matchdict["taxid"]))
-				row = result.fetchone()
-				acc={"taxid":row["taxid"], "taxname":row["taxname"], "taxrate":"%.2f"%float(row["taxrate"]),"state":row["state"]}
-				return {"gkstatus": enumdict["Success"], "gkresult":acc}
+				
+				
+				result = self.con.execute(select([tax]).order_by(tax.c.taxid))
+				tx = []
+				for row in result:
+					tx.append({"taxid": row["taxid"], "taxname":row["taxname"], "taxrate":"%.2f"%float(row["taxrate"]),"state":row["state"], "categorycode": row["categorycode"], "productcode": row["productcode"], "orgcode": row["orgcode"] })
+					
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkdata":tx}
 			except:
-				return {"gkstatus":enumdict["ConnectionFailed"] }
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 				
