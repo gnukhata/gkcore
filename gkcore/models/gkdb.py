@@ -460,11 +460,12 @@ tax = Table('tax',metadata,
 	Column('taxid',Integer,primary_key=True),
 	Column('taxname',UnicodeText,nullable=False),
 	Column('taxrate',Numeric(5,2)),
-	Column('state',UnicodeText,nullable=True),
-	Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE"), nullable=True),
-	Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"), nullable=True),
-	UniqueConstraint('productcode','taxname'),
-	UniqueConstraint('categorycode','taxname'),
+	Column('state',UnicodeText),
+	Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE")),
+	Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	UniqueConstraint('state','taxname','productcode','orgcode'),
+    UniqueConstraint('state','taxname','categorycode','orgcode'),
 	Index("taxindex","productcode","taxname"),
-	Index("tax_taxindex","categorycode","taxname")
+    Index("tax_taxindex","categorycode","taxname")
 	)
