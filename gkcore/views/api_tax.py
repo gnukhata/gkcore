@@ -2,7 +2,7 @@
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import tax, stock
+from gkcore.models.gkdb import tax,users
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -11,6 +11,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
+import gkcore
 
 
 @view_defaults(route_name='tax')
@@ -33,25 +34,74 @@ class api_tax(object):
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				
 				self.con = eng.connect()
-				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
 					dataset["orgcode"] = authDetails["orgcode"]
-					result = self.con.execute(gkdb.tax.insert(),[dataset])
+					print dataset
+					result = self.con.execute(tax.insert(),[dataset])
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 				
-	
+	@view_config(request_method='GET',request_param='psflag',renderer='json')
+	def getprodtax(self):
+		"""
+		This method will return the list of taxes for a product.
+		The tax will be either returned for a given product, or with the combination of product and state (Specially for VAT).
+		Takes in a parameter for productcode, optionally statecode.
+		If the flag is p then all the taxes for that product will be returned.
+		If it is s then for that product for that state will be returned.
+		returns a list of JSON objects.
+		"""
+		try:
+			print "all tax"
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+				self.con = eng.connect()
+				if(self.request.params["psflag"]=="p"):
+					result = self.con.execute(select([tax.c.taxname,tax.c.taxrate,tax.c.state]).where(tax.c.productcode==self.request.params["productcode"]))
+					taxRow = result.fetchone()
+					taxDetails = {"taxname":taxRow["taxname"]}
+					#return result
+					return {"gkstatus":enumdict["Success"],"gkresult":result}
+					self.con.close()
 				
+				if(self.request.params["psflag"]=="s"):
+					result = self.con.execute(select([tax.c.taxname,tax.c.taxrate]).where(and_(tax.c.productcode==self.request.params["productcode"],tax.c.state==self.request.params[state])))
+					
+					return {"gkstatus":enumdict["Success"], "gkresult":result}
+					self.con.close()
+					
+			
+				return {"gkstatus":enumdict["Success"],}
+			#except:
+				#self.con.close()
+				#return {"gkstatus":enumdict["ConnectionFailed"]}
+			#finally:
+				#self.con.close()
+
+			
+					
+			
+		
+		
+		
 	@view_config(request_method='GET',renderer='json')
 	def getAllTax(self):
 		"""This method returns	all existing data about taxes """
@@ -66,8 +116,6 @@ class api_tax(object):
 		else:
 			try:
 				self.con = eng.connect()
-				
-				
 				result = self.con.execute(select([tax]).order_by(tax.c.taxid))
 				tx = []
 				for row in result:
