@@ -80,9 +80,9 @@ organisation = Table( 'organisation' , metadata,
 	Column('orgmvat',UnicodeText),
 	Column('orgstax',UnicodeText),
 	Column('orgregno',UnicodeText),
-	Column('orgregdate',UnicodeText),
+	Column('orgregdate',Date),
 	Column('orgfcrano',UnicodeText),
-	Column('orgfcradate',UnicodeText),
+	Column('orgfcradate',Date),
 	Column('roflag',Integer, default=0),
 	Column('booksclosedflag',Integer,default=0),
 	Column('invflag',Integer,default=0),
@@ -262,7 +262,7 @@ So the accounting part is thus connected with stock movement of that cost.
 invoice = Table('invoice',metadata,
 	Column('invid',Integer,primary_key=True),
 	Column('invoiceno',UnicodeText,nullable=False),
-	Column('invoicedate',UnicodeText,nullable=False),
+	Column('invoicedate',DateTime,nullable=False),
 	Column('contents',JSONB),
 	Column('orderno', UnicodeText,ForeignKey('purchaseorder.orderno')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
@@ -284,7 +284,7 @@ Another invoice may be issued if the remaining two items are approved by the cus
 delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
 	Column('dcno',UnicodeText,nullable=False),
-	Column('dcdate',UnicodeText,nullable=False),
+	Column('dcdate',DateTime,nullable=False),
     Column('dcflag',Integer,nullable=False),
     Column('isuuername',UnicodeText,),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
@@ -363,7 +363,7 @@ bankrecon=Table('bankrecon',metadata,
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('vouchercode','accountcode'),
-	Index("bankrecoindex","clearancedate")
+	Index("bankrecoindex","clearance")
 	)
 """
 This is the table which acts as a bin for deleted vouchers.
