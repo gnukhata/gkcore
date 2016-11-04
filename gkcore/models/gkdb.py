@@ -279,12 +279,15 @@ The invoice table and this table will be linked in a subsequent table.
 This is done because one invoice may have several dc's attached and for one dc may have several invoices.
 In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
 Another invoice may be issued if the remaining two items are approved by the customer.
+
 """
 delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
 	Column('dcno',UnicodeText,nullable=False),
 	Column('dcdate',UnicodeText,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('dcflag',Integer,nullable=False),
+    Column('isuuername',UnicodeText,),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
 	Column('orderno',UnicodeText, ForeignKey('purchaseorder.orderno',ondelete="CASCADE")),
 	UniqueConstraint('orgcode','dcno'),
