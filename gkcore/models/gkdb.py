@@ -455,7 +455,8 @@ discrepancynote = Table ('discrepancynote' ,metadata,
 	   )
 
 
-"""table to store tax"""
+"""table to store tax
+This taxex would be vat , gst etc. For particular product and category (mutually exelusive)"""
 tax = Table('tax',metadata,
 	Column('taxid',Integer,primary_key=True),
 	Column('taxname',UnicodeText,nullable=False),
