@@ -148,7 +148,7 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 	Column('conversionrate',Numeric(13,2),default=0.00),
 	Column('subunitof',Integer),
 	Column('frequency',Integer),
-    UniqueConstraint('unitname'),
+	UniqueConstraint('unitname'),
 	Index("unitofmeasurement_frequency","frequency"),
 	Index("unitofmeasurement_unitname","unitname")
 	)
@@ -387,21 +387,21 @@ This may or may not link to a certain invoice.
 However if it is linked then we will have to compare the items with those in invoice.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
-    Column('orderno',UnicodeText, primary_key=True),
-    Column('podate', DateTime, nullable=False),
-    Column('maxdate', DateTime, nullable=False),
-    Column('datedelivery',DateTime),
-    Column('deliveryplaceaddr', UnicodeText),
-    Column('payterms',UnicodeText),
-    Column('schedule',UnicodeText),
-    Column('modeoftransport', UnicodeText),
-    Column('packaging',JSONB),
-    Column('tax',JSONB),
-    Column('productdetails', JSONB),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-    Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
-    Index("purchaseorder_orgcodeindex","orgcode"),
-    Index("purchaseorder_date","podate"),
+	Column('orderno',UnicodeText, primary_key=True),
+	Column('podate', DateTime, nullable=False),
+	Column('maxdate', DateTime, nullable=False),
+	Column('datedelivery',DateTime),
+	Column('deliveryplaceaddr', UnicodeText),
+	Column('payterms',UnicodeText),
+	Column('schedule',UnicodeText),
+	Column('modeoftransport', UnicodeText),
+	Column('packaging',JSONB),
+	Column('tax',JSONB),
+	Column('productdetails', JSONB),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
+	Index("purchaseorder_orgcodeindex","orgcode"),
+	Index("purchaseorder_date","podate"),
 )
 
 """
@@ -409,18 +409,18 @@ Table for storing godown details.
 Basically one organization may have many godowns and we aught to know from which one goods have moved out.
 """
 godown = Table('godown',metadata,
-    Column('goid',Integer,primary_key=True),
-    Column('goname',UnicodeText),
-    Column('goaddr',UnicodeText),
-    Column('gocontact',UnicodeText),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','goname'),
-    Index("godown_orgcodeindex","orgcode")
-    )
+	Column('goid',Integer,primary_key=True),
+	Column('goname',UnicodeText),
+	Column('goaddr',UnicodeText),
+	Column('gocontact',UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	UniqueConstraint('orgcode','goname'),
+	Index("godown_orgcodeindex","orgcode")
+	)
 
 """ Table for transferNote details. 
-    When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
-    
+	When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
+	
 """
 
 transfernote = Table('transfernote',metadata,
@@ -443,13 +443,30 @@ transfernote = Table('transfernote',metadata,
 """ Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records. 
 'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 16. """
 discrepancynote = Table ('discrepancynote' ,metadata,
-     Column('discrepancyno',UnicodeText,primary_key= True),
-     Column('discrepancydate',DateTime,nullable=False),
-     Column('discrepancydetails',JSONB , nullable = False),
-     Column('dcinvpotncode',UnicodeText,nullable = False),
-     Column('dcinvpotnflag',Integer,nullable = False),
-     Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
-     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-     Index("discrepancy_date",'discrepancydate'),
-     Index("discrepancy_details",'discrepancydetails')
-       )
+	 Column('discrepancyno',UnicodeText,primary_key= True),
+	 Column('discrepancydate',DateTime,nullable=False),
+	 Column('discrepancydetails',JSONB , nullable = False),
+	 Column('dcinvpotncode',UnicodeText,nullable = False),
+	 Column('dcinvpotnflag',Integer,nullable = False),
+	 Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
+	 Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	 Index("discrepancy_date",'discrepancydate'),
+	 Index("discrepancy_details",'discrepancydetails')
+	   )
+
+
+"""table to store tax
+This taxex would be vat , gst etc. For particular product and category (mutually exelusive)"""
+tax = Table('tax',metadata,
+	Column('taxid',Integer,primary_key=True),
+	Column('taxname',UnicodeText,nullable=False),
+	Column('taxrate',Numeric(5,2)),
+	Column('state',UnicodeText),
+	Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE")),
+	Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	UniqueConstraint('state','taxname','productcode','orgcode'),
+    UniqueConstraint('state','taxname','categorycode','orgcode'),
+	Index("taxindex","productcode","taxname"),
+    Index("tax_taxindex","categorycode","taxname")
+	)
