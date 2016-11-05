@@ -187,14 +187,14 @@ class api_invoice(object):
 					invc["invid"]=row["invid"]
 					invc["dcid"]=dcid["dcid"]
 					invc["dcno"]=dcnocustid["dcno"]
-					invc["invoicedate"]=row["invoicedate"]
+					invc["invoicedate"]=datetime.strftime["invoicedate"],'%d-%m-%Y'
 					invc["custname"]=custname["custname"]
 				else:
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
-					invc["invoicedate"]=row["invoicedate"]
+					invc["invoicedate"]=datetime.strftime["invoicedate"],'%d-%m-%Y'
 					invc["custname"]=custname["custname"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))

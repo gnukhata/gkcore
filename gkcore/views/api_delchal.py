@@ -180,7 +180,7 @@ class api_delchal(object):
 					productdesc = productdata.fetchone()
 					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
-				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"custid":delchaldata["custid"],"custname":custname["custname"],"goid":delchaldata["goid"],"goname":goname["goname"]},
+				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"goid":delchaldata["goid"],"goname":goname["goname"]},
 				"stockdata":{"inout":stockinout,"items":items}}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
 			except:
