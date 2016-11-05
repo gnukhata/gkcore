@@ -49,8 +49,8 @@ class api_delchal(object):
 	"""
 	create method for delchal resource.
 	stock table is also updated after delchal entry is made.
-		-delchal id goes in dcinvid column of stock table.
-		-dcinvflag column will be set to 4 for delivery challan entry.
+		-delchal id goes in dcinvtnid column of stock table.
+		-dcinvtnflag column will be set to 4 for delivery challan entry.
 	If stock table insert fails then the delchal entry will be deleted.
 	"""
 	@view_config(request_method='POST',renderer='json')
@@ -74,8 +74,8 @@ class api_delchal(object):
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"])))
 					dcidrow = dciddata.fetchone()
-					stockdata["dcinvid"] = dcidrow["dcid"]
-					stockdata["dcinvflag"] = 4
+					stockdata["dcinvtnid"] = dcidrow["dcid"]
+					stockdata["dcinvtnflag"] = 4
 					items = stockdata.pop("items")
 					try:
 						for key in items.keys():
@@ -83,7 +83,7 @@ class api_delchal(object):
 							stockdata["qty"] = items[key]
 							result = self.con.execute(stock.insert(),[stockdata])
 					except:
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dcidrow["dcid"],stock.c.dcinvflag==4)))
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
 						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 					return {"gkstatus":enumdict["Success"]}
@@ -113,11 +113,11 @@ class api_delchal(object):
 				stockdata = dataset["stockdata"]
 				delchaldata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
-				stockdata["dcinvid"] = delchaldata["dcid"]
-				stockdata["dcinvflag"] = 4
+				stockdata["dcinvtnid"] = delchaldata["dcid"]
+				stockdata["dcinvtnflag"] = 4
 				result = self.con.execute(delchal.update().where(delchal.c.dcid==delchaldata["dcid"]).values(delchaldata))
 				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==delchaldata["dcid"],stock.c.dcinvflag==4)))
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==delchaldata["dcid"],stock.c.dcinvtnflag==4)))
 					items = stockdata.pop("items")
 					for key in items.keys():
 						stockdata["productcode"] = key
@@ -174,7 +174,7 @@ class api_delchal(object):
 				godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid==delchaldata["goid"]))
 				goname = godata.fetchone()
 				items = {}
-				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout]).where(and_(stock.c.dcinvflag==4,stock.c.dcinvid==self.request.params["dcid"])))
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==self.request.params["dcid"])))
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
@@ -202,7 +202,7 @@ class api_delchal(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(delchal.delete().where(delchal.c.dcid==dataset["dcid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["dcid"],stock.c.dcinvflag==4)))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dataset["dcid"],stock.c.dcinvtnflag==4)))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}

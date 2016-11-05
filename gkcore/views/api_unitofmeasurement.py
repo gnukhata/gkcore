@@ -84,7 +84,7 @@ class api_unitOfMeasurement(object):
 				dataset = self.request.params
 				result = self.con.execute(select([gkdb.unitofmeasurement]).where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"] ))
 				row = result.fetchone()
-				unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":row["conversionrate"], "subunitof":row["subunitof"]}
+				unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":"%.2f"%float(row["conversionrate"]), "subunitof":row["subunitof"]}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":unitofmeasurement}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
