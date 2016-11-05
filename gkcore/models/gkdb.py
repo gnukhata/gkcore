@@ -388,11 +388,13 @@ voucherbin=Table('voucherbin', metadata,
 table for purchase order.
 This may or may not link to a certain invoice.
 However if it is linked then we will have to compare the items with those in invoice.
+psflag will be either 16 or 20 for purchase order and sales order respectively
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
-	Column('orderno',UnicodeText, primary_key=True),
-	Column('podate', DateTime, nullable=False),
-	Column('maxdate', DateTime, nullable=False),
+	Column('orderid',Integer, primary_key=True),
+	Column('orderno',UnicodeText),
+	Column('orderdate', DateTime, nullable=False),
+	Column('maxdate', DateTime),
 	Column('datedelivery',DateTime),
 	Column('deliveryplaceaddr', UnicodeText),
 	Column('payterms',UnicodeText),
@@ -401,10 +403,11 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('packaging',JSONB),
 	Column('tax',JSONB),
 	Column('productdetails', JSONB),
+	Column('psflag',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	Index("purchaseorder_orgcodeindex","orgcode"),
-	Index("purchaseorder_date","podate"),
+	Index("purchaseorder_date","orderdate"),
 )
 
 """
