@@ -50,7 +50,7 @@ class api_tax(object):
 	@view_config(request_method='POST',renderer='json')
 	def addtax(self):
 		""" This method creates tax
-			First it checks the user role if the user is admin then only user can add new tax                      """
+			First it checks the user role if the user is admin then only user can add new tax					  """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -126,9 +126,9 @@ class api_tax(object):
 		
 	@view_config(request_method='GET',renderer='json')
 	def getAllTax(self):
-		"""This method returns	all existing data about taxes """
+		"""This method returns	all existing data about taxes for existing organisation   """
 		try:
-			print "all tax"
+			
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -138,7 +138,8 @@ class api_tax(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([tax]).order_by(tax.c.taxid))
+				
+				result = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 				tx = []
 				for row in result:
 					tx.append({"taxid": row["taxid"], "taxname":row["taxname"], "taxrate":"%.2f"%float(row["taxrate"]),"state":row["state"], "categorycode": row["categorycode"], "productcode": row["productcode"], "orgcode": row["orgcode"] })
@@ -154,7 +155,7 @@ class api_tax(object):
 				
 	@view_config(request_method='PUT', renderer='json')
 	def edittaxdata(self):
-		"""  This method updates the taxdata                   """
+		"""  This method updates the taxdata				   """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -184,7 +185,7 @@ class api_tax(object):
 				
 	@view_config(request_method='DELETE', renderer ='json')
 	def deletetaxdata(self):
-		"""  This method delets the tax data by matching taxid                 """
+		"""  This method delets the tax data by matching taxid				 """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
