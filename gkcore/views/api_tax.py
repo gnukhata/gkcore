@@ -126,7 +126,7 @@ class api_tax(object):
 		
 	@view_config(request_method='GET',renderer='json')
 	def getAllTax(self):
-		"""This method returns	all existing data about taxes for existing organisation   """
+		"""This method returns	all existing data about taxes for current organisation   """
 		try:
 			
 			token = self.request.headers["gktoken"]
