@@ -363,7 +363,7 @@ bankrecon=Table('bankrecon',metadata,
 	Column('memo',Text),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('vouchercode','accountcode'),
-	Index("bankrecoindex","clearance")
+	Index("bankrecoindex","clearancedate")
 	)
 """
 This is the table which acts as a bin for deleted vouchers.

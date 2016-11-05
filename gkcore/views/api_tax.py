@@ -68,7 +68,7 @@ class api_tax(object):
 				dataset = self.request.json_body
 				if userRole[0]==-1:
 					dataset["orgcode"] = authDetails["orgcode"]
-					print dataset
+					
 					result = self.con.execute(tax.insert(),[dataset])
 					return {"gkstatus":enumdict["Success"]}
 				else:
