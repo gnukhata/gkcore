@@ -388,7 +388,7 @@ voucherbin=Table('voucherbin', metadata,
 table for purchase order.
 This may or may not link to a certain invoice.
 However if it is linked then we will have to compare the items with those in invoice.
-psflag will be either 16 or 20 for purchase order and sales order respectively
+psflag will be either 16 or 20 for purchase order and sales order respectively.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderid',Integer, primary_key=True),

@@ -29,7 +29,8 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models import gkdb
+
+from gkcore.models.gkdb import purchaseorder
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -63,7 +64,7 @@ class api_purchaseorder(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(gkdb.purchaseorder.insert(),[dataset])
+				result = self.con.execute(purchaseorder.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -73,7 +74,7 @@ class api_purchaseorder(object):
 				self.con.close()
 
 
-	@view_config(request_param='po=all',request_method='GET',renderer='json')
+	@view_config(request_method='GET',renderer='json')
 	def getAllPurchaseorders(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -85,12 +86,12 @@ class api_purchaseorder(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([gkdb.purchaseorder.c.orderno, gkdb.purchaseorder.c.podate, gkdb.purchaseorder.c.csid]).order_by(gkdb.purchaseorder.c.podate))
+				result = self.con.execute(select([purchaseorder.c.orderno, gkdb.purchaseorder.c.orderdate, gkdb.purchaseorder.c.csid]).order_by(gkdb.purchaseorder.c.orderdate))
 				purchaseorders = []
 				for row in result:
 					custdata = self.con.execute(select([gkdb.customerandsupplier.c.custname]).where(gkdb.customerandsupplier.c.custid==row["csid"]))
 					custrow = custdata.fetchone()
-					purchaseorders.append({"orderno": row["orderno"], "podate":datetime.strftime(row["podate"],'%d-%m-%Y') , "custname": custrow["custname"] })
+					purchaseorders.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["podate"],'%d-%m-%Y') , "custname": custrow["custname"],"psflag":["psflag"] })
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":purchaseorders}
 			except:
