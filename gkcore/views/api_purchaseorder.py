@@ -176,7 +176,7 @@ class api_purchaseorder(object):
 				psflag =int(self.request.params["psflag"])
 				if(psflag==16):
 					
-					result=self.con.execute(select([purchaseorder]).where(and_(purchaseorder.c.psflag == 16,purchaseorder.c.orderno==self.request.params["orderno"])))
+					result=self.con.execute(select([purchaseorder]).where(and_(purchaseorder.c.psflag == 16,purchaseorder.c.orderno==self.request.params["orderid"])))
 					po =[]
 					for row in result:
 						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
