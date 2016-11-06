@@ -130,8 +130,9 @@ class api_purchaseorder(object):
 					result=self.con.execute(select([purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.maxdate,purchaseorder.c.deliveryplaceaddr,purchaseorder.c.datedelivery,purchaseorder.c.modeoftransport,purchaseorder.c.packaging,purchaseorder.c.payterms,purchaseorder.c.productdetails,purchaseorder.c.tax,purchaseorder.c.csid]).where(purchaseorder.c.psflag == 16))
 					po =[]
 					for row in result:
-						
-						po.append({"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'), "modeoftransport": row["modeoftransport"],"packaging": row["packaging"], "payterms": row["payterms"],"csid": row["csid"],"productdetails": row["productdetails"],"tax": row["tax"]})
+						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+						custrow = custdata.fetchone()
+						po.append({"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'), "modeoftransport": row["modeoftransport"],"packaging": row["packaging"], "payterms": row["payterms"],"csid": custrow["csid"],"productdetails": row["productdetails"],"tax": row["tax"]})
 						
 						return {"gkstatus":enumdict["Success"],"gkresult":po}
 					
@@ -141,7 +142,10 @@ class api_purchaseorder(object):
 					result=self.con.execute(select([purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.productdetails,purchaseorder.c.csid]).where(purchaseorder.c.psflag == 20))
 					so =[]
 					for row in result:
-						so.append({"oredrno":row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid": row["csid"],"productdetails": row["productdetails"]})
+						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+						custrow = custdata.fetchone()
+
+						so.append({"oredrno":row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid": custrow["csid"],"productdetails": row["productdetails"]})
 					return {"gkstatus":enumdict["Success"], "gkresult":so}
 					self.con.close()
 				
@@ -175,16 +179,22 @@ class api_purchaseorder(object):
 					result=self.con.execute(select([purchaseorder]).where(and_(purchaseorder.c.psflag == 16,purchaseorder.c.orderno==self.request.params["orderno"])))
 					po =[]
 					for row in result:
-						po.append({"orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'),"csid": row["csid"],"productdetails": row["productdetails"],"tax": row["tax"]})
+						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+						custrow = custdata.fetchone()
+
+						po.append({"orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'),"csid":custrow["csid"],"productdetails": row["productdetails"],"tax": row["tax"]})
 						return {"gkstatus":enumdict["Success"],"gkresult":po}
 						self.con.close()
 				
 				if(psflag==20):
 					
-					result=self.con.execute(select([purchaseorder]).where(and_(purchaseorder.c.psflag == 20,purchaseorder.c.orderno == self.request.params["orderno"])))
+					result=self.con.execute(select([purchaseorder]).where(and_(purchaseorder.c.psflag == 20,purchaseorder.c.orderid == self.request.params["orderid"])))
 					so =[]
 					for row in result:
-						so.append({ "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid": row["csid"],"productdetails": row["productdetails"]})
+						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+						custrow = custdata.fetchone()
+
+						so.append({ "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid":custrow["csid"],"productdetails": row["productdetails"]})
 						return {"gkstatus":enumdict["Success"], "gkresult":so}
 						self.con.close()
 				
@@ -231,7 +241,7 @@ class api_purchaseorder(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(purchaseorder.delete().where(purchaseorder.c.orderno == dataset["orderno"]))
+				result = self.con.execute(purchaseorder.delete().where(purchaseorder.c.orderno == dataset["orderid"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}

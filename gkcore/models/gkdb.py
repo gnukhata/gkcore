@@ -392,7 +392,7 @@ psflag will be either 16 or 20 for purchase order and sales order respectively.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderid',Integer, primary_key=True),
-	Column('orderno',UnicodeText),
+	Column('orderno',UnicodeText,nullable=False),
 	Column('orderdate', DateTime, nullable=False),
 	Column('maxdate', DateTime),
 	Column('datedelivery',DateTime),
