@@ -277,7 +277,7 @@ class api_user(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				row = result.fetchone()
-#				print User
+#				print row["themename"]
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 			except:
 				try:
@@ -285,11 +285,8 @@ class api_user(object):
 					self.con.execute("alter table users add column themename text default 'Default'")
 					result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
 					row = result.fetchone()
-	#				print User
-					if row.rowcount>0:
-						return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
-					else:
-						return  {"gkstatus":  enumdict["ConnectionFailed"]}
+#					print row["themename"]
+					return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 				except:
 					return  {"gkstatus":  enumdict["ConnectionFailed"]}
 			finally:
