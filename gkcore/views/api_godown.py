@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
 
@@ -47,7 +48,7 @@ class api_godown(object):
 		self.con = Connection
 
 	@view_config(request_method='POST',renderer='json')
-	def addGodwon(self):
+	def addGodown(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -108,6 +109,28 @@ class api_godown(object):
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_param='qty=single', request_method='GET',renderer='json')
+	def getGodown(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([godown.c.goname,godown.c.goid,godown.c.goaddr,godown.c.gocontact]).where(godown.c.goid == self.request.params["goid"]))
+				row = result.fetchone()
+				godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"]}
+				self.con.close()
+				return {"gkstatus":enumdict["Success"],"gkresult":godownDetails}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 
