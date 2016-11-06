@@ -22,6 +22,8 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Pornima Kolte <pornima@openmailbox.org>"
+"Prajkta Patkar<prajkta.patkar007@gmail.com>"
 """
 
 
