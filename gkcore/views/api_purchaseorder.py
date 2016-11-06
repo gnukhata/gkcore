@@ -31,7 +31,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import purchaseorder, stock
+from gkcore.models.gkdb import purchaseorder, customerandsupplier
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
