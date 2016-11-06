@@ -29,17 +29,19 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-
-from gkcore.models.gkdb import purchaseorder
+from gkcore.models.gkdb import purchaseorder, stock
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_ ,exc
+from datetime import datetime,date
 import jwt
 import gkcore
-from datetime import datetime,date
 from gkcore.models.meta import dbconnect
+
+from datetime import datetime,date
+
 
 
 @view_defaults(route_name='purchaseorder')
@@ -65,6 +67,7 @@ class api_purchaseorder(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(purchaseorder.insert(),[dataset])
+				print dataset
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -75,7 +78,7 @@ class api_purchaseorder(object):
 
 
 	@view_config(request_method='GET',renderer='json')
-	def getAllPurchaseorders(self):
+	def getAllPoSoData(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -86,21 +89,24 @@ class api_purchaseorder(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([purchaseorder.c.orderno, gkdb.purchaseorder.c.orderdate, gkdb.purchaseorder.c.csid]).order_by(gkdb.purchaseorder.c.orderdate))
+				result = self.con.execute(select([purchaseorder.c.orderid,purchaseorder.c.orderno,purchaseorder.c.orderdate, purchaseorder.c.csid,purchaseorder.c.psflag]).order_by(purchaseorder.c.orderdate))
 				purchaseorders = []
 				for row in result:
-					custdata = self.con.execute(select([gkdb.customerandsupplier.c.custname]).where(gkdb.customerandsupplier.c.custid==row["csid"]))
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
 					custrow = custdata.fetchone()
-					purchaseorders.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["podate"],'%d-%m-%Y') , "custname": custrow["custname"],"psflag":["psflag"] })
+					purchaseorders.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["orderdate"],'%d-%m-%Y') , "custname": custrow["custname"],"psflag":row["psflag"] })
+					print purchaseorders
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":purchaseorders}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
-	@view_config(request_param='po=single',request_method='GET',renderer='json')
-	def getPurchaseorder(self):
+			
+	@view_config(request_method='GET',request_param='psflag',renderer='json')
+	def getposo(self):
+		
 		try:
+			
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -110,14 +116,34 @@ class api_purchaseorder(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([gkdb.purchaseorder]).where(gkdb.purchaseorder.c.orderno == self.request.params["orderno"]))
-				row = result.fetchone()
-				purchaseOrderDetails = {"orderno": row["orderno"], "podate": datetime.strftime(row["podate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'), "modeoftransport": row["modeoftransport"],"packaging": row["packaging"], "payterms": row["payterms"],"csid": row["csid"],"productdetails": row["productdetails"],"tax": row["tax"]}
-				self.con.close()
-				return {"gkstatus":enumdict["Success"],"gkresult":purchaseOrderDetails}
+				
+				psflag =int(self.request.params["psflag"])
+				if(psflag==16):
+					
+					result=self.con.execute(select([purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.maxdate,purchaseorder.c.deliveryplaceaddr,purchaseorder.c.datedelivery,purchaseorder.c.modeoftransport,purchaseorder.c.packaging,purchaseorder.c.payterms,purchaseorder.c.productdetails,purchaseorder.c.tax,purchaseorder.c.csid]).where(purchaseorder.c.psflag == 16))
+					po =[]
+					for row in result:
+						
+						po.append({"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'), "maxdate": datetime.strftime(row["maxdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "datedelivery": datetime.strftime(row["datedelivery"],'%d-%m-%Y'), "modeoftransport": row["modeoftransport"],"packaging": row["packaging"], "payterms": row["payterms"],"csid": row["csid"],"productdetails": row["productdetails"],"tax": row["tax"]})
+						
+						return {"gkstatus":enumdict["Success"],"gkresult":po}
+					
+				
+				if(psflag==20):
+					
+					result=self.con.execute(select([purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.productdetails,purchaseorder.c.csid]).where(purchaseorder.c.psflag == 20))
+					so =[]
+					for row in result:
+						so.append({"oredrno":row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid": row["csid"],"productdetails": row["productdetails"]})
+					return {"gkstatus":enumdict["Success"], "gkresult":so}
+					self.con.close()
+				
+				return {"gkstatus":enumdict["Success"],}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
 	@view_config(request_method='PUT',renderer='json')
