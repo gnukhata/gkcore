@@ -26,7 +26,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import tax,users
+from gkcore.models.gkdb import tax,users, organisation
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -37,6 +37,7 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 import os
+from sqlalchemy.sql.functions import func
 
 @view_defaults(route_name='backuprestore')
 class api_backuprestore(object):
@@ -84,6 +85,10 @@ class api_backuprestore(object):
 		First it checks the user role if the user is admin then only user can do the backup					  """
 		try:
 			self.con = eng.connect()
+			orgcount = self.con.execute(select([func.count(organisation.c.orgcode)].label('orgcount')))
+			countrow = orgcount.fetchone()
+			if int(countrow["orgcount"]) >= 0:
+				return {"gkstatus":"ActionDisallowed"}
 			print "about to restore "
 			dataset = self.request.json_body
 			datasource = dataset["datasource"]
@@ -95,8 +100,5 @@ class api_backuprestore(object):
 			return {"gkstatus":enumdict["Success"]}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			
-
-			
 		
-	
+
