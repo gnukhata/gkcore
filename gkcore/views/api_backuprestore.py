@@ -92,17 +92,21 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-	#		try:
+  	#		try:
 				self.con = eng.connect()
-				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
-				userRole = user.fetchone()
 				dataset = self.request.json_body
 				datasource = dataset["datasource"]
+
+				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				
 				if userRole[0]==-1:
-					os.system("psql -f /tmp/backup.sql gkdata")
+										
 					restorefile = open("/tmp/restore.sql","w")
 					restoredata = restorefile.write("datasource")
 					restorefile.close()
+					os.system("psql -f /tmp/restore.sql gkdata")
+					
 					return {"gkstatus":enumdict["Success"],"gkdata":restoredata}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
