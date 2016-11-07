@@ -178,7 +178,7 @@ class api_organisation(object):
 
 					userdata["orgcode"] = orgcode["orgcode"]
 					userdata["userrole"] = -1
-					result = self.con.execute(gkdb.users.insert(),[userdata])
+					result = self.con.execute(gkdb.users.insert().values(username = userdata["username"], userpassword=userdata["userpassword"], userrole = -1, userquestion = userdata["userquestion"], useranswer = userdata["useranswer"], orgcode=userdata["orgcode"]))
 					if result.rowcount==1:
 						result = self.con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==userdata["username"], gkdb.users.c.userpassword== userdata["userpassword"], gkdb.users.c.orgcode==userdata["orgcode"])) )
 						if result.rowcount == 1:
