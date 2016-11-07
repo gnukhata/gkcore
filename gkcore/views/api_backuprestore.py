@@ -37,7 +37,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
-
+import os
 
 @view_defaults(route_name='backuprestore')
 class api_backuprestore(object):
@@ -45,12 +45,12 @@ class api_backuprestore(object):
 		self.request = Request
 		self.request = request
 		self.con = Connection
-		print "tax initialized"
+		print "backup initialized"
 		
-	@view_config(request_method='POST',renderer='json')
-	def addtax(self):
-		""" This method creates tax
-			First it checks the user role if the user is admin then only user can add new tax					  """
+	@view_config(request_method='GET',renderer='json',request_param='fulldb=1')
+	def backupdatabase(self):
+		""" This method backsup entire database with organisation.
+		First it checks the user role if the user is admin then only user can do the backup					  """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -60,25 +60,25 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
-				
+		#	try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
-				dataset = self.request.json_body
+				#dataset = self.request.json_body
 				if userRole[0]==-1:
-					dataset["orgcode"] = authDetails["orgcode"]
-					
-					result = self.con.execute(tax.insert(),[dataset])
-					return {"gkstatus":enumdict["Success"]}
+					os.system("pg_dump gkdata -f /tmp/backup.sql")
+					backupfile = open("/tmp/backup.sql","r")
+					backupdata = backupfile.read()
+					backupfile.close()
+					return {"gkstatus":enumdict["Success"],"gkdata":backupdata}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+		#	except exc.IntegrityError:
+		#		return {"gkstatus":enumdict["DuplicateEntry"]}
+		#	except:
+		#		return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+		#	finally:
+		#		self.con.close()
 				
 	@view_config(request_method='GET',request_param='psflag',renderer='json')
 	def getprodtax(self):
