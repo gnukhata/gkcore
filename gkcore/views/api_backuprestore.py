@@ -21,8 +21,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
-"Prajkta Patkar"<prajkta.patkar007@gmail.com>
-"Bhagyashree Pandhare"<bhagya.pandhare@openmailbox.org>
+
 """
 
 from gkcore import eng, enumdict
@@ -84,35 +83,20 @@ class api_backuprestore(object):
 		""" This method restore entire database with organisation.
 		First it checks the user role if the user is admin then only user can do the backup					  """
 		try:
-			token = self.request.headers["gktoken"]
+			self.con = eng.connect()
+			print "about to restore "
+			dataset = self.request.json_body
+			datasource = dataset["datasource"]
+			print datasource
+			restorefile = open("/tmp/restore.sql","w")
+			restorefile.write(datasource)
+			restorefile.close()
+			os.system("psql -f /tmp/restore.sql gkdata")
+			return {"gkstatus":enumdict["Success"]}
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			
 
-		authDetails = authCheck(token)
-		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-		else:
-  	#		try:
-				self.con = eng.connect()
-				dataset = self.request.json_body
-				datasource = dataset["datasource"]
-
-				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
-				userRole = user.fetchone()
-				
-				if userRole[0]==-1:
-										
-					restorefile = open("/tmp/restore.sql","w")
-					restoredata = restorefile.write("datasource")
-					restorefile.close()
-					os.system("psql -f /tmp/restore.sql gkdata")
-					
-					return {"gkstatus":enumdict["Success"],"gkdata":restoredata}
-				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
-	#		except exc.IntegrityError:
-	#			return {"gkstatus":enumdict["DuplicateEntry"]}
-	#		except:
-	#			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-	#		finally:
-	#			self.con.close()
+			
+		
+	
