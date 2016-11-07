@@ -209,11 +209,12 @@ class category(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
+				print "single type"
 				self.con = eng.connect()
 				category_code = self.request.params['categorycode']
 				result = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.categorycode  == category_code) )
 				row = result.fetchone()
-				category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"tax":row["tax"]}
+				category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
 				return{"gkstatus":enumdict["Success"],"gkresult":category}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
