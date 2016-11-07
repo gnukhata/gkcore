@@ -107,6 +107,7 @@ class api_user(object):
 				result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				row = result.fetchone()
 				User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
+				print User
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -235,3 +236,58 @@ class api_user(object):
 			return  {"gkstatus":enumdict["ConnectionFailed"]}
 		finally:
 			self.con.close()
+	@view_config(route_name='user', request_method='PUT', request_param='type=theme', renderer='json')
+	def addtheme(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+#		print authCheck(token)
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
+				return {"gkstatus":enumdict["Success"]}
+			except:
+				try:
+					self.con.execute("alter table users add column themename text default 'Default'")
+					dataset = self.request.json_body
+					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
+					return {"gkstatus":enumdict["Success"]}
+				except:
+					return  {"gkstatus":  enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+	@view_config(route_name='user', request_method='GET', request_param='type=theme', renderer='json')
+	def gettheme(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+#		print authCheck(token)
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				row = result.fetchone()
+#				print row["themename"]
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
+			except:
+				try:
+					self.con = eng.connect()
+					self.con.execute("alter table users add column themename text default 'Default'")
+					result = self.con.execute(select([gkdb.users.c.themename]).where(gkdb.users.c.userid == authDetails["userid"] ))
+					row = result.fetchone()
+#					print row["themename"]
+					return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
+				except:
+					return  {"gkstatus":  enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
