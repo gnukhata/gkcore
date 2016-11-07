@@ -28,7 +28,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import transfernote, stock
+from gkcore.models.gkdb import transfernote, stock,godown
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -86,7 +86,7 @@ class api_transfernote(object):
 						pas = self.con.execute(stock.insert(),[stockdata])
 						return {"gkstatus":enumdict["Success"]}
 				except:
-					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == tnno ))
+					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == dataset["transfernoteno"] ))
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				
 			except exc.IntegrityError:
@@ -113,7 +113,12 @@ class api_transfernote(object):
 				result = self.con.execute(select([transfernote]).order_by(transfernote.c.transfernotedate))
 				tn = []
 				for row in result:
-					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": row["fromgodown"], "togodown": row["togodown"], "orgcode": row["orgcode"] })
+					fromgo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["fromgodown"]))
+					togo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["togodown"]))
+					fromgodata = fromgo.fetchone()
+					togodata = togo.fetchone()
+
+					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": fromgodata["goname"], "togodown": togodata["goname"], "orgcode": row["orgcode"] })
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkdata":tn}
 			except:
@@ -139,8 +144,12 @@ class api_transfernote(object):
 				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteno == self.request.params["transfernoteno"],transfernote.c.orgcode==authDetails["orgcode"])))
 				tn = []
 				for row in result:
-					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": row["fromgodown"], "togodown": row["togodown"], "orgcode": row["orgcode"] })
-					#print tn
+					fromgo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["fromgodown"]))
+					togo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["togodown"]))
+					fromgodata = fromgo.fetchone()
+					togodata = togo.fetchone()
+
+					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": fromgodata["goname"], "togodown": togodata["goname"], "orgcode": row["orgcode"] })
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkdata":tn}
 			except:

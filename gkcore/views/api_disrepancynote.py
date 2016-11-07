@@ -28,7 +28,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import discrepancynote
+from gkcore.models.gkdb import discrepancynote ,customerandsupplier
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -97,8 +97,10 @@ class api_discrepancynote(object):
 				result = self.con.execute(select([discrepancynote]).order_by(discrepancynote.c.discrepancydate))
 				dn = []
 				for row in result:
-					
-					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] })
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["supplier"]))
+					custrow = custdata.fetchone()
+
+					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') , "discrepancydetails": row["discrepancydetails"],"dcinvpotncode":row["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":custrow["custname"],"orgcode": row["orgcode"] })
 					#print dn
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":dn}
@@ -107,7 +109,7 @@ class api_discrepancynote(object):
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 			
-	@view_config(request_param='browse',request_method='GET',renderer='json')
+	@view_config(request_method='GET',request_param='browse',renderer='json')
 	def browseDN(self):
 		"""  shows all discrepancy notes order by dates	and if there are many discrepancynotes then it will show by discrepancyno		   """
 		try:
@@ -123,8 +125,11 @@ class api_discrepancynote(object):
 				result = self.con.execute(select([discrepancynote.c.discrepancyno,discrepancynote.c.discrepancydate,discrepancynote.c.supplier]).order_by(discrepancynote.c.discrepancydate,discrepancynote.c.discrepancyno))
 				dn = []
 				for row in result:
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["supplier"]))
+					custrow = custdata.fetchone()
+
 					
-					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') ,"supplier":row["supplier"] })
+					dn.append({"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y') ,"supplier":custrow["custname"] })
 					#print dn
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":dn}
@@ -153,9 +158,10 @@ class api_discrepancynote(object):
 				self.con = eng.connect()
 				
 				result = self.con.execute(select([discrepancynote]).where(and_(discrepancynote.c.discrepancyno == self.request.params["discrepancyno"],discrepancynote.c.orgcode==authDetails["orgcode"])))
-				
 				row = result.fetchone()
-				dscnote = {"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y'),"discrepancydetails": row["discrepancydetails"],"dcinvpotncode":row["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":row["supplier"],"orgcode": row["orgcode"] }
+				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["supplier"]))
+				custrow = custdata.fetchone()
+				dscnote = {"discrepancyno": row["discrepancyno"], "discrepancydate":datetime.strftime(row["discrepancydate"],'%d-%m-%Y'),"discrepancydetails": row["discrepancydetails"],"dcinvpotncode":row["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"supplier":custrow["custname"],"orgcode": row["orgcode"] }
 				#print dscnote
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":dscnote}
