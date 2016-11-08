@@ -38,6 +38,7 @@ from sqlalchemy.ext.baked import Result
 import gkcore
 import os
 from sqlalchemy.sql.functions import func
+import base64
 
 @view_defaults(route_name='backuprestore')
 class api_backuprestore(object):
@@ -67,9 +68,11 @@ class api_backuprestore(object):
 				if userRole[0]==-1:
 					os.system("pg_dump -a -Ft -t organisations -t signature -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin  gkdata -f /tmp/gkbackup.tar")
 					backupfile = open("/tmp/gkbackup.tar","r")
-					backupdata = backupfile.read()
+					
+					backup_str = base64.b64encode(backupfile.read())
+				   
 					backupfile.close()
-					return {"gkstatus":enumdict["Success"],"gkdata":backupdata}
+					return {"gkstatus":enumdict["Success"],"gkdata":backup_str}
 				else:
 					return {"gkstatus":  enumdict["BadPrivilege"]}
 			except exc.IntegrityError:
