@@ -21,6 +21,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
+"Prajkta Patkar" <prajkta.patkar007@gmail.com>
 
 """
 
@@ -66,7 +67,7 @@ class api_backuprestore(object):
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
-					os.system("pg_dump -a -Ft -t organisations -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin  gkdata -f /tmp/gkbackup.tar")
+					os.system("pg_dump -a -Ft -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin  gkdata -f /tmp/gkbackup.tar")
 					backupfile = open("/tmp/gkbackup.tar","r")
 					
 					backup_str = base64.b64encode(backupfile.read())
@@ -102,8 +103,8 @@ class api_backuprestore(object):
 			restorefile = open("/tmp/restore.tar","w")
 			restorefile.write(datasource)
 			restorefile.close()
-			os.system("pg_restore -t organisations -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin --dbname=gkdata  /tmp/gkbackup.tar")
-			#os.system("psql -f /tmp/restore.sql gkdata")
+			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin --dbname=gkdata  /tmp/gkbackup.tar")
+			
 			return {"gkstatus":enumdict["Success"]}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
