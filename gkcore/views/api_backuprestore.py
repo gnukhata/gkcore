@@ -97,11 +97,13 @@ class api_backuprestore(object):
 			print "about to restore "
 			dataset = self.request.json_body
 			datasource = dataset["datasource"]
+			restore_str = base64.b64decode(datasource)
 			print datasource
-			restorefile = open("/tmp/restore.sql","w")
+			restorefile = open("/tmp/restore.tar","w")
 			restorefile.write(datasource)
 			restorefile.close()
-			os.system("psql -f /tmp/restore.sql gkdata")
+			os.system("pg_restore -t organisations -t signature -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin --dbname=gkdata  /tmp/gkbackup.tar")
+			#os.system("psql -f /tmp/restore.sql gkdata")
 			return {"gkstatus":enumdict["Success"]}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
