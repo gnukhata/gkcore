@@ -85,10 +85,12 @@ class api_backuprestore(object):
 		First it checks the user role if the user is admin then only user can do the backup					  """
 		try:
 			self.con = eng.connect()
-			orgcount = self.con.execute(select([func.count(organisation.c.orgcode)].label('orgcount')))
+			orgcount = self.con.execute(select([func.count(organisation.c.orgcode).label('orgcount')]))
 			countrow = orgcount.fetchone()
-			if int(countrow["orgcount"]) >= 0:
-				return {"gkstatus":"ActionDisallowed"}
+			if int(countrow["orgcount"]) > 0:
+				print "data detected"
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+
 			print "about to restore "
 			dataset = self.request.json_body
 			datasource = dataset["datasource"]
@@ -100,5 +102,7 @@ class api_backuprestore(object):
 			return {"gkstatus":enumdict["Success"]}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-		
-
+			
+				
+			
+					
