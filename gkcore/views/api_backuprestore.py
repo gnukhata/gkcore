@@ -65,8 +65,8 @@ class api_backuprestore(object):
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
-					os.system("pg_dump -a gkdata -f /tmp/backup.sql")
-					backupfile = open("/tmp/backup.sql","r")
+					os.system("pg_dump -a -Ft -t organisations -t signature -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin  gkdata -f /tmp/gkbackup.tar")
+					backupfile = open("/tmp/gkbackup.tar","r")
 					backupdata = backupfile.read()
 					backupfile.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":backupdata}
