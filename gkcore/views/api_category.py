@@ -89,6 +89,8 @@ class category(object):
 					return {"gkstatus":enumdict["Success"],"gkresult":row["categorycode"]}
 				else:
 					return {"gkstatus":enumdict["ConnectionFailed"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
@@ -189,9 +191,7 @@ class category(object):
 					subcount = countrow["subcount"]
 					categories.append({"categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
-
 			except exc.IntegrityError:
-				self.con.close()
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
