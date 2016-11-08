@@ -160,7 +160,7 @@ product = Table('product',metadata,
 	Column('productcode',Integer,primary_key=True),
 	Column('productdesc',UnicodeText),
 	Column('specs', JSONB,nullable=False ),
-	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
 	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('categorycode','productdesc'),
@@ -185,9 +185,9 @@ customerandsupplier = Table('customerandsupplier',metadata,
 	Column('custdoc',JSONB),
 	Column('csflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','custname','custemail'),
-	UniqueConstraint('orgcode','custpan'),
-	UniqueConstraint('orgcode','custtan'),
+	UniqueConstraint('orgcode','custname','custemail','csflag'),
+	UniqueConstraint('orgcode','custname','custpan','csflag'),
+	UniqueConstraint('orgcode','custname','custtan','csflag'),
 	Index("customer_supplier_orgcodeindex","orgcode")
 	)
 """ table to store accounts.
@@ -284,9 +284,9 @@ delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
 	Column('dcno',UnicodeText,nullable=False),
 	Column('dcdate',DateTime,nullable=False),
-    Column('dcflag',Integer,nullable=False),
-    Column('isuuername',UnicodeText,),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+	Column('dcflag',Integer,nullable=False),
+	Column('issuername',UnicodeText),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
 	Column('orderno',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
 	UniqueConstraint('orgcode','dcno'),
@@ -346,7 +346,7 @@ users=Table('users', metadata,
 	Column('userrole',Integer, nullable=False),
 	Column('userquestion',Text, nullable=False),
 	Column('useranswer',Text, nullable=False),
-    Column('themename',Text,default="Default"),
+	Column('themename',Text,default="Default"),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','username'),
 	Index("userindex","orgcode","username")
@@ -424,9 +424,9 @@ godown = Table('godown',metadata,
 	Index("godown_orgcodeindex","orgcode")
 	)
 
-""" Table for transferNote details. 
+""" Table for transferNote details.
 	When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
-	
+
 """
 
 transfernote = Table('transfernote',metadata,
@@ -443,10 +443,10 @@ transfernote = Table('transfernote',metadata,
 	Index("transfernote_fromgodown",'fromgodown'),
 	Index("transfernote_togodown",'togodown'),
 	Index("transfernote_orgcode","orgcode")
-) 
+)
 
 
-""" Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records. 
+""" Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records.
 'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 16. """
 discrepancynote = Table ('discrepancynote' ,metadata,
 	 Column('discrepancyno',UnicodeText,primary_key= True),
@@ -470,9 +470,9 @@ tax = Table('tax',metadata,
 	Column('state',UnicodeText),
 	Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE")),
 	Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
-    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	UniqueConstraint('state','taxname','productcode','orgcode'),
-    UniqueConstraint('state','taxname','categorycode','orgcode'),
+	UniqueConstraint('state','taxname','categorycode','orgcode'),
 	Index("taxindex","productcode","taxname"),
-    Index("tax_taxindex","categorycode","taxname")
+	Index("tax_taxindex","categorycode","taxname")
 	)
