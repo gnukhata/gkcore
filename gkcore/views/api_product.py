@@ -110,7 +110,7 @@ class api_product(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				if dataset.has_key("categorycode")==False:
-					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc==self.request.params["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==dataset["orgcode"])))
+					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==dataset["orgcode"])))
 					duplicateproductrow = duplicateproduct.fetchone()
 					if duplicateproductrow["productcount"]>0:
 						return {"gkstatus":enumdict["DuplicateEntry"]}
