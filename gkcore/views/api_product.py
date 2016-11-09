@@ -109,11 +109,18 @@ class api_product(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
+				if !dataset.has_key("categorycode"):
+					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc==self.request.params["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==dataset["orgcode"])))
+					duplicateproductrow = duplicateproduct.fetchone()
+					if duplicateproductrow["productcount"]>0:
+						return {"gkstatus":enumdict["DuplicateEntry"]}
 				result = self.con.execute(gkdb.product.insert(),[dataset])
 				spec = dataset["specs"]
 				for sp in spec.keys():
 					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
-				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==dataset["categorycode"])))
+				if !dataset.has_key("categorycode"):
+					dataset["categorycode"]=None
+				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==dataset["categorycode"],gkdb.product.c.orgcode==dataset["orgcode"])))
 				row = result.fetchone()
 				return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
