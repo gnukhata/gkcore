@@ -113,10 +113,10 @@ class api_product(object):
 				spec = dataset["specs"]
 				for sp in spec.keys():
 					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
-				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.proddesce==authDetails["proddesc"], gkdb.product.c.categorycode==dataset["categorycode"])))
+				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==dataset["categorycode"])))
 				row = result.fetchone()
 				return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
-				
+
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
