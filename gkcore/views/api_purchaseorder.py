@@ -187,11 +187,11 @@ class api_purchaseorder(object):
 				for key in productdet:
 					print key
 					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==key))
-					productnamerow = result.fetchone()
+					productnamerow = prodata.fetchone()
 					productdesc = productnamerow["productdesc"]
 					print productdesc
 					details[productdesc]= productdet[key] 
-				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==psrow["csid"]))
 				custrow = custdata.fetchone()
 				po ={"orderid":psrow["orderid"],"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),  "deliveryplaceaddr": psrow["deliveryplaceaddr"], "custname":custrow["custname"],"productdetails":details}
 				
