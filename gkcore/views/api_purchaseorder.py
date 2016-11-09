@@ -180,33 +180,34 @@ class api_purchaseorder(object):
 				self.con = eng.connect()
 				
 				ordid =int(self.request.params["orderid"])
-									
 				result=self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid== ordid))
-				prod = result.fetchone()
-				productdet = prod["productdetails"]
+				psrow = result.fetchone()
+				productdet = psrow["productdetails"]
+				details = {}
 				for key in productdet:
-					productcode = key
-					print productcode
-					det = productdet[key]
-					print det
-					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==productcode))
-					productname = result.fetchone()
-					print productname
-					
-					for row in result:
-						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
-						custrow = custdata.fetchone()
-
-						po ={"orderid":row["orderid"],"orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),  "deliveryplaceaddr": row["deliveryplaceaddr"], "custname":custrow["custname"],"productname": productname["productdesc"],"productdetails":det}
-						datedelivery = row["datedelivery"]
-				 		maxdate = row["maxdate"]
-				 		if (datedelivery == None):
-				 			po["datedelivery"]=""
-				 			if (maxdate == None):
-				 				po["maxdate"]=""				 		
-						return {"gkstatus":enumdict["Success"],"gkresult":po}
-					self.con.close()
-					return {"gkstatus":enumdict["Success"]}
+					print key
+					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==key))
+					productnamerow = result.fetchone()
+					productdesc = productnamerow["productdesc"]
+					print productdesc
+					details[productdesc]= productdet[key] 
+				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+				custrow = custdata.fetchone()
+				po ={"orderid":psrow["orderid"],"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),  "deliveryplaceaddr": psrow["deliveryplaceaddr"], "custname":custrow["custname"],"productdetails":details}
+				
+				datedelivery = psrow["datedelivery"]
+				maxdate =psrow["maxdate"]
+				if datedelivery == None:
+					po["datedelivery"]=""
+				else:
+					po["datedelivery"]= datetime.strftime(psrow["datedelivery"],'%d-%m-%Y')
+				if (maxdate == None):
+					po["maxdate"]=""
+				else:
+					po["maxdate"]= datetime.strftime(psrow["maxdate"],'%d-%m-%Y')
+				return {"gkstatus":enumdict["Success"],"gkresult":po}
+				self.con.close()
+				
 			#except:
 			#	self.con.close()
 			#	return {"gkstatus":enumdict["ConnectionFailed"]}
