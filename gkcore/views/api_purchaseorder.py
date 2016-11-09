@@ -176,7 +176,7 @@ class api_purchaseorder(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				
 				ordid =int(self.request.params["orderid"])
@@ -185,11 +185,11 @@ class api_purchaseorder(object):
 				productdet = psrow["productdetails"]
 				details = {}
 				for key in productdet:
-					print key
+					
 					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==key))
 					productnamerow = prodata.fetchone()
 					productdesc = productnamerow["productdesc"]
-					print productdesc
+					
 					details[productdesc]= productdet[key] 
 				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==psrow["csid"]))
 				custrow = custdata.fetchone()
@@ -208,10 +208,10 @@ class api_purchaseorder(object):
 				return {"gkstatus":enumdict["Success"],"gkresult":po}
 				self.con.close()
 				
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
-			#finally:
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
 				self.con.close()
 
 
