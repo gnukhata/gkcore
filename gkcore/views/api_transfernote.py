@@ -239,13 +239,6 @@ class api_transfernote(object):
 			finally:
 				self.con.close()
 
-
-
-
-
-
-
-
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteTransferNote(self):
 		""" This method deletes the row of transfernote   by matching transfernote no which is provided	   """
@@ -260,11 +253,9 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				tnno = dataset["transfernoteno"]
-				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteno == tnno))
-
+				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteid == dataset["transfernoteid"]))
 				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == tnno, stock.c.dcinvtnflag == 20)))
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteid"], stock.c.dcinvtnflag == 20)))
 					return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
