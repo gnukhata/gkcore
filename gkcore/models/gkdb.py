@@ -429,17 +429,16 @@ godown = Table('godown',metadata,
 """
 
 transfernote = Table('transfernote',metadata,
-	Column('transfernoteno',UnicodeText,primary_key=True),
+	Column('transfernoteid',Integer,primary_key=True),
+	Column('transfernoteno',UnicodeText),
 	Column('transfernotedate', DateTime, nullable=False),
 	Column('transportationmode', UnicodeText),
-	Column('productdetails',JSONB, nullable = False),
 	Column('nopkt',Integer),
-	Column('recieved', BOOLEAN),
-	Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete="CASCADE"),nullable = False),
+	Column('recieved', BOOLEAN,default=False),
 	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	UniqueConstraint('transfernoteno','orgcode'),
 	Index("transfernote_date",'transfernotedate'),
-	Index("transfernote_fromgodown",'fromgodown'),
 	Index("transfernote_togodown",'togodown'),
 	Index("transfernote_orgcode","orgcode")
 )
@@ -448,7 +447,8 @@ transfernote = Table('transfernote',metadata,
 """ Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records.
 'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 16. """
 discrepancynote = Table ('discrepancynote' ,metadata,
-	 Column('discrepancyno',UnicodeText,primary_key= True),
+	 Column('discrepancyid',Integer,primary_key= True),
+	 Column('discrepancyno',UnicodeText),
 	 Column('discrepancydate',DateTime,nullable=False),
 	 Column('discrepancydetails',JSONB , nullable = False),
 	 Column('dcinvpotncode',UnicodeText,nullable = False),

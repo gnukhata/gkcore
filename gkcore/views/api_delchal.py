@@ -35,6 +35,7 @@ from sqlalchemy import and_, exc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
+from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
@@ -70,9 +71,11 @@ class api_delchal(object):
 				stockdata = dataset["stockdata"]
 				delchaldata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
+				if delchaldata["dcflag"]==19:
+					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
 				if result.rowcount==1:
-					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"])))
+					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
 					stockdata["dcinvtnid"] = dcidrow["dcid"]
 					stockdata["dcinvtnflag"] = 4

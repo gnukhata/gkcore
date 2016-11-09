@@ -35,6 +35,7 @@ from sqlalchemy import and_, exc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
+from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
@@ -82,21 +83,20 @@ class api_invoice(object):
 					try:
 						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
 						invoiceid = result.fetchone()
-						stockdataset["dcinvid"] = invoiceid["invid"]
+						stockdataset["dcinvtnid"] = invoiceid["invid"]
 						for item in items.keys():
 							stockdataset["productcode"] = item
 							stockdataset["qty"] = items[item].values()[0]
-							stockdataset["dcinvflag"] = "9"
+							stockdataset["dcinvtnflag"] = "9"
 							result = self.con.execute(stock.insert(),[stockdataset])
 						return {"gkstatus":enumdict["Success"]}
 					except:
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invoiceid["invid"],stock.c.dcinvflag==9)))
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
 						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
-				result = self.con.execute(invoice.delete().where(invoice.c.invid==dataset["invid"]))
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
@@ -120,7 +120,7 @@ class api_invoice(object):
 				items = invdataset["contents"]
 				invdataset["orgcode"] = authDetails["orgcode"]
 				stockdataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invdataset["invid"],stock.c.dcinvflag==9)))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
 				result = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
 				if invdataset.has_key("dcid"):
 					dcid = invdataset.pop("dcid")
@@ -139,15 +139,15 @@ class api_invoice(object):
 						result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
 						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
 						invoiceid = result.fetchone()
-						stockdataset["dcinvid"] = invoiceid["invid"]
+						stockdataset["dcinvtnid"] = invoiceid["invid"]
 						for item in items.keys():
 							stockdataset["productcode"] = item
 							stockdataset["qty"] = items[item].values()[0]
-							stockdataset["dcinvflag"] = "9"
+							stockdataset["dcinvtnflag"] = "9"
 							result = self.con.execute(stock.insert(),[stockdataset])
 						return {"gkstatus":enumdict["Success"]}
 					except:
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==invoiceid["invid"],stock.c.dcinvflag==9)))
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
 						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except exc.IntegrityError:
@@ -187,20 +187,20 @@ class api_invoice(object):
 					invc["invid"]=row["invid"]
 					invc["dcid"]=dcid["dcid"]
 					invc["dcno"]=dcnocustid["dcno"]
-					invc["invoicedate"]=datetime.strftime["invoicedate"],'%d-%m-%Y'
+					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
 				else:
 					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
-					invc["invoicedate"]=datetime.strftime["invoicedate"],'%d-%m-%Y'
+					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
 					productname = result.fetchone()
-					items[item]["productname"]= productname["productdesc"]
-					invc["contents"] = items
+					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"]}
+				invc["contents"] = items
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
@@ -256,7 +256,7 @@ class api_invoice(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(invoice.delete().where(invoice.c.invid==dataset["invid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvid==dataset["invid"],stock.c.dcinvflag==9)))
+				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==9)))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}

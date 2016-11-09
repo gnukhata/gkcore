@@ -28,7 +28,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import transfernote, stock,godown
+from gkcore.models.gkdb import transfernote, stock,godown, product
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -46,18 +46,18 @@ class api_transfernote(object):
 		self.request = request
 		self.con = Connection
 		print "transfernote initialized"
-		
-	
+
+
 	@view_config(request_method='POST',renderer='json')
 	def createtn(self):
 		"""	 create method for discrepancynote resource.
 			 orgcode is first authenticated, returns a json object containing success.
-			 Inserts data into transfernote table. 
+			 Inserts data into transfernote table.
 					-transfernoteno goes in dcinvtnid column of stock table.
 					-dcinvflag column will be set to 20 for transfernote no entry.
 					- inout column will be set 1 , i.e. goods are out from the godown.
 			 If stock table insert fails then the transfernote entry will be deleted.
-		  
+
 		"""
 		try:
 			token = self.request.headers["gktoken"]
@@ -70,32 +70,38 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				dataset["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(transfernote.insert(),[dataset])
-				productdict = dataset["productdetails"]
-				try:
-					for key in productdict.keys():
-						stockdata = {}
-						stockdata["productcode"] = key
-						stockdata["dcinvtnid"] = dataset["transfernoteno"]
-						stockdata["dcinvtnflag"] = 20
-						stockdata["goid"] = dataset["fromgodown"]
-						stockdata["inout"] = 1
-						stockdata["qty"] = productdict[key]
-						stockdata["orgcode"] = authDetails["orgcode"]
-						pas = self.con.execute(stock.insert(),[stockdata])
-						return {"gkstatus":enumdict["Success"]}
-				except:
-					result = self.con.execute(transfernote.delete().where( transfernote.c.transfernoteno == dataset["transfernoteno"] ))
+				transferdata = dataset["transferdata"]
+				stockdata = dataset["stockdata"]
+				transferdata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				result = self.con.execute(transfernote.insert(),[transferdata])
+				if result.rowcount==1:
+					transfernoteiddata = self.con.execute(select([transfernote.c.transfernoteid]).where(and_(transfernote.c.orgcode==authDetails["orgcode"],transfernote.c.transfernoteno==transferdata["transfernoteno"])))
+					transfernoteidrow = transfernoteiddata.fetchone()
+					stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
+					stockdata["dcinvtnflag"] = 20
+					stockdata["inout"] = 15
+					items = stockdata.pop("items")
+					try:
+						for key in items.keys():
+							stockdata["productcode"] = key
+							stockdata["qty"] = items[key]
+							result = self.con.execute(stock.insert(),[stockdata])
+					except:
+						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==transfernoteidrow["transfernoteid"],stock.c.dcinvtnflag==20)))
+						result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteid==transfernoteidrow["transfernoteid"]))
+						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+					return {"gkstatus":enumdict["Success"]}
+				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-				
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-				
+
+
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
 	def getAllTransferNote(self):
 		"""This method returns	all existing transfernotes  """
@@ -110,28 +116,23 @@ class api_transfernote(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([transfernote]).order_by(transfernote.c.transfernotedate))
+				result = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteid,transfernote.c.transfernoteno]).where(transfernote.c.orgcode==authDetails["orgcode"]).order_by(transfernote.c.transfernotedate))
 				tn = []
 				for row in result:
-					fromgo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["fromgodown"]))
-					togo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["togodown"]))
-					fromgodata = fromgo.fetchone()
-					togodata = togo.fetchone()
-
-					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": fromgodata["goname"], "togodown": togodata["goname"], "orgcode": row["orgcode"] })
+					tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})
 				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkdata":tn}
+				return {"gkstatus":enumdict["Success"], "gkresult":tn}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
-	
+
 	@view_config(request_method='GET',request_param='tn=single',renderer='json')
 	def getTn(self):
 		""" Shows single transfernote by matching transfernoteno			   """
 		try:
-			#print "transfernote" 
+			#print "transfernote"
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -141,53 +142,28 @@ class api_transfernote(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteno == self.request.params["transfernoteno"],transfernote.c.orgcode==authDetails["orgcode"])))
-				tn = []
-				for row in result:
-					fromgo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["fromgodown"]))
-					togo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["togodown"]))
-					fromgodata = fromgo.fetchone()
-					togodata = togo.fetchone()
+				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"])))
+				row = result.fetchone()
+				togo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==row["togodown"]))
+				togodata = togo.fetchone()
+				items = {}
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==20,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
+				for stockrow in stockdata:
+					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
+					productdesc = productdata.fetchone()
+					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
+					goiddata = stockrow["goid"]
+				fromgo = self.con.execute(select([godown.c.goname]).where(godown.c.goid==goiddata))
+				fromgodata = fromgo.fetchone()
+				tn={"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": items, "nopkt": row["nopkt"], "recieved": row["recieved"], "togodown": togodata["goname"],"togodownid": row["togodown"],"fromgodownid":goiddata,"fromgodown": fromgodata["goname"] , "orgcode": row["orgcode"] }
+				return {"gkstatus":enumdict["Success"], "gkresult":tn}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
-					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') , "transportationmode":row["transportationmode"], "productdetails": row["productdetails"], "nopkt": row["nopkt"], "recieved": row["recieved"], "fromgodown": fromgodata["goname"], "togodown": togodata["goname"], "orgcode": row["orgcode"] })
-				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkdata":tn}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
-	
-				
-				
-	@view_config(request_param='browse',request_method='GET',renderer='json')
-	def browse(self):		 
-		""" This method browses all transfernote and shows important data about transfernote  .""" 
-		try:
-			#print "transfernote browse"
-			token = self.request.headers["gktoken"]
-		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"] == False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				result = self.con.execute(select([transfernote.c.transfernoteno,transfernote.c.transfernotedate,transfernote.c.fromgodown,transfernote.c.togodown]).order_by(transfernote.c.transfernotedate,transfernote.c.transfernoteno))
-				tn = []
-				for row in result:
-					tn.append({"transfernoteno": row["transfernoteno"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y') ,"fromgodown": row["fromgodown"], "togodown":row["togodown"] })
-					#print tn
-				self.con.close()
-				return {"gkstatus":enumdict["Success"], "gkdata":tn}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
-				
-				
+
 	@view_config(request_method='PUT', renderer='json')
 	def updatetransfernote(self):
 		""" This method updates the transfer note, If the transfernote is updated at the same time stock table also has to updated with new entries  """
@@ -202,47 +178,31 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				#print dataset
-				productdict = dataset["productdetails"]
-				productchanged = dataset["productchanged"]
-				
-				del dataset["productchanged"]
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == dataset["transfernoteno"]).values(dataset))
-				try:
-					
-					if (productchanged == True):
-						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteno"], stock.c.dcinvtnflag == 20)))
-						
-						for key in productdict.keys():	 
-							stockdata = {}
-							stockdata["productcode"] = key
-							stockdata["dcinvtnid"] = dataset["transfernoteno"]
-							stockdata["dcinvtnflag"] = 20
-							stockdata["goid"] = dataset["fromgodown"]
-							stockdata["inout"] = 1
-							stockdata["qty"] = productdict[key]
-							stockdata["orgcode"] = authDetails["orgcode"]
-							pas = self.con.execute(stock.insert(),[stockdata])
-							
-							if dataset.has_key("togodown"):
-									stockdata["goid"] = dataset["togodown"]
-									stockdata["inout"] = 0
-									pas = self.con.execute(stock.insert(),[stockdata])
-									
-								
-				except:
+				transferdata = dataset["transferdata"]
+				stockdata = dataset["stockdata"]
+				transferdata["orgcode"] = authDetails["orgcode"]
+				stockdata["orgcode"] = authDetails["orgcode"]
+				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
+				stockdata["dcinvtnflag"] = 20
+				stockdata["inout"]=15
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(transferdata))
+				if result.rowcount==1:
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
+					items = stockdata.pop("items")
+					for key in items.keys():
+						stockdata["productcode"] = key
+						stockdata["qty"] = items[key]
+						result = self.con.execute(stock.insert(),[stockdata])
+					return {"gkstatus":enumdict["Success"]}
+				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-					
-						
-					   			
-				return {"gkstatus":enumdict["Success"]}		   
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-					
 
-				
+
+
 	@view_config(request_param='received=true',request_method='PUT', renderer='json')
 	def editransfernote(self):
 		""" when other godown receives the stock , Received entry is made and according to that changes are done ithe stock table								  """
@@ -256,41 +216,29 @@ class api_transfernote(object):
 		else:
 			try:
 				self.con = eng.connect()
-				dataset = self.request.json_body
-				tnno = dataset["transfernoteno"]
-				togodown = dataset["togodown"]
-				orgcode = dataset["orgcode"]
-				productdict = dataset["productdetails"]
-				productkey = productdict.keys()
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == tnno).value(recieved = True))
-				try:
-					for key in productkey:
-						stockdata = {}
-						stockdata["productcode"] = key
-						stockdata["dcinvtnid"] = tnno
-						stockdata["dcinvtnflag"] = 20
-						stockdata["goid"] = togodown
-						stockdata["inout"] = 0
-						stockdata["qty"] = productdict[key]
-						stockdata["orgcode"] = orgcode
-						pas = self.con.execute(stock.insert(),[stockdata])
-				except:
-					result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteno == tnno).value(recieved = False))
-					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-				
+				transferdata = self.request.json_body
+				stockdata = {}
+				stockdata["orgcode"] = authDetails["orgcode"]
+				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
+				stockdata["dcinvtnflag"] = 20
+				stockdata["inout"]=9
+				result = self.con.execute(select([transfernote.c.togodown,transfernote.c.recieved]).where(transfernote.c.transfernoteid==transferdata["transfernoteid"]))
+				row = result.fetchone()
+				if row["recieved"]:
+					return {"gkstatus":enumdict["ActionDisallowed"]}
+				stockdata["goid"]=row["togodown"]
+				stockresult = self.con.execute(select([stock.c.productcode,stock.c.qty]).where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
+				for key in stockresult:
+					stockdata["productcode"] = key["productcode"]
+					stockdata["qty"] = key["qty"]
+					result = self.con.execute(stock.insert(),[stockdata])
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-				
-				
-				
-				
-			
 
-	
-				
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteTransferNote(self):
 		""" This method deletes the row of transfernote   by matching transfernote no which is provided	   """
@@ -305,11 +253,9 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				tnno = dataset["transfernoteno"]
-				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteno == tnno))
-				
+				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteid == dataset["transfernoteid"]))
 				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == tnno, stock.c.dcinvtnflag == 20)))
+					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteid"], stock.c.dcinvtnflag == 20)))
 					return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
@@ -317,18 +263,3 @@ class api_transfernote(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	   
-	   
