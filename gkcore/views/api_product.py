@@ -109,7 +109,7 @@ class api_product(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-				if !dataset.has_key("categorycode"):
+				if dataset.has_key("categorycode")==False:
 					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc==self.request.params["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==dataset["orgcode"])))
 					duplicateproductrow = duplicateproduct.fetchone()
 					if duplicateproductrow["productcount"]>0:
@@ -118,7 +118,7 @@ class api_product(object):
 				spec = dataset["specs"]
 				for sp in spec.keys():
 					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
-				if !dataset.has_key("categorycode"):
+				if dataset.has_key("categorycode")==False:
 					dataset["categorycode"]=None
 				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==dataset["categorycode"],gkdb.product.c.orgcode==dataset["orgcode"])))
 				row = result.fetchone()

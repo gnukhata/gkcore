@@ -78,6 +78,7 @@ class api_transfernote(object):
 				if result.rowcount==1:
 					stockdata["dcinvtnid"] = transferdata["transfernoteno"]
 					stockdata["dcinvtnflag"] = 20
+					stockdata["inout"] = 15
 					items = stockdata.pop("items")
 					try:
 						for key in items.keys():

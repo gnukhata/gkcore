@@ -437,7 +437,6 @@ transfernote = Table('transfernote',metadata,
 	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	Index("transfernote_date",'transfernotedate'),
-	Index("transfernote_fromgodown",'fromgodown'),
 	Index("transfernote_togodown",'togodown'),
 	Index("transfernote_orgcode","orgcode")
 )
