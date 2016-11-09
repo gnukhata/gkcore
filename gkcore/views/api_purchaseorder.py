@@ -129,32 +129,14 @@ class api_purchaseorder(object):
 		else:
 			try:
 				self.con = eng.connect()
-
-				psflag =int(self.request.params["psflag"])
-				if(psflag==16):
-
-					result=self.con.execute(select([purchaseorder.c.orderid,purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.csid]).where(and_(purchaseorder.c.psflag == 16,purchaseorder.c.orgcode==authDetails["orgcode"])))
-					po =[]
-					for row in result:
-						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
-						custrow = custdata.fetchone()
-						po.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["orderdate"],'%d-%m-%Y') , "custname": custrow["custname"] })
-						return {"gkstatus":enumdict["Success"],"gkresult":po}
-
-
-				if(psflag==20):
-
-					result=self.con.execute(select([purchaseorder.c.orderid,purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.productdetails,purchaseorder.c.csid]).where(and_(purchaseorder.c.psflag == 20,purchaseorder.c.orgcode==authDetails["orgcode"])))
-					so =[]
-					for row in result:
-						custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
-						custrow = custdata.fetchone()
-
-						so.append({"orderid":row["orderid"],"oredrno":row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"custname": custrow["custname"],"productdetails": row["productdetails"]})
-					return {"gkstatus":enumdict["Success"], "gkresult":so}
-					self.con.close()
-
-				return {"gkstatus":enumdict["Success"],}
+				psflagdata =int(self.request.params["psflag"])
+				result=self.con.execute(select([purchaseorder.c.orderid,purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.csid]).where(and_(purchaseorder.c.psflag == psflagdata,purchaseorder.c.orgcode==authDetails["orgcode"])))
+				po =[]
+				for row in result:
+					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
+					custrow = custdata.fetchone()
+					po.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["orderdate"],'%d-%m-%Y') ,"custname": custrow["custname"]})
+				return {"gkstatus":enumdict["Success"],"gkresult":po}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}

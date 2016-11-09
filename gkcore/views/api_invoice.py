@@ -169,7 +169,7 @@ class api_invoice(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.params["invid"]
 				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
@@ -202,10 +202,10 @@ class api_invoice(object):
 					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"]}
 				invc["contents"] = items
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
-			#except:
-				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			#finally:
-				#self.con.close()
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
 
