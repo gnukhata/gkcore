@@ -99,11 +99,11 @@ class api_backuprestore(object):
 			dataset = self.request.json_body
 			datasource = dataset["datasource"]
 			restore_str = base64.b64decode(datasource)
-			print datasource
+			#print datasource
 			restorefile = open("/tmp/restore.tar","w")
-			restorefile.write(datasource)
+			restorefile.write(restore_str)
 			restorefile.close()
-			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin --dbname=gkdata  /tmp/gkbackup.tar")
+			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin --dbname=gkdata  /tmp/restore.tar")
 			
 			return {"gkstatus":enumdict["Success"]}
 		except:
