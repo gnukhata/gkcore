@@ -69,9 +69,7 @@ class api_backuprestore(object):
 				if userRole[0]==-1:
 					os.system("pg_dump -a -Ft -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankercon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t vouchersbin  gkdata -f /tmp/gkbackup.tar")
 					backupfile = open("/tmp/gkbackup.tar","r")
-					
 					backup_str = base64.b64encode(backupfile.read())
-				   
 					backupfile.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":backup_str}
 				else:
@@ -92,14 +90,10 @@ class api_backuprestore(object):
 			orgcount = self.con.execute(select([func.count(organisation.c.orgcode).label('orgcount')]))
 			countrow = orgcount.fetchone()
 			if int(countrow["orgcount"]) > 0:
-				print "data detected"
 				return {"gkstatus":enumdict["ActionDisallowed"]}
-
-			print "about to restore "
 			dataset = self.request.json_body
 			datasource = dataset["datasource"]
 			restore_str = base64.b64decode(datasource)
-			#print datasource
 			restorefile = open("/tmp/restore.tar","w")
 			restorefile.write(restore_str)
 			restorefile.close()
