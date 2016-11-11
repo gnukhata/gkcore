@@ -175,13 +175,13 @@ class api_invoice(object):
 				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
 				row = result.fetchone()
 				items = row["contents"]
-				invc = {}
+				invc = {"issuername":row["issuername"],"designation":row["designation"]}
 				if row["custid"] == None:
 					result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
 					dcid = result.fetchone()
 					result = self.con.execute(select([delchal.c.custid,delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
 					dcnocustid = result.fetchone()
-					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
+					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
@@ -189,17 +189,19 @@ class api_invoice(object):
 					invc["dcno"]=dcnocustid["dcno"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
+					invc["custstate"]=custname["custstate"]
 				else:
-					result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
+					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
+					invc["custstate"]=custname["custstate"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
 					productname = result.fetchone()
-					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"]}
+					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item]}
 				invc["contents"] = items
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
