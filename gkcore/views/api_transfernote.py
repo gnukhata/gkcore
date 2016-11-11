@@ -144,7 +144,7 @@ class api_transfernote(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"])))
 				row = result.fetchone()
-				togo = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==row["togodown"]))
+				togo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["togodown"]))
 				togodata = togo.fetchone()
 				items = {}
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==20,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
@@ -153,7 +153,7 @@ class api_transfernote(object):
 					productdesc = productdata.fetchone()
 					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
 					goiddata = stockrow["goid"]
-				fromgo = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
+				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==goiddata))
 				fromgodata = fromgo.fetchone()
 				tn={"transfernoteno": row["transfernoteno"],
 					"transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),
@@ -163,10 +163,12 @@ class api_transfernote(object):
 					"recieved": row["recieved"],
 					"togodown": togodata["goname"],
 					"togodownstate": togodata["state"],
+					"togodownaddr": togodata["goaddr"],
 					"togodownid": row["togodown"],
 					"fromgodownid":goiddata,
 					"fromgodown": fromgodata["goname"],
 					"fromgodownstate": fromgodata["state"],
+					"fromgodownaddr": fromgodata["goaddr"],
 					"issuername":row["issuername"],
 					"designation":row["designation"],
 					"orgcode": row["orgcode"] }
