@@ -124,9 +124,9 @@ class api_godown(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([godown.c.goname,godown.c.goid,godown.c.goaddr,godown.c.gocontact]).where(godown.c.goid == self.request.params["goid"]))
+				result = self.con.execute(select([godown]).where(godown.c.goid == self.request.params["goid"]))
 				row = result.fetchone()
-				godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"]}
+				godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":godownDetails}
 			except:

@@ -172,7 +172,19 @@ class api_purchaseorder(object):
 					details[key]= {"priceperunit":productdet[key].keys()[0],"qty":productdet[key][productdet[key].keys()[0]],"productdesc":productnamerow["productdesc"]}
 				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==psrow["csid"]))
 				custrow = custdata.fetchone()
-				po ={"orderid":psrow["orderid"],"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),  "deliveryplaceaddr": psrow["deliveryplaceaddr"], "custname":custrow["custname"],"csid":psrow["csid"],"productdetails":details}
+				po ={"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),
+					"deliveryplaceaddr": psrow["deliveryplaceaddr"],
+					"custname":custrow["custname"],
+					"csid":psrow["csid"],
+					"productdetails":details,
+					"issuername":row["issuername"],
+					"designation":row["designation"],
+					"payterms":row["payterms"],
+					"schedule":row["schedule"],
+					"modeoftransport":row["modeoftransport"],
+					"packaging":row["packaging"],
+					"tax":row["tax"],
+					"psflag":row["psflag"]}
 
 				datedelivery = psrow["datedelivery"]
 				maxdate =psrow["maxdate"]

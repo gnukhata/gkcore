@@ -172,7 +172,7 @@ class api_delchal(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
 				delchaldata = result.fetchone()
-				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==delchaldata["custid"]))
+				custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==delchaldata["custid"]))
 				custname = custdata.fetchone()
 				items = {}
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==self.request.params["dcid"])))
@@ -182,9 +182,9 @@ class api_delchal(object):
 					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
 					goiddata = stockrow["goid"]
-				godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid==goiddata))
+				godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
 				goname = godata.fetchone()
-				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"goid":goiddata,"goname":goname["goname"]},
+				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"custstate":custname["state"],"goid":goiddata,"goname":goname["goname"],"gostate":goname["state"]},
 				"stockdata":{"inout":stockinout,"items":items}}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
 			except:
