@@ -149,9 +149,9 @@ class api_delchal(object):
 				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
-					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
+					custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custrow = custdata.fetchone()
-					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"]})
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -174,16 +174,17 @@ class api_delchal(object):
 				delchaldata = result.fetchone()
 				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==delchaldata["custid"]))
 				custname = custdata.fetchone()
-				godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid==delchaldata["goid"]))
-				goname = godata.fetchone()
 				items = {}
-				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==self.request.params["dcid"])))
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==self.request.params["dcid"])))
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
 					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
-				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"goid":delchaldata["goid"],"goname":goname["goname"]},
+					goiddata = stockrow["goid"]
+				godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid==goiddata))
+				goname = godata.fetchone()
+				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"goid":goiddata,"goname":goname["goname"]},
 				"stockdata":{"inout":stockinout,"items":items}}
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
 			except:
