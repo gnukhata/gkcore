@@ -27,7 +27,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import tax,users
+from gkcore.models.gkdb import tax,users,product
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -37,6 +37,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
+from sqlalchemy.sql.expression import null
 
 
 @view_defaults(route_name='tax')
@@ -123,7 +124,33 @@ class api_tax(object):
 					for row in result:
 						tx.append({"taxid":row["taxid"],"taxname":row["taxname"], "taxrate":"%.2f"%float(row["taxrate"]),"state":row["state"]})
 					return {"gkstatus":enumdict["Success"],"gkresult":tx}
-				return {"gkstatus":enumdict["Success"],}
+				if(self.request.params["pscflag"]=="i"):
+					result = self.con.execute(select([product.c.categorycode]).where(product.c.productcode==self.request.params["productcode"]))
+					catcoderow = result.fetchone()
+					tx = 0.00
+					if catcoderow["categorycode"]!=None:
+						if(self.request.params.has_key("state")):
+							result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.categorycode==catcoderow["categorycode"],tax.c.state==self.request.params["state"])))
+							if result.rowcount>0:
+								taxrow = result.fetchone()
+								tx = taxrow["taxrate"]
+						else:
+							result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.categorycode==catcoderow["categorycode"],tax.c.state==null())))
+							if result.rowcount>0:
+								taxrow = result.fetchone()
+								tx = taxrow["taxrate"]
+					else:
+						if(self.request.params.has_key("state")):
+							result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.productcode==self.request.params["productcode"],tax.c.state==self.request.params["state"])))
+							if result.rowcount>0:
+								taxrow = result.fetchone()
+								tx = taxrow["taxrate"]
+						else:
+							result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.productcode==self.request.params["productcode"],tax.c.state==null())))
+							if result.rowcount>0:
+								taxrow = result.fetchone()
+								tx = taxrow["taxrate"]
+					return {"gkstatus":enumdict["Success"],"gkresult":"%.2f"%float(tx)}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
