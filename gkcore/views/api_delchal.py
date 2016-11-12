@@ -182,10 +182,25 @@ class api_delchal(object):
 					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
 					goiddata = stockrow["goid"]
-				godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
-				goname = godata.fetchone()
-				singledelchal = {"delchaldata":{"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),"custid":delchaldata["custid"],"custname":custname["custname"],"custstate":custname["state"],"goid":goiddata,"goname":goname["goname"],"gostate":goname["state"]},
-				"stockdata":{"inout":stockinout,"items":items}}
+				singledelchal = {"delchaldata":{
+									"dcid":delchaldata["dcid"],
+									"dcno":delchaldata["dcno"],
+									"dcflag":delchaldata["dcflag"],
+									"issuername":delchaldata["issuername"],
+									"designation":delchaldata["designation"],
+									"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
+									"custid":delchaldata["custid"],"custname":custname["custname"],
+									"custstate":custname["state"]
+									},
+								"stockdata":{
+									"inout":stockinout,"items":items
+									}}
+				if goiddata!=None:
+					godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
+					goname = godata.fetchone()
+					singledelchal["delchaldata"]["goid"]=goiddata
+					singledelchal["delchaldata"]["goname"]=goname["goname"]
+					singledelchal["delchaldata"]["gostate"]=goname["state"]
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
