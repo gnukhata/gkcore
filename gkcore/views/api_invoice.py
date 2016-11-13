@@ -181,7 +181,7 @@ class api_invoice(object):
 					dcid = result.fetchone()
 					result = self.con.execute(select([delchal.c.custid,delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
 					dcnocustid = result.fetchone()
-					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
+					result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==dcnocustid["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
@@ -189,15 +189,19 @@ class api_invoice(object):
 					invc["dcno"]=dcnocustid["dcno"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
-					invc["custstate"]=custname["custstate"]
+					invc["custid"]=custname["custid"]
+					invc["state"]=custname["state"]
+					invc["csflag"]=custname["csflag"]
 				else:
-					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==row["custid"]))
+					result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 					invc["custname"]=custname["custname"]
-					invc["custstate"]=custname["custstate"]
+					invc["custid"]=custname["custid"]
+					invc["state"]=custname["state"]
+					invc["csflag"]=custname["csflag"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
 					productname = result.fetchone()
@@ -231,13 +235,13 @@ class api_invoice(object):
 						dcid = result.fetchone()
 						result = self.con.execute(select([delchal.c.custid]).where(delchal.c.dcid==dcid["dcid"]))
 						custid = result.fetchone()
-						result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==custid["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==custid["custid"]))
 						custname = result.fetchone()
-						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custid["custname"]})
+						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"]})
 					else:
-						result = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
-						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"]})
+						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
