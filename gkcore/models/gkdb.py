@@ -159,6 +159,7 @@ The table is having a json field which has the keys matching the attributes from
 product = Table('product',metadata,
 	Column('productcode',Integer,primary_key=True),
 	Column('productdesc',UnicodeText),
+    Column('openingstock', Numeric(13,2),default=0.00),
 	Column('specs', JSONB,nullable=False ),
 	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
 	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),

@@ -66,11 +66,12 @@ class api_product(object):
 				products = []
 				for row in result:
 					products.append({"productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
-				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
 	@view_config(request_param='qty=single', request_method='GET',renderer='json')
@@ -87,12 +88,15 @@ class api_product(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
 				row = result.fetchone()
-				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"]}
-				self.con.close()
+				result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
+				unitrow= result.fetchone()
+				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"]}
 				return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
 	@view_config(request_method='POST',renderer='json')
