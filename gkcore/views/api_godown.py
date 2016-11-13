@@ -30,6 +30,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import godown
+from gkcore.models.gkdb import stock
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -107,7 +108,13 @@ class api_godown(object):
 				godowns = []
 				srno=1
 				for row in result:
-					godowns.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+					godownstock = self.con.execute(select([stock]).where(stock.c.goid==row["goid"]))
+					godownstatus = godownstock.rowcount
+					if godownstatus:
+						status = "Active"
+					else:
+						status = "Inactive"
+					godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
 					srno = srno+1
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
 			except:
