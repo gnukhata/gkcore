@@ -34,4 +34,5 @@ sudo -u postgres psql -c "grant all privileges on database template1 to gkadmin;
 echo 'Granted all privileges to role gkadmin'
 
 sudo -u postgres psql -c "create database gkdata"
+sudo chown gkadmin .
 echo 'Created gkdata database '
