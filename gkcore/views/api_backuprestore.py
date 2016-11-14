@@ -281,7 +281,7 @@ class api_backuprestore(object):
 					categorysubcategoriesFile = open("backupdir/categorysubcategories.back","w")
 					success = cPickle.dump(lstcategorysubcategories,categorysubcategoriesFile)
 					categorysubcategoriesFile.close()
-					categoryspecsFile = open("backupdir/accounts.back","w")
+					categoryspecsFile = open("backupdir/categoryspecs.back","w")
 					success = cPickle.dump(lstcategoryspecs,categoryspecsFile)
 					categoryspecsFile.close()
 					unitofmeasurementFile = open("backupdir/unitofmeasurement.back","w")
