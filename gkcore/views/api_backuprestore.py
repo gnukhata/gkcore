@@ -97,7 +97,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			#	try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -333,10 +333,11 @@ class api_backuprestore(object):
 					gkarch.close()
 					os.system("rm gkbackup.tar.bz2")
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-			#except:
-				#   return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-		# finally:
-			#	print "end"
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+				
 
 	@view_config(request_method='POST',renderer='json')
 	def Restoredatabase(self):
