@@ -338,7 +338,9 @@ class api_backuprestore(object):
 			finally:
 				self.con.close()
 				
-
+				
+	
+	
 	@view_config(request_method='POST',renderer='json')
 	def Restoredatabase(self):
 		""" This method restore entire database with organisation.
@@ -356,6 +358,28 @@ class api_backuprestore(object):
 			restorefile.write(restore_str)
 			restorefile.close()
 			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankrecon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t discrepancynote -t vouchers -t voucherbin --dbname=gkdata  /tmp/restore.tar")
+		
+			return {"gkstatus":enumdict["Success"]}
+		except:
+			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+				
+	
+	@view_config(request_method='POST',request_param='fulldb=1',renderer='json')
+	def RestoreOrg(self):
+		""" This method restore entire database with organisation.
+		First it checks the user role if the user is admin then only user can do the backup					  """
+		try:
+			self.con = eng.connect()
+			
+			dataset = self.request.json_body
+			datarestore = dataset["datarestore"]
+			restore_data = base64.b64decode(datasrestore)
+			restorewrite_file=open("restoreOrg.tar.bz2","w")
+			restorewritefile.write(restore_data)
+			restorewritefile.close()
+			os.system("tarjxvf.restoreOrg.tar.bz2")
+			
+			
 		
 			return {"gkstatus":enumdict["Success"]}
 		except:
