@@ -43,6 +43,7 @@ import base64
 import cPickle
 from datetime import datetime
 import tarfile
+from tarfile import TarFile
 @view_defaults(route_name='backuprestore')
 class api_backuprestore(object):
 	def __init__(self,request):
@@ -323,7 +324,15 @@ class api_backuprestore(object):
 					voucherbinFile = open("backupdir/voucherbin.back","w")
 					success = cPickle.dump(lstvoucherbin,voucherbinFile)
 					voucherbinFile.close()
-					#return {"gkstatus":enumdict["Success"]}
+					cmp=   tarfile.open("gkbackup.tar.bz2","w:bz2")
+					cmp.add("backupdir")
+					cmp.close()
+					os.system("rm -rf backupdir")
+					gkarch = open("gkbackup.tar.bz2","r")
+					archData = base64.b64encode(gkarch.read())
+					gkarch.close()
+					os.system("rm gkbackup.tar.bz2")
+					return {"gkstatus":enumdict["Success"],"gkdata":archData}
 			#except:
 				#   return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 		# finally:
