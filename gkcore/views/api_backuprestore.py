@@ -122,9 +122,9 @@ class api_backuprestore(object):
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
 						lstaccounts.append({"accountcode":newKey,"accountname":row["accountname"],"groupcode":row["groupcode"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
-					users = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
+					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
 					lstusers = []
-					for row in usr:
+					for row in backupUsers:
 						curTime = datetime.now()
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
@@ -262,7 +262,7 @@ class api_backuprestore(object):
 					gsgFile = open("../../../../backupdir/gsg.back","w")
 					success = cPickle.dump(lstgroupsubgroups,gsgFile)
 					gsgFile.close()
-					accFile = open(../../"../../backupdir/accounts.back","w")
+					accFile = open("../../backupdir/accounts.back","w")
 					success = cPickle.dump(lstaccounts,accFile)
 					accFile.close()
 					usersFile = open("../../../../backupdir/users.back","w")
