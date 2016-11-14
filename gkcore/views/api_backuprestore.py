@@ -228,14 +228,14 @@ class api_backuprestore(object):
 						curTime = datetime.now()
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
-						lststock = stock.append({"stockid":newKey,"productcode":row["productcode"],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":row["goid"],"orgcode":newOrgCode})
+						lststock.append({"stockid":newKey,"productcode":row["productcode"],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":row["goid"],"orgcode":newOrgCode})
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
 					for row in backupTransfernote:
 						curTime = datetime.now()
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
-						lsttransfernote.append({"transfernoteno":newKey,"transfernoteid": row["transfernoteid"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":row["togodown"],"orgcode":newOrgCode})
+						lsttransfernote.append({"transfernoteid":newKey,"transfernoteno": row["transfernoteno"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":row["togodown"],"orgcode":newOrgCode})
 					backupDiscrepancynote = self.con.execute(select([discrepancynote]).where(discrepancynote.c.orgcode==authDetails["orgcode"]))
 					lstdiscrepancynote = []
 					for row in backupDiscrepancynote:
@@ -444,6 +444,75 @@ class api_backuprestore(object):
 			rVbn =open("backupdir/voucherbin.back","rb")
 			pVoucherbin= cPickle.load(rVbn)
 			rVbn.close()
+			try:
+				orgdata = pOrg[0]
+				result = self.con.execute(organisation.insert(),[orgdata])
+			except:
+				self.con.execute("alter table organisation alter column orgcode type numeric(20)")
+				self.con.execute("alter table groupsubgroups alter column groupcode type numeric(20)")
+				self.con.execute("alter table accounts alter column accountcode type numeric(20)")
+				self.con.execute("alter table users alter column userid type numeric(20)")
+				self.con.execute("alter table projects alter column projectcode type numeric(20)")
+				self.con.execute("alter table bankrecon alter column reconcode type numeric(20)")
+				self.con.execute("alter table customerandsupplier alter column custid type numeric(20)")
+				self.con.execute("alter table categorysubcategories alter column categorycode type numeric(20)")
+				self.con.execute("alter table categoryspecs alter column spcode type numeric(20)")
+				self.con.execute("alter table unitofmeasurement alter column uomid type numeric(20)")
+				self.con.execute("alter table product alter column producode type numeric(20)")
+				self.con.execute("alter table tax alter column taxid type numeric(20)")
+				self.con.execute("alter table godown alter column goid type numeric(20)")
+				self.con.execute("alter table purchaseorder alter column orderid type numeric(20)")
+				self.con.execute("alter table delchal alter column dcid type numeric(20)")
+				self.con.execute("alter table invoice alter column invid type numeric(20)")
+				self.con.execute("alter table dcinv alter column dcinvid type numeric(20)")
+				self.con.execute("alter table stock alter column stockid type numeric(20)")
+				self.con.execute("alter table transfernote alter column transfernoteid type numeric(20)")
+				self.con.execute("alter table discrepancynote alter column discrepancyid type numeric(20)")
+				self.con.execute("alter table vouchers alter column vouchercode type numeric(20)")
+				self.con.execute("alter table voucherbin alter column vouchercode type numeric(20)")
+				
+			
+			for row in pGsg:
+				result = self.con.execute(groupsubgroups.insert(),[row])
+			for row in pAccount:
+				result = self.con.execute(accounts.insert(),[row])
+			for row in pUser:
+				result = self.con.execute(users.insert(),[row])
+			for row in pProjects:
+				result = self.con.execute(projects.insert(),[row])
+			for row in pBankrecon:
+				result = self.con.execute(bankrecon.insert(),[row])
+			for row in pCustomerandsupplier:
+				result = self.con.execute(customerandsupplier.insert(),[row])
+			for row in pCategoryspecs:
+				result = self.con.execute(categoryspecs.insert(),[row])
+			for row in pUnitofmeasurement:
+				result = self.con.execute(unitofmeasurement.insert(),[row])
+			for row in pProduct:
+				result = self.con.execute(product.insert(),[row])
+			for row in pGodown:
+				result = self.con.execute(godown.insert(),[row])
+			for row in pTax:
+				result = self.con.execute(tax.insert(),[row])
+			for row in pPurchaseorder:
+				result = self.con.execute(purchaseorder.insert(),[row])
+			for row in pDelchal:
+				result = self.con.execute(delchal.insert(),[row])
+			for row in pInvoice:
+				result = self.con.execute(invoice.insert(),[row])
+			for row in pDcinv:
+				result = self.con.execute(dcinv.insert(),[row])
+			for row in pStock:
+				result = self.con.execute(stock.insert(),[row])
+			for row in pTransfernote:
+				result = self.con.execute(transfernote.insert(),[row])
+			for row in pDiscrepancynote:
+				result = self.con.execute(discrepancynote.insert(),[row])
+			for row in pVoucher:
+				result = self.con.execute(vouchers.insert(),[row])
+			for row in pVoucherbin:
+				result = self.con.execute(voucherbin.insert(),[row])
+	
 			return {"gkstatus":enumdict["Success"]}
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
