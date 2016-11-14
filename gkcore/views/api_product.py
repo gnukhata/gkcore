@@ -90,7 +90,7 @@ class api_product(object):
 				row = result.fetchone()
 				result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
 				unitrow= result.fetchone()
-				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"]}
+				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"])}
 				return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
 			except:
 				self.con.close()
