@@ -106,7 +106,7 @@ class category(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode,gkdb.categorysubcategories.c.subcategoryof]).where(gkdb.categorysubcategories.c.orgcode==authDetails["orgcode"]).order_by(gkdb.categorysubcategories.c.categoryname))
 				srno = 1
@@ -119,11 +119,13 @@ class category(object):
 						parentcategory = parentname["categoryname"]
 					else:
 						parentcategory = "None"
-					product = self.con.execute(select([gkdb.product]).where(gkdb.product.c.categorycode==row["categorycode"]))
+					product = self.con.execute(select([gkdb.product.c.categorycode]).where(gkdb.product.c.categorycode==row["categorycode"]))
+					categorystatus = 0
 					for category in product:
-						productcategory = self.con.execute(select([gkdb.stock]).where(gkdb.stock.c.productcode==category["productcode"]))
-						categorystatus = productcategory.rowcount
-					if categorystatus:
+						produccategory = self.con.execute(select([func.count(gkdb.stock.c.productcode).label('categorystatus') ]).where(gkdb.categorysubcategories.c.subcategoryof==category["productcode"]))
+						categorycount = produccategory.fetchone()
+						categorystatus = categorycount["categorystatus"]
+					if categorystatus>0:
 						status = "Active"
 					else:
 						status = "Inactive"
@@ -133,10 +135,10 @@ class category(object):
 					categories.append({"srno":srno,"parentcategory":parentcategory, "categorystatus":status, "categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
 					srno = srno +1
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+			#except:
+			#	return {"gkstatus":enumdict["ConnectionFailed"] }
+			#finally:
+			#	self.con.close()
 
 	@view_config(request_method='GET',request_param="type=topcategories",renderer='json')
 	def getTopCategories(self):
