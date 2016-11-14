@@ -170,6 +170,11 @@ class api_product(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
+				result = self.con.execute(select([gkdb.product.c.specs]).where(gkdb.product.c.productcode==dataset["productcode"]))
+				row = result.fetchone()
+				spec = row["specs"]
+				for sp in spec.keys():
+					self.con.execute("update categoryspecs set productcount = productcount -1 where spcode = %d"%(int(sp)))
 				result = self.con.execute(gkdb.product.delete().where(gkdb.product.c.productcode==dataset["productcode"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
