@@ -112,6 +112,13 @@ class category(object):
 				srno = 1
 				categories = []
 				for row in result:
+					parents = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["subcategoryof"]))
+					parentname = parents.fetchone()
+					parent = parents.rowcount
+					if parent:
+						parentcategory = parentname["categoryname"]
+					else:
+						parentcategory = "None"
 					product = self.con.execute(select([gkdb.product]).where(gkdb.product.c.categorycode==row["categorycode"]))
 					for category in product:
 						productcategory = self.con.execute(select([gkdb.stock]).where(gkdb.stock.c.productcode==category["productcode"]))
@@ -123,7 +130,7 @@ class category(object):
 					countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== row["categorycode"]))
 					countrow = countResult.fetchone()
 					subcount = countrow["subcount"]
-					categories.append({"srno":srno , "categorystatus":status, "categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+					categories.append({"srno":srno,"parentcategory":parentcategory, "categorystatus":status, "categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
 					srno = srno +1
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
 			except:
