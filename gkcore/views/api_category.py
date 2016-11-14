@@ -109,12 +109,22 @@ class category(object):
 			try:
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode,gkdb.categorysubcategories.c.subcategoryof]).where(gkdb.categorysubcategories.c.orgcode==authDetails["orgcode"]).order_by(gkdb.categorysubcategories.c.categoryname))
+				srno = 1
 				categories = []
 				for row in result:
+					product = self.con.execute(select([gkdb.product]).where(gkdb.product.c.categorycode==row["categorycode"]))
+					for category in product:
+						productcategory = self.con.execute(select([gkdb.stock]).where(gkdb.stock.c.productcode==category["productcode"]))
+						categorystatus = productcategory.rowcount
+					if categorystatus:
+						status = "Active"
+					else:
+						status = "Inactive"
 					countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== row["categorycode"]))
 					countrow = countResult.fetchone()
 					subcount = countrow["subcount"]
-					categories.append({"categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+					categories.append({"srno":srno , "categorystatus":status, "categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+					srno = srno +1
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
