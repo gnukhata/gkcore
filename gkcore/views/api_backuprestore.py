@@ -97,7 +97,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+	#		try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -179,7 +179,7 @@ class api_backuprestore(object):
 						curTime = datetime.now()
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
-						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":row["categorycode"],"uomid":row["uomid"],"orgcode":newOrgCode})	
+						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":row["categorycode"],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
 					for row in backupTax:
@@ -331,12 +331,12 @@ class api_backuprestore(object):
 					gkarch = open("gkbackup.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-					os.system("rm gkbackup.tar.bz2")
+					#os.system("rm gkbackup.tar.bz2")
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+	#		except:
+	#			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+	#		finally:
+	#			self.con.close()
 				
 				
 	
@@ -363,92 +363,91 @@ class api_backuprestore(object):
 		except:
 			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 				
-	
-	@view_config(request_method='POST',request_param='fulldb=1',renderer='json')
+
+	@view_config(request_method='POST',request_param='fulldb=0',renderer='json')
 	def RestoreOrg(self):
 		""" This method restore entire database with organisation.
 		First it checks the user role if the user is admin then only user can do the backup					  """
-		try:
-			self.con = eng.connect()
-			
-			dataset = self.request.json_body
-			datarestore = dataset["datarestore"]
-			restore_data = base64.b64decode(datasrestore)
-			restorewrite_file=open("restoreOrg.tar.bz2","w")
-			restorewritefile.write(restore_data)
-			restorewritefile.close()
-			os.system("tarjxvf.restoreOrg.tar.bz2")
-			
-			rOrg =open("gkbackup/org.back","r")
-			pOrg = cPickle.load(rOrg)
-			rOrg.close()
-			rGsg =open("gkbackup/gsg.back","r")
-			pGsg = cPickle.load(rGsg)
-			rGsg.close()
-			rAcc =open("gkbackup/accounts.back","r")
-			pAccount = cPickle.load(rAcc)
-			rAcc.close()
-			rUsr =open("gkbackup/users.back","r")
-			pUser = cPickle.load(rUsr)
-			rUsr.close()
-			rProj =open("gkbackup/projects.back","r")
-			pProjects = cPickle.load(rProj)
-			rProj.close()
-			rBnkrcn =open("gkbackup/bankrecon.back","r")
-			pBankrecon = cPickle.load(rBnkrcn)
-			rBnkrcn.close()
-			rCas =open("gkbackup/customerandsupplier.back","r")
-			pCustomerandsupplier = cPickle.load(rCas)
-			rCas.close()
-			rCasb =open("gkbackup/categorysubcategories.back","r")
-			pCategorysubcategories = cPickle.load(rCasb)
-			rCasb.close()
-			rCtspc =open("gkbackup/categoryspecs.back","r")
-			pCategoryspecs = cPickle.load(rCtspc)
-			rCasb.close()
-			rUm =open("gkbackup/unitofmeasurement.back","r")
-			pUnitofmeasurement = cPickle.load(rUm)
-			rUm.close()
-			rPod =open("gkbackup/product.back","r")
-			pProduct = cPickle.load(rPod)
-			rPod.close()
-			rGo =open("gkbackup/godown.back","r")
-			pGodown = cPickle.load(rGo)
-			rGo.close()
-			rTx =open("gkbackup/tax.back","r")
-			pTax = cPickle.load(rTx)
-			rTx.close()
-			rPo =open("gkbackup/purchaseorder.back","r")
-			pPurchaseorder = cPickle.load(rPo)
-			rPo.close()
-			rDc =open("gkbackup/delchal.back","r")
-			pDelchal = cPickle.load(rDc)
-			rDc.close()
-			rIv =open("gkbackup/invoice.back","r")
-			pInvoice = cPickle.load(rIv)
-			rIv.close()
-			rDciv =open("gkbackup/dcinv.back","r")
-			pDcinv = cPickle.load(rDciv)
-			rDciv.close() 
-			rStk =open("gkbackup/stock.back","r")
-			pStock = cPickle.load(rStk)
-			rStk.close()
-			rTn =open("gkbackup/transfernote.back","r")
-			pTransfernote = cPickle.load(rTn)
-			rTn.close()
-			rDn =open("gkbackup/discrepancynote.back","r")
-			pDiscrepancynote = cPickle.load(rDn)
-			rDn.close()
-			rVouch =open("gkbackup/vouchers.back","r")
-			pVoucher = cPickle.load(rVouch)
-			rVouch.close()
-			rVbn =open("gkbackup/voucherbin.back","r")
-			pVoucherbin= cPickle.load(rVbn)
-			rVbn.close()
-			
-			return {"gkstatus":enumdict["Success"]}
-		except:
-			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+#		try:
+		self.con = eng.connect()
+		dataset = self.request.json_body
+		datarestore = dataset["datarestore"]
+		restore_data = base64.b64decode(datarestore)
+		restorewrite_file=open("restoreOrg.tar.bz2","w")
+		restorewrite_file.write(restore_data)
+		restorewrite_file.close()
+		os.system("tar jxf restoreOrg.tar.bz2")
+		
+		rOrg =open("backupdir/org.back","rb")
+		pOrg = cPickle.load(rOrg)
+		rOrg.close()
+		rGsg =open("backupdir/gsg.back","rb")
+		pGsg = cPickle.load(rGsg)
+		rGsg.close()
+		rAcc =open("backupdir/accounts.back","rb")
+		pAccount = cPickle.load(rAcc)
+		rAcc.close()
+		rUsr =open("backupdir/users.back","rb")
+		pUser = cPickle.load(rUsr)
+		rUsr.close()
+		rProj =open("backupdir/projects.back","rb")
+		pProjects = cPickle.load(rProj)
+		rProj.close()
+		rBnkrcn =open("backupdir/bankrecon.back","rb")
+		pBankrecon = cPickle.load(rBnkrcn)
+		rBnkrcn.close()
+		rCas =open("backupdir/customerandsupplier.back","rb")
+		pCustomerandsupplier = cPickle.load(rCas)
+		rCas.close()
+		rCasb =open("backupdir/categorysubcategories.back","rb")
+		pCategorysubcategories = cPickle.load(rCasb)
+		rCasb.close()
+		rCtspc =open("backupdir/categoryspecs.back","rb")
+		pCategoryspecs = cPickle.load(rCtspc)
+		rCasb.close()
+		rUm =open("backupdir/unitofmeasurement.back","rb")
+		pUnitofmeasurement = cPickle.load(rUm)
+		rUm.close()
+		rPod =open("backupdir/product.back","rb")
+		pProduct = cPickle.load(rPod)
+		rPod.close()
+		rGo =open("backupdir/godown.back","rb")
+		pGodown = cPickle.load(rGo)
+		rGo.close()
+		rTx =open("backupdir/tax.back","rb")
+		pTax = cPickle.load(rTx)
+		rTx.close()
+		rPo =open("backupdir/purchaseorder.back","rb")
+		pPurchaseorder = cPickle.load(rPo)
+		rPo.close()
+		rDc =open("backupdir/delchal.back","rb")
+		pDelchal = cPickle.load(rDc)
+		rDc.close()
+		rIv =open("backupdir/invoice.back","rb")
+		pInvoice = cPickle.load(rIv)
+		rIv.close()
+		rDciv =open("backupdir/dcinv.back","rb")
+		pDcinv = cPickle.load(rDciv)
+		rDciv.close() 
+		rStk =open("backupdir/stock.back","rb")
+		pStock = cPickle.load(rStk)
+		rStk.close()
+		rTn =open("backupdir/transfernote.back","rb")
+		pTransfernote = cPickle.load(rTn)
+		rTn.close()
+		rDn =open("backupdir/discrepancynote.back","rb")
+		pDiscrepancynote = cPickle.load(rDn)
+		rDn.close()
+		rVouch =open("backupdir/vouchers.back","rb")
+		pVoucher = cPickle.load(rVouch)
+		rVouch.close()
+		rVbn =open("backupdir/voucherbin.back","rb")
+		pVoucherbin= cPickle.load(rVbn)
+		rVbn.close()
+		print pOrg
+	#		return {"gkstatus":enumdict["Success"]}
+	#	except:
+	#		return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			
 				
 			
