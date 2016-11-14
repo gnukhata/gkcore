@@ -470,8 +470,8 @@ class api_backuprestore(object):
 				self.con.execute("alter table discrepancynote alter column discrepancyid type numeric(20)")
 				self.con.execute("alter table vouchers alter column vouchercode type numeric(20)")
 				self.con.execute("alter table voucherbin alter column vouchercode type numeric(20)")
-				
-			
+				orgdata = pOrg[0]
+				result = self.con.execute(organisation.insert(),[orgdata])
 			for row in pGsg:
 				result = self.con.execute(groupsubgroups.insert(),[row])
 			for row in pAccount:
