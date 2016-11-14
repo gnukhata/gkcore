@@ -97,12 +97,13 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-	#		try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
-					newOrgCode = str(datetime.now().year) + str(datetime.now().month) + str(datetime.now().day) + str(datetime.now().hour) + str(datetime.now().minute) + str(datetime.now().second) + str(datetime.now().microsecond)
+					snewOrgCode = str(datetime.now().year) + str(datetime.now().month) + str(datetime.now().day) + str(datetime.now().hour) + str(datetime.now().minute) + str(datetime.now().second) + str(datetime.now().microsecond)
+					newOrgCode=snewOrgCode[0:19]
 					newOrgCode = int(newOrgCode)
 
 					
@@ -114,85 +115,97 @@ class api_backuprestore(object):
 					lstgroupsubgroups = []
 					for row in backupGroupsubgroups:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstgroupsubgroups.append({"groupcode":newKey,"groupname":row["groupname"],"subgroupof":row["subgroupof"],"orgcode": newOrgCode})
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
 					for row in backupAccounts:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstaccounts.append({"accountcode":newKey,"accountname":row["accountname"],"groupcode":row["groupcode"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
 					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
 					lstusers = []
 					for row in backupUsers:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstusers.append({"userid":newKey,"username":row["username"],"userpassword":row["userpassword"],"userrole":row["userrole"],"userquestion":row["userquestion"],"useranswer":row["useranswer"],"themename":row["themename"],"orgcode":newOrgCode})	
 					backupProjects = self.con.execute(select([projects]).where(projects.c.orgcode==authDetails["orgcode"]))
 					lstprojects = []
 					for row in backupProjects:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstprojects.append({"projectcode":newKey,"projectname":row["projectname"],"sanctionedamount":row["sanctionedamount"],"orgcode":newOrgCode})
 					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
 					lstbankrecon = []
 					for row in backupBankrecon:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstbankrecon.append({"reconcode":newKey,"vouchercode":row["vouchercode"],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"],"orgcode":newOrgCode})
 					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
 					lstcustomerandsupplier = []
 					for row in backupCustomerandsupplier:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstcustomerandsupplier.append({"custid":newKey,"custname":row["custname"],"custaddr":row["custaddr"],"custphone":row["custphone"],"custemail":["custemail"],"custfax":["custfax"],"custpan":row["custpan"],"custtan":row["custtan"],"custdoc":row["custdoc"],"csflag":row["csflag"],"state":row["state"],"orgcode":newOrgCode})
 					backupCategorysubcategories = self.con.execute(select([categorysubcategories]).where(categorysubcategories.c.orgcode==authDetails["orgcode"]))
 					lstcategorysubcategories = []
 					for row in backupCategorysubcategories:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstcategorysubcategories.append({"categorycode":newKey,"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"orgcode":newOrgCode})	
 					backupCategoryspecs = self.con.execute(select([categoryspecs]).where(categoryspecs.c.orgcode==authDetails["orgcode"]))
 					lstcategoryspecs = []
 					for row in backupCategoryspecs:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstcategoryspecs.append({"spcode":newKey,"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"orgcode":newOrgCode})	
 					backupUnitofmeasurement = self.con.execute(select([unitofmeasurement]))
 					lstunitofmeasurement = []
 					for row in backupUnitofmeasurement:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
+						newKey = int(newKey)						
 						lstunitofmeasurement.append({"uomid":newKey,"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":row["subunitof"],"frequency":row["frequency"]})
 					backupProduct = self.con.execute(select([product]).where(product.c.orgcode==authDetails["orgcode"]))
 					lstproduct = []
 					for row in backupProduct:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":row["categorycode"],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
 					for row in backupTax:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lsttax.append({"taxid":newKey,"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":row["productcode"],"categorycode":row["categorycode"],"orgcode":newOrgCode})	
 					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
 					lstgodown = []
 					for row in backupGodown:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
+						newKey = int(newKey)						
 						lstgodown.append({"goid":newKey,"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocount"],"contactname":row["contactname"],"orgcode":newOrgCode})	
 					backupPurchaseorder = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]))
 					lstpurchaseorder = []
@@ -205,7 +218,8 @@ class api_backuprestore(object):
 					lstdelchal = []
 					for row in backupDelchal:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstdelchal.append({"dcid":newKey,"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issureid":row["issuerid"],"issuerid":row["issuerid"],"custid:row":["custid"],"orderid":row["orderid"],"orgcode":newOrgCode})
 					backupInvoice = self.con.execute(select([invoice]).where(invoice.c.orgcode==authDetails["orgcode"]))
@@ -219,42 +233,48 @@ class api_backuprestore(object):
 					lstdcinv = []
 					for row in backupDcinv:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
+						newKey = int(newKey)						
 						lstdcinv.append({"dcinvid":newKey,"dcid":row["dcid"],"invid":row["invid"],"contents":row["contents"],"issuername":row["issuername"],"tax":row["tax"],"orderid":row["orderid"],"custid":row["custid"],"designation":row["designation"],"orgcode":newOrgCode})	
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
 					for row in backupStock:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lststock.append({"stockid":newKey,"productcode":row["productcode"],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":row["goid"],"orgcode":newOrgCode})
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
 					for row in backupTransfernote:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lsttransfernote.append({"transfernoteid":newKey,"transfernoteno": row["transfernoteno"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":row["togodown"],"orgcode":newOrgCode})
 					backupDiscrepancynote = self.con.execute(select([discrepancynote]).where(discrepancynote.c.orgcode==authDetails["orgcode"]))
 					lstdiscrepancynote = []
 					for row in backupDiscrepancynote:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstdiscrepancynote.append({"discrepancyid":newKey,"discrepancyno":row["discrepancyno"],"discrepancydate":row["discrepancydate"],"discrepancydetails":row["discrepancydetails"],"dcinvpotncode":row["dcinvpotncode"],"dcinvpotnflag":row["dcinvpotnflag"],"issuername":row["issuername"],"supplier":row["supplier"],"designation":row["designation"],"orgcode":newOrgCode})
 					backupVouchers = self.con.execute(select([vouchers]).where(vouchers.c.orgcode==authDetails["orgcode"]))
 					lstvouchers = []
 					for row in backupVouchers:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
+						newKey = int(newKey)						
 						lstvouchers.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attatchment":row["attatchment"],"attatchmentcount":row["attatchmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"],"orgcode":newOrgCode,"invid":row["invid"]})					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
 						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstvoucherbin.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"],"orgcode":newOrgCode})
 					os.system("mkdir backupdir")
@@ -331,12 +351,12 @@ class api_backuprestore(object):
 					gkarch = open("gkbackup.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-					#os.system("rm gkbackup.tar.bz2")
+					os.system("rm gkbackup.tar.bz2")
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-	#		except:
-	#			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-	#		finally:
-	#			self.con.close()
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 				
 				
 	
