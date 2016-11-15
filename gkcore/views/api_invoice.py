@@ -187,9 +187,9 @@ class api_invoice(object):
 				row = result.fetchone()
 				items = row["contents"]
 				if row["icflag"]==3:
+					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
 					if row["cancelflag"]==1:
 						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
-					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
