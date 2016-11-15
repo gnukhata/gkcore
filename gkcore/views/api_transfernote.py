@@ -147,7 +147,11 @@ class api_transfernote(object):
 				togo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["togodown"]))
 				togodata = togo.fetchone()
 				items = {}
-				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==20,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
+				if row["cancelflag"]==1:
+					flag = 200
+				else:
+					flag = 20
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
@@ -171,7 +175,10 @@ class api_transfernote(object):
 					"fromgodownaddr": fromgodata["goaddr"],
 					"issuername":row["issuername"],
 					"designation":row["designation"],
-					"orgcode": row["orgcode"] }
+					"orgcode": row["orgcode"],
+					"cancelflag":row["cancelflag"]}
+				if row["cancelflag"]==1:
+					tn["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
 			except:
 				self.con.close()
@@ -269,10 +276,9 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(transfernote.delete().where(transfernote.c.transfernoteid == dataset["transfernoteid"]))
-				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid == dataset["transfernoteid"], stock.c.dcinvtnflag == 20)))
-					return {"gkstatus":enumdict["Success"]}
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid == dataset["transfernoteid"]).values(dataset))
+				stockcancel = {"dcinvtnflag":200}
+				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["transfernoteid"],stock.c.dcinvtnflag==20)).values(stockcancel))
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:

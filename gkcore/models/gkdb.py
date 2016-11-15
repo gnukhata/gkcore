@@ -268,6 +268,9 @@ invoice = Table('invoice',metadata,
 	Column('issuername', UnicodeText),
 	Column('designation', UnicodeText),
 	Column('tax', JSONB),
+	Column('invoicetotal', Numeric(13,2),nullable=False),
+	Column('cancelflag',Integer,default=0),
+	Column('canceldate',DateTime),
 	Column('icflag',Integer,default=9),
 	Column('taxstate',UnicodeText),
 	Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
@@ -294,6 +297,8 @@ delchal = Table('delchal',metadata,
 	Column('dcflag',Integer,nullable=False),
 	Column('issuername', UnicodeText),
 	Column('designation', UnicodeText),
+	Column('cancelflag',Integer,default=0),
+	Column('canceldate',DateTime),
 	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
@@ -332,7 +337,7 @@ The inout field is self explainatory.
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
-	Column('qty',Integer,nullable=False),
+	Column('qty',Numeric(13,2),nullable=False),
 	Column('dcinvtnid', Integer,nullable=False),
 	Column('dcinvtnflag',Integer,nullable=False),
 	Column('inout',Integer,nullable=False),
@@ -449,6 +454,8 @@ transfernote = Table('transfernote',metadata,
 	Column('transfernotedate', DateTime, nullable=False),
 	Column('transportationmode', UnicodeText),
 	Column('nopkt',Integer),
+	Column('cancelflag',Integer,default=0),
+	Column('canceldate',DateTime),
 	Column('issuername', UnicodeText),
 	Column('designation', UnicodeText),
 	Column('recieved', BOOLEAN,default=False),
@@ -460,23 +467,6 @@ transfernote = Table('transfernote',metadata,
 	Index("transfernote_orgcode","orgcode")
 )
 
-
-""" Table for descrepancy note details . The quantity of actual stock on hand may be more or less than the quantity as per stock records.
-'Dcinvpotnflag' indicates if this discrepancy note is created due to dc = 4 or inv =9 or transfernote = 20 or purchaseorder = 16. """
-discrepancynote = Table ('discrepancynote' ,metadata,
-	 Column('discrepancyid',Integer,primary_key= True),
-	 Column('discrepancyno',UnicodeText),
-	 Column('discrepancydate',DateTime,nullable=False),
-	 Column('discrepancydetails',JSONB , nullable = False),
-	 Column('dcinvpotncode',UnicodeText,nullable = False),
-	 Column('dcinvpotnflag',Integer,nullable = False),
-	 Column('issuername', UnicodeText),
-	 Column('designation', UnicodeText),
-	 Column('supplier',Integer,ForeignKey('customerandsupplier.custid', ondelete="CASCADE"),nullable = False),
-	 Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-	 Index("discrepancy_date",'discrepancydate'),
-	 Index("discrepancy_details",'discrepancydetails')
-	   )
 
 
 """table to store tax

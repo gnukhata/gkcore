@@ -187,12 +187,16 @@ class api_invoice(object):
 				row = result.fetchone()
 				items = row["contents"]
 				if row["icflag"]==3:
-					invc = {"taxstate":row["taxstate"]}
+					if row["cancelflag"]==1:
+						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
+					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 				else:
-					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"]}
+					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
+					if row["cancelflag"]==1:
+						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 					if row["custid"] == None:
 						result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
 						dcid = result.fetchone()
@@ -301,8 +305,12 @@ class api_invoice(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(invoice.delete().where(invoice.c.invid==dataset["invid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==9)))
+				result = self.con.execute(invoice.update().where(invoice.c.invid==dataset["invid"]).values(dataset))
+				if dataset["icflag"]==9:
+					stockcancel = {"dcinvtnflag":90}
+				else:
+					stockcancel = {"dcinvtnflag":30}
+				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==dataset["icflag"])).values(stockcancel))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
