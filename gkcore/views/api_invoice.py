@@ -66,6 +66,8 @@ class api_invoice(object):
 				items = invdataset["contents"]
 				invdataset["orgcode"] = authDetails["orgcode"]
 				stockdataset["orgcode"] = authDetails["orgcode"]
+				if invdataset.has_key("dcid"):
+					invdataset.pop("custid")
 				result = self.con.execute(invoice.insert(),[invdataset])
 				if invdataset.has_key("dcid"):
 					if result.rowcount == 1:
@@ -187,14 +189,14 @@ class api_invoice(object):
 				row = result.fetchone()
 				items = row["contents"]
 				if row["icflag"]==3:
-					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
+					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":row["invoicetotal"]}
 					if row["cancelflag"]==1:
 						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 				else:
-					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"]}
+					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":row["invoicetotal"]}
 					if row["cancelflag"]==1:
 						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 					if row["custid"] == None:
@@ -249,7 +251,7 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid]).where(invoice.c.orgcode==authDetails["orgcode"]).order_by(invoice.c.invoicedate))
+				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.orgcode==authDetails["orgcode"]).order_by(invoice.c.invoicedate))
 				invoices = []
 				for row in result:
 					if row["custid"] == None:
@@ -259,11 +261,11 @@ class api_invoice(object):
 						custid = result.fetchone()
 						result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==custid["custid"]))
 						custname = result.fetchone()
-						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y')})
+						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":row["invoicetotal"]})
 					else:
 						result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
-						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y')})
+						invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":row["invoicetotal"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
