@@ -183,7 +183,7 @@ class api_delchal(object):
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
-					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
+					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
 					goiddata = stockrow["goid"]
 				singledelchal = {"delchaldata":{

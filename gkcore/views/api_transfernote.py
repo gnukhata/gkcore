@@ -155,7 +155,7 @@ class api_transfernote(object):
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
-					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
+					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"]}
 					goiddata = stockrow["goid"]
 				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==goiddata))
 				fromgodata = fromgo.fetchone()
