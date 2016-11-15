@@ -34,7 +34,7 @@ from gkcore.models.gkdb import stock
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -108,9 +108,10 @@ class api_godown(object):
 				godowns = []
 				srno=1
 				for row in result:
-					godownstock = self.con.execute(select([stock]).where(stock.c.goid==row["goid"]))
-					godownstatus = godownstock.rowcount
-					if godownstatus:
+					godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+					godownstockcount = godownstock.fetchone()
+					godownstatus = godownstockcount["godownstockstatus"]
+					if godownstatus > 0:
 						status = "Active"
 					else:
 						status = "Inactive"
