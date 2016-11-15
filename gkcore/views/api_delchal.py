@@ -175,11 +175,15 @@ class api_delchal(object):
 				custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==delchaldata["custid"]))
 				custname = custdata.fetchone()
 				items = {}
-				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==self.request.params["dcid"])))
+				if delchaldata["cancelflag"]==1:
+					flag = 40
+				else:
+					flag = 4
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["dcid"])))
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
-					items[stockrow["productcode"]] = {"qty":stockrow["qty"],"productdesc":productdesc["productdesc"]}
+					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"]}
 					stockinout = stockrow["inout"]
 					goiddata = stockrow["goid"]
 				singledelchal = {"delchaldata":{
@@ -190,11 +194,15 @@ class api_delchal(object):
 									"designation":delchaldata["designation"],
 									"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
 									"custid":delchaldata["custid"],"custname":custname["custname"],
-									"custstate":custname["state"]
+									"custstate":custname["state"],
+									"cancelflag":delchaldata["cancelflag"]
 									},
 								"stockdata":{
 									"inout":stockinout,"items":items
 									}}
+				if delchaldata["cancelflag"] ==1:
+					singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')
+
 				if goiddata!=None:
 					godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
 					goname = godata.fetchone()
@@ -220,8 +228,10 @@ class api_delchal(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(delchal.delete().where(delchal.c.dcid==dataset["dcid"]))
-				result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dataset["dcid"],stock.c.dcinvtnflag==4)))
+				dataset["canceldate"]=datetime.now().date()
+				result = self.con.execute(delchal.update().where(delchal.c.dcid==dataset["dcid"]).values(dataset))
+				stockcancel = {"dcinvtnflag":40}
+				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["dcid"],stock.c.dcinvtnflag==4)).values(stockcancel))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
