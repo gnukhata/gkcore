@@ -388,199 +388,202 @@ class api_backuprestore(object):
 	def RestoreOrg(self):
 		""" This method restore entire database with organisation.
 		First it checks the user role if the user is admin then only user can do the backup					  """
+		#try:
+		self.con = eng.connect()
+		dataset = self.request.json_body
+		datarestore = dataset["datarestore"]
+		restore_data = base64.b64decode(datarestore)
+		restorewrite_file=open("restoreOrg.tar.bz2","w")
+		restorewrite_file.write(restore_data)
+		restorewrite_file.close()
+		os.system("tar jxf restoreOrg.tar.bz2")
+		
+		rOrg =open("backupdir/org.back","rb")
+		pOrg = cPickle.load(rOrg)
+		rOrg.close()
+		rGsg =open("backupdir/gsg.back","rb")
+		pGsg = cPickle.load(rGsg)
+		rGsg.close()
+		rAcc =open("backupdir/accounts.back","rb")
+		pAccount = cPickle.load(rAcc)
+		rAcc.close()
+		rUsr =open("backupdir/users.back","rb")
+		pUser = cPickle.load(rUsr)
+		rUsr.close()
+		rProj =open("backupdir/projects.back","rb")
+		pProjects = cPickle.load(rProj)
+		rProj.close()
+		rBnkrcn =open("backupdir/bankrecon.back","rb")
+		pBankrecon = cPickle.load(rBnkrcn)
+		rBnkrcn.close()
+		rCas =open("backupdir/customerandsupplier.back","rb")
+		pCustomerandsupplier = cPickle.load(rCas)
+		rCas.close()
+		rCasb =open("backupdir/categorysubcategories.back","rb")
+		pCategorysubcategories = cPickle.load(rCasb)
+		rCasb.close()
+		rCtspc =open("backupdir/categoryspecs.back","rb")
+		pCategoryspecs = cPickle.load(rCtspc)
+		rCasb.close()
+		rUm =open("backupdir/unitofmeasurement.back","rb")
+		pUnitofmeasurement = cPickle.load(rUm)
+		rUm.close()
+		rPod =open("backupdir/product.back","rb")
+		pProduct = cPickle.load(rPod)
+		rPod.close()
+		rGo =open("backupdir/godown.back","rb")
+		pGodown = cPickle.load(rGo)
+		rGo.close()
+		rTx =open("backupdir/tax.back","rb")
+		pTax = cPickle.load(rTx)
+		rTx.close()
+		rPo =open("backupdir/purchaseorder.back","rb")
+		pPurchaseorder = cPickle.load(rPo)
+		rPo.close()
+		rDc =open("backupdir/delchal.back","rb")
+		pDelchal = cPickle.load(rDc)
+		rDc.close()
+		rIv =open("backupdir/invoice.back","rb")
+		pInvoice = cPickle.load(rIv)
+		rIv.close()
+		rDciv =open("backupdir/dcinv.back","rb")
+		pDcinv = cPickle.load(rDciv)
+		rDciv.close() 
+		rStk =open("backupdir/stock.back","rb")
+		pStock = cPickle.load(rStk)
+		rStk.close()
+		rTn =open("backupdir/transfernote.back","rb")
+		pTransfernote = cPickle.load(rTn)
+		rTn.close()
+		rDn =open("backupdir/discrepancynote.back","rb")
+		pDiscrepancynote = cPickle.load(rDn)
+		rDn.close()
+		rVouch =open("backupdir/vouchers.back","rb")
+		pVoucher = cPickle.load(rVouch)
+		rVouch.close()
+		rVbn =open("backupdir/voucherbin.back","rb")
+		pVoucherbin= cPickle.load(rVbn)
+		rVbn.close()
 		try:
-			self.con = eng.connect()
-			dataset = self.request.json_body
-			datarestore = dataset["datarestore"]
-			restore_data = base64.b64decode(datarestore)
-			restorewrite_file=open("restoreOrg.tar.bz2","w")
-			restorewrite_file.write(restore_data)
-			restorewrite_file.close()
-			os.system("tar jxf restoreOrg.tar.bz2")
-			
-			rOrg =open("backupdir/org.back","rb")
-			pOrg = cPickle.load(rOrg)
-			rOrg.close()
-			rGsg =open("backupdir/gsg.back","rb")
-			pGsg = cPickle.load(rGsg)
-			rGsg.close()
-			rAcc =open("backupdir/accounts.back","rb")
-			pAccount = cPickle.load(rAcc)
-			rAcc.close()
-			rUsr =open("backupdir/users.back","rb")
-			pUser = cPickle.load(rUsr)
-			rUsr.close()
-			rProj =open("backupdir/projects.back","rb")
-			pProjects = cPickle.load(rProj)
-			rProj.close()
-			rBnkrcn =open("backupdir/bankrecon.back","rb")
-			pBankrecon = cPickle.load(rBnkrcn)
-			rBnkrcn.close()
-			rCas =open("backupdir/customerandsupplier.back","rb")
-			pCustomerandsupplier = cPickle.load(rCas)
-			rCas.close()
-			rCasb =open("backupdir/categorysubcategories.back","rb")
-			pCategorysubcategories = cPickle.load(rCasb)
-			rCasb.close()
-			rCtspc =open("backupdir/categoryspecs.back","rb")
-			pCategoryspecs = cPickle.load(rCtspc)
-			rCasb.close()
-			rUm =open("backupdir/unitofmeasurement.back","rb")
-			pUnitofmeasurement = cPickle.load(rUm)
-			rUm.close()
-			rPod =open("backupdir/product.back","rb")
-			pProduct = cPickle.load(rPod)
-			rPod.close()
-			rGo =open("backupdir/godown.back","rb")
-			pGodown = cPickle.load(rGo)
-			rGo.close()
-			rTx =open("backupdir/tax.back","rb")
-			pTax = cPickle.load(rTx)
-			rTx.close()
-			rPo =open("backupdir/purchaseorder.back","rb")
-			pPurchaseorder = cPickle.load(rPo)
-			rPo.close()
-			rDc =open("backupdir/delchal.back","rb")
-			pDelchal = cPickle.load(rDc)
-			rDc.close()
-			rIv =open("backupdir/invoice.back","rb")
-			pInvoice = cPickle.load(rIv)
-			rIv.close()
-			rDciv =open("backupdir/dcinv.back","rb")
-			pDcinv = cPickle.load(rDciv)
-			rDciv.close() 
-			rStk =open("backupdir/stock.back","rb")
-			pStock = cPickle.load(rStk)
-			rStk.close()
-			rTn =open("backupdir/transfernote.back","rb")
-			pTransfernote = cPickle.load(rTn)
-			rTn.close()
-			rDn =open("backupdir/discrepancynote.back","rb")
-			pDiscrepancynote = cPickle.load(rDn)
-			rDn.close()
-			rVouch =open("backupdir/vouchers.back","rb")
-			pVoucher = cPickle.load(rVouch)
-			rVouch.close()
-			rVbn =open("backupdir/voucherbin.back","rb")
-			pVoucherbin= cPickle.load(rVbn)
-			rVbn.close()
-			try:
-				orgdata = pOrg[0]
-				result = self.con.execute(organisation.insert(),[orgdata])
-			except:
-				self.con.execute("alter table organisation alter column orgcode type bigint")
-				self.con.execute("alter table groupsubgroups alter column groupcode type bigint")
-				self.con.execute("alter table accounts alter column accountcode type bigint")
-				self.con.execute("alter table users alter column userid type bigint")
-				self.con.execute("alter table projects alter column projectcode type bigint")
-				self.con.execute("alter table bankrecon alter column reconcode type bigint")
-				self.con.execute("alter table customerandsupplier alter column custid type bigint")
-				self.con.execute("alter table categorysubcategories alter column categorycode type bigint")
-				self.con.execute("alter table categoryspecs alter column spcode type bigint")
-				self.con.execute("alter table unitofmeasurement alter column uomid type bigint")
-				self.con.execute("alter table product alter column productode type bigint")
-				self.con.execute("alter table tax alter column taxid type bigint")
-				self.con.execute("alter table godown alter column goid type bigint")
-				self.con.execute("alter table purchaseorder alter column orderid type bigint")
-				self.con.execute("alter table delchal alter column dcid type bigint")
-				self.con.execute("alter table invoice alter column invid type bigint")
-				self.con.execute("alter table dcinv alter column dcinvid type bigint")
-				self.con.execute("alter table stock alter column stockid type bigint")
-				self.con.execute("alter table transfernote alter column transfernoteid type bigint")
-				self.con.execute("alter table discrepancynote alter column discrepancyid type bigint")
-				self.con.execute("alter table vouchers alter column vouchercode type bigint")
-				self.con.execute("alter table voucherbin alter column vouchercode type bigint")
-				
-				self.con.execute("alter table groupsubgroups alter column orgcode type bigint")
-				self.con.execute("alter table accounts alter column orgcode type bigint")
-				self.con.execute("alter table users alter column orgcode type bigint")
-				self.con.execute("alter table projects alter column orgcode type bigint")
-				self.con.execute("alter table bankrecon alter column orgcode type bigint")
-				self.con.execute("alter table customerandsupplier alter column orgcode type bigint")
-				self.con.execute("alter table categorysubcategories alter column orgcode type bigint")
-				self.con.execute("alter table categoryspecs alter column orgcode type bigint")
-				self.con.execute("alter table product alter column orgcode type bigint")
-				self.con.execute("alter table tax alter column orgcode type bigint")
-				self.con.execute("alter table godown alter column orgcode type bigint")
-				self.con.execute("alter table purchaseorder alter column orgcode type bigint")
-				self.con.execute("alter table delchal alter column orgcode type bigint")
-				self.con.execute("alter table invoice alter column orgcode type bigint")
-				self.con.execute("alter table dcinv alter column orgcode type bigint")
-				self.con.execute("alter table stock alter column orgcode type bigint")
-				self.con.execute("alter table transfernote alter column orgcode type bigint")
-				self.con.execute("alter table discrepancynote alter column orgcode type bigint")
-				self.con.execute("alter table vouchers alter column orgcode type bigint")
-				self.con.execute("alter table voucherbin alter column orgcode type bigint")
-				
-				self.con.execute("alter table accounts alter column groupcode type bigint")
-				self.con.execute("alter table bankrecon alter column vouchercode type bigint")
-				self.con.execute("alter table bankrecon alter column accountcode type bigint")
-				self.con.execute("alter table categoryspecs alter column categorycode type bigint")
-				self.con.execute("alter table product alter column categorycode type bigint")
-				self.con.execute("alter table product alter column uomid type bigint")
-				self.con.execute("alter table tax alter column productcode type bigint")
-				self.con.execute("alter table tax alter column categorycode type bigint")
-				self.con.execute("alter table purchaseorder alter column csid type bigint")
-				self.con.execute("alter table delchal alter column issuerid type bigint")
-				self.con.execute("alter table delchal alter column custid type bigint")
-				self.con.execute("alter table delchal alter column orderid type bigint")
-				self.con.execute("alter table invoice alter column orderid type bigint")
-				self.con.execute("alter table invoice alter column custid type bigint")
-				self.con.execute("alter table dcinv alter column dcid type bigint")
-				self.con.execute("alter table dcinv alter column invid type bigint")
-				self.con.execute("alter table stock alter column goid type bigint")
-				self.con.execute("alter table transfernote alter column togodown type bigint")
-				self.con.execute("alter table discrepancynote alter column supplier type bigint")
-				self.con.execute("alter table vouchers alter column projectcode type bigint")
-				
-				
-				orgdata = pOrg[0]
-				result = self.con.execute(organisation.insert(),[orgdata])
-			for row in pGsg:
-				result = self.con.execute(groupsubgroups.insert(),[row])
-			for row in pAccount:
-				result = self.con.execute(accounts.insert(),[row])
-			for row in pUser:
-				result = self.con.execute(users.insert(),[row])
-			for row in pProjects:
-				result = self.con.execute(projects.insert(),[row])
-			for row in pBankrecon:
-				result = self.con.execute(bankrecon.insert(),[row])
-			for row in pCustomerandsupplier:
-				result = self.con.execute(customerandsupplier.insert(),[row])
-			for row in pCategoryspecs:
-				result = self.con.execute(categoryspecs.insert(),[row])
-			for row in pUnitofmeasurement:
-				result = self.con.execute(unitofmeasurement.insert(),[row])
-			for row in pProduct:
-				result = self.con.execute(product.insert(),[row])
-			for row in pGodown:
-				result = self.con.execute(godown.insert(),[row])
-			for row in pTax:
-				result = self.con.execute(tax.insert(),[row])
-			for row in pPurchaseorder:
-				result = self.con.execute(purchaseorder.insert(),[row])
-			for row in pDelchal:
-				result = self.con.execute(delchal.insert(),[row])
-			for row in pInvoice:
-				result = self.con.execute(invoice.insert(),[row])
-			for row in pDcinv:
-				result = self.con.execute(dcinv.insert(),[row])
-			for row in pStock:
-				result = self.con.execute(stock.insert(),[row])
-			for row in pTransfernote:
-				result = self.con.execute(transfernote.insert(),[row])
-			for row in pDiscrepancynote:
-				result = self.con.execute(discrepancynote.insert(),[row])
-			for row in pVoucher:
-				result = self.con.execute(vouchers.insert(),[row])
-			for row in pVoucherbin:
-				result = self.con.execute(voucherbin.insert(),[row])
-	
-			return {"gkstatus":enumdict["Success"]}
+			print "first attempt attempting to insert org data"
+			orgdata = pOrg[0]
+			print pOrg
+			result = self.con.execute(organisation.insert(),[orgdata])
 		except:
-			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			self.con.execute("alter table organisation alter column orgcode type bigint")
+			self.con.execute("alter table groupsubgroups alter column groupcode type bigint")
+			self.con.execute("alter table accounts alter column accountcode type bigint")
+			self.con.execute("alter table users alter column userid type bigint")
+			self.con.execute("alter table projects alter column projectcode type bigint")
+			self.con.execute("alter table bankrecon alter column reconcode type bigint")
+			self.con.execute("alter table customerandsupplier alter column custid type bigint")
+			self.con.execute("alter table categorysubcategories alter column categorycode type bigint")
+			self.con.execute("alter table categoryspecs alter column spcode type bigint")
+			self.con.execute("alter table unitofmeasurement alter column uomid type bigint")
+			self.con.execute("alter table product alter column productcode type bigint")
+			self.con.execute("alter table tax alter column taxid type bigint")
+			self.con.execute("alter table godown alter column goid type bigint")
+			self.con.execute("alter table purchaseorder alter column orderid type bigint")
+			self.con.execute("alter table delchal alter column dcid type bigint")
+			self.con.execute("alter table invoice alter column invid type bigint")
+			self.con.execute("alter table dcinv alter column dcinvid type bigint")
+			self.con.execute("alter table stock alter column stockid type bigint")
+			self.con.execute("alter table transfernote alter column transfernoteid type bigint")
+			self.con.execute("alter table discrepancynote alter column discrepancyid type bigint")
+			self.con.execute("alter table vouchers alter column vouchercode type bigint")
+			self.con.execute("alter table voucherbin alter column vouchercode type bigint")
 			
-				
+			self.con.execute("alter table groupsubgroups alter column orgcode type bigint")
+			self.con.execute("alter table accounts alter column orgcode type bigint")
+			self.con.execute("alter table users alter column orgcode type bigint")
+			self.con.execute("alter table projects alter column orgcode type bigint")
+			self.con.execute("alter table bankrecon alter column orgcode type bigint")
+			self.con.execute("alter table customerandsupplier alter column orgcode type bigint")
+			self.con.execute("alter table categorysubcategories alter column orgcode type bigint")
+			self.con.execute("alter table categoryspecs alter column orgcode type bigint")
+			self.con.execute("alter table product alter column orgcode type bigint")
+			self.con.execute("alter table tax alter column orgcode type bigint")
+			self.con.execute("alter table godown alter column orgcode type bigint")
+			self.con.execute("alter table purchaseorder alter column orgcode type bigint")
+			self.con.execute("alter table delchal alter column orgcode type bigint")
+			self.con.execute("alter table invoice alter column orgcode type bigint")
+			self.con.execute("alter table dcinv alter column orgcode type bigint")
+			self.con.execute("alter table stock alter column orgcode type bigint")
+			self.con.execute("alter table transfernote alter column orgcode type bigint")
+			self.con.execute("alter table discrepancynote alter column orgcode type bigint")
+			self.con.execute("alter table vouchers alter column orgcode type bigint")
+			self.con.execute("alter table voucherbin alter column orgcode type bigint")
+			
+			self.con.execute("alter table groupsubgroups alter column subgroupof type bigint")
+			self.con.execute("alter table accounts alter column groupcode type bigint")
+			self.con.execute("alter table bankrecon alter column vouchercode type bigint")
+			self.con.execute("alter table bankrecon alter column accountcode type bigint")
+			self.con.execute("alter table categoryspecs alter column categorycode type bigint")
+			self.con.execute("alter table product alter column categorycode type bigint")
+			self.con.execute("alter table product alter column uomid type bigint")
+			self.con.execute("alter table tax alter column productcode type bigint")
+			self.con.execute("alter table tax alter column categorycode type bigint")
+			self.con.execute("alter table purchaseorder alter column csid type bigint")
+			self.con.execute("alter table delchal alter column issuerid type bigint")
+			self.con.execute("alter table delchal alter column custid type bigint")
+			self.con.execute("alter table delchal alter column orderid type bigint")
+			self.con.execute("alter table invoice alter column orderid type bigint")
+			self.con.execute("alter table invoice alter column custid type bigint")
+			self.con.execute("alter table dcinv alter column dcid type bigint")
+			self.con.execute("alter table dcinv alter column invid type bigint")
+			self.con.execute("alter table stock alter column goid type bigint")
+			self.con.execute("alter table transfernote alter column togodown type bigint")
+			self.con.execute("alter table discrepancynote alter column supplier type bigint")
+			self.con.execute("alter table vouchers alter column projectcode type bigint")
+			
+			
+			orgdata = pOrg[0]
+			result = self.con.execute(organisation.insert(),[orgdata])
+		for row in pGsg:
+			result = self.con.execute(groupsubgroups.insert(),[row])
+		for row in pAccount:
+			result = self.con.execute(accounts.insert(),[row])
+		for row in pUser:
+			result = self.con.execute(users.insert(),[row])
+		for row in pProjects:
+			result = self.con.execute(projects.insert(),[row])
+		for row in pBankrecon:
+			result = self.con.execute(bankrecon.insert(),[row])
+		for row in pCustomerandsupplier:
+			result = self.con.execute(customerandsupplier.insert(),[row])
+		for row in pCategoryspecs:
+			result = self.con.execute(categoryspecs.insert(),[row])
+		for row in pUnitofmeasurement:
+			result = self.con.execute(unitofmeasurement.insert(),[row])
+		for row in pProduct:
+			result = self.con.execute(product.insert(),[row])
+		for row in pGodown:
+			result = self.con.execute(godown.insert(),[row])
+		for row in pTax:
+			result = self.con.execute(tax.insert(),[row])
+		for row in pPurchaseorder:
+			result = self.con.execute(purchaseorder.insert(),[row])
+		for row in pDelchal:
+			result = self.con.execute(delchal.insert(),[row])
+		for row in pInvoice:
+			result = self.con.execute(invoice.insert(),[row])
+		for row in pDcinv:
+			result = self.con.execute(dcinv.insert(),[row])
+		for row in pStock:
+			result = self.con.execute(stock.insert(),[row])
+		for row in pTransfernote:
+			result = self.con.execute(transfernote.insert(),[row])
+		for row in pDiscrepancynote:
+			result = self.con.execute(discrepancynote.insert(),[row])
+		for row in pVoucher:
+			result = self.con.execute(vouchers.insert(),[row])
+		for row in pVoucherbin:
+			result = self.con.execute(voucherbin.insert(),[row])
+
+			return {"gkstatus":enumdict["Success"]}
+		#except:
+			#return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+
+
 			
 					
