@@ -276,6 +276,7 @@ class api_transfernote(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
+				dataset["canceldate"]=datetime.now().date()
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid == dataset["transfernoteid"]).values(dataset))
 				stockcancel = {"dcinvtnflag":200}
 				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["transfernoteid"],stock.c.dcinvtnflag==20)).values(stockcancel))

@@ -305,6 +305,7 @@ class api_invoice(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
+				dataset["canceldate"]=datetime.now().date()
 				result = self.con.execute(invoice.update().where(invoice.c.invid==dataset["invid"]).values(dataset))
 				if dataset["icflag"]==9:
 					stockcancel = {"dcinvtnflag":90}
