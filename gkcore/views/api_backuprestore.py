@@ -174,7 +174,16 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
-						lstcategorysubcategories.append({"categorycode":newKey,"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"orgcode":newOrgCode})	
+						
+						newSubcategoryOf = None
+						if row["subcategoryof"] != None:
+							sco = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.orgcode == authDetails["orgcode"], categorysubcategories.c.groupcode == row["subcategoryof"])))
+							cnData = sco.fetchone()
+							pcn = cnData["categoryname"]
+							for g in lstcategorysubcategories:
+								if g["categoryname"] == pcn:
+									newSubcategoryOf = g["categorycode"]
+						lstcategorysubcategories.append({"categorycode":newKey,"categoryname":row["categoryname"],"subcategoryof":newSubcategoryOf,"orgcode":newOrgCode})	
 					backupCategoryspecs = self.con.execute(select([categoryspecs]).where(categoryspecs.c.orgcode==authDetails["orgcode"]))
 					lstcategoryspecs = []
 					for row in backupCategoryspecs:
@@ -519,7 +528,9 @@ class api_backuprestore(object):
 			self.con.execute("alter table accounts alter column groupcode type bigint")
 			self.con.execute("alter table bankrecon alter column vouchercode type bigint")
 			self.con.execute("alter table bankrecon alter column accountcode type bigint")
+			self.con.execute("alter table categorysubcategories alter column subcategoryof type bigint")
 			self.con.execute("alter table categoryspecs alter column categorycode type bigint")
+			self.con.execute("alter table unitofmeasurement alter column subunitof type bigint")
 			self.con.execute("alter table product alter column categorycode type bigint")
 			self.con.execute("alter table product alter column uomid type bigint")
 			self.con.execute("alter table tax alter column productcode type bigint")
