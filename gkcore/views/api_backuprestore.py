@@ -198,8 +198,17 @@ class api_backuprestore(object):
 						curTime = datetime.now()
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
-						newKey = int(newKey)						
-						lstunitofmeasurement.append({"uomid":newKey,"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":row["subunitof"],"frequency":row["frequency"]})
+						newKey = int(newKey)  
+						newSubunitOf = None
+						if row["subunitof"] != None:
+							suo = self.con.execute(select([unitofmeasurement.c.unitname]).where(and_(unitofmeasurement.c.orgcode == authDetails["orgcode"],unitofmeasurement.c.uomid == row["subunitof"])))
+							unData = suo.fetchone()
+							pun = unData["unitname"]
+							for u in lstcategorysubcategories:
+								if u["unitname"] == pun:
+									newSubunitOf = u["uomid"]
+						
+						lstunitofmeasurement.append({"uomid":newKey,"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":newSubunitOf,"frequency":row["frequency"]})
 					backupProduct = self.con.execute(select([product]).where(product.c.orgcode==authDetails["orgcode"]))
 					lstproduct = []
 					for row in backupProduct:
