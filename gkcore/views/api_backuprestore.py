@@ -157,15 +157,7 @@ class api_backuprestore(object):
 						newKey = int(newKey)
 						projmap[row[projectcode]] = newKey
 						lstprojects.append({"projectcode":newKey,"projectname":row["projectname"],"sanctionedamount":row["sanctionedamount"],"orgcode":newOrgCode})
-					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
-					lstbankrecon = []
-					for row in backupBankrecon:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lstbankrecon.append({"reconcode":newKey,"vouchercode":row["vouchercode"],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"],"orgcode":newOrgCode})
-					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
+					
 					lstcustomerandsupplier = []
 					custmap = {}
 					for row in backupCustomerandsupplier:
@@ -200,7 +192,7 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
-						lstcategoryspecs.append({"spcode":newKey,"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":row["categorycode"],"orgcode":newOrgCode})	
+						lstcategoryspecs.append({"spcode":newKey,"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":catsubmap[row["categorycode"]],"orgcode":newOrgCode})	
 					backupUnitofmeasurement = self.con.execute(select([unitofmeasurement]))
 					lstunitofmeasurement = []
 					for row in backupUnitofmeasurement:
@@ -227,7 +219,7 @@ class api_backuprestore(object):
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						prodmap[row[productcode]] = newKey
-						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":row["categorycode"],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
+						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":catsubmap[row["categorycode"]],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
 					for row in backupTax:
@@ -235,7 +227,7 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
-						lsttax.append({"taxid":newKey,"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":row["productcode"],"categorycode":row["categorycode"],"orgcode":newOrgCode})	
+						lsttax.append({"taxid":newKey,"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":prodmap[row["productcode"]],"categorycode":catsubmap[row["categorycode"]],"orgcode":newOrgCode})	
 					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
 					lstgodown = []
 					gomap = {}
@@ -254,7 +246,7 @@ class api_backuprestore(object):
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
 						pomap[row[orderid]] = newKey
-						lstpurchaseorder.append({"orderid":newKey,"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid":row["csid"],"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"],"orgcode":newOrgCode})	
+						lstpurchaseorder.append({"orderid":newKey,"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid":custmap[row["csid"]],"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"],"orgcode":newOrgCode})	
 					backupDelchal = self.con.execute(select([delchal]).where(delchal.c.orgcode==authDetails["orgcode"]))
 					lstdelchal = []
 					delchalmap = {}
@@ -264,7 +256,7 @@ class api_backuprestore(object):
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						delchalmap[row[dcid]] = newKey
-						lstdelchal.append({"dcid":newKey,"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issureid":row["issuerid"],"issuerid":row["issuerid"],"custid:row":["custid"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":row["orderid"],"orgcode":newOrgCode})
+						lstdelchal.append({"dcid":newKey,"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issureid":row["issuerid"],"issuerid":row["issuerid"],"custid:row":custmap[["custid"]],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":pomap[row["orderid"]],"orgcode":newOrgCode})
 					backupInvoice = self.con.execute(select([invoice]).where(invoice.c.orgcode==authDetails["orgcode"]))
 					lstinvoice = []
 					invmap = {}
@@ -273,7 +265,7 @@ class api_backuprestore(object):
 						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = int(newKey)
 						invmap[row[invid]] = newKey
-						lstinvoice.append({"invid":newKey,"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":row["contents"],"orderid":row["orderid"],"custid":row["custid"],"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orgcode":newOrgCode})	
+						lstinvoice.append({"invid":newKey,"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":row["contents"],"orderid":pomap[row["orderid"]],"custid":custmap[row["custid"]],"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orgcode":newOrgCode})	
 					backupDcinv = self.con.execute(select([dcinv]).where(dcinv.c.orgcode==authDetails["orgcode"]))
 					lstdcinv = []
 					for row in backupDcinv:
@@ -281,7 +273,7 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)						
-						lstdcinv.append({"dcinvid":newKey,"dcid":row["dcid"],"invid":row["invid"],"orgcode":newOrgCode})	
+						lstdcinv.append({"dcinvid":newKey,"dcid":delchalmap[row["dcid"]],"invid":invmap[row["invid"]],"orgcode":newOrgCode})	
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
 					for row in backupStock:
@@ -289,7 +281,7 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
-						lststock.append({"stockid":newKey,"productcode":row["productcode"],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":row["goid"],"orgcode":newOrgCode})
+						lststock.append({"stockid":newKey,"productcode":prodmap[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":gomap[row["goid"]],"orgcode":newOrgCode})
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
 					for row in backupTransfernote:
@@ -308,7 +300,7 @@ class api_backuprestore(object):
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						vcmap[row[vouchercode]] = newKey						
-						lstvouchers.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"],"orgcode":newOrgCode,"invid":row["invid"]})					
+						lstvouchers.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":projmap[row["projectcode"]],"orgcode":newOrgCode,"invid":invmap[row["invid"]]})					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
@@ -317,6 +309,15 @@ class api_backuprestore(object):
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						lstvoucherbin.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"],"orgcode":newOrgCode})
+					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
+					lstbankrecon = []
+					for row in backupBankrecon:
+						curTime = datetime.now()
+						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
+						newKey = snewKey[0:19]
+						newKey = int(newKey)
+						lstbankrecon.append({"reconcode":newKey,"vouchercode":vcmap[row["vouchercode"]],"accountcode":accmap[row["accountcode"]],"clearancedate":row["clearancedate"],"memo":row["memo"],"orgcode":newOrgCode})
+					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
 					os.system("mkdir backupdir")
 					orgFile = open("backupdir/org.back","w")
 					success = cPickle.dump(lstorganisation,orgFile)
@@ -333,9 +334,6 @@ class api_backuprestore(object):
 					projFile = open("backupdir/projects.back","w")
 					success = cPickle.dump(lstprojects,projFile)
 					projFile.close()
-					bankreconFile = open("backupdir/bankrecon.back","w")
-					success = cPickle.dump(lstbankrecon,bankreconFile)
-					bankreconFile.close()
 					customerandsupplierFile = open("backupdir/customerandsupplier.back","w")
 					success = cPickle.dump(lstcustomerandsupplier,customerandsupplierFile)
 					customerandsupplierFile.close()
@@ -381,6 +379,10 @@ class api_backuprestore(object):
 					voucherbinFile = open("backupdir/voucherbin.back","w")
 					success = cPickle.dump(lstvoucherbin,voucherbinFile)
 					voucherbinFile.close()
+					bankreconFile = open("backupdir/bankrecon.back","w")
+					success = cPickle.dump(lstbankrecon,bankreconFile)
+					bankreconFile.close()
+
 					cmp=   tarfile.open("gkbackup.tar.bz2","w:bz2")
 					cmp.add("backupdir")
 					cmp.close()
