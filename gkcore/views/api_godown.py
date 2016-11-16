@@ -24,15 +24,17 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
+"Abhijith Balan" <abhijithb21@openmailbox.org>
 """
 
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import godown
+from gkcore.models.gkdb import stock
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -102,10 +104,19 @@ class api_godown(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([godown.c.goname,godown.c.goid,godown.c.goaddr,godown.c.gocontact]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goname))
+				result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goname))
 				godowns = []
+				srno=1
 				for row in result:
-					godowns.append({"goname":row["goname"], "goid":row["goid"], "goaddr":row["goaddr"],"gocontact":row["gocontact"]})
+					godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+					godownstockcount = godownstock.fetchone()
+					godownstatus = godownstockcount["godownstockstatus"]
+					if godownstatus > 0:
+						status = "Active"
+					else:
+						status = "Inactive"
+					godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+					srno = srno+1
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }

@@ -36,7 +36,7 @@ from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
@@ -62,10 +62,25 @@ class api_product(object):
 		else:
 			try:
 				self.con=eng.connect()
-				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 				products = []
+				srno=1
 				for row in result:
-					products.append({"productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
+					unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
+					unitofmeasurement = unitsofmeasurement.fetchone()
+					unitname = unitofmeasurement["unitname"]
+					categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
+					category = categories.fetchone()
+					categoryname = category["categoryname"]
+					productstock = self.con.execute(select([func.count(gkdb.stock.c.productcode).label("productstockstatus") ]).where(gkdb.stock.c.productcode==row["productcode"]))
+					productstockcount = productstock.fetchone()
+					productstatus = productstockcount["productstockstatus"]
+					if productstatus > 0:
+						status = "Active"
+					else:
+						status = "Inactive"
+					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productstatus":status, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
+					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
 			except:
 				self.con.close()

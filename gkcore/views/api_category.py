@@ -109,12 +109,31 @@ class category(object):
 			try:
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode,gkdb.categorysubcategories.c.subcategoryof]).where(gkdb.categorysubcategories.c.orgcode==authDetails["orgcode"]).order_by(gkdb.categorysubcategories.c.categoryname))
+				srno = 1
 				categories = []
 				for row in result:
+					parents = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["subcategoryof"]))
+					parentname = parents.fetchone()
+					parent = parents.rowcount
+					if parent > 0:
+						parentcategory = parentname["categoryname"]
+					else:
+						parentcategory = "None"
+					product = self.con.execute(select([gkdb.product.c.productcode]).where(gkdb.product.c.categorycode==row["categorycode"]))
+					categorystatus = 0
+					for category in product:
+						produccategory = self.con.execute(select([func.count(gkdb.stock.c.productcode).label('categorystatus') ]).where(gkdb.stock.c.productcode==category["productcode"]))
+						categorycount = produccategory.fetchone()
+						categorystatus = categorycount["categorystatus"]
+					if categorystatus>0:
+						status = "Active"
+					else:
+						status = "Inactive"
 					countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== row["categorycode"]))
 					countrow = countResult.fetchone()
 					subcount = countrow["subcount"]
-					categories.append({"categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+					categories.append({"srno":srno,"parentcategory":parentcategory, "categorystatus":status, "categoryname":row["categoryname"], "categorycode":row["categorycode"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+					srno = srno +1
 				return {"gkstatus": enumdict["Success"], "gkresult":categories}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
