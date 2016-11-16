@@ -118,7 +118,15 @@ class api_backuprestore(object):
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
-						lstgroupsubgroups.append({"groupcode":newKey,"groupname":row["groupname"],"subgroupof":row["subgroupof"],"orgcode": newOrgCode})
+						newSubGroupOf = None
+						if row["subgroupof"] != None:
+							sgo = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.groupcode == row["subgroupof"])))
+							gnData = sgo.fetchone()
+							pgn = gnData["groupname"]
+							for g in lstgroupsubgroups:
+								if g["groupname"] == pgn:
+									newSubGroupOf = g["groupcode"]
+						lstgroupsubgroups.append({"groupcode":newKey,"groupname":row["groupname"],"subgroupof":newSubGroupOf,"orgcode":newOrgCode})
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
 					for row in backupAccounts:
