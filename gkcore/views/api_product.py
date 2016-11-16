@@ -69,9 +69,12 @@ class api_product(object):
 					unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
 					unitofmeasurement = unitsofmeasurement.fetchone()
 					unitname = unitofmeasurement["unitname"]
-					categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
-					category = categories.fetchone()
-					categoryname = category["categoryname"]
+					if row["categorycode"]!=None:
+						categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
+						category = categories.fetchone()
+						categoryname = category["categoryname"]
+					else:
+						categoryname=""
 					productstock = self.con.execute(select([func.count(gkdb.stock.c.productcode).label("productstockstatus") ]).where(gkdb.stock.c.productcode==row["productcode"]))
 					productstockcount = productstock.fetchone()
 					productstatus = productstockcount["productstockstatus"]

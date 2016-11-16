@@ -148,7 +148,7 @@ class api_transaction(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
 				row = result.fetchone()
@@ -158,9 +158,9 @@ class api_transaction(object):
 					voucher = {"vdate": datetime.strftime((row["voucherdate"]),"%d-%m-%Y"),"vno":row["vouchernumber"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 
@@ -185,7 +185,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherCode = self.request.params["code"]
-				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
+				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode,vouchers.c.invid]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
 				row = result.fetchone()
 				rawDr = dict(row["drs"])
 				rawCr = dict(row["crs"])
@@ -203,7 +203,7 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"]}
+				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"],"invid":row["invid"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher,"userrole":urole["userrole"]}
 			except:

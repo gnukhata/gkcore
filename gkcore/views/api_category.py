@@ -118,7 +118,7 @@ class category(object):
 					if parent > 0:
 						parentcategory = parentname["categoryname"]
 					else:
-						parentcategory = "None"
+						parentcategory = ""
 					product = self.con.execute(select([gkdb.product.c.productcode]).where(gkdb.product.c.categorycode==row["categorycode"]))
 					categorystatus = 0
 					for category in product:
