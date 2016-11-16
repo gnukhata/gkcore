@@ -177,7 +177,7 @@ class api_backuprestore(object):
 						
 						newSubcategoryOf = None
 						if row["subcategoryof"] != None:
-							sco = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.orgcode == authDetails["orgcode"], categorysubcategories.c.groupcode == row["subcategoryof"])))
+							sco = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.orgcode == authDetails["orgcode"], categorysubcategories.c.categorycode == row["subcategoryof"])))
 							cnData = sco.fetchone()
 							pcn = cnData["categoryname"]
 							for g in lstcategorysubcategories:
