@@ -201,7 +201,7 @@ class api_backuprestore(object):
 						newKey = int(newKey)  
 						newSubunitOf = None
 						if row["subunitof"] != None:
-							suo = self.con.execute(select([unitofmeasurement.c.unitname]).where(and_(unitofmeasurement.c.orgcode == authDetails["orgcode"],unitofmeasurement.c.uomid == row["subunitof"])))
+							suo = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == row["subunitof"]))
 							unData = suo.fetchone()
 							pun = unData["unitname"]
 							for u in lstcategorysubcategories:
