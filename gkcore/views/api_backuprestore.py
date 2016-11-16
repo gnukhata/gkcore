@@ -113,12 +113,14 @@ class api_backuprestore(object):
 						lstorganisation.append({"orgcode":newOrgCode, "orgname":row["orgname"],"orgtype":row["orgtype"],"yearstart":row["yearstart"],"yearend":row["yearend"],"orgcity":row["orgcity"],"orgaddr":row["orgaddr"],"orgpincode":row["orgpincode"],"orgstate":row["orgstate"],"orgcountry":row["orgcountry"],"orgtelno":row["orgtelno"],"orgfax":row["orgfax"],"orgwebsite":row["orgwebsite"],"orgemail":row["orgemail"],"orgpan":row["orgpan"],"orgmvat":row["orgmvat"],"orgstax":row["orgstax"],"orgregno":row["orgregno"],"orgregdate":row["orgregdate"],"orgfcrano":row["orgfcrano"],"orgfcradate":row["orgfcradate"],"roflag":row["roflag"],"booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"]})
 					backupGroupsubgroups = self.con.execute(select([groupsubgroups]).where(groupsubgroups.c.orgcode==authDetails["orgcode"]))
 					lstgroupsubgroups = []
+					grpmap = {}
 					for row in backupGroupsubgroups:
 						curTime = datetime.now()
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
 						newSubGroupOf = None
+						grpmap[row[groupcode]] = newKey
 						if row["subgroupof"] != None:
 							sgo = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.groupcode == row["subgroupof"])))
 							gnData = sgo.fetchone()
@@ -129,11 +131,13 @@ class api_backuprestore(object):
 						lstgroupsubgroups.append({"groupcode":newKey,"groupname":row["groupname"],"subgroupof":newSubGroupOf,"orgcode":newOrgCode})
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
+					accmap = {}
 					for row in backupAccounts:
 						curTime = datetime.now()
 						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
 						newKey = snewKey[0:19]
 						newKey = int(newKey)
+						accmap[row[accountcode]] = newKey
 						lstaccounts.append({"accountcode":newKey,"accountname":row["accountname"],"groupcode":row["groupcode"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
 					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
 					lstusers = []
@@ -367,7 +371,7 @@ class api_backuprestore(object):
 					gkarch = open("gkbackup.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-					os.system("rm gkbackup.tar.bz2")
+					#os.system("rm gkbackup.tar.bz2")
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
 	#		except:
 	#			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
