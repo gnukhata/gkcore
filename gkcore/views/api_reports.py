@@ -2049,10 +2049,10 @@ class api_reports(object):
 		Cash memo is in the invoice table so even 3 will qualify.
 		Then we wil find the customer or supplyer name on the basis of given data.
 		Note that if the startdate is same as the yearstart of the organisation then opening stock can be directly taken from the product table.
-		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance. 
+		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance.
 		The row will be represented in this grid with every key denoting a column.
 		The columns (keys) will be,
-		date,particulars,invoice/dcno, transaction type (invoice /delchal),inward quantity,outward quantity ,total inward quantity , total outwrd quanity and balance. 
+		date,particulars,invoice/dcno, transaction type (invoice /delchal),inward quantity,outward quantity ,total inward quantity , total outwrd quanity and balance.
 		"""
 		try:
 			token = self.request.headers["gktoken"]
@@ -2078,7 +2078,7 @@ class api_reports(object):
 				stockData = stockRecords.fetchall()
 				ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
 				ysRow = ysData.fetchone()
-				yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d") 
+				yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
 				enData = self.con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode) )
 				enRow = enData.fetchone()
 				yearend = datetime.strptime(str(enRow["yearend"]),"%Y-%m-%d")
@@ -2089,17 +2089,17 @@ class api_reports(object):
 							countrow = countresult.fetchone()
 							if countrow["inv"] == 1:
 								if  stockRow["inout"] == 9:
-									openingStock = openingStock + stockRow["qty"]
+									openingStock = float(openingStock) + float(stockRow["qty"])
 								if  stockRow["inout"] == 15:
-									openingStock = openingStock - stockRow["qty"]
+									openingStock = float(openingStock) - float(stockRow["qty"])
 						if stockRow["dcinvtnflag"] == 4:
 							countresult = self.con.execute(select([func.count(delchal.c.dcid).label('dc')]).where(and_(delchal.c.dcdate >= yearStart, delchal.c.dcdate < startDate, delchal.c.dcid == stockRow["dcinvtnid"])))
 							countrow = countresult.fetchone()
 							if countrow["dc"] == 1:
 								if  stockRow["inout"] == 9:
-									openingStock = openingStock + stockRow["qty"]
+									openingStock = float(openingStock) + float(stockRow["qty"])
 								if  stockRow["inout"] == 15:
-									openingStock = openingStock - stockRow["qty"]
+									openingStock = float(openingStock) - float(stockRow["qty"])
 				stockReport.append({"date":"","particulars":"opening stock","trntype":"","invdcid":"","invdcno":"","inward":"%.2f"%float(openingStock)})
 				totalinward = totalinward + float(openingStock)
 				for finalRow in stockData:
@@ -2110,35 +2110,35 @@ class api_reports(object):
 							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
 							custrow = custdata.fetchone()
 							if  finalRow["inout"] == 9:
-								openingStock = openingStock + finalRow["qty"]
-								totalinward = totalinward + finalRow["qty"]
-								
+								openingStock = float(openingStock) + float(finalRow["qty"])
+								totalinward = float(totalinward) + float(finalRow["qty"])
+
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"]),"%Y-%m-%d".date()),"%Y-%m-%d"),"particulars":custrow["custname"],"trntype":"invoice","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
 							if  finalRow["inout"] == 15:
-								openingStock = openingStock - finalRow["qty"]
-								totaloutward = totaloutward + finalRow["qty"]
-								
+								openingStock = float(openingStock) - float(finalRow["qty"])
+								totaloutward = float(totaloutward) + float(finalRow["qty"])
+
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d"),"%Y-%m-%d"),"particulars":custrow["custname"],"trntype":"invoice","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["invoiceno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 					if finalRow["dcinvtnflag"] == 4:
-						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate >= startDate, delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))		
+						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate >= startDate, delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 						if countresult.rowcount == 1:
 							countrow = countresult.fetchone()
 							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
 							custrow = custdata.fetchone()
 							if  finalRow["inout"] == 9:
-								openingStock = openingStock + finalRow["qty"]
-								totalinward = totalinward + finalRow["qty"]
-								
+								openingStock = float(openingStock) + float(finalRow["qty"])
+								totalinward = float(totalinward) + float(finalRow["qty"])
+
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%Y-%m-%d"),"particulars":custrow["custname"],"trntype":"delchal","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["dcno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
 							if  finalRow["inout"] == 15:
-								openingStock = openingStock - finalRow["qty"]
-								totaloutward = totaloutward +finalRow["qty"]
-								
+								openingStock = float(openingStock) - float(finalRow["qty"])
+								totaloutward = float(totaloutward) + float(finalRow["qty"])
+
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%Y-%m-%d"),"particulars":custrow["custname"],"trntype":"delchal","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["dcno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
-				
+
 				stockReport.append({"date":"","particulars":"Total","invdcid":"","invdcno":"","trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
-				
+
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
