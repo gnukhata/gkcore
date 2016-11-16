@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
+"Prajkta Patkar" <prajkta.patkar007@gmail.com>
 """
 
 
@@ -2035,11 +2036,11 @@ class api_reports(object):
 		Purpose:
 		Return the structured data grid of stock report for given product.
 		Input will be productcode,startdate,enddate.
-		orgcode will be taken from header.
+		orgcode will be taken from header and startdate and enddate of fianancial year taken from organisation table .
 		returns a list of dictionaries where every dictionary will be one row.
 		description:
 		This function returns the complete stock report,
-		including opening stock every inward and outward quantity and running balance for every transaction.
+		including opening stock every inward and outward quantity and running balance for every transaction along with transaction type.
 		at the end we get total inward and outward quantity.
 		This report will be on the basis of productcode, startdate and enddate given from the client.
 		The orgcode is taken from the header.
@@ -2051,7 +2052,7 @@ class api_reports(object):
 		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance. 
 		The row will be represented in this grid with every key denoting a column.
 		The columns (keys) will be,
-		date,particulars,invoice/dcno, inward quantity,outward quantity and balance. 
+		date,particulars,invoice/dcno, transaction type (invoice /delchal),inward quantity,outward quantity ,total inward quantity , total outwrd quanity and balance. 
 		"""
 		try:
 			token = self.request.headers["gktoken"]
