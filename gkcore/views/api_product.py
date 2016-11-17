@@ -117,6 +117,34 @@ class api_product(object):
 				self.con.close()
 
 
+	@view_config(request_method='GET', request_param='by=category',renderer='json')
+	def getProductbyCategory(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				if self.request.params["categorycode"] =="":
+					result = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.productdesc]).where(gkdb.product.c.categorycode==None))
+				else:
+					result = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.productdesc]).where(gkdb.product.c.categorycode==self.request.params["categorycode"]))
+				prodlist = []
+				for row in result:
+					productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"]}
+					prodlist.append(productDetails);
+				return {"gkstatus":enumdict["Success"],"gkresult":prodlist}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+
 	@view_config(request_method='POST',renderer='json')
 	def addProduct(self):
 		try:
