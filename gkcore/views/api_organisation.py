@@ -40,6 +40,7 @@ import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
+from gkcore.models.gkdb import metadata
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
@@ -404,6 +405,32 @@ class api_organisation(object):
 				result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_method='PUT', request_param="type=getinventory", renderer='json')
+	def getinventory(self):
+		token = self.request.headers['gktoken']
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+				userRole = user.fetchone()
+				dataset = self.request.json_body
+				if userRole[0]==-1:
+					metadata.create_all(eng)
+					print "database created successfully"
+					self.con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
+					self.con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+					result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
+					self.con.close()
+					return {"gkstatus":enumdict["Success"]}
+				else:
+					{"gkstatus":  enumdict["BadPrivilege"]}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
