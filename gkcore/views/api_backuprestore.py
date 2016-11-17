@@ -263,7 +263,7 @@ class api_backuprestore(object):
 						godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"]))
 						gorow = godata.fetchone()
 						goname= gorow ["goname"]
-						lststock.append({"productcode":newkey,"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
+						lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
 					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
@@ -283,17 +283,15 @@ class api_backuprestore(object):
 						newkey= int(newkey)
 						mapVouchers[row["vouchercode"]] = newkey
 						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
-					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
 						lstvoucherbin.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"]})
-					
 					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
 					lstbankrecon = []
 					for row in backupBankrecon:
-						lstbankrecon.append({"reconcode":row["reconcode"],"vouchercode":row["vouchercode"],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"]})
-					
+						map
+						lstbankrecon.append({"vouchercode":mapVouchers[row["vouchercode"]],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"]})
 					os.system("mkdir backupdir")
 					orgFile = open("backupdir/org.back","w")
 					success = cPickle.dump(lstorganisation,orgFile)
