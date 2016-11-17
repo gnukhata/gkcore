@@ -106,218 +106,111 @@ class api_backuprestore(object):
 					newOrgCode=snewOrgCode[0:19]
 					newOrgCode = int(newOrgCode)
 
-					
 					backupOrganisation = self.con.execute(select([organisation]).where(organisation.c.orgcode==authDetails["orgcode"]))
 					lstorganisation = []
 					for row in backupOrganisation:
 						lstorganisation.append({"orgcode":newOrgCode, "orgname":row["orgname"],"orgtype":row["orgtype"],"yearstart":row["yearstart"],"yearend":row["yearend"],"orgcity":row["orgcity"],"orgaddr":row["orgaddr"],"orgpincode":row["orgpincode"],"orgstate":row["orgstate"],"orgcountry":row["orgcountry"],"orgtelno":row["orgtelno"],"orgfax":row["orgfax"],"orgwebsite":row["orgwebsite"],"orgemail":row["orgemail"],"orgpan":row["orgpan"],"orgmvat":row["orgmvat"],"orgstax":row["orgstax"],"orgregno":row["orgregno"],"orgregdate":row["orgregdate"],"orgfcrano":row["orgfcrano"],"orgfcradate":row["orgfcradate"],"roflag":row["roflag"],"booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"]})
 					backupGroupsubgroups = self.con.execute(select([groupsubgroups]).where(groupsubgroups.c.orgcode==authDetails["orgcode"]))
 					lstgroupsubgroups = []
-					grpmap = {}
 					for row in backupGroupsubgroups:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						newSubGroupOf = None
-						grpmap[row[groupcode]] = newKey
-						if row["subgroupof"] != None:
-							sgo = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.groupcode == row["subgroupof"])))
-							gnData = sgo.fetchone()
-							pgn = gnData["groupname"]
-							for g in lstgroupsubgroups:
-								if g["groupname"] == pgn:
-									newSubGroupOf = g["groupcode"]
-						lstgroupsubgroups.append({"groupcode":newKey,"groupname":row["groupname"],"subgroupof":newSubGroupOf,"orgcode":newOrgCode})
+						lstgroupsubgroups.append({"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupof":row["subgroupof"],"orgcode":newOrgCode})
+					
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
-					accmap = {}
 					for row in backupAccounts:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						accmap[row[accountcode]] = newKey
-						lstaccounts.append({"accountcode":newKey,"accountname":row["accountname"],"groupcode": grpmap[row["groupcode"]],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
+						lstaccounts.append({"accountcode":row["accountcode"],"accountname":row["accountname"],"groupcode":row["groupcode"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
+					
 					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
 					lstusers = []
-					for row in backupUsers:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lstusers.append({"userid":newKey,"username":row["username"],"userpassword":row["userpassword"],"userrole":row["userrole"],"userquestion":row["userquestion"],"useranswer":row["useranswer"],"themename":row["themename"],"orgcode":newOrgCode})	
+					for row in backupAccounts:
+						lstusers.append({"userid":row["userid"],"username":row["username"],"userpassword":row["userpassword"],"userrole":row["userrole"],"userquestion":row["userquestion"],"useranswer":row["useranswer"],"themename":row["themename"],"orgcode":newOrgCode})
+											
 					backupProjects = self.con.execute(select([projects]).where(projects.c.orgcode==authDetails["orgcode"]))
 					lstprojects = []
-					projmap = {}
 					for row in backupProjects:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						projmap[row[projectcode]] = newKey
-						lstprojects.append({"projectcode":newKey,"projectname":row["projectname"],"sanctionedamount":row["sanctionedamount"],"orgcode":newOrgCode})
+						lstprojects.append({"projectcode":row["projectcode"],"projectname":row["projectname"],"sanctionedamount":row["sanctionedamount"],"orgcode":newOrgCode})
 					
-					lstcustomerandsupplier = []
-					custmap = {}
+					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
+					backupCustomerandsupplier = []
 					for row in backupCustomerandsupplier:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						custmap[row[custid]] = newKey
-						lstcustomerandsupplier.append({"custid":newKey,"custname":row["custname"],"custaddr":row["custaddr"],"custphone":row["custphone"],"custemail":["custemail"],"custfax":["custfax"],"custpan":row["custpan"],"custtan":row["custtan"],"custdoc":row["custdoc"],"csflag":row["csflag"],"state":row["state"],"orgcode":newOrgCode})
+						lstcustomerandsupplier.append({"custid":row["custid"],"custname":row["custname"],"custaddr":row["custaddr"],"custphone":row["custphone"],"custemail":row["custemail"],"custfax":row["custfax"],"custpan":row["custpan"],"custtan":row["custtan"],"custdoc":row["custdoc"],"csflag":row["csflag"],"state":row["state"],"orgcode":newOrgCode})
+					
 					backupCategorysubcategories = self.con.execute(select([categorysubcategories]).where(categorysubcategories.c.orgcode==authDetails["orgcode"]))
 					lstcategorysubcategories = []
-					catsubmap = {}
 					for row in backupCategorysubcategories:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						catsubmap[row[categorycode]] = newKey
-						newSubcategoryOf = None
-						if row["subcategoryof"] != None:
-							sco = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.orgcode == authDetails["orgcode"], categorysubcategories.c.categorycode == row["subcategoryof"])))
-							cnData = sco.fetchone()
-							pcn = cnData["categoryname"]
-							for g in lstcategorysubcategories:
-								if g["categoryname"] == pcn:
-									newSubcategoryOf = g["categorycode"]
-						lstcategorysubcategories.append({"categorycode":newKey,"categoryname":row["categoryname"],"subcategoryof":newSubcategoryOf,"orgcode":newOrgCode})	
+						lstcategorysubcategories.append({"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"orgcode":newOrgCode})	
+					
 					backupCategoryspecs = self.con.execute(select([categoryspecs]).where(categoryspecs.c.orgcode==authDetails["orgcode"]))
 					lstcategoryspecs = []
 					for row in backupCategoryspecs:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lstcategoryspecs.append({"spcode":newKey,"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":catsubmap[row["categorycode"]],"orgcode":newOrgCode})	
+						lstcategoryspecs.append({"spcode":row["spcode"],"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":row["categorycode"],"orgcode":newOrgCode})	
+					
 					backupUnitofmeasurement = self.con.execute(select([unitofmeasurement]))
 					lstunitofmeasurement = []
 					for row in backupUnitofmeasurement:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)  
-						newSubunitOf = None
-						if row["subunitof"] != None:
-							suo = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == row["subunitof"]))
-							unData = suo.fetchone()
-							pun = unData["unitname"]
-							for u in lstcategorysubcategories:
-								if u["unitname"] == pun:
-									newSubunitOf = u["uomid"]
-						
-						lstunitofmeasurement.append({"uomid":newKey,"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":newSubunitOf,"frequency":row["frequency"]})
+						lstunitofmeasurement.append({"uomid":row["uomid"],"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":row["subunitof"],"frequency":row["frequency"]})
+					
 					backupProduct = self.con.execute(select([product]).where(product.c.orgcode==authDetails["orgcode"]))
 					lstproduct = []
-					prodmap = {}
 					for row in backupProduct:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						prodmap[row[productcode]] = newKey
-						lstproduct.append({"productcode":newKey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":catsubmap[row["categorycode"]],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
+						lstproduct.append({"productcode":row["productcode"],"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":row["categorycode"],"uomid":row["uomid"],"openingstock":row["openingstock"],"orgcode":newOrgCode})	
+					
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
 					for row in backupTax:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lsttax.append({"taxid":newKey,"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":prodmap[row["productcode"]],"categorycode":catsubmap[row["categorycode"]],"orgcode":newOrgCode})	
+						lsttax.append({"taxid":row["taxid"],"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":row["productcode"],"categorycode":row["categorycode"],"orgcode":newOrgCode})	
+					
 					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
 					lstgodown = []
-					gomap = {}
 					for row in backupGodown:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						gomap[row[goid]] = newKey						
-						lstgodown.append({"goid":newKey,"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocount"],"contactname":row["contactname"],"orgcode":newOrgCode})	
+						lstgodown.append({"goid":row["goid"],"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocount"],"contactname":row["contactname"],"orgcode":newOrgCode})	
+					
 					backupPurchaseorder = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]))
 					lstpurchaseorder = []
-					pomap = {}
 					for row in backupPurchaseorder:
-						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
-						pomap[row[orderid]] = newKey
-						lstpurchaseorder.append({"orderid":newKey,"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"csid":custmap[row["csid"]],"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"],"orgcode":newOrgCode})	
+						lstpurchaseorder.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":row["orderdate"],"csid":row["csid"],"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"],"orgcode":newOrgCode})	
+					
 					backupDelchal = self.con.execute(select([delchal]).where(delchal.c.orgcode==authDetails["orgcode"]))
 					lstdelchal = []
-					delchalmap = {}
 					for row in backupDelchal:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						delchalmap[row[dcid]] = newKey
-						lstdelchal.append({"dcid":newKey,"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issureid":row["issuerid"],"issuerid":row["issuerid"],"custid:row":custmap[["custid"]],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":pomap[row["orderid"]],"orgcode":newOrgCode})
+						lstdelchal.append({"dcid":row["dcid"],"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issureid":row["issuerid"],"issuerid":row["issuerid"],"custid:row":row["custid"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":row["orderid"],"orgcode":newOrgCode})
+					
 					backupInvoice = self.con.execute(select([invoice]).where(invoice.c.orgcode==authDetails["orgcode"]))
 					lstinvoice = []
-					invmap = {}
 					for row in backupInvoice:
-						curTime = datetime.now()
-						newKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = int(newKey)
-						invmap[row[invid]] = newKey
-						lstinvoice.append({"invid":newKey,"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":row["contents"],"orderid":pomap[row["orderid"]],"custid":custmap[row["custid"]],"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orgcode":newOrgCode})	
+						lstinvoice.append({"invid":row["invid"],"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":row["contents"],"orderid":row["orderid"],"custid":row["custid"],"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orgcode":newOrgCode})	
+					
 					backupDcinv = self.con.execute(select([dcinv]).where(dcinv.c.orgcode==authDetails["orgcode"]))
 					lstdcinv = []
 					for row in backupDcinv:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)						
-						lstdcinv.append({"dcinvid":newKey,"dcid":delchalmap[row["dcid"]],"invid":invmap[row["invid"]],"orgcode":newOrgCode})	
+						lstdcinv.append({"dcinvid":row["dcinvid"],"dcid":row["dcid"],"invid":row["invid"],"orgcode":newOrgCode})	
+					
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
 					for row in backupStock:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lststock.append({"stockid":newKey,"productcode":prodmap[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":gomap[row["goid"]],"orgcode":newOrgCode})
+						lststock.append({"stockid":row["stockid"],"productcode":row["productcode"],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":row["goid"],"orgcode":newOrgCode})
+					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
 					for row in backupTransfernote:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lsttransfernote.append({"transfernoteid":newKey,"transfernoteno": row["transfernoteno"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":row["togodown"],"canceldate":row["canceldate"],"cancelfag":row["cancelfalg"],"orgcode":newOrgCode})
+						lsttransfernote.append({"transfernoteid":row["transfernoteid"],"transfernoteno": row["transfernoteno"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":row["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":row["togodown"],"canceldate":row["canceldate"],"cancelfag":row["cancelfalg"],"orgcode":newOrgCode})
 					
 					backupVouchers = self.con.execute(select([vouchers]).where(vouchers.c.orgcode==authDetails["orgcode"]))
 					lstvouchers = []
-					vcmap = {}
+					
 					for row in backupVouchers:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						vcmap[row[vouchercode]] = newKey						
-						lstvouchers.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":projmap[row["projectcode"]],"orgcode":newOrgCode,"invid":invmap[row["invid"]]})					
+
+						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"],"orgcode":newOrgCode})					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lstvoucherbin.append({"vouchercode":newKey,"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"],"orgcode":newOrgCode})
+						lstvoucherbin.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"],"orgcode":newOrgCode})
+					
 					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
 					lstbankrecon = []
 					for row in backupBankrecon:
-						curTime = datetime.now()
-						snewKey = str(curTime.year) + str(curTime.month) + str(curTime.day) + str(curTime.hour) + str(curTime.minute) + str(curTime.second) + str(curTime.microsecond)
-						newKey = snewKey[0:19]
-						newKey = int(newKey)
-						lstbankrecon.append({"reconcode":newKey,"vouchercode":vcmap[row["vouchercode"]],"accountcode":accmap[row["accountcode"]],"clearancedate":row["clearancedate"],"memo":row["memo"],"orgcode":newOrgCode})
-					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
+						lstbankrecon.append({"reconcode":row["reconcode"],"vouchercode":row["vouchercode"],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"],"orgcode":newOrgCode})
+					
 					os.system("mkdir backupdir")
 					orgFile = open("backupdir/org.back","w")
 					success = cPickle.dump(lstorganisation,orgFile)
