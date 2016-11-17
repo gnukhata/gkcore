@@ -180,7 +180,7 @@ class api_backuprestore(object):
 						unitrow = unitdata.fetchone()
 						unitname = unitrow ["unitname"]
 
-						lstproduct.append({"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":categoryname,"uomid":unitname,"openingstock":row["openingstock"],"orgcode":newOrgCode})	
+						lstproduct.append({"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":categoryname,"uomid":unitname,"openingstock":row["openingstock"]})	
 					
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
