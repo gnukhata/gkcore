@@ -28,7 +28,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import transfernote, stock,godown, product
+from gkcore.models.gkdb import transfernote, stock,godown, product, unitofmeasurement
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -153,9 +153,11 @@ class api_transfernote(object):
 					flag = 20
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
 				for stockrow in stockdata:
-					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
+					productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
-					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"]}
+					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+					unitnamrrow = uomresult.fetchone()
+					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
 					goiddata = stockrow["goid"]
 				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==goiddata))
 				fromgodata = fromgo.fetchone()

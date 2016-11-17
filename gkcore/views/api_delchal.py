@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product
+from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -181,9 +181,11 @@ class api_delchal(object):
 					flag = 4
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["dcid"])))
 				for stockrow in stockdata:
-					productdata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==stockrow["productcode"]))
+					productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
-					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"]}
+					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+					unitnamrrow = uomresult.fetchone()
+					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
 					stockinout = stockrow["inout"]
 					goiddata = stockrow["goid"]
 				singledelchal = {"delchaldata":{

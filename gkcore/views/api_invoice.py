@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -225,9 +225,11 @@ class api_invoice(object):
 						invc["state"]=custname["state"]
 						invc["csflag"]=custname["csflag"]
 				for item in items.keys():
-					result = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==item))
+					result = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==item))
 					productname = result.fetchone()
-					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item]}
+					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productname["uomid"]))
+					unitnamrrow = uomresult.fetchone()
+					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"]}
 				invc["contents"] = items
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
@@ -249,7 +251,7 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.orgcode==authDetails["orgcode"]).order_by(invoice.c.invoicedate))
+				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
 				invoices = []
 				for row in result:
 					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
