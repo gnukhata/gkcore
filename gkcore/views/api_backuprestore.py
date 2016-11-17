@@ -113,11 +113,18 @@ class api_backuprestore(object):
 					backupGroupsubgroups = self.con.execute(select([groupsubgroups]).where(groupsubgroups.c.orgcode==authDetails["orgcode"]))
 					lstgroupsubgroups = []
 					for row in backupGroupsubgroups:
-						lstgroupsubgroups.append({"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupof":row["subgroupof"],"orgcode":newOrgCode})
+						grpname = None
+						if row["subgroupof"] != None:
+							grpnamedata = self.con.execute(select([groupsubgroups.c.groupname]).where(groupsubgroups.groupcode ==row["subgroupof"], groupsubgroups.c.orgcode == authDetails["orgcode"]))
+							grpnamerow = grpnamedata.fetchone()
+							grpname = grpnamerow["groupname"]
+						lstgroupsubgroups.append({"groupname":row["groupname"],"subgroupof":grpname,"or=gcode":newOrgCode})
 					
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
 					for row in backupAccounts:
+						grpname = self.con.execute(select([groupsubgroup.c.groupname].where(groupsubgroups.c.groupname == row["groupcode"])))																					
+																					
 						lstaccounts.append({"accountcode":row["accountcode"],"accountname":row["accountname"],"groupcode":row["groupcode"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"],"orgcode":newOrgCode})
 					
 					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
