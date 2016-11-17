@@ -172,7 +172,13 @@ class api_backuprestore(object):
 					
 					backupProduct = self.con.execute(select([product]).where(product.c.orgcode==authDetails["orgcode"]))
 					lstproduct = []
+					mapProd ={}
 					for row in backupProduct:
+						curtime = datetime.now()
+						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
+						newkey = snewkey[0:19]
+						newkey= int(newkey)
+						mapProd[row["productcode"]] = newkey
 						categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(categorysubcategories.c.categorycode ==row["categorycode"], categorysubcategories.c.orgcode == authDetails["orgcode"]))
 						ctrow = categorydata.fetchone()
 						categoryname = ctrow["categoryname"]
@@ -180,7 +186,7 @@ class api_backuprestore(object):
 						unitrow = unitdata.fetchone()
 						unitname = unitrow ["unitname"]
 
-						lstproduct.append({"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":categoryname,"uomid":unitname,"openingstock":row["openingstock"]})	
+						lstproduct.append({"productcode" : newkey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":categoryname,"uomid":unitname,"openingstock":row["openingstock"]})	
 					
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
@@ -247,14 +253,17 @@ class api_backuprestore(object):
 					
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
+					mapProd ={}
 					for row in backupStock:
-						prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode ==row["productcode"],product.c.orgcode == authDetails["orgcode"]))
-						prodrow = prodata.fetchone()
-						productdesc = prodrow ["productdesc"]
+						curtime = datetime.now()
+						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
+						newkey = snewkey[0:19]
+						newkey= int(newkey)
+						mapProd[row["productcode"]] = newkey
 						godata = self.con.execute(select([godown.c.goname]).where(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"]))
 						gorow = godata.fetchone()
 						goname= gorow ["goname"]
-						lststock.append({"productcode":productdesc,"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
+						lststock.append({"productcode":newkey,"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
 					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
