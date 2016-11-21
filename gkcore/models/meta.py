@@ -25,9 +25,21 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 """
 from sqlalchemy.engine import create_engine
+from gkcore.models.gkdb import metadata
 def dbconnect():
 	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
 	#engine = Engine
 	engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
 	return engine
+
+def inventoryMigration(con,eng):
+	metadata.create_all(eng)
+	print "database created successfully"
+	con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
+	con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+	con.execute("alter table organisation add column invflag Integer default 0 ")
+	con.execute("alter table vouchers add column invid Integer")
+	con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
+	con.execute("alter table users add column themename text default 'Default'")
+	return 0

@@ -38,6 +38,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
+from gkcore.models.meta import inventoryMigration
 import jwt
 import gkcore
 con= Connection
@@ -56,6 +57,11 @@ def gkLogin(request):
 	try:
 		con= eng.connect()
 		dataset = request.json_body
+		try:
+			self.con.execute(select([gkdb.organisation.c.invflag]))
+		except:
+			inventoryMigration(con,eng)
+
 		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
 			record = result.fetchone()
