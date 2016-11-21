@@ -41,6 +41,7 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
+from gkcore.models.meta import inventoryMigration
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
@@ -102,6 +103,10 @@ class api_organisation(object):
 					sig = {"secretcode":privatekey}
 					gkcore.secret = privatekey
 					result = self.con.execute(gkdb.signature.insert(),[sig])
+			try:
+				self.con.execute(select([gkdb.organisation.c.invflag]))
+			except:
+				inventoryMigration(self.con,eng)
 			result = self.con.execute(gkdb.organisation.insert(),[orgdata])
 			if result.rowcount==1:
 				code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
