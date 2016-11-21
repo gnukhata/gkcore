@@ -120,10 +120,10 @@ class api_backuprestore(object):
 					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
 					lstaccounts = []
 					for row in backupAccounts:
-						grpname = self.con.execute(select([groupsubgroup.c.groupname].where(groupsubgroups.c.groupname == row["groupcode"])))																					
+						grpname = self.con.execute(select([groupsubgroup.c.groupname].where(groupsubgroups.c.groupcode == row["groupcode"])))																					
 						grpnamerow = grpname.fetchone()
 						groupname = grpnamerow["groupname"]															
-						lstaccounts.append({"accountname":row["accountname"],"groupcode":row["groupname"],"openingbal":row["openingbal"],"vouchercount":row["vouchercount"]})
+						lstaccounts.append({"accountname":row["accountname"],"groupcode":groupname,"openingbal":row["openingbal"],"vouchercount":row["vouchercount"]})
 					
 					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
 					lstusers = []
@@ -154,7 +154,7 @@ class api_backuprestore(object):
 					backupCategoryspecs = self.con.execute(select([categoryspecs]).where(categoryspecs.c.orgcode==authDetails["orgcode"]))
 					lstcategoryspecs = []
 					for row in backupCategoryspecs:
-						categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(categorysubcategories.c.categorycode ==row["subcategoryof"], categorysubcategories.c.orgcode == authDetails["orgcode"]))
+						categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(categorysubcategories.c.categorycode ==row["categorycode"], categorysubcategories.c.orgcode == authDetails["orgcode"]))
 						ctrow = categorydata.fetchone()
 						categoryname = ctrow["categoryname"]
 						lstcategoryspecs.append({"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":categoryname})	
@@ -286,12 +286,20 @@ class api_backuprestore(object):
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
-						lstvoucherbin.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"]})
+						lstvoucherbin.append({"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"]})
 					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
 					lstbankrecon = []
 					for row in backupBankrecon:
-						map
-						lstbankrecon.append({"vouchercode":mapVouchers[row["vouchercode"]],"accountcode":row["accountcode"],"clearancedate":row["clearancedate"],"memo":row["memo"]})
+						curtime = datetime.now()
+						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
+						newkey = snewkey[0:19]
+						newkey= int(newkey)
+						mapVouchers[row["vouchercode"]] = newkey
+						accname = self.con.execute(select([accounts.c.accountname].where(accounts.c.accountcode == row["accountcode"])))																					
+						accnamerow = accname .fetchone()
+						accountname = accnamerow ["accountname"]															
+
+						lstbankrecon.append({"vouchercode":mapVouchers[row["vouchercode"]],"accountcode":accountname,"clearancedate":row["clearancedate"],"memo":row["memo"]})
 					os.system("mkdir backupdir")
 					orgFile = open("backupdir/org.back","w")
 					success = cPickle.dump(lstorganisation,orgFile)
