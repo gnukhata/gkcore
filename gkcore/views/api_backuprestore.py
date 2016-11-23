@@ -204,9 +204,7 @@ class api_backuprestore(object):
 							categoryname = ctrow["categoryname"]
 							
 						lsttax.append({"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":productcode,"categorycode":categoryname})
-		
-					
-					
+							
 					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
 					lstgodown = []
 					for row in backupGodown:
@@ -308,13 +306,33 @@ class api_backuprestore(object):
 					backupVouchers = self.con.execute(select([vouchers]).where(vouchers.c.orgcode==authDetails["orgcode"]))
 					lstvouchers = []
 					mapVouchers = {}
-					for row in backupVouchers:
+					drs = {}
+					crs = {}
+				   	for row in backupVouchers:
+						
 						curtime = datetime.now()
 						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
 						newkey = snewkey[0:19]
 						newkey= int(newkey)
 						mapVouchers[row["vouchercode"]] = newkey
-						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
+						drs = backupVouchers["drs"]
+						crs = backupVouchers["crs"]
+						for key in drs:
+							accnodr = key
+							valuedr = drs[key]
+						for key in crs:
+							accnocr = key
+							valuecr = crs[key]
+						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnodr,accounts.c.orgcode==authDetails["orgcode"])))																					
+						accnamerow = accname .fetchone()
+						accountnamedr = accnamerow ["accountname"]															
+						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnocr,accounts.c.orgcode==authDetails["orgcode"])))																					
+						accnamerow = accname .fetchone()
+						accountnamecr = accnamerow ["accountname"]	
+						crs["crs"] = {accountnamecr:valuecr}
+						drs["drs"] = {accountnamedr:valuedr}
+						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":drs,"crs":crs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
+					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
 					for row in backupVoucherbin:
@@ -397,7 +415,7 @@ class api_backuprestore(object):
 					success = cPickle.dump(lstbankrecon,bankreconFile)
 					bankreconFile.close()
 
-					cmp=   tarfile.open("gkbackup.tar.bz2","w:bz2")
+					cmp =   tarfile.open("gkbackup.tar.bz2","w:bz2")
 					cmp.add("backupdir")
 					cmp.close()
 					#os.system("rm -rf backupdir")
