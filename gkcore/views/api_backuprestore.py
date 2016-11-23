@@ -190,9 +190,10 @@ class api_backuprestore(object):
 					
 					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
 					lsttax = []
-					productcode = None
-					categorycode = None
 					for row in backupTax:
+						productcode = None
+						categorycode = None
+
 						if row["productcode"] != None:
 							productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode ==row["productcode"], product.c.orgcode == authDetails["orgcode"])))
 							productrow = productdata.fetchone()
@@ -221,10 +222,11 @@ class api_backuprestore(object):
 					
 					backupDelchal = self.con.execute(select([delchal]).where(delchal.c.orgcode==authDetails["orgcode"]))
 					lstdelchal = []
-					custname = None
-					orderno = None
-					issuername = None
+					
 					for row in backupDelchal:
+						custname = None
+						orderno = None
+						issuername = None
 						if row["custid"] != None :
 							csdata = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid ==row["custid"], customerandsupplier.c.orgcode == authDetails["orgcode"])))
 							csrow = csdata.fetchone()
@@ -245,9 +247,19 @@ class api_backuprestore(object):
 					
 					backupInvoice = self.con.execute(select([invoice]).where(invoice.c.orgcode==authDetails["orgcode"]))
 					lstinvoice = []
-					orderno = None
-					custname = None
 					for row in backupInvoice:
+						orderno = None
+						custname = None
+						newcontent = {}
+						content = row["contents"]
+						for key in content:
+							productcode = key
+							value = content[key]
+							prodname = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productcode,accounts.c.orgcode==authDetails["orgcode"])))																					
+							prodnamerow = prodname.fetchone()
+							productname = prodnamerow ["productdesc"]	
+							newcontent[productname]= value	
+																				
 						if row["orderid"] != None:
 							podata = self.con.execute(select([purchaseorder.c.orderno]).where(and_(purchaseorder.c.orderid ==row["orderid"],purchaseorder.c.orgcode == authDetails["orgcode"])))
 							porow = podata.fetchone()
@@ -258,14 +270,15 @@ class api_backuprestore(object):
 							csrow = csdata.fetchone()
 							custname = csrow["custname"]
 													
-						lstinvoice.append({"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":row["contents"],"orderid":orderno,"custid":custname ,"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"]})
+						lstinvoice.append({"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":newcontent,"orderid":orderno,"custid":custname ,"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"]})
 					  
 					
 					backupDcinv = self.con.execute(select([dcinv]).where(dcinv.c.orgcode==authDetails["orgcode"]))
 					lstdcinv = []
-					dcno = None
-					invoiceno = None
 					for row in backupDcinv:
+						dcno = None
+						invoiceno = None
+
 						if row["dcid"] != None:
 							dcdata = self.con.execute(select([delchal.c.dcno]).where(and_(delchal.c.dcid ==row["dcid"], delchal.c.orgcode == authDetails["orgcode"])))
 							dcrow = dcdata.fetchone()
@@ -306,12 +319,9 @@ class api_backuprestore(object):
 					backupVouchers = self.con.execute(select([vouchers]).where(vouchers.c.orgcode==authDetails["orgcode"]))
 					lstvouchers = []
 					mapVouchers = {}
-					drs = {}
-					crs = {}
-					newdrs = {}
-					newcrs = {}
-				   	for row in backupVouchers:
-						
+					for row in backupVouchers:
+						newdrs = {}
+						newcrs = {}
 						curtime = datetime.now()
 						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
 						newkey = snewkey[0:19]
@@ -325,14 +335,16 @@ class api_backuprestore(object):
 						for key in crs:
 							accnocr = key
 							valuecr = crs[key]
+
 						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnodr,accounts.c.orgcode==authDetails["orgcode"])))																					
 						accnamerow = accname .fetchone()
 						accountnamedr = accnamerow ["accountname"]															
 						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnocr,accounts.c.orgcode==authDetails["orgcode"])))																					
 						accnamerow = accname .fetchone()
-						accountnamecr = accnamerow ["accountname"]	
+						accountnamecr = accnamerow ["accountname"]
 						newcrs[accountnamecr] = valuecr
 						newdrs[accountnamedr] = valuedr
+						  
 						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":newdrs,"crs":newcrs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
 					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
@@ -613,9 +625,9 @@ class api_backuprestore(object):
 			orgrow = organisation.fetchone()
 			orgcode = orgrow["orgcode"]
 		for row in pGsg:
-            
+			
 			result = self.con.execute(groupsubgroups.insert(),[row])
-            
+			
 		for row in pAccount:
 			result = self.con.execute(accounts.insert(),[row])
 		for row in pUser:
