@@ -427,10 +427,6 @@ class api_organisation(object):
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1:
-					metadata.create_all(eng)
-					print "database created successfully"
-					self.con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
-					self.con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
 					result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
 					self.con.close()
 					return {"gkstatus":enumdict["Success"]}

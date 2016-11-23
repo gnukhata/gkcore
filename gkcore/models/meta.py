@@ -35,11 +35,13 @@ def dbconnect():
 
 def inventoryMigration(con,eng):
 	metadata.create_all(eng)
-	print "database created successfully"
 	con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
 	con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
 	con.execute("alter table organisation add column invflag Integer default 0 ")
 	con.execute("alter table vouchers add column invid Integer")
 	con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
-	con.execute("alter table users add column themename text default 'Default'")
+	try:
+		con.execute("select themename from users")
+	except:
+		con.execute("alter table users add column themename text default 'Default'")
 	return 0

@@ -56,12 +56,11 @@ def gkLogin(request):
 	"""
 	try:
 		con= eng.connect()
-		dataset = request.json_body
 		try:
-			self.con.execute(select([gkdb.organisation.c.invflag]))
+			con.execute(select([gkdb.organisation.c.invflag]))
 		except:
 			inventoryMigration(con,eng)
-
+		dataset = request.json_body
 		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
 			record = result.fetchone()
