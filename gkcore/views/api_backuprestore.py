@@ -476,6 +476,7 @@ class api_backuprestore(object):
 		rOrg.close()
 		rGsg =open("backupdir/gsg.back","rb")
 		pGsg = cPickle.load(rGsg)
+		
 		rGsg.close()
 		rAcc =open("backupdir/accounts.back","rb")
 		pAccount = cPickle.load(rAcc)
@@ -608,8 +609,13 @@ class api_backuprestore(object):
 			
 			orgdata = pOrg[0]
 			result = self.con.execute(organisation.insert(),[orgdata])
+			organisation = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
+			orgrow = organisation.fetchone()
+			orgcode = orgrow["orgcode"]
 		for row in pGsg:
+            
 			result = self.con.execute(groupsubgroups.insert(),[row])
+            
 		for row in pAccount:
 			result = self.con.execute(accounts.insert(),[row])
 		for row in pUser:
