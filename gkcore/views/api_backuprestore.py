@@ -308,6 +308,8 @@ class api_backuprestore(object):
 					mapVouchers = {}
 					drs = {}
 					crs = {}
+					newdrs = {}
+					newcrs = {}
 				   	for row in backupVouchers:
 						
 						curtime = datetime.now()
@@ -315,8 +317,8 @@ class api_backuprestore(object):
 						newkey = snewkey[0:19]
 						newkey= int(newkey)
 						mapVouchers[row["vouchercode"]] = newkey
-						drs = backupVouchers["drs"]
-						crs = backupVouchers["crs"]
+						drs = row["drs"]
+						crs = row["crs"]
 						for key in drs:
 							accnodr = key
 							valuedr = drs[key]
@@ -329,9 +331,9 @@ class api_backuprestore(object):
 						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnocr,accounts.c.orgcode==authDetails["orgcode"])))																					
 						accnamerow = accname .fetchone()
 						accountnamecr = accnamerow ["accountname"]	
-						crs["crs"] = {accountnamecr:valuecr}
-						drs["drs"] = {accountnamedr:valuedr}
-						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":drs,"crs":crs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
+						newcrs[accountnamecr] = valuecr
+						newdrs[accountnamedr] = valuedr
+						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":newdrs,"crs":newcrs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
 					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
