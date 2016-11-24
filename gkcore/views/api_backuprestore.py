@@ -255,7 +255,7 @@ class api_backuprestore(object):
 						for key in content:
 							productcode = key
 							value = content[key]
-							prodname = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productcode,accounts.c.orgcode==authDetails["orgcode"])))																					
+							prodname = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productcode,product.c.orgcode==authDetails["orgcode"])))																					
 							prodnamerow = prodname.fetchone()
 							productname = prodnamerow ["productdesc"]	
 							newcontent[productname]= value	
@@ -270,7 +270,7 @@ class api_backuprestore(object):
 							csrow = csdata.fetchone()
 							custname = csrow["custname"]
 													
-						lstinvoice.append({"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":newcontent,"orderid":orderno,"custid":custname ,"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"]})
+						lstinvoice.append({"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":newcontent,"invoicetotal":row["invoicetotal"],"orderid":orderno,"custid":custname ,"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"]})
 					  
 					
 					backupDcinv = self.con.execute(select([dcinv]).where(dcinv.c.orgcode==authDetails["orgcode"]))
@@ -293,20 +293,13 @@ class api_backuprestore(object):
 					
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
-					mapProd ={}
+					
 					for row in backupStock:
-						curtime = datetime.now()
-						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
-						newkey = snewkey[0:19]
-						newkey= int(newkey)
-						mapProd[row["productcode"]] = newkey
-						if row["goid"]!= None:
-							godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
-							gorow = godata.fetchone()
-							goname= gorow ["goname"]
-							
-						
-						lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
+							if row["goid"]!= None:
+								godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
+								gorow = godata.fetchone()
+								goname= gorow ["goname"]
+					lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
 					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
@@ -355,11 +348,6 @@ class api_backuprestore(object):
 					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
 					lstbankrecon = []
 					for row in backupBankrecon:
-						curtime = datetime.now()
-						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
-						newkey = snewkey[0:19]
-						newkey= int(newkey)
-						mapVouchers[row["vouchercode"]] = newkey
 						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == row["accountcode"],accounts.c.orgcode==authDetails["orgcode"])))																					
 						accnamerow = accname .fetchone()
 						accountname = accnamerow ["accountname"]															
@@ -486,7 +474,7 @@ class api_backuprestore(object):
 		
 		rOrg =open("backupdir/org.back","rb")
 		pOrg = cPickle.load(rOrg)
-		#print pOrg
+		
 		rOrg.close()
 		rGsg =open("backupdir/gsg.back","rb")
 		pGsg = cPickle.load(rGsg)
@@ -552,9 +540,7 @@ class api_backuprestore(object):
 		try:
 			print "first attempt attempting to insert org data"
 			orgdata = pOrg[0]
-			#print orgdata
 			result = self.con.execute(organisation.insert(),[orgdata])
-			print result
 					
 			organisationd = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
 			orgrow = organisationd.fetchone()
@@ -565,7 +551,6 @@ class api_backuprestore(object):
 				if row["subgroupof"]== None:
 					result = self.con.execute(groupsubgroups.insert(),[row])
 				if row["subgroupof"]!= None:
-					grpname = row["subgroupof"]
 					grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
 					grcdow = grpcode.fetchone()
 					grpcode = grcdow["groupcode"]
@@ -589,9 +574,25 @@ class api_backuprestore(object):
 			for row in pCustomerandsupplier:
 				row["orgcode"] = orgcode
 				result = self.con.execute(customerandsupplier.insert(),[row])
+			for row in pCategorysubcategories:
+				row["orgcode"] = orgcode
+				if row["subcategoryof"]==None:
+					result = self.con.execute(categorysubcategories.insert(),[row])
+				if row["subcategoryof"]!=None:
+					catcode = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname==row["subcategoryof"],categorysubcategories.c.orgcode==orgcode)))
+					catrow = catcode.fetchone()
+					catscode = catrow["categorycode"]
+					row["subcategoryof"] = catscode
+					result = self.con.execute(groupsubgroups.insert(),[row])
+							
 			for row in pCategoryspecs:
 				row["orgcode"] = orgcode
+				categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
+				ctrow = categorydata.fetchone()
+				categorycode = ctrow["categorycode"]
+				row["categorycode"] = categorycode
 				result = self.con.execute(categoryspecs.insert(),[row])
+				
 			for row in pUnitofmeasurement:
 				row["orgcode"] = orgcode
 				result = self.con.execute(unitofmeasurement.insert(),[row])
@@ -604,40 +605,140 @@ class api_backuprestore(object):
 					self.con.execute("alter table stock alter column productcode type bigint")
 					self.con.execute("alter table vouchers alter column vouchercode type bigint")
 					self.con.execute("alter table bankrecon alter column vouchercode type bigint")
+					
+					categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
+					ctrow = categorydata.fetchone()
+					categorycode = ctrow["categorycode"]
+					row["categorycode"] = categorycode
+					uomdata = self.con.execute(select([unitofmeasurement.c.uomid]).where(and_(unitofmeasurement.c.unitname ==row["uomid"])))
+					umrow = uomdata.fetchone()
+					umcode = umrow["uomid"]
+					row["uomid"] = umcode 
+
+
 					result = self.con.execute(product.insert(),[row])
 			for row in pGodown:
 				row["orgcode"] = orgcode
 				result = self.con.execute(godown.insert(),[row])
+				
 			for row in pTax:
 				row["orgcode"] = orgcode
+				if row["categorycode"]!= None:
+					categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
+					ctrow = categorydata.fetchone()
+					categorycodee = ctrow["categorycode"]
+					row["categorycode"] = categorycodee
+					
+				if row["productcode"]!= None:
+					proddata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["categorycode"], product.c.orgcode == orgcode)))
+					prodrow = proddata.fetchone()
+					productcodee = prodrow["productcode"]
+					row["productcode"] = productcodee
 				result = self.con.execute(tax.insert(),[row])
 			for row in pPurchaseorder:
 				row["orgcode"] = orgcode
+				csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custid ==row["csid"], customerandsupplier.c.orgcode == orgcode)))
+				csrow = csdata.fetchone()
+				custidd = csrow["custid"]
+				row["csid"] = custidd
 				result = self.con.execute(purchaseorder.insert(),[row])
 			for row in pDelchal:
 				row["orgcode"] = orgcode
 				result = self.con.execute(delchal.insert(),[row])
 			for row in pInvoice:
 				row["orgcode"] = orgcode
+				row["invoicetotal"]=100
+				newcontent = {}
+				content = row["contents"]
+				for key in content:
+						productcode = key
+						value = content[key]
+						prodname = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc == productcode,product.c.orgcode==orgcode)))																					
+						prodnamerow = prodname.fetchone()
+						productcodee = prodnamerow ["productcode"]	
+						newcontent[productcodee]= value
+						row["contents"]= newcontent   
+				
+				if row["orderid"] != None:
+					podata = self.con.execute(select([purchaseorder.c.orderid]).where(and_(purchaseorder.c.orderno ==row["orderid"],purchaseorder.c.orgcode == orgcode)))
+					porow = podata.fetchone()
+					orderidd= porow["orderid"]
+					row["orderid"] = orderidd
+							
+				if row["custid"]!= None:
+					csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custname == row["custid"], customerandsupplier.c.orgcode == orgcode)))
+					csrow = csdata.fetchone()
+					custidd = csrow["custid"]
+					row["custid"] = custidd
 				result = self.con.execute(invoice.insert(),[row])
+				
 			for row in pDcinv:
 				row["orgcode"] = orgcode
+				if row["dcid"] != None:
+					dcdata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.dcno ==row["dcid"], delchal.c.orgcode == orgcode)))
+					dcrow = dcdata.fetchone()
+					dcidd = dcrow["dcid"]
+					row["dcid"]= dcidd
+					
+				if row["invid"] !=None:
+					invdata = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.invoiceno ==row["invid"], invoice.c.orgcode == orgcode)))
+					inrow = invdata.fetchone()
+					invidd = inrow["invid"]
+					row["invid"]= invidd
 				result = self.con.execute(dcinv.insert(),[row])
+   
 			for row in pStock:
 				row["orgcode"] = orgcode
-				result = self.con.execute(stock.insert(),[row])
+				if row["goid"]!= None:
+					godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["goid"],godown.c.orgcode == orgcode)))
+					gorow = godata.fetchone()
+					goidd= gorow ["goid"]
+					row["goid"] = goidd
+				result = self.con.execute(stock.insert(),[row]) 
 			for row in pTransfernote:
 				row["orgcode"] = orgcode
+				godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["togodown"],godown.c.orgcode == orgcode)))
+				gorow = godata.fetchone()
+				goidd= gorow ["goid"]
+				row["togodown"] = goidd
+
 				result = self.con.execute(transfernote.insert(),[row])
 			
 			for row in pVoucher:
 				row["orgcode"] = orgcode
+				drs = row["drs"]
+				crs = row["crs"]
+				newdrs = {}
+				newcrs = {}
+
+				for key in drs:
+					accnodr = key
+					valuedr = drs[key]
+				for key in crs:
+					accnocr = key
+					valuecr = crs[key]
+
+				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnodr,accounts.c.orgcode==orgcode)))																					
+				accnamerow = acccode .fetchone()
+				accountcodedr = accnamerow ["accountcode"]															
+				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnocr,accounts.c.orgcode==orgcode)))																					
+				accnamerow = acccode.fetchone()
+				accountcodecr = accnamerow ["accountcode"]
+				newcrs[accountcodecr] = valuecr
+				row["crs"]=newcrs
+				newdrs[accountcodedr] = valuedr
+				row["drs"]=newdrs
+
 				result = self.con.execute(vouchers.insert(),[row])
 			for row in pVoucherbin:
 				row["orgcode"] = orgcode
 				result = self.con.execute(voucherbin.insert(),[row])
 			for row in pBankrecon:
 				row["orgcode"] = orgcode
+				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == row["accountcode"],accounts.c.orgcode==orgcode)))																					
+				accnamerow = acccode .fetchone()
+				accountcodde = accnamerow ["accountcode"]															
+				row["accountcode"]=accountcodde
 				result = self.con.execute(bankrecon.insert(),[row])
 		finally:
 				self.con.close()
