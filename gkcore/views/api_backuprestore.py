@@ -554,71 +554,12 @@ class api_backuprestore(object):
 			print pOrg
 			result = self.con.execute(organisation.insert(),[orgdata])
 		except:
-			self.con.execute("alter table organisation alter column orgcode type bigint")
-			self.con.execute("alter table groupsubgroups alter column groupcode type bigint")
-			self.con.execute("alter table accounts alter column accountcode type bigint")
-			self.con.execute("alter table users alter column userid type bigint")
-			self.con.execute("alter table projects alter column projectcode type bigint")
-			self.con.execute("alter table bankrecon alter column reconcode type bigint")
-			self.con.execute("alter table customerandsupplier alter column custid type bigint")
-			self.con.execute("alter table categorysubcategories alter column categorycode type bigint")
-			self.con.execute("alter table categoryspecs alter column spcode type bigint")
-			self.con.execute("alter table unitofmeasurement alter column uomid type bigint")
 			self.con.execute("alter table product alter column productcode type bigint")
-			self.con.execute("alter table tax alter column taxid type bigint")
-			self.con.execute("alter table godown alter column goid type bigint")
-			self.con.execute("alter table purchaseorder alter column orderid type bigint")
-			self.con.execute("alter table delchal alter column dcid type bigint")
-			self.con.execute("alter table invoice alter column invid type bigint")
-			self.con.execute("alter table dcinv alter column dcinvid type bigint")
-			self.con.execute("alter table stock alter column stockid type bigint")
-			self.con.execute("alter table transfernote alter column transfernoteid type bigint")
+			self.con.execute("alter table stock alter column productcode type bigint")
 			self.con.execute("alter table vouchers alter column vouchercode type bigint")
-			self.con.execute("alter table voucherbin alter column vouchercode type bigint")
-			
-			self.con.execute("alter table groupsubgroups alter column orgcode type bigint")
-			self.con.execute("alter table accounts alter column orgcode type bigint")
-			self.con.execute("alter table users alter column orgcode type bigint")
-			self.con.execute("alter table projects alter column orgcode type bigint")
-			self.con.execute("alter table bankrecon alter column orgcode type bigint")
-			self.con.execute("alter table customerandsupplier alter column orgcode type bigint")
-			self.con.execute("alter table categorysubcategories alter column orgcode type bigint")
-			self.con.execute("alter table categoryspecs alter column orgcode type bigint")
-			self.con.execute("alter table product alter column orgcode type bigint")
-			self.con.execute("alter table tax alter column orgcode type bigint")
-			self.con.execute("alter table godown alter column orgcode type bigint")
-			self.con.execute("alter table purchaseorder alter column orgcode type bigint")
-			self.con.execute("alter table delchal alter column orgcode type bigint")
-			self.con.execute("alter table invoice alter column orgcode type bigint")
-			self.con.execute("alter table dcinv alter column orgcode type bigint")
-			self.con.execute("alter table stock alter column orgcode type bigint")
-			self.con.execute("alter table transfernote alter column orgcode type bigint")
-			self.con.execute("alter table vouchers alter column orgcode type bigint")
-			self.con.execute("alter table voucherbin alter column orgcode type bigint")
-			
-			self.con.execute("alter table groupsubgroups alter column subgroupof type bigint")
-			self.con.execute("alter table accounts alter column groupcode type bigint")
 			self.con.execute("alter table bankrecon alter column vouchercode type bigint")
-			self.con.execute("alter table bankrecon alter column accountcode type bigint")
-			self.con.execute("alter table categorysubcategories alter column subcategoryof type bigint")
-			self.con.execute("alter table categoryspecs alter column categorycode type bigint")
-			self.con.execute("alter table unitofmeasurement alter column subunitof type bigint")
-			self.con.execute("alter table product alter column categorycode type bigint")
-			self.con.execute("alter table product alter column uomid type bigint")
-			self.con.execute("alter table tax alter column productcode type bigint")
-			self.con.execute("alter table tax alter column categorycode type bigint")
-			self.con.execute("alter table purchaseorder alter column csid type bigint")
-			self.con.execute("alter table delchal alter column issuerid type bigint")
-			self.con.execute("alter table delchal alter column custid type bigint")
-			self.con.execute("alter table delchal alter column orderid type bigint")
-			self.con.execute("alter table invoice alter column orderid type bigint")
-			self.con.execute("alter table invoice alter column custid type bigint")
-			self.con.execute("alter table dcinv alter column dcid type bigint")
-			self.con.execute("alter table dcinv alter column invid type bigint")
-			self.con.execute("alter table stock alter column goid type bigint")
-			self.con.execute("alter table transfernote alter column togodown type bigint")
-			self.con.execute("alter table vouchers alter column projectcode type bigint")
 			
+
 			
 			orgdata = pOrg[0]
 			result = self.con.execute(organisation.insert(),[orgdata])
@@ -626,11 +567,22 @@ class api_backuprestore(object):
 			orgrow = organisation.fetchone()
 			orgcode = orgrow["orgcode"]
 		for row in pGsg:
-			
-			result = self.con.execute(groupsubgroups.insert(),[row])
+			if row["subgroupof"]== None:
+				result = self.con.execute(groupsubgroups.insert(),[row])
+			if row["subgroupof"]!= None:
+				grpname = row["subgroupof"]
+				grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
+				grcdow = grpcode.fetchone()
+				row["subgroupof"]= grcdow["groupcode"]
+				#row["subgroupof"] = grpcode
+				result = self.con.execute(groupsubgroups.insert(),[row])
 			
 		for row in pAccount:
+			grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["groupcode"],organisation.c.orgcode==orgcode)))
+			grprow = grpcode.fetchone()
+			row["groupcode"]= grcdow["groupcode"]
 			result = self.con.execute(accounts.insert(),[row])
+			
 		for row in pUser:
 			result = self.con.execute(users.insert(),[row])
 		for row in pProjects:
