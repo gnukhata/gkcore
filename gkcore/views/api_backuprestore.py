@@ -27,7 +27,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import  organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
+from gkcore.models.gkdb import organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -486,6 +486,7 @@ class api_backuprestore(object):
 		
 		rOrg =open("backupdir/org.back","rb")
 		pOrg = cPickle.load(rOrg)
+		#print pOrg
 		rOrg.close()
 		rGsg =open("backupdir/gsg.back","rb")
 		pGsg = cPickle.load(rGsg)
@@ -551,75 +552,97 @@ class api_backuprestore(object):
 		try:
 			print "first attempt attempting to insert org data"
 			orgdata = pOrg[0]
-			print pOrg
+			#print orgdata
 			result = self.con.execute(organisation.insert(),[orgdata])
-		except:
-			self.con.execute("alter table product alter column productcode type bigint")
-			self.con.execute("alter table stock alter column productcode type bigint")
-			self.con.execute("alter table vouchers alter column vouchercode type bigint")
-			self.con.execute("alter table bankrecon alter column vouchercode type bigint")
-			
-
-			
-			orgdata = pOrg[0]
-			result = self.con.execute(organisation.insert(),[orgdata])
-			organisation = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
-			orgrow = organisation.fetchone()
+			print result
+					
+			organisationd = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
+			orgrow = organisationd.fetchone()
 			orgcode = orgrow["orgcode"]
-		for row in pGsg:
-			if row["subgroupof"]== None:
-				result = self.con.execute(groupsubgroups.insert(),[row])
-			if row["subgroupof"]!= None:
-				grpname = row["subgroupof"]
-				grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
-				grcdow = grpcode.fetchone()
-				row["subgroupof"]= grcdow["groupcode"]
-				#row["subgroupof"] = grpcode
-				result = self.con.execute(groupsubgroups.insert(),[row])
+			print orgcode
+			for row in pGsg:
+				row["orgcode"] = orgcode
+				if row["subgroupof"]== None:
+					result = self.con.execute(groupsubgroups.insert(),[row])
+				if row["subgroupof"]!= None:
+					grpname = row["subgroupof"]
+					grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
+					grcdow = grpcode.fetchone()
+					grpcode = grcdow["groupcode"]
+					row["subgroupof"] = grpcode
+					result = self.con.execute(groupsubgroups.insert(),[row])
+				
+			for row in pAccount:
+				row["orgcode"] = orgcode
+				grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["groupcode"],organisation.c.orgcode==orgcode)))
+				grprow = grpcode.fetchone()
+				row["groupcode"]= grcdow["groupcode"]
+				result = self.con.execute(accounts.insert(),[row])
+				
+			for row in pUser:
+				row["orgcode"] = orgcode
+				result = self.con.execute(users.insert(),[row])
+			for row in pProjects:
+				row["orgcode"] = orgcode
+				result = self.con.execute(projects.insert(),[row])
 			
-		for row in pAccount:
-			grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["groupcode"],organisation.c.orgcode==orgcode)))
-			grprow = grpcode.fetchone()
-			row["groupcode"]= grcdow["groupcode"]
-			result = self.con.execute(accounts.insert(),[row])
+			for row in pCustomerandsupplier:
+				row["orgcode"] = orgcode
+				result = self.con.execute(customerandsupplier.insert(),[row])
+			for row in pCategoryspecs:
+				row["orgcode"] = orgcode
+				result = self.con.execute(categoryspecs.insert(),[row])
+			for row in pUnitofmeasurement:
+				row["orgcode"] = orgcode
+				result = self.con.execute(unitofmeasurement.insert(),[row])
+			for row in pProduct:
+				row["orgcode"] = orgcode
+				try :
+					result = self.con.execute(product.insert(),[row])
+				except:
+					self.con.execute("alter table product alter column productcode type bigint")
+					self.con.execute("alter table stock alter column productcode type bigint")
+					self.con.execute("alter table vouchers alter column vouchercode type bigint")
+					self.con.execute("alter table bankrecon alter column vouchercode type bigint")
+					result = self.con.execute(product.insert(),[row])
+			for row in pGodown:
+				row["orgcode"] = orgcode
+				result = self.con.execute(godown.insert(),[row])
+			for row in pTax:
+				row["orgcode"] = orgcode
+				result = self.con.execute(tax.insert(),[row])
+			for row in pPurchaseorder:
+				row["orgcode"] = orgcode
+				result = self.con.execute(purchaseorder.insert(),[row])
+			for row in pDelchal:
+				row["orgcode"] = orgcode
+				result = self.con.execute(delchal.insert(),[row])
+			for row in pInvoice:
+				row["orgcode"] = orgcode
+				result = self.con.execute(invoice.insert(),[row])
+			for row in pDcinv:
+				row["orgcode"] = orgcode
+				result = self.con.execute(dcinv.insert(),[row])
+			for row in pStock:
+				row["orgcode"] = orgcode
+				result = self.con.execute(stock.insert(),[row])
+			for row in pTransfernote:
+				row["orgcode"] = orgcode
+				result = self.con.execute(transfernote.insert(),[row])
 			
-		for row in pUser:
-			result = self.con.execute(users.insert(),[row])
-		for row in pProjects:
-			result = self.con.execute(projects.insert(),[row])
-		for row in pBankrecon:
-			result = self.con.execute(bankrecon.insert(),[row])
-		for row in pCustomerandsupplier:
-			result = self.con.execute(customerandsupplier.insert(),[row])
-		for row in pCategoryspecs:
-			result = self.con.execute(categoryspecs.insert(),[row])
-		for row in pUnitofmeasurement:
-			result = self.con.execute(unitofmeasurement.insert(),[row])
-		for row in pProduct:
-			result = self.con.execute(product.insert(),[row])
-		for row in pGodown:
-			result = self.con.execute(godown.insert(),[row])
-		for row in pTax:
-			result = self.con.execute(tax.insert(),[row])
-		for row in pPurchaseorder:
-			result = self.con.execute(purchaseorder.insert(),[row])
-		for row in pDelchal:
-			result = self.con.execute(delchal.insert(),[row])
-		for row in pInvoice:
-			result = self.con.execute(invoice.insert(),[row])
-		for row in pDcinv:
-			result = self.con.execute(dcinv.insert(),[row])
-		for row in pStock:
-			result = self.con.execute(stock.insert(),[row])
-		for row in pTransfernote:
-			result = self.con.execute(transfernote.insert(),[row])
-		
-		for row in pVoucher:
-			result = self.con.execute(vouchers.insert(),[row])
-		for row in pVoucherbin:
-			result = self.con.execute(voucherbin.insert(),[row])
+			for row in pVoucher:
+				row["orgcode"] = orgcode
+				result = self.con.execute(vouchers.insert(),[row])
+			for row in pVoucherbin:
+				row["orgcode"] = orgcode
+				result = self.con.execute(voucherbin.insert(),[row])
+			for row in pBankrecon:
+				row["orgcode"] = orgcode
+				result = self.con.execute(bankrecon.insert(),[row])
+		finally:
+				self.con.close()
 
-			return {"gkstatus":enumdict["Success"]}
+		return {"gkstatus":enumdict["Success"]}
 		#except:
 			#return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
