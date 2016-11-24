@@ -345,7 +345,8 @@ class api_backuprestore(object):
 						newcrs[accountnamecr] = valuecr
 						newdrs[accountnamedr] = valuedr
 						  
-						lstvouchers.append({"vouchercode":row["vouchercode"],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":newdrs,"crs":newcrs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
+						lstvouchers.append({"vouchercode":mapVouchers[row["vouchercode"]],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":newdrs,"crs":newcrs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
+						print lstvouchers
 					
 					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
 					lstvoucherbin = []
