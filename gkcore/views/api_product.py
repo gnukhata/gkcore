@@ -60,7 +60,7 @@ class api_product(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con=eng.connect()
 				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 				products = []
@@ -75,20 +75,22 @@ class api_product(object):
 						categoryname = category["categoryname"]
 					else:
 						categoryname=""
-					productstock = self.con.execute(select([func.count(gkdb.stock.c.productcode).label("productstockstatus") ]).where(gkdb.stock.c.productcode==row["productcode"]))
-					productstockcount = productstock.fetchone()
-					productstatus = productstockcount["productstockstatus"]
-					if productstatus > 0:
-						status = "Active"
+					if row["productcode"]!=None:
+						productstock = self.con.execute(select([gkdb.stock.c.qty]).where(gkdb.stock.c.productcode==row["productcode"]))
+						productstockquantity = productstock.fetchone()
+						if productstockquantity!=None:
+							productquantity = productstockquantity["qty"]
+						else:
+							productquantity = 0
 					else:
-						status = "Inactive"
-					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productstatus":status, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
+						productquantity = 0
+					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productquantity":"%.2f"%float(productquantity), "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
 					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
+			#except:
+			#	self.con.close()
+			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			#finally:
 				self.con.close()
 
 
