@@ -60,7 +60,7 @@ class api_product(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con=eng.connect()
 				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 				products = []
@@ -76,21 +76,34 @@ class api_product(object):
 					else:
 						categoryname=""
 					if row["productcode"]!=None:
-						productstock = self.con.execute(select([gkdb.stock.c.qty]).where(gkdb.stock.c.productcode==row["productcode"]))
-						productstockquantity = productstock.fetchone()
-						if productstockquantity!=None:
-							productquantity = productstockquantity["qty"]
-						else:
-							productquantity = 0
-					else:
-						productquantity = 0
-					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productquantity":"%.2f"%float(productquantity), "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"]})
+						openingStockResult = self.con.execute(select([gkdb.product.c.openingstock]).where(gkdb.product.c.productcode == row["productcode"]))
+						osRow =openingStockResult.fetchone()
+						openingStock = osRow["openingstock"]
+						productstock = self.con.execute(select([gkdb.stock]).where(gkdb.stock.c.productcode == row["productcode"]))
+						for stockData in productstock:
+							if stockData["dcinvtnflag"] == 3 or  stockData["dcinvtnflag"] ==  9:
+								countresult = self.con.execute(select([func.count(gkdb.invoice.c.invid).label('inv')]).where(and_(gkdb.invoice.c.invid == stockData["dcinvtnid"])))
+								countrow = countresult.fetchone()
+								if countrow["inv"] == 1:
+									if  stockData["inout"] == 9:
+										openingStock = float(openingStock) + float(stockData["qty"])
+									if  stockData["inout"] == 15:
+										openingStock = float(openingStock) - float(stockData["qty"])
+							if stockData["dcinvtnflag"] == 4:
+								countresult = self.con.execute(select([func.count(gkdb.delchal.c.dcid).label('dc')]).where(and_(gkdb.delchal.c.dcid == stockData["dcinvtnid"])))
+								countrow = countresult.fetchone()
+								if countrow["dc"] == 1:
+									if  stockData["inout"] == 9:
+										openingStock = float(openingStock) + float(stockData["qty"])
+									if  stockData["inout"] == 15:
+										openingStock = float(openingStock) - float(stockData["qty"])
+					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
 					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
-			#finally:
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
 				self.con.close()
 
 
