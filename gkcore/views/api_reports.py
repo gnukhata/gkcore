@@ -2261,6 +2261,20 @@ class api_reports(object):
 								totaloutward = float(totaloutward) + float(finalRow["qty"])
 
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"delchal","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["dcno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+					if finalRow["dcinvtnflag"] == 20:
+						countresult = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteno]).where(and_(delchal.c.dcdate >= startDate, delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+						if countresult.rowcount == 1:
+							countrow = countresult.fetchone()
+							if  finalRow["inout"] == 9:
+								openingStock = float(openingStock) + float(finalRow["qty"])
+								totalinward = float(totalinward) + float(finalRow["qty"])
+								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["transfernotedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":"","trntype":"transfer note","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["transfernoteno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+							if  finalRow["inout"] == 15:
+								openingStock = float(openingStock) - float(finalRow["qty"])
+								totaloutward = float(totaloutward) + float(finalRow["qty"])
+
+								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"delchal","invdcid":finalRow["dcinvtnid"],"invdcno":countrow["dcno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+
 
 				stockReport.append({"date":"","particulars":"Total","invdcid":"","invdcno":"","trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
