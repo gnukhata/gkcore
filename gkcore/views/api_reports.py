@@ -30,7 +30,8 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,\
+	transfernote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -2209,6 +2210,14 @@ class api_reports(object):
 									openingStock = float(openingStock) - float(stockRow["qty"])
 						if stockRow["dcinvtnflag"] == 4:
 							countresult = self.con.execute(select([func.count(delchal.c.dcid).label('dc')]).where(and_(delchal.c.dcdate >= yearStart, delchal.c.dcdate < startDate, delchal.c.dcid == stockRow["dcinvtnid"])))
+							countrow = countresult.fetchone()
+							if countrow["dc"] == 1:
+								if  stockRow["inout"] == 9:
+									openingStock = float(openingStock) + float(stockRow["qty"])
+								if  stockRow["inout"] == 15:
+									openingStock = float(openingStock) - float(stockRow["qty"])
+						if stockRow["dcinvtnflag"] == 20:
+							countresult = self.con.execute(select([func.count(transfernote.c.transfernoteid).label('dc')]).where(and_(transfernote.c.transfernotedate >= yearStart,transfernote.c.transfernotedate  < startDate,transfernote.c.transfernoteid  == stockRow["dcinvtnid"])))
 							countrow = countresult.fetchone()
 							if countrow["dc"] == 1:
 								if  stockRow["inout"] == 9:
