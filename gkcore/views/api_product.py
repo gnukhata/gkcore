@@ -79,24 +79,14 @@ class api_product(object):
 						openingStockResult = self.con.execute(select([gkdb.product.c.openingstock]).where(gkdb.product.c.productcode == row["productcode"]))
 						osRow =openingStockResult.fetchone()
 						openingStock = osRow["openingstock"]
-						productstock = self.con.execute(select([gkdb.stock]).where(gkdb.stock.c.productcode == row["productcode"]))
-						for stockData in productstock:
-							if stockData["dcinvtnflag"] == 3 or  stockData["dcinvtnflag"] ==  9:
-								countresult = self.con.execute(select([func.count(gkdb.invoice.c.invid).label('inv')]).where(and_(gkdb.invoice.c.invid == stockData["dcinvtnid"])))
-								countrow = countresult.fetchone()
-								if countrow["inv"] == 1:
-									if  stockData["inout"] == 9:
-										openingStock = float(openingStock) + float(stockData["qty"])
-									if  stockData["inout"] == 15:
-										openingStock = float(openingStock) - float(stockData["qty"])
-							if stockData["dcinvtnflag"] == 4:
-								countresult = self.con.execute(select([func.count(gkdb.delchal.c.dcid).label('dc')]).where(and_(gkdb.delchal.c.dcid == stockData["dcinvtnid"])))
-								countrow = countresult.fetchone()
-								if countrow["dc"] == 1:
-									if  stockData["inout"] == 9:
-										openingStock = float(openingStock) + float(stockData["qty"])
-									if  stockData["inout"] == 15:
-										openingStock = float(openingStock) - float(stockData["qty"])
+						productstockin = self.con.execute(select([func.sum(gkdb.stock.c.qty).label("sumofins")]).where(and_(gkdb.stock.c.productcode==row["productcode"],gkdb.stock.c.inout==9)))
+						stockinsum = productstockin.fetchone()
+						if stockinsum["sumofins"]!=None:
+							openingStock = openingStock + stockinsum["sumofins"]
+						productstockout = self.con.execute(select([func.sum(gkdb.stock.c.qty).label("sumofouts")]).where(and_(gkdb.stock.c.productcode==row["productcode"],gkdb.stock.c.inout==15)))
+						stockoutsum = productstockout.fetchone()
+						if stockoutsum["sumofouts"]!=None:
+							openingStock = openingStock - stockoutsum["sumofouts"]
 					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
 					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
