@@ -2272,7 +2272,7 @@ class api_reports(object):
 							if  finalRow["inout"] == 15:
 								openingStock = float(openingStock) - float(finalRow["qty"])
 								totaloutward = float(totaloutward) + float(finalRow["qty"])
-								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":"","trntype":"transfer note","dcinvtnid":finalRow["dcinvtnid"],"dcinvtnno":countrow["transfernoteno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["transfernotedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":"","trntype":"transfer note","dcinvtnid":finalRow["dcinvtnid"],"dcinvtnno":countrow["transfernoteno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
 
 				stockReport.append({"date":"","particulars":"Total","dcinvtnid":"","dcinvtnno":"","trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
