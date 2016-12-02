@@ -450,7 +450,7 @@ When products are stored in the different godowns its openingstick will be enter
 goprod = Table('goprod',metadata,
     Column('goprodid',Integer,primary_key=True),
     Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
-    Column('productcode',Integer, ForeignKey('productcode.product', ondelete="CASCADE"), nullable=False),
+    Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
     Column('goopeningstock',Integer,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     Index("godown_product","productcode")
