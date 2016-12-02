@@ -453,6 +453,7 @@ goprod = Table('goprod',metadata,
     Column('productcode',Integer, ForeignKey('productcode.product', ondelete="CASCADE"), nullable=False),
     Column('goopeningstock',Integer,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Index("godown_product","productcode")
     )
 
 
