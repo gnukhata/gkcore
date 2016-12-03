@@ -178,7 +178,7 @@ class api_product(object):
 					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
 				if productDetails.has_key("categorycode")==False:
 					productDetails["categorycode"]=None
-				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==productDetails["categorycode"],gkdb.product.c.orgcode==productDetails["orgcode"])))
+				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==productDetails["productdesc"], gkdb.product.c.categorycode==productDetails["categorycode"],gkdb.product.c.orgcode==productDetails["orgcode"])))
 				row = result.fetchone()
 				productCode = row["productcode"]
 				if godownFlag:
@@ -209,17 +209,24 @@ class api_product(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==dataset["productcode"]).values(dataset))
+				productDetails = dataset["productdetails"]
+				productCode = productDetails["productcode"]	
+				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
+				if dataset.has_key("godownflag"):
+					goDetails = dataset["godetails"]
+					result = self.con.execute(gkdb.goprod.update().where(gkdb.goprod.c.goprodid==goDetails["goprodid"]).values(goDetails))
+
+			
 				return {"gkstatus":enumdict["Success"]}
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+#			except exc.IntegrityError:
+#				return {"gkstatus":enumdict["DuplicateEntry"]}
+#			except:
+#				return {"gkstatus":enumdict["ConnectionFailed"]}
+#			finally:
+#				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteProduct(self):
