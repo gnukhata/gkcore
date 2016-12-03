@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
+"Prajkta Patkar" <prajkta.patkar007@gmail.com>
 """
 
 
@@ -40,6 +41,7 @@ from sqlalchemy import and_, exc, func
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
+from gkcore.models.gkdb import goprod, product
 
 
 @view_defaults(route_name='products')
@@ -163,20 +165,32 @@ class api_product(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				dataset["orgcode"] = authDetails["orgcode"]
-				if dataset.has_key("categorycode")==False:
-					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==dataset["orgcode"])))
+				productDetails = dataset["productdetails"]
+				godownFlag = dataset["godownflag"]
+				productDetails["orgcode"] = authDetails["orgcode"]
+				if productDetails.has_key("categorycode")==False:
+					duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc== productDetails["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==productDetails["orgcode"])))
 					duplicateproductrow = duplicateproduct.fetchone()
 					if duplicateproductrow["productcount"]>0:
 						return {"gkstatus":enumdict["DuplicateEntry"]}
-				result = self.con.execute(gkdb.product.insert(),[dataset])
-				spec = dataset["specs"]
+				result = self.con.execute(gkdb.product.insert(),[productDetails])
+				spec = productDetails["specs"]
 				for sp in spec.keys():
 					self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
-				if dataset.has_key("categorycode")==False:
-					dataset["categorycode"]=None
-				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==dataset["productdesc"], gkdb.product.c.categorycode==dataset["categorycode"],gkdb.product.c.orgcode==dataset["orgcode"])))
+				if productDetails.has_key("categorycode")==False:
+					productDetails["categorycode"]=None
+				result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==productDetails["productdesc"], gkdb.product.c.categorycode==productDetails["categorycode"],gkdb.product.c.orgcode==productDetails["orgcode"])))
 				row = result.fetchone()
+				productCode = row["productcode"]
+				if godownFlag:
+					goDetails = dataset["godetails"]
+					ttlOpening = 0.00
+					for g in goDetails.keys():
+						ttlOpening = ttlOpening + float(goDetails[g])
+						goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
+						self.con.execute(goprod.insert(),[goro])
+					self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
+						
 				return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
 			except exc.IntegrityError:
@@ -199,7 +213,17 @@ class api_product(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==dataset["productcode"]).values(dataset))
+				productDetails = dataset["productdetails"]
+				productCode = productDetails["productcode"]	
+				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
+				if dataset.has_key("godownflag"):
+					goDetails = dataset["godetails"]
+					ttlOpening = 0.0
+					for g in goDetails.keys():
+						ttlOpening = ttlOpening + float(goDetails[g])
+						result = self.con.execute(gkdb.goprod.update().where(and_(gkdb.goprod.c.goid== g,gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])).values(goopeningstock=goDetails[g]))
+					self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
+				
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}

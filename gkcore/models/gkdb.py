@@ -443,6 +443,20 @@ godown = Table('godown',metadata,
 	Index("godown_orgcodeindex","orgcode")
 	)
 
+"""
+Table for storing product godownwise. 
+When products are stored in the different godowns its openingstick will be entered accordingly. 
+"""
+goprod = Table('goprod',metadata,
+    Column('goprodid',Integer,primary_key=True),
+    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
+    Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
+    Column('goopeningstock',Integer,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Index("godown_product","productcode")
+    )
+
+
 """ Table for transferNote details.
 	When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
 
