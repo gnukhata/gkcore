@@ -217,9 +217,10 @@ class api_product(object):
 				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
 				if dataset.has_key("godownflag"):
 					goDetails = dataset["godetails"]
-					result = self.con.execute(gkdb.goprod.update().where(gkdb.goprod.c.goprodid==goDetails["goprodid"]).values(goDetails))
-
-			
+					for g in goDetails.keys():
+						goid = g
+						goopeningstock = goDetails[g]
+						result = self.con.execute(gkdb.goprod.update().where(and_(gkdb.goprod.c.goid== goid,gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])).values(goopeningstock))
 				return {"gkstatus":enumdict["Success"]}
 #			except exc.IntegrityError:
 #				return {"gkstatus":enumdict["DuplicateEntry"]}
