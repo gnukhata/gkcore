@@ -190,7 +190,7 @@ class api_product(object):
 						goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
 						self.con.execute(goprod.insert(),[goro])
 					self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
-						
+
 				return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
 			except exc.IntegrityError:
@@ -214,16 +214,17 @@ class api_product(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				productDetails = dataset["productdetails"]
-				productCode = productDetails["productcode"]	
+				godownFlag = dataset["godownflag"]
+				productCode = productDetails["productcode"]
 				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
-				if dataset.has_key("godownflag"):
+				if godownFlag:
 					goDetails = dataset["godetails"]
 					ttlOpening = 0.0
 					for g in goDetails.keys():
 						ttlOpening = ttlOpening + float(goDetails[g])
 						result = self.con.execute(gkdb.goprod.update().where(and_(gkdb.goprod.c.goid== g,gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])).values(goopeningstock=goDetails[g]))
 					self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
-				
+
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
