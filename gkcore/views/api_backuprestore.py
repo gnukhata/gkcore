@@ -209,7 +209,23 @@ class api_backuprestore(object):
 					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
 					lstgodown = []
 					for row in backupGodown:
-						lstgodown.append({"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocontact"],"contactname":row["contactname"]})	
+					   lstgodown.append({"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocontact"],"contactname":row["contactname"]})
+
+					
+					backupGoprod = self.con.execute(select([goprod]).where(goprod.c.orgcode==authDetails["orgcode"]))
+					lstgodown = []
+					for row in backupGoprod:
+						godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
+						gorow = godata.fetchone()
+						goname= gorow ["goname"]
+
+						productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode ==row["productcode"], product.c.orgcode == authDetails["orgcode"])))
+						productrow = productdata.fetchone()
+						productdesc= productrow["productdesc"]
+						
+						lstgodown.append({"goid":goname,"productcode":productdesc,"goopeningstock":row["goopeningstock"]})	
+					
+										
 					
 					backupPurchaseorder = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]))
 					lstpurchaseorder = []
@@ -387,6 +403,9 @@ class api_backuprestore(object):
 					godownFile = open("backupdir/godown.back","w")
 					success = cPickle.dump(lstgodown,godownFile)
 					godownFile.close()
+					goprodFile = open("backupdir/goprod.back","w")
+					success = cPickle.dump(lstgoprod,goprodFile)
+					goprodFile.close()
 					taxFile = open("backupdir/tax.back","w")
 					success = cPickle.dump(lsttax,taxFile)
 					taxFile.close()
@@ -474,11 +493,9 @@ class api_backuprestore(object):
 		
 		rOrg =open("backupdir/org.back","rb")
 		pOrg = cPickle.load(rOrg)
-		
 		rOrg.close()
 		rGsg =open("backupdir/gsg.back","rb")
 		pGsg = cPickle.load(rGsg)
-		
 		rGsg.close()
 		rAcc =open("backupdir/accounts.back","rb")
 		pAccount = cPickle.load(rAcc)
@@ -510,6 +527,9 @@ class api_backuprestore(object):
 		rGo =open("backupdir/godown.back","rb")
 		pGodown = cPickle.load(rGo)
 		rGo.close()
+		rGoprod =open("backupdir/goprod.back","rb")
+		pGoprod = cPickle.load(rGoprod)
+		rGoprod.close()
 		rTx =open("backupdir/tax.back","rb")
 		pTax = cPickle.load(rTx)
 		rTx.close()
@@ -589,8 +609,8 @@ class api_backuprestore(object):
 				row["orgcode"] = orgcode
 				categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
 				ctrow = categorydata.fetchone()
-				categorycode = ctrow["categorycode"]
-				row["categorycode"] = categorycode
+				categorycodee = ctrow["categorycode"]
+				row["categorycode"] = categorycodee
 				result = self.con.execute(categoryspecs.insert(),[row])
 				
 			for row in pUnitofmeasurement:
@@ -602,25 +622,38 @@ class api_backuprestore(object):
 					result = self.con.execute(product.insert(),[row])
 				except:
 					self.con.execute("alter table product alter column productcode type bigint")
+					self.con.execute("alter table goprod alter column productcode type bigint")
 					self.con.execute("alter table stock alter column productcode type bigint")
 					self.con.execute("alter table vouchers alter column vouchercode type bigint")
 					self.con.execute("alter table bankrecon alter column vouchercode type bigint")
 					
 					categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
 					ctrow = categorydata.fetchone()
-					categorycode = ctrow["categorycode"]
-					row["categorycode"] = categorycode
+					categorycodee = ctrow["categorycode"]
+					row["categorycode"] = categorycodee
 					uomdata = self.con.execute(select([unitofmeasurement.c.uomid]).where(and_(unitofmeasurement.c.unitname ==row["uomid"])))
 					umrow = uomdata.fetchone()
-					umcode = umrow["uomid"]
-					row["uomid"] = umcode 
-
-
+					umcodee = umrow["uomid"]
+					row["uomid"] = umcodee 
 					result = self.con.execute(product.insert(),[row])
+					
 			for row in pGodown:
 				row["orgcode"] = orgcode
 				result = self.con.execute(godown.insert(),[row])
 				
+			for row in pGoprod:
+				row["orgcode"] = orgcode
+				godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["goid"],godown.c.orgcode == orgcode)))
+				gorow = godata.fetchone()
+				goidd= gorow ["goid"]
+				row["goid"] = goidd
+				productdata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["productcode"],product.c.orgcode == orgcode)))
+				pdrow = productdata.fetchone()
+				productcodee = pdrow["productdata"]
+				row["categorycode"] = productcodee
+				
+				result = self.con.execute(goprod.insert(),[row])
+
 			for row in pTax:
 				row["orgcode"] = orgcode
 				if row["categorycode"]!= None:
