@@ -27,7 +27,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
+from gkcore.models.gkdb import organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,goprod,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -213,7 +213,7 @@ class api_backuprestore(object):
 
 					
 					backupGoprod = self.con.execute(select([goprod]).where(goprod.c.orgcode==authDetails["orgcode"]))
-					lstgodown = []
+					lstgoprod = []
 					for row in backupGoprod:
 						godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
 						gorow = godata.fetchone()
@@ -223,7 +223,7 @@ class api_backuprestore(object):
 						productrow = productdata.fetchone()
 						productdesc= productrow["productdesc"]
 						
-						lstgodown.append({"goid":goname,"productcode":productdesc,"goopeningstock":row["goopeningstock"]})	
+						lstgoprod.append({"goid":goname,"productcode":productdesc,"goopeningstock":row["goopeningstock"]})	
 					
 										
 					
@@ -309,13 +309,13 @@ class api_backuprestore(object):
 					
 					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
 					lststock = []
-					
 					for row in backupStock:
 							if row["goid"]!= None:
 								godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
 								gorow = godata.fetchone()
 								goname= gorow ["goname"]
-					lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
+								print "error in stock"
+							lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
 					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
 					lsttransfernote = []
@@ -649,8 +649,8 @@ class api_backuprestore(object):
 				row["goid"] = goidd
 				productdata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["productcode"],product.c.orgcode == orgcode)))
 				pdrow = productdata.fetchone()
-				productcodee = pdrow["productdata"]
-				row["categorycode"] = productcodee
+				productcodee = pdrow["productcode"]
+				row["productcode"] = productcodee
 				
 				result = self.con.execute(goprod.insert(),[row])
 
