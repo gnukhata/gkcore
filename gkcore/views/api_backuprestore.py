@@ -98,7 +98,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-	#		try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -224,16 +224,13 @@ class api_backuprestore(object):
 						productdesc= productrow["productdesc"]
 						
 						lstgoprod.append({"goid":goname,"productcode":productdesc,"goopeningstock":row["goopeningstock"]})	
-					
-										
-					
+			
 					backupPurchaseorder = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]))
 					lstpurchaseorder = []
 					for row in backupPurchaseorder:
 						csdata = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid ==row["csid"], customerandsupplier.c.orgcode == authDetails["orgcode"])))
 						csrow = csdata.fetchone()
 						custname = csrow["custname"]
-
 						lstpurchaseorder.append({"orderno": row["orderno"], "orderdate":row["orderdate"],"csid":custname,"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"]})	
 					
 					backupDelchal = self.con.execute(select([delchal]).where(delchal.c.orgcode==authDetails["orgcode"]))
@@ -257,7 +254,6 @@ class api_backuprestore(object):
 							 issuerdata = self.con.execute(select([users.c.username]).where(and_(users.c.userid ==row["issuerid"], users.c.orgcode == authDetails["orgcode"])))
 							 isrow = issuerdata.fetchone()
 							 issuername = isrow["username"]
-							 
 							 
 						lstdelchal.append({"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issuerid":issuername,"custid:":custname,"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":orderno})
 					
@@ -314,7 +310,7 @@ class api_backuprestore(object):
 								godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
 								gorow = godata.fetchone()
 								goname= gorow ["goname"]
-								print "error in stock"
+								
 							lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
 					
 					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
@@ -440,16 +436,16 @@ class api_backuprestore(object):
 					cmp =   tarfile.open("gkbackup.tar.bz2","w:bz2")
 					cmp.add("backupdir")
 					cmp.close()
-					#os.system("rm -rf backupdir")
+					os.system("rm -rf backupdir")
 					gkarch = open("gkbackup.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-					#os.system("rm gkbackup.tar.bz2")
+					os.system("rm gkbackup.tar.bz2")
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-	#		except:
-	#			return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-	#		finally:
-	#			self.con.close() """
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close() 
 				
 				
 	
@@ -481,305 +477,312 @@ class api_backuprestore(object):
 	def RestoreOrg(self):
 		""" This method restore entire database with organisation.
 		First it checks the user role if the user is admin then only user can do the backup					  """
-		#try:
-		self.con = eng.connect()
-		dataset = self.request.json_body
-		datarestore = dataset["datarestore"]
-		restore_data = base64.b64decode(datarestore)
-		restorewrite_file=open("restoreOrg.tar.bz2","w")
-		restorewrite_file.write(restore_data)
-		restorewrite_file.close()
-		os.system("tar jxf restoreOrg.tar.bz2")
-		
-		rOrg =open("backupdir/org.back","rb")
-		pOrg = cPickle.load(rOrg)
-		rOrg.close()
-		rGsg =open("backupdir/gsg.back","rb")
-		pGsg = cPickle.load(rGsg)
-		rGsg.close()
-		rAcc =open("backupdir/accounts.back","rb")
-		pAccount = cPickle.load(rAcc)
-		rAcc.close()
-		rUsr =open("backupdir/users.back","rb")
-		pUser = cPickle.load(rUsr)
-		rUsr.close()
-		rProj =open("backupdir/projects.back","rb")
-		pProjects = cPickle.load(rProj)
-		rProj.close()
-		rBnkrcn =open("backupdir/bankrecon.back","rb")
-		pBankrecon = cPickle.load(rBnkrcn)
-		rBnkrcn.close()
-		rCas =open("backupdir/customerandsupplier.back","rb")
-		pCustomerandsupplier = cPickle.load(rCas)
-		rCas.close()
-		rCasb =open("backupdir/categorysubcategories.back","rb")
-		pCategorysubcategories = cPickle.load(rCasb)
-		rCasb.close()
-		rCtspc =open("backupdir/categoryspecs.back","rb")
-		pCategoryspecs = cPickle.load(rCtspc)
-		rCasb.close()
-		rUm =open("backupdir/unitofmeasurement.back","rb")
-		pUnitofmeasurement = cPickle.load(rUm)
-		rUm.close()
-		rPod =open("backupdir/product.back","rb")
-		pProduct = cPickle.load(rPod)
-		rPod.close()
-		rGo =open("backupdir/godown.back","rb")
-		pGodown = cPickle.load(rGo)
-		rGo.close()
-		rGoprod =open("backupdir/goprod.back","rb")
-		pGoprod = cPickle.load(rGoprod)
-		rGoprod.close()
-		rTx =open("backupdir/tax.back","rb")
-		pTax = cPickle.load(rTx)
-		rTx.close()
-		rPo =open("backupdir/purchaseorder.back","rb")
-		pPurchaseorder = cPickle.load(rPo)
-		rPo.close()
-		rDc =open("backupdir/delchal.back","rb")
-		pDelchal = cPickle.load(rDc)
-		rDc.close()
-		rIv =open("backupdir/invoice.back","rb")
-		pInvoice = cPickle.load(rIv)
-		rIv.close()
-		rDciv =open("backupdir/dcinv.back","rb")
-		pDcinv = cPickle.load(rDciv)
-		rDciv.close() 
-		rStk =open("backupdir/stock.back","rb")
-		pStock = cPickle.load(rStk)
-		rStk.close()
-		rTn =open("backupdir/transfernote.back","rb")
-		pTransfernote = cPickle.load(rTn)
-		rTn.close()
-		rVouch =open("backupdir/vouchers.back","rb")
-		pVoucher = cPickle.load(rVouch)
-		rVouch.close()
-		rVbn =open("backupdir/voucherbin.back","rb")
-		pVoucherbin= cPickle.load(rVbn)
-		rVbn.close()
 		try:
-			print "first attempt attempting to insert org data"
-			orgdata = pOrg[0]
-			result = self.con.execute(organisation.insert(),[orgdata])
-					
-			organisationd = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
-			orgrow = organisationd.fetchone()
-			orgcode = orgrow["orgcode"]
-			print orgcode
-			for row in pGsg:
-				row["orgcode"] = orgcode
-				if row["subgroupof"]== None:
-					result = self.con.execute(groupsubgroups.insert(),[row])
-				if row["subgroupof"]!= None:
-					grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
-					grcdow = grpcode.fetchone()
-					grpcode = grcdow["groupcode"]
-					row["subgroupof"] = grpcode
-					result = self.con.execute(groupsubgroups.insert(),[row])
-				
-			for row in pAccount:
-				row["orgcode"] = orgcode
-				grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["groupcode"],organisation.c.orgcode==orgcode)))
-				grprow = grpcode.fetchone()
-				row["groupcode"]= grcdow["groupcode"]
-				result = self.con.execute(accounts.insert(),[row])
-				
-			for row in pUser:
-				row["orgcode"] = orgcode
-				result = self.con.execute(users.insert(),[row])
-			for row in pProjects:
-				row["orgcode"] = orgcode
-				result = self.con.execute(projects.insert(),[row])
+			self.con = eng.connect()
+			dataset = self.request.json_body
+			datarestore = dataset["datarestore"]
+			restore_data = base64.b64decode(datarestore)
+			restorewrite_file=open("restoreOrg.tar.bz2","w")
+			restorewrite_file.write(restore_data)
+			restorewrite_file.close()
+			os.system("tar jxf restoreOrg.tar.bz2")
 			
-			for row in pCustomerandsupplier:
-				row["orgcode"] = orgcode
-				result = self.con.execute(customerandsupplier.insert(),[row])
-			for row in pCategorysubcategories:
-				row["orgcode"] = orgcode
-				if row["subcategoryof"]==None:
-					result = self.con.execute(categorysubcategories.insert(),[row])
-				if row["subcategoryof"]!=None:
-					catcode = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname==row["subcategoryof"],categorysubcategories.c.orgcode==orgcode)))
-					catrow = catcode.fetchone()
-					catscode = catrow["categorycode"]
-					row["subcategoryof"] = catscode
-					result = self.con.execute(groupsubgroups.insert(),[row])
-							
-			for row in pCategoryspecs:
-				row["orgcode"] = orgcode
-				categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
-				ctrow = categorydata.fetchone()
-				categorycodee = ctrow["categorycode"]
-				row["categorycode"] = categorycodee
-				result = self.con.execute(categoryspecs.insert(),[row])
+			rOrg =open("backupdir/org.back","rb")
+			pOrg = cPickle.load(rOrg)
+			rOrg.close()
+			rGsg =open("backupdir/gsg.back","rb")
+			pGsg = cPickle.load(rGsg)
+			rGsg.close()
+			rAcc =open("backupdir/accounts.back","rb")
+			pAccount = cPickle.load(rAcc)
+			rAcc.close()
+			rUsr =open("backupdir/users.back","rb")
+			pUser = cPickle.load(rUsr)
+			rUsr.close()
+			rProj =open("backupdir/projects.back","rb")
+			pProjects = cPickle.load(rProj)
+			rProj.close()
+			rBnkrcn =open("backupdir/bankrecon.back","rb")
+			pBankrecon = cPickle.load(rBnkrcn)
+			rBnkrcn.close()
+			rCas =open("backupdir/customerandsupplier.back","rb")
+			pCustomerandsupplier = cPickle.load(rCas)
+			rCas.close()
+			rCasb =open("backupdir/categorysubcategories.back","rb")
+			pCategorysubcategories = cPickle.load(rCasb)
+			rCasb.close()
+			rCtspc =open("backupdir/categoryspecs.back","rb")
+			pCategoryspecs = cPickle.load(rCtspc)
+			rCasb.close()
+			rUm =open("backupdir/unitofmeasurement.back","rb")
+			pUnitofmeasurement = cPickle.load(rUm)
+			rUm.close()
+			rPod =open("backupdir/product.back","rb")
+			pProduct = cPickle.load(rPod)
+			rPod.close()
+			rGo =open("backupdir/godown.back","rb")
+			pGodown = cPickle.load(rGo)
+			rGo.close()
+			rGoprod =open("backupdir/goprod.back","rb")
+			pGoprod = cPickle.load(rGoprod)
+			rGoprod.close()
+			rTx =open("backupdir/tax.back","rb")
+			pTax = cPickle.load(rTx)
+			rTx.close()
+			rPo =open("backupdir/purchaseorder.back","rb")
+			pPurchaseorder = cPickle.load(rPo)
+			rPo.close()
+			rDc =open("backupdir/delchal.back","rb")
+			pDelchal = cPickle.load(rDc)
+			rDc.close()
+			rIv =open("backupdir/invoice.back","rb")
+			pInvoice = cPickle.load(rIv)
+			rIv.close()
+			rDciv =open("backupdir/dcinv.back","rb")
+			pDcinv = cPickle.load(rDciv)
+			rDciv.close() 
+			rStk =open("backupdir/stock.back","rb")
+			pStock = cPickle.load(rStk)
+			rStk.close()
+			rTn =open("backupdir/transfernote.back","rb")
+			pTransfernote = cPickle.load(rTn)
+			rTn.close()
+			rVouch =open("backupdir/vouchers.back","rb")
+			pVoucher = cPickle.load(rVouch)
+			rVouch.close()
+			rVbn =open("backupdir/voucherbin.back","rb")
+			pVoucherbin= cPickle.load(rVbn)
+			rVbn.close()
+			try:
 				
-			for row in pUnitofmeasurement:
-				row["orgcode"] = orgcode
-				result = self.con.execute(unitofmeasurement.insert(),[row])
-			for row in pProduct:
-				row["orgcode"] = orgcode
-				try :
-					result = self.con.execute(product.insert(),[row])
-				except:
-					self.con.execute("alter table product alter column productcode type bigint")
-					self.con.execute("alter table goprod alter column productcode type bigint")
-					self.con.execute("alter table stock alter column productcode type bigint")
-					self.con.execute("alter table vouchers alter column vouchercode type bigint")
-					self.con.execute("alter table bankrecon alter column vouchercode type bigint")
+				orgdata = pOrg[0]
+				result = self.con.execute(organisation.insert(),[orgdata])
+						
+				organisationd = self.con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.orgname==orgdata["orgname"],organisation.c.orgtype==orgdata["orgtype"],organisation.c.yearstart==orgdata["yearstart"],organisation.c.yearend==orgdata["yearend"])))
+				orgrow = organisationd.fetchone()
+				orgcode = orgrow["orgcode"]
+				
+				for row in pGsg:
+					row["orgcode"] = orgcode
+					if row["subgroupof"]== None:
+						result = self.con.execute(groupsubgroups.insert(),[row])
+					if row["subgroupof"]!= None:
+						grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["subgroupof"],organisation.c.orgcode==orgcode)))
+						grcdow = grpcode.fetchone()
+						grpcode = grcdow["groupcode"]
+						row["subgroupof"] = grpcode
+						result = self.con.execute(groupsubgroups.insert(),[row])
 					
+				for row in pAccount:
+					row["orgcode"] = orgcode
+					grpcode = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname==row["groupcode"],organisation.c.orgcode==orgcode)))
+					grprow = grpcode.fetchone()
+					row["groupcode"]= grcdow["groupcode"]
+					result = self.con.execute(accounts.insert(),[row])
+					
+				for row in pUser:
+					row["orgcode"] = orgcode
+					result = self.con.execute(users.insert(),[row])
+				for row in pProjects:
+					row["orgcode"] = orgcode
+					result = self.con.execute(projects.insert(),[row])
+				
+				for row in pCustomerandsupplier:
+					row["orgcode"] = orgcode
+					result = self.con.execute(customerandsupplier.insert(),[row])
+				for row in pCategorysubcategories:
+					row["orgcode"] = orgcode
+					if row["subcategoryof"]==None:
+						result = self.con.execute(categorysubcategories.insert(),[row])
+					if row["subcategoryof"]!=None:
+						catcode = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname==row["subcategoryof"],categorysubcategories.c.orgcode==orgcode)))
+						catrow = catcode.fetchone()
+						catscode = catrow["categorycode"]
+						row["subcategoryof"] = catscode
+						result = self.con.execute(groupsubgroups.insert(),[row])
+								
+				for row in pCategoryspecs:
+					row["orgcode"] = orgcode
 					categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
 					ctrow = categorydata.fetchone()
 					categorycodee = ctrow["categorycode"]
 					row["categorycode"] = categorycodee
-					uomdata = self.con.execute(select([unitofmeasurement.c.uomid]).where(and_(unitofmeasurement.c.unitname ==row["uomid"])))
-					umrow = uomdata.fetchone()
-					umcodee = umrow["uomid"]
-					row["uomid"] = umcodee 
-					result = self.con.execute(product.insert(),[row])
+					result = self.con.execute(categoryspecs.insert(),[row])
 					
-			for row in pGodown:
-				row["orgcode"] = orgcode
-				result = self.con.execute(godown.insert(),[row])
-				
-			for row in pGoprod:
-				row["orgcode"] = orgcode
-				godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["goid"],godown.c.orgcode == orgcode)))
-				gorow = godata.fetchone()
-				goidd= gorow ["goid"]
-				row["goid"] = goidd
-				productdata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["productcode"],product.c.orgcode == orgcode)))
-				pdrow = productdata.fetchone()
-				productcodee = pdrow["productcode"]
-				row["productcode"] = productcodee
-				
-				result = self.con.execute(goprod.insert(),[row])
-
-			for row in pTax:
-				row["orgcode"] = orgcode
-				if row["categorycode"]!= None:
-					categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
-					ctrow = categorydata.fetchone()
-					categorycodee = ctrow["categorycode"]
-					row["categorycode"] = categorycodee
+				for row in pUnitofmeasurement:
+					row["orgcode"] = orgcode
+					result = self.con.execute(unitofmeasurement.insert(),[row])
+				for row in pProduct:
+					row["orgcode"] = orgcode
+					try :
+						result = self.con.execute(product.insert(),[row])
+					except:
+						self.con.execute("alter table product alter column productcode type bigint")
+						self.con.execute("alter table goprod alter column productcode type bigint")
+						self.con.execute("alter table stock alter column productcode type bigint")
+						self.con.execute("alter table vouchers alter column vouchercode type bigint")
+						self.con.execute("alter table bankrecon alter column vouchercode type bigint")
+						
+						categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
+						ctrow = categorydata.fetchone()
+						categorycodee = ctrow["categorycode"]
+						row["categorycode"] = categorycodee
+						uomdata = self.con.execute(select([unitofmeasurement.c.uomid]).where(and_(unitofmeasurement.c.unitname ==row["uomid"])))
+						umrow = uomdata.fetchone()
+						umcodee = umrow["uomid"]
+						row["uomid"] = umcodee 
+						result = self.con.execute(product.insert(),[row])
+						
+				for row in pGodown:
+					row["orgcode"] = orgcode
+					result = self.con.execute(godown.insert(),[row])
 					
-				if row["productcode"]!= None:
-					proddata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["categorycode"], product.c.orgcode == orgcode)))
-					prodrow = proddata.fetchone()
-					productcodee = prodrow["productcode"]
-					row["productcode"] = productcodee
-				result = self.con.execute(tax.insert(),[row])
-			for row in pPurchaseorder:
-				row["orgcode"] = orgcode
-				csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custid ==row["csid"], customerandsupplier.c.orgcode == orgcode)))
-				csrow = csdata.fetchone()
-				custidd = csrow["custid"]
-				row["csid"] = custidd
-				result = self.con.execute(purchaseorder.insert(),[row])
-			for row in pDelchal:
-				row["orgcode"] = orgcode
-				result = self.con.execute(delchal.insert(),[row])
-			for row in pInvoice:
-				row["orgcode"] = orgcode
-				row["invoicetotal"]=100
-				newcontent = {}
-				content = row["contents"]
-				for key in content:
-						productcode = key
-						value = content[key]
-						prodname = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc == productcode,product.c.orgcode==orgcode)))																					
-						prodnamerow = prodname.fetchone()
-						productcodee = prodnamerow ["productcode"]	
-						newcontent[productcodee]= value
-						row["contents"]= newcontent   
-				
-				if row["orderid"] != None:
-					podata = self.con.execute(select([purchaseorder.c.orderid]).where(and_(purchaseorder.c.orderno ==row["orderid"],purchaseorder.c.orgcode == orgcode)))
-					porow = podata.fetchone()
-					orderidd= porow["orderid"]
-					row["orderid"] = orderidd
-							
-				if row["custid"]!= None:
-					csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custname == row["custid"], customerandsupplier.c.orgcode == orgcode)))
-					csrow = csdata.fetchone()
-					custidd = csrow["custid"]
-					row["custid"] = custidd
-				result = self.con.execute(invoice.insert(),[row])
-				
-			for row in pDcinv:
-				row["orgcode"] = orgcode
-				if row["dcid"] != None:
-					dcdata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.dcno ==row["dcid"], delchal.c.orgcode == orgcode)))
-					dcrow = dcdata.fetchone()
-					dcidd = dcrow["dcid"]
-					row["dcid"]= dcidd
-					
-				if row["invid"] !=None:
-					invdata = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.invoiceno ==row["invid"], invoice.c.orgcode == orgcode)))
-					inrow = invdata.fetchone()
-					invidd = inrow["invid"]
-					row["invid"]= invidd
-				result = self.con.execute(dcinv.insert(),[row])
-   
-			for row in pStock:
-				row["orgcode"] = orgcode
-				if row["goid"]!= None:
+				for row in pGoprod:
+					row["orgcode"] = orgcode
 					godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["goid"],godown.c.orgcode == orgcode)))
 					gorow = godata.fetchone()
 					goidd= gorow ["goid"]
 					row["goid"] = goidd
-				result = self.con.execute(stock.insert(),[row]) 
-			for row in pTransfernote:
-				row["orgcode"] = orgcode
-				godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["togodown"],godown.c.orgcode == orgcode)))
-				gorow = godata.fetchone()
-				goidd= gorow ["goid"]
-				row["togodown"] = goidd
-
-				result = self.con.execute(transfernote.insert(),[row])
+					productdata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["productcode"],product.c.orgcode == orgcode)))
+					pdrow = productdata.fetchone()
+					productcodee = pdrow["productcode"]
+					row["productcode"] = productcodee
+					
+					result = self.con.execute(goprod.insert(),[row])
+	
+				for row in pTax:
+					row["orgcode"] = orgcode
+					if row["categorycode"]!= None:
+						categorydata = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.categoryname ==row["categorycode"], categorysubcategories.c.orgcode == orgcode)))
+						ctrow = categorydata.fetchone()
+						categorycodee = ctrow["categorycode"]
+						row["categorycode"] = categorycodee
+						
+					if row["productcode"]!= None:
+						proddata = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc ==row["categorycode"], product.c.orgcode == orgcode)))
+						prodrow = proddata.fetchone()
+						productcodee = prodrow["productcode"]
+						row["productcode"] = productcodee
+					result = self.con.execute(tax.insert(),[row])
+				for row in pPurchaseorder:
+					row["orgcode"] = orgcode
+					csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custid ==row["csid"], customerandsupplier.c.orgcode == orgcode)))
+					csrow = csdata.fetchone()
+					custidd = csrow["custid"]
+					row["csid"] = custidd
+					result = self.con.execute(purchaseorder.insert(),[row])
+				for row in pDelchal:
+					row["orgcode"] = orgcode
+					result = self.con.execute(delchal.insert(),[row])
+				for row in pInvoice:
+					row["orgcode"] = orgcode
+					row["invoicetotal"]=100
+					newcontent = {}
+					content = row["contents"]
+					for key in content:
+							productcode = key
+							value = content[key]
+							prodname = self.con.execute(select([product.c.productcode]).where(and_(product.c.productdesc == productcode,product.c.orgcode==orgcode)))																					
+							prodnamerow = prodname.fetchone()
+							productcodee = prodnamerow ["productcode"]	
+							newcontent[productcodee]= value
+							row["contents"]= newcontent   
+					
+					if row["orderid"] != None:
+						podata = self.con.execute(select([purchaseorder.c.orderid]).where(and_(purchaseorder.c.orderno ==row["orderid"],purchaseorder.c.orgcode == orgcode)))
+						porow = podata.fetchone()
+						orderidd= porow["orderid"]
+						row["orderid"] = orderidd
+								
+					if row["custid"]!= None:
+						csdata = self.con.execute(select([customerandsupplier.c.custid]).where(and_(customerandsupplier.c.custname == row["custid"], customerandsupplier.c.orgcode == orgcode)))
+						csrow = csdata.fetchone()
+						custidd = csrow["custid"]
+						row["custid"] = custidd
+					result = self.con.execute(invoice.insert(),[row])
+					
+				for row in pDcinv:
+					row["orgcode"] = orgcode
+					if row["dcid"] != None:
+						dcdata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.dcno ==row["dcid"], delchal.c.orgcode == orgcode)))
+						dcrow = dcdata.fetchone()
+						dcidd = dcrow["dcid"]
+						row["dcid"]= dcidd
+						
+					if row["invid"] !=None:
+						invdata = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.invoiceno ==row["invid"], invoice.c.orgcode == orgcode)))
+						inrow = invdata.fetchone()
+						invidd = inrow["invid"]
+						row["invid"]= invidd
+					result = self.con.execute(dcinv.insert(),[row])
+	   
+				for row in pStock:
+					row["orgcode"] = orgcode
+					if row["goid"]!= None:
+						godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["goid"],godown.c.orgcode == orgcode)))
+						gorow = godata.fetchone()
+						goidd= gorow ["goid"]
+						row["goid"] = goidd
+					result = self.con.execute(stock.insert(),[row]) 
+				for row in pTransfernote:
+					row["orgcode"] = orgcode
+					godata = self.con.execute(select([godown.c.goid]).where(and_(godown.c.goname ==row["togodown"],godown.c.orgcode == orgcode)))
+					gorow = godata.fetchone()
+					goidd= gorow ["goid"]
+					row["togodown"] = goidd
+	
+					result = self.con.execute(transfernote.insert(),[row])
+				
+				for row in pVoucher:
+					row["orgcode"] = orgcode
+					drs = row["drs"]
+					crs = row["crs"]
+					newdrs = {}
+					newcrs = {}
+	
+					for key in drs:
+						accnodr = key
+						valuedr = drs[key]
+					for key in crs:
+						accnocr = key
+						valuecr = crs[key]
+	
+					acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnodr,accounts.c.orgcode==orgcode)))																					
+					accnamerow = acccode .fetchone()
+					accountcodedr = accnamerow ["accountcode"]															
+					acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnocr,accounts.c.orgcode==orgcode)))																					
+					accnamerow = acccode.fetchone()
+					accountcodecr = accnamerow ["accountcode"]
+					newcrs[accountcodecr] = valuecr
+					row["crs"]=newcrs
+					newdrs[accountcodedr] = valuedr
+					row["drs"]=newdrs
+	
+					result = self.con.execute(vouchers.insert(),[row])
+				for row in pVoucherbin:
+					row["orgcode"] = orgcode
+					result = self.con.execute(voucherbin.insert(),[row])
+				for row in pBankrecon:
+					row["orgcode"] = orgcode
+					acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == row["accountcode"],accounts.c.orgcode==orgcode)))																					
+					accnamerow = acccode .fetchone()
+					accountcodde = accnamerow ["accountcode"]															
+					row["accountcode"]=accountcodde
+					result = self.con.execute(bankrecon.insert(),[row])
+					return {"gkstatus":enumdict["Success"]}
+			except:
+				  return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			
-			for row in pVoucher:
-				row["orgcode"] = orgcode
-				drs = row["drs"]
-				crs = row["crs"]
-				newdrs = {}
-				newcrs = {}
-
-				for key in drs:
-					accnodr = key
-					valuedr = drs[key]
-				for key in crs:
-					accnocr = key
-					valuecr = crs[key]
-
-				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnodr,accounts.c.orgcode==orgcode)))																					
-				accnamerow = acccode .fetchone()
-				accountcodedr = accnamerow ["accountcode"]															
-				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accnocr,accounts.c.orgcode==orgcode)))																					
-				accnamerow = acccode.fetchone()
-				accountcodecr = accnamerow ["accountcode"]
-				newcrs[accountcodecr] = valuecr
-				row["crs"]=newcrs
-				newdrs[accountcodedr] = valuedr
-				row["drs"]=newdrs
-
-				result = self.con.execute(vouchers.insert(),[row])
-			for row in pVoucherbin:
-				row["orgcode"] = orgcode
-				result = self.con.execute(voucherbin.insert(),[row])
-			for row in pBankrecon:
-				row["orgcode"] = orgcode
-				acccode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == row["accountcode"],accounts.c.orgcode==orgcode)))																					
-				accnamerow = acccode .fetchone()
-				accountcodde = accnamerow ["accountcode"]															
-				row["accountcode"]=accountcodde
-				result = self.con.execute(bankrecon.insert(),[row])
 		finally:
-				self.con.close()
+			self.con.close()
+					
+					
 
-		return {"gkstatus":enumdict["Success"]}
-		#except:
-			#return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-
+					
+			
+		
+		
+		  
 
 			
 					
