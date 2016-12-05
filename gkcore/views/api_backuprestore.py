@@ -71,7 +71,7 @@ class api_backuprestore(object):
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
-					os.system("pg_dump -a -Ft -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankrecon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t vouchers -t voucherbin  gkdata -f /tmp/gkbackup.tar")
+					os.system("pg_dump -a -Ft -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankrecon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t goprod -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote -t vouchers -t voucherbin  gkdata -f /tmp/gkbackup.tar")
 					backupfile = open("/tmp/gkbackup.tar","r")
 					backup_str = base64.b64encode(backupfile.read())
 					backupfile.close()
@@ -451,7 +451,7 @@ class api_backuprestore(object):
 			restorefile = open("/tmp/restore.tar","w")
 			restorefile.write(restore_str)
 			restorefile.close()
-			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankrecon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote  -t vouchers -t voucherbin --dbname=gkdata  /tmp/restore.tar")
+			os.system("pg_restore -t organisation -t groupsubgroups -t accounts -t users -t projects -t bankrecon -t customerandsupplier -t categorysubcategories -t categoryspecs -t unitofmeasurement -t product -t tax -t godown -t goprod -t purchaseorder -t delchal -t invoice -t dcinv -t stock -t transfernote  -t vouchers -t voucherbin --dbname=gkdata  /tmp/restore.tar")
 		
 			return {"gkstatus":enumdict["Success"]}
 		except:
