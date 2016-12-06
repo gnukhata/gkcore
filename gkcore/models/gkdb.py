@@ -444,14 +444,14 @@ godown = Table('godown',metadata,
 	)
 
 """
-Table for storing product godownwise. 
-When products are stored in the different godowns its openingstick will be entered accordingly. 
+Table for storing product godownwise.
+When products are stored in the different godowns its openingstick will be entered accordingly.
 """
 goprod = Table('goprod',metadata,
     Column('goprodid',Integer,primary_key=True),
     Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
     Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
-    Column('goopeningstock',Integer,nullable=False),
+    Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     Index("godown_product","productcode")
     )
