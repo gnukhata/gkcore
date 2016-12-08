@@ -190,7 +190,7 @@ class api_user(object):
 			finally:
 				self.con.close()
 				
-	@view_config(route_name="groupflatlist",request_method='GET', renderer ='json')
+	@view_config(request_method='GET', request_param="groupflatlist",renderer ='json')
 	def getGroupFlatList(self):
 		#print "getflatlist"
 		try:
