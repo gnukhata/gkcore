@@ -74,6 +74,7 @@ def main(global_config, **settings):
     config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
     config.add_route("groupsubgroups","/groupsubgroups")
     config.add_route("groupDetails","/groupDetails/{groupcode}")
+    config.add_route("groupflatlist","/groupflatlist")
     config.add_route("report","/report")
     config.add_route("rollclose","/rollclose")
     config.add_route("forgotpassword","/forgotpassword")
@@ -86,6 +87,7 @@ def main(global_config, **settings):
     config.add_route("discrepancynote","/discrepancynote")
     config.add_route("tax","/tax")
     config.add_route("backuprestore","/backuprestore")
+    
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

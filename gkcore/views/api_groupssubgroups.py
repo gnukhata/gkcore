@@ -39,6 +39,7 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from sqlalchemy.sql.expression import null
+from gkcore.models.gkdb import groupsubgroups
 
 
 
@@ -91,6 +92,7 @@ class api_user(object):
 				grpsubs = []
 				for row in resultset:
 					grpsubs.append({"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupcode":row["subgroupcode"],"subgroupname":row["subgroupname"]})
+				print grpsubs
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -187,6 +189,31 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+				
+	@view_config(route_name="groupflatlist",request_method='GET', renderer ='json')
+	def getGroupFlatList(self):
+		print "getflatlist"
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				gsData = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.orgcode == authDetails["orgcode"]))
+				gsRows = gsData.fetchall()
+				gsList = []
+				for row in gsRows:
+					gsList.append({"groupname":row["groupname"],"groupcode":row["groupcode"]})
+				return{"gkstatus":enumdict["Success"],"gkresult":gsList}
+			except:
+				return{"gkstatus":enumdict["ConnectionFailed"]}
+			finally:	
+				self.con.close()
+	
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteSubgroup(self):
@@ -212,7 +239,8 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-
+	
+	
 	def getGroupBalance(self,orgcode):
 		typeData = self.con.execute(select([gkdb.organisation.c.orgtype]).where(gkdb.organisation.c.orgcode ==orgcode))
 		typeRow = typeData.fetchone()
@@ -277,3 +305,7 @@ class api_user(object):
 			difference = abs(assetsTotal - liabilityTotal)
 			groupBalanceTable.append({"Difference in balance": "%.2f"%float(difference) })
 		return groupBalanceTable
+		
+				
+
+		
