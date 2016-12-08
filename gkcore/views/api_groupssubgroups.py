@@ -213,7 +213,8 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-
+	
+	
 	def getGroupBalance(self,orgcode):
 		typeData = self.con.execute(select([gkdb.organisation.c.orgtype]).where(gkdb.organisation.c.orgcode ==orgcode))
 		typeRow = typeData.fetchone()
@@ -278,7 +279,8 @@ class api_user(object):
 			difference = abs(assetsTotal - liabilityTotal)
 			groupBalanceTable.append({"Difference in balance": "%.2f"%float(difference) })
 		return groupBalanceTable
-	@view_config(request_method='get',request_param="flatlist")
+        
+	@view_config(route_name="groupflatlist",request_method='get')
 	def getGroupFlatList(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -288,7 +290,7 @@ class api_user(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				gsData = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.orgcode == authDetails["orgcode"]))
 				gsRows = gsData.fetchall()
@@ -296,10 +298,10 @@ class api_user(object):
 				for row in gsRows:
 					gsList.append({"groupname":row["groupname"],"groupcode":row["groupcode"]})
 				return{"gkstatus":enumdict["Success"],"gkresult":gsList}
-			except:
-				return{"gkstatus":enumdict["ConnectionFailed"]}
-			finally:	
-				self.con.close()
+#			except:
+#				return{"gkstatus":enumdict["ConnectionFailed"]}
+#			finally:	
+#				self.con.close()
 				
 
 		
