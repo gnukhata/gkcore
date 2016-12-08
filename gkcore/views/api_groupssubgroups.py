@@ -190,9 +190,9 @@ class api_user(object):
 			finally:
 				self.con.close()
 				
-	@view_config(route_name="groupflatlist",request_method='GET', renderer ='json')
+	@view_config(request_method='GET', request_param="groupflatlist",renderer ='json')
 	def getGroupFlatList(self):
-		print "getflatlist"
+		#print "getflatlist"
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -205,9 +205,11 @@ class api_user(object):
 				self.con = eng.connect()
 				gsData = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.orgcode == authDetails["orgcode"]))
 				gsRows = gsData.fetchall()
-				gsList = []
+				gsList = {}
 				for row in gsRows:
-					gsList.append({"groupname":row["groupname"],"groupcode":row["groupcode"]})
+					gsList[row["groupname"]]= row["groupcode"]
+					
+					#gsList.append({"groupname":row["groupname"],"groupcode":row["groupcode"]})
 				return{"gkstatus":enumdict["Success"],"gkresult":gsList}
 			except:
 				return{"gkstatus":enumdict["ConnectionFailed"]}
