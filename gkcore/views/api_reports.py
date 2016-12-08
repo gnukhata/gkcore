@@ -31,7 +31,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod
-	
+
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -388,65 +388,65 @@ class api_reports(object):
 					ledgerRecord["ttlRunDr"] = "%.2f"%(drtotal)
 					ledgerRecord["ttlRunCr"] = "%.2f"%(crtotal)
 					vouchergrid.append(ledgerRecord)
-  				if projectCode=="":
-  					if calbalDict["openbaltype"] == "Cr":
-  						calbalDict["totalcrbal"] -= calbalDict["balbrought"]
-  					if calbalDict["openbaltype"] == "Dr":
-  						calbalDict["totaldrbal"] -= calbalDict["balbrought"]
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
-  					vouchergrid.append(ledgerRecord)
+				if projectCode=="":
+					if calbalDict["openbaltype"] == "Cr":
+						calbalDict["totalcrbal"] -= calbalDict["balbrought"]
+					if calbalDict["openbaltype"] == "Dr":
+						calbalDict["totaldrbal"] -= calbalDict["balbrought"]
+					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(calbalDict["totaldrbal"]),"Cr":"%.2f"%(calbalDict["totalcrbal"]),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
+					vouchergrid.append(ledgerRecord)
 
 					if calbalDict["curbal"]!=0:
 						ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":datetime.strftime(datetime.strptime(str(calculateTo),"%Y-%m-%d").date(),'%d-%m-%Y'),"narration":"", "particulars":["Closing Balance C/F"],"balance":"","status":"", "vouchertype":""}
-	  					if calbalDict["baltype"] == "Cr":
+						if calbalDict["baltype"] == "Cr":
 							if (calbalDict["grpname"] == 'Current Assets' or calbalDict["grpname"] == 'Fixed Assets'or calbalDict["grpname"] == 'Investments' or calbalDict["grpname"] == 'Loans(Asset)' or calbalDict["grpname"] == 'Miscellaneous Expenses(Asset)') and calbalDict["curbal"]!=0:
 								adverseflag = 1
 							ledgerRecord["Dr"] = "%.2f"%(calbalDict["curbal"])
 							ledgerRecord["Cr"] = ""
 
-	  					if calbalDict["baltype"] == "Dr":
+						if calbalDict["baltype"] == "Dr":
 							if (calbalDict["grpname"] == 'Corpus' or calbalDict["grpname"] == 'Capital'or calbalDict["grpname"] == 'Current Liabilities' or calbalDict["grpname"] == 'Loans(Liability)' or calbalDict["grpname"] == 'Reserves') and calbalDict["curbal"]!=0:
 								adverseflag = 1
 							ledgerRecord["Cr"] = "%.2f"%(calbalDict["curbal"])
 							ledgerRecord["Dr"] = ""
 						ledgerRecord["advflag"] = adverseflag
-	  					vouchergrid.append(ledgerRecord)
+						vouchergrid.append(ledgerRecord)
 
 					if (calbalDict["curbal"]==0 and calbalDict["balbrought"]!=0) or calbalDict["curbal"]!=0 or calbalDict["balbrought"]!=0:
-	  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":"", "vouchertype":"", "advflag":""}
-	  					if projectCode == "" and calbalDict["balbrought"]>0:
-	  						if calbalDict["openbaltype"] =="Dr":
-	  							calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
+						ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"", "particulars":["Grand Total"],"balance":"","status":"", "vouchertype":"", "advflag":""}
+						if projectCode == "" and calbalDict["balbrought"]>0:
+							if calbalDict["openbaltype"] =="Dr":
+								calbalDict["totaldrbal"] +=  float(calbalDict["balbrought"])
 
-	  						if calbalDict["openbaltype"] =="Cr":
-	  							calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
+							if calbalDict["openbaltype"] =="Cr":
+								calbalDict["totalcrbal"] +=  float(calbalDict["balbrought"])
 							if calbalDict["baltype"] == "Cr":
 								calbalDict["totaldrbal"] += float(calbalDict["curbal"])
 
-		  					if calbalDict["baltype"] == "Dr":
+							if calbalDict["baltype"] == "Dr":
 								calbalDict["totalcrbal"] += float(calbalDict["curbal"])
-	  						ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
 							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
-	  						vouchergrid.append(ledgerRecord)
-	  					else:
-	  						if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
-	  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
-	  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
+							vouchergrid.append(ledgerRecord)
+						else:
+							if calbalDict["totaldrbal"]>calbalDict["totalcrbal"]:
+								ledgerRecord["Dr"] = "%.2f"%(calbalDict["totaldrbal"])
+								ledgerRecord["Cr"] = "%.2f"%(calbalDict["totaldrbal"])
 
-	  						if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
-	  							ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
-	  							ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
-	  						vouchergrid.append(ledgerRecord)
-  				else:
-  					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
-  					vouchergrid.append(ledgerRecord)
+							if calbalDict["totaldrbal"]<calbalDict["totalcrbal"]:
+								ledgerRecord["Dr"] = "%.2f"%(calbalDict["totalcrbal"])
+								ledgerRecord["Cr"] = "%.2f"%(calbalDict["totalcrbal"])
+							vouchergrid.append(ledgerRecord)
+				else:
+					ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":["Total of Transactions"],"balance":"","status":"", "vouchertype":"", "advflag":""}
+					vouchergrid.append(ledgerRecord)
 				self.con.close()
 
 
-  				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
-  			except:
+				return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
+			except:
 				self.con.close()
-  				return {"gkstatus":enumdict["ConnectionFailed"]}
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 	@view_config(request_param='type=crdrledger', renderer='json')
@@ -2003,15 +2003,15 @@ class api_reports(object):
 		it returns a grid containing details of all the deleted vouchers
 		it first checks the userrole then fetches the data from voucherbin puts into a list.
 		"""
-  		try:
-  			token = self.request.headers["gktoken"]
-  		except:
-  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-  		authDetails = authCheck(token)
-  		if authDetails["auth"] == False:
-  			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-  		else:
-  			try:
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		else:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				orgcode = int(orgcode)
@@ -2028,7 +2028,7 @@ class api_reports(object):
 				else:
 					self.con.close()
 					return {"gkstatus":enumdict["BadPrivilege"]}
-  			except:
+			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 	@view_config(request_param="type=stockreport",renderer="json")
@@ -2190,7 +2190,10 @@ class api_reports(object):
 				openingStock = 0.00
 				goopeningStockResult = self.con.execute(select([goprod.c.goopeningstock]).where(and_(goprod.c.productcode == productCode,goprod.c.goid == godownCode, goprod.c.orgcode == orgcode)))
 				gosRow =goopeningStockResult.fetchone()
-				gopeningStock = gosRow["goopeningstock"]
+				if gosRow!=None:
+					gopeningStock = gosRow["goopeningstock"]
+				else:
+					gopeningStock = 0.00
 				stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.goid == godownCode,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
 				stockData = stockRecords.fetchall()
 				ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
@@ -2227,7 +2230,7 @@ class api_reports(object):
 									gopeningStock = float(gopeningStock) - float(stockRow["qty"])
 				stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcinvtnid":"","dcinvtnno":"","inward":"%.2f"%float(gopeningStock)})
 				totalinward = totalinward + float(gopeningStock)
-				
+
 				for finalRow in stockData:
 					if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
 						countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate >= startDate, invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
