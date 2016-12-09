@@ -152,6 +152,33 @@ class api_product(object):
 				self.con.close()
 
 
+	@view_config(request_method='GET', request_param='by=godown',renderer='json')
+	def getProductbyGodown(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				goid = self.request.params["goid"]
+				productcode = self.request.params["productcode"]
+				result = self.con.execute(select([goprod]).where(and_(goprod.c.goid == goid, goprod.c.productcode == productcode)))
+				godowns = []
+				for row in result:
+					goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
+					godowns.append(goDownDetails)
+				return {"gkstatus":enumdict["Success"],"gkresult":godowns}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+
 	@view_config(request_method='POST',renderer='json')
 	def addProduct(self):
 		try:
