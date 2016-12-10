@@ -43,6 +43,7 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
+from gkcore.models.gkdb import accounts
 """
 purpose:
 This class is the resource to create, update, read and delete accounts.
@@ -167,6 +168,32 @@ class api_account(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+
+	@view_config(request_method='GET',request_param='acclist', renderer ='json')
+	def getAccountslist(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				accData = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(accounts.c.orgcode == authDetails["orgcode"]))
+				accRows = accData.fetchall()
+				accList = {}
+				for row in accRows:
+					accList[row["accountname"]]= row["accountcode"]
+					
+				return {"gkstatus": enumdict["Success"], "gkresult":accList}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
 
 	@view_config(request_method='GET',request_param='find=exists', renderer ='json')
 	def accountExists(self):
