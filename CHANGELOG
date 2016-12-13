@@ -1,3 +1,13 @@
+[13-December-2016 Release 3.5.1]
+* A flatlist to get all groups and subgroups
+* A flatlist to get all accounts
+* A joint table for godown wise opening stock
+* Stock quantity in product list
+* Alter table for database compatibility
+* Modification in product API for adding godown wise opening stock
+* Stock report
+* Godown wise stock report
+
 [17-November-2016 Release 3.5]
 * Addition of support for choosing themes.
 * Facility of search in all table views.
