@@ -70,7 +70,7 @@ class TestUser:
 		assert result.json()["gkstatus"] == 0
 
 	def test_update_user(self):
-		gkdata={"userid":self.demo_userid, "username":"demo_user", "userpassword":"demo_passwd"}
+		gkdata={"userid":self.demo_userid, "username":"new_demo_user", "userpassword":"new_demo_passwd"}
 		result = requests.put("http://127.0.0.1:6543/users", headers=self.header, data=json.dumps(gkdata))
 		assert result.json()["gkstatus"] == 0
 
@@ -79,8 +79,10 @@ class TestUser:
 		assert result.json()["gkstatus"] == 0
 
 	def test_get_single_user(self):
-		gkdata={"userid": self.demo_userid }
-		result = requests.get("http://127.0.0.1:6543/user", headers=self.header, data=json.dumps(gkdata))
+		""" No need to insert data.
+		Because, ultimately, in api_user::getUser(): userid is taken as the currently logged in user's id and
+		not the one which we pass it through the below request"""
+		result = requests.get("http://127.0.0.1:6543/user", headers=self.header)
 		data = result.json()["gkresult"]
 		print data
 		assert data["username"] == "admin" and data["userpassword"] == "admin" and data["userrole"] == -1 and data["userquestion"] == "who am i?" and data["useranswer"] == "hacker"
