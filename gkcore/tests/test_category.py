@@ -64,6 +64,20 @@ class TestCategory:
         result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata1), headers=self.header)
         assert result.json()["gkstatus"]==0
 
+    def test_create_subcategory(self):
+        categorydata = {"categoryname":"Test SubCategory", "subcategoryof": self.democategorycode}
+    	result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
+        assert result.json()["gkstatus"]==0
+
+    def test_delete_subcategory(self):
+        result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
+        for record in result.json()["gkresult"]:
+            if record["categoryname"] == "Test SubCategory":
+                self.categorycode = record["categorycode"]
+                break
+        gkdata1={"categorycode": self.categorycode}
+        result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata1), headers=self.header)
+        assert result.json()["gkstatus"]==0
 
     def test_update_category(self):
         categorydata = {"categoryname":"Test Completed", "subcategoryof": None, "categorycode": self.democategorycode}
