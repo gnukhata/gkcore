@@ -148,3 +148,10 @@ class TestTransaction:
 		gkdata={"vouchercode": vouchercode}
 		result_delete = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
 		assert result_post.json()["gkstatus"] == 0 and result_delete.json()["gkstatus"] == 0
+
+	def test_update_voucher(self):
+		drs = {self.demo_accountcode2: 66}
+		crs = {self.demo_accountcode1: 66}
+		gkdata = {"vouchercode":self.demo_vouchercode, "narration":"Updated Demo Narration", "drs":drs, "crs":crs}
+		result = requests.put("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
+		assert result.json()["gkstatus"] == 0
