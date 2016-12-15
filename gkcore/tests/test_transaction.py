@@ -160,11 +160,9 @@ class TestTransaction:
 		result = requests.get("http://127.0.0.1:6543/transaction?code=%d"%(int(self.demo_vouchercode)),headers=self.header)
 		v = result.json()["gkresult"]
 		#print v
-		drs = {self.demo_accountcode1: 100}
-		crs = {self.demo_accountcode2: 100}
-		gkdata={"invid": None,"vouchernumber":100,"voucherdate":"2016-03-30","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
-
-		assert result.json()["gkstatus"] == 0 and v["invid"] == None and v["vouchernumber"] == "100" and v["voucherdate"] == "30-03-2016" and v["narration"] == "Demo Narration" and v["vouchertype"] == "purchase" and v["project"] == int(self.projectcode)
+		drs = {"Bank Of India": 100}
+		crs = {"Bank Of Badoda": 100}
+		assert result.json()["gkstatus"] == 0 and v["invid"] == None and v["vouchernumber"] == "100" and v["voucherdate"] == "30-03-2016" and v["narration"] == "Demo Narration" and v["vouchertype"] == "purchase" and v["project"] == int(self.projectcode) and cmp(v["drs"], drs) == 0 and cmp(v["crs"], crs) == 0
 
 	def test_get_last_voucher_details(self):
 		vouchertype = "purchase"
@@ -202,4 +200,3 @@ class TestTransaction:
 		nar = "Demo Narration"
 		result = requests.get("http://127.0.0.1:6543/transaction?searchby=%s&nartext=%s"%(searchby,nar), headers=self.header)
 		assert result.json()["gkstatus"] == 0
-		
