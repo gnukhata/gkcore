@@ -155,3 +155,7 @@ class TestTransaction:
 		gkdata = {"vouchercode":self.demo_vouchercode, "narration":"Updated Demo Narration", "drs":drs, "crs":crs}
 		result = requests.put("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_get_voucher(self):
+		result = requests.get("http://127.0.0.1:6543/transaction?code=%d"%(int(self.demo_vouchercode)),headers=self.header)
+		assert result.json()["gkstatus"] == 0
