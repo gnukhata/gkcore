@@ -158,13 +158,20 @@ class TestTransaction:
 
 	def test_get_voucher(self):
 		result = requests.get("http://127.0.0.1:6543/transaction?code=%d"%(int(self.demo_vouchercode)),headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		v = result.json()["gkresult"]
+		#print v
+		drs = {self.demo_accountcode1: 100}
+		crs = {self.demo_accountcode2: 100}
+		gkdata={"invid": None,"vouchernumber":100,"voucherdate":"2016-03-30","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
+
+		assert result.json()["gkstatus"] == 0 and v["invid"] == None and v["vouchernumber"] == "100" and v["voucherdate"] == "30-03-2016" and v["narration"] == "Demo Narration" and v["vouchertype"] == "purchase" and v["project"] == int(self.projectcode)
 
 	def test_get_last_voucher_details(self):
 		vouchertype = "purchase"
 		result = requests.get("http://127.0.0.1:6543/transaction?details=last&type=%s"%(vouchertype), headers=self.header)
 		voucherdetails = result.json()["gkresult"]
 		assert result.json()["gkstatus"] == 0 and voucherdetails["vno"] == "100" and voucherdetails["vdate"] == "30-03-2016"
+
 
 
 	"""
