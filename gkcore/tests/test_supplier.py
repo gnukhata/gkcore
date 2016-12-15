@@ -29,7 +29,6 @@ class TestSupplier:
 	def setup_class(self):
 		orgdata = {"orgdetails":{'orgname': 'Test Organisation', 'yearend': '2016-03-31', 'yearstart': '2015-04-01', 'orgtype': 'Profit Making', 'invflag': 1}, "userdetails":{"username":"admin", "userpassword":"admin","userquestion":"who am i?", "useranswer":"hacker"}}
 		result = requests.post("http://127.0.0.1:6543/organisations",data=json.dumps(orgdata))
-		print result.json()["gkstatus"]
 		self.key = result.json()["token"]
 		self.header={"gktoken":self.key}
 
@@ -40,9 +39,7 @@ class TestSupplier:
 	def setup(self):
 		custdata = {"custname":"rahul_mahi","custaddr":"goregaon","custphone":"432123","custemail":"rahulkande@gmail.com","custfax":"FAX212345","state":"Maharashtra","custpan":"IDPAN1234","custtan":"IDTAN1234","csflag":19}
 		result = requests.post("http://127.0.0.1:6543/customersupplier",data=json.dumps(custdata),headers=self.header)
-		print result.json()["gkstatus"]
 		result = requests.get("http://127.0.0.1:6543/customersupplier?qty=supall", headers=self.header)
-		print result.json()
 		for record in result.json()["gkresult"]:
 			if record["custname"] == "rahul_mahi":
 				self.democustid = record["custid"]

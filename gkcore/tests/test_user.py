@@ -84,7 +84,6 @@ class TestUser:
 		not the one which we pass it through the below request"""
 		result = requests.get("http://127.0.0.1:6543/user", headers=self.header)
 		data = result.json()["gkresult"]
-		print data
 		assert data["username"] == "admin" and data["userpassword"] == "admin" and data["userrole"] == -1 and data["userquestion"] == "who am i?" and data["useranswer"] == "hacker"
 
 	def test_verify_security_answer(self):
