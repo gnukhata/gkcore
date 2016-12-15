@@ -159,3 +159,24 @@ class TestTransaction:
 	def test_get_voucher(self):
 		result = requests.get("http://127.0.0.1:6543/transaction?code=%d"%(int(self.demo_vouchercode)),headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_get_last_voucher_details(self):
+		vouchertype = "purchase"
+		result = requests.get("http://127.0.0.1:6543/transaction?details=last&type=%s"%(vouchertype), headers=self.header)
+		voucherdetails = result.json()["gkresult"]
+		assert result.json()["gkstatus"] == 0 and voucherdetails["vno"] == "100" and voucherdetails["vdate"] == "30-03-2016"
+
+
+	"""
+	def test_search_by_voucher_type(self):
+
+	def test_search_by_voucher_number(self):
+
+	def test_search_by_voucher_amount(self):
+
+	def test_search_by_voucher_date(self):
+
+	def test_search_by_voucher_narration(self):
+
+	def test_get_voucher_attachment(self):
+	"""
