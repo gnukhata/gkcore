@@ -197,13 +197,18 @@ class TestTransaction:
 		result = requests.get("http://127.0.0.1:6543/transaction?searchby=%s&from=%s&to=%s"%(searchby,vfrom,vto), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
+	def test_search_by_voucher_narration(self):
+		searchby = "narration"
+		nar = "Demo Narration"
+		result = requests.get("http://127.0.0.1:6543/transaction?searchby=%s&nartext=%s"%(searchby,nar), headers=self.header)
+		assert result.json()["gkstatus"] == 0
 	"""
 
 
 
 
 
-	def test_search_by_voucher_narration(self):
+
 
 	def test_get_voucher_attachment(self):
 	"""
