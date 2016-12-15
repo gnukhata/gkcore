@@ -54,8 +54,6 @@ class TestTransaction:
 
 	@classmethod
 	def teardown_class(self):
-		gkdata = {"projectcode":self.projectcode}
-		result = requests.delete("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
 
 	def setup(self):
