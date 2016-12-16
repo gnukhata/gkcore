@@ -57,11 +57,7 @@ class TestDelChal:
 				self.supid = record["custid"]
 				break
 
-	@classmethod
-	def teardown_class(self):
-		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
-
-	def setup(self):
+		""" setup() combined with setup_class()"""
 		""" Product generation code """
 		categorydata = {"categoryname":"Test Category", "subcategoryof": None}
 		result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
@@ -84,35 +80,104 @@ class TestDelChal:
 			if record["attrname"] == "Type":
 				self.demospeccode = record["spcode"]
 				break
+
 		proddetails = {"productdesc":"Sugar","specs":{self.demospeccode: "Pure"}, "uomid":self.demouomid, "categorycode": self.democategorycode}
 		productdetails = {"productdetails":proddetails, "godetails":None, "godownflag":False}
 		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
+		print "product creation gkstatus: ", result.json()["gkstatus"]
 		self.demoproductcode = result.json()["gkresult"]
 
-		result = requests.get("http://127.0.0.1:6543/products", headers=self.header)
-		for record in result.json()["gkresult"]:
-			if record["productdesc"] == "jaggery":
-				self.qty = record["qty"]
-				break
-
+		""" Creating Delchallan """
 		""" In this testcase, godown is not linked with Delivery Challan """
+		self.qty = 1
 		products = {self.demoproductcode: self.qty}
-		delchaldata = {"custid":self.custid,"dcno":"15","dcdate":"2016-03-30","dcflag":3, "issuername": "Mr. Sanjeev"}
+
+		delchaldata = {"custid":self.custid,"dcno":"15","dcdate":"2016-03-30","dcflag":3}
 		""" inout=9 means IN and inout=15 means OUT """
 		stockdata = {"inout": 9, "items": products}
-		delchalwholedata = {"delchaldata":delchaldata,"stockdata":stockdata}
-		result=requests.post("http://127.0.0.1:6543/delchal",data=json.dumps(delchalwholedata),headers=self.header)
-		delchals = requests.get("http://127.0.0.1:6543/delchal?delchal=all", headers=header)
-		for record in delchals.json()["gkresult"]:
+		self.demo_delchalwholedata = {"delchaldata":delchaldata,"stockdata":stockdata}
+		result=requests.post("http://127.0.0.1:6543/delchal",data=json.dumps(self.demo_delchalwholedata),headers=self.header)
+		print "delchal creation gkstatus: ", result.json()["gkstatus"]
+		result = requests.get("http://127.0.0.1:6543/delchal?delchal=all", headers=self.header)
+		for record in result.json()["gkresult"]:
 			if record["dcno"] == "15":
 				self.demo_delchalid = record["dcid"]
 				break
 
-	def teardown(self):
+	@classmethod
+	def teardown_class(self):
+		""" Actually no need to do all this before deleting an organisation. Since, organisation can be deleted directly which deltes all the data underneath it. Still we have done."""
+		deldata = {"dcid": self.demo_delchalid,"cancelflag": 1}
+		result = requests.delete("http://127.0.0.1:6543/delchal",data=json.dumps(deldata), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(self.demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
 		gkdata = {"categorycode": self.democategorycode}
 		result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata), headers=self.header)
-		deldata = {"dcid": self.demo_delchalid,"cancelflag": 1}
+
+		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
+
+	def test_create_and_delete_delchal(self):
+		qty = 2
+		"""
+			IMP Doubt: In this testcase, godown is not linked with Delivery Challan
+			So, how it gets the quantity? and how and where it gets stored in the database table stock?
+		"""
+		products = {self.demoproductcode: qty}
+		delchaldata = {"custid":self.custid,"dcno":"30","dcdate":"2016-03-10","dcflag":3}
+		""" inout=9 means IN and inout=15 means OUT """
+		stockdata = {"inout": 9, "items": products}
+		delchalwholedata = {"delchaldata":delchaldata,"stockdata":stockdata}
+		result=requests.post("http://127.0.0.1:6543/delchal",data=json.dumps(delchalwholedata),headers=self.header)
+
+		""" Delete Delchallan Code """
+		delchals = requests.get("http://127.0.0.1:6543/delchal?delchal=all", headers=self.header)
+		for record in delchals.json()["gkresult"]:
+			if record["dcno"] == "30":
+				self.delchalid = record["dcid"]
+				break
+		deldata = {"dcid": self.delchalid,"cancelflag": 1}
 		result = requests.delete("http://127.0.0.1:6543/delchal",data=json.dumps(deldata), headers=self.header)
+		print "delchal: status ",result.json()["gkstatus"]
+		assert result.json()["gkstatus"] == 0
+
+	def test_update_delchal(self):
+		delchalwholedata = self.demo_delchalwholedata
+		delchaldata = delchalwholedata["delchaldata"]
+		delchaldata["dcid"] = self.demo_delchalid
+		stockdata = delchalwholedata["stockdata"]
+		delchaldata["dcno"] = 16
+		delchaldata["dcdate"] = "2016-03-29"
+		result=requests.put("http://127.0.0.1:6543/delchal",data=json.dumps(delchalwholedata),headers=self.header)
+		assert result.json()["gkstatus"] == 0
+
+"""
+Unnecessary code from create_and_delete_delchal():-
+
+categorydata = {"categoryname":"Test2 Category", "subcategoryof": None}
+result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
+result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
+for record in result.json()["gkresult"]:
+	if record["categoryname"] == "Test2 Category":
+		self.categorycode = record["categorycode"]
+		break
+uomdata = {"unitname":"gram"}
+result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps(uomdata), headers=self.header)
+result = requests.get("http://127.0.0.1:6543/unitofmeasurement?qty=all", headers=self.header)
+for record in result.json()["gkresult"]:
+	if record["unitname"] == "gram":
+		self.uomid = record["uomid"]
+		break
+specdata= {"attrname":"Type","attrtype":0,"categorycode":self.categorycode}
+specresult = requests.post("http://127.0.0.1:6543/categoryspecs",data=json.dumps(specdata) ,headers=self.header)
+result = requests.get("http://127.0.0.1:6543/categoryspecs?categorycode=%d"%(int(self.categorycode)), headers=self.header)
+for record in result.json()["gkresult"]:
+	if record["attrname"] == "Type":
+		self.speccode = record["spcode"]
+		break
+proddetails = {"productdesc":"Chini","specs":{self.speccode: "Pure"}, "uomid":self.uomid, "categorycode": self.categorycode}
+productdetails = {"productdetails":proddetails, "godetails":None, "godownflag":False}
+result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
+self.productcode = result.json()["gkresult"]
+
+"""
