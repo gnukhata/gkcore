@@ -33,12 +33,6 @@ class TestAccountsByRule:
 		self.key = result.json()["token"]
 		self.header={"gktoken":self.key}
 
-
-	@classmethod
-	def teardown_class(self):
-		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
-
-	def setup(self):
 		""" Create an account of each type """
 		result = requests.get("http://127.0.0.1:6543/groupsubgroups", headers=self.header)
 		groups = result.json()["gkresult"]
@@ -79,7 +73,19 @@ class TestAccountsByRule:
 
 		print "no of accounts created: ", i - 1
 
-	def teardown(self):
+	@classmethod
+	def teardown_class(self):
 		for accountcode in self.demoaccountcode.keys():
 			gkdata={"accountcode": accountcode}
 			result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
+
+		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
+
+	def test_get_contra(self):
+		type = "contra"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s"%(type), headers=self.header)
+		"""for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
+		"""
+		assert result.json()["gkstatus"] == 0
