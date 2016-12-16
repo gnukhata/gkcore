@@ -151,33 +151,13 @@ class TestDelChal:
 		result=requests.put("http://127.0.0.1:6543/delchal",data=json.dumps(delchalwholedata),headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
-"""
-Unnecessary code from create_and_delete_delchal():-
+	def test_get_all_delchal(self):
+		delchals = requests.get("http://127.0.0.1:6543/delchal?delchal=all", headers=self.header)
+		assert delchals.json()["gkstatus"] == 0
 
-categorydata = {"categoryname":"Test2 Category", "subcategoryof": None}
-result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
-result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
-for record in result.json()["gkresult"]:
-	if record["categoryname"] == "Test2 Category":
-		self.categorycode = record["categorycode"]
-		break
-uomdata = {"unitname":"gram"}
-result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps(uomdata), headers=self.header)
-result = requests.get("http://127.0.0.1:6543/unitofmeasurement?qty=all", headers=self.header)
-for record in result.json()["gkresult"]:
-	if record["unitname"] == "gram":
-		self.uomid = record["uomid"]
-		break
-specdata= {"attrname":"Type","attrtype":0,"categorycode":self.categorycode}
-specresult = requests.post("http://127.0.0.1:6543/categoryspecs",data=json.dumps(specdata) ,headers=self.header)
-result = requests.get("http://127.0.0.1:6543/categoryspecs?categorycode=%d"%(int(self.categorycode)), headers=self.header)
-for record in result.json()["gkresult"]:
-	if record["attrname"] == "Type":
-		self.speccode = record["spcode"]
-		break
-proddetails = {"productdesc":"Chini","specs":{self.speccode: "Pure"}, "uomid":self.uomid, "categorycode": self.categorycode}
-productdetails = {"productdetails":proddetails, "godetails":None, "godownflag":False}
-result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
-self.productcode = result.json()["gkresult"]
-
-"""
+	def test_get_single_delchal(self):
+		delchaldata = requests.get("http://127.0.0.1:6543/delchal?delchal=single&dcid=%d"%(int(self.demo_delchalid)), headers=self.header)
+		result = delchaldata.json()["gkresult"]
+		dc = result["delchaldata"]
+		stock = result["stockdata"]
+		assert dc["dcno"] == "15" and dc["dcflag"] == 3 and dc["dcdate"] == "30-03-2016" and dc["custid"] == self.custid
