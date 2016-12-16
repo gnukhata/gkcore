@@ -104,9 +104,17 @@ class TestReports:
 		assert result1.json()["gkstatus"] == 0 and ledger[0]["vouchernumber"] == "100" and ledger[0]["vouchertype"] == "purchase" and ledger[0]["Dr"] == "100.00" and ledger[1]["vouchernumber"] == "101" and ledger[1]["vouchertype"] == "purchase" and ledger[1]["Dr"] == "10.00" and ledger[2]["Dr"] == "110.00" and ledger[2]["particulars"][0] == "Total of Transactions"
 
 	def test_crdrledger(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode),"cr"), headers=self.header)
-		result1 = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode),"dr"), headers=self.header)
-		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
+		CrOK = False
+		DrOK = False
+		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=&side=%s"%(self.demo_accountcode2, "2016-04-01", "2017-03-31", "2016-04-01","cr"), headers=self.header)
+		crdata = result.json()["gkresult"]
+		if crdata[0]["vouchernumber"] == "100" and crdata[0]["Cr"] == "100.00" and crdata[0]["particulars"][0] == "Bank Of India":
+			CrOK = True
+		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", "dr"), headers=self.header)
+		drdata = result.json()["gkresult"]
+		if drdata[0]["vouchernumber"] == "100" and drdata[0]["Dr"] == "100.00" and drdata[0]["particulars"][0] == "Bank Of Badoda":
+			DrOK = True
+		assert CrOK == True and DrOK == True
 
 	def test_netTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=nettrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
