@@ -31,12 +31,6 @@ class TestInvoice:
 		result = requests.post("http://127.0.0.1:6543/organisations",data=json.dumps(orgdata))
 		self.key = result.json()["token"]
 		self.header={"gktoken":self.key}
-
-	@classmethod
-	def teardown_class(self):
-		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
-
-	def setup(self):
 		custdata = {"custname":"Jaky Python","custaddr":"goregaon","custphone":"432123","custemail":"jakypython@gmail.com","custfax":"FAX212345","state":"Maharashtra","custpan":"IDPAN1234","custtan":"IDTAN1234","csflag":3}
 		result = requests.post("http://127.0.0.1:6543/customersupplier",data=json.dumps(custdata),headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/customersupplier?qty=custall", headers=self.header)
@@ -76,8 +70,19 @@ class TestInvoice:
 		productdetails = {"productdetails":proddetails, "godetails":None, "godownflag":False}
 		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
 		self.demoproductcode = result.json()["gkresult"]
+		invoicedata = {"invoiceno":"1","taxstate":"Maharashtra","invoicedate":"2016-12-15",
+			"tax":{self.demoproductcode: "0.00"},"custid":self.democustid,"invoicetotal":"10000.00",
+			"contents":{self.demoproductcode:{"5000.00" : "2"}},
+			"issuername":"Bhavesh","designation":"Owner"}
+		stock = {"inout":"15","items":{self.demoproductcode: "2"}}
+		invoicewholedata = {"invoice":invoicedata,"stock":stock}
+		result=requests.post("http://127.0.0.1:6543/invoice",data=json.dumps(invoicewholedata),headers=self.header)
+		print result.json()["gkstatus"]
+		self.demoinvoiceid = result.json()["gkresult"]
 
-	def teardown(self):
+	@classmethod
+	def teardown_class(self):
+		result = requests.delete("http://127.0.0.1:6543/invoice",data =json.dumps({"invid":self.demoinvoiceid,"cancelflag":1,"icflag":9}), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(self.demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
@@ -87,16 +92,25 @@ class TestInvoice:
 		result = requests.delete("http://127.0.0.1:6543/customersupplier", data=json.dumps(custdata), headers=self.header)
 		custdata = {"custid": int(self.demosuplid)}
 		result = requests.delete("http://127.0.0.1:6543/customersupplier", data=json.dumps(custdata), headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
 
 	def test_add_delete_invoice(self):
-		invoicedata = {"invoiceno":"1","taxstate":"Maharashtra","invoicedate":"2016-12-15",
+		invoicedata = {"invoiceno":"2","taxstate":"Maharashtra","invoicedate":"2016-12-15",
 			"tax":{self.demoproductcode: "0.00"},"custid":self.democustid,"invoicetotal":"10000.00",
 			"contents":{self.demoproductcode:{"5000.00" : "2"}},
-			"issuername":"Bhavesh","designation":"Owner"}
+			"issuername":"Akshay","designation":"Owner"}
 		stock = {"inout":"15","items":{self.demoproductcode: "2"}}
 		invoicewholedata = {"invoice":invoicedata,"stock":stock}
 		result=requests.post("http://127.0.0.1:6543/invoice",data=json.dumps(invoicewholedata),headers=self.header)
 		self.invoiceid = result.json()["gkresult"]
-		#assert result.json()["gkstatus"] == 0
 		result1 = requests.delete("http://127.0.0.1:6543/invoice",data =json.dumps({"invid":self.invoiceid,"cancelflag":1,"icflag":9}), headers=self.header)
 		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
+
+	def test_getSingle_invoice(self):
+		result = requests.get("http://127.0.0.1:6543/invoice?inv=single&invid=%d"%(self.demoinvoiceid), headers=self.header)
+		invdetails = result.json()["gkresult"]
+		assert invdetails["invoiceno"] == "1" and invdetails["taxstate"] == "Maharashtra" and invdetails["invoicetotal"] == "10000.00" and invdetails["issuername"] == "Bhavesh" and invdetails["designation"] == "Owner"
+
+	def test_getAll_invoice(self):
+		result = requests.get("http://127.0.0.1:6543/invoice?inv=all", headers=self.header)
+		assert result.json()["gkstatus"] == 0
