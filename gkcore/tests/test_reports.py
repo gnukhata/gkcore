@@ -94,3 +94,8 @@ class TestReports:
 	def test_ledger(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode)), headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_crdrledger(self):
+		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode),"cr"), headers=self.header)
+		result1 = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode),"dr"), headers=self.header)
+		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
