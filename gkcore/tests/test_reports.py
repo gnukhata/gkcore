@@ -91,8 +91,17 @@ class TestReports:
 		assert result.json()["gkstatus"] == 0 and monthlyledger[0]["month"] == "April" and monthlyledger[0]["Dr"] == "500.00" and monthlyledger[8]["month"] == "December" and monthlyledger[8]["Dr"] == "600.00" and monthlyledger[8]["vcount"] == 1
 
 	def test_ledger(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode)), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		drs = {self.demo_accountcode1: 10}
+		crs = {self.demo_accountcode2: 10}
+		gkdata={"invid": None,"vouchernumber":101,"voucherdate":"2016-12-16","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
+		result = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/transaction?searchby=vnum&voucherno=101", headers=self.header)
+		vcode = result.json()["gkresult"][0]["vouchercode"]
+		result1 = requests.get("http://127.0.0.1:6543/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode)), headers=self.header)
+		ledger = result1.json()["gkresult"]
+		gkdata={"vouchercode": vcode}
+		result = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
+		assert result1.json()["gkstatus"] == 0 and ledger[0]["vouchernumber"] == "100" and ledger[0]["vouchertype"] == "purchase" and ledger[0]["Dr"] == "100.00" and ledger[1]["vouchernumber"] == "101" and ledger[1]["vouchertype"] == "purchase" and ledger[1]["Dr"] == "10.00" and ledger[2]["Dr"] == "110.00" and ledger[2]["particulars"][0] == "Total of Transactions"
 
 	def test_crdrledger(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode),"cr"), headers=self.header)
