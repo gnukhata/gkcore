@@ -114,7 +114,11 @@ class TestInvoice:
 	def test_getAll_invoice(self):
 		result = requests.get("http://127.0.0.1:6543/invoice?inv=all", headers=self.header)
 		assert result.json()["gkstatus"] == 0
-		
+
+	def test_getAll_cashMemos(self):
+		result = requests.get("http://127.0.0.1:6543/invoice?cash=all", headers=self.header)
+		assert result.json()["gkstatus"] == 0
+
 	def test_update_invoice(self):
 		invoicedata = {"invid": self.demoinvoiceid, "invoiceno":"3","taxstate":"Punjab","invoicedate":"2016-12-15",
 			"tax":{self.demoproductcode: "0.00"},"custid":self.democustid,"invoicetotal":"10000.00",
