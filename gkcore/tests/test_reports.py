@@ -70,9 +70,7 @@ class TestReports:
 		crs = {self.demo_accountcode2: 100}
 		gkdata={"invid": None,"vouchernumber":100,"voucherdate":"2016-03-30","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
 		result = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
-		vnum = "100"
-		searchby = "vnum"
-		result = requests.get("http://127.0.0.1:6543/transaction?searchby=%s&voucherno=%s"%(searchby,vnum), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/transaction?searchby=vnum&voucherno=100", headers=self.header)
 		self.demo_vouchercode = result.json()["gkresult"][0]["vouchercode"]
 
 	@classmethod
@@ -128,3 +126,17 @@ class TestReports:
 	def test_profitLoss(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2016-03-31"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_get_deleted_vouchers(self):
+		drs = {self.demo_accountcode1: 1000}
+		crs = {self.demo_accountcode2: 1000}
+		gkdata={"invid": None,"vouchernumber":11,"voucherdate":"2016-12-16","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
+		""" Create a Voucher """
+		result = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/transaction?searchby=vnum&voucherno=11", headers=self.header)
+		vouchercode = result.json()["gkresult"][0]["vouchercode"]
+		""" Delete a Voucher """
+		gkdata={"vouchercode": vouchercode}
+		result = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=deletedvoucher", headers=self.header)
+		assert result.json()["gkresult"][0]["vouchercode"] == vouchercode
