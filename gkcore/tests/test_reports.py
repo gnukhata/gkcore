@@ -124,3 +124,7 @@ class TestReports:
 		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=1"%("2016-03-31"), headers=self.header)
 		result1 = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2016-03-31"), headers=self.header)
 		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
+
+	def test_profitLoss(self):
+		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2016-03-31"), headers=self.header)
+		assert result.json()["gkstatus"] == 0
