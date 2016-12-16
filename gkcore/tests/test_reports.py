@@ -140,3 +140,46 @@ class TestReports:
 		result = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/report?type=deletedvoucher", headers=self.header)
 		assert result.json()["gkresult"][0]["vouchercode"] == vouchercode
+
+	def test_stockReport(self):
+		categorydata = {"categoryname":"Test Category", "subcategoryof": None}
+		result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["categoryname"] == "Test Category":
+				self.democategorycode = record["categorycode"]
+				break
+		uomdata = {"unitname":"kilogram"}
+		result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps(uomdata), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/unitofmeasurement?qty=all", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["unitname"] == "kilogram":
+				self.demouomid = record["uomid"]
+				break
+		specdata= {"attrname":"Type","attrtype":0,"categorycode":self.democategorycode}
+		specresult = requests.post("http://127.0.0.1:6543/categoryspecs",data=json.dumps(specdata) ,headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/categoryspecs?categorycode=%d"%(int(self.democategorycode)), headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["attrname"] == "Type":
+				self.demospeccode = record["spcode"]
+				break
+		gkdata = {"goname":"Test Godown", "state":"Maharashtra", "goaddr":"Pune", "contactname":"Bhavesh Bavdhane", "designation":"Designation", "gocontact":"8446611103"}
+		result = requests.post("http://127.0.0.1:6543/godown", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/godown", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["goname"] == "Test Godown":
+				self.godownid = record["goid"]
+				break
+		proddetails = {"productdesc":"Sugar","specs":{self.demospeccode: "Pure"}, "uomid":self.demouomid, "categorycode": self.democategorycode}
+		productdetails = {"productdetails":proddetails, "godetails":{self.godownid:100}, "godownflag":True}
+		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
+		demoproductcode = result.json()["gkresult"]
+		stockresult = requests.get("http://127.0.0.1:6543/report?type=stockreport&productcode=%d&startdate=%s&enddate=%s"%(demoproductcode, "2015-04-01", "2016-03-31"),headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(demoproductcode)}),headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
+		gkdata={"categorycode": self.democategorycode}
+		result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata), headers=self.header)
+		gkdata={"goid":self.godownid}
+		result = requests.delete("http://127.0.0.1:6543/godown",data =json.dumps(gkdata), headers=self.header)
+		assert stockresult.json()["gkstatus"] == 0 and stockresult.json()["gkresult"][0]["inward"] == "100.00"
