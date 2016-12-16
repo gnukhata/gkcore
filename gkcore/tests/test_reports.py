@@ -107,3 +107,7 @@ class TestReports:
 	def test_grossTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"%("2016-03-31", "2015-04-01"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_extendedTrialBalance(self):
+		result = requests.get("http://127.0.0.1:6543/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"%("2016-03-31", "2015-04-01"), headers=self.header)
+		assert result.json()["gkstatus"] == 0
