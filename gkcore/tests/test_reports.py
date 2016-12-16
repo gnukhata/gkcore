@@ -27,7 +27,7 @@ class TestReports:
 
 	@classmethod
 	def setup_class(self):
-		orgdata = {"orgdetails":{'orgname': 'Test Organisation', 'yearend': '2016-03-31', 'yearstart': '2015-04-01', 'orgtype': 'Profit Making', 'invflag': 1}, "userdetails":{"username":"admin", "userpassword":"admin","userquestion":"who am i?", "useranswer":"hacker"}}
+		orgdata = {"orgdetails":{'orgname': 'Test Organisation', 'yearend': '2017-03-31', 'yearstart': '2016-04-01', 'orgtype': 'Profit Making', 'invflag': 1}, "userdetails":{"username":"admin", "userpassword":"admin","userquestion":"who am i?", "useranswer":"hacker"}}
 		result = requests.post("http://127.0.0.1:6543/organisations", data =json.dumps(orgdata))
 		self.key = result.json()["token"]
 		self.header={"gktoken":self.key}
@@ -68,7 +68,7 @@ class TestReports:
 		""" Preparing gkdata to pass to Create Voucher """
 		drs = {self.demo_accountcode1: 100}
 		crs = {self.demo_accountcode2: 100}
-		gkdata={"invid": None,"vouchernumber":100,"voucherdate":"2016-03-30","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
+		gkdata={"invid": None,"vouchernumber":100,"voucherdate":"2016-12-16","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
 		result = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/transaction?searchby=vnum&voucherno=100", headers=self.header)
 		self.demo_vouchercode = result.json()["gkresult"][0]["vouchercode"]
@@ -87,44 +87,45 @@ class TestReports:
 
 	def test_monthly_ledger(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=monthlyledger&accountcode=%d"%(self.demo_accountcode1), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		monthlyledger = result.json()["gkresult"]
+		assert result.json()["gkstatus"] == 0 and monthlyledger[0]["month"] == "April" and monthlyledger[0]["Dr"] == "500.00" and monthlyledger[8]["month"] == "December" and monthlyledger[8]["Dr"] == "600.00" and monthlyledger[8]["vcount"] == 1
 
 	def test_ledger(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode)), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode)), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_crdrledger(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode),"cr"), headers=self.header)
-		result1 = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2015-04-01", "2016-03-31", "2015-04-01", int(self.projectcode),"dr"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode),"cr"), headers=self.header)
+		result1 = requests.get("http://127.0.0.1:6543/report?type=crdrledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d&side=%s"%(self.demo_accountcode1, "2016-04-01", "2017-03-31", "2016-04-01", int(self.projectcode),"dr"), headers=self.header)
 		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
 
 	def test_netTrialBalance(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=nettrialbalance&calculateto=%s&financialstart=%s"%("2016-03-31", "2015-04-01"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=nettrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_grossTrialBalance(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"%("2016-03-31", "2015-04-01"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_extendedTrialBalance(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"%("2016-03-31", "2015-04-01"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_cashflow(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=cashflow&calculateto=%s&financialstart=%s&calculatefrom=%s"%("2016-03-31", "2015-04-01", "2015-04-01",), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=cashflow&calculateto=%s&financialstart=%s&calculatefrom=%s"%("2017-03-31", "2016-04-01", "2016-04-01",), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_projectStatement(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=projectstatement&calculateto=%s&financialstart=%s&projectcode=%d"%("2016-03-31", "2015-04-01", self.projectcode), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=projectstatement&calculateto=%s&financialstart=%s&projectcode=%d"%("2017-03-31", "2016-04-01", self.projectcode), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_balanceSheet(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=1"%("2016-03-31"), headers=self.header)
-		result1 = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2016-03-31"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=1"%("2017-03-31"), headers=self.header)
+		result1 = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2017-03-31"), headers=self.header)
 		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
 
 	def test_profitLoss(self):
-		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2016-03-31"), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2017-03-31"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_get_deleted_vouchers(self):
@@ -174,7 +175,7 @@ class TestReports:
 		productdetails = {"productdetails":proddetails, "godetails":{self.godownid:100}, "godownflag":True}
 		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
 		demoproductcode = result.json()["gkresult"]
-		stockresult = requests.get("http://127.0.0.1:6543/report?type=stockreport&productcode=%d&startdate=%s&enddate=%s"%(demoproductcode, "2015-04-01", "2016-03-31"),headers=self.header)
+		stockresult = requests.get("http://127.0.0.1:6543/report?type=stockreport&productcode=%d&startdate=%s&enddate=%s"%(demoproductcode, "2016-04-01", "2017-03-31"),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
@@ -217,7 +218,7 @@ class TestReports:
 		productdetails = {"productdetails":proddetails, "godetails":{self.godownid:100}, "godownflag":True}
 		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
 		demoproductcode = result.json()["gkresult"]
-		gostockreport = requests.get("http://127.0.0.1:6543/report?type=godownstockreport&goid=%d&productcode=%d&startdate=%s&enddate=%s"%(self.godownid, demoproductcode, "2015-04-01", "2016-03-31"),headers=self.header)
+		gostockreport = requests.get("http://127.0.0.1:6543/report?type=godownstockreport&goid=%d&productcode=%d&startdate=%s&enddate=%s"%(self.godownid, demoproductcode, "2016-04-01", "2017-03-31"),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
