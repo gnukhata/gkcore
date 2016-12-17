@@ -96,3 +96,39 @@ class TestAccountsByRule:
 		status = cmp(receivedlist, contralist)
 		#print "status: ", status
 		assert result.json()["gkstatus"] == 0 and status == 0
+
+	def test_get_journal(self):
+		type = "journal"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s"%(type), headers=self.header)
+		journallist = []
+		""" Now the question is : How order of the list items can be put the same way as it will be received in result? """
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
+				journallist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+
+		receivedlist = result.json()["gkresult"]
+		#print "received list: ", receivedlist
+		result = requests.get("http://127.0.0.1:6543/accounts?acclist", headers=self.header)
+		print "acclist status: ", result.json()["gkstatus"]
+		acclist = result.json()["gkresult"] # Though it is named as accountlist, it's actually a dictionary containing accountnames as keys and accountcodes as values.
+		journallist.append({"accountcode": acclist["Opening Stock"], "accountname": "Opening Stock"})
+		journallist.append({"accountcode": acclist["Closing Stock"], "accountname": "Closing Stock"})
+		journallist.append({"accountcode": acclist["Stock at the Beginning"], "accountname": "Stock at the Beginning"})
+		journallist.append({"accountcode": acclist["Profit & Loss"], "accountname": "Profit & Loss"})
+		""" Is this guaranteed that dictionary comparisons are performed correctly? """
+		"""
+		status = cmp(receivedlist, journallist)
+		print "status: ", status
+		"""
+		"""
+		list1 = [{"code": 20, "name": "aaaa"}, {"code": 18, "name": "bbbb"}, {"code": 21, "name": "cccc"}]
+		list2 = [{"code": 18, "name": "bbbb"}, {"code": 20, "name": "aaaa"}, {"code": 21, "name": "cccc"}]
+		newlist = sorted(list2, key=lambda k: k['name'])
+		print "list2: ", newlist
+		#list2.sort()
+		print "comparison : ", cmp(list1, newlist)
+		"""
+		journallist = sorted(journallist, key=lambda k: k['accountname'])
+		status = cmp(receivedlist, journallist)
+		assert result.json()["gkstatus"] == 0 and status == 0
