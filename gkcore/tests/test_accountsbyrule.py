@@ -110,7 +110,7 @@ class TestAccountsByRule:
 		receivedlist = result.json()["gkresult"]
 		#print "received list: ", receivedlist
 		result = requests.get("http://127.0.0.1:6543/accounts?acclist", headers=self.header)
-		print "acclist status: ", result.json()["gkstatus"]
+		#print "acclist status: ", result.json()["gkstatus"]
 		acclist = result.json()["gkresult"] # Though it is named as accountlist, it's actually a dictionary containing accountnames as keys and accountcodes as values.
 		journallist.append({"accountcode": acclist["Opening Stock"], "accountname": "Opening Stock"})
 		journallist.append({"accountcode": acclist["Closing Stock"], "accountname": "Closing Stock"})
@@ -132,3 +132,32 @@ class TestAccountsByRule:
 		journallist = sorted(journallist, key=lambda k: k['accountname'])
 		status = cmp(receivedlist, journallist)
 		assert result.json()["gkstatus"] == 0 and status == 0
+
+	def test_get_payment(self):
+		type = "payment"
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		paymentlist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
+				paymentlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		paymentlist = sorted(paymentlist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, paymentlist)
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		paymentlist = [] # will it work? we have to empty the previous contents of this paymentlist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
+				paymentlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		paymentlist = sorted(paymentlist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, paymentlist)
+
+		assert result.json()["gkstatus"] == 0 and drstatus == 0 and crstatus == 0
