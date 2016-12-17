@@ -71,7 +71,7 @@ class TestAccountsByRule:
 				i = i + 1
 				accountname = "India Bank" + str(i)
 
-		print "no of accounts created: ", i - 1
+		#print "no of accounts created: ", i - 1
 
 	@classmethod
 	def teardown_class(self):
@@ -84,8 +84,15 @@ class TestAccountsByRule:
 	def test_get_contra(self):
 		type = "contra"
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s"%(type), headers=self.header)
-		"""for accountcode in self.demoaccountcode.keys():
+		contralist = []
+		""" Now the question is : How order of the list items can be put the same way as it will be received in result? """
+		for accountcode in self.demoaccountcode.keys():
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
-		"""
-		assert result.json()["gkstatus"] == 0
+				contralist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		receivedlist = result.json()["gkresult"]
+		""" Is this guaranteed that dictionary comparisons are performed correctly? """
+		contralist = sorted(contralist, key=lambda k: k['accountname'])
+		status = cmp(receivedlist, contralist)
+		#print "status: ", status
+		assert result.json()["gkstatus"] == 0 and status == 0
