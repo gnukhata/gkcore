@@ -247,8 +247,35 @@ class TestReports:
 		assert testResult == True and testcount == 8
 
 	def test_projectStatement(self):
+		result = requests.get("http://127.0.0.1:6543/groupsubgroups", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["groupname"] == "Direct Expense":
+				grpcode = record["groupcode"]
+				break
+		gkdata = {"accountname":"SBI","openingbal":10000,"groupcode":grpcode}
+		result = requests.post("http://127.0.0.1:6543/accounts", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/accounts", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["accountname"] == "SBI":
+				accountcode = record["accountcode"]
+				break
+		""" Preparing gkdata to pass to Create Voucher """
+		drs = {accountcode: 1000}
+		crs = {self.demo_accountcode2: 100}
+		gkdata={"invid": None,"vouchernumber":123,"voucherdate":"2016-12-16","narration":"Demo Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
+		result = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/transaction?searchby=vnum&voucherno=100", headers=self.header)
+		vouchercode = result.json()["gkresult"][0]["vouchercode"]
 		result = requests.get("http://127.0.0.1:6543/report?type=projectstatement&calculateto=%s&financialstart=%s&projectcode=%d"%("2017-03-31", "2016-04-01", self.projectcode), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		projectdata = result.json()["gkresult"]
+		testResult = False
+		for record in projectdata:
+			if record["accountcode"] == accountcode:
+				if record["totalout"] == "1000.00" and record["accountname"] == "SBI" and record["groupname"] == "Direct Expense":
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True
 
 	def test_balanceSheet(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=1"%("2017-03-31"), headers=self.header)
