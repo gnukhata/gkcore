@@ -92,7 +92,7 @@ class TestProducts:
 
 	def test_get_single_product(self):
 		result = requests.get("http://127.0.0.1:6543/products?qty=single&productcode=%d"%(int(self.demoproductcode)),headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		assert result.json()["gkstatus"] == 0 and result.json()["gkresult"]["unitname"] == "kilogram" and result.json()["gkresult"]["productdesc"] == "Sugar"
 
 	def test_get_all_products(self):
 		result = requests.get("http://127.0.0.1:6543/products", headers=self.header)
