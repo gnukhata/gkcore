@@ -314,3 +314,34 @@ class TestAccountsByRule:
 		drstatus = cmp(receivedlist, purchasereturnlist)
 
 		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
+
+	def test_get_debitnote(self):
+		type = "debitnote"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		debitnotelist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income":
+				debitnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		debitnotelist = sorted(debitnotelist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, debitnotelist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		debitnotelist = [] # will it work? we have to empty the previous contents of this debitnotelist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Debtors":
+				debitnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		debitnotelist = sorted(debitnotelist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, debitnotelist)
+
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
