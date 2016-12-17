@@ -120,28 +120,33 @@ class TestReports:
 		result = requests.get("http://127.0.0.1:6543/report?type=nettrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		nettrialdata = result.json()["gkresult"]
 		testResult = False
+		testcount = 0
 		for record in nettrialdata:
 			if record["accountcode"] == self.demo_accountcode1:
 				if record["Dr"] == "600.00" and record["accountname"] == "Bank Of India":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
 			if record["accountcode"] == self.demo_accountcode2:
 				if record["Dr"] == "900.00" and record["accountname"] == "Bank Of Badoda":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
 			if record["accountname"] == "Total":
 				if record["Dr"] == "1500.00":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
 			if record["accountname"] == "Difference in Trial balance":
 				if record["Cr"] == "1500.00":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
-		assert testResult == True
+		assert testResult == True and testcount == 4
 
 	"""
 		This is not tested with input and returned data Because this module is not used anywhere
@@ -155,33 +160,91 @@ class TestReports:
 		result = requests.get("http://127.0.0.1:6543/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		extdata = result.json()["gkresult"]
 		testResult = False
+		testcount = 0
 		for record in extdata:
 			if record["accountcode"] == self.demo_accountcode1:
 				if record["accountname"] == "Bank Of India" and record["totaldr"] == "100.00" and record["curbaldr"] == "600.00" and record["openingbalance"] == "500.00(Dr)":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
 			if record["accountcode"] == self.demo_accountcode2:
 				if record["accountname"] == "Bank Of Badoda" and record["totalcr"] == "100.00" and record["curbaldr"] == "900.00" and record["openingbalance"] == "1000.00(Dr)":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
 			if record["accountname"] == "Total":
 				if record["totalcr"] == "100.00":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
-			if record["accountname"] == "Difference in Trial balance":
+			if record["accountname"] == "Difference in Trial Balance":
 				if record["curbalcr"] == "1500.00":
+					testcount += 1
 					testResult = True
 				else:
 					testResult = False
-		assert testResult == True
-		assert result.json()["gkstatus"] == 0
+		assert testResult == True and testcount == 4
 
 	def test_cashflow(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=cashflow&calculateto=%s&financialstart=%s&calculatefrom=%s"%("2017-03-31", "2016-04-01", "2016-04-01",), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		receiptcashdata = result.json()["rcgkresult"]
+		paymentcashdata = result.json()["pygkresult"]
+		testResult = False
+		testcount = 0
+		for record in receiptcashdata:
+			if record["accountcode"] == self.demo_accountcode1:
+				if record["particulars"] == "Bank Of India" and record["amount"] == "500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode2 and record["amount"] == "1000.00":
+				if record["particulars"] == "Bank Of Badoda":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode2 and record["amount"] == "100.00":
+				if record["particulars"] == "Bank Of Badoda" and record["toby"] == "To":# and record["ttlRunDr"] == "100.0":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["particulars"] == "Total":
+				if record["amount"] == "1600.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		for record in paymentcashdata:
+			if record["accountcode"] == self.demo_accountcode1 and record["amount"] == "600.00":
+				if record["particulars"] == "Bank Of India":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode1 and record["amount"] == "100.00":
+				if record["particulars"] == "Bank Of India" and record["toby"] == "By":# and record["ttlRunCr"] == "100.0":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode2:
+				if record["particulars"] == "Bank Of Badoda" and record["amount"] == "900.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["particulars"] == "Total":
+				if record["amount"] == "1600.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True and testcount == 8
 
 	def test_projectStatement(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=projectstatement&calculateto=%s&financialstart=%s&projectcode=%d"%("2017-03-31", "2016-04-01", self.projectcode), headers=self.header)
