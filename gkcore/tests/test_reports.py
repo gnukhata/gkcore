@@ -282,9 +282,51 @@ class TestReports:
 		result1 = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2017-03-31"), headers=self.header)
 		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
 
-	def test_profitLoss(self):
+	def test_reportProfitLoss(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2017-03-31"), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		profitdata = result.json()["income"]
+		lossdata = result.json()["expense"]
+		testResult = False
+		testcount = 0
+		for record in profitdata:
+			if record["accountname"] == "Gross Loss C/F":
+				if record["amount"] == "1000.00" and record["toby"] == "By,":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "Net Loss Carried to B/S":
+				if record["amount"] == "1000.00" and record["toby"] == "By,":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "TOTAL":
+				if record["amount"] == "1000.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		for record in lossdata:
+			if record["accountname"] == "SBI":
+				if record["amount"] == "1000.00" and record["toby"] == "To,":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "Gross Loss B/F":
+				if record["amount"] == "1000.00" and record["toby"] == "To,":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "TOTAL":
+				if record["amount"] == "1000.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True and testcount == 8
 
 	def test_get_deleted_vouchers(self):
 		drs = {self.demo_accountcode1: 1000}
