@@ -279,8 +279,90 @@ class TestReports:
 
 	def test_balanceSheet(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=1"%("2017-03-31"), headers=self.header)
-		result1 = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2017-03-31"), headers=self.header)
-		assert result.json()["gkstatus"] == 0 and result1.json()["gkstatus"] == 0
+		rconvbaldata = result.json()["gkresult"]["rightlist"]
+		lconvbaldata = result.json()["gkresult"]["leftlist"]
+		result = requests.get("http://127.0.0.1:6543/report?type=balancesheet&calculateto=%s&baltype=2"%("2017-03-31"), headers=self.header)
+		rsourcesdata = result.json()["gkresult"]["rightlist"]
+		lsourcesdata = result.json()["gkresult"]["leftlist"]
+		testResult = False
+		testcount = 0
+		for record in rconvbaldata:
+			if record["groupAccname"] == "Bank":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Bank Of Badoda":
+				if record["amount"] == "900.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Bank Of India":
+				if record["amount"] == "600.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Total":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		for record in lconvbaldata:
+			if record["groupAccname"] == "Difference":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Total":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		for record in rsourcesdata:
+			if record["groupAccname"] == "Bank":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Bank Of Badoda":
+				if record["amount"] == "900.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Bank Of India":
+				if record["amount"] == "600.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Total":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		for record in lsourcesdata:
+			if record["groupAccname"] == "Difference":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+			if record["groupAccname"] == "Total":
+				if record["amount"] == "1500.00":
+					testcount += 1
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True and testcount == 12
 
 	def test_reportProfitLoss(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=profitloss&calculateto=%s"%("2017-03-31"), headers=self.header)
