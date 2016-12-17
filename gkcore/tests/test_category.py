@@ -85,8 +85,8 @@ class TestCategory:
         assert result.json()["gkstatus"] == 0
 
     def test_get_single_category(self):
-        result = requests.get("http://127.0.0.1:6543/categoryspecs?categorycode=%d"%(int(self.democategorycode)), headers=self.header)
-        assert result.json()["gkstatus"] == 0
+        result = requests.get("http://127.0.0.1:6543/categories?type=single&categorycode=%d"%(int(self.democategorycode)), headers=self.header)
+        assert result.json()["gkstatus"] == 0 and result.json()["gkresult"]["categoryname"] == "Test Category"
 
     def test_get_all_categories(self):
         result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
