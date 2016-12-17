@@ -345,3 +345,33 @@ class TestAccountsByRule:
 		drstatus = cmp(receivedlist, debitnotelist)
 
 		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
+
+	def test_get_creditnote(self):
+		type = "creditnote"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		creditnotelist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Creditors for Purchase" or accountinfolist[1] == "Sundry Creditors for Expense":
+				creditnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		creditnotelist = sorted(creditnotelist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, creditnotelist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		creditnotelist = [] # will it work? we have to empty the previous contents of this creditnotelist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense":
+				creditnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		creditnotelist = sorted(creditnotelist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, creditnotelist)
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
