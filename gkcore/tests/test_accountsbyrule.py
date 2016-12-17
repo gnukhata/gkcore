@@ -161,3 +161,32 @@ class TestAccountsByRule:
 		crstatus = cmp(receivedlist, paymentlist)
 
 		assert result.json()["gkstatus"] == 0 and drstatus == 0 and crstatus == 0
+
+	def test_get_receipt(self):
+		type = "receipt"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		receiptlist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
+				receiptlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		receiptlist = sorted(receiptlist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, receiptlist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		receiptlist = [] # will it work? we have to empty the previous contents of this receiptlist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
+				receiptlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		receiptlist = sorted(receiptlist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, receiptlist)
+
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
