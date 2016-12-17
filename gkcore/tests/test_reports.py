@@ -118,7 +118,25 @@ class TestReports:
 
 	def test_netTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=nettrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+		nettrialdata = result.json()["gkresult"]
+		testResult = False
+		for record in nettrialdata:
+			if record["accountcode"] == self.demo_accountcode1:
+				if record["Dr"] == "600.00" and record["accountname"] == "Bank Of India":
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode2:
+				if record["Dr"] == "900.00" and record["accountname"] == "Bank Of Badoda":
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "Difference in Trial balance":
+				if record["Cr"] == "1500.00":
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True
 
 	def test_grossTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
