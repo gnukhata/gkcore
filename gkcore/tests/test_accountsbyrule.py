@@ -252,3 +252,65 @@ class TestAccountsByRule:
 		drstatus = cmp(receivedlist, purchaselist)
 
 		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
+
+	def test_get_salesreturn(self):
+		type = "salesreturn"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		salesreturnlist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Creditors for Purchase" or accountinfolist[1] == "Sundry Creditors for Expense":
+				salesreturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		salesreturnlist = sorted(salesreturnlist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, salesreturnlist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		salesreturnlist = [] # will it work? we have to empty the previous contents of this salesreturnlist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense":
+				salesreturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		salesreturnlist = sorted(salesreturnlist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, salesreturnlist)
+
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
+
+	def test_get_purchasereturn(self):
+		type = "purchasereturn"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		purchasereturnlist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income":
+				purchasereturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		purchasereturnlist = sorted(purchasereturnlist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, purchasereturnlist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		purchasereturnlist = [] # will it work? we have to empty the previous contents of this purchasereturnlist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Debtors":
+				purchasereturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		purchasereturnlist = sorted(purchasereturnlist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, purchasereturnlist)
+
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
