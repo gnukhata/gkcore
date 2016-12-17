@@ -131,6 +131,11 @@ class TestReports:
 					testResult = True
 				else:
 					testResult = False
+			if record["accountname"] == "Total":
+				if record["Dr"] == "1500.00":
+					testResult = True
+				else:
+					testResult = False
 			if record["accountname"] == "Difference in Trial balance":
 				if record["Cr"] == "1500.00":
 					testResult = True
@@ -138,12 +143,40 @@ class TestReports:
 					testResult = False
 		assert testResult == True
 
+	"""
+		This is not tested with input and returned data Because this module is not used anywhere
+		To generate grosstrialbalance report extendedtrialbalance() method is used and it has been modified to work with this.
+	"""
 	def test_grossTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
 	def test_extendedTrialBalance(self):
 		result = requests.get("http://127.0.0.1:6543/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"%("2017-03-31", "2016-04-01"), headers=self.header)
+		extdata = result.json()["gkresult"]
+		testResult = False
+		for record in extdata:
+			if record["accountcode"] == self.demo_accountcode1:
+				if record["accountname"] == "Bank Of India" and record["totaldr"] == "100.00" and record["curbaldr"] == "600.00" and record["openingbalance"] == "500.00(Dr)":
+					testResult = True
+				else:
+					testResult = False
+			if record["accountcode"] == self.demo_accountcode2:
+				if record["accountname"] == "Bank Of Badoda" and record["totalcr"] == "100.00" and record["curbaldr"] == "900.00" and record["openingbalance"] == "1000.00(Dr)":
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "Total":
+				if record["totalcr"] == "100.00":
+					testResult = True
+				else:
+					testResult = False
+			if record["accountname"] == "Difference in Trial balance":
+				if record["curbalcr"] == "1500.00":
+					testResult = True
+				else:
+					testResult = False
+		assert testResult == True
 		assert result.json()["gkstatus"] == 0
 
 	def test_cashflow(self):
