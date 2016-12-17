@@ -203,7 +203,7 @@ class TestAccountsByRule:
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Current Liabilities" or accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income" or accountinfolist[2] == "Current Liabilities" or accountinfolist[2] == "Direct Income" or accountinfolist[2] == "Indirect Income":
 				saleslist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
-		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet up to criteria. """
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
 		saleslist = sorted(saleslist, key=lambda k: k['accountname'])
 		crstatus = cmp(receivedlist, saleslist)
 
@@ -218,5 +218,37 @@ class TestAccountsByRule:
 				saleslist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
 		saleslist = sorted(saleslist, key=lambda k: k['accountname'])
 		drstatus = cmp(receivedlist, saleslist)
+
+		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
+
+	def test_get_purchase(self):
+		type = "purchase"
+
+		""" When side == Cr """
+		side = "Cr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		purchaselist = []
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Current Liabilities" or accountinfolist[2] == "Current Liabilities":
+				purchaselist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		purchaselist = sorted(purchaselist, key=lambda k: k['accountname'])
+		crstatus = cmp(receivedlist, purchaselist)
+
+		""" When side == Dr """
+		side = "Dr"
+		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
+		receivedlist = result.json()["gkresult"]
+		purchaselist = [] # will it work? we have to empty the previous contents of this purchaselist.
+		for accountcode in self.demoaccountcode.keys():
+			accountinfolist = self.demoaccountcode[accountcode]
+			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense" or accountinfolist[1] == "Current Liabilities" or accountinfolist[2] == "Direct Expense" or accountinfolist[2] == "Indirect Expense" or accountinfolist[2] == "Current Liabilities":
+				purchaselist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
+
+		""" Here, we do not need to add any of the automatically generated accounts, since they do not meet the criteria. """
+		purchaselist = sorted(purchaselist, key=lambda k: k['accountname'])
+		drstatus = cmp(receivedlist, purchaselist)
 
 		assert result.json()["gkstatus"] == 0 and crstatus == 0 and drstatus == 0
