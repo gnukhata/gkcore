@@ -37,11 +37,11 @@ class TestSupplier:
 		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
 
 	def setup(self):
-		custdata = {"custname":"rahul_mahi","custaddr":"goregaon","custphone":"432123","custemail":"rahulkande@gmail.com","custfax":"FAX212345","state":"Maharashtra","custpan":"IDPAN1234","custtan":"IDTAN1234","csflag":19}
+		custdata = {"custname":"rahul kande","custaddr":"goregaon","custphone":"432123","custemail":"rahulkande@gmail.com","custfax":"FAX212345","state":"Maharashtra","custpan":"IDPAN1234","custtan":"IDTAN1234","csflag":19}
 		result = requests.post("http://127.0.0.1:6543/customersupplier",data=json.dumps(custdata),headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/customersupplier?qty=supall", headers=self.header)
 		for record in result.json()["gkresult"]:
-			if record["custname"] == "rahul_mahi":
+			if record["custname"] == "rahul kande":
 				self.democustid = record["custid"]
 				break
 
@@ -67,7 +67,7 @@ class TestSupplier:
 
 	def test_get_single_customer(self):
 		result = requests.get("http://127.0.0.1:6543/customersupplier?qty=single&custid=%d"%(int(self.democustid)), headers=self.header)
-		assert result.json()["gkresult"]["custname"]=="rahul_mahi" and result.json()["gkresult"]["custemail"] == "rahulkande@gmail.com"
+		assert result.json()["gkresult"]["custname"]=="rahul kande" and result.json()["gkresult"]["custemail"] == "rahulkande@gmail.com"
 
 	def test_update_customer(self):
 		custdata = {"custname":"rahul mande","custaddr":"goregaon, mumbai west","custphone":"023524","custemail":"rahulmande@gmail.com","custfax":"FAX212345","state":"Maharashtra","custpan":"IDPAN1234","custtan":"IDTAN1234","csflag":19, "custid": int(self.democustid)}
