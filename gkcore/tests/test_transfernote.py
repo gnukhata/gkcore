@@ -87,7 +87,6 @@ class TestTransferNote:
 		result = requests.delete("http://127.0.0.1:6543/transfernote",data =json.dumps(dataset), headers=self.header)
 		#result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(self.demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
-		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
 		gkdata={"categorycode": self.democategorycode}
 		result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata), headers=self.header)
 		gkdata={"goid":self.fromgodownid}
@@ -95,6 +94,7 @@ class TestTransferNote:
 		gkdata={"goid":self.togodownid}
 		result = requests.delete("http://127.0.0.1:6543/godown",data =json.dumps(gkdata), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
 
 	def test_createAndDelete_transfernote(self):
 		transferdata = {"transfernoteno":"2","transfernotedate":"2016-12-15","nopkt": 1, "togodown":self.togodownid,"transportationmode":"Direct","issuername":"Bhavesh","designation":"Owner"}

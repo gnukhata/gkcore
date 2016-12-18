@@ -77,7 +77,6 @@ class TestInvoice:
 		stock = {"inout":"15","items":{self.demoproductcode: "2"}}
 		invoicewholedata = {"invoice":invoicedata,"stock":stock}
 		result=requests.post("http://127.0.0.1:6543/invoice",data=json.dumps(invoicewholedata),headers=self.header)
-		print result.json()["gkstatus"]
 		self.demoinvoiceid = result.json()["gkresult"]
 
 	@classmethod
@@ -85,7 +84,6 @@ class TestInvoice:
 		result = requests.delete("http://127.0.0.1:6543/invoice",data =json.dumps({"invid":self.demoinvoiceid,"cancelflag":1,"icflag":9}), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(self.demoproductcode)}),headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
-		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
 		gkdata={"categorycode": self.democategorycode}
 		result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata), headers=self.header)
 		custdata = {"custid": int(self.democustid)}
@@ -93,6 +91,7 @@ class TestInvoice:
 		custdata = {"custid": int(self.demosuplid)}
 		result = requests.delete("http://127.0.0.1:6543/customersupplier", data=json.dumps(custdata), headers=self.header)
 		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
+		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
 
 	def test_add_delete_invoice(self):
 		invoicedata = {"invoiceno":"2","taxstate":"Maharashtra","invoicedate":"2016-12-15",
