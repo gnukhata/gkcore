@@ -71,7 +71,7 @@ class TestAccountsByRule:
 				i = i + 1
 				accountname = "India Bank" + str(i)
 
-		#print "no of accounts created: ", i - 1
+		print "no of accounts created: ", i - 1
 
 	@classmethod
 	def teardown_class(self):

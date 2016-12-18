@@ -66,13 +66,6 @@ class TestGroupsSubgroups:
 	def test_delete_subgroup(self):
 		result = requests.get("http://127.0.0.1:6543/groupsubgroups?groupflatlist", headers=self.header)
 		subgroupcode = result.json()["gkresult"]["test_subgroup"]
-		"""
-		result = requests.get("http://127.0.0.1:6543/groupsubgroups", headers=self.header)
-		for record in result.json()["gkresult"]:
-			if record["groupname"] == "test_subgroup":
-				groupcode = record["groupcode"]
-				break
-		"""
 		gkdata = {"groupcode":subgroupcode}
 		result = requests.delete("http://127.0.0.1:6543/groupsubgroups", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"] == 0
