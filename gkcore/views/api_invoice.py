@@ -164,7 +164,7 @@ class api_invoice(object):
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
-				result = self.con.execute(invoice.delete().where(invoice.c.invid==dataset["invid"]))
+				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
