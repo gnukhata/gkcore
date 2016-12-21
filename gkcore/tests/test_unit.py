@@ -51,9 +51,15 @@ class Testunit:
 
 
 	def test_create_unit(self):
-		gkdata = {'unitname': 'b', 'conversionrate': '7', 'subunitof': None}
+		gkdata = {'unitname': 'b', 'conversionrate': '75', 'subunitof': None}
 		result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"]==0
+
+	def test_create_subunit(self):
+		gkdata = {'unitname': 'c', 'conversionrate': '5', 'subunitof': self.demoid}
+		result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data =json.dumps(gkdata),headers=self.header)
+		assert result.json()["gkstatus"]==0
+
 
 	def test_delete_unit(self):
 		gkdata = {'unitname': 'b', 'conversionrate': '75', 'subunitof': None}
@@ -67,9 +73,14 @@ class Testunit:
 		assert result.json()["gkstatus"]==0
 
 	def test_update_unit(self):
-		gkdata = {'unitname': 'giga', 'conversionrate': '15','subunitof': None,"uomid":self.demoid}
+		gkdata = {'unitname': 'giga', 'conversionrate': '15','subunitof':None,"uomid":self.demoid}
 		result = requests.put("http://127.0.0.1:6543/unitofmeasurement", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"]==0
+
+	def test_duplicate_unit(self):
+		gkdata= {'unitname': 'Mega', 'conversionrate': '45', 'subunitof': None}
+		result= requests.post("http://127.0.0.1:6543/unitofmeasurement", data =json.dumps(gkdata),headers=self.header)
+		assert result.json()["gkstatus"]==1
 
 	def test_get_single_unit(self):
 		result = requests.get("http://127.0.0.1:6543/unitofmeasurement?qty=single&uomid=%d"%(self.demoid), headers=self.header)
