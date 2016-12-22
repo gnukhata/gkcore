@@ -87,8 +87,36 @@ class api_backuprestore(object):
 				
 	@view_config(request_method='GET',renderer='json',request_param='fulldb=0')
 	def backuporg(self):
-		""" This method backsup entire database for certain organisation.
-		First it checks the user role if the user is admin then only user can do the backup					  """
+		""" Purpose:
+		This function gives a backup of all data for an entire organisation for a given financial year.
+		Returns a spreadsheet in encoded form with list of accounts under their groups or subgroups in the first sheet.
+		and second sheet with all vouchers.
+		description:
+		this function will take orgcode and userid from the get request.
+		Once this data is taken from the json_body the processing is done for that organisation.
+		Firstly check for the user's role.  If it is admin then,
+		First it gets the list of all main groups.
+		Then a main loop runs through this list.
+		For each iteration a cell is created with the current groupname in bold.
+		after the cell is created,
+		In this loop we first check if any accounts exist for the main group.
+		if row count is > 0 for the select query,
+		then a loop is run to add every account name one below the other in successive cells.
+		The account name is in italics.
+		now query for list of subgroup for this group. 
+		then if there are subgroups for this group using groupcode in the select query,
+		run a for loop.
+		This means if the rowcount is more than 0 then a for loop is run for these subgroups.
+		At the beginning of this subgroup loop the name of the subgroup is put exactly under the group if no accounts were directly in the group,
+		Else the subgroup will be put under the cell containing the last account for the main group.
+		Inside this for loop we check for the list of accounts.
+		If there are accounts (check for row count after query ) then run another loop inside.
+		All that this loop will do is to add account name in cells below the subgroup.
+		Note that account names will be in italics.
+		"""
+		
+		
+		
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -103,345 +131,9 @@ class api_backuprestore(object):
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
-					backupOrganisation = self.con.execute(select([organisation]).where(organisation.c.orgcode==authDetails["orgcode"]))
-					lstorganisation = []
-					for row in backupOrganisation:
-						lstorganisation.append({ "orgname":row["orgname"],"orgtype":row["orgtype"],"yearstart":row["yearstart"],"yearend":row["yearend"],"orgcity":row["orgcity"],"orgaddr":row["orgaddr"],"orgpincode":row["orgpincode"],"orgstate":row["orgstate"],"orgcountry":row["orgcountry"],"orgtelno":row["orgtelno"],"orgfax":row["orgfax"],"orgwebsite":row["orgwebsite"],"orgemail":row["orgemail"],"orgpan":row["orgpan"],"orgmvat":row["orgmvat"],"orgstax":row["orgstax"],"orgregno":row["orgregno"],"orgregdate":row["orgregdate"],"orgfcrano":row["orgfcrano"],"orgfcradate":row["orgfcradate"],"roflag":row["roflag"],"booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"]})
-					backupGroupsubgroups = self.con.execute(select([groupsubgroups]).where(groupsubgroups.c.orgcode==authDetails["orgcode"]))
-					lstgroupsubgroups = []
-					for row in backupGroupsubgroups:
-						grpname = None
-						if row["subgroupof"] != None:
-							grpnamedata = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.groupcode ==row["subgroupof"], groupsubgroups.c.orgcode == authDetails["orgcode"])))
-							grpnamerow = grpnamedata.fetchone()
-							grpname = grpnamerow["groupname"]
-						lstgroupsubgroups.append({"groupname":row["groupname"],"subgroupof":grpname})
 					
-					backupAccounts = self.con.execute(select([accounts]).where(accounts.c.orgcode==authDetails["orgcode"]))
-					lstaccounts = []
-					for row in backupAccounts:
-						grpname = self.con.execute(select([groupsubgroups.c.groupname]).where(groupsubgroups.c.groupcode == row["groupcode"]))																				
-						grpnamerow = grpname.fetchone()
-						groupname = grpnamerow["groupname"]															
-						lstaccounts.append({"accountname":row["accountname"],"groupcode":groupname,"openingbal":row["openingbal"],"vouchercount":row["vouchercount"]})
 					
-					backupUsers = self.con.execute(select([users]).where(users.c.orgcode==authDetails["orgcode"]))
-					lstusers = []
-					for row in backupUsers:
-						lstusers.append({"username":row["username"],"userpassword":row["userpassword"],"userrole":row["userrole"],"userquestion":row["userquestion"],"useranswer":row["useranswer"],"themename":row["themename"]})
-											
-					backupProjects = self.con.execute(select([projects]).where(projects.c.orgcode==authDetails["orgcode"]))
-					lstprojects = []
-					for row in backupProjects:
-						lstprojects.append({"projectname":row["projectname"],"sanctionedamount":row["sanctionedamount"]})
-					
-					backupCustomerandsupplier = self.con.execute((select([customerandsupplier]).where(customerandsupplier.c.orgcode==authDetails["orgcode"])))
-					lstcustomerandsupplier = []
-					for row in backupCustomerandsupplier:
-						lstcustomerandsupplier.append({"custname":row["custname"],"custaddr":row["custaddr"],"custphone":row["custphone"],"custemail":row["custemail"],"custfax":row["custfax"],"custpan":row["custpan"],"custtan":row["custtan"],"custdoc":row["custdoc"],"csflag":row["csflag"],"state":row["state"]})
-					
-					backupCategorysubcategories = self.con.execute(select([categorysubcategories]).where(categorysubcategories.c.orgcode==authDetails["orgcode"]))
-					lstcategorysubcategories = []
-					for row in backupCategorysubcategories:
-						subcategryof = None
-						if row["subcategoryof"] != None:
-							subcategorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.categorycode ==row["subcategoryof"], categorysubcategories.c.orgcode == authDetails["orgcode"])))
-							sbctorow = subcategorydata.fetchone()
-							subcategryof = sbctorow["categoryname"]
-
-						lstcategorysubcategories.append({"categoryname":row["categoryname"],"subcategoryof":subcategryof})	
-					
-					backupCategoryspecs = self.con.execute(select([categoryspecs]).where(categoryspecs.c.orgcode==authDetails["orgcode"]))
-					lstcategoryspecs = []
-					for row in backupCategoryspecs:
-						categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.categorycode ==row["categorycode"], categorysubcategories.c.orgcode == authDetails["orgcode"])))
-						ctrow = categorydata.fetchone()
-						categoryname = ctrow["categoryname"]
-						lstcategoryspecs.append({"attrname":row["attrname"],"attrtype":row["attrtype"],"productcount":row["productcount"],"categorycode":categoryname})	
-					
-					backupUnitofmeasurement = self.con.execute(select([unitofmeasurement]))
-					lstunitofmeasurement = []
-					for row in backupUnitofmeasurement:
-						subunitof = None
-						if row["subunitof"] != None:
-							subunitdata = self.con.execute(select([unitofmeasurement.c.unitname]).where(and_(unitofmeasurement.c.uomid ==row["subunitof"], unitofmeasurement.c.orgcode == authDetails["orgcode"])))
-							sbuntrow = subunitdata.fetchone()
-							unitname = sbuntrow["unitname"]
-
-						lstunitofmeasurement.append({"unitname":row["unitname"],"conversionrate":row["conversionrate"],"subunitof":subunitof ,"frequency":row["frequency"]})
-					
-					backupProduct = self.con.execute(select([product]).where(product.c.orgcode==authDetails["orgcode"]))
-					lstproduct = []
-					mapProd ={}
-					for row in backupProduct:
-						curtime = datetime.now()
-						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
-						newkey = snewkey[0:19]
-						newkey= int(newkey)
-						mapProd[row["productcode"]] = newkey
-						categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.categorycode ==row["categorycode"], categorysubcategories.c.orgcode == authDetails["orgcode"])))
-						ctrow = categorydata.fetchone()
-						categoryname = ctrow["categoryname"]
-						unitdata = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid ==row["uomid"]))
-						unitrow = unitdata.fetchone()
-						unitname = unitrow ["unitname"]
-
-						lstproduct.append({"productcode" : newkey,"productdesc":row["productdesc"],"specs":row["specs"],"categorycode":categoryname,"uomid":unitname,"openingstock":row["openingstock"]})	
-					
-					backupTax = self.con.execute(select([tax]).where(tax.c.orgcode==authDetails["orgcode"]))
-					lsttax = []
-					for row in backupTax:
-						productcode = None
-						categorycode = None
-
-						if row["productcode"] != None:
-							productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode ==row["productcode"], product.c.orgcode == authDetails["orgcode"])))
-							productrow = productdata.fetchone()
-							productdesc= productrow["productdesc"]
-							
-						if row["categorycode"]!= None:
-							categorydata = self.con.execute(select([categorysubcategories.c.categoryname]).where(and_(categorysubcategories.c.categorycode ==row["categorycode"], categorysubcategories.c.orgcode == authDetails["orgcode"])))
-							ctrow = categorydata.fetchone()
-							categoryname = ctrow["categoryname"]
-							
-						lsttax.append({"taxname":row["taxname"],"taxrate":row["taxrate"],"state":row["state"],"productcode":productcode,"categorycode":categoryname})
-							
-					backupGodown = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
-					lstgodown = []
-					for row in backupGodown:
-					   lstgodown.append({"goname":row["goname"],"goaddr":row["goaddr"],"gocontact":row["gocontact"],"contactname":row["contactname"]})
-
-					
-					backupGoprod = self.con.execute(select([goprod]).where(goprod.c.orgcode==authDetails["orgcode"]))
-					lstgoprod = []
-					for row in backupGoprod:
-						godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
-						gorow = godata.fetchone()
-						goname= gorow ["goname"]
-
-						productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode ==row["productcode"], product.c.orgcode == authDetails["orgcode"])))
-						productrow = productdata.fetchone()
-						productdesc= productrow["productdesc"]
-						
-						lstgoprod.append({"goid":goname,"productcode":productdesc,"goopeningstock":row["goopeningstock"]})	
-			
-					backupPurchaseorder = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]))
-					lstpurchaseorder = []
-					for row in backupPurchaseorder:
-						csdata = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid ==row["csid"], customerandsupplier.c.orgcode == authDetails["orgcode"])))
-						csrow = csdata.fetchone()
-						custname = csrow["custname"]
-						lstpurchaseorder.append({"orderno": row["orderno"], "orderdate":row["orderdate"],"csid":custname,"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":row["maxdate"],"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"],"issuername":row["issuername"],"designation":row["designation"]})	
-					
-					backupDelchal = self.con.execute(select([delchal]).where(delchal.c.orgcode==authDetails["orgcode"]))
-					lstdelchal = []
-					
-					for row in backupDelchal:
-						custname = None
-						orderno = None
-						issuername = None
-						if row["custid"] != None :
-							csdata = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid ==row["custid"], customerandsupplier.c.orgcode == authDetails["orgcode"])))
-							csrow = csdata.fetchone()
-							custname = csrow["custname"]
-														
-						if row["orderid"] != None :
-							 podata = self.con.execute(select([purchaseorder.c.orderno]).where(and_(purchaseorder.c.orderid ==row["orderid"],purchaseorder.c.orgcode == authDetails["orgcode"])))
-							 porow = podata.fetchone()
-							 orderno= porow["orderno"]
-							 
-						if row["issuerid"] != None:
-							 issuerdata = self.con.execute(select([users.c.username]).where(and_(users.c.userid ==row["issuerid"], users.c.orgcode == authDetails["orgcode"])))
-							 isrow = issuerdata.fetchone()
-							 issuername = isrow["username"]
-							 
-						lstdelchal.append({"dcno":row["dcno"],"dcdate":row["dcdate"],"dcflag":row["dcflag"],"issuerid":issuername,"custid:":custname,"canceldate":row["canceldate"],"cancelflag":row["cancelflag"],"orderid":orderno})
-					
-					backupInvoice = self.con.execute(select([invoice]).where(invoice.c.orgcode==authDetails["orgcode"]))
-					lstinvoice = []
-					for row in backupInvoice:
-						orderno = None
-						custname = None
-						newcontent = {}
-						content = row["contents"]
-						for key in content:
-							productcode = key
-							value = content[key]
-							prodname = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productcode,product.c.orgcode==authDetails["orgcode"])))																					
-							prodnamerow = prodname.fetchone()
-							productname = prodnamerow ["productdesc"]	
-							newcontent[productname]= value	
-																				
-						if row["orderid"] != None:
-							podata = self.con.execute(select([purchaseorder.c.orderno]).where(and_(purchaseorder.c.orderid ==row["orderid"],purchaseorder.c.orgcode == authDetails["orgcode"])))
-							porow = podata.fetchone()
-							orderno= porow["orderno"]
-							
-						if row["custid"]!= None:
-							csdata = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == row["custid"], customerandsupplier.c.orgcode == authDetails["orgcode"])))
-							csrow = csdata.fetchone()
-							custname = csrow["custname"]
-													
-						lstinvoice.append({"invoiceno":row["invoiceno"],"invoicedate":row["invoicedate"],"contents":newcontent,"invoicetotal":row["invoicetotal"],"orderid":orderno,"custid":custname ,"issuername":row["issuername"],"designation":row["designation"],"tax":row["tax"],"taxstate":row["taxstate"],"icflag":row["icflag"],"canceldate":row["canceldate"],"cancelflag":row["cancelflag"]})
-					  
-					
-					backupDcinv = self.con.execute(select([dcinv]).where(dcinv.c.orgcode==authDetails["orgcode"]))
-					lstdcinv = []
-					for row in backupDcinv:
-						dcno = None
-						invoiceno = None
-
-						if row["dcid"] != None:
-							dcdata = self.con.execute(select([delchal.c.dcno]).where(and_(delchal.c.dcid ==row["dcid"], delchal.c.orgcode == authDetails["orgcode"])))
-							dcrow = dcdata.fetchone()
-							dcno = dcrow["dcno"]
-							
-						if row["invid"] !=None:
-							invdata = self.con.execute(select([invoice.c.invoiceno]).where(and_(invoice.c.invid ==row["invid"], invoice.c.orgcode == authDetails["orgcode"])))
-							inrow = invdata.fetchone()
-							invoiceno = inrow["invoiceno"]
-							
-						lstdcinv.append({"dcid":dcno,"invid":invoiceno})	
-					
-					backupStock = self.con.execute(select([stock]).where(stock.c.orgcode==authDetails["orgcode"]))
-					lststock = []
-					for row in backupStock:
-							if row["goid"]!= None:
-								godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["goid"],godown.c.orgcode == authDetails["orgcode"])))
-								gorow = godata.fetchone()
-								goname= gorow ["goname"]
-								
-							lststock.append({"productcode":mapProd[row["productcode"]],"qty":row["qty"],"dcinvtnid":row["dcinvtnid"],"dcinvtnflag":row["dcinvtnflag"],"inout":row["inout"],"goid":goname})
-					
-					backupTransfernote = self.con.execute(select([transfernote]).where(transfernote.c.orgcode==authDetails["orgcode"]))
-					lsttransfernote = []
-					for row in backupTransfernote:
-						godata = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid ==row["togodown"],godown.c.orgcode == authDetails["orgcode"])))
-						gorow = godata.fetchone()
-						goname= gorow ["goname"]
-						lsttransfernote.append({"transfernoteno": row["transfernoteno"], "transfernotedate":row["transfernotedate"],"transportationmode":row["transportationmode"],"nopkt":row["nopkt"],"issuername":row["issuername"],"designation":row["designation"],"recieved":row["recieved"],"togodown":goname,"canceldate":row["canceldate"],"cancelfag":row["cancelflag"]})
-					
-					backupVouchers = self.con.execute(select([vouchers]).where(vouchers.c.orgcode==authDetails["orgcode"]))
-					lstvouchers = []
-					mapVouchers = {}
-					for row in backupVouchers:
-						newdrs = {}
-						newcrs = {}
-						curtime = datetime.now()
-						snewkey = str(curtime.year) + str(curtime.month) + str(curtime.day) + str(curtime.hour) + str(curtime.minute) + str(curtime.second) + str(curtime.microsecond)
-						newkey = snewkey[0:19]
-						newkey= int(newkey)
-						mapVouchers[row["vouchercode"]] = newkey
-						drs = row["drs"]
-						crs = row["crs"]
-						for key in drs:
-							accnodr = key
-							valuedr = drs[key]
-						for key in crs:
-							accnocr = key
-							valuecr = crs[key]
-
-						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnodr,accounts.c.orgcode==authDetails["orgcode"])))																					
-						accnamerow = accname .fetchone()
-						accountnamedr = accnamerow ["accountname"]															
-						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == accnocr,accounts.c.orgcode==authDetails["orgcode"])))																					
-						accnamerow = accname .fetchone()
-						accountnamecr = accnamerow ["accountname"]
-						newcrs[accountnamecr] = valuecr
-						newdrs[accountnamedr] = valuedr
-						  
-						lstvouchers.append({"vouchercode":mapVouchers[row["vouchercode"]],"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"invid":row["invid"],"entrydate":row["entrydate"],"narration":row["narration"],"drs":newdrs,"crs":newcrs,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"attachment":row["attachment"],"attachmentcount":row["attachmentcount"],"vouchertype":row["vouchertype"],"lockflag":row["lockflag"],"delflag":row["delflag"],"projectcode":row["projectcode"]})					
-						
-					
-					backupVoucherbin = self.con.execute((select([voucherbin]).where(voucherbin.c.orgcode==authDetails["orgcode"])))
-					lstvoucherbin = []
-					for row in backupVoucherbin:
-						lstvoucherbin.append({"vouchernumber":row["vouchernumber"],"voucherdate":row["voucherdate"],"narration":row["narration"],"drs":row["drs"],"crs":row["crs"],"vouchertype":row["vouchertype"],"projectname":row["projectname"]})
-					backupBankrecon = self.con.execute(select([bankrecon]).where(bankrecon.c.orgcode==authDetails["orgcode"]))
-					lstbankrecon = []
-					for row in backupBankrecon:
-						accname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == row["accountcode"],accounts.c.orgcode==authDetails["orgcode"])))																					
-						accnamerow = accname .fetchone()
-						accountname = accnamerow ["accountname"]															
-
-						lstbankrecon.append({"vouchercode":mapVouchers[row["vouchercode"]],"accountcode":accountname,"clearancedate":row["clearancedate"],"memo":row["memo"]})
-					os.system("mkdir backupdir")
-					orgFile = open("backupdir/org.back","w")
-					success = cPickle.dump(lstorganisation,orgFile)
-					orgFile.close()
-					gsgFile = open("backupdir/gsg.back","w")
-					success = cPickle.dump(lstgroupsubgroups,gsgFile)
-					gsgFile.close()
-					accFile = open("backupdir/accounts.back","w")
-					success = cPickle.dump(lstaccounts,accFile)
-					accFile.close()
-					usersFile = open("backupdir/users.back","w")
-					success = cPickle.dump(lstusers,usersFile)
-					usersFile.close()
-					projFile = open("backupdir/projects.back","w")
-					success = cPickle.dump(lstprojects,projFile)
-					projFile.close()
-					customerandsupplierFile = open("backupdir/customerandsupplier.back","w")
-					success = cPickle.dump(lstcustomerandsupplier,customerandsupplierFile)
-					customerandsupplierFile.close()
-					categorysubcategoriesFile = open("backupdir/categorysubcategories.back","w")
-					success = cPickle.dump(lstcategorysubcategories,categorysubcategoriesFile)
-					categorysubcategoriesFile.close()
-					categoryspecsFile = open("backupdir/categoryspecs.back","w")
-					success = cPickle.dump(lstcategoryspecs,categoryspecsFile)
-					categoryspecsFile.close()
-					unitofmeasurementFile = open("backupdir/unitofmeasurement.back","w")
-					success = cPickle.dump(lstunitofmeasurement,unitofmeasurementFile)
-					unitofmeasurementFile.close()
-					productFile = open("backupdir/product.back","w")
-					success = cPickle.dump(lstproduct,productFile)
-					productFile.close()
-					godownFile = open("backupdir/godown.back","w")
-					success = cPickle.dump(lstgodown,godownFile)
-					godownFile.close()
-					goprodFile = open("backupdir/goprod.back","w")
-					success = cPickle.dump(lstgoprod,goprodFile)
-					goprodFile.close()
-					taxFile = open("backupdir/tax.back","w")
-					success = cPickle.dump(lsttax,taxFile)
-					taxFile.close()
-					purchaseorderFile = open("backupdir/purchaseorder.back","w")
-					success = cPickle.dump(lstpurchaseorder,purchaseorderFile)
-					purchaseorderFile.close()
-					delchalFile = open("backupdir/delchal.back","w")
-					success = cPickle.dump(lstdelchal,delchalFile)
-					delchalFile.close()
-					invoiceFile = open("backupdir/invoice.back","w")
-					success = cPickle.dump(lstinvoice,invoiceFile)
-					invoiceFile.close()
-					dcinvFile = open("backupdir/dcinv.back","w")
-					success = cPickle.dump(lstdcinv,dcinvFile)
-					dcinvFile.close()
-					stockFile = open("backupdir/stock.back","w")
-					success = cPickle.dump(lststock,stockFile)
-					stockFile.close()
-					transfernoteFile = open("backupdir/transfernote.back","w")
-					success = cPickle.dump(lsttransfernote,transfernoteFile)
-					transfernoteFile.close()
-					vouchersFile = open("backupdir/vouchers.back","w")
-					success = cPickle.dump(lstvouchers,vouchersFile)
-					vouchersFile.close()
-					voucherbinFile = open("backupdir/voucherbin.back","w")
-					success = cPickle.dump(lstvoucherbin,voucherbinFile)
-					voucherbinFile.close()
-					bankreconFile = open("backupdir/bankrecon.back","w")
-					success = cPickle.dump(lstbankrecon,bankreconFile)
-					bankreconFile.close()
-
-					cmp =   tarfile.open("gkbackup.tar.bz2","w:bz2")
-					cmp.add("backupdir")
-					cmp.close()
-					os.system("rm -rf backupdir")
-					gkarch = open("gkbackup.tar.bz2","r")
-					archData = base64.b64encode(gkarch.read())
-					gkarch.close()
-					os.system("rm gkbackup.tar.bz2")
-					return {"gkstatus":enumdict["Success"],"gkdata":archData}
+					return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 			finally:
