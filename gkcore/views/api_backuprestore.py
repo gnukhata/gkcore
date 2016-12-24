@@ -29,6 +29,8 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,goprod,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
 from sqlalchemy.sql import select
+from openpyxl import Workbook
+from openpyxl.styles import Font
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
@@ -45,6 +47,7 @@ from datetime import datetime
 import tarfile
 from tarfile import TarFile
 import user
+
 @view_defaults(route_name='backuprestore')
 class api_backuprestore(object):
 	def __init__(self,request):
@@ -114,14 +117,10 @@ class api_backuprestore(object):
 		All that this loop will do is to add account name in cells below the subgroup.
 		Note that account names will be in italics.
 		"""
-		
-		
-		
 		try:
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -131,6 +130,20 @@ class api_backuprestore(object):
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				if userRole[0]==-1:
+					#create a workbook
+					#open the book with one sheet.
+					#then we will get list of all groups.
+					gkwb = Workbook()
+					accountList = gkwb.active
+					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
+					groups =  mainGroups.fetchall()
+					cellCounter = 1
+					for group in groups:
+						#create first row with cell containing groupname.
+						#make it bold style with font object and then go for it's accounts first.
+						c = accountList.cell(row=cellCounter,column=1,value=group["groupname"])
+						c.font = Font(name=c.font.name,bold=True)
+						
 					
 					
 					return {"gkstatus":enumdict["Success"]}
