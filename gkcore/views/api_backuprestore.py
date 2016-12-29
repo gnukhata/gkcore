@@ -168,6 +168,9 @@ class api_backuprestore(object):
 										a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 										a.font = Font(name=a.font.name,italic=True) 
 										cellCounter = cellCounter + 1
+										
+					ws2 = gkwb.create_sheet(title="Vouchers")
+                    
 
 					gkwb.save(filename = "GkExport.xlsx")			
 																
