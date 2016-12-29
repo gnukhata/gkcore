@@ -152,8 +152,8 @@ class api_backuprestore(object):
 								a = accountList.cell(row=cellCounter,column=1,value= acct)
 								a.font = Font(name=a.font.name,italic=True) 
 								cellCounter = cellCounter + 1
-                        #search for subgroups existing for main group , create row with cell containing subgroup
-                        #then search for accounts existing for subgroup. and create new cell immediately under subgroup.
+						#search for subgroups existing for main group , create row with cell containing subgroup
+						#then search for accounts existing for subgroup. and create new cell immediately under subgroup.
 						subgrp = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof ==group["groupcode"])))
 						if subgrp.rowcount > 0:
 							subgroup = subgrp.fetchall()
@@ -167,18 +167,7 @@ class api_backuprestore(object):
 									a = accountList.cell(row=cellCounter,column=1,value= acct)
 									a.font = Font(name=a.font.name,italic=True) 
 									cellCounter = cellCounter + 1
-
-							
-						
-							
-						
-
-						 
-								
-							
-							
-					
-					
+									
 					return {"gkstatus":enumdict["Success"]}
 #			except:
 #				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}"""
