@@ -135,9 +135,10 @@ class api_backuprestore(object):
 					#then we will get list of all groups.
 					gkwb = Workbook()
 					accountList = gkwb.active
+					accountList.title = "AccountList"
+					accountList.column_dimensions["A"].width = 50
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
-					print groups
 					cellCounter = 1
 					for group in groups:
 						#create first row with cell containing groupname.
@@ -147,8 +148,8 @@ class api_backuprestore(object):
 						cellCounter = cellCounter + 1
 						grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == group["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
 						if grpaccounts.rowcount > 0:
-							accounts = grpaccounts.fetchall()
-							for acct in accounts:
+							account = grpaccounts.fetchall()
+							for acct in account:
 								a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 								a.font = Font(name=a.font.name,italic=True) 
 								cellCounter = cellCounter + 1
@@ -162,13 +163,13 @@ class api_backuprestore(object):
 								cellCounter = cellCounter + 1
 								grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == sg["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
 								if grpaccounts.rowcount > 0:
-									accounts = grpaccounts.fetchall()
-									for acct in accounts:
+									account = grpaccounts.fetchall()
+									for acct in account:
 										a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 										a.font = Font(name=a.font.name,italic=True) 
 										cellCounter = cellCounter + 1
 
-								
+					gkwb.save(filename = "GkExport.xlsx")			
 																
 					return {"gkstatus":enumdict["Success"]}
 #			except:
