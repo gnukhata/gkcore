@@ -125,7 +125,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -137,20 +137,52 @@ class api_backuprestore(object):
 					accountList = gkwb.active
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
+					print groups
 					cellCounter = 1
 					for group in groups:
 						#create first row with cell containing groupname.
 						#make it bold style with font object and then go for it's accounts first.
 						c = accountList.cell(row=cellCounter,column=1,value=group["groupname"])
 						c.font = Font(name=c.font.name,bold=True)
+						cellCounter = cellCounter + 1
+						grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == group["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+						if grpaccounts.rowcount > 0:
+							accounts = grpaccounts.fetchall()
+							for acct in accounts:
+							 a = accountList.cell(row=cellCounter,column=1,value= acct)
+							 a.font = Font(name=a.font.name,italic=True) 
+							 cellCounter = cellCounter + 1
 						
+						subgrp = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof ==group["groupcode"])))
+						if subgrp.rowcount > 0:
+							subgroup = subgrp.fetchall()
+							s = accountList.cell(row=cellCounter,column=1,value=subgroup["groupname"])
+							s.font = Font(name=s.font.name)
+							cellCounter = cellCounter + 1
+							grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == subgroup["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+							if grpaccounts.rowcount > 0:
+								accounts = grpaccounts.fetchall()
+								for acct in accounts:
+									a = accountList.cell(row=cellCounter,column=1,value= acct)
+									a.font = Font(name=a.font.name,italic=True) 
+									cellCounter = cellCounter + 1
+
+							
+						
+							
+						
+
+						 
+								
+							
+							
 					
 					
 					return {"gkstatus":enumdict["Success"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close() 
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}"""
+#			finally:
+#				self.con.close() 
 				
 				
 	
