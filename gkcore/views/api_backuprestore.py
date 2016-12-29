@@ -149,7 +149,7 @@ class api_backuprestore(object):
 						if grpaccounts.rowcount > 0:
 							accounts = grpaccounts.fetchall()
 							for acct in accounts:
-								a = accountList.cell(row=cellCounter,column=1,value= acct)
+								a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 								a.font = Font(name=a.font.name,italic=True) 
 								cellCounter = cellCounter + 1
 						#search for subgroups existing for main group , create row with cell containing subgroup
@@ -158,13 +158,13 @@ class api_backuprestore(object):
 						if subgrp.rowcount > 0:
 							subgroup = subgrp.fetchall()
 							for sg in subgroup:
-								s = accountList.cell(row=cellCounter,column=1,value=subgroup["groupname"])
+								s = accountList.cell(row=cellCounter,column=1,value=sg["groupname"])
 								cellCounter = cellCounter + 1
-								grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == subgroup["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+								grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == sg["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
 								if grpaccounts.rowcount > 0:
 									accounts = grpaccounts.fetchall()
 									for acct in accounts:
-										a = accountList.cell(row=cellCounter,column=1,value= acct)
+										a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 										a.font = Font(name=a.font.name,italic=True) 
 										cellCounter = cellCounter + 1
 
