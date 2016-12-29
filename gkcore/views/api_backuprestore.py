@@ -157,17 +157,19 @@ class api_backuprestore(object):
 						subgrp = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof ==group["groupcode"])))
 						if subgrp.rowcount > 0:
 							subgroup = subgrp.fetchall()
-							s = accountList.cell(row=cellCounter,column=1,value=subgroup["groupname"])
-							s.font = Font(name=s.font.name)
-							cellCounter = cellCounter + 1
-							grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == subgroup["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
-							if grpaccounts.rowcount > 0:
-								accounts = grpaccounts.fetchall()
-								for acct in accounts:
-									a = accountList.cell(row=cellCounter,column=1,value= acct)
-									a.font = Font(name=a.font.name,italic=True) 
-									cellCounter = cellCounter + 1
-									
+							for sg in subgroup:
+								s = accountList.cell(row=cellCounter,column=1,value=subgroup["groupname"])
+								cellCounter = cellCounter + 1
+								grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == subgroup["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+								if grpaccounts.rowcount > 0:
+									accounts = grpaccounts.fetchall()
+									for acct in accounts:
+										a = accountList.cell(row=cellCounter,column=1,value= acct)
+										a.font = Font(name=a.font.name,italic=True) 
+										cellCounter = cellCounter + 1
+
+								
+																
 					return {"gkstatus":enumdict["Success"]}
 #			except:
 #				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}"""
