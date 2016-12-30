@@ -29,6 +29,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import organisation,accounts,users,bankrecon,categorysubcategories,categoryspecs,customerandsupplier,dcinv,delchal,godown,goprod,groupsubgroups,invoice,projects,product,purchaseorder,transfernote,stock,tax,unitofmeasurement,vouchers,voucherbin
 from sqlalchemy.sql import select
+from datetime import datetime,date
 from openpyxl import Workbook
 from openpyxl.styles import Font
 import json
@@ -169,43 +170,45 @@ class api_backuprestore(object):
 										a.font = Font(name=a.font.name,italic=True) 
 										cellCounter = cellCounter + 1
 										
-					ws2 = gkwb.create_sheet(title="Vouchers")
+					Vouchers = gkwb.create_sheet(title="Vouchers")
 					rowcounter = 1
 					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode]).where(vouchers.c.orgcode== authDetails["orgcode"]))
 					
 					if voucher.rowcount > 0:
 						voucherData = voucher.fetchall()
 						for vch in voucherData:
-							vn = Vouchers.cell(row= rowcounter,collumn=1,value=vch["vouchernumber"]) 
-							vd =  Vouchers.cell(row= rowcounter,collumn=2,value=vch["voucherdate"])
-							vt =  Vouchers.cell(row= rowcounter,collumn=3,value=vch["vouchertype"])
+							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
+							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
+							vd =  Vouchers.cell(row= rowcounter,column=2,value=  date) 
+											   
+							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 							dr = vch["drs"]
+							print dr
+							drcounter = rowcounter
 							for accno in dr:
-								drcounter = rowcounter
 								acctno = accno
 							#	drValue = dr["accno"]
 								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == acctno , accounts.c.orgcode == authDetails["orgcode"])))
-								dracctname = accname.fetchone()
-								drAccName =  Vouchers.cell(row= rowcounter,collumn=4,value=dracctname["acctname"])
-								drValue = Vouchers.cell(row= rowcounter,collumn=5,value= dr["accno"])
+								dracctname = draccname.fetchone()
+								drAccName =  Vouchers.cell(row= rowcounter,column=4,value=dracctname["accountname"])
+								drValue = Vouchers.cell(row= rowcounter,column=5,value= dr[accno])
 								drcounter = drcounter + 1
 								
 							cr = vch["crs"]
+							crcounter = rowcounter
 							for craccno in cr:
-								crcounter = rowcounter
 								cracctno = craccno
-								crValue = cr["craccno"]
 								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == cracctno,accounts.c.orgcode == authDetails["orgcode"])))
-								cracctname = accname.fetchone()
-								crAccName = Vouchers.cell(row= rowcounter,collumn=6,value=cracctname["acctname"])
-								crvalue = Vouchers.cell(row= rowcounter,collumn=7,value= cr["craccno"])
+								cracctname = craccname.fetchone()
+								crAccName = Vouchers.cell(row= rowcounter,column=6,value=cracctname["accountname"])
+								crvalue = Vouchers.cell(row= rowcounter,column=7,value= cr[craccno])
 								crcounter = crcounter + 1
 							
-							vnr = Vouchers.cell(row= rowcounter,collumn=8,value=vch["narration"])
-							vl = Vouchers.cell(row= rowcounter,collumn=9,value=vch["lockflag"])
-							vp = Vouchers.cell(row= rowcounter,collumn=10,value=vch["projectcode"])
+							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
+							vl = Vouchers.cell(row= rowcounter,column=9,value=vch["lockflag"])
+							vp = Vouchers.cell(row= rowcounter,column=10,value=vch["projectcode"])
 							
-							if drcounter > rowcounter:
+							if drcounter >= rowcounter:
 								rowcounter = drcounter + 1
 							else :
 								rowcounter = crcounter + 1
