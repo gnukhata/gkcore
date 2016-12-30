@@ -180,7 +180,7 @@ class api_backuprestore(object):
 							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
 							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
 							vd =  Vouchers.cell(row= rowcounter,column=2,value=  date) 
-											   
+			   
 							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 							dr = vch["drs"]
 							print dr
@@ -190,8 +190,10 @@ class api_backuprestore(object):
 							#	drValue = dr["accno"]
 								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == acctno , accounts.c.orgcode == authDetails["orgcode"])))
 								dracctname = draccname.fetchone()
-								drAccName =  Vouchers.cell(row= rowcounter,column=4,value=dracctname["accountname"])
-								drValue = Vouchers.cell(row= rowcounter,column=5,value= dr[accno])
+								print dracctname["accountname"]
+								print dr[accno]
+								drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
+								drValue = Vouchers.cell(row= drcounter,column=5,value= dr[accno])
 								drcounter = drcounter + 1
 								
 							cr = vch["crs"]
@@ -200,8 +202,8 @@ class api_backuprestore(object):
 								cracctno = craccno
 								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == cracctno,accounts.c.orgcode == authDetails["orgcode"])))
 								cracctname = craccname.fetchone()
-								crAccName = Vouchers.cell(row= rowcounter,column=6,value=cracctname["accountname"])
-								crvalue = Vouchers.cell(row= rowcounter,column=7,value= cr[craccno])
+								crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
+								crvalue = Vouchers.cell(row= crcounter,column=7,value= cr[craccno])
 								crcounter = crcounter + 1
 							
 							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
