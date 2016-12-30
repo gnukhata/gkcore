@@ -146,12 +146,12 @@ class api_delchal(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custrow = custdata.fetchone()
-					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"]})
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y')})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
