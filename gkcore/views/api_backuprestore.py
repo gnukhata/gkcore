@@ -185,7 +185,7 @@ class api_backuprestore(object):
 							dr = vch["drs"]
 							print dr
 							drcounter = rowcounter
-							for accno in dr:
+							for accno in dr.keys():
 								acctno = accno
 							#	drValue = dr["accno"]
 								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == acctno , accounts.c.orgcode == authDetails["orgcode"])))
@@ -196,7 +196,7 @@ class api_backuprestore(object):
 								
 							cr = vch["crs"]
 							crcounter = rowcounter
-							for craccno in cr:
+							for craccno in cr.keys():
 								cracctno = craccno
 								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == cracctno,accounts.c.orgcode == authDetails["orgcode"])))
 								cracctname = craccname.fetchone()
