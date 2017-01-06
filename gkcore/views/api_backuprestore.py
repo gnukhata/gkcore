@@ -122,14 +122,15 @@ class api_backuprestore(object):
 		Now query for vouchers details such as voucherdate , vouchernumber , vouchertype , narration ,crs and drs , projectcode.
 		if rowcount > 0 , fetch all data which query has return.
 		loop through data & Add data in the rows and columns accordingly.
-		Format decided for adding data to the spreadsheet is as follows VoucherNumber ,Date, VoucherType , DebitAccount , Debit amount,CreditAccount , Credit amount ,Narration , Lockflag , ProjectCode; 
-		Filling details start from column 1 and fill up the columns upto column 10 respectively. Row counter will increase by 1 as soon as all details in current in row is filled up.
+		Format decided for adding data to the spreadsheet is as follows VoucherNumber ,Date, VoucherType , DebitAccount , Debit amount,CreditAccount , Credit amount ,Narration , Lockflag , Projectname; 
+		Title for each field is mentioned in 1st row.
+		Filling details(values) start from column 1 and fill up the columns upto column 10 of 2nd row respectively. Row counter will increase by 1 as soon as all details in current in row is filled up.
 		To get accountname for creditaccount and debitaccount firstly get accountcode form dictionary crs and drs .
 		query to accounts table using accountcode and retrieve accountname.
 		For multiple crs and drs for each entry , Entries for accountname and amount will be added to immediate next row .
-		
+		Projectname can be find using projectcode. If project name exists project name will be added for that voucher entry else field will be blank.
 		At last Save the file in xlsx format by giving suitable name.
-		For better compression use tar.bz2 file format.
+		For better compression tar.bz2 file format is used.
 		encode the compressed file using base64 encode format , now file has been converted into encoded string format, So that we can use it as value to JSON dictionary.
 				
 		"""
@@ -141,7 +142,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -152,7 +153,7 @@ class api_backuprestore(object):
 					gkwb = Workbook()
 					accountList = gkwb.active
 					accountList.title = "AccountList"
-					accountList.column_dimensions["A"].width = 50
+					accountList.column_dimensions["A"].width = 100
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
 					cellCounter = 1
@@ -188,29 +189,31 @@ class api_backuprestore(object):
 					Vouchers = gkwb.create_sheet(title="Vouchers")
 					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode]).where(vouchers.c.orgcode== authDetails["orgcode"]))
 					
+					Vouchers.column_dimensions["D"].width = 25 
+					Vouchers.column_dimensions["F"].width = 25
+					Vouchers.column_dimensions["H"].width = 20
+					Vouchers.column_dimensions["J"].width = 20
 					Vouchers.cell(row= 1,column=1,value= "VchNo")
 					Vouchers.cell(row= 1,column=2,value= "Date")
 					Vouchers.cell(row= 1,column=3,value= "VchType")
 					Vouchers.cell(row= 1,column=4,value= "DrAcc")
 					Vouchers.cell(row= 1,column=5,value= "DrAmt")
 					Vouchers.cell(row= 1,column=6,value= "CrAcc")
-					Vouchers.cell(row= 1,column=7,value= "DrAmt")
+					Vouchers.cell(row= 1,column=7,value= "CrAmt")
 					Vouchers.cell(row= 1,column=8,value= "Narration")
 					Vouchers.cell(row= 1,column=9,value= "Lockflag")
-					Vouchers.cell(row= 1,column=10,value= "ProjectCode")
-                        
+					Vouchers.cell(row= 1,column=10,value= "Project")
+						
 					rowcounter = 2	
 					if voucher.rowcount > 0:
 						voucherData = voucher.fetchall()
 						for vch in voucherData:
 							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
-#							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
 							vd =  Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
 							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 							dr = vch["drs"]
 							drcounter = rowcounter
 							for draccno in dr.keys():
-#								acctno = accno
 								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == draccno , accounts.c.orgcode == authDetails["orgcode"])))
 								dracctname = draccname.fetchone()
 								drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
@@ -220,7 +223,6 @@ class api_backuprestore(object):
 							cr = vch["crs"]
 							crcounter = rowcounter
 							for craccno in cr.keys():
-#								cracctno = craccno
 								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == craccno,accounts.c.orgcode == authDetails["orgcode"])))
 								cracctname = craccname.fetchone()
 								crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
@@ -229,7 +231,13 @@ class api_backuprestore(object):
 							
 							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
 							vl = Vouchers.cell(row= rowcounter,column=9,value=vch["lockflag"])
-							vp = Vouchers.cell(row= rowcounter,column=10,value=vch["projectcode"])
+							prj = self.con.execute(select([projects.c.projectname]).where(and_(projects.c.projectcode == vch["projectcode"], projects.c.orgcode == authDetails["orgcode"])))
+							prjname = prj.fetchone()
+							if prjname != None:
+								vp = Vouchers.cell(row= rowcounter,column=10,value=prjname["projectname"])
+							else:
+								vp = Vouchers.cell(row= rowcounter,column=10,value= " ")
+							
 							
 							if drcounter >= rowcounter:
 								rowcounter = drcounter + 1
@@ -248,10 +256,10 @@ class api_backuprestore(object):
 
 																
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-#			finally:
-#				self.con.close() 
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close() 
 				
 				
 	
