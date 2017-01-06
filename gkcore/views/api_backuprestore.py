@@ -117,6 +117,21 @@ class api_backuprestore(object):
 		If there are accounts (check for row count after query ) then run another loop inside.
 		All that this loop will do is to add account name in cells below the subgroup.
 		Note that account names will be in italics.
+		
+		Once all accounts entries have been added to first sheet next sheet will be created for vouchers entries.
+		Now query for vouchers details such as voucherdate , vouchernumber , vouchertype , narration ,crs and drs , projectcode.
+		if rowcount > 0 , fetch all data which query has return.
+		loop through data & Add data in the rows and columns accordingly.
+		Format decided for adding data to the spreadsheet is as follows VoucherNumber ,Date, VoucherType , DebitAccount , Debit amount,CreditAccount , Credit amount ,Narration , Lockflag , ProjectCode; 
+		Filling details start from column 1 and fill up the columns upto column 10 respectively. Row counter will increase by 1 as soon as all details in current in row is filled up.
+		To get accountname for creditaccount and debitaccount firstly get accountcode form dictionary crs and drs .
+		query to accounts table using accountcode and retrieve accountname.
+		For multiple crs and drs for each entry , Entries for accountname and amount will be added to immediate next row .
+		
+		At last Save the file in xlsx format by giving suitable name.
+		For better compression use tar.bz2 file format.
+		encode the compressed file using base64 encode format , now file has been converted into encoded string format, So that we can use it as value to JSON dictionary.
+				
 		"""
 		try:
 			token = self.request.headers["gktoken"]
@@ -171,31 +186,42 @@ class api_backuprestore(object):
 										cellCounter = cellCounter + 1
 										
 					Vouchers = gkwb.create_sheet(title="Vouchers")
-					rowcounter = 1
 					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode]).where(vouchers.c.orgcode== authDetails["orgcode"]))
 					
+					Vouchers.cell(row= 1,column=1,value= "VchNo")
+					Vouchers.cell(row= 1,column=2,value= "Date")
+					Vouchers.cell(row= 1,column=3,value= "VchType")
+					Vouchers.cell(row= 1,column=4,value= "DrAcc")
+					Vouchers.cell(row= 1,column=5,value= "DrAmt")
+					Vouchers.cell(row= 1,column=6,value= "CrAcc")
+					Vouchers.cell(row= 1,column=7,value= "DrAmt")
+					Vouchers.cell(row= 1,column=8,value= "Narration")
+					Vouchers.cell(row= 1,column=9,value= "Lockflag")
+					Vouchers.cell(row= 1,column=10,value= "ProjectCode")
+                        
+					rowcounter = 2	
 					if voucher.rowcount > 0:
 						voucherData = voucher.fetchall()
 						for vch in voucherData:
 							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
-							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
-							vd =  Vouchers.cell(row= rowcounter,column=2,value=  date) 
+#							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
+							vd =  Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
 							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 							dr = vch["drs"]
 							drcounter = rowcounter
-							for accno in dr.keys():
-								acctno = accno
-								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == acctno , accounts.c.orgcode == authDetails["orgcode"])))
+							for draccno in dr.keys():
+#								acctno = accno
+								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == draccno , accounts.c.orgcode == authDetails["orgcode"])))
 								dracctname = draccname.fetchone()
 								drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
-								drValue = Vouchers.cell(row= drcounter,column=5,value= "%.2f"%float(dr[accno]))
+								drValue = Vouchers.cell(row= drcounter,column=5,value= "%.2f"%float(dr[draccno]))
 								drcounter = drcounter + 1
 								
 							cr = vch["crs"]
 							crcounter = rowcounter
 							for craccno in cr.keys():
-								cracctno = craccno
-								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == cracctno,accounts.c.orgcode == authDetails["orgcode"])))
+#								cracctno = craccno
+								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == craccno,accounts.c.orgcode == authDetails["orgcode"])))
 								cracctname = craccname.fetchone()
 								crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
 								crvalue = Vouchers.cell(row= crcounter,column=7,value= "%.2f"%float(cr[craccno]))
@@ -219,11 +245,11 @@ class api_backuprestore(object):
 					gkarch = open("GkOrgExport.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-					#os.system("rm gkbackup.tar.bz2")			
+
 																
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
 #			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}"""
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 #			finally:
 #				self.con.close() 
 				
