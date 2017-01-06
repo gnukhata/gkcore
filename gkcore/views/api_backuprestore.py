@@ -180,20 +180,15 @@ class api_backuprestore(object):
 							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
 							date = str(vch["voucherdate"].date().strftime('%d-%m-%Y'))
 							vd =  Vouchers.cell(row= rowcounter,column=2,value=  date) 
-			   
 							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 							dr = vch["drs"]
-							print dr
 							drcounter = rowcounter
 							for accno in dr.keys():
 								acctno = accno
-							#	drValue = dr["accno"]
 								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == acctno , accounts.c.orgcode == authDetails["orgcode"])))
 								dracctname = draccname.fetchone()
-								print dracctname["accountname"]
-								print dr[accno]
 								drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
-								drValue = Vouchers.cell(row= drcounter,column=5,value= dr[accno])
+								drValue = Vouchers.cell(row= drcounter,column=5,value= "%.2f"%float(dr[accno]))
 								drcounter = drcounter + 1
 								
 							cr = vch["crs"]
@@ -203,7 +198,7 @@ class api_backuprestore(object):
 								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == cracctno,accounts.c.orgcode == authDetails["orgcode"])))
 								cracctname = craccname.fetchone()
 								crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
-								crvalue = Vouchers.cell(row= crcounter,column=7,value= cr[craccno])
+								crvalue = Vouchers.cell(row= crcounter,column=7,value= "%.2f"%float(cr[craccno]))
 								crcounter = crcounter + 1
 							
 							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
@@ -216,9 +211,17 @@ class api_backuprestore(object):
 								rowcounter = crcounter + 1
 							
 							
-					gkwb.save(filename = "GkExport.xlsx")			
+					gkwb.save(filename = "GkExport.xlsx")
+					cmp = tarfile.open("GkOrgExport.tar.bz2","w:bz2")
+					cmp.add("GkExport.xlsx")
+					cmp.close()
+					os.system("rm -rf GkExport.xlsx")
+					gkarch = open("GkOrgExport.tar.bz2","r")
+					archData = base64.b64encode(gkarch.read())
+					gkarch.close()
+					#os.system("rm gkbackup.tar.bz2")			
 																
-					return {"gkstatus":enumdict["Success"]}
+					return {"gkstatus":enumdict["Success"],"gkdata":archData}
 #			except:
 #				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}"""
 #			finally:
