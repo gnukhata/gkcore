@@ -156,9 +156,10 @@ class api_backuprestore(object):
 					accountList.title = "Account List"
 					accountList.column_dimensions["A"].width = 100
 					
-					orgInfo = self.con.execute(select([organisation.c.orgname,organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"] ))
+					orgInfo = self.con.execute(select([organisation.c.orgname,organisation.c.orgtype,organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"] ))
 					org = orgInfo.fetchone()
 					t = accountList.cell(row=1,column=1,value= org["orgname"])
+					t = accountList.cell(row=1,column=2,value= org["orgtype"])
 					t = accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%d-%m-%Y')))
 					t = accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%d-%m-%Y')))
 								
