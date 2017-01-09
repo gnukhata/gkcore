@@ -99,6 +99,7 @@ class api_backuprestore(object):
 		this function will take orgcode and userid from the get request.
 		Once this data is taken from the json_body the processing is done for that organisation.
 		Firstly check for the user's role.  If it is admin then,
+		Query to organisation table and get organisation name , yearstart and yearend ; Fill this data into first row. 
 		First it gets the list of all main groups.
 		Then a main loop runs through this list.
 		For each iteration a cell is created with the current groupname in bold.
@@ -152,11 +153,19 @@ class api_backuprestore(object):
 					#then we will get list of all groups.
 					gkwb = Workbook()
 					accountList = gkwb.active
-					accountList.title = "AccountList"
+					accountList.title = "Account List"
 					accountList.column_dimensions["A"].width = 100
+					
+					orgInfo = self.con.execute(select([organisation.c.orgname,organisation.c.orgtype,organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"] ))
+					org = orgInfo.fetchone()
+					t = accountList.cell(row=1,column=1,value= org["orgname"])
+					t = accountList.cell(row=1,column=2,value= org["orgtype"])
+					t = accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%d-%m-%Y')))
+					t = accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%d-%m-%Y')))
+								
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
-					cellCounter = 1
+					cellCounter = 3
 					for group in groups:
 						#create first row with cell containing groupname.
 						#make it bold style with font object and then go for it's accounts first.
