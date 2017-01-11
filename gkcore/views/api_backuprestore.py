@@ -131,8 +131,7 @@ class api_backuprestore(object):
 		For multiple crs and drs for each entry , Entries for accountname and amount will be added to immediate next row .
 		Projectname can be find using projectcode. If project name exists project name will be added for that voucher entry else field will be blank.
 		At last Save the file in xlsx format by giving suitable name.
-		For better compression tar.bz2 file format is used.
-		encode the compressed file using base64 encode format , now file has been converted into encoded string format, So that we can use it as value to JSON dictionary.
+		encode the file using base64 encode format , now file has been converted into encoded string format, So that we can use it as value to JSON dictionary.
 				
 		"""
 		try:
@@ -252,18 +251,11 @@ class api_backuprestore(object):
 								rowcounter = drcounter + 1
 							else :
 								rowcounter = crcounter + 1
-							
-							
+												
 					gkwb.save(filename = "/tmp/GkExport.xlsx")
-					cmp = tarfile.open("/tmp/GkOrgExport.tar.bz2","w:bz2")
-					cmp.add("/tmp/GkExport.xlsx")
-					cmp.close()
-					os.system("rm /tmp/GkExport.xlsx")
-					gkarch = open("GkOrgExport.tar.bz2","r")
+					gkarch = open("/tmp/GkExport.xlsx","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
-
-																
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
