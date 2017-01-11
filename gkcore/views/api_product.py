@@ -116,7 +116,10 @@ class api_product(object):
 				result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
 				unitrow= result.fetchone()
 				productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"])}
-				return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
+				godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
+				godowns = godownswithstock.fetchone()
+				numberofgodowns = godowns["numberofgodowns"]
+				return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -164,9 +167,8 @@ class api_product(object):
 		else:
 			try:
 				self.con = eng.connect()
-				goid = self.request.params["goid"]
 				productcode = self.request.params["productcode"]
-				result = self.con.execute(select([goprod]).where(and_(goprod.c.goid == goid, goprod.c.productcode == productcode)))
+				result = self.con.execute(select([goprod]).where(goprod.c.productcode == productcode))
 				godowns = []
 				for row in result:
 					goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
