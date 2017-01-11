@@ -254,11 +254,11 @@ class api_backuprestore(object):
 								rowcounter = crcounter + 1
 							
 							
-					gkwb.save(filename = "GkExport.xlsx")
-					cmp = tarfile.open("GkOrgExport.tar.bz2","w:bz2")
-					cmp.add("GkExport.xlsx")
+					gkwb.save(filename = "/tmp/GkExport.xlsx")
+					cmp = tarfile.open("/tmp/GkOrgExport.tar.bz2","w:bz2")
+					cmp.add("/tmp/GkExport.xlsx")
 					cmp.close()
-					os.system("rm -rf GkExport.xlsx")
+					os.system("rm /tmp/GkExport.xlsx")
 					gkarch = open("GkOrgExport.tar.bz2","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
