@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -108,7 +108,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -160,6 +160,22 @@ class api_backuprestore(object):
 										a.font = Font(name=a.font.name,italic=True) 
 										cellCounter = cellCounter + 1
 										
+					# Now create project sheet to backup project data if any project exists in the GNUKhata.
+					projInfo = self.con.execute(select([projects.c.projectcode,projects.c.projectname,projects.c.sanctionedamount]).where(organisation.c.orgcode == authDetails["orgcode"] ))
+					if projInfo.rowcount > 0:
+						
+						Projects = gkwb.create_sheet(title="Projects")
+						Projects.column_dimensions["B"].width = 60
+						Projects.column_dimensions["C"].width = 40
+#					   projInfo = self.con.execute(select([projects.c.projectcode,projects.c.projectname,projects.c.sanctionedamount]).where(organisation.c.orgcode == authDetails["orgcode"] ))
+						Projects.cell(row= 1,column=1,value= "PrjCode")
+						Projects.cell(row= 1,column=2,value= "ProjectName")
+						Projects.cell(row= 1,column=3,value= "SanctionedAmount")
+					
+						projrow = 2
+
+
+															
 					Vouchers = gkwb.create_sheet(title="Vouchers")
 					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode]).where(vouchers.c.orgcode== authDetails["orgcode"]))
 					
@@ -217,16 +233,20 @@ class api_backuprestore(object):
 								rowcounter = drcounter + 1
 							else :
 								rowcounter = crcounter + 1
+								
+										
+								
+						
 												
 					gkwb.save(filename = "/tmp/GkExport.xlsx")
 					gkarch = open("/tmp/GkExport.xlsx","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close() 
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+#			finally:
+#				self.con.close() 
 				
 				
 	
