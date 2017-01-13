@@ -59,7 +59,7 @@ class api_backuprestore(object):
 		""" Purpose:
 		This function gives a backup of all data for an entire organisation for a given financial year.
 		Returns a spreadsheet in encoded form with list of accounts under their groups or subgroups in the first sheet.
-		and second sheet with all vouchers.
+		2nd sheet has all projects details , 3rd sheet with all vouchers and 4th sheet contains all users details.
 		description:
 		this function will take orgcode and userid from the get request.
 		Once this data is taken from the json_body the processing is done for that organisation.
@@ -84,7 +84,10 @@ class api_backuprestore(object):
 		All that this loop will do is to add account name in cells below the subgroup.
 		Note that account names will be in italics.
 		
-		Once all accounts entries have been added to first sheet next sheet will be created for vouchers entries.
+		Once all accounts entries have been added to first sheet next sheet will be created for project existed for organisation.
+		query the projects table to get all project's name and sanctioned amount.
+		
+		Then next sheet create for vouchers entry.
 		Now query for vouchers details such as voucherdate , vouchernumber , vouchertype , narration ,crs and drs , projectcode.
 		if rowcount > 0 , fetch all data which query has return.
 		loop through data & Add data in the rows and columns accordingly.
@@ -94,7 +97,10 @@ class api_backuprestore(object):
 		To get accountname for creditaccount and debitaccount firstly get accountcode form dictionary crs and drs .
 		query to accounts table using accountcode and retrieve accountname.
 		For multiple crs and drs for each entry , Entries for accountname and amount will be added to immediate next row .
-		Projectname can be find using projectcode. If project name exists project name will be added for that voucher entry else field will be blank.
+		Projectname can be find using projectcode. 
+		If projects exist project column will be created and find the project name for that voucher entry else field will be blank.
+		
+		Atlast 4th sheet is created if users exist other than admin, and users details are filled in the columns accordingly.
 		At last Save the file in xlsx format by giving suitable name.
 		encode the file using base64 encode format , now file has been converted into encoded string format, So that we can use it as value to JSON dictionary.
 				
@@ -107,7 +113,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -122,11 +128,11 @@ class api_backuprestore(object):
 					
 					orgInfo = self.con.execute(select([organisation.c.orgname,organisation.c.orgtype,organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"] ))
 					org = orgInfo.fetchone()
-					t = accountList.cell(row=1,column=1,value= org["orgname"])
-					t = accountList.cell(row=1,column=2,value= org["orgtype"])
-					t = accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%d-%m-%Y')))
-					t = accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%d-%m-%Y')))
-								
+					accountList.cell(row=1,column=1,value= org["orgname"])
+					accountList.cell(row=1,column=2,value= org["orgtype"])
+					accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%d-%m-%Y')))
+					accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%d-%m-%Y')))
+													
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
 					cellCounter = 3
@@ -160,82 +166,80 @@ class api_backuprestore(object):
 										cellCounter = cellCounter + 1
 										
 					# Now create project sheet to backup project data if any project exists in the GNUKhata.
-					projInfo = self.con.execute(select([projects.c.projectcode,projects.c.projectname,projects.c.sanctionedamount]).where(organisation.c.orgcode == authDetails["orgcode"] ))
+					projInfo = self.con.execute(select([projects.c.projectname,projects.c.sanctionedamount]).where(projects.c.orgcode == authDetails["orgcode"] ))
 					if projInfo.rowcount > 0:
 						Projects = gkwb.create_sheet(title="Projects")
-						Projects.column_dimensions["B"].width = 60
-						Projects.column_dimensions["C"].width = 40
-#					   projInfo = self.con.execute(select([projects.c.projectcode,projects.c.projectname,projects.c.sanctionedamount]).where(organisation.c.orgcode == authDetails["orgcode"] ))
-						Projects.cell(row= 1,column=1,value= "PrjCode")
-						Projects.cell(row= 1,column=2,value= "ProjectName")
-						Projects.cell(row= 1,column=3,value= "SanctionedAmount")
+						Projects.column_dimensions["A"].width = 60
+						Projects.column_dimensions["B"].width = 40
+					   	Projects.cell(row= 1,column=1,value= "ProjectName")
+						Projects.cell(row= 1,column=2,value= "SanctionedAmount")
 					
 						projrow = 2
 						projData = projInfo.fetchall()
 						for prj in projData :
-							pc = Projects.cell(row= projrow ,column=1,value= prj["projectcode"]) 
-							pn = Projects.cell(row= projrow ,column=2,value= prj["projectname"]) 
-							pa = Projects.cell(row= projrow ,column=3,value= "%.2f"%float(prj["sanctionedamount"]))
+							Projects.cell(row= projrow ,column=1,value= prj["projectname"]) 
+							Projects.cell(row= projrow ,column=2,value= "%.2f"%float(prj["sanctionedamount"]))
 							projrow = projrow + 1
 																				
-					Vouchers = gkwb.create_sheet(title="Vouchers")
+					
 					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode,vouchers.c.delflag]).where(vouchers.c.orgcode== authDetails["orgcode"]))
-					
-					Vouchers.column_dimensions["D"].width = 25 
-					Vouchers.column_dimensions["F"].width = 25
-					Vouchers.column_dimensions["H"].width = 20
-					
-					Vouchers.cell(row= 1,column=1,value= "VchNo")
-					Vouchers.cell(row= 1,column=2,value= "Date")
-					Vouchers.cell(row= 1,column=3,value= "VchType")
-					Vouchers.cell(row= 1,column=4,value= "DrAcc")
-					Vouchers.cell(row= 1,column=5,value= "DrAmt")
-					Vouchers.cell(row= 1,column=6,value= "CrAcc")
-					Vouchers.cell(row= 1,column=7,value= "CrAmt")
-					Vouchers.cell(row= 1,column=8,value= "Narration")
-					Vouchers.cell(row= 1,column=9,value= "Lockflag")
-											
-					rowcounter = 2	
 					if voucher.rowcount > 0:
-						voucherData = voucher.fetchall()
-						for vch in voucherData:
-							vn = Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
-							vd =  Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
-							vt =  Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
-							dr = vch["drs"]
-							drcounter = rowcounter
-							for draccno in dr.keys():
-								draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == draccno , accounts.c.orgcode == authDetails["orgcode"])))
-								dracctname = draccname.fetchone()
-								drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
-								drValue = Vouchers.cell(row= drcounter,column=5,value= "%.2f"%float(dr[draccno]))
-								drcounter = drcounter + 1
+						Vouchers = gkwb.create_sheet(title="Vouchers")
+						Vouchers.column_dimensions["D"].width = 25 
+						Vouchers.column_dimensions["F"].width = 25
+						Vouchers.column_dimensions["H"].width = 20
+						
+						Vouchers.cell(row= 1,column=1,value= "VchNo")
+						Vouchers.cell(row= 1,column=2,value= "Date")
+						Vouchers.cell(row= 1,column=3,value= "VchType")
+						Vouchers.cell(row= 1,column=4,value= "DrAcc")
+						Vouchers.cell(row= 1,column=5,value= "DrAmt")
+						Vouchers.cell(row= 1,column=6,value= "CrAcc")
+						Vouchers.cell(row= 1,column=7,value= "CrAmt")
+						Vouchers.cell(row= 1,column=8,value= "Narration")
+						Vouchers.cell(row= 1,column=9,value= "Lockflag")
+												
+						rowcounter = 2	
+						if voucher.rowcount > 0:
+							voucherData = voucher.fetchall()
+							for vch in voucherData:
+								Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
+								Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
+								Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
+								dr = vch["drs"]
+								drcounter = rowcounter
+								for draccno in dr.keys():
+									draccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == draccno , accounts.c.orgcode == authDetails["orgcode"])))
+									dracctname = draccname.fetchone()
+									drAccName =  Vouchers.cell(row= drcounter,column=4,value=dracctname["accountname"])
+									drValue = Vouchers.cell(row= drcounter,column=5,value= "%.2f"%float(dr[draccno]))
+									drcounter = drcounter + 1
+									
+								cr = vch["crs"]
+								crcounter = rowcounter
+								for craccno in cr.keys():
+									craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == craccno,accounts.c.orgcode == authDetails["orgcode"])))
+									cracctname = craccname.fetchone()
+									crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
+									crvalue = Vouchers.cell(row= crcounter,column=7,value= "%.2f"%float(cr[craccno]))
+									crcounter = crcounter + 1
 								
-							cr = vch["crs"]
-							crcounter = rowcounter
-							for craccno in cr.keys():
-								craccname = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == craccno,accounts.c.orgcode == authDetails["orgcode"])))
-								cracctname = craccname.fetchone()
-								crAccName = Vouchers.cell(row= crcounter,column=6,value=cracctname["accountname"])
-								crvalue = Vouchers.cell(row= crcounter,column=7,value= "%.2f"%float(cr[craccno]))
-								crcounter = crcounter + 1
-							
-							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
-							vl = Vouchers.cell(row= rowcounter,column=9,value=vch["lockflag"])
-															
-							if vch["projectcode"] !=None:
-								Vouchers.column_dimensions["J"].width = 20
-								Vouchers.cell(row= 1,column=10,value= "Project")
-								prj = self.con.execute(select([projects.c.projectname]).where(and_(projects.c.projectcode == vch["projectcode"], projects.c.orgcode == authDetails["orgcode"])))
-								prjname = prj.fetchone()
-								vp = Vouchers.cell(row= rowcounter,column=10,value=prjname["projectname"])
-																		
-							if drcounter >= rowcounter:
-								rowcounter = drcounter + 1
-							else :
-								rowcounter = crcounter + 1
+								Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
+								Vouchers.cell(row= rowcounter,column=9,value=vch["lockflag"])
+																
+								if vch["projectcode"] !=None:
+									Vouchers.column_dimensions["J"].width = 20
+									Vouchers.cell(row= 1,column=10,value= "Project")
+									prj = self.con.execute(select([projects.c.projectname]).where(and_(projects.c.projectcode == vch["projectcode"], projects.c.orgcode == authDetails["orgcode"])))
+									prjname = prj.fetchone()
+									Vouchers.cell(row= rowcounter,column=10,value=prjname["projectname"])
+																			
+								if drcounter >= rowcounter:
+									rowcounter = drcounter + 1
+								else :
+									rowcounter = crcounter + 1
 				
-					userInfo = self.con.execute(select([users.c.username,users.c.userpassword,users.c.userrole,users.c.userquestion,users.c.useranswer,]).where(and_(organisation.c.orgcode == authDetails["orgcode"],users.c.userrole != -1) ))
+					userInfo = self.con.execute(select([users.c.username,users.c.userpassword,users.c.userrole,users.c.userquestion,users.c.useranswer,]).where(and_(users.c.orgcode == authDetails["orgcode"],users.c.userrole != -1) ))
 					if userInfo.rowcount > 0:
 						User = gkwb.create_sheet(title="Users")
 						User.column_dimensions["A"].width =30
@@ -257,15 +261,16 @@ class api_backuprestore(object):
 							User.cell(row = usRow ,column=4,value= us[3])
 							User.cell(row = usRow ,column=5,value= us[4])
 							usRow = usRow + 1
-					gkwb.save(filename = "GkExport.xlsx")
-					gkarch = open("GkExport.xlsx","r")
+					gkwb.save(filename = "/tmp/GkExport.xlsx")
+					gkarch = open("/tmp/GkExport.xlsx","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-#			finally:
-#				self.con.close() 
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+				 
 				
 				
 	
