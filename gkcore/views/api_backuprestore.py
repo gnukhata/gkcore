@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -163,7 +162,6 @@ class api_backuprestore(object):
 					# Now create project sheet to backup project data if any project exists in the GNUKhata.
 					projInfo = self.con.execute(select([projects.c.projectcode,projects.c.projectname,projects.c.sanctionedamount]).where(organisation.c.orgcode == authDetails["orgcode"] ))
 					if projInfo.rowcount > 0:
-						
 						Projects = gkwb.create_sheet(title="Projects")
 						Projects.column_dimensions["B"].width = 60
 						Projects.column_dimensions["C"].width = 40
@@ -173,16 +171,20 @@ class api_backuprestore(object):
 						Projects.cell(row= 1,column=3,value= "SanctionedAmount")
 					
 						projrow = 2
-
-
-															
+						projData = projInfo.fetchall()
+						for prj in projData :
+							pc = Projects.cell(row= projrow ,column=1,value= prj["projectcode"]) 
+							pn = Projects.cell(row= projrow ,column=2,value= prj["projectname"]) 
+							pa = Projects.cell(row= projrow ,column=3,value= "%.2f"%float(prj["sanctionedamount"]))
+							projrow = projrow + 1
+																				
 					Vouchers = gkwb.create_sheet(title="Vouchers")
-					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode]).where(vouchers.c.orgcode== authDetails["orgcode"]))
+					voucher = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.vouchertype,vouchers.c.drs,vouchers.c.crs,vouchers.c.lockflag,vouchers.c.projectcode,vouchers.c.delflag]).where(vouchers.c.orgcode== authDetails["orgcode"]))
 					
 					Vouchers.column_dimensions["D"].width = 25 
 					Vouchers.column_dimensions["F"].width = 25
 					Vouchers.column_dimensions["H"].width = 20
-					Vouchers.column_dimensions["J"].width = 20
+					
 					Vouchers.cell(row= 1,column=1,value= "VchNo")
 					Vouchers.cell(row= 1,column=2,value= "Date")
 					Vouchers.cell(row= 1,column=3,value= "VchType")
@@ -192,8 +194,7 @@ class api_backuprestore(object):
 					Vouchers.cell(row= 1,column=7,value= "CrAmt")
 					Vouchers.cell(row= 1,column=8,value= "Narration")
 					Vouchers.cell(row= 1,column=9,value= "Lockflag")
-					Vouchers.cell(row= 1,column=10,value= "Project")
-						
+											
 					rowcounter = 2	
 					if voucher.rowcount > 0:
 						voucherData = voucher.fetchall()
@@ -221,25 +222,43 @@ class api_backuprestore(object):
 							
 							vnr = Vouchers.cell(row= rowcounter,column=8,value=vch["narration"])
 							vl = Vouchers.cell(row= rowcounter,column=9,value=vch["lockflag"])
-							prj = self.con.execute(select([projects.c.projectname]).where(and_(projects.c.projectcode == vch["projectcode"], projects.c.orgcode == authDetails["orgcode"])))
-							prjname = prj.fetchone()
-							if prjname != None:
+															
+							if vch["projectcode"] !=None:
+								Vouchers.column_dimensions["J"].width = 20
+								Vouchers.cell(row= 1,column=10,value= "Project")
+								prj = self.con.execute(select([projects.c.projectname]).where(and_(projects.c.projectcode == vch["projectcode"], projects.c.orgcode == authDetails["orgcode"])))
+								prjname = prj.fetchone()
 								vp = Vouchers.cell(row= rowcounter,column=10,value=prjname["projectname"])
-							else:
-								vp = Vouchers.cell(row= rowcounter,column=10,value= " ")
-							
-							
+																		
 							if drcounter >= rowcounter:
 								rowcounter = drcounter + 1
 							else :
 								rowcounter = crcounter + 1
-								
-										
-								
-						
-												
-					gkwb.save(filename = "/tmp/GkExport.xlsx")
-					gkarch = open("/tmp/GkExport.xlsx","r")
+				
+					userInfo = self.con.execute(select([users.c.username,users.c.userpassword,users.c.userrole,users.c.userquestion,users.c.useranswer,]).where(and_(organisation.c.orgcode == authDetails["orgcode"],users.c.userrole != -1) ))
+					if userInfo.rowcount > 0:
+						User = gkwb.create_sheet(title="Users")
+						User.column_dimensions["A"].width =30
+						User.cell(row= 1,column=1,value= "UserName")
+						User.cell(row= 1,column=2,value= "Password")
+						User.cell(row= 1,column=3,value= "Role")
+						User.cell(row= 1,column=4,value= "Question")
+						User.cell(row= 1,column=5,value= "Answer")
+						usRow = 2
+						userData = userInfo.fetchall()
+						for us in userData:
+							User.cell(row = usRow ,column=1,value= us[0])
+							User.cell(row = usRow ,column=2,value= us[1])
+							if us[2] == 0:
+								userRole = "Manager"
+							else:
+								userRole = "Operator" 
+							User.cell(row = usRow ,column=3,value= userRole)	
+							User.cell(row = usRow ,column=4,value= us[3])
+							User.cell(row = usRow ,column=5,value= us[4])
+							usRow = usRow + 1
+					gkwb.save(filename = "GkExport.xlsx")
+					gkarch = open("GkExport.xlsx","r")
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
