@@ -113,7 +113,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -124,7 +124,8 @@ class api_backuprestore(object):
 					gkwb = Workbook()
 					accountList = gkwb.active
 					accountList.title = "Account List"
-					accountList.column_dimensions["A"].width = 100
+					accountList.column_dimensions["A"].width = 80
+					accountList.column_dimensions["B"].width = 30
 					
 					orgInfo = self.con.execute(select([organisation.c.orgname,organisation.c.orgtype,organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"] ))
 					org = orgInfo.fetchone()
@@ -142,12 +143,13 @@ class api_backuprestore(object):
 						c = accountList.cell(row=cellCounter,column=1,value=group["groupname"])
 						c.font = Font(name=c.font.name,bold=True)
 						cellCounter = cellCounter + 1
-						grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == group["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+						grpaccounts = self.con.execute(select([accounts.c.accountname,accounts.c.openingbal]).where(and_(accounts.c.groupcode == group["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
 						if grpaccounts.rowcount > 0:
 							account = grpaccounts.fetchall()
 							for acct in account:
 								a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 								a.font = Font(name=a.font.name,italic=True) 
+								ob = accountList.cell(row=cellCounter,column=2,value= "%.2f"%float(acct["openingbal"]))
 								cellCounter = cellCounter + 1
 						#search for subgroups existing for main group , create row with cell containing subgroup
 						#then search for accounts existing for subgroup. and create new cell immediately under subgroup.
@@ -157,12 +159,13 @@ class api_backuprestore(object):
 							for sg in subgroup:
 								s = accountList.cell(row=cellCounter,column=1,value=sg["groupname"])
 								cellCounter = cellCounter + 1
-								grpaccounts = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.groupcode == sg["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
+								grpaccounts = self.con.execute(select([accounts.c.accountname,accounts.c.openingbal]).where(and_(accounts.c.groupcode == sg["groupcode"],accounts.c.orgcode == authDetails["orgcode"]) ))
 								if grpaccounts.rowcount > 0:
 									account = grpaccounts.fetchall()
 									for acct in account:
 										a = accountList.cell(row=cellCounter,column=1,value= acct["accountname"])
 										a.font = Font(name=a.font.name,italic=True) 
+										ob = accountList.cell(row=cellCounter,column=2,value="%.2f"%float( acct["openingbal"]))
 										cellCounter = cellCounter + 1
 										
 					# Now create project sheet to backup project data if any project exists in the GNUKhata.
@@ -266,10 +269,10 @@ class api_backuprestore(object):
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+#			finally:
+#				self.con.close()
 				 
 				
 				
