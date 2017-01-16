@@ -113,7 +113,7 @@ class api_backuprestore(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
@@ -269,10 +269,10 @@ class api_backuprestore(object):
 					archData = base64.b64encode(gkarch.read())
 					gkarch.close()
 					return {"gkstatus":enumdict["Success"],"gkdata":archData}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-#			finally:
-#				self.con.close()
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 				 
 				
 				
