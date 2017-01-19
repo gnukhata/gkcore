@@ -229,6 +229,12 @@ class api_product(object):
 			finally:
 				self.con.close()
 
+	'''
+	Here product data is updated with new data input by the user while editing product.
+	If godowns have been created and godownwise opening stock has been entered for a product the record in "goprod" table is first deleted and fresh record is created.
+	If godownwise opening stock was not recorded while creating product it can be created here.
+	In this case a new record is created in "goprod" table.
+	'''
 	@view_config(request_method='PUT', renderer='json')
 	def editProduct(self):
 		try:
@@ -248,10 +254,12 @@ class api_product(object):
 				result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
 				if godownFlag:
 					goDetails = dataset["godetails"]
+					result = self.con.execute(gkdb.goprod.delete().where(and_(gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])))
 					ttlOpening = 0.0
 					for g in goDetails.keys():
 						ttlOpening = ttlOpening + float(goDetails[g])
-						result = self.con.execute(gkdb.goprod.update().where(and_(gkdb.goprod.c.goid== g,gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])).values(goopeningstock=goDetails[g]))
+						goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
+						self.con.execute(gkdb.goprod.insert(),[goro])
 					self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
 
 				return {"gkstatus":enumdict["Success"]}
