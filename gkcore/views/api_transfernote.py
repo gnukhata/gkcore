@@ -5,7 +5,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -167,6 +167,7 @@ class api_transfernote(object):
 					"productdetails": items,
 					"nopkt": row["nopkt"],
 					"recieved": row["recieved"],
+					"receiveddate":row["recieveddate"],
 					"togodown": togodata["goname"],
 					"togodownstate": togodata["state"],
 					"togodownaddr": togodata["goaddr"],
@@ -257,7 +258,7 @@ class api_transfernote(object):
 					stockdata["productcode"] = key["productcode"]
 					stockdata["qty"] = key["qty"]
 					result = self.con.execute(stock.insert(),[stockdata])
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True))
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=self.request.params["recieveddate"]))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
