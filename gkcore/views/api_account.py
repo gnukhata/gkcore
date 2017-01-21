@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,13 +23,9 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+Prajkta Patkar" <prajkta.patkar007@gmail.com>
 """
-#imports contain sqlalchemy modules,
-#enumdict containing status messages,
-#eng for executing raw sql,
-#gkdb from models for all the alchemy expressed tables.
-#view_default for setting default route
-#view_config for per method configurations predicates etc.
+
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
@@ -39,7 +35,7 @@ from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc,alias, or_, func
 from pyramid.request import Request
 from pyramid.response import Response
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
@@ -168,6 +164,34 @@ class api_account(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+
+	@view_config(request_method='GET',request_param='accbygrp', renderer ='json')
+	def getAllAccountsByGroup(self):
+		"""
+		Purpose:
+		This function returns accountcode , accountname and openingbalance for a certain groupcode (group) which has been provided.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname,accounts.c.openingbal]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode==self.request.params["groupcode"])))
+				accData = result.fetchall()
+				allAcc = []
+				for row in accData:
+					allAcc.append({"accountcode":row["accountcode"], "accountname":row["accountname"],"openingbal":"%.2f"%float(row["openingbal"])})
+				self.con.close()
+				return {"gkstatus": enumdict["Success"], "gkresult":allAcc}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+
 
 	@view_config(request_method='GET',request_param='acclist', renderer ='json')
 	def getAccountslist(self):
