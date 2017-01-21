@@ -2141,7 +2141,7 @@ class api_reports(object):
 								""" No need to check if invresult has rowcount 1 since it must be 1 """
 								invrow = invresult.fetchone()
 								trntype = "delchal&invoice"
-							else
+							else:
 								dcinvrow = {"invid": ""}
 								invrow = {"invoiceno": ""}
 								trntype = "delchal"
