@@ -2134,19 +2134,19 @@ class api_reports(object):
 							countrow = countresult.fetchone()
 							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
 							custrow = custdata.fetchone()
-                            dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
-                            if dcinvresult.rowcount == 1:
-                                dcinvrow = dcinv.fetchone()
-                                invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
-                                """ No need to check if invresult has rowcount 1 since it must be 1 """
-                                invrow = invresult.fetchone()
-                                trntype = "delchal&invoice"
-                            else
-                                dcinvrow = {"invid": ""}
-                                invrow = {"invoiceno": ""}
-                                trntype = "delchal"
+							dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+							if dcinvresult.rowcount == 1:
+								dcinvrow = dcinv.fetchone()
+								invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+								""" No need to check if invresult has rowcount 1 since it must be 1 """
+								invrow = invresult.fetchone()
+								trntype = "delchal&invoice"
+							else
+								dcinvrow = {"invid": ""}
+								invrow = {"invoiceno": ""}
+								trntype = "delchal"
 
-                            if  finalRow["inout"] == 9:
+							if  finalRow["inout"] == 9:
 								openingStock = float(openingStock) + float(finalRow["qty"])
 								totalinward = float(totalinward) + float(finalRow["qty"])
 
