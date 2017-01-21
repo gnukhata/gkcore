@@ -258,7 +258,7 @@ class api_transfernote(object):
 					stockdata["productcode"] = key["productcode"]
 					stockdata["qty"] = key["qty"]
 					result = self.con.execute(stock.insert(),[stockdata])
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=self.request.params["recieveddate"]))
+				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=transferdata["recieveddate"]))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
