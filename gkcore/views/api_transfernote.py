@@ -161,13 +161,13 @@ class api_transfernote(object):
 					goiddata = stockrow["goid"]
 				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==goiddata))
 				fromgodata = fromgo.fetchone()
+				
 				tn={"transfernoteno": row["transfernoteno"],
 					"transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),
 					"transportationmode":row["transportationmode"],
 					"productdetails": items,
 					"nopkt": row["nopkt"],
 					"recieved": row["recieved"],
-					"receiveddate":datetime.strftime(row["recieveddate"],'%d-%m-%Y'),
 					"togodown": togodata["goname"],
 					"togodownstate": togodata["state"],
 					"togodownaddr": togodata["goaddr"],
@@ -240,30 +240,31 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				transferdata = self.request.json_body
 				stockdata = {}
 				stockdata["orgcode"] = authDetails["orgcode"]
-				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-				stockdata["dcinvtnflag"] = 20
-				stockdata["inout"]=9
-				result = self.con.execute(select([transfernote.c.togodown,transfernote.c.recieved]).where(transfernote.c.transfernoteid==transferdata["transfernoteid"]))
+				result = self.con.execute(select([transfernote.c.togodown,transfernote.c.recieved,transfernote.c.togodown]).where(transfernote.c.transfernoteid==transferdata["transfernoteid"]))
 				row = result.fetchone()
 				if row["recieved"]:
 					return {"gkstatus":enumdict["ActionDisallowed"]}
-				stockdata["goid"]=row["togodown"]
-				stockresult = self.con.execute(select([stock.c.productcode,stock.c.qty]).where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
-				for key in stockresult:
-					stockdata["productcode"] = key["productcode"]
-					stockdata["qty"] = key["qty"]
-					result = self.con.execute(stock.insert(),[stockdata])
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=transferdata["recieveddate"]))
+				else:
+					stockdata["dcinvtnid"] = transferdata["transfernoteid"]
+					stockdata["dcinvtnflag"] = 20
+					stockdata["inout"]=9	
+					stockdata["goid"]=row["togodown"]
+					stockresult = self.con.execute(select([stock.c.productcode,stock.c.qty]).where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
+					for key in stockresult:
+						stockdata["productcode"] = key["productcode"]
+						stockdata["qty"] = key["qty"]
+						result = self.con.execute(stock.insert(),[stockdata])
+					result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=transferdata["recieveddate"]))
 				return {"gkstatus":enumdict["Success"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#			finally:
+#				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteTransferNote(self):
