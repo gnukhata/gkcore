@@ -67,7 +67,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				transferdata = dataset["transferdata"]
@@ -94,12 +94,12 @@ class api_transfernote(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+#			except exc.IntegrityError:
+#				return {"gkstatus":enumdict["DuplicateEntry"]}
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#			finally:
+#				self.con.close()
 
 
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
@@ -240,9 +240,10 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				transferdata = self.request.json_body
+				print transferdata
 				stockdata = {}
 				stockdata["orgcode"] = authDetails["orgcode"]
 				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
@@ -260,10 +261,10 @@ class api_transfernote(object):
 					result = self.con.execute(stock.insert(),[stockdata])
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=transferdata["recieveddate"]))
 				return {"gkstatus":enumdict["Success"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#			finally:
+#				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteTransferNote(self):
