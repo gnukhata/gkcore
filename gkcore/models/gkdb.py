@@ -327,7 +327,7 @@ This table records movement of goods and can give details either on basis of pro
 invoice or dc (which ever is responsible for the movement ),
 or by godown using the goid.
 It has a field for product quantity.
-it also has a field called dcinvflag which can tell if this movement was due to dc or inv.
+it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote.
 This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
@@ -473,6 +473,7 @@ transfernote = Table('transfernote',metadata,
 	Column('issuername', UnicodeText),
 	Column('designation', UnicodeText),
 	Column('recieved', BOOLEAN,default=False),
+    Column('recieveddate', DateTime),
 	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	UniqueConstraint('transfernoteno','orgcode'),
