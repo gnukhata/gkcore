@@ -30,8 +30,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod
-
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -2136,7 +2135,7 @@ class api_reports(object):
 							custrow = custdata.fetchone()
 							dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
 							if dcinvresult.rowcount == 1:
-								dcinvrow = dcinv.fetchone()
+								dcinvrow = dcinvresult.fetchone()
 								invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
 								""" No need to check if invresult has rowcount 1 since it must be 1 """
 								invrow = invresult.fetchone()
@@ -2158,6 +2157,7 @@ class api_reports(object):
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"],"invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
 				stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"","trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
+
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
