@@ -146,7 +146,7 @@ class api_delchal(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
@@ -197,7 +197,9 @@ class api_delchal(object):
 									"dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
 									"custid":delchaldata["custid"],"custname":custname["custname"],
 									"custstate":custname["state"],
-									"cancelflag":delchaldata["cancelflag"]
+									"cancelflag":delchaldata["cancelflag"],
+									"noofpackages":delchaldata["noofpackages"],
+									"modeoftransport": delchaldata["modeoftransport"]
 									},
 								"stockdata":{
 									"inout":stockinout,"items":items
