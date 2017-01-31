@@ -207,7 +207,7 @@ class api_backuprestore(object):
 							voucherData = voucher.fetchall()
 							for vch in voucherData:
 								Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
-								Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
+								Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%Y-%m-%d'))) 
 								Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 								dr = vch["drs"]
 								drcounter = rowcounter
