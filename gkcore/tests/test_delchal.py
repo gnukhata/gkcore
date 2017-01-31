@@ -100,7 +100,7 @@ class TestDelChal:
 		""" In this testcase, godown is not linked with Delivery Challan """
 		self.qty = 1
 		products = {self.demoproductcode: self.qty}
-		delchaldata = {"custid":self.custid,"dcno":"15","dcdate":"2016-03-30","dcflag":3}
+		delchaldata = {"custid":self.custid,"dcno":"15","dcdate":"2016-03-30","dcflag":19, "noofpackages":2, "modeoftransport":"By Road"}
 		""" inout = 9 means stock is IN and inout = 15 means stock is OUT """
 		stockdata = {"inout": 9, "items": products}
 		self.demo_delchalwholedata = {"delchaldata": delchaldata, "stockdata": stockdata}
@@ -139,7 +139,7 @@ class TestDelChal:
 		""" Create Delivery Challan """
 		qty = 2
 		products = {self.demoproductcode: qty}
-		delchaldata = {"custid": self.custid, "dcno": "30", "dcdate": "2016-03-10", "dcflag": 3}
+		delchaldata = {"custid": self.custid, "dcno": "30", "dcdate": "2016-03-10", "dcflag": 3, "noofpackages":2, "modeoftransport":"By Road"}
 		""" 'inout = 9' means stock is IN and 'inout = 15' means stock is OUT """
 		stockdata = {"inout": 9, "items": products}
 		delchalwholedata = {"delchaldata":delchaldata,"stockdata":stockdata}
@@ -175,4 +175,4 @@ class TestDelChal:
 		result = delchaldata.json()["gkresult"]
 		dc = result["delchaldata"]
 		stock = result["stockdata"]
-		assert dc["dcno"] == "15" and dc["dcflag"] == 3 and dc["dcdate"] == "30-03-2016" and dc["custid"] == self.custid
+		assert dc["dcno"] == "15" and dc["dcflag"] == 19 and dc["dcdate"] == "30-03-2016" and dc["custid"] == self.custid
