@@ -131,8 +131,8 @@ class api_backuprestore(object):
 					org = orgInfo.fetchone()
 					accountList.cell(row=1,column=1,value= org["orgname"])
 					accountList.cell(row=1,column=2,value= org["orgtype"])
-					accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%d-%m-%Y')))
-					accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%d-%m-%Y')))
+					accountList.cell(row=1,column=3,value= str(org["yearstart"].strftime('%Y-%m-%d')))
+					accountList.cell(row=1,column=4,value= str(org["yearend"].strftime('%Y-%m-%d')))
 													
 					mainGroups = self.con.execute(select([groupsubgroups.c.groupcode, groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.orgcode == authDetails["orgcode"], groupsubgroups.c.subgroupof == None )))
 					groups =  mainGroups.fetchall()
@@ -207,7 +207,7 @@ class api_backuprestore(object):
 							voucherData = voucher.fetchall()
 							for vch in voucherData:
 								Vouchers.cell(row= rowcounter,column=1,value=vch["vouchernumber"]) 
-								Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%d-%m-%Y'))) 
+								Vouchers.cell(row= rowcounter,column=2,value= str(vch["voucherdate"].date().strftime('%Y-%m-%d'))) 
 								Vouchers.cell(row= rowcounter,column=3,value=vch["vouchertype"])
 								dr = vch["drs"]
 								drcounter = rowcounter

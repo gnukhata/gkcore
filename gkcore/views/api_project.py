@@ -155,7 +155,33 @@ class api_project(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+	
+	@view_config(request_method='GET',request_param='projlist', renderer ='json')
+	def getProjslist(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				projData = self.con.execute(select([gkdb.projects.c.projectcode,gkdb.projects.c.projectname]).where(gkdb.projects.c.orgcode == authDetails["orgcode"]))
+				projRows = projData.fetchall()
+				projList = {}
+				for row in projRows:
+					projList[row["projectname"]]= row["projectcode"]
+					
+				return {"gkstatus": enumdict["Success"], "gkresult":projList}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
+	
 	@view_config(request_method='PUT', renderer='json')
 	def editproject(self):
 		try:
