@@ -1,3 +1,12 @@
+[7-February-2017 Release 3.5.2 ]
+* A flatlist to get all projects of organisation.
+* A flatlist to get details of all accounts under a group.
+* Received Date in transfernote table.
+* Modification in transfernote API for received transfernote.
+* Modification in report API to output delivery note no and invoice no at same time (if present).
+* Modification in ledger API to get no. of credit vouchers and debit vouchers.
+* Make editing of godown wise opening stock perfect.
+
 [13-December-2016 Release 3.5.1]
 * A flatlist to get all groups and subgroups
 * A flatlist to get all accounts

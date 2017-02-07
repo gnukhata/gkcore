@@ -85,7 +85,7 @@ def main(global_config, **settings):
     config.add_route("transfernote","/transfernote")
     config.add_route("discrepancynote","/discrepancynote")
     config.add_route("tax","/tax")
-    config.add_route("backuprestore","/backuprestore")
+    
     
     config.scan("gkcore.views")
 
