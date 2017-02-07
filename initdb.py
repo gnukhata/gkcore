@@ -42,5 +42,8 @@ print "database created successfully"
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
 eng.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
 eng.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+ng.execute("alter table transfernote add column recieveddate DateTime")
+eng.execute("alter table delchal add column noofpackages Integer")
+eng.execute("alter table delchal add column modeoftransport UnicodeText")
 
 print "secret signature generated"
