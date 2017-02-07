@@ -42,8 +42,13 @@ print "database created successfully"
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
 eng.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
 eng.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
-eng.execute("alter table transfernote add recieveddate date")
-eng.execute("alter table delchal add noofpackages int")
-eng.execute("alter table delchal add modeoftransport text")
+try:
+	eng.execute("alter table transfernote add recieveddate date")
+	eng.execute("alter table delchal add noofpackages int")
+	eng.execute("alter table delchal add modeoftransport text")
+except:
+	pass
+
+	
 
 print "secret signature generated"
