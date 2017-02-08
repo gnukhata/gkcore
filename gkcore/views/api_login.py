@@ -58,6 +58,8 @@ def gkLogin(request):
 		con= eng.connect()
 		try:
 			con.execute(select([gkdb.organisation.c.invflag]))
+			con.execute(select([gkdb.tranfernote.c.recieveddate]))
+			con.execute(select([gkdb.delchal.c.noofpackages,gkdb.delchal.c.modeoftransport]))
 		except:
 			inventoryMigration(con,eng)
 		dataset = request.json_body
