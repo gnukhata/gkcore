@@ -41,7 +41,8 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration
+from gkcore.models.meta import inventoryMigration,addFields
+con= Connection
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
@@ -105,10 +106,14 @@ class api_organisation(object):
 					result = self.con.execute(gkdb.signature.insert(),[sig])
 			try:
 				self.con.execute(select([gkdb.organisation.c.invflag]))
-				con.execute(select([gkdb.tranfernote.c.recieveddate]))
-				con.execute(select([gkdb.delchal.c.noofpackages,gkdb.delchal.c.modeoftransport]))
 			except:
 				inventoryMigration(self.con,eng)
+			try:
+				con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+				con.execute(select([gkdb.transfernote.c.recieveddate]))
+			except:
+				addFields(self.con,eng)
+
 			result = self.con.execute(gkdb.organisation.insert(),[orgdata])
 			if result.rowcount==1:
 				code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))

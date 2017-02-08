@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,7 +38,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
-from gkcore.models.meta import inventoryMigration
+from gkcore.models.meta import inventoryMigration,addFields
 import jwt
 import gkcore
 con= Connection
@@ -54,42 +54,48 @@ def gkLogin(request):
 	The object will have the userid and orgcode and this will be sent back as a response.
 	Else the function will not issue any token.
 	"""
+#	try:
+	con= eng.connect()
 	try:
-		con= eng.connect()
-		try:
-			con.execute(select([gkdb.organisation.c.invflag]))
-			con.execute(select([gkdb.tranfernote.c.recieveddate]))
-			con.execute(select([gkdb.delchal.c.noofpackages,gkdb.delchal.c.modeoftransport]))
-		except:
-			inventoryMigration(con,eng)
-		dataset = request.json_body
-		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
-		if result.rowcount == 1:
-			record = result.fetchone()
-			result = con.execute(select([gkdb.signature]))
-			sign = result.fetchone()
-			if sign == None:
+		con.execute(select([gkdb.organisation.c.invflag]))
+	
+	except:
+		inventoryMigration(con,eng)
+	try:
+		con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+		con.execute(select([gkdb.transfernote.c.recieveddate]))
+	except:
+		addFields(con,eng)
+		
+	
+	dataset = request.json_body
+	result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+	if result.rowcount == 1:
+		record = result.fetchone()
+		result = con.execute(select([gkdb.signature]))
+		sign = result.fetchone()
+		if sign == None:
+			key = RSA.generate(2560)
+			privatekey = key.exportKey('PEM')
+			sig = {"secretcode":privatekey}
+			gkcore.secret = privatekey
+			result = con.execute(gkdb.signature.insert(),[sig])
+		elif len(sign["secretcode"]) <= 20:
+			result = con.execute(gkdb.signature.delete())
+			if result.rowcount == 1:
 				key = RSA.generate(2560)
 				privatekey = key.exportKey('PEM')
 				sig = {"secretcode":privatekey}
 				gkcore.secret = privatekey
 				result = con.execute(gkdb.signature.insert(),[sig])
-			elif len(sign["secretcode"]) <= 20:
-				result = con.execute(gkdb.signature.delete())
-				if result.rowcount == 1:
-					key = RSA.generate(2560)
-					privatekey = key.exportKey('PEM')
-					sig = {"secretcode":privatekey}
-					gkcore.secret = privatekey
-					result = con.execute(gkdb.signature.insert(),[sig])
-			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-			return {"gkstatus":enumdict["Success"],"token":token }
-		else:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-	except:
-		return {"gkstatus":enumdict["ConnectionFailed"]}
-	finally:
-		con.close()
+		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+		return {"gkstatus":enumdict["Success"],"token":token }
+	else:
+		return {"gkstatus":enumdict["UnauthorisedAccess"]}
+#	except:
+#		return {"gkstatus":enumdict["ConnectionFailed"]}
+#	finally:
+#			con.close()
 
 @view_config(route_name='login',request_method='GET',renderer='json')
 def getuserorgdetails(request):

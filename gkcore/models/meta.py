@@ -41,11 +41,24 @@ def inventoryMigration(con,eng):
 	con.execute("alter table organisation add column invflag Integer default 0 ")
 	con.execute("alter table vouchers add column invid Integer")
 	con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
-	con.execute("alter table transfernote add recieveddate date")
-	con.execute("alter table delchal add noofpackages int")
-	con.execute("alter table delchal add modeoftransport text")
 	try:
 		con.execute("select themename from users")
 	except:
 		con.execute("alter table users add column themename text default 'Default'")
 	return 0
+	
+	
+def addFields(con,eng):
+	metadata.create_all(eng)
+	try:
+		con.execute("select noofpackages,modeoftransport from delchal")
+		con.execute("select recieveddate from transfernote")
+	except:
+		con.execute("alter table transfernote add recieveddate date")
+		con.execute("alter table delchal add noofpackages int")
+		con.execute("alter table delchal add modeoftransport text")
+	return 0
+		
+
+	
+	
