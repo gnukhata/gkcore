@@ -45,6 +45,7 @@ con= Connection
 
 @view_config(route_name='login',request_method='POST',renderer='json')
 def gkLogin(request):
+	
 	"""
 	purpose: take org code, username and password and authenticate the user.
 	Return true if username and password matches or false otherwise.
@@ -54,48 +55,47 @@ def gkLogin(request):
 	The object will have the userid and orgcode and this will be sent back as a response.
 	Else the function will not issue any token.
 	"""
-#	try:
-	con= eng.connect()
 	try:
-		con.execute(select([gkdb.organisation.c.invflag]))
-	
-	except:
-		inventoryMigration(con,eng)
-	try:
-		con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
-		con.execute(select([gkdb.transfernote.c.recieveddate]))
-	except:
-		addFields(con,eng)
+		con= eng.connect()
+		try:
+			con.execute(select([gkdb.organisation.c.invflag]))
+		except:
+			inventoryMigration(con,eng)
+		try:
+			con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+			con.execute(select([gkdb.transfernote.c.recieveddate]))
+		except:
+			addFields(con,eng)
+			
 		
-	
-	dataset = request.json_body
-	result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
-	if result.rowcount == 1:
-		record = result.fetchone()
-		result = con.execute(select([gkdb.signature]))
-		sign = result.fetchone()
-		if sign == None:
-			key = RSA.generate(2560)
-			privatekey = key.exportKey('PEM')
-			sig = {"secretcode":privatekey}
-			gkcore.secret = privatekey
-			result = con.execute(gkdb.signature.insert(),[sig])
-		elif len(sign["secretcode"]) <= 20:
-			result = con.execute(gkdb.signature.delete())
-			if result.rowcount == 1:
+		dataset = request.json_body
+		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+		if result.rowcount == 1:
+			record = result.fetchone()
+			result = con.execute(select([gkdb.signature]))
+			sign = result.fetchone()
+			if sign == None:
 				key = RSA.generate(2560)
 				privatekey = key.exportKey('PEM')
 				sig = {"secretcode":privatekey}
 				gkcore.secret = privatekey
 				result = con.execute(gkdb.signature.insert(),[sig])
-		token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-		return {"gkstatus":enumdict["Success"],"token":token }
-	else:
-		return {"gkstatus":enumdict["UnauthorisedAccess"]}
-#	except:
-#		return {"gkstatus":enumdict["ConnectionFailed"]}
-#	finally:
-#			con.close()
+			elif len(sign["secretcode"]) <= 20:
+				result = con.execute(gkdb.signature.delete())
+				if result.rowcount == 1:
+					key = RSA.generate(2560)
+					privatekey = key.exportKey('PEM')
+					sig = {"secretcode":privatekey}
+					gkcore.secret = privatekey
+					result = con.execute(gkdb.signature.insert(),[sig])
+			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+			return {"gkstatus":enumdict["Success"],"token":token }
+		else:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+	except:
+		return {"gkstatus":enumdict["ConnectionFailed"]}
+	finally:
+			con.close()
 
 @view_config(route_name='login',request_method='GET',renderer='json')
 def getuserorgdetails(request):
