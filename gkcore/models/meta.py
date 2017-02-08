@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Prajkta Patkar"<prajkta.patkar007@gmail.com>
 """
 from sqlalchemy.engine import create_engine
 from gkcore.models.gkdb import metadata
@@ -45,3 +46,19 @@ def inventoryMigration(con,eng):
 	except:
 		con.execute("alter table users add column themename text default 'Default'")
 	return 0
+	
+	
+def addFields(con,eng):
+	metadata.create_all(eng)
+	try:
+		con.execute("select noofpackages,modeoftransport from delchal")
+		con.execute("select recieveddate from transfernote")
+	except:
+		con.execute("alter table transfernote add recieveddate date")
+		con.execute("alter table delchal add noofpackages int")
+		con.execute("alter table delchal add modeoftransport text")
+	return 0
+		
+
+	
+	

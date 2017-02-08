@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,7 +41,8 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration
+from gkcore.models.meta import inventoryMigration,addFields
+con= Connection
 
 @view_defaults(route_name='organisations')
 class api_organisation(object):
@@ -107,6 +108,12 @@ class api_organisation(object):
 				self.con.execute(select([gkdb.organisation.c.invflag]))
 			except:
 				inventoryMigration(self.con,eng)
+			try:
+				con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+				con.execute(select([gkdb.transfernote.c.recieveddate]))
+			except:
+				addFields(self.con,eng)
+
 			result = self.con.execute(gkdb.organisation.insert(),[orgdata])
 			if result.rowcount==1:
 				code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
