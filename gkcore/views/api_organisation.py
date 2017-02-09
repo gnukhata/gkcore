@@ -60,6 +60,7 @@ class api_organisation(object):
 			orgs = []
 			for row in result:
 				orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
+				orgs.sort()
 			self.con.close()
 			return {"gkstatus":enumdict["Success"], "gkdata":orgs}
 		except:
