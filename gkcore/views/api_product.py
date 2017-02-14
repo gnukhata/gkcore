@@ -180,7 +180,7 @@ class api_product(object):
 			finally:
 				self.con.close()
 
-    @view_config(request_method='GET', request_param='from=godown',renderer='json')
+	@view_config(request_method='GET', request_param='from=godown',renderer='json')
 	def getProductfromGodown(self):
 		try:
 			token = self.request.headers["gktoken"]
@@ -193,12 +193,12 @@ class api_product(object):
 			try:
 				self.con = eng.connect()
 				goid = self.request.params["godownid"]
-				result = self.con.execute(select([goprod]).where(goprod.c.goid == goid))
-				godowns = []
+				result = self.con.execute(select([gkdb.goprod.c.goprodid, gkdb.goprod.c.goopeningstock, gkdb.goprod.c.productcode]).where(and_(gkdb.goprod.c.goid== goid, gkdb.goprod.c.orgcode==authDetails["orgcode"])))
+				products = []
 				for row in result:
-					goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
-					godowns.append(goDownDetails)
-				return {"gkstatus":enumdict["Success"],"gkresult":godowns}
+					productDetails = {"goprodid":row["goprodid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
+					products.append(productDetails)
+				return {"gkstatus":enumdict["Success"],"gkresult":products}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}

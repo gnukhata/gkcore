@@ -97,3 +97,18 @@ class TestProducts:
 	def test_get_all_products(self):
 		result = requests.get("http://127.0.0.1:6543/products", headers=self.header)
 		assert result.json()["gkstatus"]==0
+
+	def test_get_productsFromGodown(self):
+		gkdata = {"goname":"Test Godown", "state":"Maharashtra", "goaddr":"Pune", "contactname":"Bhavesh Bavdhane", "designation":"Designation", "gocontact":"8446611103"}
+		result = requests.post("http://127.0.0.1:6543/godown", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/godown", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["goname"] == "Test Godown":
+				self.demogodownid = record["goid"]
+				break
+		proddetails = {"productdesc":"Jaggery","specs":{self.demospeccode: "Pure"}, "uomid":self.demouomid, "categorycode": self.democategorycode}
+		productdetails = {"productdetails":proddetails, "godetails":{self.demogodownid :100}, "godownflag":True}
+		result1 = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
+		productcode = result1.json()["gkresult"]
+		result = requests.get("http://127.0.0.1:6543/products?from=godown&godownid=%d"%int(self.demogodownid),headers=self.header)
+		assert result.json()["gkstatus"]==0 and result.json()["gkresult"][0]["goopeningstock"]=="100.00" and result.json()["gkresult"][0]["productcode"]== productcode
