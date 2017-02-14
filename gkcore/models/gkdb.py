@@ -410,23 +410,19 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderid',Integer, primary_key=True),
 	Column('orderno',UnicodeText,nullable=False),
 	Column('orderdate', DateTime, nullable=False),
-	Column('maxdate', DateTime),
-	Column('datedelivery',DateTime),
-	Column('deliveryplaceaddr', UnicodeText),
+	Column('creditperiod', UnicodeText),
 	Column('payterms',UnicodeText),
-	Column('schedule',UnicodeText),
-	Column('modeoftransport', UnicodeText),
-	Column('packaging',JSONB),
-	Column('tax',JSONB),
-	Column('productdetails', JSONB),
-	Column('issuername', UnicodeText),
+    Column('modeoftransport', UnicodeText),
 	Column('designation', UnicodeText),
+	Column('schedule',JSONB),
+    Column('tax',JSONB),
 	Column('psflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","orderdate"),
 )
+
 
 """
 Table for storing godown details.
