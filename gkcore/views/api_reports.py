@@ -362,27 +362,37 @@ class api_reports(object):
 				for transaction in transactions:
 					ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"], "advflag":""}
 					if transaction["drs"].has_key(accountCode):
-						ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
 						ledgerRecord["Cr"] = ""
 						drtotal += float(transaction["drs"][accountCode])
 						par=[]
+						dramts = []
 						for cr in transaction["crs"].keys():
 							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 							accountname = accountnameRow.fetchone()
 							par.append(''.join(accountname))
+							dramts.append("%.2f"%float(transaction["crs"][cr]))
 						ledgerRecord["particulars"] = par
+						if len(dramts)>1:
+							ledgerRecord["Dr"] = dramts
+						else:
+							ledgerRecord["Dr"] = ["%.2f"%float(transaction["drs"][accountCode])]
 						bal = bal + float(transaction["drs"][accountCode])
 
 					if transaction["crs"].has_key(accountCode):
-						ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
 						ledgerRecord["Dr"] = ""
 						crtotal += float(transaction["crs"][accountCode])
 						par=[]
+						cramts = []
 						for dr in transaction["drs"].keys():
 							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 							accountname = accountnameRow.fetchone()
 							par.append(''.join(accountname))
+							cramts.append("%.2f"%float(transaction["drs"][dr]))
 						ledgerRecord["particulars"] = par
+						if len(cramts)>1:
+							ledgerRecord["Cr"] = cramts
+						else:
+							ledgerRecord["Cr"] = ["%.2f"%float(transaction["crs"][accountCode])]
 						bal = bal - float(transaction["crs"][accountCode])
 					if bal>0:
 						ledgerRecord["balance"] = "%.2f(Dr)"%(bal)
