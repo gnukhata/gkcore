@@ -101,8 +101,10 @@ class api_purchaseorder(object):
 
 					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
 					custrow = custdata.fetchone()
-					allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"custname": custrow["custname"],"productdetails": row["productdetails"],"tax":row["tax"],"payterms":row["payterms"],"maxdate":["maxdate"],
-										"datedelivery":row["datedelivery"],"deliveryplaceaddr":row["deliveryplaceaddr"],"schedule":row["schedule"],"modeoftransport":row["modeoftransport"],"psflag":row["psflag"],"packaging":row["packaging"]})
+					allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"creditperiod": custrow["creditperiod"],"payterms": row["payterms"],"modeoftransport":row["modeoftransport"],"designation":["designation"],
+										"schedule":row["schedule"],"tax":row["tax"],"psflag":row["psflag"]})
+
+
 
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":allposo}
@@ -164,38 +166,25 @@ class api_purchaseorder(object):
 				ordid =int(self.request.params["orderid"])
 				result=self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid== ordid))
 				psrow = result.fetchone()
-				productdet = psrow["productdetails"]
+				schedule = psrow["schedule"]
 				details = {}
-				for key in productdet:
+				for key in schedule:
 					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==key))
 					productnamerow = prodata.fetchone()
-					details[key]= {"priceperunit":productdet[key].keys()[0],"qty":productdet[key][productdet[key].keys()[0]],"productdesc":productnamerow["productdesc"]}
+					details[key]= {"priceperunit":productdet[key].keys()[0],"packages":productdet[key].keys()[0],"qty":productdet[key][productdet[key].keys()[0]],"productdesc":productnamerow["productdesc"]}
 				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==psrow["csid"]))
 				custrow = custdata.fetchone()
 				po ={"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),
-					"deliveryplaceaddr": psrow["deliveryplaceaddr"],
-					"custname":custrow["custname"],
-					"csid":psrow["csid"],
-					"productdetails":details,
-					"issuername":row["issuername"],
-					"designation":row["designation"],
+					"creditperiod":row["creditperiod"],
 					"payterms":row["payterms"],
-					"schedule":row["schedule"],
 					"modeoftransport":row["modeoftransport"],
-					"packaging":row["packaging"],
+					"designation":row["designation"],
+					"schedule":details,
 					"tax":row["tax"],
-					"psflag":row["psflag"]}
-
-				datedelivery = psrow["datedelivery"]
-				maxdate =psrow["maxdate"]
-				if datedelivery == None:
-					po["datedelivery"]=""
-				else:
-					po["datedelivery"]= datetime.strftime(psrow["datedelivery"],'%d-%m-%Y')
-				if (maxdate == None):
-					po["maxdate"]=""
-				else:
-					po["maxdate"]= datetime.strftime(psrow["maxdate"],'%d-%m-%Y')
+					"psflag":row["psflag"],
+					"custname":custrow["custname"],
+					"csid":psrow["csid"]
+					}
 				return {"gkstatus":enumdict["Success"],"gkresult":po}
 				self.con.close()
 
