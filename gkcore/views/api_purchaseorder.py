@@ -104,9 +104,6 @@ class api_purchaseorder(object):
 					custrow = custdata.fetchone()
 					allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"creditperiod": custrow["creditperiod"],"payterms": row["payterms"],"modeoftransport":row["modeoftransport"],"designation":["designation"],
 										"schedule":row["schedule"],"taxstate":row["taxstate"],"taxrate":row["taxrate"],"psflag":row["psflag"]})
-
-
-
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":allposo}
 			except:
@@ -232,7 +229,7 @@ class api_purchaseorder(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				result = self.con.execute(purchaseorder.delete().where(purchaseorder.c.orderno == dataset["orderid"]))
+				result = self.con.execute(purchaseorder.delete().where(purchaseorder.c.orderid == dataset["orderid"]))
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
