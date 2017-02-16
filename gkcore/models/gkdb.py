@@ -412,15 +412,16 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderdate', DateTime, nullable=False),
 	Column('creditperiod', UnicodeText),
 	Column('payterms',UnicodeText),
-    Column('modeoftransport', UnicodeText),    
+    Column('modeoftransport', UnicodeText),
 	Column('designation', UnicodeText),
 	Column('schedule',JSONB),
-    Column('tax',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('taxrate',Numeric(5,2)),
 	Column('psflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
 	Index("purchaseorder_orgcodeindex","orgcode"),
-	Index("purchaseorder_date","orderdate"),
+	Index("purchaseorder_date","orderdate")
 )
 
 

@@ -1,3 +1,4 @@
+
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -102,7 +103,7 @@ class api_purchaseorder(object):
 					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
 					custrow = custdata.fetchone()
 					allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"creditperiod": custrow["creditperiod"],"payterms": row["payterms"],"modeoftransport":row["modeoftransport"],"designation":["designation"],
-										"schedule":row["schedule"],"tax":row["tax"],"psflag":row["psflag"]})
+										"schedule":row["schedule"],"taxstate":row["taxstate"],"taxrate":row["taxrate"],"psflag":row["psflag"]})
 
 
 
@@ -180,7 +181,8 @@ class api_purchaseorder(object):
 					"modeoftransport":row["modeoftransport"],
 					"designation":row["designation"],
 					"schedule":details,
-					"tax":row["tax"],
+					"taxstate":row["taxstate"],
+					"taxrate":row["taxrate"],
 					"psflag":row["psflag"],
 					"custname":custrow["custname"],
 					"csid":psrow["csid"]
