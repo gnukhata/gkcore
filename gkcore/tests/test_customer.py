@@ -77,3 +77,9 @@ class TestCustomer:
 	def test_get_all_customers(self):
 		result = requests.get("http://127.0.0.1:6543/customersupplier?qty=custall", headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	def test_duplicate_customer(self):
+		custdata = {"custname":"rahul kande","custaddr":"goregaon","custphone":"432123","custemail":"rahulkande@ymail.com","custfax":"FAX26345","state":"Maharashtra","custpan":"IDPAN1634","custtan":"IDTAN4234","csflag":3}
+		result = requests.post("http://127.0.0.1:6543/customersupplier", data =json.dumps(custdata),headers=self.header)
+		'''customer data is different than what is already there in database except his name so now it should return gkstatus 1 duplicate entry'''
+		assert result.json()["gkstatus"] == 1
