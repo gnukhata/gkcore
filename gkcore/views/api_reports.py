@@ -2737,10 +2737,13 @@ class api_reports(object):
 				dc_unbilled = []
 				print "running query"
 				#dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate, delchal.c.dcflag, delchal.c.custid]).where(delchal.c.orgcode == orgcode).filter(not_(delchal.c.dcid.in_(select([dcinv.c.dcid].where(dcinv.c.orgcode == orgcode))))))
-				dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate, delchal.c.dcflag, delchal.c.custid, customerandsupplier.c.custname, stock.c.goid, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
+				dcResult = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
 				#dcResult = dcResult.fetchall()
 				print "dcresult: "
+				temp_dict = {}
 				for row in dcResult:
+					temp_dict.update({"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]})
+					dc_unbilled.append(temp_dict)
 					print row
 				#custResult = self.con.execute(select([customerandsupplier.c.custid, customerandsupplier.c.custname]))
 				#print "custresult: "
@@ -2757,7 +2760,7 @@ class api_reports(object):
 				print "query executed correctly"
 				self.con.close()
 				print "success"
-				return {"gkstatus":enumdict["Success"]}
+				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
