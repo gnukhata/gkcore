@@ -2736,10 +2736,6 @@ class api_reports(object):
 				temp_dict = {}
 				for row in dcResult:
 					temp_dict = {"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]}
-					#if (int)temp_dict["dcdate"][0:2] <= (int)inputdate[0:2] and (int)temp_dict["dcdate"][2:4] <= (int)inputdate[2:4] and (int)temp_dict["dcdate"][4:8] <= (int)inputdate[4:8]:
-					print temp_dict
-					print "Date: "
-					print row["dcdate"].year, inputdate.year, row["dcdate"].month, inputdate.month, row["dcdate"].day, inputdate.day
 					if row["dcdate"].year <= inputdate.year and row["dcdate"].month <= inputdate.month and row["dcdate"].day <= inputdate.day:
 						dc_unbilled.append(temp_dict)
 				self.con.close()
