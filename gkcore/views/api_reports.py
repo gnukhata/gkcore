@@ -2727,13 +2727,21 @@ class api_reports(object):
 			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
+				dataset = self.request.json_body
+				inputdate = dataset["inputdate"]
+				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				dc_unbilled = []
 				dcResult = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
 				dcResult = dcResult.fetchall()
 				temp_dict = {}
 				for row in dcResult:
-					temp_dict.update({"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]})
-					dc_unbilled.append(temp_dict)
+					temp_dict = {"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]}
+					#if (int)temp_dict["dcdate"][0:2] <= (int)inputdate[0:2] and (int)temp_dict["dcdate"][2:4] <= (int)inputdate[2:4] and (int)temp_dict["dcdate"][4:8] <= (int)inputdate[4:8]:
+					print temp_dict
+					print "Date: "
+					print row["dcdate"].year, inputdate.year, row["dcdate"].month, inputdate.month, row["dcdate"].day, inputdate.day
+					if row["dcdate"].year <= inputdate.year and row["dcdate"].month <= inputdate.month and row["dcdate"].day <= inputdate.day:
+						dc_unbilled.append(temp_dict)
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except:
