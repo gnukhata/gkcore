@@ -2717,49 +2717,24 @@ class api_reports(object):
 		We also require Orgcode, but it is extracted from the token itself.
 		"""
 		try:
-			print "In gkcore: gktoken: "
 			token = self.request.headers["gktoken"]
-			print token
 		except:
-			print "token exception"
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
-		print "authDetails: "
-		print authDetails
 		if authDetails["auth"]==False:
-			print "unathorised access"
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				print "try block"
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dc_unbilled = []
-				print "running query"
-				#dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate, delchal.c.dcflag, delchal.c.custid]).where(delchal.c.orgcode == orgcode).filter(not_(delchal.c.dcid.in_(select([dcinv.c.dcid].where(dcinv.c.orgcode == orgcode))))))
 				dcResult = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
-				#dcResult = dcResult.fetchall()
-				print "dcresult: "
+				dcResult = dcResult.fetchall()
 				temp_dict = {}
 				for row in dcResult:
 					temp_dict.update({"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]})
 					dc_unbilled.append(temp_dict)
-					print row
-				#custResult = self.con.execute(select([customerandsupplier.c.custid, customerandsupplier.c.custname]))
-				#print "custresult: "
-				#for row in custResult:
-				#	print row
-				#godownidResult = self.con.execute(select([stock.c.goid, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid)))
-				#print "godownidresult: "
-				#for row in godownidResult:
-				#	print row
-				#godownnameResult = self.con.execute(select([godown.c.goid, godown.c.goname]))
-				#print "godownnameresult: "
-				#for row in godownnameResult:
-				#	print row
-				print "query executed correctly"
 				self.con.close()
-				print "success"
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except:
 				self.con.close()
