@@ -31,7 +31,7 @@ from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, prod
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -218,6 +218,35 @@ class api_delchal(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_param="delchal=last",request_method='GET',renderer='json')
+	def getLastDelChalDetails(self):
+		try:
+			"""
+			Purpose:
+			returns a last created note no. of Deliverychallan.
+			Returns a json dictionary containing that Deliverychallan.
+			"""
+			token = self.request.headers['gktoken']
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				deliverychallandata = {"dcdate": "","dcno":""}
+				result = self.con.execute(select([delchal.c.dcno,delchal.c.dcdate]).where(delchal.c.dcid==(select([func.max(delchal.c.dcid)]).where(and_(delchal.c.dcflag==self.request.params["dcflag"],delchal.c.orgcode==authDetails["orgcode"] )))) )
+				row = result.fetchone()
+				if row != None:
+					deliverychallandata["dcdate"] = datetime.strftime((row["dcdate"]),"%d-%m-%Y")
+					deliverychallandata["dcno"] = row["dcno"]
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkresult":deliverychallandata}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteDelchal(self):
