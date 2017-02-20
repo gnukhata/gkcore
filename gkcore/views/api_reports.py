@@ -2329,3 +2329,28 @@ class api_reports(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+	@view_config(request_param='type=closingbalance', renderer='json')
+	def closingBalance(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				accountName = self.request.params["Accountname"]
+				financialStart = self.request.params["financialstart"]							
+				calculateTo =  self.request.params["calculateto"]
+				accountData = self.con.execute("select accountcode from accounts where orgcode=%d and accountname=%s"%(authDetails["orgcode"],accountName))
+				accountRow = accountData.fetchone()
+				calbalData = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+				currentBalance=calbalData["curbal"]
+						 
+				self.con.close()
+				return {"gkstatus":enumdict["Success"],"gkresult":currentBalance}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
