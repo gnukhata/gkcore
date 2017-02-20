@@ -144,54 +144,45 @@ class api_purchaseorder(object):
 				self.con.close()
 
 
-	@view_config(request_method='GET',request_param="poso=single",renderer='json')
+	@view_config(request_method='GET',request_param="poso=single", renderer ='json')
 	def getSingleposo(self):
-		"""
-		THis function is to get single purchaseorder or salesorder, By matching parameters psflag and orderno
-		"""
 		try:
-
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-			try:
-				self.con = eng.connect()
+			self.con = eng.connect()
+			result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid==self.request.params["orderid"]))
+			podata = result.fetchone()
+			schedule = podata["schedule"]
+			details={}
+			for key in schedule:
+				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"]}
 
-				ordid =int(self.request.params["orderid"])
-				result=self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid== ordid))
-				psrow = result.fetchone()
-				schedule = psrow["schedule"]
-				details = {}
-				for key in schedule:
-					prodata = self.con.execute(select([product.c.productdesc]).where(product.c.productcode==key))
-					productnamerow = prodata.fetchone()
-					details[key]= {"priceperunit":productdet[key].keys()[0],"packages":productdet[key].keys()[0],"qty":productdet[key][productdet[key].keys()[0]],"productdesc":productnamerow["productdesc"]}
-				custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==psrow["csid"]))
-				custrow = custdata.fetchone()
-				po ={"orderdate": datetime.strftime(psrow["orderdate"],'%d-%m-%Y'),
-					"creditperiod":row["creditperiod"],
-					"payterms":row["payterms"],
-					"modeoftransport":row["modeoftransport"],
-					"designation":row["designation"],
-					"schedule":details,
-					"taxstate":row["taxstate"],
-					"taxrate":row["taxrate"],
-					"psflag":row["psflag"],
-					"custname":custrow["custname"],
-					"csid":psrow["csid"]
-					}
-				return {"gkstatus":enumdict["Success"],"gkresult":po}
-				self.con.close()
 
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+
+			po = {
+				"orderno":podata["orderno"],
+				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
+				"creditperiod":podata["creditperiod"],
+				"payterms":podata["payterms"],
+				"modeoftransport":podata["modeoftransport"],
+				"designation":podata["designation"],
+				"schedule":details,
+				"taxstate":podata["taxstate"],
+				"taxrate":"%.2f"%float(podata["taxrate"]),
+				"psflag":podata["psflag"],
+				"csid":podata["csid"]
+				}
+			print po
+			return {"gkstatus":enumdict["Success"],"gkresult":po}
+			self.con.close()
+
+
+
 
 
 
