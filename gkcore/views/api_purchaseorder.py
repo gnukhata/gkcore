@@ -161,9 +161,6 @@ class api_purchaseorder(object):
 			details={}
 			for key in schedule:
 				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"]}
-
-
-
 			po = {
 				"orderno":podata["orderno"],
 				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
@@ -176,8 +173,7 @@ class api_purchaseorder(object):
 				"taxrate":"%.2f"%float(podata["taxrate"]),
 				"psflag":podata["psflag"],
 				"csid":podata["csid"]
-				}
-			print po
+				}			
 			return {"gkstatus":enumdict["Success"],"gkresult":po}
 			self.con.close()
 
