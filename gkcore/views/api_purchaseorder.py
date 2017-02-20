@@ -173,13 +173,9 @@ class api_purchaseorder(object):
 				"taxrate":"%.2f"%float(podata["taxrate"]),
 				"psflag":podata["psflag"],
 				"csid":podata["csid"]
-				}			
+				}
 			return {"gkstatus":enumdict["Success"],"gkresult":po}
 			self.con.close()
-
-
-
-
 
 
 	@view_config(request_method='PUT',renderer='json')
