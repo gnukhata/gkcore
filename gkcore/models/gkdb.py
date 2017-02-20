@@ -499,3 +499,14 @@ tax = Table('tax',metadata,
 	Index("taxindex","productcode","taxname"),
 	Index("tax_taxindex","categorycode","taxname")
 	)
+
+"""Table to store Log of users
+This table will store all the activities made by different users. eg. created account at this time, deleted account, created voucher, etc."""
+log = Table('log',metadata,
+	Column('logid',Integer,primary_key=True),
+    Column('time',DateTime),
+	Column('activity',UnicodeText),
+	Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
+	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	Index("logindex","userid","activity")
+	)
