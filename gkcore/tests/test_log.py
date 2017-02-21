@@ -65,12 +65,14 @@ class TestLog:
 		gkdata={"logid":self.logid}
 		result = requests.delete("http://127.0.0.1:6543/log",data =json.dumps(gkdata), headers=self.header)
 		assert result.json()["gkstatus"]==0
+
 	''' No need to update log, as it is log it cannot be updated
 	def test_update_log(self):
 		gkdata = {"logid":self.demologid,"time":"20-02-2016","activity":"deleted account SBI", "orgcode": "1", "userid":"1"}
 		result = requests.put("http://127.0.0.1:6543/log", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"]==0
 	'''
+
 	def test_get_single_log(self):
 		result = requests.get("http://127.0.0.1:6543/log?qty=single&logid=%s"%(self.demologid), headers=self.header)
 		assert result.json()["gkresult"]["activity"]=="Bank Of India account added"
