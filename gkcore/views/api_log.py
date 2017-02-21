@@ -140,6 +140,28 @@ class api_log(object):
 			finally:
 				self.con.close()
 
+	@view_config(request_param='type=byuser', request_method='GET',renderer='json')
+	def getLogbyUser(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"])))
+				logdata = []
+				for row in result:
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":logdata }
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteLog(self):
 		try:
