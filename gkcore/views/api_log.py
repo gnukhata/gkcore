@@ -91,3 +91,27 @@ class api_log(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_method='GET', renderer ='json')
+	def getFullLog(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([log]).where(log.c.orgcode==authDetails["orgcode"]).order_by(log.c.time))
+				logdata = []
+				for row in result:
+					username = self.con.execute(select([users.c.username]).where(users.c.userid==row["userid"]))
+					username = username.fetchone()
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":logdata }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
