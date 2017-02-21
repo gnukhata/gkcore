@@ -109,7 +109,7 @@ class api_log(object):
 				for row in result:
 					username = self.con.execute(select([users.c.username]).where(users.c.userid==row["userid"]))
 					username = username.fetchone()
-					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]})
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":logdata }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -132,7 +132,7 @@ class api_log(object):
 				row = result.fetchone()
 				username = self.con.execute(select([users.c.username]).where(users.c.userid==row["userid"]))
 				username = username.fetchone()
-				logdata = {"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]}
+				logdata = {"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]}
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":logdata}
 			except:
@@ -155,7 +155,7 @@ class api_log(object):
 				result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"])))
 				logdata = []
 				for row in result:
-					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":logdata }
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
