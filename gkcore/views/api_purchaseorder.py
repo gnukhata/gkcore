@@ -160,7 +160,7 @@ class api_purchaseorder(object):
 			schedule = podata["schedule"]
 			details={}
 			for key in schedule:
-				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"]}
+				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"]}
 			po = {
 				"orderno":podata["orderno"],
 				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
@@ -170,7 +170,6 @@ class api_purchaseorder(object):
 				"designation":podata["designation"],
 				"schedule":details,
 				"taxstate":podata["taxstate"],
-				"taxrate":"%.2f"%float(podata["taxrate"]),
 				"psflag":podata["psflag"],
 				"csid":podata["csid"]
 				}
