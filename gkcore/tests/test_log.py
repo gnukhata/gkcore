@@ -74,3 +74,7 @@ class TestLog:
 	def test_get_single_log(self):
 		result = requests.get("http://127.0.0.1:6543/log?qty=single&logid=%s"%(self.demologid), headers=self.header)
 		assert result.json()["gkresult"]["activity"]=="Bank Of India account added"
+
+	def test_get_all_logs(self):
+		result = requests.get("http://127.0.0.1:6543/log", headers=self.header)
+		assert result.json()["gkstatus"]==0
