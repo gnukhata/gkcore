@@ -53,3 +53,21 @@ class TestLog:
 		gkdata = {"activity":"Bank Of India account deleted"}
 		result = requests.post("http://127.0.0.1:6543/log", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"]==0
+
+	def test_delete_log(self):
+		gkdata = {"activity":"Bank Of India account added"}
+		result = requests.post("http://127.0.0.1:6543/log", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/log", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["activity"] == "Bank Of India account added":
+				self.logid = record["logid"]
+				break
+		gkdata={"logid":self.logid}
+		result = requests.delete("http://127.0.0.1:6543/log",data =json.dumps(gkdata), headers=self.header)
+		assert result.json()["gkstatus"]==0
+	''' No need to update log, as it is log it cannot be updated
+	def test_update_log(self):
+		gkdata = {"logid":self.demologid,"time":"20-02-2016","activity":"deleted account SBI", "orgcode": "1", "userid":"1"}
+		result = requests.put("http://127.0.0.1:6543/log", data =json.dumps(gkdata),headers=self.header)
+		assert result.json()["gkstatus"]==0
+	'''
