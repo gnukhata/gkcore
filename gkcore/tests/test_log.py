@@ -78,3 +78,8 @@ class TestLog:
 	def test_get_all_logs(self):
 		result = requests.get("http://127.0.0.1:6543/log", headers=self.header)
 		assert result.json()["gkstatus"]==0
+
+	def test_get_log_byuser(self):
+		result = requests.get("http://127.0.0.1:6543/user", headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/log?type=byuser&userid=%s"%(result.json()["gkresult"]["userid"]), headers=self.header)
+		assert result.json()["gkstatus"] == 0
