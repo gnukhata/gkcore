@@ -98,12 +98,10 @@ class api_purchaseorder(object):
 				result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
 				allposo = []
 				for row in result:
-
-
 					custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
 					custrow = custdata.fetchone()
 					allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"creditperiod": custrow["creditperiod"],"payterms": row["payterms"],"modeoftransport":row["modeoftransport"],"designation":["designation"],
-										"schedule":row["schedule"],"taxstate":row["taxstate"],"taxrate":row["taxrate"],"psflag":row["psflag"]})
+										"schedule":row["schedule"],"taxstate":row["taxstate"],"psflag":row["psflag"]})
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":allposo}
 			except:
@@ -159,8 +157,9 @@ class api_purchaseorder(object):
 			podata = result.fetchone()
 			schedule = podata["schedule"]
 			details={}
+			staggered={}
 			for key in schedule:
-				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"]}
+				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"],"reorderlimit":schedule[key]["reorderlimit"],"staggered":schedule[key]["staggered"]}
 			po = {
 				"orderno":podata["orderno"],
 				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),

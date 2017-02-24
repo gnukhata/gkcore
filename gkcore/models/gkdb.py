@@ -406,6 +406,10 @@ table for purchase order.
 This may or may not link to a certain invoice.
 However if it is linked then we will have to compare the items with those in invoice.
 psflag will be either 16 or 20 for purchase order and sales order respectively.
+
+Here schedule json field will be having all the product details in format,
+product code is key and value will be dictionary having product name, quantity, price per unit, number of packages, reorder limit, tax rate,
+and  dictionary for saving staggered delivery details whose key will be date and value will be quantity.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderid',Integer, primary_key=True),
@@ -417,7 +421,6 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('designation', UnicodeText),
 	Column('schedule',JSONB),
     Column('taxstate',UnicodeText),
-    Column('taxrate',Numeric(5,2)),
 	Column('psflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
