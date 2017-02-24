@@ -156,8 +156,7 @@ class api_purchaseorder(object):
 			result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid==self.request.params["orderid"]))
 			podata = result.fetchone()
 			schedule = podata["schedule"]
-			details={}
-			staggered={}
+			details={}			
 			for key in schedule:
 				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"],"reorderlimit":schedule[key]["reorderlimit"],"staggered":schedule[key]["staggered"]}
 			po = {
