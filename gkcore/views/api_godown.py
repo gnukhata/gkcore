@@ -168,7 +168,7 @@ class api_godown(object):
                 self.con.close()
 
     @view_config(request_method='GET', request_param='type=lastfivegodown', renderer ='json')
-    def getAllGodowns(self):
+    def lastfivegodata(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -179,7 +179,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goid.desc()).limit(2))
+                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goid.desc()).limit(5))
                 godowns = []
                 srno=1
                 for row in result:
