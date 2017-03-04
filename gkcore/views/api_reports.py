@@ -25,12 +25,13 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
 "Prajkta Patkar" <prajkta.patkar007@gmail.com>
+"Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
