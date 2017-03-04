@@ -2345,7 +2345,7 @@ class api_reports(object):
 				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
 				calbalData = calculateBalance(self.con,accountCode, financialStart, financialStart, calculateTo)
-				currentBalance=calbalData["curbal"]
+				currentBalance="%.2f"%float(calbalData["curbal"])
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":currentBalance}
 			except:
