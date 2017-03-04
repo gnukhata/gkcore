@@ -2341,14 +2341,11 @@ class api_reports(object):
 		else:
 			try:
 				self.con = eng.connect()
-				accountName = self.request.params["Accountname"]
-				financialStart = self.request.params["financialstart"]							
+				accountCode=self.request.params["accountcode"]
+				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
-				accountData = self.con.execute("select accountcode from accounts where orgcode=%d and accountname=%s"%(authDetails["orgcode"],accountName))
-				accountRow = accountData.fetchone()
-				calbalData = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+				calbalData = calculateBalance(self.con,accountCode, financialStart, financialStart, calculateTo)
 				currentBalance=calbalData["curbal"]
-						 
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":currentBalance}
 			except:
