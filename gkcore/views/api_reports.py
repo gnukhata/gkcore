@@ -6,7 +6,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   GNUKhata is Free Software; you can redistribute it and/or modify
   it under the terms of the GNU Affero General Public License as
   published by the Free Software Foundation; either version 3 of
-  the License, or (at your option) any later version.and old.stockflag = 's'
+  the License, or (at your option) any later version.
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,12 +25,13 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
 "Prajkta Patkar" <prajkta.patkar007@gmail.com>
+"Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -2351,3 +2352,49 @@ class api_reports(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='type=logbyorg', renderer='json')
+	def logByOrg(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
+				logdata = []
+				for row in result:
+					username = self.con.execute(select([users.c.username]).where(users.c.userid==row["userid"]))
+					username = username.fetchone()
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]})
+				return {"gkstatus":enumdict["Success"], "gkresult":logdata }
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_param='type=logbyuser', renderer='json')
+	def logByUser(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])))
+				logdata = []
+				for row in result:
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"]})
+				return {"gkstatus": enumdict["Success"], "gkresult":logdata }
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()

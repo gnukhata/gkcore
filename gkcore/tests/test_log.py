@@ -85,3 +85,15 @@ class TestLog:
 		result = requests.get("http://127.0.0.1:6543/user", headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/log?type=byuser&userid=%s"%(result.json()["gkresult"]["userid"]), headers=self.header)
 		assert result.json()["gkstatus"] == 0
+
+	''' while testing and checking output of following two methods please specify current date and tomorrow's date in calculatefrom and calculateto respectively'''
+	def test_get_orgLogReport(self):
+		result = requests.get("http://127.0.0.1:6543/report?type=logbyorg&calculatefrom=2017-03-04&calculateto=2017-03-05", headers=self.header)
+		#print result.json()["gkresult"]
+		assert result.json()["gkstatus"]==0
+
+	def test_get_log_Reportbyuser(self):
+		result = requests.get("http://127.0.0.1:6543/user", headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/report?type=logbyuser&userid=%s&calculatefrom=2017-03-04&calculateto=2017-03-05"%(result.json()["gkresult"]["userid"]), headers=self.header)
+		#print result.json()["gkresult"]
+		assert result.json()["gkstatus"] == 0
