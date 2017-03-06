@@ -2331,7 +2331,7 @@ class api_reports(object):
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(request_param="type=stockOnHandreport",renderer="json")
+	@view_config(request_param="type=stockonhandreport",renderer="json")
 	def stockOnHandReport(self):
 		"""
 		Purpose:
