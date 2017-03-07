@@ -2367,7 +2367,6 @@ class api_reports(object):
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				productCode = self.request.params["productcode"]
-#				startDate =datetime.strptime(str(self.request.params["startdate"]),"%Y-%m-%d")
 				endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
 				print endDate
 				stockReport = []
@@ -2378,34 +2377,6 @@ class api_reports(object):
 				openingStock = osRow["openingstock"]
 				stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
 				stockData = stockRecords.fetchall()
-				ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
-				ysRow = ysData.fetchone()
-				yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
-			#	enData = self.con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode) )
-			#	enRow = enData.fetchone()
-			#	yearend = datetime.strptime(str(enRow["yearend"]),"%Y-%m-%d")
-				"""
-				if startDate > yearStart:
-					for stockRow in stockData:
-						if stockRow["dcinvtnflag"] == 3 or  stockRow["dcinvtnflag"] ==  9:
-							countresult = self.con.execute(select([func.count(invoice.c.invid).label('inv')]).where(and_(invoice.c.invoicedate >= yearStart, invoice.c.invoicedate < startDate, invoice.c.invid == stockRow["dcinvtnid"])))
-							countrow = countresult.fetchone()
-							if countrow["inv"] == 1:
-								if  stockRow["inout"] == 9:
-									openingStock = float(openingStock) + float(stockRow["qty"])
-								if  stockRow["inout"] == 15:
-									openingStock = float(openingStock) - float(stockRow["qty"])
-						if stockRow["dcinvtnflag"] == 4:
-							countresult = self.con.execute(select([func.count(delchal.c.dcid).label('dc')]).where(and_(delchal.c.dcdate >= yearStart, delchal.c.dcdate < startDate, delchal.c.dcid == stockRow["dcinvtnid"])))
-							countrow = countresult.fetchone()
-							if countrow["dc"] == 1:
-								if  stockRow["inout"] == 9:
-									openingStock = float(openingStock) + float(stockRow["qty"])
-								if  stockRow["inout"] == 15:
-									openingStock = float(openingStock) - float(stockRow["qty"])
-				"""					
-#				stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"","invid":"","invno":"","inward":"%.2f"%float(openingStock)})
-				totalinward = totalinward + float(openingStock)
 				for finalRow in stockData:
 					if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
 						countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
@@ -2420,11 +2391,9 @@ class api_reports(object):
 							if  finalRow["inout"] == 9:
 								openingStock = float(openingStock) + float(finalRow["qty"])
 								totalinward = float(totalinward) + float(finalRow["qty"])
-							#	stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"","invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
 							if  finalRow["inout"] == 15:
 								openingStock = float(openingStock) - float(finalRow["qty"])
 								totaloutward = float(totaloutward) + float(finalRow["qty"])
-					#			stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"","invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 					if finalRow["dcinvtnflag"] == 4:
 						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 						if countresult.rowcount == 1:
@@ -2446,16 +2415,10 @@ class api_reports(object):
 							if  finalRow["inout"] == 9:
 								openingStock = float(openingStock) + float(finalRow["qty"])
 								totalinward = float(totalinward) + float(finalRow["qty"])
-
-					#			stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"],"invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
 							if  finalRow["inout"] == 15:
 								openingStock = float(openingStock) - float(finalRow["qty"])
 								totaloutward = float(totaloutward) + float(finalRow["qty"])
-
-							#	stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"],"invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
-
 				stockReport.append({"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
-
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
