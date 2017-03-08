@@ -2363,7 +2363,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				productCode = self.request.params["productcode"]
@@ -2421,8 +2421,9 @@ class api_reports(object):
 								if  finalRow["inout"] == 15:
 									openingStock = float(openingStock) - float(finalRow["qty"])
 									totaloutward = float(totaloutward) + float(finalRow["qty"])
-					stockReport.append({productname:prodName,"balance":"%.2f"%float(openingStock)})
-
+					stockReport.append({"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+					self.con.close()
+					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 				if productCode == "all":
 					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(product.c.orgcode == orgcode))
 					prodDesc =  products.fetchall()
@@ -2481,9 +2482,9 @@ class api_reports(object):
 					
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+#			except:
+#				self.con.close()
+#				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 	
 	@view_config(request_param='type=closingbalance', renderer='json')
