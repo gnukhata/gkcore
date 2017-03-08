@@ -2731,13 +2731,27 @@ class api_reports(object):
 				inputdate = dataset["inputdate"]
 				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				dc_unbilled = []
-				dcResult = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
+				dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
 				dcResult = dcResult.fetchall()
 				temp_dict = {}
+				srno = 1
 				for row in dcResult:
-					temp_dict = {"dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]}
-					if row["dcdate"].year <= inputdate.year and row["dcdate"].month <= inputdate.month and row["dcdate"].day <= inputdate.day:
+					if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
+						print "row[dcdate]:"
+						print row["dcdate"]
+						print "inputdate: In gkcore"
+						print inputdate
+						temp_dict = {"srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]}
+						if temp_dict["dcflag"] == 1:
+							temp_dict["dcflag"] = "Approval"
+						elif temp_dict["dcflag"] == 3:
+							temp_dict["dcflag"] = "Consignment"
+						elif temp_dict["dcflag"] == 4:
+							temp_dict["dcflag"] = "Sale"
+						elif temp_dict["dcflag"] == 19:
+							temp_dict["dcflag"] = "Sample"
 						dc_unbilled.append(temp_dict)
+						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except:
