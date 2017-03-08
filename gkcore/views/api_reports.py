@@ -2374,9 +2374,13 @@ class api_reports(object):
 						userrole = "Admin"
 					elif rowuser["userrole"] == 0:
 						userrole = "Manager"
-					else:
+					elif rowuser["userrole"] == 1:
 						userrole = "Operator"
-					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
+					elif rowuser["userrole"] == 2:
+						userrole = "Internal Auditor"
+					else:
+						userrole = "Godown Keeper"
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
 				return {"gkstatus":enumdict["Success"], "gkresult":logdata }
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
@@ -2398,7 +2402,7 @@ class api_reports(object):
 				result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])))
 				logdata = []
 				for row in result:
-					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"]})
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
 				return {"gkstatus": enumdict["Success"], "gkresult":logdata }
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
