@@ -2368,9 +2368,15 @@ class api_reports(object):
 				result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
 				logdata = []
 				for row in result:
-					username = self.con.execute(select([users.c.username]).where(users.c.userid==row["userid"]))
-					username = username.fetchone()
-					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": username["username"]})
+					userdata = self.con.execute(select([users.c.username, users.c.userrole]).where(users.c.userid==row["userid"]))
+					rowuser = userdata.fetchone()
+					if rowuser["userrole"] == -1:
+						userrole = "Admin"
+					elif rowuser["userrole"] == 0:
+						userrole = "Manager"
+					else:
+						userrole = "Operator"
+					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y %H:%M:%S'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
 				return {"gkstatus":enumdict["Success"], "gkresult":logdata }
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
