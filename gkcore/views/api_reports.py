@@ -2372,53 +2372,113 @@ class api_reports(object):
 				stockReport = []
 				totalinward = 0.00
 				totaloutward = 0.00
-				openingStockResult = self.con.execute(select([product.c.openingstock]).where(and_(product.c.productcode == productCode, product.c.orgcode == orgcode)))
-				osRow =openingStockResult.fetchone()
-				openingStock = osRow["openingstock"]
-				stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
-				stockData = stockRecords.fetchall()
-				for finalRow in stockData:
-					if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
-						countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
-						if countresult.rowcount == 1:
-							countrow = countresult.fetchone()
-							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
-							custrow = custdata.fetchone()
-							if custrow!=None:
-								custnamedata = custrow["custname"]
-							else:
-								custnamedata = "Cash Memo"
-							if  finalRow["inout"] == 9:
-								openingStock = float(openingStock) + float(finalRow["qty"])
-								totalinward = float(totalinward) + float(finalRow["qty"])
-							if  finalRow["inout"] == 15:
-								openingStock = float(openingStock) - float(finalRow["qty"])
-								totaloutward = float(totaloutward) + float(finalRow["qty"])
-					if finalRow["dcinvtnflag"] == 4:
-						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
-						if countresult.rowcount == 1:
-							countrow = countresult.fetchone()
-							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
-							custrow = custdata.fetchone()
-							dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
-							if dcinvresult.rowcount == 1:
-								dcinvrow = dcinvresult.fetchone()
-								invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
-								""" No need to check if invresult has rowcount 1 since it must be 1 """
-								invrow = invresult.fetchone()
-								trntype = "delchal&invoice"
-							else:
-								dcinvrow = {"invid": ""}
-								invrow = {"invoiceno": ""}
-								trntype = "delchal"
+				if productCode != "all":
+					openingStockResult = self.con.execute(select([product.c.openingstock,product.c.productdesc]).where(and_(product.c.productcode == productCode, product.c.orgcode == orgcode)))
+					osRow =openingStockResult.fetchone()
+					openingStock = osRow["openingstock"]
+					prodName = osRow["productdesc"]
+					print prodName
+					stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
+					stockData = stockRecords.fetchall()
+					for finalRow in stockData:
+						if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
+							countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
+							if countresult.rowcount == 1:
+								countrow = countresult.fetchone()
+								custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+								custrow = custdata.fetchone()
+								if custrow!=None:
+									custnamedata = custrow["custname"]
+								else:
+									custnamedata = "Cash Memo"
+								if  finalRow["inout"] == 9:
+									openingStock = float(openingStock) + float(finalRow["qty"])
+									totalinward = float(totalinward) + float(finalRow["qty"])
+								if  finalRow["inout"] == 15:
+									openingStock = float(openingStock) - float(finalRow["qty"])
+									totaloutward = float(totaloutward) + float(finalRow["qty"])
+						if finalRow["dcinvtnflag"] == 4:
+							countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+							if countresult.rowcount == 1:
+								countrow = countresult.fetchone()
+								custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+								custrow = custdata.fetchone()
+								dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+								if dcinvresult.rowcount == 1:
+									dcinvrow = dcinvresult.fetchone()
+									invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+									""" No need to check if invresult has rowcount 1 since it must be 1 """
+									invrow = invresult.fetchone()
+									trntype = "delchal&invoice"
+								else:
+									dcinvrow = {"invid": ""}
+									invrow = {"invoiceno": ""}
+									trntype = "delchal"
+	
+								if  finalRow["inout"] == 9:
+									openingStock = float(openingStock) + float(finalRow["qty"])
+									totalinward = float(totalinward) + float(finalRow["qty"])
+								if  finalRow["inout"] == 15:
+									openingStock = float(openingStock) - float(finalRow["qty"])
+									totaloutward = float(totaloutward) + float(finalRow["qty"])
+					stockReport.append({productname:prodName,"balance":"%.2f"%float(openingStock)})
 
-							if  finalRow["inout"] == 9:
-								openingStock = float(openingStock) + float(finalRow["qty"])
-								totalinward = float(totalinward) + float(finalRow["qty"])
-							if  finalRow["inout"] == 15:
-								openingStock = float(openingStock) - float(finalRow["qty"])
-								totaloutward = float(totaloutward) + float(finalRow["qty"])
-				stockReport.append({"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+				if productCode == "all":
+					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(product.c.orgcode == orgcode))
+					prodDesc =  products.fetchall()
+					print prodDesc
+					for row in prodDesc:
+						openingStock = row["openingstock"]
+						
+						productCd = row["productcode"]
+						
+						prodName = row["productdesc"]
+						print prodName , productCd , openingStock
+						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCd,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
+						stockData = stockRecords.fetchall()
+						for finalRow in stockData:
+							if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
+								countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
+								if countresult.rowcount == 1:
+									countrow = countresult.fetchone()
+									custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+									custrow = custdata.fetchone()
+									if custrow!=None:
+										custnamedata = custrow["custname"]
+									else:
+										custnamedata = "Cash Memo"
+									if  finalRow["inout"] == 9:
+										openingStock = float(openingStock) + float(finalRow["qty"])
+										totalinward = float(totalinward) + float(finalRow["qty"])
+									if  finalRow["inout"] == 15:
+										openingStock = float(openingStock) - float(finalRow["qty"])
+										totaloutward = float(totaloutward) + float(finalRow["qty"])
+							if finalRow["dcinvtnflag"] == 4:
+								countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+								if countresult.rowcount == 1:
+									countrow = countresult.fetchone()
+									custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+									custrow = custdata.fetchone()
+									dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+									if dcinvresult.rowcount == 1:
+										dcinvrow = dcinvresult.fetchone()
+										invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+										""" No need to check if invresult has rowcount 1 since it must be 1 """
+										invrow = invresult.fetchone()
+										trntype = "delchal&invoice"
+									else:
+										dcinvrow = {"invid": ""}
+										invrow = {"invoiceno": ""}
+										trntype = "delchal"
+		
+									if  finalRow["inout"] == 9:
+										openingStock = float(openingStock) + float(finalRow["qty"])
+										totalinward = float(totalinward) + float(finalRow["qty"])
+									if  finalRow["inout"] == 15:
+										openingStock = float(openingStock) - float(finalRow["qty"])
+										totaloutward = float(totaloutward) + float(finalRow["qty"])
+						stockReport.append({"productname":prodName,"balance":"%.2f"%float(openingStock)})
+					
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
