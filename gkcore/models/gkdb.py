@@ -355,7 +355,7 @@ stock = Table('stock',metadata,
 """ table to store users for an organization.
 Table for storing users for a particular organisation.
 So orgcode is foreign key like other tables.
-In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 """
+In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 internal auditor:2 godown keeper:3"""
 users=Table('users', metadata,
 	Column('userid',Integer, primary_key=True),
 	Column('username',Text, nullable=False),
