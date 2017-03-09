@@ -2524,7 +2524,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				print "Hii"
@@ -2605,13 +2605,11 @@ class api_reports(object):
 	
 					stockReport.append({"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
-#					self.con.close()
+					self.con.close()
 				print "hello"
 				if self.request.params["type"] == "pag":
-					
-					print "single product all godowns"
 					productCode = self.request.params["productcode"]
-#						godownCode = self.request.params["goid"]
+					godownCode = self.request.params["goid"]
 					products = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productCode,product.c.orgcode == orgcode)))
 					prodDesc =  products.fetchone()
 					goopeningStockResult = self.con.execute(select([goprod.c.goopeningstock,goprod.c.goid]).where(and_(goprod.c.productcode == productCode, goprod.c.orgcode == orgcode)))
@@ -2627,12 +2625,8 @@ class api_reports(object):
 							gopeningStock = 0.00
 						godowns = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid == row["goid"],godown.c.orgcode == orgcode)))
 						goName =  str(godowns.fetchone())
-						print goName
 						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.goid == row["goid"],stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))).order_by(stock.c.stockdate))
 						stockData = stockRecords.fetchall()
-#							ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
-#							ysRow = ysData.fetchone()
-#							yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
 						totalinward = totalinward + float(gopeningStock)
 						for finalRow in stockData:
 							if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
@@ -2693,10 +2687,9 @@ class api_reports(object):
 						
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 					self.con.close()
-				
-#			except:
-#				self.con.close()
-#				return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 	
