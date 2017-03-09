@@ -64,7 +64,7 @@ class api_delchal(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				delchaldata = dataset["delchaldata"]
@@ -74,6 +74,7 @@ class api_delchal(object):
 				if delchaldata["dcflag"]==19:
 					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
+				print delchaldata
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
@@ -86,6 +87,7 @@ class api_delchal(object):
 							stockdata["productcode"] = key
 							stockdata["qty"] = items[key]
 							result = self.con.execute(stock.insert(),[stockdata])
+							print stockdata
 					except:
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
 						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
@@ -93,12 +95,12 @@ class api_delchal(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }#
-#			except exc.IntegrityError:
-#				return {"gkstatus":enumdict["DuplicateEntry"]}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			finally:
-#				self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
 	def editdelchal(self):
