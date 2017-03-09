@@ -2527,7 +2527,6 @@ class api_reports(object):
 			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
-				print "Hii"
 				endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
 				stockReport = []
 				totalinward = 0.00
@@ -2606,7 +2605,7 @@ class api_reports(object):
 					stockReport.append({"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 					self.con.close()
-				print "hello"
+				
 				if self.request.params["type"] == "pag":
 					productCode = self.request.params["productcode"]
 					godownCode = self.request.params["goid"]
@@ -2614,7 +2613,6 @@ class api_reports(object):
 					prodDesc =  products.fetchone()
 					goopeningStockResult = self.con.execute(select([goprod.c.goopeningstock,goprod.c.goid]).where(and_(goprod.c.productcode == productCode, goprod.c.orgcode == orgcode)))
 					gosRow =goopeningStockResult.fetchall()
-					print gosRow
 					for row in gosRow:
 						totalinward = 0.00
 						totaloutward = 0.00
