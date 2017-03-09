@@ -2367,7 +2367,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				productCode = self.request.params["productcode"]
@@ -2485,9 +2485,9 @@ class api_reports(object):
 					
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
-#			except:
-#				self.con.close()
-#				return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 	@view_config(request_param='type=closingbalance', renderer='json')
