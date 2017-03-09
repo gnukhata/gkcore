@@ -64,7 +64,7 @@ class api_delchal(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				delchaldata = dataset["delchaldata"]
@@ -75,10 +75,11 @@ class api_delchal(object):
 					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
 				if result.rowcount==1:
-					dciddata = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
+					dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
 					stockdata["dcinvtnid"] = dcidrow["dcid"]
 					stockdata["dcinvtnflag"] = 4
+					stockdata["stockdate"] = dcidrow["dcdate"]
 					items = stockdata.pop("items")
 					try:
 						for key in items.keys():
@@ -91,13 +92,13 @@ class api_delchal(object):
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }#
+#			except exc.IntegrityError:
+#				return {"gkstatus":enumdict["DuplicateEntry"]}
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#			finally:
+#				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
 	def editdelchal(self):
@@ -117,6 +118,7 @@ class api_delchal(object):
 				delchaldata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
 				stockdata["dcinvtnid"] = delchaldata["dcid"]
+				stockdata["stockdate"] = dcidrow["dcdate"]
 				stockdata["dcinvtnflag"] = 4
 				result = self.con.execute(delchal.update().where(delchal.c.dcid==delchaldata["dcid"]).values(delchaldata))
 				if result.rowcount==1:

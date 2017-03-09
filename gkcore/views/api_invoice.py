@@ -82,19 +82,21 @@ class api_invoice(object):
 				else:
 					try:
 						if invdataset.has_key('icflag'):
-							result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
+							result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
 							invoiceid = result.fetchone()
 							stockdataset["dcinvtnid"] = invoiceid["invid"]
 							for item in items.keys():
 								stockdataset["productcode"] = item
 								stockdataset["qty"] = items[item].values()[0]
 								stockdataset["dcinvtnflag"] = "3"
+								stockdataset["stockdate"] = invoiceid["invoicedate"]
 								result = self.con.execute(stock.insert(),[stockdataset])
 							return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
 						else:
-							result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
+							result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
 							invoiceid = result.fetchone()
 							stockdataset["dcinvtnid"] = invoiceid["invid"]
+							stockdataset["stockdate"] = invoiceid["invoicedate"]
 							for item in items.keys():
 								stockdataset["productcode"] = item
 								stockdataset["qty"] = items[item].values()[0]
@@ -148,9 +150,10 @@ class api_invoice(object):
 				else:
 					try:
 						result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-						result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
+						result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
 						invoiceid = result.fetchone()
 						stockdataset["dcinvtnid"] = invoiceid["invid"]
+						stockdataset["stockdate"] = invoiceid["invoicedate"]
 						for item in items.keys():
 							stockdataset["productcode"] = item
 							stockdataset["qty"] = items[item].values()[0]

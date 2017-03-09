@@ -340,6 +340,7 @@ The inout field is self explainatory.
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
+    Column('stockdate',DateTime),
 	Column('qty',Numeric(13,2),nullable=False),
 	Column('dcinvtnid', Integer,nullable=False),
 	Column('dcinvtnflag',Integer,nullable=False),
