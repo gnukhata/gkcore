@@ -2126,7 +2126,7 @@ class api_reports(object):
 						countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate >= startDate, invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
 						if countresult.rowcount == 1:
 							countrow = countresult.fetchone()
-							print countrow
+							
 							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
 							custrow = custdata.fetchone()
 							if custrow!=None:
@@ -2141,12 +2141,12 @@ class api_reports(object):
 								openingStock = float(openingStock) - float(finalRow["qty"])
 								totaloutward = float(totaloutward) + float(finalRow["qty"])
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"","invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
-								print stockReport
+								
 					if finalRow["dcinvtnflag"] == 4:
 						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate >= startDate, delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 						if countresult.rowcount == 1:
 							countrow = countresult.fetchone()
-							print countrow
+							
 							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
 							custrow = custdata.fetchone()
 							dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
@@ -2333,8 +2333,163 @@ class api_reports(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
 	
+
+	@view_config(request_param="stockonhandreport",renderer="json")
+	def stockOnHandReport(self):
+		"""
+		Purpose:
+		Return the structured data grid of stock report for given product.
+		Input will be productcode,startdate,enddate.
+		orgcode will be taken from header and startdate and enddate of fianancial year taken from organisation table .
+		returns a list of dictionaries where every dictionary will be one row.
+		description:
+		This function returns the complete stock report,
+		including opening stock every inward and outward quantity and running balance for every transaction along with transaction type.
+		at the end we get total inward and outward quantity.
+		This report will be on the basis of productcode, startdate and enddate given from the client.
+		The orgcode is taken from the header.
+		The report will query database to get all in and out records for the given product where the dcinvtn flag is not 20.
+		For every iteration of this list with a for loop we will find out the date of transaction from the delchal or invoice table depending on the flag being 4 or 9.
+		Cash memo is in the invoice table so even 3 will qualify.
+		Then we wil find the customer or supplyer name on the basis of given data.
+		Note that if the startdate is same as the yearstart of the organisation then opening stock can be directly taken from the product table.
+		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance.
+		The row will be represented in this grid with every key denoting a column.
+		The columns (keys) will be,
+		date,particulars,invoice/dcno, transaction type (invoice /delchal),inward quantity,outward quantity ,total inward quantity , total outwrd quanity and balance.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+#			try:
+				self.con = eng.connect()
+				orgcode = authDetails["orgcode"]
+				productCode = self.request.params["productcode"]
+				endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
+				
+				stockReport = []
+				totalinward = 0.00
+				totaloutward = 0.00
+				if productCode != "all":
+					openingStockResult = self.con.execute(select([product.c.openingstock,product.c.productdesc]).where(and_(product.c.productcode == productCode, product.c.orgcode == orgcode)))
+					osRow =openingStockResult.fetchone()
+					openingStock = osRow["openingstock"]
+					prodName = osRow["productdesc"]
+					stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))).order_by(stock.c.stockdate))
+					stockData = stockRecords.fetchall()
+					totalinward = totalinward + float(openingStock)
+					for finalRow in stockData:
+						if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
+							countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
+							if countresult.rowcount == 1:
+								countrow = countresult.fetchone()
+								custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+								custrow = custdata.fetchone()
+								if custrow!=None:
+									custnamedata = custrow["custname"]
+								else:
+									custnamedata = "Cash Memo"
+								if  finalRow["inout"] == 9:
+									openingStock = float(openingStock) + float(finalRow["qty"])
+									totalinward = float(totalinward) + float(finalRow["qty"])
+								if  finalRow["inout"] == 15:
+									openingStock = float(openingStock) - float(finalRow["qty"])
+									totaloutward = float(totaloutward) + float(finalRow["qty"])
+						if finalRow["dcinvtnflag"] == 4:
+							countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+							if countresult.rowcount == 1:
+								countrow = countresult.fetchone()
+								custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+								custrow = custdata.fetchone()
+								dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+								if dcinvresult.rowcount == 1:
+									dcinvrow = dcinvresult.fetchone()
+									invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+									""" No need to check if invresult has rowcount 1 since it must be 1 """
+									invrow = invresult.fetchone()
+									trntype = "delchal&invoice"
+								else:
+									dcinvrow = {"invid": ""}
+									invrow = {"invoiceno": ""}
+									trntype = "delchal"
+								if  finalRow["inout"] == 9:
+									openingStock = float(openingStock) + float(finalRow["qty"])
+									totalinward = float(totalinward) + float(finalRow["qty"])
+								if  finalRow["inout"] == 15:
+									openingStock = float(openingStock) - float(finalRow["qty"])
+									totaloutward = float(totaloutward) + float(finalRow["qty"])
+					stockReport.append({"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+					self.con.close()
+					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				if productCode == "all":
+					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(product.c.orgcode == orgcode))
+					prodDesc =  products.fetchall()
+					for row in prodDesc:
+						totalinward = 0.00
+						totaloutward = 0.00
+						openingStock = row["openingstock"]
+						productCd = row["productcode"]
+						prodName = row["productdesc"]
+						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCd,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
+						stockData = stockRecords.fetchall()
+						totalinward = totalinward + float(openingStock)
+						for finalRow in stockData:
+							if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
+								countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
+								if countresult.rowcount == 1:
+									countrow = countresult.fetchone()
+									custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+									custrow = custdata.fetchone()
+									if custrow!=None:
+										custnamedata = custrow["custname"]
+									else:
+										custnamedata = "Cash Memo"
+									if  finalRow["inout"] == 9:
+										openingStock = float(openingStock) + float(finalRow["qty"])
+										totalinward = float(totalinward) + float(finalRow["qty"])
+									if  finalRow["inout"] == 15:
+										openingStock = float(openingStock) - float(finalRow["qty"])
+										totaloutward = float(totaloutward) + float(finalRow["qty"])
+										
+							if finalRow["dcinvtnflag"] == 4:
+								countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+								if countresult.rowcount == 1:
+									countrow = countresult.fetchone()
+									custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+									custrow = custdata.fetchone()
+									dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+									if dcinvresult.rowcount == 1:
+										dcinvrow = dcinvresult.fetchone()
+										invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+										""" No need to check if invresult has rowcount 1 since it must be 1 """
+										invrow = invresult.fetchone()
+										trntype = "delchal&invoice"
+									else:
+										dcinvrow = {"invid": ""}
+										invrow = {"invoiceno": ""}
+										trntype = "delchal"
+									if  finalRow["inout"] == 9:
+										openingStock = float(openingStock) + float(finalRow["qty"])
+										totalinward = float(totalinward) + float(finalRow["qty"])
+									if  finalRow["inout"] == 15:
+										openingStock = float(openingStock) - float(finalRow["qty"])
+										totaloutward = float(totaloutward) + float(finalRow["qty"])
+			
+						stockReport.append({"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+					
+				self.con.close()
+				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+#			except:
+#				self.con.close()
+#				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
 	@view_config(request_param='type=closingbalance', renderer='json')
 	def closingBalance(self):
 		try:
