@@ -67,7 +67,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				transferdata = dataset["transferdata"]
@@ -97,12 +97,12 @@ class api_transfernote(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			except exc.IntegrityError:
-#				return {"gkstatus":enumdict["DuplicateEntry"]}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			finally:
-#				self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
@@ -249,13 +249,13 @@ class api_transfernote(object):
 				transferdata = self.request.json_body
 				stockdata = {}
 				stockdata["orgcode"] = authDetails["orgcode"]
-				result = self.con.execute(select([transfernote.c.togodown,transfernote.c.recieved,transfernote.c.togodown,transfernote.c.transfernotedate]).where(transfernote.c.transfernoteid==transferdata["transfernoteid"]))
+				result = self.con.execute(select([transfernote.c.togodown,transfernote.c.recieved,transfernote.c.togodown]).where(transfernote.c.transfernoteid==transferdata["transfernoteid"]))
 				row = result.fetchone()
 				if row["recieved"]:
 					return {"gkstatus":enumdict["ActionDisallowed"]}
 				else:
 					stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-					stockdata["dcinvtnid"] = transferdata["transfernotdate"]
+					stockdata["stockdate"] = transferdata["recieveddate"]
 					stockdata["dcinvtnflag"] = 20
 					stockdata["inout"]=9	
 					stockdata["goid"]=row["togodown"]
@@ -264,6 +264,7 @@ class api_transfernote(object):
 						stockdata["productcode"] = key["productcode"]
 						stockdata["qty"] = key["qty"]
 						result = self.con.execute(stock.insert(),[stockdata])
+						print stockdata
 					result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(recieved=True, recieveddate=transferdata["recieveddate"]))
 				return {"gkstatus":enumdict["Success"]}
 			except:
