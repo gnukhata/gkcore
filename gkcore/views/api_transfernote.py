@@ -74,12 +74,14 @@ class api_transfernote(object):
 				stockdata = dataset["stockdata"]
 				transferdata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
+				print transferdata
 				result = self.con.execute(transfernote.insert(),[transferdata])
+				print result
 				if result.rowcount==1:
 					transfernoteiddata = self.con.execute(select([transfernote.c.transfernoteid,transfernote.c.transfernotedate]).where(and_(transfernote.c.orgcode==authDetails["orgcode"],transfernote.c.transfernoteno==transferdata["transfernoteno"])))
 					transfernoteidrow = transfernoteiddata.fetchone()
 					stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
-					stockdata["dcinvtnid"] = transfernoteidrow["transfernotedate"]
+					stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
 					stockdata["dcinvtnflag"] = 20
 					stockdata["inout"] = 15
 					items = stockdata.pop("items")
@@ -210,7 +212,7 @@ class api_transfernote(object):
 				transferdata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
 				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-				stockdata["dcinvtnid"] = transferdata["transfernotedate"]
+				stockdata["stockdate"] = transferdata["transfernotedate"]
 				stockdata["dcinvtnflag"] = 20
 				stockdata["inout"]=15
 				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(transferdata))
