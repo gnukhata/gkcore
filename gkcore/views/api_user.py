@@ -83,7 +83,7 @@ class api_user(object):
                     if goflag == True:
                         golist = tuple(dataset.pop("golist"))
                         result = self.con.execute(gkdb.users.insert(),[dataset])
-                        userset = self.con.execute
+                        userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset[orgcode])))
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
