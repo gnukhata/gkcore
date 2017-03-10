@@ -84,6 +84,13 @@ class api_user(object):
                         golist = tuple(dataset.pop("golist"))
                         result = self.con.execute(gkdb.users.insert(),[dataset])
                         userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset[orgcode])))
+                        userRow = userdata.fetchone()
+                        lastid = userRow["userid"]
+                        for goid in golist:
+                            godata = {"userid":lastid,"goid":goid,"orgcod":dataset["orgcode"]}
+                            result = self.con.execute(gkdb.usergodown.insert(),godata)
+                            
+                        
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
