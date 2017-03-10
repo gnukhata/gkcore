@@ -2238,14 +2238,7 @@ class api_reports(object):
 				yearend = datetime.strptime(str(enRow["yearend"]),"%Y-%m-%d")
 				if startDate > yearStart:
 					for stockRow in stockData:
-						if stockRow["dcinvtnflag"] == 3 or  stockRow["dcinvtnflag"] ==  9:
-							countresult = self.con.execute(select([func.count(invoice.c.invid).label('inv')]).where(and_(invoice.c.invoicedate >= yearStart, invoice.c.invoicedate < startDate, invoice.c.invid == stockRow["dcinvtnid"])))
-							countrow = countresult.fetchone()
-							if countrow["inv"] == 1:
-								if  stockRow["inout"] == 9:
-									gopeningStock = float(gopeningStock) + float(stockRow["qty"])
-								if  stockRow["inout"] == 15:
-									gopeningStock = float(gopeningStock) - float(stockRow["qty"])
+						
 						if stockRow["dcinvtnflag"] == 4:
 							countresult = self.con.execute(select([func.count(delchal.c.dcid).label('dc')]).where(and_(delchal.c.dcdate >= yearStart, delchal.c.dcdate < startDate, delchal.c.dcid == stockRow["dcinvtnid"])))
 							countrow = countresult.fetchone()
@@ -2266,24 +2259,7 @@ class api_reports(object):
 				totalinward = totalinward + float(gopeningStock)
 
 				for finalRow in stockData:
-					if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
-						countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate >= startDate, invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
-						if countresult.rowcount == 1:
-							countrow = countresult.fetchone()
-							custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
-							custrow = custdata.fetchone()
-							if custrow!=None:
-								custnamedata = custrow["custname"]
-							else:
-								custnamedata = "Cash Memo"
-							if  finalRow["inout"] == 9:
-								gopeningStock = float(gopeningStock) + float(finalRow["qty"])
-								totalinward = float(totalinward) + float(finalRow["qty"])
-								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"","invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"tnid":"","tnno":"","inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(gopeningStock)  })
-							if  finalRow["inout"] == 15:
-								gopeningStock = float(gopeningStock) - float(finalRow["qty"])
-								totaloutward = float(totaloutward) + float(finalRow["qty"])
-								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"","invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(gopeningStock)  })
+					
 					if finalRow["dcinvtnflag"] == 4:
 						countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate >= startDate, delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 						if countresult.rowcount == 1:
@@ -2493,28 +2469,25 @@ class api_reports(object):
 		"""
 		Purpose:
 		Return the structured data grid of stock report for given product.
-		Input will be productcode,startdate,enddate and goid.
-		orgcode will be taken from header and startdate and enddate of fianancial year taken from organisation table .
+		Input will be productcode,enddate and goid(for specific godown) also type(mention at last).
+		orgcode will be taken from header .
 		returns a list of dictionaries where every dictionary will be one row.
 		description:
-		This function returns the complete stock report,
-		including opening stock every inward and outward quantity and running balance for every transaction along with transaction type for a selected product and godown.
-		at the end we get total inward and outward quantity.
-		This report will be on the basis of productcode, startdate and enddate given from the client.
-		The orgcode is taken from the header.
-		The report will query database to get all in and out records for the given product where the dcinvtn flag is not 20.
-		For every iteration of this list with a for loop we will find out the date of transaction from the delchal or invoice table depending on the flag being 4 or 9.
-		Cash memo is in the invoice table so even 3 will qualify.
-		Then we wil find the customer or supplyer name on the basis of given data.
-		Note that if the startdate is same as the yearstart of the organisation then opening stock can be directly taken from the product table.
-		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance.
+		This function returns the complete godown wise stock on hand report,
+		including opening stock every inward and outward quantity and running balance  for  selected product and godown.
+		at the end we get total inward and outward quantity and balance.
+		godownwise opening stock can be taken from goprod table 
+		The report will query database to get all in and out records for the given product where the dcinvtn flag 4 & 20.
+		For every iteration of this list with a for loop we will find out the date of transaction from the delchal or transfernote table depending on the flag being 4 or 20.
+		closing balance of the day before startdate given by client and use it as the opening balance.
 		The row will be represented in this grid with every key denoting a column.
 		The columns (keys) will be,
-		total inward quantity , total outwrd quanity and balance.
-		product and godown = pg
-		all product and all godown = apag
-		all godown and single product = apg
-		product and all godown = pag
+		total inward quantity , total outwrd quanity and balance , product name ,godownname.
+		
+		*product and godown = pg
+		*all product and all godown = apag
+		*all godown and single product = apg
+		*product and all godown = pag
 		"""
 		try:
 			token = self.request.headers["gktoken"]
