@@ -461,17 +461,17 @@ goprod = Table('goprod',metadata,
     Index("godown_product","productcode")
     )
 #now table for user godown rights.
-usergodown = Table('usergodown',MetaData,
-                   Column('ugid', Integer, primary_key=true),
-                   Column('goid',Integer, ForeignKey('godown.goid',ondelete='cascade'),
-                          Column('userid',Integer, ForeignKey('users.userid', ondelete='cascade'),
-                   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False))
+usergodown = Table('usergodown',metadata,
+                   Column('ugid', Integer, primary_key=True),
+                   Column('goid',Integer, ForeignKey('godown.goid',ondelete='CASCADE')),
+                   Column('userid',Integer, ForeignKey('users.userid', ondelete='CASCADE')),
+                   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False)
+				   )
 
-
-""" Table for transferNote details.
+''' Table for transferNote details.
 	When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
 
-"""
+'''
 
 transfernote = Table('transfernote',metadata,
 	Column('transfernoteid',Integer,primary_key=True),
