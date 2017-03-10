@@ -2732,22 +2732,21 @@ class api_reports(object):
 				inputdate = dataset["inputdate"]
 				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				dc_unbilled = []
-				dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
-				# I have added distinct clause in above query.
-				dcResult = dcResult.fetchall()
+                # I have added distinct clause in below query.
+                #dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
+				#dcResult = dcResult.fetchall()
+                alldcResult = self.con.execute(select([delchal.c.dcid]).order_by(delchal.c.dcid))
+                alldcResult = dcResult.fetchall()
 				print "dcresult: "
-				print dcResult
-				#dcpossible = self.con.execute(select([stock.c.dcinvtnid]).where(not_(stock.c.dcinvtnid.in_(  select([stock.c.dcinvtnid]).where(and_(stock.c.dcinvtnflag == 4, stock.c.inout == 15, not_(stock.c.dcinvtnid.in_(select([dcinv.c.dcid]))))  )))))
+				print alldcResult
+				#dcpossible = self.con.execute(select([dcinv.c.dcid]).distinct())
 				#dcpossible = dcpossible.fetchall()
 				#print "dcpossible: "
 				#print dcpossible
-				dcpossible = self.con.execute(select([dcinv.c.dcid]).distinct())
-				dcpossible = dcpossible.fetchall()
-				print "dcpossible: "
-				print dcpossible
 				matcheddcids = []
-                # ********* What if multiple delchals are covered by single invoice? *******************
-				for dcid in dcpossible:
+                dcResult = []
+                # ********* What if multiple delchals are covered by single invoice? => Works for this case too.*******************
+				for dcid in alldcResult:
 					#how to obtain distinct results? => use select().distinct()
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(dcid[0] == dcinv.c.dcid))
 					invidresult = invidresult.fetchall()
