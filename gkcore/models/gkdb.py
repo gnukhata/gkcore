@@ -460,6 +460,12 @@ goprod = Table('goprod',metadata,
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     Index("godown_product","productcode")
     )
+#now table for user godown rights.
+usergodown = Table('usergodown',MetaData,
+                   Column('ugid', Integer, primary_key=true),
+                   Column('goid',Integer, ForeignKey('godown.goid',ondelete='cascade'),
+                          Column('userid',Integer, ForeignKey('users.userid', ondelete='cascade'),
+                   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False))
 
 
 """ Table for transferNote details.
