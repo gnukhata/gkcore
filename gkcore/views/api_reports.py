@@ -2736,7 +2736,7 @@ class api_reports(object):
 				print "alldcids: "
 				print alldcids
 				dcResult = []
-				# ********* What if multiple delchals are covered by single invoice? => Works for this case too.*******************
+				# ********* What if multiple delchals are covered by single invoice?*******************
 				for dcid in alldcids:
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode)))
 					invidresult = invidresult.fetchall()
@@ -2814,6 +2814,7 @@ class api_reports(object):
 										else:
 											print "pass"
 											#"dcqty < invqty" should never happen.
+											# It could happen when multiple delivery chalans have only one invoice.
 											pass
 
 						print "matched products: "
