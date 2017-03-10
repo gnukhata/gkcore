@@ -74,7 +74,7 @@ class api_delchal(object):
 				if delchaldata["dcflag"]==19:
 					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
-				print delchaldata
+				
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
@@ -87,7 +87,7 @@ class api_delchal(object):
 							stockdata["productcode"] = key
 							stockdata["qty"] = items[key]
 							result = self.con.execute(stock.insert(),[stockdata])
-							print stockdata
+							
 					except:
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
 						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))

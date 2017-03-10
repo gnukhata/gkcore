@@ -74,9 +74,9 @@ class api_transfernote(object):
 				stockdata = dataset["stockdata"]
 				transferdata["orgcode"] = authDetails["orgcode"]
 				stockdata["orgcode"] = authDetails["orgcode"]
-				print transferdata
+				
 				result = self.con.execute(transfernote.insert(),[transferdata])
-				print result
+				
 				if result.rowcount==1:
 					transfernoteiddata = self.con.execute(select([transfernote.c.transfernoteid,transfernote.c.transfernotedate]).where(and_(transfernote.c.orgcode==authDetails["orgcode"],transfernote.c.transfernoteno==transferdata["transfernoteno"])))
 					transfernoteidrow = transfernoteiddata.fetchone()
@@ -109,7 +109,7 @@ class api_transfernote(object):
 	def getAllTransferNote(self):
 		"""This method returns	all existing transfernotes  """
 		try:
-			#print transfernote all
+			
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -135,7 +135,7 @@ class api_transfernote(object):
 	def getTn(self):
 		""" Shows single transfernote by matching transfernoteno			   """
 		try:
-			#print "transfernote"
+			
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
