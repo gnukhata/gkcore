@@ -2510,7 +2510,7 @@ class api_reports(object):
 		if it is later than the startyear then we will have to come to the closing balance of the day before startdate given by client and use it as the opening balance.
 		The row will be represented in this grid with every key denoting a column.
 		The columns (keys) will be,
-		date,particulars,invoice/dcno, transaction type (invoice /delchal),inward quantity,outward quantity ,total inward quantity , total outwrd quanity and balance.
+		total inward quantity , total outwrd quanity and balance.
 		product and godown = pg
 		all product and all godown = apag
 		all godown and single product = apg
@@ -2548,23 +2548,7 @@ class api_reports(object):
 					yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
 					totalinward = totalinward + float(gopeningStock)
 					for finalRow in stockData:
-						if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
-							countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
-							if countresult.rowcount == 1:
-								countrow = countresult.fetchone()
-								custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
-								custrow = custdata.fetchone()
-								if custrow!=None:
-									custnamedata = custrow["custname"]
-								else:
-									custnamedata = "Cash Memo"
-								if  finalRow["inout"] == 9:
-									gopeningStock = float(gopeningStock) + float(finalRow["qty"])
-									totalinward = float(totalinward) + float(finalRow["qty"])
-									
-								if  finalRow["inout"] == 15:
-									gopeningStock = float(gopeningStock) - float(finalRow["qty"])
-									totaloutward = float(totaloutward) + float(finalRow["qty"])
+						
 						if finalRow["dcinvtnflag"] == 4:
 							countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 							if countresult.rowcount == 1:
@@ -2608,7 +2592,7 @@ class api_reports(object):
 				
 				if self.request.params["type"] == "pag":
 					productCode = self.request.params["productcode"]
-					godownCode = self.request.params["goid"]
+					
 					products = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productCode,product.c.orgcode == orgcode)))
 					prodDesc =  products.fetchone()
 					goopeningStockResult = self.con.execute(select([goprod.c.goopeningstock,goprod.c.goid]).where(and_(goprod.c.productcode == productCode, goprod.c.orgcode == orgcode)))
@@ -2627,23 +2611,7 @@ class api_reports(object):
 						stockData = stockRecords.fetchall()
 						totalinward = totalinward + float(gopeningStock)
 						for finalRow in stockData:
-							if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
-								countresult = self.con.execute(select([invoice.c.invoicedate,invoice.c.invoiceno,invoice.c.custid]).where(and_(invoice.c.invoicedate <= endDate, invoice.c.invid == finalRow["dcinvtnid"])))
-								if countresult.rowcount == 1:
-									countrow = countresult.fetchone()
-									custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
-									custrow = custdata.fetchone()
-									if custrow!=None:
-										custnamedata = custrow["custname"]
-									else:
-										custnamedata = "Cash Memo"
-									if  finalRow["inout"] == 9:
-										gopeningStock = float(gopeningStock) + float(finalRow["qty"])
-										totalinward = float(totalinward) + float(finalRow["qty"])
-										
-									if  finalRow["inout"] == 15:
-										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
-										totaloutward = float(totaloutward) + float(finalRow["qty"])
+							
 							if finalRow["dcinvtnflag"] == 4:
 								countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 								if countresult.rowcount == 1:
