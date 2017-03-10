@@ -2316,7 +2316,7 @@ class api_reports(object):
 		Purpose:
 		Return the structured data grid of stock report for given product.
 		Input will be productcode,startdate,enddate.
-		orgcode will be taken from header and startdate and enddate of fianancial year taken from organisation table .
+		orgcode will be taken from header and enddate 
 		returns a list of dictionaries where every dictionary will be one row.
 		description:
 		This function returns the complete stock report,
@@ -2468,7 +2468,7 @@ class api_reports(object):
 	def godownStockHReport(self):
 		"""
 		Purpose:
-		Return the structured data grid of stock report for given product.
+		Return the structured data grid of godown wise stock on hand report for given product.
 		Input will be productcode,enddate and goid(for specific godown) also type(mention at last).
 		orgcode will be taken from header .
 		returns a list of dictionaries where every dictionary will be one row.
