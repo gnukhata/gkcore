@@ -2713,7 +2713,6 @@ class api_reports(object):
 	@view_config(request_param="type=del_unbilled_for_entire_org",renderer="json")
 	def unbilled_deliveries(self):
 		"""
-		The most important part is data types.
 		Token is the only required input.
 		We also require Orgcode, but it is extracted from the token itself.
 		"""
@@ -2725,41 +2724,25 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
 				inputdate = dataset["inputdate"]
 				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				dc_unbilled = []
-				# I have added distinct clause in below query.
-				#dcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
-				#dcResult = dcResult.fetchall()
-				#alldcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, stock.c.goid == godown.c.goid)).order_by(delchal.c.dcdate))
-				#alldcResult = self.con.execute("select distinct delchal.dcid, delchal.dcno, delchal.dcdate, delchal.dcflag, customerandsupplier.custname, godown.goname from delchal, customerandsupplier, godown, stock where delchal.custid = customerandsupplier.custid and stock.dcinvtnflag = 4 and stock.inout = 15 and stock.goid = godown.goid order by delchal.dcdate")
 				alldcids = self.con.execute(select([delchal.c.dcid]).where(delchal.c.orgcode == orgcode).order_by(delchal.c.dcdate))
 				alldcids = alldcids.fetchall()
 				print "alldcids: "
 				print alldcids
-				#dcpossible = self.con.execute(select([dcinv.c.dcid]).distinct())
-				#dcpossible = dcpossible.fetchall()
-				#print "dcpossible: "
-				#print dcpossible
-				#dcpossible = []
-				#matcheddcids = []
-				#dcids = []
 				dcResult = []
 				# ********* What if multiple delchals are covered by single invoice? => Works for this case too.*******************
 				for dcid in alldcids:
-					#how to obtain distinct results? => use select().distinct()
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode)))
 					invidresult = invidresult.fetchall()
 					if len(invidresult) == 0:
 						pass
-						#alldcResult.remove(dcid)
-						#dcids.append(dcid[0])
 					else:
-						#dcpossible.append(dcid[0])
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
 						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, dcid[0] == stock.c.dcinvtnid)))
 						dcprodresult = dcprodresult.fetchall()
@@ -2782,9 +2765,8 @@ class api_reports(object):
 						#Now we have to compare the two results: dcprodresult and invprodresult
 						#I assume that the delchal must have at most only one entry for a particular product. If not, then it's a bug and needs to be rectified.
 						#But, in case of invprodresult, there can be more than one productcodes mentioned. This is because, with one delchal, there can be many invoices linked.
-						matchedproducts = []#we can later remove this list, if we don't require it.Rather we can take use of remainingproducts list to decide if a delchal is fully mapped with one or more invoices.
+						matchedproducts = []
 						remainingproducts = {}
-						flag = 0 #this flag is used in correspondence with remainingproducts. IF this flag is zero, then remainingproducts is empty. and if it is one, then it's not empty.
 						for eachitem in dcprodresult:
 							print "for eachitem in dcprodresult:"
 						#dcprodresult is a list of tuples. eachitem is one such tuple.
@@ -2803,12 +2785,8 @@ class api_reports(object):
 										#now we will check its quantity
 										invqty = eachinvoice[eachproductcode].values()[0]
 										dcqty = eachitem[1]
-										print "type of dcqty:"
-										print type(dcqty)
-										print "type of invqty:"
-										print type(invqty)
+										print "dcqty is equal to invqty"
 										if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
-											print "dcqty is equal to invqty"
 											print "productcode added to matchedproducts list"
 											#this means the quantity of current individual product is matched exactly
 											matchedproducts.append(int(eachproductcode))
@@ -2835,7 +2813,7 @@ class api_reports(object):
 												flag = 1
 										else:
 											print "pass"
-											#dcqty < invqty should never happen.
+											#"dcqty < invqty" should never happen.
 											pass
 
 						print "matched products: "
@@ -2845,62 +2823,22 @@ class api_reports(object):
 						#changing previous logic..
 						if len(matchedproducts) == len(dcprodresult):
 							print "len(matchedproducts) == len(dcprodresult)"
-							#What if from start only, remainingproducts didn't get filled. Instead remained empty?
 							#Now we have got the delchals, for which invoices are also sent completely.
-							#print "appending new dcid to matcheddcids list"
 							print "removing dcid from alldcResult"
-							print "type of dcid[0]:"
-							print type(dcid[0])
 							print "dcid[0]: "
 							print dcid[0]
-							#matcheddcids.append(dcid[0])
 							alldcids.remove(dcid)
 
-				#print "matched dcids: "
-				#print matcheddcids
-				#Now, we will subtract above dcids from the ones in dcinv table. So, we will get the dcids of delchals, which are partially billed, i.e. which are to be included in the Unbilled Delivery report.
-				'''for eachdcid in dcpossible:
-					print "for eachdcid in dcpossible:"
-					for eachmatcheddcid in matcheddcids:
-						print "for eachmatcheddcid in matcheddcids:"
-						print "eachdcid[0] = " + str(eachdcid[0])
-						print "type of eachdcid[0]: "
-						print type(eachdcid[0])
-						print "type of eachmatcheddcid: "
-						print type(eachmatcheddcid)
-						if eachdcid[0] == eachmatcheddcid:
-							print "removing dcpossible element"
-							#I am not sure whether this works. Probably this works. Will see.
-							#tuples are immutable! Its elements can't be deleted.
-							dcpossible.remove(eachdcid)
-							print "removed dcpossible element"
-				'''
-				#print "updated dcpossible: "
-				#print dcpossible
-				#Now, dcpossible will contain only those dcids which are to be included in our report.
-				#We will find all corresponding fields, like we did in first 4-5 lines in finding dcids with no linkages to any invoices and then combine both and return them.
-				"""extradcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).where(and_(stock.c.dcinvtnflag == 4, stock.c.goid == godown.c.goid, delchal.c.dcid == stock.c.dcinvtnid, delchal.c.orgcode == orgcode, delchal.c.custid == customerandsupplier.c.custid, not_(delchal.c.dcid.in_(select([dcinv.c.dcid]).where(dcinv.c.orgcode == orgcode))))))
-				extradcResult = dcResult.fetchall()
-				print "extradcresult: "
-				print extradcResult
-				"""
 				for eachdcid in alldcids:
 					print "eachdcid[0]: "
 					print eachdcid[0]
-					#distinct clause added
-					#extradcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
-					#extradcResult = extradcResult.fetchone()
-					#dcResult.append(extradcResult)
 					singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
 					singledcResult = singledcResult.fetchone()
 					dcResult.append(singledcResult)
-					#print "extradcResult: "
-					#print extradcResult
 					print "singledcResult: "
 					print singledcResult
 				print "Pre-conditional-Final dcResult: "
 				print dcResult
-
 
 				temp_dict = {}
 				srno = 1
@@ -2918,12 +2856,13 @@ class api_reports(object):
 						elif temp_dict["dcflag"] == 4:
 							temp_dict["dcflag"] = "Sale"
 						elif temp_dict["dcflag"] == 19:
-							#I think we have to remove this sample thing.
+							#We don't have to consider sample.
 							temp_dict["dcflag"] = "Sample"
-						dc_unbilled.append(temp_dict)
+						if temp_dict["dcflag"] != "Sample":
+							dc_unbilled.append(temp_dict)
 						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
