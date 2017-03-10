@@ -2622,7 +2622,7 @@ class api_reports(object):
 										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 										totaloutward = float(totaloutward) + float(finalRow["qty"])
 		
-						stockReport.append({"productname":prodDesc["productdesc"],"godown":goName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
+						stockReport.append({"productname":prodDesc["productdesc"],"godown":gn,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
 						
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 					self.con.close()
