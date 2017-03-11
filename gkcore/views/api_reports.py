@@ -2728,15 +2728,20 @@ class api_reports(object):
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
+				inout = self.request.params["inout"]
 				inputdate = dataset["inputdate"]
 				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				dc_unbilled = []
-                #Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
-                if request.params["inout"] == "i":#in
-                    alldcids = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
-                if request.params["inout"] == "o":#out
-				    alldcids = self.con.execute(select([delchal.c.dcid]).where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
-                alldcids = alldcids.fetchall()
+				#Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
+				if inout == "i":#in
+					#distinct clause must be added to the query.
+					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
+					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+				if inout == "o":#out
+					#distinct clause must be added to the query.
+					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
+					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+				alldcids = alldcids.fetchall()
 				print "alldcids: "
 				print alldcids
 				dcResult = []
@@ -2748,10 +2753,10 @@ class api_reports(object):
 						pass
 					else:
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
-                        if request.params["inout"] == "i":#in
-                            dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, dcid[0] == stock.c.dcinvtnid)))
-                        if request.params["inout"] == "o":#out
-                            dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, dcid[0] == stock.c.dcinvtnid)))
+						if inout == "i":#in
+							dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, dcid[0] == stock.c.dcinvtnid)))
+						if inout == "o":#out
+							dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, dcid[0] == stock.c.dcinvtnid)))
 						dcprodresult = dcprodresult.fetchall()
 						#I am assuming :productcode must be distinct. So, I haven't applied distinct construct.
 						print "dcprodresult: "
@@ -2840,11 +2845,11 @@ class api_reports(object):
 				for eachdcid in alldcids:
 					print "eachdcid[0]: "
 					print eachdcid[0]
-                    if request.params["inout"] == "i":#in
-                        singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
-                    if request.params["inout"] == "o":#out
-                        singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
-                    singledcResult = singledcResult.fetchone()
+					if inout == "i":#in
+						singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
+					if inout == "o":#out
+						singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
+					singledcResult = singledcResult.fetchone()
 					dcResult.append(singledcResult)
 					print "singledcResult: "
 					print singledcResult
