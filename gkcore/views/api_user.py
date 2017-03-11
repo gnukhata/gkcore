@@ -87,8 +87,10 @@ class api_user(object):
                         userRow = userdata.fetchone()
                         lastid = userRow["userid"]
                         for goid in golist:
-                            godata = {"userid":lastid,"goid":goid,"orgcod":dataset["orgcode"]}
-                            result = self.con.execute(gkdb.usergodown.insert(),godata)
+                            godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
+                            result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                            
+
                             
                         
                     return {"gkstatus":enumdict["Success"]}
