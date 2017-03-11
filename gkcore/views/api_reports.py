@@ -2913,7 +2913,7 @@ class api_reports(object):
 							temp_dict["dcflag"] = "Sample"
 						if temp_dict["dcflag"] != "Sample":
 							dc_unbilled.append(temp_dict)
-						srno += 1
+							srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			#except:
