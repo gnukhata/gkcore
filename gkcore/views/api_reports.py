@@ -2724,7 +2724,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
@@ -2746,10 +2746,21 @@ class api_reports(object):
 				print alldcids
 				dcResult = []
 				# ********* What if multiple delchals are covered by single invoice?*******************
-				for dcid in alldcids:
+				#n = len(alldcids)
+				#for dcid in alldcids:
+				#for i in range(len(alldcids):
+				i = 0
+				while(i < len(alldcids)):
+					print "i: " + str(i)
+					dcid = alldcids[i]
+					print "dcid:"
+					print dcid
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode)))
 					invidresult = invidresult.fetchall()
+					print "invidresult: "
+					print invidresult
 					if len(invidresult) == 0:
+						print "dc without any invoice"
 						pass
 					else:
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
@@ -2797,8 +2808,8 @@ class api_reports(object):
 										#now we will check its quantity
 										invqty = eachinvoice[eachproductcode].values()[0]
 										dcqty = eachitem[1]
-										print "dcqty is equal to invqty"
 										if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
+											print "dcqty is equal to invqty"
 											print "productcode added to matchedproducts list"
 											#this means the quantity of current individual product is matched exactly
 											matchedproducts.append(int(eachproductcode))
@@ -2809,12 +2820,12 @@ class api_reports(object):
 												if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
 													print "addition became equal to dcqty"
 													matchedproducts.append(int(eachproductcode))
-													print "remainingproducts: "
-													print remainingproducts
 													print "eachproductcode:"
 													print eachproductcode
 													#whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
 													del remainingproducts[int(eachproductcode)]
+													print "remainingproducts: "
+													print remainingproducts
 												else:
 													print "added to previous invqty"
 													#It must not be the case that below addition is greater than dcqty.
@@ -2822,7 +2833,6 @@ class api_reports(object):
 											else:
 												print "new product added to remaining products list"
 												remainingproducts.update({dcprodcode:float(invqty)})
-												flag = 1
 										else:
 											print "pass"
 											#"dcqty < invqty" should never happen.
@@ -2841,14 +2851,37 @@ class api_reports(object):
 							print "dcid[0]: "
 							print dcid[0]
 							alldcids.remove(dcid)
+							print "After removing, alldcids: "
+							print alldcids
+							i-=1
+							print "updated i: " + str(i)
+					i+=1
+					pass
+
 
 				for eachdcid in alldcids:
 					print "eachdcid[0]: "
 					print eachdcid[0]
 					if inout == "i":#in
-						singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
+						#check if current dcid has godown name or it's None. Accordingly, our query should be changed.
+						tmpresult = self.con.execute(select([stock.c.goid]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, stock.c.dcinvtnid == eachdcid[0])))
+						tmpresult = tmpresult.fetchone()
+						print "tmpresult: for eachdcid"
+						print tmpresult
+						if tmpresult[0] == None:
+							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid)))
+						else:
+							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
 					if inout == "o":#out
-						singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
+						#check if current dcid has godown name or it's None. Accordingly, our query should be changed.
+						tmpresult = self.con.execute(select([stock.c.goid]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, stock.c.dcinvtnid == eachdcid[0])))
+						tmpresult = tmpresult.fetchone()
+						print "tmpresult: for eachdcid"
+						print tmpresult
+						if tmpresult[0] == None:
+							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid)))
+						else:
+							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
 					singledcResult = singledcResult.fetchone()
 					dcResult.append(singledcResult)
 					print "singledcResult: "
@@ -2864,7 +2897,11 @@ class api_reports(object):
 						print row["dcdate"]
 						print "inputdate: In gkcore"
 						print inputdate
-						temp_dict = {"srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"], "goname": row["goname"]}
+						temp_dict = {"srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"]}
+						if "goname" in row.keys():
+							temp_dict["goname"] = row["goname"]
+						else:
+							temp_dict["goname"] = None
 						if temp_dict["dcflag"] == 1:
 							temp_dict["dcflag"] = "Approval"
 						elif temp_dict["dcflag"] == 3:
@@ -2879,6 +2916,6 @@ class api_reports(object):
 						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
+			#except:
+			#	self.con.close()
+			#	return {"gkstatus":enumdict["ConnectionFailed"]}
