@@ -64,6 +64,15 @@ class api_user(object):
 
     @view_config(request_method='POST',renderer='json')
     def addUser(self):
+        """
+        purpose
+        adds a user in the users table.
+        description:
+        this function  takes username and role as basic parameters.
+        It may also have a list of goids for the godowns associated with this user.
+        This is only true if goflag is True.
+        The frontend must send the role as godownkeeper for this.
+"""
         try:
             token = self.request.headers["gktoken"]
         except:
