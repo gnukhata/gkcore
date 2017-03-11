@@ -145,7 +145,18 @@ class api_user(object):
                 userRole = user.fetchone()
                 dataset = self.request.json_body
                 if userRole[0]==-1 or authDetails["userid"]==dataset["userid"]:
-                    result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                    goflag = dataset.pop("goflag")
+                    if goflag == True:
+                        goids = tuple( dataset.pop("goids"))
+                                        
+                        result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                        usgoupdate = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid == dataset["userid"]))
+                        for goid in goids:
+                            ugSet = {"userid":dataset["userid"],"goid":goid,"orgcode":authDetails["orgcode"]}
+                            self.con.execute(gkdb.usergodown.insert(),ugSet)
+                    else:
+                        result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                            
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
