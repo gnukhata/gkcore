@@ -2724,7 +2724,7 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
@@ -2908,6 +2908,8 @@ class api_reports(object):
 							temp_dict["dcflag"] = "Consignment"
 						elif temp_dict["dcflag"] == 4:
 							temp_dict["dcflag"] = "Sale"
+						elif temp_dict["dcflag"] == 16:
+							temp_dict["dcflag"] = "Purchase"
 						elif temp_dict["dcflag"] == 19:
 							#We don't have to consider sample.
 							temp_dict["dcflag"] = "Sample"
@@ -2916,6 +2918,6 @@ class api_reports(object):
 							srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
