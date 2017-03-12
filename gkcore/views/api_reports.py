@@ -2724,23 +2724,25 @@ class api_reports(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
 				inout = self.request.params["inout"]
 				inputdate = dataset["inputdate"]
-				inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
+				#inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
+				new_inputdate = dataset["inputdate"]
+				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
 				dc_unbilled = []
 				#Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
 				if inout == "i":#in
 					#distinct clause must be added to the query.
 					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
-					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
 				if inout == "o":#out
 					#distinct clause must be added to the query.
 					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
-					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
 				alldcids = alldcids.fetchall()
 				print "alldcids: "
 				print alldcids
@@ -2755,7 +2757,7 @@ class api_reports(object):
 					dcid = alldcids[i]
 					print "dcid:"
 					print dcid
-					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode)))
+					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode, invoice.c.orgcode == orgcode, invoice.c.invid == dcinv.c.invid, invoice.c.invoicedate <= new_inputdate)))
 					invidresult = invidresult.fetchall()
 					print "invidresult: "
 					print invidresult
@@ -2892,7 +2894,7 @@ class api_reports(object):
 				temp_dict = {}
 				srno = 1
 				for row in dcResult:
-					if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
+					#if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
 						print "row[dcdate]:"
 						print row["dcdate"]
 						print "inputdate: In gkcore"
@@ -2908,6 +2910,8 @@ class api_reports(object):
 							temp_dict["dcflag"] = "Consignment"
 						elif temp_dict["dcflag"] == 4:
 							temp_dict["dcflag"] = "Sale"
+						elif temp_dict["dcflag"] == 16:
+							temp_dict["dcflag"] = "Purchase"
 						elif temp_dict["dcflag"] == 19:
 							#We don't have to consider sample.
 							temp_dict["dcflag"] = "Sample"
@@ -2916,6 +2920,6 @@ class api_reports(object):
 							srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			#except:
-			#	self.con.close()
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
+			except:
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
