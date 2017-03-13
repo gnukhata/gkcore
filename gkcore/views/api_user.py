@@ -98,8 +98,8 @@ class api_user(object):
                         for goid in golist:
                             godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
                             result = self.con.execute(gkdb.usergodown.insert(),[godata])
-                        else:
-                            result = self.con.execute(gkdb.users.insert(),[dataset])
+                    else:
+                        result = self.con.execute(gkdb.users.insert(),[dataset])
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
@@ -124,6 +124,16 @@ class api_user(object):
                 result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 row = result.fetchone()
                 User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
+                if User["userrole"] == 3:
+                    usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.userid == authDetails["userid"]))
+                    goids = usgo.fetchall()
+                    userGodowns = {}
+                    for g in goids:
+                        godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == g))
+                        gNameRow = godownData.fetchone()
+                        userGodowns[g] = gNameRow["gname"]
+                    User["godowns"] = userGodowns
+
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
