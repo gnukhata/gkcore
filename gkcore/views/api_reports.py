@@ -2737,7 +2737,6 @@ class api_reports(object):
 				dataset = self.request.json_body
 				inout = self.request.params["inout"]
 				inputdate = dataset["inputdate"]
-				#inputdate = datetime.strptime(inputdate, "%d-%m-%Y")
 				new_inputdate = dataset["inputdate"]
 				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
 				dc_unbilled = []
@@ -2751,25 +2750,14 @@ class api_reports(object):
 					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
 					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
 				alldcids = alldcids.fetchall()
-				print "alldcids: "
-				print alldcids
 				dcResult = []
 				# ********* What if multiple delchals are covered by single invoice?*******************
-				#n = len(alldcids)
-				#for dcid in alldcids:
-				#for i in range(len(alldcids):
 				i = 0
 				while(i < len(alldcids)):
-					print "i: " + str(i)
 					dcid = alldcids[i]
-					print "dcid:"
-					print dcid
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode, invoice.c.orgcode == orgcode, invoice.c.invid == dcinv.c.invid, invoice.c.invoicedate <= new_inputdate)))
 					invidresult = invidresult.fetchall()
-					print "invidresult: "
-					print invidresult
 					if len(invidresult) == 0:
-						print "dc without any invoice"
 						pass
 					else:
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
@@ -2779,8 +2767,6 @@ class api_reports(object):
 							dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, dcid[0] == stock.c.dcinvtnid)))
 						dcprodresult = dcprodresult.fetchall()
 						#I am assuming :productcode must be distinct. So, I haven't applied distinct construct.
-						print "dcprodresult: "
-						print dcprodresult
 						#what if dcprodresult or invprodresult is empty?
 						invprodresult = []
 						for invid in invidresult:
@@ -2790,93 +2776,57 @@ class api_reports(object):
 							temp = temp[0]
 							temp = temp[0]
 							invprodresult.append(temp)
-							print "temp: "
-							print temp
-						print "invprodresult: "
-						print invprodresult
 						#Now we have to compare the two results: dcprodresult and invprodresult
 						#I assume that the delchal must have at most only one entry for a particular product. If not, then it's a bug and needs to be rectified.
 						#But, in case of invprodresult, there can be more than one productcodes mentioned. This is because, with one delchal, there can be many invoices linked.
 						matchedproducts = []
 						remainingproducts = {}
 						for eachitem in dcprodresult:
-							print "for eachitem in dcprodresult:"
 						#dcprodresult is a list of tuples. eachitem is one such tuple.
 							for eachinvoice in invprodresult:
-								print "for eachinvoice in invprodresult:"
 							#invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
 								for eachproductcode in eachinvoice.keys():
-									print "for eachproductcode in eachinvoice.keys()"
 									#eachitem[0] is unique. It's not repeated.
 									dcprodcode = eachitem[0]
-									print "dcprodcode: " + str(dcprodcode)
-									print "eachproductcode: " + str(eachproductcode)
 									if int(dcprodcode) == int(eachproductcode):#why do we need to convert these into string to compare?
-										print "dcprodcode == eachproductcode"
 										#this means that the product in delchal matches with the product in invoice
 										#now we will check its quantity
 										invqty = eachinvoice[eachproductcode].values()[0]
 										dcqty = eachitem[1]
 										if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
-											print "dcqty is equal to invqty"
-											print "productcode added to matchedproducts list"
 											#this means the quantity of current individual product is matched exactly
 											matchedproducts.append(int(eachproductcode))
 										elif float(dcqty) > float(invqty):
-											print "dcqty is greater than invqty"
 											#this means current invoice has not billed the whole product quantity.
 											if dcprodcode in remainingproducts.keys():
 												if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
-													print "addition became equal to dcqty"
 													matchedproducts.append(int(eachproductcode))
-													print "eachproductcode:"
-													print eachproductcode
 													#whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
 													del remainingproducts[int(eachproductcode)]
-													print "remainingproducts: "
-													print remainingproducts
 												else:
-													print "added to previous invqty"
 													#It must not be the case that below addition is greater than dcqty.
 													remainingproducts[dcprodcode] = (float(remainingproducts[dcprodcode]) + float(invqty))
 											else:
-												print "new product added to remaining products list"
 												remainingproducts.update({dcprodcode:float(invqty)})
 										else:
-											print "pass"
 											#"dcqty < invqty" should never happen.
 											# It could happen when multiple delivery chalans have only one invoice.
 											pass
 
-						print "matched products: "
-						print matchedproducts
-						print "remainingproducts: "
-						print remainingproducts
 						#changing previous logic..
 						if len(matchedproducts) == len(dcprodresult):
-							print "len(matchedproducts) == len(dcprodresult)"
 							#Now we have got the delchals, for which invoices are also sent completely.
-							print "removing dcid from alldcResult"
-							print "dcid[0]: "
-							print dcid[0]
 							alldcids.remove(dcid)
-							print "After removing, alldcids: "
-							print alldcids
 							i-=1
-							print "updated i: " + str(i)
 					i+=1
 					pass
 
 
 				for eachdcid in alldcids:
-					print "eachdcid[0]: "
-					print eachdcid[0]
 					if inout == "i":#in
 						#check if current dcid has godown name or it's None. Accordingly, our query should be changed.
 						tmpresult = self.con.execute(select([stock.c.goid]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, stock.c.dcinvtnid == eachdcid[0])))
 						tmpresult = tmpresult.fetchone()
-						print "tmpresult: for eachdcid"
-						print tmpresult
 						if tmpresult[0] == None:
 							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 9, eachdcid[0] == stock.c.dcinvtnid)))
 						else:
@@ -2885,27 +2835,17 @@ class api_reports(object):
 						#check if current dcid has godown name or it's None. Accordingly, our query should be changed.
 						tmpresult = self.con.execute(select([stock.c.goid]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, stock.c.dcinvtnid == eachdcid[0])))
 						tmpresult = tmpresult.fetchone()
-						print "tmpresult: for eachdcid"
-						print tmpresult
 						if tmpresult[0] == None:
 							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid)))
 						else:
 							singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, godown.c.goname]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, godown.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, stock.c.inout == 15, eachdcid[0] == stock.c.dcinvtnid, stock.c.goid == godown.c.goid)))
 					singledcResult = singledcResult.fetchone()
 					dcResult.append(singledcResult)
-					print "singledcResult: "
-					print singledcResult
-				print "Pre-conditional-Final dcResult: "
-				print dcResult
 
 				temp_dict = {}
 				srno = 1
 				for row in dcResult:
 					#if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
-						print "row[dcdate]:"
-						print row["dcdate"]
-						print "inputdate: In gkcore"
-						print inputdate
 						temp_dict = {"srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"]}
 						if "goname" in row.keys():
 							temp_dict["goname"] = row["goname"]
