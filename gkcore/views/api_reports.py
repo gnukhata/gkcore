@@ -2308,13 +2308,14 @@ class api_reports(object):
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
+
 	@view_config(request_param="stockonhandreport",renderer="json")
 	def stockOnHandReport(self):
 		"""
 		Purpose:
 		Return the structured data grid of stock report for given product.
 		Input will be productcode,startdate,enddate.
-		orgcode will be taken from header and enddate
+		orgcode will be taken from header and enddate 
 		returns a list of dictionaries where every dictionary will be one row.
 		description:
 		This function returns the complete stock report,
@@ -2345,7 +2346,7 @@ class api_reports(object):
 				orgcode = authDetails["orgcode"]
 				productCode = self.request.params["productcode"]
 				endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
-
+				
 				stockReport = []
 				totalinward = 0.00
 				totaloutward = 0.00
@@ -2397,12 +2398,13 @@ class api_reports(object):
 								if  finalRow["inout"] == 15:
 									openingStock = float(openingStock) - float(finalRow["qty"])
 									totaloutward = float(totaloutward) + float(finalRow["qty"])
-					stockReport.append({"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+					stockReport.append({"srno":1,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
 					self.con.close()
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 				if productCode == "all":
 					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(product.c.orgcode == orgcode))
 					prodDesc =  products.fetchall()
+					srno = 1
 					for row in prodDesc:
 						totalinward = 0.00
 						totaloutward = 0.00
@@ -2429,7 +2431,7 @@ class api_reports(object):
 									if  finalRow["inout"] == 15:
 										openingStock = float(openingStock) - float(finalRow["qty"])
 										totaloutward = float(totaloutward) + float(finalRow["qty"])
-
+										
 							if finalRow["dcinvtnflag"] == 4:
 								countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 								if countresult.rowcount == 1:
@@ -2453,15 +2455,15 @@ class api_reports(object):
 									if  finalRow["inout"] == 15:
 										openingStock = float(openingStock) - float(finalRow["qty"])
 										totaloutward = float(totaloutward) + float(finalRow["qty"])
-
-						stockReport.append({"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
-
+										
+						stockReport.append({"srno":srno,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
+						srno = srno + 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
+	
 	@view_config(request_param="godownwisestockonhand",renderer="json")
 	def godownStockHReport(self):
 		"""
@@ -2474,14 +2476,14 @@ class api_reports(object):
 		This function returns the complete godown wise stock on hand report,
 		including opening stock every inward and outward quantity and running balance  for  selected product and godown.
 		at the end we get total inward and outward quantity and balance.
-		godownwise opening stock can be taken from goprod table
+		godownwise opening stock can be taken from goprod table . and godown name can be taken from godown
 		The report will query database to get all in and out records for the given product where the dcinvtn flag 4 & 20.
 		For every iteration of this list with a for loop we will find out the date of transaction from the delchal or transfernote table depending on the flag being 4 or 20.
 		closing balance of the day before startdate given by client and use it as the opening balance.
 		The row will be represented in this grid with every key denoting a column.
 		The columns (keys) will be,
 		total inward quantity , total outwrd quanity and balance , product name ,godownname.
-
+		
 		*product and godown = pg
 		*all product and all godown = apag
 		*all godown and single product = apg
@@ -2519,7 +2521,7 @@ class api_reports(object):
 					yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
 					totalinward = totalinward + float(gopeningStock)
 					for finalRow in stockData:
-
+						
 						if finalRow["dcinvtnflag"] == 4:
 							countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 							if countresult.rowcount == 1:
@@ -2537,11 +2539,11 @@ class api_reports(object):
 									dcinvrow = {"invid": ""}
 									invrow = {"invoiceno": ""}
 									trntype = "delchal"
-
+	
 								if  finalRow["inout"] == 9:
 									gopeningStock = float(gopeningStock) + float(finalRow["qty"])
 									totalinward = float(totalinward) + float(finalRow["qty"])
-
+								
 								if  finalRow["inout"] == 15:
 									gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 									totaloutward = float(totaloutward) + float(finalRow["qty"])
@@ -2552,22 +2554,23 @@ class api_reports(object):
 								if  finalRow["inout"] == 9:
 									gopeningStock = float(gopeningStock) + float(finalRow["qty"])
 									totalinward = float(totalinward) + float(finalRow["qty"])
-
+									
 								if  finalRow["inout"] == 15:
 									gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 									totaloutward = float(totaloutward) + float(finalRow["qty"])
-
-					stockReport.append({"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
+	
+					stockReport.append({"srno":1,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 					self.con.close()
-
+				
 				if self.request.params["type"] == "pag":
 					productCode = self.request.params["productcode"]
-
+					
 					products = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == productCode,product.c.orgcode == orgcode)))
 					prodDesc =  products.fetchone()
 					goopeningStockResult = self.con.execute(select([goprod.c.goopeningstock,goprod.c.goid]).where(and_(goprod.c.productcode == productCode, goprod.c.orgcode == orgcode)))
 					gosRow =goopeningStockResult.fetchall()
+					srno = 1
 					for row in gosRow:
 						totalinward = 0.00
 						totaloutward = 0.00
@@ -2577,12 +2580,13 @@ class api_reports(object):
 						else:
 							gopeningStock = 0.00
 						godowns = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid == row["goid"],godown.c.orgcode == orgcode)))
-						goName =  str(godowns.fetchone())
+						goName = godowns.fetchone()
+						gn = goName["goname"]
 						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCode,stock.c.goid == row["goid"],stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))).order_by(stock.c.stockdate))
 						stockData = stockRecords.fetchall()
 						totalinward = totalinward + float(gopeningStock)
 						for finalRow in stockData:
-
+							
 							if finalRow["dcinvtnflag"] == 4:
 								countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
 								if countresult.rowcount == 1:
@@ -2600,11 +2604,11 @@ class api_reports(object):
 										dcinvrow = {"invid": ""}
 										invrow = {"invoiceno": ""}
 										trntype = "delchal"
-
+		
 									if  finalRow["inout"] == 9:
 										gopeningStock = float(gopeningStock) + float(finalRow["qty"])
 										totalinward = float(totalinward) + float(finalRow["qty"])
-
+									
 									if  finalRow["inout"] == 15:
 										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 										totaloutward = float(totaloutward) + float(finalRow["qty"])
@@ -2615,18 +2619,21 @@ class api_reports(object):
 									if  finalRow["inout"] == 9:
 										gopeningStock = float(gopeningStock) + float(finalRow["qty"])
 										totalinward = float(totalinward) + float(finalRow["qty"])
-
+										
 									if  finalRow["inout"] == 15:
 										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 										totaloutward = float(totaloutward) + float(finalRow["qty"])
-
-						stockReport.append({"productname":prodDesc["productdesc"],"godown":gn,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
-
+		
+						stockReport.append({"srno":srno,"productname":prodDesc["productdesc"],"godown":gn,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
+						srno = srno + 1
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 					self.con.close()
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
+
 
 
 
