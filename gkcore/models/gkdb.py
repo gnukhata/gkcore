@@ -425,9 +425,11 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('psflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
+    Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
     UniqueConstraint('orderno','orderdate','csid','psflag'),
 	Index("purchaseorder_orgcodeindex","orgcode"),
-	Index("purchaseorder_date","orderdate")
+	Index("purchaseorder_date","orderdate"),
+    Index("purchaseorder_togodown",'togodown')
 )
 
 
