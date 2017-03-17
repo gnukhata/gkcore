@@ -92,7 +92,7 @@ class api_user(object):
                     if goflag == True:
                         golist = tuple(dataset.pop("golist"))
                         result = self.con.execute(gkdb.users.insert(),[dataset])
-                        userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset[orgcode])))
+                        userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset["orgcode"])))
                         userRow = userdata.fetchone()
                         lastid = userRow["userid"]
                         for goid in golist:
