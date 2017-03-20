@@ -2846,7 +2846,7 @@ class api_reports(object):
 				srno = 1
 				for row in dcResult:
 					#if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
-						temp_dict = {"srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"]}
+						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"]}
 						if "goname" in row.keys():
 							temp_dict["goname"] = row["goname"]
 						else:
