@@ -39,6 +39,7 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_user import getUserRole
 
 @view_defaults(route_name='delchal')
 class api_delchal(object):
@@ -204,7 +205,7 @@ class api_delchal(object):
 									"cancelflag":delchaldata["cancelflag"],
 									"noofpackages":delchaldata["noofpackages"],
 									"modeoftransport": delchaldata["modeoftransport"],
-                                    "attachmentcount": delchaldata["attachmentcount"]
+									"attachmentcount": delchaldata["attachmentcount"]
 									},
 								"stockdata":{
 									"inout":stockinout,"items":items
@@ -252,6 +253,29 @@ class api_delchal(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				ur = getUserRole(authDetails["userid"])
+				urole = ur["gkresult"]
+				dcid = self.request.params["dcid"]
+				delchalData = self.con.execute(select([delchal.c.attachment,delchal.c.cancelflag]).where(and_(delchal.c.dcid == dcid)))
+				attachment = delchalData.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteDelchal(self):

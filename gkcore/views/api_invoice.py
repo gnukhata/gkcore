@@ -39,6 +39,7 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_user import getUserRole
 
 @view_defaults(route_name='invoice')
 class api_invoice(object):
