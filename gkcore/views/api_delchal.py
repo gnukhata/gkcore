@@ -74,7 +74,7 @@ class api_delchal(object):
 				if delchaldata["dcflag"]==19:
 					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
-				
+
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
@@ -87,7 +87,7 @@ class api_delchal(object):
 							stockdata["productcode"] = key
 							stockdata["qty"] = items[key]
 							result = self.con.execute(stock.insert(),[stockdata])
-							
+
 					except:
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
 						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
@@ -150,12 +150,12 @@ class api_delchal(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custrow = custdata.fetchone()
-					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y')})
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'), "attachmentcount":row["attachmentcount"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -203,7 +203,8 @@ class api_delchal(object):
 									"custstate":custname["state"],
 									"cancelflag":delchaldata["cancelflag"],
 									"noofpackages":delchaldata["noofpackages"],
-									"modeoftransport": delchaldata["modeoftransport"]
+									"modeoftransport": delchaldata["modeoftransport"],
+                                    "attachmentcount": delchaldata["attachmentcount"]
 									},
 								"stockdata":{
 									"inout":stockinout,"items":items
