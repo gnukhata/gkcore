@@ -3348,7 +3348,7 @@ class api_reports(object):
 			finally:
 				self.con.close()
 
-	@view_config(request_param="type=del_unbilled_for_entire_org",renderer="json")
+	@view_config(request_param="type=del_unbilled",renderer="json")
 	def unbilled_deliveries(self):
 		"""
 		Token is the only required input.
@@ -3368,6 +3368,7 @@ class api_reports(object):
 				dataset = self.request.json_body
 				inout = self.request.params["inout"]
 				inputdate = dataset["inputdate"]
+				del_unbilled_type = dataset["del_unbilled_type"]
 				new_inputdate = dataset["inputdate"]
 				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
 				dc_unbilled = []
@@ -3375,11 +3376,17 @@ class api_reports(object):
 				if inout == "i":#in
 					#distinct clause must be added to the query.
 					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
-					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					if del_unbilled_type == "0":
+						alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					else:
+						alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcflag == int(del_unbilled_type), delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 9, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
 				if inout == "o":#out
 					#distinct clause must be added to the query.
 					#delchal dcdate need to be added into select clause, since it is mentioned in order_by clause.
-					alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					if del_unbilled_type == "0":
+						alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+					else:
+						alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcflag == int(del_unbilled_type), delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, stock.c.inout == 15, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
 				alldcids = alldcids.fetchall()
 				dcResult = []
 				# ********* What if multiple delchals are covered by single invoice?*******************
