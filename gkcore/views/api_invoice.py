@@ -288,6 +288,29 @@ class api_invoice(object):
 			finally:
 				self.con.close()
 
+	@view_config(request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				ur = getUserRole(authDetails["userid"])
+				urole = ur["gkresult"]
+				invoiceid = self.request.params["invid"]
+				invoiceData = self.con.execute(select([invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
+				attachment = invoiceData.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteinvoice(self):
 		try:
