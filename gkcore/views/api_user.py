@@ -10,7 +10,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
   GNU Affero General Public License for more details.
 
   You should have received a copy of the GNU Affero General Public
@@ -34,7 +34,7 @@ from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from pyramid.request import Request
 from pyramid.response import Response
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults,	 view_config
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
@@ -64,13 +64,22 @@ class api_user(object):
 
 	@view_config(request_method='POST',renderer='json')
 	def addUser(self):
+		"""
+		purpose
+		adds a user in the users table.
+		description:
+		this function  takes username and role as basic parameters.
+		It may also have a list of goids for the godowns associated with this user.
+		This is only true if goflag is True.
+		The frontend must send the role as godownkeeper for this.
+"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -79,10 +88,20 @@ class api_user(object):
 				dataset = self.request.json_body
 				if userRole[0]==-1 or (userRole[0]==0 and dataset["userrole"]==1):
 					dataset["orgcode"] = authDetails["orgcode"]
-					result = self.con.execute(gkdb.users.insert(),[dataset])
+					if dataset["userrole"]== 3:
+						golist = tuple(dataset.pop("golist"))
+						result = self.con.execute(gkdb.users.insert(),[dataset])
+						userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset["orgcode"])))
+						userRow = userdata.fetchone()
+						lastid = userRow["userid"]
+						for goid in golist:
+							godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
+							result = self.con.execute(gkdb.usergodown.insert(),[godata])
+					else:
+						result = self.con.execute(gkdb.users.insert(),[dataset])
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":	 enumdict["BadPrivilege"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
@@ -94,16 +113,26 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				row = result.fetchone()
 				User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
+				if User["userrole"] == 3:
+					usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.userid == authDetails["userid"]))
+					goids = usgo.fetchall()
+					userGodowns = {}
+					for g in goids:
+						godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == g))
+						gNameRow = godownData.fetchone()
+						userGodowns[g] = gNameRow["gname"]
+					User["godowns"] = userGodowns
+
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -114,10 +143,10 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -125,10 +154,20 @@ class api_user(object):
 				userRole = user.fetchone()
 				dataset = self.request.json_body
 				if userRole[0]==-1 or authDetails["userid"]==dataset["userid"]:
-					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+					if dataset["userrole"] == 3:
+						goids = tuple( dataset.pop("goids"))
+										
+						result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+						usgoupdate = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid == dataset["userid"]))
+						for goid in goids:
+							ugSet = {"userid":dataset["userid"],"goid":goid,"orgcode":authDetails["orgcode"]}
+							self.con.execute(gkdb.usergodown.insert(),ugSet)
+					else:
+						result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+							
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":	 enumdict["BadPrivilege"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
@@ -138,10 +177,10 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -161,7 +200,7 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -175,7 +214,7 @@ class api_user(object):
 					result = self.con.execute(gkdb.users.delete().where(gkdb.users.c.userid==dataset["userid"]))
 					return {"gkstatus":enumdict["Success"]}
 				else:
-					return {"gkstatus":  enumdict["BadPrivilege"]}
+					return {"gkstatus":	 enumdict["BadPrivilege"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
@@ -196,7 +235,7 @@ class api_user(object):
 				else:
 					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
-			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+			return	{"gkstatus":  enumdict["ConnectionFailed"]}
 		finally:
 			self.con.close()
 	@view_config(route_name='forgotpassword', request_method='GET', request_param='type=securityanswer', renderer='json')
@@ -212,7 +251,7 @@ class api_user(object):
 				else:
 					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
-			return  {"gkstatus":  enumdict["ConnectionFailed"]}
+			return	{"gkstatus":  enumdict["ConnectionFailed"]}
 		finally:
 			self.con.close()
 	@view_config(route_name='forgotpassword', request_method='PUT', renderer='json')
@@ -227,7 +266,7 @@ class api_user(object):
 				else:
 					return {"gkstatus":enumdict["BadPrivilege"]}
 		except:
-			return  {"gkstatus":enumdict["ConnectionFailed"]}
+			return	{"gkstatus":enumdict["ConnectionFailed"]}
 		finally:
 			self.con.close()
 	@view_config(route_name='user', request_method='PUT', request_param='type=theme', renderer='json')
@@ -235,10 +274,10 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -252,7 +291,7 @@ class api_user(object):
 					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==authDetails["userid"]).values(dataset))
 					return {"gkstatus":enumdict["Success"]}
 				except:
-					return  {"gkstatus":  enumdict["ConnectionFailed"]}
+					return	{"gkstatus":  enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 	@view_config(route_name='user', request_method='GET', request_param='type=theme', renderer='json')
@@ -260,10 +299,10 @@ class api_user(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -278,6 +317,6 @@ class api_user(object):
 					row = result.fetchone()
 					return {"gkstatus": gkcore.enumdict["Success"], "gkresult":row["themename"]}
 				except:
-					return  {"gkstatus":  enumdict["ConnectionFailed"]}
+					return	{"gkstatus":  enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
