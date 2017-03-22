@@ -67,14 +67,14 @@ class api_organisation(object):
 			self.con.close()
 			return {"gkstatus":enumdict["ConnectionFailed"]}
 
-	@view_config(request_method='GET', request_param='type=orgcodelist', renderer='json')
+	@view_config(request_method='GET', request_param='type=orgcodelist', renderer='json' , route_name="organisations")
 	def getsubOrgs(self):
 		try:
 			self.con=eng.connect()
-			result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.orgcode]).order_by(gkdb.organisation.c.orgcode))
+			result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype,gkdb.organisation.c.orgcode,gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]).order_by(gkdb.organisation.c.orgcode))
 			orgs = []
 			for row in result:
-				orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"], "orgcode":row["orgcode"]})
+				orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"], "orgcode":row["orgcode"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]) })
 				orgs.sort()
 			self.con.close()
 			return {"gkstatus":enumdict["Success"], "gkdata":orgs}
