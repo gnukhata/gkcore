@@ -303,10 +303,10 @@ class api_invoice(object):
 				self.con = eng.connect()
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
-				invoiceid = self.request.params["invid"]
-				invoiceData = self.con.execute(select([invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
+				invid = self.request.params["invid"]
+				invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
 				attachment = invoiceData.fetchone()
-				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:

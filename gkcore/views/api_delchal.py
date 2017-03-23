@@ -269,9 +269,9 @@ class api_delchal(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				dcid = self.request.params["dcid"]
-				delchalData = self.con.execute(select([delchal.c.attachment,delchal.c.cancelflag]).where(and_(delchal.c.dcid == dcid)))
+				delchalData = self.con.execute(select([delchal.c.dcno, delchal.c.attachment,delchal.c.cancelflag]).where(and_(delchal.c.dcid == dcid)))
 				attachment = delchalData.fetchone()
-				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"], "dcno": attachment["dcno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
