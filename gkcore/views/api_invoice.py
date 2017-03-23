@@ -39,6 +39,7 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_user import getUserRole
 
 @view_defaults(route_name='invoice')
 class api_invoice(object):
@@ -190,14 +191,14 @@ class api_invoice(object):
 				row = result.fetchone()
 				items = row["contents"]
 				if row["icflag"]==3:
-					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"])}
+					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
 					if row["cancelflag"]==1:
 						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 					invc["invoiceno"]=row["invoiceno"]
 					invc["invid"]=row["invid"]
 					invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 				else:
-					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"])}
+					invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
 					if row["cancelflag"]==1:
 						invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
 					result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
@@ -254,12 +255,12 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
 				invoices = []
 				for row in result:
 					result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custname = result.fetchone()
-					invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"])})
+					invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
@@ -285,6 +286,29 @@ class api_invoice(object):
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				ur = getUserRole(authDetails["userid"])
+				urole = ur["gkresult"]
+				invid = self.request.params["invid"]
+				invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
+				attachment = invoiceData.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
 

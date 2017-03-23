@@ -39,6 +39,7 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_user import getUserRole
 
 @view_defaults(route_name='delchal')
 class api_delchal(object):
@@ -74,7 +75,7 @@ class api_delchal(object):
 				if delchaldata["dcflag"]==19:
 					delchaldata["issuerid"] = authDetails["userid"]
 				result = self.con.execute(delchal.insert(),[delchaldata])
-				
+
 				if result.rowcount==1:
 					dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
 					dcidrow = dciddata.fetchone()
@@ -87,7 +88,7 @@ class api_delchal(object):
 							stockdata["productcode"] = key
 							stockdata["qty"] = items[key]
 							result = self.con.execute(stock.insert(),[stockdata])
-							
+
 					except:
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
 						result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
@@ -150,12 +151,12 @@ class api_delchal(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+				result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
 				delchals = []
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 					custrow = custdata.fetchone()
-					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y')})
+					delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'), "attachmentcount":row["attachmentcount"]})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -203,7 +204,8 @@ class api_delchal(object):
 									"custstate":custname["state"],
 									"cancelflag":delchaldata["cancelflag"],
 									"noofpackages":delchaldata["noofpackages"],
-									"modeoftransport": delchaldata["modeoftransport"]
+									"modeoftransport": delchaldata["modeoftransport"],
+									"attachmentcount": delchaldata["attachmentcount"]
 									},
 								"stockdata":{
 									"inout":stockinout,"items":items
@@ -251,6 +253,29 @@ class api_delchal(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				ur = getUserRole(authDetails["userid"])
+				urole = ur["gkresult"]
+				dcid = self.request.params["dcid"]
+				delchalData = self.con.execute(select([delchal.c.dcno, delchal.c.attachment,delchal.c.cancelflag]).where(and_(delchal.c.dcid == dcid)))
+				attachment = delchalData.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"], "dcno": attachment["dcno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteDelchal(self):
