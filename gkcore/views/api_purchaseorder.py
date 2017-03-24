@@ -69,9 +69,7 @@ class api_purchaseorder(object):
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
-
 				result = self.con.execute(purchaseorder.insert(),[dataset])
-
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -94,7 +92,6 @@ class api_purchaseorder(object):
 		else:
 			try:
 				self.con = eng.connect()
-
 				result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
 				allposo = []
 				for row in result:
@@ -158,19 +155,35 @@ class api_purchaseorder(object):
 			schedule = podata["schedule"]
 			details={}
 			for key in schedule:
-				details[key] = {"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"],"reorderlimit":schedule[key]["reorderlimit"],"staggered":schedule[key]["staggered"]}
-			po = {
-				"orderno":podata["orderno"],
-				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
-				"creditperiod":podata["creditperiod"],
-				"payterms":podata["payterms"],
-				"modeoftransport":podata["modeoftransport"],
-				"designation":podata["designation"],
-				"schedule":details,
-				"taxstate":podata["taxstate"],
-				"psflag":podata["psflag"],
-				"csid":podata["csid"]
-				}
+				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"],"staggered":schedule[key]["staggered"]}
+
+			if podata.has_key("togodown"):
+				po = {
+					"orderno":podata["orderno"],
+					"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
+					"creditperiod":podata["creditperiod"],
+					"payterms":podata["payterms"],
+					"modeoftransport":podata["modeoftransport"],
+					"designation":podata["designation"],
+					"schedule":details,
+					"taxstate":podata["taxstate"],
+					"psflag":podata["psflag"],
+					"csid":podata["csid"],
+					"togodown":podata["togodown"]
+					}
+			else:
+				po = {
+					"orderno":podata["orderno"],
+					"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
+					"creditperiod":podata["creditperiod"],
+					"payterms":podata["payterms"],
+					"modeoftransport":podata["modeoftransport"],
+					"designation":podata["designation"],
+					"schedule":details,
+					"taxstate":podata["taxstate"],
+					"psflag":podata["psflag"],
+					"csid":podata["csid"]
+					}
 			return {"gkstatus":enumdict["Success"],"gkresult":po}
 			self.con.close()
 
