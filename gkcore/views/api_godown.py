@@ -43,12 +43,11 @@ from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 
 def getusergodowns(userid):
-	#try:
+	try:
 		con = Connection
 		con = eng.connect()
 		uid=userid
 		godowns=con.execute(select([godown]).where(godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid))))
-		#result = godowns.fetchall()
 		usergo = []
 		srno=1
 		for row in godowns:
@@ -63,9 +62,9 @@ def getusergodowns(userid):
 			srno = srno+1
 			print usergo
 		return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
-	#except:
+	except:
 		return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-	#finally:
+	finally:
 		con.close();
 
 
@@ -130,16 +129,16 @@ class api_godown(object):
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 			print hello
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				userrole = getUserRole(authDetails["userid"])
 				gorole = userrole["gkresult"]
 				print gorole
 				if (gorole["userrole"]==3):
-					#try:
+					try:
 						result = getusergodowns(authDetails["userid"])
 						return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
-					#except:
+					except:
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 				if (gorole["userrole"]!=3):
 					result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goname))
@@ -156,9 +155,9 @@ class api_godown(object):
 						godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
 						srno = srno+1
 					return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
-			#except:
+			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
+			finally:
 				self.con.close()
 
 	@view_config(request_param='qty=single', request_method='GET',renderer='json')
