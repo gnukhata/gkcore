@@ -61,7 +61,6 @@ def getusergodowns(userid):
 				status = "Inactive"
 			usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
 			srno = srno+1
-			print usergo
 		return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
 	except:
 		return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -128,13 +127,11 @@ class api_godown(object):
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-			print hello
 		else:
 			try:
 				self.con = eng.connect()
 				userrole = getUserRole(authDetails["userid"])
 				gorole = userrole["gkresult"]
-				print gorole
 				if (gorole["userrole"]==3):
 					try:
 						result = getusergodowns(authDetails["userid"])
