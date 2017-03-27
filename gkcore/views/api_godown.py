@@ -158,6 +158,30 @@ class api_godown(object):
 			finally:
 				self.con.close()
 
+	@view_config(request_method='GET', request_param='type=togodown', renderer ='json')
+	def togodowns(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
+				godowns = []
+				for row in result:
+					godowns.append({"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"]})
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+
+
 	@view_config(request_param='qty=single', request_method='GET',renderer='json')
 	def getGodown(self):
 		try:
