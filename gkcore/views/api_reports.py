@@ -3277,7 +3277,7 @@ class api_reports(object):
 					elif rowuser["userrole"] == 2:
 						userrole = "Internal Auditor"
 					else:
-						userrole = "Godown Keeper"
+						userrole = "Godown In Charge"
 					logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
 				return {"gkstatus":enumdict["Success"], "gkresult":logdata }
 			except:
