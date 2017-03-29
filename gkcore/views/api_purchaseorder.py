@@ -157,33 +157,20 @@ class api_purchaseorder(object):
 			for key in schedule:
 				details[key] = {"productname":schedule[key]["productname"],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"taxrate":schedule[key]["taxrate"],"staggered":schedule[key]["staggered"]}
 
-			if podata.has_key("togodown"):
-				po = {
-					"orderno":podata["orderno"],
-					"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
-					"creditperiod":podata["creditperiod"],
-					"payterms":podata["payterms"],
-					"modeoftransport":podata["modeoftransport"],
-					"designation":podata["designation"],
-					"schedule":details,
-					"taxstate":podata["taxstate"],
-					"psflag":podata["psflag"],
-					"csid":podata["csid"],
-					"togodown":podata["togodown"]
-					}
-			else:
-				po = {
-					"orderno":podata["orderno"],
-					"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
-					"creditperiod":podata["creditperiod"],
-					"payterms":podata["payterms"],
-					"modeoftransport":podata["modeoftransport"],
-					"designation":podata["designation"],
-					"schedule":details,
-					"taxstate":podata["taxstate"],
-					"psflag":podata["psflag"],
-					"csid":podata["csid"]
-					}
+			po = {
+				"orderno":podata["orderno"],
+				"orderdate": datetime.strftime(podata["orderdate"],'%d-%m-%Y'),
+				"creditperiod":podata["creditperiod"],
+				"payterms":podata["payterms"],
+				"modeoftransport":podata["modeoftransport"],
+				"issuername":podata["issuername"],
+				"designation":podata["designation"],
+				"schedule":details,
+				"taxstate":podata["taxstate"],
+				"psflag":podata["psflag"],
+				"csid":podata["csid"],
+				"togodown":podata["togodown"]
+				}
 			return {"gkstatus":enumdict["Success"],"gkresult":po}
 			self.con.close()
 
