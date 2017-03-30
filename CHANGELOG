@@ -1,3 +1,18 @@
+[30-March-2017 Release 4.0]
+* Function for consolidated balancesheet of holding and subsidiary companies.
+* Godown-in-charge and Internal auditor userrole added.
+* API for Purchase order and Sales order.
+* Attachment of file field added in invoice and delchal.
+* Unbilled deliveries report.
+* Stock on hand report.
+* Godown wise stock on hand report.
+* Function to get current balance of account.
+* Multple drs and crs in a ledger report.
+* A flatlist to get last 5 godowns created.
+* Date field in stock .
+* Modified stock report and godown wise stock report.
+* Function to manage database upgrade.
+
 [7-February-2017 Release 3.5.2 ]
 * A flatlist to get all projects of organisation.
 * A flatlist to get details of all accounts under a group.
