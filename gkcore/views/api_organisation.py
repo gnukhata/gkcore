@@ -60,10 +60,10 @@ class api_organisation(object):
 		self.con = eng.connect()
 		try:
 			self.con.execute(select([gkdb.stock.c.stockdate]))
-			self.con.close()
-			return 0
+			#self.con.close()
+			#return 0
 		except:
-			self.con.execute("alter table stock add stockdate datetime")
+			self.con.execute("alter table stock add stockdate timestamp")
 			self.con.execute("alter table delchal add attachment json")
 			self.con.execute("alter table delchal add attachmentcount integer default 0")
 			self.con.execute("alter table invoice add attachment json")
@@ -80,9 +80,13 @@ class api_organisation(object):
 			self.con.execute("alter table purchaseorder drop column productdetails")
 			self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
 			self.con.execute("create table usergodown(ugid integer, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-			self.con.execute("create table log(logid integer, time datetime, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			self.con.execute("create table log(logid integer, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			#return 0
+		finally:
 			self.con.close()
 			return 0
+
+
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
