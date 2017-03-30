@@ -60,6 +60,7 @@ class api_organisation(object):
 		self.con = eng.connect()
 		try:
 			self.con.execute(select([gkdb.stock.c.stockdate]))
+			self.con.close()
 			return 0
 		except:
 			self.con.execute("alter table stock add stockdate datetime")
@@ -80,15 +81,12 @@ class api_organisation(object):
 			self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
 			self.con.execute("create table usergodown(ugid integer, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
 			self.con.execute("create table log(logid integer, time datetime, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			self.con.close()
 			return 0
-			
-		
-			
-
-
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
+			self.gkUpgrade()
 			self.con=eng.connect()
 			result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
 			orgs = []
