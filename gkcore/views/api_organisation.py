@@ -80,7 +80,7 @@ class api_organisation(object):
 			self.con.execute("alter table purchaseorder drop column productdetails")
 			self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
 			self.con.execute("create table usergodown(ugid integer, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-			self.con.execute("create table log(logid integer, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
 			#return 0
 		finally:
 			self.con.close()
