@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Mohd. Talha Pawaty" <mtalha456@gmail.com>
 """
 
 
@@ -124,13 +125,14 @@ class api_user(object):
 				row = result.fetchone()
 				User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
 				if User["userrole"] == 3:
-					usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.userid == authDetails["userid"]))
+					usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == authDetails["userid"]))
 					goids = usgo.fetchall()
 					userGodowns = {}
 					for g in goids:
-						godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == g))
+						godownid = g["goid"]
+						godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
 						gNameRow = godownData.fetchone()
-						userGodowns[g] = gNameRow["gname"]
+						userGodowns[godownid] = gNameRow["goname"]
 					User["godowns"] = userGodowns
 
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
@@ -153,18 +155,8 @@ class api_user(object):
 				user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
 				userRole = user.fetchone()
 				dataset = self.request.json_body
-				if userRole[0]==-1 or authDetails["userid"]==dataset["userid"]:
-					if dataset["userrole"] == 3:
-						goids = tuple( dataset.pop("goids"))
-										
-						result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-						usgoupdate = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid == dataset["userid"]))
-						for goid in goids:
-							ugSet = {"userid":dataset["userid"],"goid":goid,"orgcode":authDetails["orgcode"]}
-							self.con.execute(gkdb.usergodown.insert(),ugSet)
-					else:
-						result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-							
+				if userRole[0]==-1 or int(authDetails["userid"])==int(dataset["userid"]):
+					result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":	 enumdict["BadPrivilege"]}
