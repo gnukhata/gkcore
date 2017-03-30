@@ -51,10 +51,46 @@ class api_organisation(object):
 		self.request = request
 		self.con = Connection
 		print "Organisation initialized"
+	def gkUpgrade(self):
+		"""
+		This function will be called only once while upgrading gnukhata.
+		We check if the field stockdate is present.
+		If it is not present it means that this is an upgrade.
+		"""
+		self.con = eng.connect()
+		try:
+			self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
+			#self.con.close()
+			#return 0
+		except:
+			self.con.execute("alter table stock add stockdate timestamp")
+			self.con.execute("alter table delchal add attachment json")
+			self.con.execute("alter table delchal add attachmentcount integer default 0")
+			self.con.execute("alter table invoice add attachment json")
+			self.con.execute("alter table invoice add attachmentcount integer default 0")
+			self.con.execute("alter table purchaseorder add creditperiod text")
+			self.con.execute("alter table purchaseorder add taxstate text")
+			self.con.execute("alter table purchaseorder add togodown integer")
+			self.con.execute("alter table purchaseorder drop column schedule")
+			self.con.execute("alter table purchaseorder add schedule jsonb")
+			self.con.execute("alter table purchaseorder drop column maxdate")
+			self.con.execute("alter table purchaseorder drop column datedelivery")
+			self.con.execute("alter table purchaseorder drop column deliveryplaceaddr")
+			self.con.execute("alter table purchaseorder drop column tax")
+			self.con.execute("alter table purchaseorder drop column productdetails")
+			self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
+			self.con.execute("create table usergodown(ugid integer, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+			#return 0
+		finally:
+			self.con.close()
+			return 0
+
 
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
+			self.gkUpgrade()
 			self.con=eng.connect()
 			result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
 			orgs = []
@@ -458,3 +494,5 @@ class api_organisation(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+				
