@@ -59,7 +59,7 @@ class api_organisation(object):
 		"""
 		self.con = eng.connect()
 		try:
-			self.con.execute(select([gkdb.stock.c.stockdate]))
+			self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
 			#self.con.close()
 			#return 0
 		except:
