@@ -3230,6 +3230,12 @@ class api_reports(object):
 
 	@view_config(request_param='type=closingbalance', renderer='json')
 	def closingBalance(self):
+		"""
+		Purpose: returns the current balance and balance type for the given account as per the current date.
+		description:
+		This function takes the startedate and enddate (date of transaction) as well as accountcode.
+		Returns the balance as on that date with the baltype.    
+		"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -3244,7 +3250,10 @@ class api_reports(object):
 				financialStart = self.request.params["financialstart"]
 				calculateTo =  self.request.params["calculateto"]
 				calbalData = calculateBalance(self.con,accountCode, financialStart, financialStart, calculateTo)
-				currentBalance="%.2f"%float(calbalData["curbal"])
+				if calbalData["curbal"] == 0:
+					currentBalance="%.2f"%float(calbalData["curbal"])
+				else:
+					currentBalance="%.2f (%s)"%(float(calbalData["curbal"]),calbalData["baltype"])
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":currentBalance}
 			except:
@@ -3253,6 +3262,13 @@ class api_reports(object):
 
 	@view_config(request_param='type=logbyorg', renderer='json')
 	def logByOrg(self):
+		"""
+		purpose: returns complete log statement for an organisation.
+		Date range is taken from calculatefrom and calculateto.
+		description:
+		This function returns entire log statement for a given organisation.
+		Date range is taken from client and orgcode from authdetails.    
+		"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
