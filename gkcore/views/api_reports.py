@@ -3303,6 +3303,10 @@ class api_reports(object):
 
 	@view_config(request_param='type=logbyuser', renderer='json')
 	def logByUser(self):
+		"""
+This function is the replica of the previous one except the log here is for a particular user.
+All parameter are same with the addition of userid.
+"""
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -3481,7 +3485,7 @@ free replacement or sample are those which are excluded.
 						elif temp_dict["dcflag"]== 6:
 							#we ignore this as well
 							temp_dict["dcflag"] = "Free Replacement"
-						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] ~="Free Replacement":
+						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] !="Free Replacement":
 							dc_unbilled.append(temp_dict)
 							srno += 1
 				self.con.close()
