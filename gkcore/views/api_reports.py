@@ -3326,6 +3326,9 @@ class api_reports(object):
 	@view_config(request_param="type=del_unbilled",renderer="json")
 	def unbilled_deliveries(self):
 		"""
+purpose:
+presents a list of deliverys which are unbilled  There are exceptions which should be excluded.
+free replacement or sample are those which are excluded.
 		Token is the only required input.
 		We also require Orgcode, but it is extracted from the token itself.
 		"""
@@ -3475,7 +3478,10 @@ class api_reports(object):
 						elif temp_dict["dcflag"] == 19:
 							#We don't have to consider sample.
 							temp_dict["dcflag"] = "Sample"
-						if temp_dict["dcflag"] != "Sample":
+						elif temp_dict["dcflag"]== 6:
+							#we ignore this as well
+							temp_dict["dcflag"] = "Free Replacement"
+						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] ~="Free Replacement":
 							dc_unbilled.append(temp_dict)
 							srno += 1
 				self.con.close()
