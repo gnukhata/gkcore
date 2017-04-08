@@ -1,3 +1,8 @@
+[8-April-2017 Release 4.0 Update]
+*Altered rules for sales and purchase for gst/vat implementations.
+*Closing balance function now provides balance types (Dr/Cr) along with the balance.  
+*Improved documantation.
+
 [30-March-2017 Release 4.0]
 * Function for consolidated balancesheet of holding and subsidiary companies.
 * Godown-in-charge and Internal auditor userrole added.
