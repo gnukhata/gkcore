@@ -78,6 +78,21 @@ class TestUser:
 		result = requests.get("http://127.0.0.1:6543/users", headers=self.header)
 		assert result.json()["gkstatus"] == 0
 
+	#You can run this file with nosetests -s --verbose test_user.py. It will show the list of users with godowns whenever godown is there.
+	def test_get_listof_users(self):
+		gkdata = {"goname":"Test Godown 1", "state":"Maharashtra", "goaddr":"Pune", "contactname":"Bhavesh Bavdhane", "designation":"Designation", "gocontact":"8446611103"}
+		result = requests.post("http://127.0.0.1:6543/godown", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/godown", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["goname"] == "Test Godown 1":
+				self.goid = record["goid"]
+				break
+		gkdata = {"username":"test","userpassword":"test","userrole":3,"userquestion":"test","useranswer":"test","golist":json.loads(str([self.goid]))}
+		result = requests.post("http://127.0.0.1:6543/users", data =json.dumps(gkdata), headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/users?type=list", headers=self.header)
+		print result.json()["gkresult"]
+		assert result.json()["gkstatus"] == 0
+
 	def test_get_single_user(self):
 		""" No need to insert data.
 		Because, ultimately, in api_user::getUser(): userid is taken as the currently logged in user's id and
