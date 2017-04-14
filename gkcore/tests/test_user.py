@@ -80,6 +80,7 @@ class TestUser:
 
 	#You can run this file with nosetests -s --verbose test_user.py. It will show the list of users with godowns whenever godown is there.
 	def test_get_listof_users(self):
+		#godown 1
 		gkdata = {"goname":"Test Godown 1", "state":"Maharashtra", "goaddr":"Pune", "contactname":"Bhavesh Bavdhane", "designation":"Designation", "gocontact":"8446611103"}
 		result = requests.post("http://127.0.0.1:6543/godown", data =json.dumps(gkdata),headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/godown", headers=self.header)
@@ -87,7 +88,15 @@ class TestUser:
 			if record["goname"] == "Test Godown 1":
 				self.goid = record["goid"]
 				break
-		gkdata = {"username":"test","userpassword":"test","userrole":3,"userquestion":"test","useranswer":"test","golist":json.loads(str([self.goid]))}
+		#godown 2
+		gkdata = {"goname":"Test Godown 2", "state":"Maharashtra", "goaddr":"Pune", "contactname":"Bhavesh Bavdhane", "designation":"Designation", "gocontact":"8446611103"}
+		result = requests.post("http://127.0.0.1:6543/godown", data =json.dumps(gkdata),headers=self.header)
+		result = requests.get("http://127.0.0.1:6543/godown", headers=self.header)
+		for record in result.json()["gkresult"]:
+			if record["goname"] == "Test Godown 2":
+				self.goid2 = record["goid"]
+				break
+		gkdata = {"username":"test","userpassword":"test","userrole":3,"userquestion":"test","useranswer":"test","golist":json.loads(str([self.goid, self.goid2]))}
 		result = requests.post("http://127.0.0.1:6543/users", data =json.dumps(gkdata), headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/users?type=list", headers=self.header)
 		print result.json()["gkresult"]
