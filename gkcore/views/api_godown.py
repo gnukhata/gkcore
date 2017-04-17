@@ -204,6 +204,11 @@ class api_godown(object):
 			finally:
 				self.con.close()
 
+	"""
+	The below function "getNumberOfProductInGodown" will be called when user select a
+	godown for deletetion, it will return number of products a selected godown content.
+	"""
+
 	@view_config(request_method='GET', request_param='type=goproduct',renderer='json')
 	def getNumberOfProductInGodown(self):
 		try:
