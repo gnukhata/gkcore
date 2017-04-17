@@ -30,7 +30,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import godown, usergodown, stock
+from gkcore.models.gkdb import godown, usergodown, stock, goprod
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -200,6 +200,33 @@ class api_godown(object):
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":godownDetails}
 			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
+
+	"""
+	The below function "getNumberOfProductInGodown" will be called when user select a
+	godown for deletetion, it will return number of products a selected godown content.
+	"""
+
+	@view_config(request_method='GET', request_param='type=goproduct',renderer='json')
+	def getNumberOfProductInGodown(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				goid = self.request.params["goid"]
+				result = self.con.execute(select([func.count(goprod.c.productcode)]).where(goprod.c.goid == goid))
+				row = result.fetchone()
+				return {"gkstatus":enumdict["Success"],"gkresult":row[0]}
+			except:
+				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
