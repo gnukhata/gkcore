@@ -48,8 +48,10 @@ class api_invoice(object):
 		self.request = request
 		self.con = Connection
 
+
+			
 	@view_config(request_method='POST',renderer='json')
-	def addinvoice(self):
+	def addInvoice(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -116,7 +118,7 @@ class api_invoice(object):
 				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
-	def editinvoice(self):
+	def editInvoice(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -172,6 +174,33 @@ class api_invoice(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_method='put',request_param='type=bwa',renderer='json')
+	def updatePayment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %s"%(dataset["amountpaid"],dataset["invid"]))
+				return {"gkstatus":enumdict["Success"]}
+				
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+			
+		
+		
 
 
 	@view_config(request_method='GET',request_param="inv=single", renderer ='json')
