@@ -220,7 +220,7 @@ class api_user(object):
 							godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
 							goname = godownnameres.fetchone()
 							godowns.append(str(goname["goname"] + "(" +goname["goaddr"]+")"))
-					users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns})
+					users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns, "noofgodowns": len(godowns)})
 					srno += 1
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
 			except:
