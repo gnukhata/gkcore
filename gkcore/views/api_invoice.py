@@ -187,8 +187,9 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				dataset = self.request.json_body
-				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %s"%(dataset["amountpaid"],dataset["invid"]))
+				invid = self.request.params["invid"]
+				pdamt = self.request.params["pdamt"]
+				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
 				return {"gkstatus":enumdict["Success"]}
 				
 			except exc.IntegrityError:
