@@ -201,6 +201,7 @@ class api_user(object):
 				self.con = eng.connect()
 				result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
 				users = []
+				srno = 1
 				for row in result:
 					godowns = []
 					urole = ""
@@ -219,7 +220,8 @@ class api_user(object):
 							godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
 							goname = godownnameres.fetchone()
 							godowns.append(str(goname["goname"] + "(" +goname["goaddr"]+")"))
-					users.append({"userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns})
+					users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns})
+					srno += 1
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
