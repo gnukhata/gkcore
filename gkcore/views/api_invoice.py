@@ -185,20 +185,20 @@ class api_invoice(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				invid = int(self.request.params["invid"])
 				pdamt = float(self.request.params["pdamt"])
 				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
 				return {"gkstatus":enumdict["Success"]}
 				
-#			except exc.IntegrityError:
-#				return {"gkstatus":enumdict["DuplicateEntry"]}
-#			except:
-#				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			finally:
-#				self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 			
 		
 		
