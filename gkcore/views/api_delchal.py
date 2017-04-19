@@ -243,7 +243,8 @@ class api_delchal(object):
 			try:
 				self.con = eng.connect()
 				deliverychallandata = {"dcdate": "","dcno":""}
-				result = self.con.execute(select([delchal.c.dcno,delchal.c.dcdate]).where(delchal.c.dcid==(select([func.max(delchal.c.dcid)]).where(and_(delchal.c.dcflag==self.request.params["dcflag"],delchal.c.orgcode==authDetails["orgcode"] )))) )
+				dcstatus = int(self.request.params["status"])
+				result = self.con.execute(select([delchal.c.dcno,delchal.c.dcdate]).where(delchal.c.dcid==(select([func.max(stock.c.dcinvtnid)]).where(and_(stock.c.inout==dcstatus,stock.c.dcinvtnflag==4,stock.c.orgcode==authDetails["orgcode"] )))) )
 				row = result.fetchone()
 				if row != None:
 					deliverychallandata["dcdate"] = datetime.strftime((row["dcdate"]),"%d-%m-%Y")
