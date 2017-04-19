@@ -300,7 +300,7 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				unpaidBillsRecords = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(invoice.c.custid == self.request.params["custid"]) )
+				unpaidBillsRecords = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
 
 		  	except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
