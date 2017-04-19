@@ -282,10 +282,13 @@ class api_invoice(object):
 		"""
 		Purpose: gets list of unpaid bills for a given customerandsupplier or supplier.
 		Takes the person's id and returns a grid containing bills.
+Apart from the bills it also returns customerandsupplier or supplyer name. 
 		Description:
 		The function will take customerandsupplier or supplier id while orgcode is  taken from token.
 		The invoice table will be scanned for all the bills concerning the party.
 		If the total amount is greater than amountpaid(which is 0 by default ) then the bill qualifies to be returned.
+		The function will return json object with gkstatus,csName:name of the party and gkresult:grid of bills.
+The bills grid calld gkresult will return a list as it's value. 
 		The columns will be as follows:
 		Bill no., Bill date, Customer/ supplier name,total amount and outstanding.
 		the outstanding is calculated as total - amountpaid.
@@ -309,8 +312,8 @@ class api_invoice(object):
 					upb["invid"] = bill["invid"]
 					upb["invoiceno"] = bill["invoiceno"]
 					upb["invoicedate"]=datetime.strftime(bill["invoicedate"],'%d-%m-%Y')
-					upb["invoicetotal"] = float(bill["invoicetotal"])
-					upb["pendingamount"] = float(bill["invoicetotal"]) - float(bill["amountpaid"])
+					upb["invoicetotal"] ="%.2f"%float(bill["invoicetotal"])
+					upb["pendingamount"] = "%.2f"% (float(bill["invoicetotal"]) -  float(bill["amountpaid"]))
 					bills.append(upb)
 				custNameData = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == self.request.params["custid"]))
 				custnameRecord = custNameData.fetchone()
