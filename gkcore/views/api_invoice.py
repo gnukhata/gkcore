@@ -300,23 +300,23 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				unpaidBillsRecords = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
+				unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
 
 				unpaidBills = unpaidBillsRecords.fetchall()
 				bills = []
 				for bill in unpaidBills:
 					upb = {}
-					upb["invid"] = self.request.params["invid"]
+					upb["invid"] = bill["invid"]
 					upb["invoiceno"] = bill["invoiceno"]
 					upb["invoicedate"]=datetime.strftime(bill["invoicedate"],'%d-%m-%Y')
-					upb["invoicetotal"] = bill["invoicetotal"]
-					upb["pendingamount"] =  bill["invoicetotal"] - bill["amountpaid"]
+					upb["invoicetotal"] = float(bill["invoicetotal"])
+					upb["pendingamount"] = float(bill["invoicetotal"]) - float(bill["amountpaid"])
 					bills.append(upb)
 				custNameData = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == self.request.params["custid"]))
 				custnameRecord = custNameData.fetchone()
 				csName = custnameRecord["custname"]
 				gkresult = {"csname":csName,"unpaidbills":bills} 
-				return{"gkstatus":enumdict["Succes"],"gkresult":gkresult}
+				return{"gkstatus":enumdict["Success"],"gkresult":gkresult}
 		  	except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
