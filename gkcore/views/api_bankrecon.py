@@ -70,7 +70,7 @@ class bankreconciliation(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname=='Bank'))))).order_by(accounts.c.accountname))
+				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname==unicode('Bank')))))).order_by(accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
@@ -112,8 +112,9 @@ class bankreconciliation(object):
 		uctotaldr=0.00
 		uctotalcr=0.00
 		for record in result:
-			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
+			voucherdata=self.con.execute("select * from vouchers where vouchercode='%d' and delflag=false and voucherdate<='%s' order by voucherdate"%(int(record["vouchercode"]),calculateTo))
 			voucher= voucherdata.fetchone()
+			print voucher
 			if voucher==None:
 				continue
 			if voucher["drs"].has_key(str(record["accountcode"])):
