@@ -22,7 +22,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-
+"Mohd. Talha Pawaty" <mtalha456@gmail.com>
 """
 #imports contain sqlalchemy modules,
 #enumdict containing status messages,
@@ -107,14 +107,13 @@ class bankreconciliation(object):
 				self.con.close()
 
 	def showUnclearedTransactions(self,accountCode,calculateFrom,calculateTo):
-		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateTo),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
+		result = self.con.execute(select([bankrecon,vouchers.c.voucherdate]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateTo,bankrecon.c.vouchercode==vouchers.c.vouchercode),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null(),bankrecon.c.vouchercode==vouchers.c.vouchercode))).order_by(vouchers.c.voucherdate))
 		recongrid=[]
 		uctotaldr=0.00
 		uctotalcr=0.00
 		for record in result:
-			voucherdata=self.con.execute("select * from vouchers where vouchercode='%d' and delflag=false and voucherdate<='%s' order by voucherdate"%(int(record["vouchercode"]),calculateTo))
+			voucherdata=self.con.execute("select * from vouchers where vouchercode=%d and delflag=false and voucherdate<='%s'"%(int(record["vouchercode"]),calculateTo))
 			voucher= voucherdata.fetchone()
-			print voucher
 			if voucher==None:
 				continue
 			if voucher["drs"].has_key(str(record["accountcode"])):
