@@ -22,7 +22,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-
+"Mohd. Talha Pawaty" <mtalha456@gmail.com>
 """
 #imports contain sqlalchemy modules,
 #enumdict containing status messages,
@@ -70,7 +70,7 @@ class bankreconciliation(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname=='Bank'))))).order_by(accounts.c.accountname))
+				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname==unicode('Bank')))))).order_by(accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
@@ -107,12 +107,12 @@ class bankreconciliation(object):
 				self.con.close()
 
 	def showUnclearedTransactions(self,accountCode,calculateFrom,calculateTo):
-		result = result = self.con.execute(select([bankrecon]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateTo),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null()))))
+		result = self.con.execute(select([bankrecon,vouchers.c.voucherdate]).where(or_(and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate!=null(),bankrecon.c.clearancedate>calculateTo,bankrecon.c.vouchercode==vouchers.c.vouchercode),and_(bankrecon.c.accountcode==accountCode,bankrecon.c.clearancedate==null(),bankrecon.c.vouchercode==vouchers.c.vouchercode))).order_by(vouchers.c.voucherdate))
 		recongrid=[]
 		uctotaldr=0.00
 		uctotalcr=0.00
 		for record in result:
-			voucherdata=self.con.execute(select([vouchers]).where(and_(vouchers.c.vouchercode==int(record["vouchercode"]),vouchers.c.delflag==False,vouchers.c.voucherdate<=calculateTo)).order_by(vouchers.c.voucherdate))
+			voucherdata=self.con.execute("select * from vouchers where vouchercode=%d and delflag=false and voucherdate<='%s'"%(int(record["vouchercode"]),calculateTo))
 			voucher= voucherdata.fetchone()
 			if voucher==None:
 				continue
