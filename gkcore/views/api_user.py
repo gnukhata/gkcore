@@ -186,45 +186,6 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-	#This method makes a list of users. If the user is godown incharge then its respective godowns is also added in list. This method will be used to make list of users report.
-	@view_config(request_method='GET', request_param = "type=list", renderer ='json')
-	def getListofUsers(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"] == False:
-			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
-				users = []
-				for row in result:
-					godowns = []
-					urole = ""
-					if(row["userrole"] == -1):
-						urole = "Admin"
-					elif(row["userrole"] == 0):
-						urole = "Manager"
-					elif(row["userrole"] == 1):
-						urole = "Operator"
-					elif(row["userrole"] == 2):
-						urole = "Internal Auditor"
-					else:
-						urole = "Godown In Charge"
-						godownresult = self.con.execute(select([gkdb.usergodown.c.goid]).where(and_(gkdb.usergodown.c.orgcode==authDetails["orgcode"], gkdb.usergodown.c.userid==row["userid"])))
-						for goid in godownresult:
-							godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
-							goname = godownnameres.fetchone()
-							godowns.append(str(goname["goname"] + "(" +goname["goaddr"]+")"))
-					users.append({"userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
 
 	@view_config(request_method='DELETE', renderer ='json')
 	def deleteuser(self):
