@@ -280,6 +280,7 @@ invoice = Table('invoice',metadata,
 	Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+    Column('freeqty',Numeric(13,2),default=0),
 	UniqueConstraint('orgcode','invoiceno','custid','icflag'),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_invoicenoindex","invoiceno")
