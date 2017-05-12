@@ -48,8 +48,10 @@ class api_invoice(object):
 		self.request = request
 		self.con = Connection
 
+
+			
 	@view_config(request_method='POST',renderer='json')
-	def addinvoice(self):
+	def addInvoice(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -116,7 +118,7 @@ class api_invoice(object):
 				self.con.close()
 
 	@view_config(request_method='PUT', renderer='json')
-	def editinvoice(self):
+	def editInvoice(self):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
@@ -172,6 +174,40 @@ class api_invoice(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_method='PUT',request_param='type=bwa',renderer='json')
+	def updatePayment(self):
+		"""
+		purpose: updates the total payed amount for a certain bill or invoice.
+		Description:
+		The function will take invid and amount received.
+		Will update the invoice table.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				invid = int(self.request.params["invid"])
+				pdamt = float(self.request.params["pdamt"])
+				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
+				return {"gkstatus":enumdict["Success"]}
+				
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+			
+		
+		
 
 
 	@view_config(request_method='GET',request_param="inv=single", renderer ='json')
@@ -241,6 +277,57 @@ class api_invoice(object):
 			finally:
 				self.con.close()
 
+	@view_config(request_method='GET',request_param="type=bwa", renderer ='json')
+	def getCSUPBills(self):
+		"""
+		Purpose: gets list of unpaid bills for a given customerandsupplier or supplier.
+		Takes the person's id and returns a grid containing bills.
+Apart from the bills it also returns customerandsupplier or supplyer name. 
+		Description:
+		The function will take customerandsupplier or supplier id while orgcode is  taken from token.
+		The invoice table will be scanned for all the bills concerning the party.
+		If the total amount is greater than amountpaid(which is 0 by default ) then the bill qualifies to be returned.
+		The function will return json object with gkstatus,csName:name of the party and gkresult:grid of bills.
+The bills grid calld gkresult will return a list as it's value. 
+		The columns will be as follows:
+		Bill no., Bill date, Customer/ supplier name,total amount and outstanding.
+		the outstanding is calculated as total - amountpaid.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
+
+				unpaidBills = unpaidBillsRecords.fetchall()
+				bills = []
+				for bill in unpaidBills:
+					upb = {}
+					upb["invid"] = bill["invid"]
+					upb["invoiceno"] = bill["invoiceno"]
+					upb["invoicedate"]=datetime.strftime(bill["invoicedate"],'%d-%m-%Y')
+					upb["invoicetotal"] ="%.2f"%float(bill["invoicetotal"])
+					upb["pendingamount"] = "%.2f"% (float(bill["invoicetotal"]) -  float(bill["amountpaid"]))
+					bills.append(upb)
+				custNameData = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == self.request.params["custid"]))
+				custnameRecord = custNameData.fetchone()
+				csName = custnameRecord["custname"]
+				gkresult = {"csname":csName,"unpaidbills":bills} 
+				return{"gkstatus":enumdict["Success"],"gkresult":gkresult}
+		  	except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+				
 
 
 	@view_config(request_method='GET',request_param="inv=all", renderer ='json')
