@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Mohd. Talha Pawaty" <mtallha456@gmail.com>
 """
 from sqlalchemy.dialects.postgresql.json import JSONB
 
@@ -260,6 +261,8 @@ The key of this field is the productcode while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty).
 Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
+A new json field called freeqty.
+This field is a dictionary.
 """
 invoice = Table('invoice',metadata,
 	Column('invid',Integer,primary_key=True),
@@ -280,6 +283,7 @@ invoice = Table('invoice',metadata,
 	Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+    Column('freeqty',JSONB),
 	UniqueConstraint('orgcode','invoiceno','custid','icflag'),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_invoicenoindex","invoiceno")

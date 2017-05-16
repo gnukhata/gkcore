@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Mohd. Talha Pawaty" <mtalha456@gmail.com>
 """
 
 
@@ -49,7 +50,7 @@ class api_invoice(object):
 		self.con = Connection
 
 
-			
+
 	@view_config(request_method='POST',renderer='json')
 	def addInvoice(self):
 		try:
@@ -197,7 +198,7 @@ class api_invoice(object):
 				pdamt = float(self.request.params["pdamt"])
 				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
 				return {"gkstatus":enumdict["Success"]}
-				
+
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
@@ -205,9 +206,9 @@ class api_invoice(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-			
-		
-		
+
+
+
 
 
 	@view_config(request_method='GET',request_param="inv=single", renderer ='json')
@@ -226,6 +227,7 @@ class api_invoice(object):
 				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
 				row = result.fetchone()
 				items = row["contents"]
+				freeitems = row["freeqty"]
 				if row["icflag"]==3:
 					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
 					if row["cancelflag"]==1:
@@ -271,6 +273,7 @@ class api_invoice(object):
 					unitnamrrow = uomresult.fetchone()
 					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"]}
 				invc["contents"] = items
+				invc["freeqty"] = freeitems
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
@@ -282,13 +285,13 @@ class api_invoice(object):
 		"""
 		Purpose: gets list of unpaid bills for a given customerandsupplier or supplier.
 		Takes the person's id and returns a grid containing bills.
-Apart from the bills it also returns customerandsupplier or supplyer name. 
+Apart from the bills it also returns customerandsupplier or supplyer name.
 		Description:
 		The function will take customerandsupplier or supplier id while orgcode is  taken from token.
 		The invoice table will be scanned for all the bills concerning the party.
 		If the total amount is greater than amountpaid(which is 0 by default ) then the bill qualifies to be returned.
 		The function will return json object with gkstatus,csName:name of the party and gkresult:grid of bills.
-The bills grid calld gkresult will return a list as it's value. 
+The bills grid calld gkresult will return a list as it's value.
 		The columns will be as follows:
 		Bill no., Bill date, Customer/ supplier name,total amount and outstanding.
 		the outstanding is calculated as total - amountpaid.
@@ -318,16 +321,16 @@ The bills grid calld gkresult will return a list as it's value.
 				custNameData = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == self.request.params["custid"]))
 				custnameRecord = custNameData.fetchone()
 				csName = custnameRecord["custname"]
-				gkresult = {"csname":csName,"unpaidbills":bills} 
+				gkresult = {"csname":csName,"unpaidbills":bills}
 				return{"gkstatus":enumdict["Success"],"gkresult":gkresult}
-		  	except exc.IntegrityError:
+			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
 
-				
+
 
 
 	@view_config(request_method='GET',request_param="inv=all", renderer ='json')
