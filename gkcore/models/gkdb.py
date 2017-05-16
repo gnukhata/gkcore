@@ -261,6 +261,8 @@ The key of this field is the productcode while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty).
 Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
+A new json field called freeqty.
+This field is a dictionary.
 """
 invoice = Table('invoice',metadata,
 	Column('invid',Integer,primary_key=True),
