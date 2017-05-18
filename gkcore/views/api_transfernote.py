@@ -9,7 +9,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
   GNU Affero General Public License for more details.
 
   You should have received a copy of the GNU Affero General Public
@@ -24,7 +24,7 @@ Contributors:
 """
 
 
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults,	 view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
@@ -62,10 +62,10 @@ class api_transfernote(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -107,12 +107,12 @@ class api_transfernote(object):
 
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
 	def getAllTransferNote(self):
-		"""This method returns	all existing transfernotes  """
+		"""This method returns	all existing transfernotes	"""
 		try:
 			
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -138,7 +138,7 @@ class api_transfernote(object):
 			
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -149,21 +149,19 @@ class api_transfernote(object):
 				row = result.fetchone()
 				togo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["togodown"]))
 				togodata = togo.fetchone()
+				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["fromgodown"]))
+				fromgodata = fromgo.fetchone()
+
 				items = {}
-				if row["cancelflag"]==1:
-					flag = 200
-				else:
-					flag = 20
-				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
+				
+				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty]).where(and_(stock.c.dcinvtnflag==20,stock.c.dcinvtnid==self.request.params["transfernoteid"])))
 				for stockrow in stockdata:
 					productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
 					productdesc = productdata.fetchone()
 					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
 					unitnamrrow = uomresult.fetchone()
 					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
-					goiddata = stockrow["goid"]
-				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==goiddata))
-				fromgodata = fromgo.fetchone()
+					
 				
 				tn={"transfernoteno": row["transfernoteno"],
 					"transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),
@@ -175,16 +173,15 @@ class api_transfernote(object):
 					"togodownstate": togodata["state"],
 					"togodownaddr": togodata["goaddr"],
 					"togodownid": row["togodown"],
-					"fromgodownid":goiddata,
+					"fromgodownid":row["fromgodown"],
 					"fromgodown": fromgodata["goname"],
 					"fromgodownstate": fromgodata["state"],
 					"fromgodownaddr": fromgodata["goaddr"],
 					"issuername":row["issuername"],
 					"designation":row["designation"],
 					"orgcode": row["orgcode"],
-					"cancelflag":row["cancelflag"]}
-				if row["cancelflag"]==1:
-					tn["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
+					
+
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
 			except:
 				self.con.close()
@@ -195,14 +192,14 @@ class api_transfernote(object):
 
 	@view_config(request_method='PUT', renderer='json')
 	def updatetransfernote(self):
-		""" This method updates the transfer note, If the transfernote is updated at the same time stock table also has to updated with new entries  """
+		""" This method updates the transfer note, If the transfernote is updated at the same time stock table also has to updated with new entries	 """
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -239,10 +236,10 @@ class api_transfernote(object):
 		try:
 			token = self.request.headers["gktoken"]
 		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		authDetails = authCheck(token)
 		if authDetails["auth"] == False:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
 			try:
 				self.con = eng.connect()
@@ -272,28 +269,4 @@ class api_transfernote(object):
 			finally:
 				self.con.close()
 
-	@view_config(request_method='DELETE', renderer ='json')
-	def deleteTransferNote(self):
-		""" This method deletes the row of transfernote   by matching transfernote no which is provided	   """
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"]==False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				dataset = self.request.json_body
-				dataset["canceldate"]=datetime.now().date()
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid == dataset["transfernoteid"]).values(dataset))
-				stockcancel = {"dcinvtnflag":200}
-				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["transfernoteid"],stock.c.dcinvtnflag==20)).values(stockcancel))
-				return {"gkstatus":enumdict["Success"]}
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["ActionDisallowed"]}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+	
