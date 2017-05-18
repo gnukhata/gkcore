@@ -64,7 +64,7 @@ class api_product(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con=eng.connect()
 				userrole = getUserRole(authDetails["userid"])
 				gorole = userrole["gkresult"]
@@ -76,13 +76,12 @@ class api_product(object):
 					productCodes=[]
 					for record2 in gid:
 						proCode = self.con.execute(select([gkdb.goprod.c.productcode]).where(gkdb.goprod.c.goid==record2))
-						proCodes = proCode.fetchone()
-						if (proCodes is None):
-							continue
-						productCodes.append(proCodes["productcode"])
+						proCodes = proCode.fetchall()
+						for record3 in proCodes:
+							productCodes.append(record3["productcode"])
 					results = []
-					for record3 in productCodes:
-						result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record3)).order_by(gkdb.product.c.productdesc))
+					for record4 in productCodes:
+						result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
 						products = result.fetchone()
 						results.append(products)
 				else:
@@ -114,10 +113,10 @@ class api_product(object):
 					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
 					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
-			except:
+			#except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
+			#finally:
 				self.con.close()
 
 
