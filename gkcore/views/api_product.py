@@ -42,6 +42,8 @@ import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import goprod, product
+from gkcore.views.api_user import getUserRole
+from gkcore.views.api_godown import getusergodowns
 
 
 @view_defaults(route_name='products')
@@ -62,12 +64,31 @@ class api_product(object):
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con=eng.connect()
-				result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+				userrole = getUserRole(authDetails["userid"])
+				gorole = userrole["gkresult"]
+				if (gorole["userrole"]==3):
+					uId = getusergodowns(authDetails["userid"])
+					gid=[]
+					for record1 in uId["gkresult"]:
+						gid.append(record1["goid"])
+					productCodes=[]
+					for record2 in gid:
+						proCode = self.con.execute(select([gkdb.goprod.c.productcode]).where(gkdb.goprod.c.goid==record2))
+						proCodes = proCode.fetchall()
+						for record3 in proCodes:
+							productCodes.append(record3["productcode"])
+					results = []
+					for record4 in productCodes:
+						result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
+						products = result.fetchone()
+						results.append(products)
+				else:
+					results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 				products = []
 				srno=1
-				for row in result:
+				for row in results:
 					unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
 					unitofmeasurement = unitsofmeasurement.fetchone()
 					unitname = unitofmeasurement["unitname"]
@@ -92,10 +113,10 @@ class api_product(object):
 					products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
 					srno = srno+1
 				return {"gkstatus":enumdict["Success"], "gkresult":products}
-			except:
+			#except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
+			#finally:
 				self.con.close()
 
 
