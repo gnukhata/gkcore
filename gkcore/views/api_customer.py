@@ -182,3 +182,27 @@ class api_customer(object):
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	@view_config(request_param="by=account", request_method='GET', renderer ='json')
+	def getCustomerSupplieraccount(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				#there is only one possibility for a catch which is failed connection to db.
+				result = self.con.execute(select([gkdb.accounts.c.accountname]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"],gkdb.accounts.c.accountcode==self.request.params["accountcode"])))
+				account = result.fetchone()
+				accountname = account["accountname"]
+				result = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname==accountname)))
+				customer = result.fetchone()
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":customer["custid"] }
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
