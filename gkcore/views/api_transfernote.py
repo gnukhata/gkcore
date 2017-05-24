@@ -144,7 +144,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
   				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"],transfernote.c.orgcode==authDetails["orgcode"])))
 				row = result.fetchone()
@@ -163,6 +163,7 @@ class api_transfernote(object):
 					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
 					unitnamrrow = uomresult.fetchone()
 					items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+
 					
 				
 				tn={"transfernoteno": row["transfernoteno"],
@@ -171,6 +172,7 @@ class api_transfernote(object):
 					"productdetails": items,
 					"nopkt": row["nopkt"],
 					"recieved": row["recieved"],
+					"receiveddate":datetime.strftime(row["recieveddate"],'%d-%m-%Y'),
 					"togodown": togodata["goname"],
 					"togodownstate": togodata["state"],
 					"togodownaddr": togodata["goaddr"],
@@ -185,11 +187,11 @@ class api_transfernote(object):
 				}	
 
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+#			except:
+#				self.con.close()
+#				return {"gkstatus":enumdict["ConnectionFailed"]}
+#			finally:
+#				self.con.close()
 
 
 
