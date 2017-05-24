@@ -144,7 +144,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				print authDetails["orgcode"]
 				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"],transfernote.c.orgcode==authDetails["orgcode"])))
@@ -186,50 +186,12 @@ class api_transfernote(object):
 				}	
 
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
-#			except:
-#				self.con.close()
-#				return {"gkstatus":enumdict["ConnectionFailed"]}
-#			finally:
-#				self.con.close()
-
-
-	@view_config(request_method='PUT', renderer='json')
-	def updatetransfernote(self):
-		""" This method updates the transfer note, If the transfernote is updated at the same time stock table also has to updated with new entries	 """
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return	{"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"] == False:
-			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				dataset = self.request.json_body
-				transferdata = dataset["transferdata"]
-				stockdata = dataset["stockdata"]
-				transferdata["orgcode"] = authDetails["orgcode"]
-				stockdata["orgcode"] = authDetails["orgcode"]
-				stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-				stockdata["stockdate"] = transferdata["transfernotedate"]
-				stockdata["dcinvtnflag"] = 20
-				stockdata["inout"]=15
-				result = self.con.execute(transfernote.update().where(transfernote.c.transfernoteid==transferdata["transfernoteid"]).values(transferdata))
-				if result.rowcount==1:
-					result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
-					items = stockdata.pop("items")
-					for key in items.keys():
-						stockdata["productcode"] = key
-						stockdata["qty"] = items[key]
-						result = self.con.execute(stock.insert(),[stockdata])
-					return {"gkstatus":enumdict["Success"]}
-				else:
-					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+				self.con.close()
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
+
 
 
 
