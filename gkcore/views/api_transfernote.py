@@ -67,7 +67,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				transferdata = dataset["transferdata"]
@@ -97,12 +97,12 @@ class api_transfernote(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+#			except exc.IntegrityError:
+#				return {"gkstatus":enumdict["DuplicateEntry"]}
+#			except:
+#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#			finally:
+#				self.con.close()
 
 
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
@@ -179,8 +179,8 @@ class api_transfernote(object):
 					"fromgodownaddr": fromgodata["goaddr"],
 					"issuername":row["issuername"],
 					"designation":row["designation"],
-					"orgcode": row["orgcode"],
-					
+					"orgcode": row["orgcode"]
+				}	
 
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
 			except:
