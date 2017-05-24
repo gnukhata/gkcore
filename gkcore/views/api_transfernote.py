@@ -146,10 +146,9 @@ class api_transfernote(object):
 		else:
 			try:
 				self.con = eng.connect()
-				print authDetails["orgcode"]
-				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"],transfernote.c.orgcode==authDetails["orgcode"])))
+  				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"],transfernote.c.orgcode==authDetails["orgcode"])))
 				row = result.fetchone()
-				print row
+				
 				togo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["togodown"]))
 				togodata = togo.fetchone()
 				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["fromgodown"]))
