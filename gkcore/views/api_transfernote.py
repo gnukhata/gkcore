@@ -67,7 +67,7 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return	{"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-#			try:
+			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
 				transferdata = dataset["transferdata"]
@@ -82,6 +82,7 @@ class api_transfernote(object):
 					transfernoteidrow = transfernoteiddata.fetchone()
 					stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
 					stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
+					stockdata["goid"] = transferdata["fromgodown"]
 					stockdata["dcinvtnflag"] = 20
 					stockdata["inout"] = 15
 					items = stockdata.pop("items")
@@ -97,12 +98,12 @@ class api_transfernote(object):
 					return {"gkstatus":enumdict["Success"]}
 				else:
 					return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			except exc.IntegrityError:
-#				return {"gkstatus":enumdict["DuplicateEntry"]}
-#			except:
-#				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#			finally:
-#				self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 
 	@view_config(request_method='GET',request_param='tn=all',renderer='json')
@@ -143,10 +144,12 @@ class api_transfernote(object):
 		if authDetails["auth"] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+#			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"])))
+				print authDetails["orgcode"]
+				result = self.con.execute(select([transfernote]).where(and_(transfernote.c.transfernoteid == self.request.params["transfernoteid"],transfernote.c.orgcode==authDetails["orgcode"])))
 				row = result.fetchone()
+				print row
 				togo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["togodown"]))
 				togodata = togo.fetchone()
 				fromgo = self.con.execute(select([godown.c.goname,godown.c.goaddr,godown.c.state]).where(godown.c.goid==row["fromgodown"]))
@@ -183,11 +186,11 @@ class api_transfernote(object):
 				}	
 
 				return {"gkstatus":enumdict["Success"], "gkresult":tn}
-			except:
-				self.con.close()
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
+#			except:
+#				self.con.close()
+#				return {"gkstatus":enumdict["ConnectionFailed"]}
+#			finally:
+#				self.con.close()
 
 
 	@view_config(request_method='PUT', renderer='json')
