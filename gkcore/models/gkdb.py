@@ -10,7 +10,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
   GNU Affero General Public License for more details.
 
   You should have received a copy of the GNU Affero General Public
@@ -98,7 +98,7 @@ So every group is either a parent group or subgroup who will have the groupcode 
 
 groupsubgroups = Table('groupsubgroups', metadata,
 	Column('groupcode',Integer,primary_key=True),
-	Column('groupname',UnicodeText,  nullable=False),
+	Column('groupname',UnicodeText,	 nullable=False),
 	Column('subgroupof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','groupname'),
@@ -115,7 +115,7 @@ So if a category has a value in subcategoryof wich matches another categorycode,
 
 categorysubcategories = Table('categorysubcategories', metadata,
 	Column('categorycode',Integer,primary_key=True),
-	Column('categoryname',UnicodeText,  nullable=False),
+	Column('categoryname',UnicodeText,	nullable=False),
 	Column('subcategoryof',Integer),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
 	UniqueConstraint('orgcode','categoryname'),
@@ -188,7 +188,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
 	Column('state', UnicodeText),
 	Column('csflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','custname'),
+	UniqueConstraint('orgcode','custname'),
 	UniqueConstraint('orgcode','custname','custemail','csflag'),
 	UniqueConstraint('orgcode','custname','custpan','csflag'),
 	UniqueConstraint('orgcode','custname','custtan','csflag'),
@@ -278,12 +278,12 @@ invoice = Table('invoice',metadata,
 	Column('canceldate',DateTime),
 	Column('icflag',Integer,default=9),
 	Column('taxstate',UnicodeText),
-    Column('attachment',JSON),
-    Column('attachmentcount',Integer,default=0),
+	Column('attachment',JSON),
+	Column('attachmentcount',Integer,default=0),
 	Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-    Column('freeqty',JSONB),
+	Column('freeqty',JSONB),
 	UniqueConstraint('orgcode','invoiceno','custid','icflag'),
 	Index("invoice_orgcodeindex","orgcode"),
 	Index("invoice_invoicenoindex","invoiceno")
@@ -307,10 +307,10 @@ delchal = Table('delchal',metadata,
 	Column('designation', UnicodeText),
 	Column('cancelflag',Integer,default=0),
 	Column('canceldate',DateTime),
-    Column('noofpackages', Integer, nullable=False),
-    Column('modeoftransport', UnicodeText),
-    Column('attachment',JSON),
-    Column('attachmentcount',Integer,default=0),
+	Column('noofpackages', Integer, nullable=False),
+	Column('modeoftransport', UnicodeText),
+	Column('attachment',JSON),
+	Column('attachmentcount',Integer,default=0),
 	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
@@ -349,7 +349,7 @@ The inout field is self explainatory.
 stock = Table('stock',metadata,
 	Column('stockid',Integer,primary_key=True),
 	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
-    Column('stockdate',DateTime),
+	Column('stockdate',DateTime),
 	Column('qty',Numeric(13,2),nullable=False),
 	Column('dcinvtnid', Integer,nullable=False),
 	Column('dcinvtnflag',Integer,nullable=False),
@@ -419,7 +419,7 @@ psflag will be either 16 or 20 for purchase order and sales order respectively.
 
 Here schedule json field will be having all the product details in format,
 product code is key and value will be dictionary having product name, quantity, price per unit, number of packages, reorder limit, tax rate,
-and  dictionary for saving staggered delivery details whose key will be date and value will be quantity.
+and	 dictionary for saving staggered delivery details whose key will be date and value will be quantity.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderid',Integer, primary_key=True),
@@ -427,19 +427,19 @@ purchaseorder = Table( 'purchaseorder' , metadata,
 	Column('orderdate', DateTime, nullable=False),
 	Column('creditperiod', UnicodeText),
 	Column('payterms',UnicodeText),
-    Column('modeoftransport', UnicodeText),
-    Column('issuername', UnicodeText),
+	Column('modeoftransport', UnicodeText),
+	Column('issuername', UnicodeText),
 	Column('designation', UnicodeText),
 	Column('schedule',JSONB),
-    Column('taxstate',UnicodeText),
+	Column('taxstate',UnicodeText),
 	Column('psflag',Integer,nullable=False),
 	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
 	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
-    Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
-    UniqueConstraint('orderno','orderdate','csid','psflag'),
+	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
+	UniqueConstraint('orderno','orderdate','csid','psflag'),
 	Index("purchaseorder_orgcodeindex","orgcode"),
 	Index("purchaseorder_date","orderdate"),
-    Index("purchaseorder_togodown",'togodown')
+	Index("purchaseorder_togodown",'togodown')
 )
 
 
@@ -465,19 +465,19 @@ Table for storing product godownwise.
 When products are stored in the different godowns its openingstick will be entered accordingly.
 """
 goprod = Table('goprod',metadata,
-    Column('goprodid',Integer,primary_key=True),
-    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
-    Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
-    Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
-    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    Index("godown_product","productcode")
-    )
+	Column('goprodid',Integer,primary_key=True),
+	Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
+	Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
+	Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
+	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+	Index("godown_product","productcode")
+	)
 #now table for user godown rights.
 usergodown = Table('usergodown',metadata,
-                   Column('ugid', Integer, primary_key=True),
-                   Column('goid',Integer, ForeignKey('godown.goid',ondelete='CASCADE')),
-                   Column('userid',Integer, ForeignKey('users.userid', ondelete='CASCADE')),
-                   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False)
+				   Column('ugid', Integer, primary_key=True),
+				   Column('goid',Integer, ForeignKey('godown.goid',ondelete='CASCADE')),
+				   Column('userid',Integer, ForeignKey('users.userid', ondelete='CASCADE')),
+				   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False)
 				   )
 
 ''' Table for transferNote details.
@@ -491,12 +491,11 @@ transfernote = Table('transfernote',metadata,
 	Column('transfernotedate', DateTime, nullable=False),
 	Column('transportationmode', UnicodeText),
 	Column('nopkt',Integer),
-	Column('cancelflag',Integer,default=0),
-	Column('canceldate',DateTime),
-	Column('issuername', UnicodeText),
+	Column('issuername',UnicodeText),
 	Column('designation', UnicodeText),
 	Column('recieved', BOOLEAN,default=False),
-    Column('recieveddate', DateTime),
+	Column('recieveddate', DateTime),
+	Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
 	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	UniqueConstraint('transfernoteno','orgcode'),
@@ -527,7 +526,7 @@ tax = Table('tax',metadata,
 This table will store all the activities made by different users. eg. created account at this time, deleted account, created voucher, etc."""
 log = Table('log',metadata,
 	Column('logid',Integer,primary_key=True),
-    Column('time',DateTime),
+	Column('time',DateTime),
 	Column('activity',UnicodeText),
 	Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
