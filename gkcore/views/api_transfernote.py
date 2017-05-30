@@ -108,29 +108,28 @@ class api_transfernote(object):
 
     @view_config(request_method='GET',request_param='tn=all',renderer='json')
     def getAllTransferNote(self):
-            """This method returns  all existing transfernotes      """
+        """This method returns  all existing transfernotes which are not received """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
             try:
-
-                    token = self.request.headers["gktoken"]
+                self.con = eng.connect()
+                result = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteid,transfernote.c.transfernoteno]).where(and_(transfernote.c.recieved==False,transfernote.c.orgcode==authDetails["orgcode"])).order_by(transfernote.c.transfernotedate))
+                tn = []
+                for row in result:
+                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})
+                self.con.close()
+                return {"gkstatus":enumdict["Success"], "gkresult":tn}
             except:
-                    return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-            authDetails = authCheck(token)
-            if authDetails["auth"] == False:
-                    return {"gkstatus":enumdict["UnauthorisedAccess"]}
-            else:
-                    try:
-                            self.con = eng.connect()
-                            result = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteid,transfernote.c.transfernoteno]).where(transfernote.c.orgcode==authDetails["orgcode"]).order_by(transfernote.c.transfernotedate))
-                            tn = []
-                            for row in result:
-                                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})
-                            self.con.close()
-                            return {"gkstatus":enumdict["Success"], "gkresult":tn}
-                    except:
-                            self.con.close()
-                            return {"gkstatus":enumdict["ConnectionFailed"]}
-                    finally:
-                            self.con.close()
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param='tn=single',renderer='json')
     def getTn(self):
