@@ -10,7 +10,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
   GNUKhata is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU Affero General Public License for more details.
 
   You should have received a copy of the GNU Affero General Public
@@ -35,17 +35,17 @@ import datetime
 from sqlalchemy.dialects.postgresql import JSONB, JSON
 
 from sqlalchemy import (
-	Table,
-	Column,
-	Index,
-	Integer,
-	Text,
-	Unicode,	 #<- will provide Unicode field
-	UnicodeText, #<- will provide Unicode text field
+    Table,
+    Column,
+    Index,
+    Integer,
+    Text,
+    Unicode,     #<- will provide Unicode field
+    UnicodeText, #<- will provide Unicode text field
 DateTime,
 Date
-	 #<- time abstraction field
-	)
+     #<- time abstraction field
+    )
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText, Integer
 from sqlalchemy import MetaData
@@ -56,54 +56,54 @@ metadata = MetaData()
 This will be generated during the database setup.
 """
 signature = Table('signature', metadata,
-	Column('secretcode',UnicodeText, primary_key=True))
+    Column('secretcode',UnicodeText, primary_key=True))
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
 """
 
 organisation = Table( 'organisation' , metadata,
-	Column('orgcode',Integer, primary_key=True),
-	Column('orgname',UnicodeText, nullable=False),
-	Column('orgtype',UnicodeText, nullable=False),
-	Column('yearstart',Date, nullable=False),
-	Column('yearend',Date, nullable=False),
-	Column('orgcity',UnicodeText),
-	Column('orgaddr',UnicodeText),
-	Column('orgpincode',Unicode(30)),
-	Column('orgstate',UnicodeText),
-	Column('orgcountry',UnicodeText),
-	Column('orgtelno',UnicodeText),
-	Column('orgfax',UnicodeText),
-	Column('orgwebsite',UnicodeText),
-	Column('orgemail',UnicodeText),
-	Column('orgpan',UnicodeText),
-	Column('orgmvat',UnicodeText),
-	Column('orgstax',UnicodeText),
-	Column('orgregno',UnicodeText),
-	Column('orgregdate',UnicodeText),
-	Column('orgfcrano',UnicodeText),
-	Column('orgfcradate',UnicodeText),
-	Column('roflag',Integer, default=0),
-	Column('booksclosedflag',Integer,default=0),
-	Column('invflag',Integer,default=0),
-	UniqueConstraint('orgname','orgtype','yearstart'),
-	UniqueConstraint('orgname','orgtype','yearend'),
-	Index("orgindex", "orgname","yearstart","yearend")
-	)
+    Column('orgcode',Integer, primary_key=True),
+    Column('orgname',UnicodeText, nullable=False),
+    Column('orgtype',UnicodeText, nullable=False),
+    Column('yearstart',Date, nullable=False),
+    Column('yearend',Date, nullable=False),
+    Column('orgcity',UnicodeText),
+    Column('orgaddr',UnicodeText),
+    Column('orgpincode',Unicode(30)),
+    Column('orgstate',UnicodeText),
+    Column('orgcountry',UnicodeText),
+    Column('orgtelno',UnicodeText),
+    Column('orgfax',UnicodeText),
+    Column('orgwebsite',UnicodeText),
+    Column('orgemail',UnicodeText),
+    Column('orgpan',UnicodeText),
+    Column('orgmvat',UnicodeText),
+    Column('orgstax',UnicodeText),
+    Column('orgregno',UnicodeText),
+    Column('orgregdate',UnicodeText),
+    Column('orgfcrano',UnicodeText),
+    Column('orgfcradate',UnicodeText),
+    Column('roflag',Integer, default=0),
+    Column('booksclosedflag',Integer,default=0),
+    Column('invflag',Integer,default=0),
+    UniqueConstraint('orgname','orgtype','yearstart'),
+    UniqueConstraint('orgname','orgtype','yearend'),
+    Index("orgindex", "orgname","yearstart","yearend")
+    )
 
 """ the table for groups and subgroups.
 Note that the groupcode is used as an internal (self referencing) foreign key named subgroupof.
 So every group is either a parent group or subgroup who will have the groupcode as foreign key in subgroup off to which this subgroup belongs.This essentially means a group can be a subgroup of a parent group who's groupcode is in it's subgroupof field."""
 
 groupsubgroups = Table('groupsubgroups', metadata,
-	Column('groupcode',Integer,primary_key=True),
-	Column('groupname',UnicodeText,	 nullable=False),
-	Column('subgroupof',Integer),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','groupname'),
-	Index("grpindex","orgcode","groupname")
-	)
+    Column('groupcode',Integer,primary_key=True),
+    Column('groupname',UnicodeText,  nullable=False),
+    Column('subgroupof',Integer),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','groupname'),
+    Index("grpindex","orgcode","groupname")
+    )
 """
 table for categories and subcategories.
 This table is for storing names of categories and their optional one or many subcategories.
@@ -114,13 +114,13 @@ So if a category has a value in subcategoryof wich matches another categorycode,
 """
 
 categorysubcategories = Table('categorysubcategories', metadata,
-	Column('categorycode',Integer,primary_key=True),
-	Column('categoryname',UnicodeText,	nullable=False),
-	Column('subcategoryof',Integer),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','categoryname'),
-	Index("catindex","orgcode","categoryname")
-	)
+    Column('categorycode',Integer,primary_key=True),
+    Column('categoryname',UnicodeText,  nullable=False),
+    Column('subcategoryof',Integer),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','categoryname'),
+    Index("catindex","orgcode","categoryname")
+    )
 """
 This is the table for maintaining the ontology.
 Once you have defined the name of category,this table will store the attributes of that category, as in what features are there.
@@ -129,46 +129,46 @@ Needless to say that the categorycode becomes a foreign key here.
 The type will be an enum, eg. 0= number, 1=text etc.
 """
 categoryspecs = Table('categoryspecs',metadata,
-	Column('spcode',Integer, primary_key=True),
-	Column('attrname',UnicodeText, nullable=False),
-	Column('attrtype',Integer,nullable=False),
-	Column('productcount', Integer ,default=0),
-	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('categorycode','attrname'),
-	Index("catspecindex","orgcode","attrname")
-	)
+    Column('spcode',Integer, primary_key=True),
+    Column('attrname',UnicodeText, nullable=False),
+    Column('attrtype',Integer,nullable=False),
+    Column('productcount', Integer ,default=0),
+    Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE"),nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('categorycode','attrname'),
+    Index("catspecindex","orgcode","attrname")
+    )
 """
 This table is for unit of measurement for products.
 The unit of measurement has units, conversion rates and its resulting unit.
 """
 unitofmeasurement = Table('unitofmeasurement',metadata,
-	Column('uomid',Integer,primary_key=True),
-	Column('unitname',UnicodeText,nullable=False),
-	Column('conversionrate',Numeric(13,2),default=0.00),
-	Column('subunitof',Integer),
-	Column('frequency',Integer),
-	UniqueConstraint('unitname'),
-	Index("unitofmeasurement_frequency","frequency"),
-	Index("unitofmeasurement_unitname","unitname")
-	)
+    Column('uomid',Integer,primary_key=True),
+    Column('unitname',UnicodeText,nullable=False),
+    Column('conversionrate',Numeric(13,2),default=0.00),
+    Column('subunitof',Integer),
+    Column('frequency',Integer),
+    UniqueConstraint('unitname'),
+    Index("unitofmeasurement_frequency","frequency"),
+    Index("unitofmeasurement_unitname","unitname")
+    )
 """
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
 """
 product = Table('product',metadata,
-	Column('productcode',Integer,primary_key=True),
-	Column('productdesc',UnicodeText),
-	Column('openingstock', Numeric(13,2),default=0.00),
-	Column('specs', JSONB,nullable=False ),
-	Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
-	Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('categorycode','productdesc'),
-	Index("product_orgcodeindex","orgcode"),
-	Index("product_categorycode","categorycode")
-	)
+    Column('productcode',Integer,primary_key=True),
+    Column('productdesc',UnicodeText),
+    Column('openingstock', Numeric(13,2),default=0.00),
+    Column('specs', JSONB,nullable=False ),
+    Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
+    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('categorycode','productdesc'),
+    Index("product_orgcodeindex","orgcode"),
+    Index("product_categorycode","categorycode")
+    )
 """
 Table for customers and suppliers.
 We need this data when we sell goods.
@@ -176,24 +176,24 @@ The reason to store this data is that we may need it in both invoice and deliver
 Here the csflag is 3 for customer and 19 for supplier
 """
 customerandsupplier = Table('customerandsupplier',metadata,
-	Column('custid',Integer,primary_key=True),
-	Column('custname',UnicodeText,nullable=False),
-	Column('custaddr',UnicodeText),
-	Column('custphone',UnicodeText),
-	Column('custemail',UnicodeText),
-	Column('custfax',UnicodeText),
-	Column('custpan',UnicodeText),
-	Column('custtan',UnicodeText),
-	Column('custdoc',JSONB),
-	Column('state', UnicodeText),
-	Column('csflag',Integer,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','custname'),
-	UniqueConstraint('orgcode','custname','custemail','csflag'),
-	UniqueConstraint('orgcode','custname','custpan','csflag'),
-	UniqueConstraint('orgcode','custname','custtan','csflag'),
-	Index("customer_supplier_orgcodeindex","orgcode")
-	)
+    Column('custid',Integer,primary_key=True),
+    Column('custname',UnicodeText,nullable=False),
+    Column('custaddr',UnicodeText),
+    Column('custphone',UnicodeText),
+    Column('custemail',UnicodeText),
+    Column('custfax',UnicodeText),
+    Column('custpan',UnicodeText),
+    Column('custtan',UnicodeText),
+    Column('custdoc',JSONB),
+    Column('state', UnicodeText),
+    Column('csflag',Integer,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','custname'),
+    UniqueConstraint('orgcode','custname','custemail','csflag'),
+    UniqueConstraint('orgcode','custname','custpan','csflag'),
+    UniqueConstraint('orgcode','custname','custtan','csflag'),
+    Index("customer_supplier_orgcodeindex","orgcode")
+    )
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
@@ -201,24 +201,24 @@ So it has  2 foreign keys, first the orgcode of the organisation to which it bel
 the groupcode to with it belongs."""
 
 accounts = Table('accounts', metadata,
-	Column('accountcode',Integer, primary_key=True ),
-	Column('accountname',UnicodeText, nullable=False),
-	Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
-	Column('openingbal', Numeric(13,2),default=0.00),
-	Column('vouchercount', Integer ,default=0),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','accountname'),
-	Index("accindex","orgcode","accountname")
-	)
+    Column('accountcode',Integer, primary_key=True ),
+    Column('accountname',UnicodeText, nullable=False),
+    Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
+    Column('openingbal', Numeric(13,2),default=0.00),
+    Column('vouchercount', Integer ,default=0),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','accountname'),
+    Index("accindex","orgcode","accountname")
+    )
 """ table for storing projects for one organisation.
 This means that it has one foreign key, namely the org code of the organisation to which it belongs. """
 projects = Table('projects', metadata,
-	Column('projectcode',Integer, primary_key=True),
-	Column('projectname',UnicodeText, nullable=False),
-	Column('sanctionedamount',Numeric(13,2),default=0.00),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','projectname')
-	)
+    Column('projectcode',Integer, primary_key=True),
+    Column('projectname',UnicodeText, nullable=False),
+    Column('sanctionedamount',Numeric(13,2),default=0.00),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','projectname')
+    )
 """ table to store vouchers.
 This table has one foreign key from organisation to which it belongs and has the project code to which it belongs.
 Additionally this table has 2 json fields named Drs and Crs.
@@ -227,28 +227,28 @@ Key is the account code and value is the amount.
 This helps us to store multiple Drs and Crs because there can be many key-value pares in the dictionary field.
 Apart from this orgcode is there as the foreign key.  We also connect the invoice table where sales or purchase happens.  So there is a nullable foreign key here. """
 vouchers=Table('vouchers', metadata,
-	Column('vouchercode',Integer,primary_key=True),
-	Column('vouchernumber',UnicodeText, nullable=False),
-	Column('voucherdate',DateTime,nullable=False),
-	Column('entrydate',DateTime,nullable=False,default=datetime.datetime.now().date()),
-	Column('narration',UnicodeText),
-	Column('drs',JSONB,nullable=False),
-	Column('crs',JSONB,nullable=False),
-	Column('prjdrs',JSONB),
-	Column('prjcrs',JSONB),
-	Column('attachment',JSON),
-	Column('attachmentcount',Integer,default=0),
-	Column('vouchertype',UnicodeText, nullable=False),
-	Column('lockflag',BOOLEAN,default=False),
-	Column('delflag',BOOLEAN,default=False),
-	Column('projectcode',Integer, ForeignKey('projects.projectcode')),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('invid',Integer,ForeignKey('invoice.invid')),
-	Index("voucher_orgcodeindex","orgcode"),
-	Index("voucher_entrydate","entrydate"),
-	Index("voucher_vno","vouchernumber"),
-	Index("voucher_vdate","voucherdate")
-	)
+    Column('vouchercode',Integer,primary_key=True),
+    Column('vouchernumber',UnicodeText, nullable=False),
+    Column('voucherdate',DateTime,nullable=False),
+    Column('entrydate',DateTime,nullable=False,default=datetime.datetime.now().date()),
+    Column('narration',UnicodeText),
+    Column('drs',JSONB,nullable=False),
+    Column('crs',JSONB,nullable=False),
+    Column('prjdrs',JSONB),
+    Column('prjcrs',JSONB),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('vouchertype',UnicodeText, nullable=False),
+    Column('lockflag',BOOLEAN,default=False),
+    Column('delflag',BOOLEAN,default=False),
+    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('invid',Integer,ForeignKey('invoice.invid')),
+    Index("voucher_orgcodeindex","orgcode"),
+    Index("voucher_entrydate","entrydate"),
+    Index("voucher_vno","vouchernumber"),
+    Index("voucher_vdate","voucherdate")
+    )
 
 
 
@@ -265,29 +265,29 @@ A new json field called freeqty.
 This field is a dictionary.
 """
 invoice = Table('invoice',metadata,
-	Column('invid',Integer,primary_key=True),
-	Column('invoiceno',UnicodeText,nullable=False),
-	Column('invoicedate',DateTime,nullable=False),
-	Column('contents',JSONB),
-	Column('issuername', UnicodeText),
-	Column('designation', UnicodeText),
-	Column('tax', JSONB),
-	Column('amountpaid',Numeric(13,2),default=0.00),
-	Column('invoicetotal', Numeric(13,2),nullable=False),
-	Column('cancelflag',Integer,default=0),
-	Column('canceldate',DateTime),
-	Column('icflag',Integer,default=9),
-	Column('taxstate',UnicodeText),
-	Column('attachment',JSON),
-	Column('attachmentcount',Integer,default=0),
-	Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('freeqty',JSONB),
-	UniqueConstraint('orgcode','invoiceno','custid','icflag'),
-	Index("invoice_orgcodeindex","orgcode"),
-	Index("invoice_invoicenoindex","invoiceno")
-	)
+    Column('invid',Integer,primary_key=True),
+    Column('invoiceno',UnicodeText,nullable=False),
+    Column('invoicedate',DateTime,nullable=False),
+    Column('contents',JSONB),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('tax', JSONB),
+    Column('amountpaid',Numeric(13,2),default=0.00),
+    Column('invoicetotal', Numeric(13,2),nullable=False),
+    Column('cancelflag',Integer,default=0),
+    Column('canceldate',DateTime),
+    Column('icflag',Integer,default=9),
+    Column('taxstate',UnicodeText),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+    Column('freeqty',JSONB),
+    UniqueConstraint('orgcode','invoiceno','custid','icflag'),
+    Index("invoice_orgcodeindex","orgcode"),
+    Index("invoice_invoicenoindex","invoiceno")
+    )
 """
 Table for challan.
 This table stores the delivary challans issues when the goods move out.
@@ -299,40 +299,40 @@ Another invoice may be issued if the remaining two items are approved by the cus
 
 """
 delchal = Table('delchal',metadata,
-	Column('dcid',Integer,primary_key=True),
-	Column('dcno',UnicodeText,nullable=False),
-	Column('dcdate',DateTime,nullable=False),
-	Column('dcflag',Integer,nullable=False),
-	Column('issuername', UnicodeText),
-	Column('designation', UnicodeText),
-	Column('cancelflag',Integer,default=0),
-	Column('canceldate',DateTime),
-	Column('noofpackages', Integer, nullable=False),
-	Column('modeoftransport', UnicodeText),
-	Column('attachment',JSON),
-	Column('attachmentcount',Integer,default=0),
-	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
-	Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
-	UniqueConstraint('orgcode','dcno','custid'),
-	Index("delchal_orgcodeindex","orgcode"),
-	Index("delchal_dcnoindex","dcno")
-	)
+    Column('dcid',Integer,primary_key=True),
+    Column('dcno',UnicodeText,nullable=False),
+    Column('dcdate',DateTime,nullable=False),
+    Column('dcflag',Integer,nullable=False),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('cancelflag',Integer,default=0),
+    Column('canceldate',DateTime),
+    Column('noofpackages', Integer, nullable=False),
+    Column('modeoftransport', UnicodeText),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid',ondelete="CASCADE")),
+    Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
+    UniqueConstraint('orgcode','dcno','custid'),
+    Index("delchal_orgcodeindex","orgcode"),
+    Index("delchal_dcnoindex","dcno")
+    )
 """
 The join table which has keys from both inv and dc table.
 As explained before, one invoice may have many dc and one dc can be partially passed for many invoices.
 """
 dcinv = Table('dcinv',metadata,
-	Column('dcinvid',Integer,primary_key=True),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
-	Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
-	UniqueConstraint('orgcode','dcid','invid'),
-	Index("deinv_orgcodeindex","orgcode"),
-	Index("deinv_dcidindex","dcid"),
-	Index("deinv_invidindex","invid")
-	)
+    Column('dcinvid',Integer,primary_key=True),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('dcid',Integer, ForeignKey('delchal.dcid',ondelete="CASCADE")),
+    Column('invid',Integer, ForeignKey('invoice.invid',ondelete="CASCADE")),
+    UniqueConstraint('orgcode','dcid','invid'),
+    Index("deinv_orgcodeindex","orgcode"),
+    Index("deinv_dcidindex","dcid"),
+    Index("deinv_invidindex","invid")
+    )
 """
 Table for stock.
 This table records movement of goods and can give details either on basis of productcode,
@@ -347,19 +347,19 @@ This is always the case when we purchase goods.
 The inout field is self explainatory.
 """
 stock = Table('stock',metadata,
-	Column('stockid',Integer,primary_key=True),
-	Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
-	Column('stockdate',DateTime),
-	Column('qty',Numeric(13,2),nullable=False),
-	Column('dcinvtnid', Integer,nullable=False),
-	Column('dcinvtnflag',Integer,nullable=False),
-	Column('inout',Integer,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
-	Index("stock_orgcodeindex","orgcode"),
-	Index("stock_productcodeindex","productcode"),
-	Index("stock_dcinvtnid","dcinvtnid")
-	)
+    Column('stockid',Integer,primary_key=True),
+    Column('productcode',Integer,ForeignKey('product.productcode'),nullable=False),
+    Column('stockdate',DateTime),
+    Column('qty',Numeric(13,2),nullable=False),
+    Column('dcinvtnid', Integer,nullable=False),
+    Column('dcinvtnflag',Integer,nullable=False),
+    Column('inout',Integer,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('goid',Integer, ForeignKey('godown.goid',ondelete="CASCADE")),
+    Index("stock_orgcodeindex","orgcode"),
+    Index("stock_productcodeindex","productcode"),
+    Index("stock_dcinvtnid","dcinvtnid")
+    )
 
 
 """ table to store users for an organization.
@@ -367,49 +367,49 @@ Table for storing users for a particular organisation.
 So orgcode is foreign key like other tables.
 In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 internal auditor:2 Godown In Charge:3"""
 users=Table('users', metadata,
-	Column('userid',Integer, primary_key=True),
-	Column('username',Text, nullable=False),
-	Column('userpassword',Text, nullable=False),
-	Column('userrole',Integer, nullable=False),
-	Column('userquestion',Text, nullable=False),
-	Column('useranswer',Text, nullable=False),
-	Column('themename',Text,default="Default"),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','username'),
-	Index("userindex","orgcode","username")
-	)
+    Column('userid',Integer, primary_key=True),
+    Column('username',Text, nullable=False),
+    Column('userpassword',Text, nullable=False),
+    Column('userrole',Integer, nullable=False),
+    Column('userquestion',Text, nullable=False),
+    Column('useranswer',Text, nullable=False),
+    Column('themename',Text,default="Default"),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','username'),
+    Index("userindex","orgcode","username")
+    )
 
 """ the table for storing bank reconciliation data.
 Every row will have voucher code for which the transaction is being checked against bank record.
 """
 bankrecon=Table('bankrecon',metadata,
-	Column('reconcode',Integer,primary_key = True),
-	Column('vouchercode',Integer,ForeignKey("vouchers.vouchercode", ondelete="CASCADE"), nullable=False),
-	Column('accountcode',Integer, ForeignKey("accounts.accountcode", ondelete="CASCADE"), nullable=False),
-	Column('clearancedate',DateTime),
-	Column('memo',Text),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('vouchercode','accountcode'),
-	Index("bankrecoindex","clearancedate")
-	)
+    Column('reconcode',Integer,primary_key = True),
+    Column('vouchercode',Integer,ForeignKey("vouchers.vouchercode", ondelete="CASCADE"), nullable=False),
+    Column('accountcode',Integer, ForeignKey("accounts.accountcode", ondelete="CASCADE"), nullable=False),
+    Column('clearancedate',DateTime),
+    Column('memo',Text),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('vouchercode','accountcode'),
+    Index("bankrecoindex","clearancedate")
+    )
 """
 This is the table which acts as a bin for deleted vouchers.
 While these vouchers can't be recovered, they are for investigation purpose if need be.
 """
 voucherbin=Table('voucherbin', metadata,
-	Column('vouchercode',Integer,primary_key=True),
-	Column('vouchernumber',UnicodeText, nullable=False),
-	Column('voucherdate',DateTime,nullable=False),
-	Column('narration',UnicodeText),
-	Column('drs',JSONB,nullable=False),
-	Column('crs',JSONB,nullable=False),
-	Column('vouchertype',UnicodeText, nullable=False),
-	Column('projectname',UnicodeText, nullable=True),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Index("binvoucher_orgcodeindex","orgcode"),
-	Index("binvoucher_vno","vouchernumber"),
-	Index("binvoucher_vdate","voucherdate")
-	)
+    Column('vouchercode',Integer,primary_key=True),
+    Column('vouchernumber',UnicodeText, nullable=False),
+    Column('voucherdate',DateTime,nullable=False),
+    Column('narration',UnicodeText),
+    Column('drs',JSONB,nullable=False),
+    Column('crs',JSONB,nullable=False),
+    Column('vouchertype',UnicodeText, nullable=False),
+    Column('projectname',UnicodeText, nullable=True),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Index("binvoucher_orgcodeindex","orgcode"),
+    Index("binvoucher_vno","vouchernumber"),
+    Index("binvoucher_vdate","voucherdate")
+    )
 
 """
 table for purchase order.
@@ -419,27 +419,27 @@ psflag will be either 16 or 20 for purchase order and sales order respectively.
 
 Here schedule json field will be having all the product details in format,
 product code is key and value will be dictionary having product name, quantity, price per unit, number of packages, reorder limit, tax rate,
-and	 dictionary for saving staggered delivery details whose key will be date and value will be quantity.
+and  dictionary for saving staggered delivery details whose key will be date and value will be quantity.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
-	Column('orderid',Integer, primary_key=True),
-	Column('orderno',UnicodeText,nullable=False),
-	Column('orderdate', DateTime, nullable=False),
-	Column('creditperiod', UnicodeText),
-	Column('payterms',UnicodeText),
-	Column('modeoftransport', UnicodeText),
-	Column('issuername', UnicodeText),
-	Column('designation', UnicodeText),
-	Column('schedule',JSONB),
-	Column('taxstate',UnicodeText),
-	Column('psflag',Integer,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
-	Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
-	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
-	UniqueConstraint('orderno','orderdate','csid','psflag'),
-	Index("purchaseorder_orgcodeindex","orgcode"),
-	Index("purchaseorder_date","orderdate"),
-	Index("purchaseorder_togodown",'togodown')
+    Column('orderid',Integer, primary_key=True),
+    Column('orderno',UnicodeText,nullable=False),
+    Column('orderdate', DateTime, nullable=False),
+    Column('creditperiod', UnicodeText),
+    Column('payterms',UnicodeText),
+    Column('modeoftransport', UnicodeText),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('schedule',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('psflag',Integer,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
+    Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
+    UniqueConstraint('orderno','orderdate','csid','psflag'),
+    Index("purchaseorder_orgcodeindex","orgcode"),
+    Index("purchaseorder_date","orderdate"),
+    Index("purchaseorder_togodown",'togodown')
 )
 
 
@@ -448,60 +448,60 @@ Table for storing godown details.
 Basically one organization may have many godowns and we aught to know from which one goods have moved out.
 """
 godown = Table('godown',metadata,
-	Column('goid',Integer,primary_key=True),
-	Column('goname',UnicodeText),
-	Column('goaddr',UnicodeText),
-	Column('state', UnicodeText),
-	Column('gocontact',UnicodeText),
-	Column('contactname',UnicodeText),
-	Column('designation',UnicodeText),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	UniqueConstraint('orgcode','goname'),
-	Index("godown_orgcodeindex","orgcode")
-	)
+    Column('goid',Integer,primary_key=True),
+    Column('goname',UnicodeText),
+    Column('goaddr',UnicodeText),
+    Column('state', UnicodeText),
+    Column('gocontact',UnicodeText),
+    Column('contactname',UnicodeText),
+    Column('designation',UnicodeText),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('orgcode','goname'),
+    Index("godown_orgcodeindex","orgcode")
+    )
 
 """
 Table for storing product godownwise.
 When products are stored in the different godowns its openingstick will be entered accordingly.
 """
 goprod = Table('goprod',metadata,
-	Column('goprodid',Integer,primary_key=True),
-	Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
-	Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
-	Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
-	Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-	Index("godown_product","productcode")
-	)
+    Column('goprodid',Integer,primary_key=True),
+    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
+    Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
+    Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Index("godown_product","productcode")
+    )
 #now table for user godown rights.
 usergodown = Table('usergodown',metadata,
-				   Column('ugid', Integer, primary_key=True),
-				   Column('goid',Integer, ForeignKey('godown.goid',ondelete='CASCADE')),
-				   Column('userid',Integer, ForeignKey('users.userid', ondelete='CASCADE')),
-				   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False)
-				   )
+                   Column('ugid', Integer, primary_key=True),
+                   Column('goid',Integer, ForeignKey('godown.goid',ondelete='CASCADE')),
+                   Column('userid',Integer, ForeignKey('users.userid', ondelete='CASCADE')),
+                   Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False)
+                   )
 
 ''' Table for transferNote details.
-	When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
+    When the goods are to be trasnferred from one godown to another or from godown to factory floor, or vice versa.
 
 '''
 
 transfernote = Table('transfernote',metadata,
-	Column('transfernoteid',Integer,primary_key=True),
-	Column('transfernoteno',UnicodeText),
-	Column('transfernotedate', DateTime, nullable=False),
-	Column('transportationmode', UnicodeText),
-	Column('nopkt',Integer),
-	Column('issuername',UnicodeText),
-	Column('designation', UnicodeText),
-	Column('recieved', BOOLEAN,default=False),
-	Column('recieveddate', DateTime),
-	Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
-	Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
-	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-	UniqueConstraint('transfernoteno','orgcode'),
-	Index("transfernote_date",'transfernotedate'),
-	Index("transfernote_togodown",'togodown'),
-	Index("transfernote_orgcode","orgcode")
+    Column('transfernoteid',Integer,primary_key=True),
+    Column('transfernoteno',UnicodeText),
+    Column('transfernotedate', DateTime, nullable=False),
+    Column('transportationmode', UnicodeText),
+    Column('nopkt',Integer),
+    Column('issuername',UnicodeText),
+    Column('designation', UnicodeText),
+    Column('recieved', BOOLEAN,default=False),
+    Column('recieveddate', DateTime),
+    Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
+    Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+    UniqueConstraint('transfernoteno','orgcode'),
+    Index("transfernote_date",'transfernotedate'),
+    Index("transfernote_togodown",'togodown'),
+    Index("transfernote_orgcode","orgcode")
 )
 
 
@@ -509,26 +509,26 @@ transfernote = Table('transfernote',metadata,
 """table to store tax
 This taxex would be vat , gst etc. For particular product and category (mutually exelusive)"""
 tax = Table('tax',metadata,
-	Column('taxid',Integer,primary_key=True),
-	Column('taxname',UnicodeText,nullable=False),
-	Column('taxrate',Numeric(5,2)),
-	Column('state',UnicodeText),
-	Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE")),
-	Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
-	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-	UniqueConstraint('state','taxname','productcode','orgcode'),
-	UniqueConstraint('state','taxname','categorycode','orgcode'),
-	Index("taxindex","productcode","taxname"),
-	Index("tax_taxindex","categorycode","taxname")
-	)
+    Column('taxid',Integer,primary_key=True),
+    Column('taxname',UnicodeText,nullable=False),
+    Column('taxrate',Numeric(5,2)),
+    Column('state',UnicodeText),
+    Column('productcode',Integer, ForeignKey('product.productcode',ondelete="CASCADE")),
+    Column('categorycode',Integer, ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+    UniqueConstraint('state','taxname','productcode','orgcode'),
+    UniqueConstraint('state','taxname','categorycode','orgcode'),
+    Index("taxindex","productcode","taxname"),
+    Index("tax_taxindex","categorycode","taxname")
+    )
 
 """Table to store Log of users
 This table will store all the activities made by different users. eg. created account at this time, deleted account, created voucher, etc."""
 log = Table('log',metadata,
-	Column('logid',Integer,primary_key=True),
-	Column('time',DateTime),
-	Column('activity',UnicodeText),
-	Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
-	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-	Index("logindex","userid","activity")
-	)
+    Column('logid',Integer,primary_key=True),
+    Column('time',DateTime),
+    Column('activity',UnicodeText),
+    Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+    Index("logindex","userid","activity")
+    )
