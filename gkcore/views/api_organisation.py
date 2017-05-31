@@ -60,9 +60,16 @@ class api_organisation(object):
 		self.con = eng.connect()
 		try:
 			self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
+			self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
 			#self.con.close()
 			#return 0
 		except:
+			self.con.execute("alter table transfernote add fromgodown integer")
+			self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
+			self.con.execute("alter table transfernote drop column canceldate")
+			self.con.execute("alter table transfernote drop column cancelflag")
+			self.con.execute("alter table invoice add amountpaid numeric default 0.00")
+			self.con.execute("alter table invoice add freeqty jsonb")
 			self.con.execute("alter table stock add stockdate timestamp")
 			self.con.execute("alter table delchal add attachment json")
 			self.con.execute("alter table delchal add attachmentcount integer default 0")
