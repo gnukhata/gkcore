@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import categoryspecs
+from gkcore.models.gkdb import categoryspecs, categorysubcategories
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -59,6 +59,11 @@ class api_categoryspecs(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(categoryspecs.insert(),[dataset])
+				result1 = self.con.execute(select([categorysubcategories.c.categorycode]).where(categorysubcategories.c.subcategoryof==dataset["categorycode"]))
+				data = result1.fetchall()
+				for categorycode in data:
+					dataset["categorycode"] = categorycode[0]
+					result1 = self.con.execute(categoryspecs.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
