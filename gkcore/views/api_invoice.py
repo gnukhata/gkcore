@@ -194,15 +194,16 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
-                invid = int(self.request.params["invid"])
                 payflag = int(self.request.params["payflag"])
                 pdamt = float(self.request.params["pdamt"])
-                csid = int(self.request.params["csid"])
                 if payflag == 1:
-                    result = self.con.execute("update customerandsupplier set advamt = advamt + %f where csid = %d"%(pdamt,csid))
+                    custid = int(self.request.params["custid"])
+                    result = self.con.execute("update customerandsupplier set advamt = advamt + %f where custid = %d"%(pdamt,custid))
                 if payflag == 15:
-                    result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where csid = %d"%(pdamt,csid))
+                    custid = int(self.request.params["custid"])
+                    result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
                 if payflag == 2:
+                invid = int(self.request.params["invid"])
                     result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
                 return {"gkstatus":enumdict["Success"]}
 
