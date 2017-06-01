@@ -200,18 +200,16 @@ class api_invoice(object):
                     custid = int(self.request.params["custid"])
                     result = self.con.execute("update customerandsupplier set advamt = advamt + %f where custid = %d"%(pdamt,custid))
                 if payflag == 15:gkadmin
-                
                     custid = int(self.request.params["custid"])
                     result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
                 if payflag == 2:
-                invid = int(self.request.params["invid"])
+                    invid = int(self.request.params["invid"])
                     result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
                 return {"gkstatus":enumdict["Success"]}
 
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
-                result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
