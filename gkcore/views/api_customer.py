@@ -71,6 +71,10 @@ class api_customer(object):
                 self.con.close()
     @view_config(request_param="qty=single", request_method='GET',renderer='json')
     def getCustomerSupplier(self):
+        """
+        this function returns details on one customer or supplier.
+        the request parameter determines that there is only single entity to be returned.
+ """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -84,7 +88,7 @@ class api_customer(object):
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.customerandsupplier]).where(gkdb.customerandsupplier.c.custid == dataset["custid"] ))
                 row = result.fetchone()
-                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"advamt":row["advamt"],"onaccamt":row["onaccamt"]}
+                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"advamt": float("%.2f"%row["advamt"]),"onaccamt": float("%.2f"%row["onaccamt"])}
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
