@@ -204,6 +204,28 @@ class api_godown(object):
 			finally:
 				self.con.close()
 
+	'''This function returns all godowns associated with godown in charge.
+	   It takes user id as a input'''
+	@view_config(request_method='GET', request_param='type=byuser', renderer ='json')
+	def getGodownsByUser(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+				self.con = eng.connect()
+				result = getusergodowns(self.request.params["userid"])
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
+			#except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			#finally:
+				self.con.close()
+
+
 	"""
 	The below function "getNumberOfProductInGodown" will be called when user select a
 	godown for deletetion, it will return number of products a selected godown content.
