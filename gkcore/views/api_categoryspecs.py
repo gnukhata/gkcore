@@ -108,7 +108,18 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
+				result1 = self.con.execute(select([categoryspecs.c.attrname, categoryspecs.c.attrtype]).where(categoryspecs.c.spcode==dataset["spcode"]))
+				parentcatdata = result1.fetchone()
 				result = self.con.execute(categoryspecs.update().where(categoryspecs.c.spcode==dataset["spcode"]).values(dataset))
+				result1 = self.con.execute(select([categorysubcategories.c.categorycode]).where(categorysubcategories.c.subcategoryof==dataset["categorycode"]))
+				subcatdata = result1.fetchall()
+				for categorycode in subcatdata:
+					result1 = self.con.execute(select([categoryspecs.c.spcode]).where(and_(categoryspecs.c.categorycode == categorycode[0], categoryspecs.c.attrname == str(parentcatdata["attrname"]), categoryspecs.c.attrtype == parentcatdata["attrtype"])))
+					subcatspcode = result1.fetchone()
+					if subcatspcode:
+						dataset["spcode"] = subcatspcode[0]
+						dataset["categorycode"] = categorycode[0]
+						result = self.con.execute(categoryspecs.update().where(categoryspecs.c.spcode==subcatspcode[0]).values(dataset))
 				return {"gkstatus":enumdict["Success"]}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
