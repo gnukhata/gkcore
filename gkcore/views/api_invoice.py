@@ -199,7 +199,7 @@ class api_invoice(object):
                 if payflag == 1:
                     custid = int(self.request.params["custid"])
                     result = self.con.execute("update customerandsupplier set advamt = advamt + %f where custid = %d"%(pdamt,custid))
-                if payflag == 15:gkadmin
+                if payflag == 15:
                     custid = int(self.request.params["custid"])
                     result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
                 if payflag == 2:
