@@ -180,8 +180,8 @@ class api_invoice(object):
         The function also takes a flag called payflag.
         This flag will have the value 1:advance,2:billwise,15:on-account.
         If payflag = 2 then function will update the invoice table,
-        with the given amount by altering payedamount.
-        Else the amount will be added to either advamt for value 1 and onaccamt for value 15,
+        with the given amount by incrementing paydamount for the given invoice.
+        Else the amount will be added to either advamce for value 1 and onaccamt for value 15,
         Both in customer table, which implies that csid must be needed.
         """
         try:
@@ -197,6 +197,7 @@ class api_invoice(object):
                 invid = int(self.request.params["invid"])
                 payflag = int(self.request.params["payflag"])
                 pdamt = float(self.request.params["pdamt"])
+                csid = int(self.request.params["csid"])
                 if payflag == 1:
                     result = self.con.execute("update customerandsupplier set advamt = advamt + %f where csid = %d"%(pdamt,csid))
                 if payflag == 15:
