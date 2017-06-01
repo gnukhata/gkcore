@@ -60,8 +60,8 @@ class api_categoryspecs(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				result = self.con.execute(categoryspecs.insert(),[dataset])
 				result1 = self.con.execute(select([categorysubcategories.c.categorycode]).where(categorysubcategories.c.subcategoryof==dataset["categorycode"]))
-				data = result1.fetchall()
-				for categorycode in data:
+				subcatdata = result1.fetchall()
+				for categorycode in subcatdata:
 					dataset["categorycode"] = categorycode[0]
 					result1 = self.con.execute(categoryspecs.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
@@ -128,11 +128,18 @@ class api_categoryspecs(object):
 			try:
 				self.con = eng.connect()
 				dataset = self.request.json_body
-				productcountdata = self.con.execute(select([categoryspecs.c.productcount]).where(categoryspecs.c.spcode==dataset["spcode"]))
+				productcountdata = self.con.execute(select([categoryspecs.c.productcount, categoryspecs.c.attrname, categoryspecs.c.attrtype, categoryspecs.c.categorycode]).where(categoryspecs.c.spcode==dataset["spcode"]))
 				productcountrow = productcountdata.fetchone()
 				if productcountrow["productcount"]!=0:
 					return {"gkstatus":enumdict["ActionDisallowed"]}
 				else:
+					result1 = self.con.execute(select([categorysubcategories.c.categorycode]).where(categorysubcategories.c.subcategoryof==productcountrow["categorycode"]))
+					subcatdata = result1.fetchall()
+					for categorycode in subcatdata:
+						result1 = self.con.execute(select([categoryspecs.c.spcode]).where(and_(categoryspecs.c.categorycode == categorycode[0], categoryspecs.c.attrname == str(productcountrow["attrname"]), categoryspecs.c.attrtype == productcountrow["attrtype"])))
+						subcatspcode = result1.fetchone()
+						if subcatspcode:
+							result = self.con.execute(categoryspecs.delete().where(categoryspecs.c.spcode == subcatspcode[0]))
 					result = self.con.execute(categoryspecs.delete().where(categoryspecs.c.spcode==dataset["spcode"]))
 					return {"gkstatus":enumdict["Success"]}
 			except:
