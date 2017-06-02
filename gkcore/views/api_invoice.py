@@ -198,14 +198,18 @@ class api_invoice(object):
                 pdamt = float(self.request.params["pdamt"])
                 if payflag == 1:
                     icFlag =int( self.request.params["icflag"])
+                    custid = int(self.request.params["custid"])
                     if icFlag == 9:
-                        custid = int(self.request.params["custid"])
                         result = self.con.execute("update customerandsupplier set advamt = advamt + %f where custid = %d"%(pdamt,custid))
                     else:
                         result = self.con.execute("update customerandsupplier set advamt = advamt - %f where custid = %d"%(pdamt,custid))
                 if payflag == 15:
+                    icFlag = self.request.params["icflag"]
                     custid = int(self.request.params["custid"])
-                    result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
+                    if icFlag == 9:
+                        result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
+                    else:
+                        result = self.con.execute("update customerandsupplier set onaccamt = onaccamt - %f where custid = %d"%(pdamt,custid))
                 if payflag == 2:
                     invid = int(self.request.params["invid"])
                     result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
