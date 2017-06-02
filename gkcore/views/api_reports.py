@@ -33,7 +33,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
@@ -3249,8 +3249,11 @@ class api_reports(object):
 				totaloutward = 0.00
 				'''get its subcategories as well'''
 				result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == categorycode)))
-				catdata = result.fetchall()
-				catdata.append(categorycode)
+				result = result.fetchall()
+				catdata = []
+				for cat in result:
+					catdata.append(cat[0])
+				catdata.append(int(categorycode))
 				products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 				prodDesc =  products.fetchall()
 				srno = 1
@@ -3307,11 +3310,11 @@ class api_reports(object):
 
 					stockReport.append({"srno":srno,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
 					srno = srno + 1
-				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
-				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()
 
 
 	@view_config(request_param='type=closingbalance', renderer='json')
