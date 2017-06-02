@@ -62,9 +62,12 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
+            self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
             #self.con.close()
             #return 0
         except:
+            self.con.execute("alter table transfernote add duedate timestamp")
+            self.con.execute("alter table transfernote add grace integer")
             self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
             self.con.execute("alter table customerandsupplier add onaccamt numeric default 0.00")
             self.con.execute("alter table transfernote add fromgodown integer")
