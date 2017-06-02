@@ -162,16 +162,12 @@ class api_transfernote(object):
                     unitnamrrow = uomresult.fetchone()
                     items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
 
-                if row["recieved"] :
-                    tn={"transfernoteno": row["transfernoteno"],
+                tn = {}
+                tn={"transfernoteno": row["transfernoteno"],
                     "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),
                     "transportationmode":row["transportationmode"],
                     "productdetails": items,
                     "nopkt": row["nopkt"],
-                    "duedate":datetime.strftime(row["duedate"],'%d-%m-%Y'),
-                    "grace":row["grace"],
-                    "recieved": row["recieved"],
-                    "receiveddate":datetime.strftime(row["recieveddate"],'%d-%m-%Y'),
                     "togodown": togodata["goname"],
                     "togodownstate": togodata["state"],
                     "togodownaddr": togodata["goaddr"],
@@ -183,27 +179,14 @@ class api_transfernote(object):
                     "issuername":row["issuername"],
                     "designation":row["designation"],
                     "orgcode": row["orgcode"] }
-
-                if row["recieved"] == False:
-                    tn={"transfernoteno": row["transfernoteno"],
-                    "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),
-                    "transportationmode":row["transportationmode"],
-                    "productdetails": items,
-                    "nopkt": row["nopkt"],
-                    "duedate":datetime.strftime(row["duedate"],'%d-%m-%Y'),
-                    "grace":row["grace"],
-                    "recieved": row["recieved"],
-                    "togodown": togodata["goname"],
-                    "togodownstate": togodata["state"],
-                    "togodownaddr": togodata["goaddr"],
-                    "togodownid": row["togodown"],
-                    "fromgodownid":row["fromgodown"],
-                    "fromgodown": fromgodata["goname"],
-                    "fromgodownstate": fromgodata["state"],
-                    "fromgodownaddr": fromgodata["goaddr"],
-                    "issuername":row["issuername"],
-                    "designation":row["designation"],
-                    "orgcode": row["orgcode"] }
+                if row["duedate"] != None:
+                    tn["duedate"]=datetime.strftime(row["duedate"],'%d-%m-%Y')
+                    tn["grace"]=row["grace"]
+                if row["recieved"]:
+                    tn ["recieved"]=row["recieved"],
+                    tn["receiveddate"]= datetime.strftime(row["recieveddate"],'%d-%m-%Y')
+                else:
+                    tn["recieved"]=row["recieved"]
 
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
             except:
