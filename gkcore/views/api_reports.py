@@ -3248,12 +3248,13 @@ class api_reports(object):
 				totalinward = 0.00
 				totaloutward = 0.00
 				'''get its subcategories as well'''
-				result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == categorycode)))
-				result = result.fetchall()
 				catdata = []
-				for cat in result:
-					catdata.append(cat[0])
 				catdata.append(int(categorycode))
+				for ccode in catdata:
+					result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == ccode)))
+					result = result.fetchall()
+					for cat in result:
+						catdata.append(cat[0])
 				products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 				prodDesc =  products.fetchall()
 				srno = 1
