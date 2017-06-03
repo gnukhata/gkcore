@@ -183,6 +183,7 @@ class api_invoice(object):
         with the given amount by incrementing paydamount for the given invoice.
         Else the amount will be added to either advamce for value 1 and onaccamt for value 15,
         Both in customer table, which implies that csid must be needed.
+There will be an icFlag which will determine if it's  an incrementing or decrement.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -204,7 +205,7 @@ class api_invoice(object):
                     else:
                         result = self.con.execute("update customerandsupplier set advamt = advamt - %f where custid = %d"%(pdamt,custid))
                 if payflag == 15:
-                    icFlag = self.request.params["icflag"]
+                    icFlag = int(self.request.params["icflag"])
                     custid = int(self.request.params["custid"])
                     if icFlag == 9:
                         result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
