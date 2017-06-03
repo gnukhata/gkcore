@@ -188,7 +188,6 @@ customerandsupplier = Table('customerandsupplier',metadata,
     Column('state', UnicodeText),
     Column('advamt',Numeric(13,2),default=0.00),
     Column('onaccamt',Numeric(13,2),default=0.00),
-
     Column('csflag',Integer,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','custname'),
@@ -498,6 +497,8 @@ transfernote = Table('transfernote',metadata,
     Column('designation', UnicodeText),
     Column('recieved', BOOLEAN,default=False),
     Column('recieveddate', DateTime),
+    Column('duedate', DateTime),
+    Column('grace',Integer),
     Column('fromgodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
     Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE"),nullable = False),
     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
@@ -505,6 +506,7 @@ transfernote = Table('transfernote',metadata,
     Index("transfernote_date",'transfernotedate'),
     Index("transfernote_togodown",'togodown'),
     Index("transfernote_orgcode","orgcode")
+
 )
 
 
