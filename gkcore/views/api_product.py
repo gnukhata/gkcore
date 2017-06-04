@@ -216,8 +216,6 @@ class api_product(object):
                 goid = self.request.params["godownid"]
                 result = self.con.execute(select([gkdb.stock.c.productcode]).where(and_(gkdb.stock.c.goid== goid, gkdb.goprod.c.orgcode==authDetails["orgcode"])))
 
-                
-                
                 productsL = []
                 for row in result:
                     productDetails = {"productcode":row["productcode"]}
