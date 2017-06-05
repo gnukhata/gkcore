@@ -3241,6 +3241,9 @@ class api_reports(object):
 		else:
 			try:
 				self.con = eng.connect()
+				goid = self.request.params["goid"]
+				subcategorycode = self.request.params["subcategorycode"]
+				speccode = self.request.params["speccode"]
 				orgcode = authDetails["orgcode"]
 				categorycode = self.request.params["categorycode"]
 				endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
@@ -3249,13 +3252,25 @@ class api_reports(object):
 				totaloutward = 0.00
 				'''get its subcategories as well'''
 				catdata = []
-				catdata.append(int(categorycode))
-				for ccode in catdata:
-					result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == ccode)))
-					result = result.fetchall()
-					for cat in result:
-						catdata.append(cat[0])
-				products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
+
+				if subcategorycode != "all":
+					catdata.append(int(subcategorycode))
+					for ccode in catdata:
+						result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == ccode)))
+						result = result.fetchall()
+						for cat in result:
+							catdata.append(cat[0])
+				else:
+					catdata.append(int(categorycode))
+					for ccode in catdata:
+						result = self.con.execute(select([categorysubcategories.c.categorycode]).where(and_(categorysubcategories.c.orgcode == orgcode, categorysubcategories.c.subcategoryof == ccode)))
+						result = result.fetchall()
+						for cat in result:
+							catdata.append(cat[0])
+				if goid != "-1" and goid != "all":
+					products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"),product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, goprod.c.goid == int(goid), product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
+				else:
+					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 				prodDesc =  products.fetchall()
 				srno = 1
 				for row in prodDesc:
@@ -3264,7 +3279,10 @@ class api_reports(object):
 					openingStock = row["openingstock"]
 					productCd = row["productcode"]
 					prodName = row["productdesc"]
-					stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCd,stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
+					if goid != "-1" and goid != "all":
+						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCd, stock.c.goid == int(goid), stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
+					else:
+						stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == productCd, stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 20,stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))))
 					stockData = stockRecords.fetchall()
 					totalinward = totalinward + float(openingStock)
 					for finalRow in stockData:
