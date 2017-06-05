@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
+"Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
 """
 
 
@@ -75,6 +76,7 @@ class api_invoice(object):
                         dcinvdataset["dcid"]=invdataset["dcid"]
                         dcinvdataset["invid"]=invoiceid["invid"]
                         dcinvdataset["orgcode"]=invdataset["orgcode"]
+						dcinvdataset["invprods"] = stockdataset["items"]
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
