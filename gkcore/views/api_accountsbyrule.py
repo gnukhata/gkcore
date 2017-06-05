@@ -204,7 +204,7 @@ class api_accountsbyrule(object):
                 self.con = eng.connect()
                 if self.request.params['side']=="Cr":
                     try:
-                        accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Closing Stock', 'Stock at the Beginning') and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') or subgroupof = (select groupcode from groupsubgroups where groupname = 'Current Liabilities' and orgcode = %d)   and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                        accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and accountname not in ('Closing Stock', 'Stock at the Beginning') and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash') or subgroupof = (select groupcode from groupsubgroups where groupname = 'Current Liabilities' and orgcode = %d)   and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                         list = []
                         for row in accs:
                             list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
