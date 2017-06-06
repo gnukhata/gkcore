@@ -103,7 +103,6 @@ class api_organisation(object):
 			self.con.close()
 			return 0
 
-
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
 		try:
@@ -479,13 +478,11 @@ class api_organisation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con =eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
-
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -511,7 +508,6 @@ class api_organisation(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
 
 	@view_config(route_name='organisation', request_method='GET',request_param='attach=image', renderer='json')
 	def getattachment(self):
