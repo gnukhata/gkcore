@@ -331,11 +331,15 @@ class api_delchal(object):
 				#linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
 				for invoice in linkedinvoices:
 					invprods = invoice[1]
-					for productcode in invprods.keys():
+					print type(invprods)
+					try:
+						for productcode in invprods.keys():
 							print type(productcode)
 							print type(items[int(productcode)]["qty"])
 							print type(invprods[productcode])
 							items[int(productcode)]["qty"] -= float(invprods[productcode])
+					except:
+						pass
 				if len(linkedinvoices) != 0:
 					for productcode in items.keys():
 						if items[productcode]["qty"] == 0:
