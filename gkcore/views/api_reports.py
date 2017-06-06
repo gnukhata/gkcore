@@ -3654,15 +3654,15 @@ free replacement or sample are those which are excluded.
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-    @view_config(request_param='type=register', renderer='json')
+	@view_config(request_param='type=register', renderer='json')
 	def register(self):
 		"""
 		purpose: Takes input: i.e. either sales/purchase register and time period.
-        Returns a dictionary of all matched invoices.
+		Returns a dictionary of all matched invoices.
 		description:
 		This function is used to see sales or purchase register of organisation.
-        It means the total purchase and sales of different products. Also its amount,
-        tax, etc.
+		It means the total purchase and sales of different products. Also its amount,
+		tax, etc.
 		"""
 		try:
 			token = self.request.headers["gktoken"]
@@ -3672,21 +3672,23 @@ free replacement or sample are those which are excluded.
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
-                #sales register
+				#sales register
 				spdata = []
-                if int(self.request.params["flag"]) == 0:
-    				result = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, invoice.c.custid, invoice.c.contents, invoice.c.tax, invoice.c.invoicetotal]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.custid.in_("select custid from customerandsupplier where csflag == 3"), invoice.c.invoicedate >= self.request.params["calculatefrom"], invoice.c.invoicedate <= self.request.params["calculateto"])).order_by(invoice.c.invoicedate))
-                    srno = 1
-    				for row in result:
-    					custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
-    					rowcust = custdata.fetchone()
-    					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": row["invoicetotal"], "taxfree":""}
-                        spdata.append(invoicedata)
-                        srno += 1
-                return {"gkstatus":enumdict["Success"], "gkresult":spdata }
-			except:
+				if int(self.request.params["flag"]) == 0:
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, invoicetotal from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					srno = 1
+					for row in result:
+						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
+						rowcust = custdata.fetchone()
+						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%float(row["invoicetotal"]), "taxfree":""}
+						for product in row["contents"]:
+							print product
+						spdata.append(invoicedata)
+						srno += 1
+				return {"gkstatus":enumdict["Success"], "gkresult":spdata }
+			#except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-			finally:
+			#finally:
 				self.con.close()
