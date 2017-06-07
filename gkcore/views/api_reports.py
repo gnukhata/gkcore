@@ -3755,15 +3755,15 @@ free replacement or sample are those which are excluded.
 								qty = row["contents"][product][productprice]
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
-									invoicedata["taxfree"] = float("%.2f"%float(invoicedata["taxfree"])) + taxamount
+									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
-									taxdata.update({taxrate:invoicedata[taxrate] + taxamount})
+									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
-									taxdata.update({taxrate:taxamount})
+									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = grossamount
+						invoicedata["grossamount"] = "%.2f"%grossamount
 						spdata.append(invoicedata)
 						srno += 1
 				#purchase register
@@ -3787,17 +3787,18 @@ free replacement or sample are those which are excluded.
 								qty = row["contents"][product][productprice]
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
-									invoicedata["taxfree"] = float("%.2f"%float(invoicedata["taxfree"])) + taxamount
+									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
-									taxdata.update({taxrate:invoicedata[taxrate] + taxamount})
+									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
-									taxdata.update({taxrate:taxamount})
+									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = grossamount
+						invoicedata["grossamount"] = "%.2f"%grossamount
 						spdata.append(invoicedata)
 						srno += 1
+				print spdata
 				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "flag": self.request.params["flag"] }
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
