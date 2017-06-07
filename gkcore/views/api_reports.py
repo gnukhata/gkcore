@@ -3753,7 +3753,7 @@ free replacement or sample are those which are excluded.
 							taxrate = "%.2f"%float(row["tax"][product])
 							for productprice in row["contents"][product].iterkeys():
 								ppu = productprice
-								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product])
+								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
 									grossamount += taxamount
@@ -3762,7 +3762,7 @@ free replacement or sample are those which are excluded.
 								if invoicedata.has_key(str(taxrate)):
 									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
-									taxcolumns.append("Net @ " + taxrate + "% TAX")
+									taxcolumns.append(taxrate)
 									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
@@ -3771,7 +3771,7 @@ free replacement or sample are those which are excluded.
 						srno += 1
 				#purchase register
 				elif int(self.request.params["flag"]) == 1:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 					srno = 1
 					for row in result:
 						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
@@ -3787,7 +3787,7 @@ free replacement or sample are those which are excluded.
 							taxrate = "%.2f"%float(row["tax"][product])
 							for productprice in row["contents"][product].iterkeys():
 								ppu = productprice
-								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product])
+								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
 									grossamount += taxamount
@@ -3796,7 +3796,7 @@ free replacement or sample are those which are excluded.
 								if invoicedata.has_key(str(taxrate)):
 									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
-									taxcolumns.append("Net @ " + taxrate + "% TAX")
+									taxcolumns.append(taxrate)
 									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
