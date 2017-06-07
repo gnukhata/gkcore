@@ -3755,6 +3755,7 @@ free replacement or sample are those which are excluded.
 								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product])
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
+									grossamount += taxamount
 									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
@@ -3787,6 +3788,7 @@ free replacement or sample are those which are excluded.
 								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product])
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
+									grossamount += taxamount
 									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
