@@ -3252,7 +3252,7 @@ class api_reports(object):
 				totaloutward = 0.00
 				'''get its subcategories as well'''
 				catdata = []
-
+				#when there is some subcategory then get all N level categories of this category.
 				if subcategorycode != "all":
 					catdata.append(int(subcategorycode))
 					for ccode in catdata:
@@ -3260,6 +3260,7 @@ class api_reports(object):
 						result = result.fetchall()
 						for cat in result:
 							catdata.append(cat[0])
+				#when subcategory is not there get all N level categories of main category.
 				else:
 					catdata.append(int(categorycode))
 					for ccode in catdata:
@@ -3267,6 +3268,7 @@ class api_reports(object):
 						result = result.fetchall()
 						for cat in result:
 							catdata.append(cat[0])
+				#if godown wise report selected
 				if goid != "-1" and goid != "all":
 					products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"),product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, goprod.c.goid == int(goid), product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
 					prodDesc =  products.fetchall()
@@ -3317,10 +3319,67 @@ class api_reports(object):
 									if  finalRow["inout"] == 15:
 										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 										totaloutwardgo = float(totaloutwardgo) + float(finalRow["qty"])
-
-						stockReport.append({"srno":1,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+						stockReport.append({"srno":srno,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+						srno +=1
 					self.con.close()
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				#if godown wise report selected but all godowns selected
+				elif goid == "all":
+						products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"), goprod.c.goid, product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
+						prodDesc =  products.fetchall()
+						srno = 1
+						for row in prodDesc:
+							totalinwardgo = 0.00
+							totaloutwardgo = 0.00
+							gopeningStock = row["openingstock"]
+							godowns = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid == row["goid"],godown.c.orgcode == orgcode)))
+							stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == row["productcode"],stock.c.goid == int(row["goid"]),stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))).order_by(stock.c.stockdate))
+							stockData = stockRecords.fetchall()
+							ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
+							ysRow = ysData.fetchone()
+							yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
+							totalinwardgo = totalinwardgo + float(gopeningStock)
+							for finalRow in stockData:
+								if finalRow["dcinvtnflag"] == 4:
+									countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+									if countresult.rowcount == 1:
+										countrow = countresult.fetchone()
+										custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+										custrow = custdata.fetchone()
+										dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+										if dcinvresult.rowcount == 1:
+											dcinvrow = dcinvresult.fetchone()
+											invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+											""" No need to check if invresult has rowcount 1 since it must be 1 """
+											invrow = invresult.fetchone()
+											trntype = "delchal&invoice"
+										else:
+											dcinvrow = {"invid": ""}
+											invrow = {"invoiceno": ""}
+											trntype = "delchal"
+										if  finalRow["inout"] == 9:
+											gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+											totalinwardgo = float(totalinwardgo) + float(finalRow["qty"])
+
+										if  finalRow["inout"] == 15:
+											gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+											totaloutward = float(totaloutwardgo) + float(finalRow["qty"])
+								if finalRow["dcinvtnflag"] == 20:
+									countresult = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteno]).where(and_(transfernote.c.transfernotedate <= endDate, transfernote.c.transfernoteid == finalRow["dcinvtnid"])))
+									if countresult.rowcount == 1:
+										countrow = countresult.fetchone()
+										if  finalRow["inout"] == 9:
+											gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+											totalinwardgo = float(totalinwardgo) + float(finalRow["qty"])
+
+										if  finalRow["inout"] == 15:
+											gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+											totaloutwardgo = float(totaloutwardgo) + float(finalRow["qty"])
+							stockReport.append({"srno":srno,"productname":row["productdesc"], "godown": godowns.fetchone()["goname"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+							srno +=1
+						self.con.close()
+						return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				#No godown selected just categorywise stock on hand report
 				else:
 					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 					prodDesc =  products.fetchall()
@@ -3653,3 +3712,95 @@ free replacement or sample are those which are excluded.
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+	@view_config(request_param='type=register', renderer='json')
+	def register(self):
+		"""
+		purpose: Takes input: i.e. either sales/purchase register and time period.
+		Returns a dictionary of all matched invoices.
+		description:
+		This function is used to see sales or purchase register of organisation.
+		It means the total purchase and sales of different products. Also its amount,
+		tax, etc.
+		"""
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"] == False:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				#sales register
+				spdata = []
+				if int(self.request.params["flag"]) == 0:
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					srno = 1
+					for row in result:
+						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
+						rowcust = custdata.fetchone()
+						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
+						qty = 0
+						ppu = 0.00
+						taxrate = 0.00
+						grossamount = 0.00
+						taxamount = 0.00
+						taxdata = {}
+						for product in row["contents"].iterkeys():
+							taxrate = "%.2f"%float(row["tax"][product])
+							for productprice in row["contents"][product].iterkeys():
+								ppu = productprice
+								qty = row["contents"][product][productprice]
+								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
+								if taxrate == "0.00":
+									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
+									continue
+								if invoicedata.has_key(str(taxrate)):
+									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
+								else:
+									taxdata.update({taxrate:"%.2f"%taxamount})
+								grossamount = grossamount + taxamount
+						invoicedata["tax"] = taxdata
+						invoicedata["grossamount"] = "%.2f"%grossamount
+						spdata.append(invoicedata)
+						srno += 1
+				#purchase register
+				elif int(self.request.params["flag"]) == 1:
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					srno = 1
+					for row in result:
+						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
+						rowcust = custdata.fetchone()
+						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
+						qty = 0
+						ppu = 0.00
+						taxrate = 0.00
+						grossamount = 0.00
+						taxamount = 0.00
+						taxdata = {}
+						for product in row["contents"].iterkeys():
+							taxrate = "%.2f"%float(row["tax"][product])
+							for productprice in row["contents"][product].iterkeys():
+								ppu = productprice
+								qty = row["contents"][product][productprice]
+								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
+								if taxrate == "0.00":
+									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
+									continue
+								if invoicedata.has_key(str(taxrate)):
+									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
+								else:
+									taxdata.update({taxrate:"%.2f"%taxamount})
+								grossamount = grossamount + taxamount
+						invoicedata["tax"] = taxdata
+						invoicedata["grossamount"] = "%.2f"%grossamount
+						spdata.append(invoicedata)
+						srno += 1
+				print spdata
+				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "flag": self.request.params["flag"] }
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
