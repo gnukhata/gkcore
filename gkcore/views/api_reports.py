@@ -3321,6 +3321,61 @@ class api_reports(object):
 						stockReport.append({"srno":1,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
 					self.con.close()
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				elif goid == "all":
+						products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"), goprod.c.goid, product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
+						prodDesc =  products.fetchall()
+						srno = 1
+						for row in prodDesc:
+							totalinwardgo = 0.00
+							totaloutwardgo = 0.00
+							gopeningStock = row["openingstock"]
+							godowns = self.con.execute(select([godown.c.goname]).where(and_(godown.c.goid == row["goid"],godown.c.orgcode == orgcode)))
+							stockRecords = self.con.execute(select([stock]).where(and_(stock.c.productcode == row["productcode"],stock.c.goid == int(row["goid"]),stock.c.orgcode == orgcode, or_(stock.c.dcinvtnflag != 40, stock.c.dcinvtnflag != 30,stock.c.dcinvtnflag != 90))).order_by(stock.c.stockdate))
+							stockData = stockRecords.fetchall()
+							ysData = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == orgcode) )
+							ysRow = ysData.fetchone()
+							yearStart = datetime.strptime(str(ysRow["yearstart"]),"%Y-%m-%d")
+							totalinwardgo = totalinwardgo + float(gopeningStock)
+							for finalRow in stockData:
+								if finalRow["dcinvtnflag"] == 4:
+									countresult = self.con.execute(select([delchal.c.dcdate,delchal.c.dcno,delchal.c.custid]).where(and_(delchal.c.dcdate <= endDate, delchal.c.dcid == finalRow["dcinvtnid"])))
+									if countresult.rowcount == 1:
+										countrow = countresult.fetchone()
+										custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == countrow["custid"]))
+										custrow = custdata.fetchone()
+										dcinvresult = self.con.execute(select([dcinv.c.invid]).where(dcinv.c.dcid == finalRow["dcinvtnid"]))
+										if dcinvresult.rowcount == 1:
+											dcinvrow = dcinvresult.fetchone()
+											invresult = self.con.execute(select([invoice.c.invoiceno]).where(invoice.c.invid == dcinvrow["invid"]))
+											""" No need to check if invresult has rowcount 1 since it must be 1 """
+											invrow = invresult.fetchone()
+											trntype = "delchal&invoice"
+										else:
+											dcinvrow = {"invid": ""}
+											invrow = {"invoiceno": ""}
+											trntype = "delchal"
+										if  finalRow["inout"] == 9:
+											gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+											totalinwardgo = float(totalinwardgo) + float(finalRow["qty"])
+
+										if  finalRow["inout"] == 15:
+											gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+											totaloutward = float(totaloutwardgo) + float(finalRow["qty"])
+								if finalRow["dcinvtnflag"] == 20:
+									countresult = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteno]).where(and_(transfernote.c.transfernotedate <= endDate, transfernote.c.transfernoteid == finalRow["dcinvtnid"])))
+									if countresult.rowcount == 1:
+										countrow = countresult.fetchone()
+										if  finalRow["inout"] == 9:
+											gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+											totalinwardgo = float(totalinwardgo) + float(finalRow["qty"])
+
+										if  finalRow["inout"] == 15:
+											gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+											totaloutwardgo = float(totaloutwardgo) + float(finalRow["qty"])
+
+							stockReport.append({"srno":1,"productname":row["productdesc"], "godown": godowns.fetchone()["goname"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+						self.con.close()
+						return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 				else:
 					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 					prodDesc =  products.fetchall()
