@@ -313,7 +313,7 @@ class api_delchal(object):
 		if authDetails['auth'] == False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dcid = self.request.params["dcid"]
 				items = {}
@@ -323,20 +323,14 @@ class api_delchal(object):
 					productdesc = productdata.fetchone()
 					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
 					unitnamrrow = uomresult.fetchone()
-					print "type of productcode"
-					print type(stockrow["productcode"])
 					items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
 				result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
 				linkedinvoices = result.fetchall()
 				#linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
 				for invoice in linkedinvoices:
 					invprods = invoice[1]
-					print type(invprods)
 					try:
 						for productcode in invprods.keys():
-							print type(productcode)
-							print type(items[int(productcode)]["qty"])
-							print type(invprods[productcode])
 							items[int(productcode)]["qty"] -= float(invprods[productcode])
 					except:
 						pass
@@ -345,7 +339,7 @@ class api_delchal(object):
 						if items[productcode]["qty"] == 0:
 							del items[productcode]
 				return {"gkstatus":enumdict["Success"], "gkresult": items}
-			#except:
-			#	return {"gkstatus":enumdict["ConnectionFailed"]}
-			#finally:
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
 				self.con.close()

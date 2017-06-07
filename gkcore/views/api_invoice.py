@@ -502,7 +502,7 @@ The bills grid calld gkresult will return a list as it's value.
 								for eachproductcode in eachinvoice.keys():
 									#eachitem[0] is unique. It's not repeated.
 									dcprodcode = eachitem[0]
-									if int(dcprodcode) == int(eachproductcode):#why do we need to convert these into string to compare?
+									if int(dcprodcode) == int(eachproductcode):
 										#this means that the product in delchal matches with the product in invoice
 										#now we will check its quantity
 										invqty = eachinvoice[eachproductcode].values()[0]
@@ -527,7 +527,6 @@ The bills grid calld gkresult will return a list as it's value.
 											# It could happen when multiple delivery chalans have only one invoice.
 											pass
 
-						#changing previous logic..
 						if len(matchedproducts) == len(dcprodresult):
 							#Now we have got the delchals, for which invoices are also sent completely.
 							alldcids.remove(dcid)
