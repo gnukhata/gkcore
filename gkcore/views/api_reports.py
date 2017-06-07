@@ -3737,7 +3737,7 @@ free replacement or sample are those which are excluded.
 				spdata = []
 				taxcolumns = []
 				if int(self.request.params["flag"]) == 0:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 					srno = 1
 					for row in result:
 						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
@@ -3746,7 +3746,6 @@ free replacement or sample are those which are excluded.
 						qty = 0
 						ppu = 0.00
 						taxrate = 0.00
-						grossamount = 0.00
 						taxamount = 0.00
 						taxdata = {}
 						for product in row["contents"].iterkeys():
@@ -3756,7 +3755,6 @@ free replacement or sample are those which are excluded.
 								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
-									grossamount += taxamount
 									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
@@ -3764,14 +3762,13 @@ free replacement or sample are those which are excluded.
 								else:
 									taxcolumns.append(taxrate)
 									taxdata.update({taxrate:"%.2f"%taxamount})
-								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = "%.2f"%grossamount
+						invoicedata["grossamount"] = "%.2f"%row["invoicetotal"]
 						spdata.append(invoicedata)
 						srno += 1
 				#purchase register
 				elif int(self.request.params["flag"]) == 1:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 					srno = 1
 					for row in result:
 						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
@@ -3780,7 +3777,6 @@ free replacement or sample are those which are excluded.
 						qty = 0
 						ppu = 0.00
 						taxrate = 0.00
-						grossamount = 0.00
 						taxamount = 0.00
 						taxdata = {}
 						for product in row["contents"].iterkeys():
@@ -3790,7 +3786,6 @@ free replacement or sample are those which are excluded.
 								qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
 								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 								if taxrate == "0.00":
-									grossamount += taxamount
 									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 									continue
 								if invoicedata.has_key(str(taxrate)):
@@ -3798,9 +3793,8 @@ free replacement or sample are those which are excluded.
 								else:
 									taxcolumns.append(taxrate)
 									taxdata.update({taxrate:"%.2f"%taxamount})
-								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = "%.2f"%grossamount
+						invoicedata["grossamount"] = "%.2f"%row["invoicetotal"]
 						spdata.append(invoicedata)
 						srno += 1
 				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "taxcolumns":taxcolumns}
