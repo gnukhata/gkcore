@@ -3733,9 +3733,9 @@ free replacement or sample are those which are excluded.
 		else:
 			try:
 				self.con = eng.connect()
-				#sales register
 				spdata = []
 				taxcolumns = []
+				#sales register
 				if int(self.request.params["flag"]) == 0:
 					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 				#purchase register
