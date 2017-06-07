@@ -3252,7 +3252,7 @@ class api_reports(object):
 				totaloutward = 0.00
 				'''get its subcategories as well'''
 				catdata = []
-
+				#when there is some subcategory then get all N level categories of this category.
 				if subcategorycode != "all":
 					catdata.append(int(subcategorycode))
 					for ccode in catdata:
@@ -3260,6 +3260,7 @@ class api_reports(object):
 						result = result.fetchall()
 						for cat in result:
 							catdata.append(cat[0])
+				#when subcategory is not there get all N level categories of main category.
 				else:
 					catdata.append(int(categorycode))
 					for ccode in catdata:
@@ -3267,6 +3268,7 @@ class api_reports(object):
 						result = result.fetchall()
 						for cat in result:
 							catdata.append(cat[0])
+				#if godown wise report selected
 				if goid != "-1" and goid != "all":
 					products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"),product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, goprod.c.goid == int(goid), product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
 					prodDesc =  products.fetchall()
@@ -3321,6 +3323,7 @@ class api_reports(object):
 						stockReport.append({"srno":1,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
 					self.con.close()
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				#if godown wise report selected but all godowns selected
 				elif goid == "all":
 						products = self.con.execute(select([goprod.c.goopeningstock.label("openingstock"), goprod.c.goid, product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, goprod.c.orgcode == orgcode, product.c.productcode == goprod.c.productcode, product.c.categorycode.in_(catdata))))
 						prodDesc =  products.fetchall()
@@ -3376,6 +3379,7 @@ class api_reports(object):
 							stockReport.append({"srno":1,"productname":row["productdesc"], "godown": godowns.fetchone()["goname"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
 						self.con.close()
 						return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
+				#No godown selected just categorywise stock on hand report
 				else:
 					products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode, product.c.categorycode.in_(catdata))))
 					prodDesc =  products.fetchall()
