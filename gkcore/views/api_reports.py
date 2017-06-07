@@ -3319,8 +3319,8 @@ class api_reports(object):
 									if  finalRow["inout"] == 15:
 										gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 										totaloutwardgo = float(totaloutwardgo) + float(finalRow["qty"])
-
-						stockReport.append({"srno":1,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+						stockReport.append({"srno":srno,"productname":row["productdesc"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+						srno +=1
 					self.con.close()
 					return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 				#if godown wise report selected but all godowns selected
@@ -3375,8 +3375,8 @@ class api_reports(object):
 										if  finalRow["inout"] == 15:
 											gopeningStock = float(gopeningStock) - float(finalRow["qty"])
 											totaloutwardgo = float(totaloutwardgo) + float(finalRow["qty"])
-
-							stockReport.append({"srno":1,"productname":row["productdesc"], "godown": godowns.fetchone()["goname"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+							stockReport.append({"srno":srno,"productname":row["productdesc"], "godown": godowns.fetchone()["goname"],"totalinwardqty":"%.2f"%float(totalinwardgo),"totaloutwardqty":"%.2f"%float(totaloutwardgo),"balance":"%.2f"%float(gopeningStock)})
+							srno +=1
 						self.con.close()
 						return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 				#No godown selected just categorywise stock on hand report
