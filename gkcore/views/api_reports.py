@@ -3735,6 +3735,7 @@ free replacement or sample are those which are excluded.
 				self.con = eng.connect()
 				#sales register
 				spdata = []
+				taxcolumns = []
 				if int(self.request.params["flag"]) == 0:
 					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 					srno = 1
@@ -3761,6 +3762,7 @@ free replacement or sample are those which are excluded.
 								if invoicedata.has_key(str(taxrate)):
 									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
+									taxcolumns.append("Net @ " + taxrate + "% TAX")
 									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
@@ -3794,13 +3796,14 @@ free replacement or sample are those which are excluded.
 								if invoicedata.has_key(str(taxrate)):
 									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
 								else:
+									taxcolumns.append("Net @ " + taxrate + "% TAX")
 									taxdata.update({taxrate:"%.2f"%taxamount})
 								grossamount = grossamount + taxamount
 						invoicedata["tax"] = taxdata
 						invoicedata["grossamount"] = "%.2f"%grossamount
 						spdata.append(invoicedata)
 						srno += 1
-				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "flag": self.request.params["flag"] }
+				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "taxcolumns":taxcolumns}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
