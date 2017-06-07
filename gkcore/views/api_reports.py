@@ -3677,14 +3677,34 @@ free replacement or sample are those which are excluded.
 				#sales register
 				spdata = []
 				if int(self.request.params["flag"]) == 0:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax, invoicetotal from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 					srno = 1
 					for row in result:
 						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
 						rowcust = custdata.fetchone()
-						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%float(row["invoicetotal"]), "taxfree":""}
-						for product in row["contents"]:
-							print product
+						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
+						qty = 0
+						ppu = 0.00
+						taxrate = 0.00
+						grossamount = 0.00
+						taxamount = 0.00
+						taxdata = {}
+						for product in row["contents"].iterkeys():
+							taxrate = "%.2f"%float(row["tax"][product])
+							for productprice in row["contents"][product].iterkeys():
+								ppu = productprice
+								qty = row["contents"][product][productprice]
+								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
+								if taxrate == "0.00":
+									invoicedata["taxfree"] = float("%.2f"%float(invoicedata["taxfree"])) + taxamount
+									continue
+								if invoicedata.has_key(str(taxrate)):
+									taxdata.update({taxrate:invoicedata[taxrate] + taxamount})
+								else:
+									taxdata.update({taxrate:taxamount})
+								grossamount = grossamount + taxamount
+						invoicedata["tax"] = taxdata
+						invoicedata["grossamount"] = grossamount
 						spdata.append(invoicedata)
 						srno += 1
 				return {"gkstatus":enumdict["Success"], "gkresult":spdata }
