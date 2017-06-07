@@ -3745,12 +3745,13 @@ free replacement or sample are those which are excluded.
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
 					rowcust = custdata.fetchone()
-					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
+					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 					qty = 0
 					ppu = 0.00
 					taxrate = 0.00
 					taxamount = 0.00
 					taxdata = {}
+					taxamountdata = {}
 					for product in row["contents"].iterkeys():
 						taxrate = "%.2f"%float(row["tax"][product])
 						for productprice in row["contents"][product].iterkeys():
@@ -3760,13 +3761,16 @@ free replacement or sample are those which are excluded.
 							if taxrate == "0.00":
 								invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
 								continue
-							if invoicedata.has_key(str(taxrate)):
-								taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
+							if taxdata.has_key(str(taxrate)):
+								taxdata.update({taxrate:"%.2f"%(taxdata[taxrate] + taxamount)})
+								taxamountdata.update({taxrate:"%.2f"%(taxamountdata[taxrate] + taxamount*float(taxrate)/100.00)})
 							else:
-								taxcolumns.append(taxrate)
 								taxdata.update({taxrate:"%.2f"%taxamount})
+								taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
+							if taxrate not in taxcolumns:
+								taxcolumns.append(taxrate)
 					invoicedata["tax"] = taxdata
-					invoicedata["grossamount"] = "%.2f"%row["invoicetotal"]
+					invoicedata["taxamount"] = taxamountdata
 					spdata.append(invoicedata)
 					srno += 1
 				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "taxcolumns":taxcolumns}
