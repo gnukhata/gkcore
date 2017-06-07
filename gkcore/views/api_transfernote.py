@@ -28,7 +28,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import transfernote, stock,godown, product, unitofmeasurement
+from gkcore.models.gkdb import transfernote, stock,godown, product, unitofmeasurement, goprod
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -222,10 +222,13 @@ class api_transfernote(object):
                                     stockdata["dcinvtnid"] = transferdata["transfernoteid"]
                                     stockdata["stockdate"] = transferdata["recieveddate"]
                                     stockdata["dcinvtnflag"] = 20
-                                    stockdata["inout"]=9    
+                                    stockdata["inout"]=9
                                     stockdata["goid"]=row["togodown"]
                                     stockresult = self.con.execute(select([stock.c.productcode,stock.c.qty]).where(and_(stock.c.dcinvtnid==transferdata["transfernoteid"],stock.c.dcinvtnflag==20)))
                                     for key in stockresult:
+                                            resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid ==row["togodown"], goprod.c.productcode==key["productcode"])))
+                                            if resultgoprod.rowcount == 0:
+                                                    result = self.con.execute(goprod.insert(),[{"goid":row["togodown"],"productcode": key["productcode"],"goopeningstock":0, "orgcode":authDetails["orgcode"]}])
                                             stockdata["productcode"] = key["productcode"]
                                             stockdata["qty"] = key["qty"]
                                             result = self.con.execute(stock.insert(),[stockdata])
@@ -236,5 +239,3 @@ class api_transfernote(object):
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     finally:
                             self.con.close()
-
-
