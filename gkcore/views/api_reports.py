@@ -3731,7 +3731,7 @@ free replacement or sample are those which are excluded.
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				spdata = []
 				taxcolumns = []
@@ -3760,29 +3760,30 @@ free replacement or sample are those which are excluded.
 							ppu = productprice
 							qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
 							taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
-							if taxrate == "0.00":
-								invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
-								totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
-								continue
-							if taxdata.has_key(str(taxrate)):
-								taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-								taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-							else:
-								taxdata.update({taxrate:"%.2f"%taxamount})
-								taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
-							if taxrate not in taxcolumns:
-								taxcolumns.append(taxrate)
-								totalrow["taxamount"].update({taxrate:"%.2f"%taxamount})
-								totalrow["tax"].update({taxrate:taxamountdata[taxrate]})
-							else:
-								totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + taxamount)
-								totalrow["tax"][taxrate] =  float(totalrow["tax"][taxrate]) + float(taxamountdata[taxrate])
+						if taxrate == "0.00":
+							invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
+							totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
+							continue
+						if taxdata.has_key(str(taxrate)):
+							taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+							taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+						else:
+							taxdata.update({taxrate:"%.2f"%taxamount})
+							taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
+						if taxrate not in taxcolumns:
+							taxcolumns.append(taxrate)
+							totalrow["taxamount"].update({taxrate:"%.2f"%taxamount})
+							totalrow["tax"].update({taxrate:taxamountdata[taxrate]})
+						else:
+							totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + taxamount)
+							totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + float(taxamount*float(taxrate)/100.00))
 					invoicedata["tax"] = taxdata
 					invoicedata["taxamount"] = taxamountdata
 					spdata.append(invoicedata)
 					srno += 1
+				taxcolumns.sort(reverse=True)
 				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
-			#except:
+			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-			#finally:
+			finally:
 				self.con.close()
