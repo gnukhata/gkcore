@@ -214,20 +214,18 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 goid = self.request.params["godownid"]
-                result = self.con.execute(select([gkdb.stock.c.productcode]).where(and_(gkdb.stock.c.goid== goid, gkdb.goprod.c.orgcode==authDetails["orgcode"])))
-
-                productsL = []
+                result = self.con.execute(select([gkdb.goprod.c.goprodid, gkdb.goprod.c.goopeningstock, gkdb.goprod.c.productcode]).where(and_(gkdb.goprod.c.goid== goid, gkdb.goprod.c.orgcode==authDetails["orgcode"])))
+                products = []
                 for row in result:
-                    productDetails = {"productcode":row["productcode"]}
-                    productsL.append(productDetails)
-                products = [dict(tupleized) for tupleized in set(tuple(item.items()) for item in productsL)]
-                sorted(products)
+                    productDetails = {"goprodid":row["goprodid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
+                    products.append(productDetails)
                 return {"gkstatus":enumdict["Success"],"gkresult":products}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
 
     @view_config(request_method='POST',renderer='json')
     def addProduct(self):
