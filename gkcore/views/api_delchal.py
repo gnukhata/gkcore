@@ -88,9 +88,10 @@ class api_delchal(object):
                             stockdata["productcode"] = key
                             stockdata["qty"] = items[key]
                             result = self.con.execute(stock.insert(),[stockdata])
-                            resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
-                            if resultgoprod.rowcount == 0:
-                                result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
+                            if stockdata.has_key("goid"):
+                                resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
+                                if resultgoprod.rowcount == 0:
+                                    result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
                                 
                     except:
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
