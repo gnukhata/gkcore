@@ -3742,10 +3742,12 @@ free replacement or sample are those which are excluded.
 				elif int(self.request.params["flag"]) == 1:
 					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
 				srno = 1
+				totalrow = {"grossamount":"0.00", "taxfree":"0.00", "tax": {}, "taxamount":{}}
 				for row in result:
 					custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
 					rowcust = custdata.fetchone()
 					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
+					totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
 					qty = 0
 					ppu = 0.00
 					taxrate = 0.00
@@ -3760,20 +3762,26 @@ free replacement or sample are those which are excluded.
 							taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 							if taxrate == "0.00":
 								invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
+								totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
 								continue
 							if taxdata.has_key(str(taxrate)):
-								taxdata.update({taxrate:"%.2f"%(taxdata[taxrate] + taxamount)})
-								taxamountdata.update({taxrate:"%.2f"%(taxamountdata[taxrate] + taxamount*float(taxrate)/100.00)})
+								taxdata[taxrate]="%.2f"%(taxdata[taxrate] + taxamount)
+								taxamountdata[taxrate]="%.2f"%(taxamountdata[taxrate] + taxamount*float(taxrate)/100.00)
 							else:
 								taxdata.update({taxrate:"%.2f"%taxamount})
 								taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
 							if taxrate not in taxcolumns:
 								taxcolumns.append(taxrate)
+								totalrow["taxamount"].update({taxrate:"%.2f"%taxamount})
+								totalrow["tax"].update({taxrate:taxamountdata[taxrate]})
+							else:
+								totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + taxamount)
+								totalrow["tax"][taxrate] =  float(totalrow["tax"][taxrate]) + taxamountdata[taxrate]
 					invoicedata["tax"] = taxdata
 					invoicedata["taxamount"] = taxamountdata
 					spdata.append(invoicedata)
 					srno += 1
-				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "taxcolumns":taxcolumns}
+				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
