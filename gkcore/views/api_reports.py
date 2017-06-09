@@ -3733,73 +3733,73 @@ free replacement or sample are those which are excluded.
 		else:
 			try:
 				self.con = eng.connect()
-				#sales register
+				'''This is a list of dictionaries. Each dictionary contains details of an invoice, like-invoiceno, invdate,
+				customer or supllier name, TIN, then total amount of invoice in rs then different tax rates and their respective amounts
+				'''
 				spdata = []
+				'''taxcolumns is a list, which contains all possible rates of tax which are there in invoices'''
+				taxcolumns = []
+				#sales register(flag = 0)
 				if int(self.request.params["flag"]) == 0:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
-					srno = 1
-					for row in result:
-						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
-						rowcust = custdata.fetchone()
-						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
-						qty = 0
-						ppu = 0.00
-						taxrate = 0.00
-						grossamount = 0.00
-						taxamount = 0.00
-						taxdata = {}
-						for product in row["contents"].iterkeys():
-							taxrate = "%.2f"%float(row["tax"][product])
-							for productprice in row["contents"][product].iterkeys():
-								ppu = productprice
-								qty = row["contents"][product][productprice]
-								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
-								if taxrate == "0.00":
-									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
-									continue
-								if invoicedata.has_key(str(taxrate)):
-									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
-								else:
-									taxdata.update({taxrate:"%.2f"%taxamount})
-								grossamount = grossamount + taxamount
-						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = "%.2f"%grossamount
-						spdata.append(invoicedata)
-						srno += 1
-				#purchase register
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+				#purchase register(flag = 1)
 				elif int(self.request.params["flag"]) == 1:
-					result = self.con.execute("select invid, invoiceno, invoicedate, custid, contents, tax from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s'"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%Y-%m-%d"), datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")))
-					srno = 1
-					for row in result:
-						custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
-						rowcust = custdata.fetchone()
-						invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "", "taxfree":"0.00", "tax":""}
-						qty = 0
-						ppu = 0.00
-						taxrate = 0.00
-						grossamount = 0.00
-						taxamount = 0.00
-						taxdata = {}
-						for product in row["contents"].iterkeys():
-							taxrate = "%.2f"%float(row["tax"][product])
-							for productprice in row["contents"][product].iterkeys():
-								ppu = productprice
-								qty = row["contents"][product][productprice]
-								taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
-								if taxrate == "0.00":
-									invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
-									continue
-								if invoicedata.has_key(str(taxrate)):
-									taxdata.update({taxrate:"%.2f"%(invoicedata[taxrate] + taxamount)})
-								else:
-									taxdata.update({taxrate:"%.2f"%taxamount})
-								grossamount = grossamount + taxamount
-						invoicedata["tax"] = taxdata
-						invoicedata["grossamount"] = "%.2f"%grossamount
-						spdata.append(invoicedata)
-						srno += 1
-				print spdata
-				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "flag": self.request.params["flag"] }
+					result = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+				srno = 1
+				'''This totalrow dictionary is used for very last row of report which contains sum of all columns in report'''
+				totalrow = {"grossamount":"0.00", "taxfree":"0.00", "tax": {}, "taxamount":{}}
+				#for each invoice
+				for row in result:
+					custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
+					rowcust = custdata.fetchone()
+					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
+					totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
+					qty = 0.00
+					ppu = 0.00
+					#taxrate is in percentage
+					taxrate = 0.00
+					#taxamount is net amount for some tax rate. eg. 2% tax on 200rs. This 200rs is taxamount
+					taxamount = 0.00
+					'''This taxdata dictionary has key as taxrate and value as amount of tax to be paid on this rate. eg. {"2.00": "2.80"}'''
+					taxdata = {}
+					'''This taxamountdata dictionary has key as taxrate and value as Net amount on which tax to be paid. eg. {"2.00": "140.00"}'''
+					taxamountdata = {}
+					'''for each product in invoice.
+					row["contents"] is JSONB which has format like this - {"22": {"20.00": "2"}, "61": {"100.00": "1"}} where 22 and 61 is productcode, {"20.00": "2"}
+					here 20.00 is price per unit and quantity is 2.
+					The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products'''
+					for product in row["contents"].iterkeys():
+						taxrate = "%.2f"%float(row["tax"][product])
+						for productprice in row["contents"][product].iterkeys():
+							ppu = productprice
+							#freeqty is subtracted
+							qty = float(row["contents"][product][productprice]) - float(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0.00
+							taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
+						if taxrate == "0.00":
+							invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
+							totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
+							continue
+						'''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
+						if taxdata.has_key(str(taxrate)):
+							taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+							taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+						else:
+							taxdata.update({taxrate:"%.2f"%taxamount})
+							taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
+						'''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
+						if taxrate not in taxcolumns:
+							taxcolumns.append(taxrate)
+							totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
+							totalrow["tax"].update({taxrate:"%.2f"%taxamount})
+						else:
+							totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
+							totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
+					invoicedata["tax"] = taxdata
+					invoicedata["taxamount"] = taxamountdata
+					spdata.append(invoicedata)
+					srno += 1
+				taxcolumns.sort(reverse=True)
+				return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
