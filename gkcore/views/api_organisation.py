@@ -63,9 +63,13 @@ class api_organisation(object):
 			self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
 			self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
 			self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
+			self.con.execute(select(gkdb.dcinv.c.invprods))
+			self.con.execute(select(gkdb.organisation.c.logo))
 			#self.con.close()
 			#return 0
 		except:
+			self.con.execute("alter table organisation add logo json")
+			self.con.execute("alter table dcinv add invprods jsonb")
 			self.con.execute("alter table transfernote add duedate timestamp")
 			self.con.execute("alter table transfernote add grace integer")
 			self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
@@ -98,7 +102,6 @@ class api_organisation(object):
 		finally:
 			self.con.close()
 			return 0
-
 
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
@@ -475,13 +478,11 @@ class api_organisation(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-
 				self.con =eng.connect()
 				dataset = self.request.json_body
 				result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==dataset["orgcode"]).values(dataset))
 				self.con.close()
 				return {"gkstatus":enumdict["Success"]}
-
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -507,7 +508,6 @@ class api_organisation(object):
 			except:
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
-
 
 	@view_config(route_name='organisation', request_method='GET',request_param='attach=image', renderer='json')
 	def getattachment(self):
