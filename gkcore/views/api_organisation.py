@@ -65,9 +65,14 @@ class api_organisation(object):
 			self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
 			self.con.execute(select(gkdb.dcinv.c.invprods))
 			self.con.execute(select(gkdb.organisation.c.logo))
+			self.con.execute(select(gkdb.vouchers.c.instrumentno))
 			#self.con.close()
 			#return 0
 		except:
+			self.con.execute("alter table vouchers add instrumentno text")
+			self.con.execute("alter table vouchers add branchname text")
+			self.con.execute("alter table vouchers add bankname text")
+			self.con.execute("alter table vouchers add instrumentdate timestamp")
 			self.con.execute("alter table organisation add logo json")
 			self.con.execute("alter table dcinv add invprods jsonb")
 			self.con.execute("alter table transfernote add duedate timestamp")
