@@ -3789,7 +3789,7 @@ free replacement or sample are those which are excluded.
 						'''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
 						if taxrate not in taxcolumns:
 							taxcolumns.append(taxrate)
-							totalrow["taxamount"].update({taxrate:"%.2f"%taxamountdata[taxrate]})
+							totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
 							totalrow["tax"].update({taxrate:taxamount})
 						else:
 							totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
