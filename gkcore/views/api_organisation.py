@@ -64,7 +64,7 @@ class api_organisation(object):
 			self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
 			self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
 			self.con.execute(select(gkdb.dcinv.c.invprods))
-            self.con.execute(select(gkdb.organisation.c.logo))
+			self.con.execute(select(gkdb.organisation.c.logo))
 			#self.con.close()
 			#return 0
 		except:
