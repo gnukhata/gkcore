@@ -3754,7 +3754,7 @@ free replacement or sample are those which are excluded.
 					rowcust = custdata.fetchone()
 					invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 					totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
-					qty = 0
+					qty = 0.00
 					ppu = 0.00
 					#taxrate is in percentage
 					taxrate = 0.00
@@ -3773,7 +3773,7 @@ free replacement or sample are those which are excluded.
 						for productprice in row["contents"][product].iterkeys():
 							ppu = productprice
 							#freeqty is subtracted
-							qty = int(row["contents"][product][productprice]) - int(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0
+							qty = float(row["contents"][product][productprice]) - float(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0.00
 							taxamount = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty)))
 						if taxrate == "0.00":
 							invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
