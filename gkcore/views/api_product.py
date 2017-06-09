@@ -64,7 +64,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -113,10 +113,10 @@ class api_product(object):
                     products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
                     srno = srno+1
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
-            #except:
+            except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
+            finally:
                 self.con.close()
 
 
