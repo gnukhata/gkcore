@@ -185,7 +185,7 @@ class api_transaction(object):
 				ur = getUserRole(authDetails["userid"])
 				urole = ur["gkresult"]
 				voucherCode = self.request.params["code"]
-				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode,vouchers.c.invid]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
+				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode,vouchers.c.invid,vouchers.c.instrumentno,vouchers.c.bankname,vouchers.c.branchname,vouchers.c.instrumentdate]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
 				row = result.fetchone()
 				rawDr = dict(row["drs"])
 				rawCr = dict(row["crs"])
