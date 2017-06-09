@@ -3790,7 +3790,7 @@ free replacement or sample are those which are excluded.
 						if taxrate not in taxcolumns:
 							taxcolumns.append(taxrate)
 							totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
-							totalrow["tax"].update({taxrate:taxamount})
+							totalrow["tax"].update({taxrate:"%.2f"%taxamount})
 						else:
 							totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
 							totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
