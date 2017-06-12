@@ -551,7 +551,7 @@ log = Table('log',metadata,
 This table will store all the rejected products from invoice or delivery note"""
 rejectionnote = Table('rejectionnote',metadata,
 	Column('rnid',Integer,primary_key=True),
-	Column('rnno',UnicodeText),
+	Column('rnno',UnicodeText, nullable=False),
 	Column('rndate', DateTime, nullable=False),
 	Column('rejected', JSONB),
 	Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
