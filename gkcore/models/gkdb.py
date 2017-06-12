@@ -548,7 +548,8 @@ log = Table('log',metadata,
 	)
 
 """Table to store Rejection Note
-This table will store all the rejected products from invoice or delivery note"""
+This table will store all the rejected products from invoice or delivery note
+rejected is JSONB field which will have a dictionary, containing productcode as a key and rejected quantity as a value"""
 rejectionnote = Table('rejectionnote',metadata,
 	Column('rnid',Integer,primary_key=True),
 	Column('rnno',UnicodeText, nullable=False),
