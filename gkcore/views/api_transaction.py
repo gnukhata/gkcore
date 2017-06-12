@@ -110,6 +110,9 @@ class api_transaction(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				drs = dataset["drs"]
 				crs = dataset["crs"]
+				if dataset["instrumentdate"]!="":
+					instrumentdate=dataset["instrumentdate"]
+					dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
 				result = self.con.execute(vouchers.insert(),[dataset])
 				for drkeys in drs.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
