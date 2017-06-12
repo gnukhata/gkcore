@@ -306,7 +306,7 @@ The invoice table and this table will be linked in a subsequent table.
 This is done because one invoice may have several dc's attached and for one dc may have several invoices.
 In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
 Another invoice may be issued if the remaining two items are approved by the customer.
-
+dcflag is used for type of transaction: 1 - Approval, 2 - consignment, 3 - Free Replacement, etc.
 """
 delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
@@ -545,4 +545,18 @@ log = Table('log',metadata,
 	Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	Index("logindex","userid","activity")
+	)
+
+"""Table to store Rejection Note
+This table will store all the rejected products from invoice or delivery note"""
+rejectionnote = Table('rejectionnote',metadata,
+	Column('rnid',Integer,primary_key=True),
+	Column('rnno',UnicodeText),
+	Column('rndate', DateTime, nullable=False),
+	Column('rejected', JSONB),
+	Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
+	Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
+	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	UniqueConstraint('rnno','orgcode'),
+    Index("rejection_note","orgcode","rejected")
 	)
