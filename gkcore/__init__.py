@@ -86,6 +86,7 @@ def main(global_config, **settings):
     config.add_route("discrepancynote","/discrepancynote")
     config.add_route("tax","/tax")
     config.add_route("log", "/log")
+    config.add_route("rejectionnote", "/rejectionnote")
 
     config.scan("gkcore.views")
 
