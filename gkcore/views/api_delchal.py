@@ -282,93 +282,47 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
+    @view_config(request_method='GET',request_param='action=getdcinvprods', renderer='json')
+    def getdcinvproducts(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails['auth'] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dcid = self.request.params["dcid"]
+                items = {}
+                stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.dcinvtnflag == 4, stock.c.dcinvtnid == dcid)))
+                for stockrow in stockdata:
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
+                    productdesc = productdata.fetchone()
+                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    unitnamrrow = uomresult.fetchone()
+                    items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
+                linkedinvoices = result.fetchall()
+                #linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
+                for invoice in linkedinvoices:
+                    invprods = invoice[1]
+                    try:
+                        for productcode in invprods.keys():
+                            items[int(productcode)]["qty"] -= float(invprods[productcode])
+                    except:
+                        pass
+                if len(linkedinvoices) != 0:
+                    for productcode in items.keys():
+                        if items[productcode]["qty"] == 0:
+                            del items[productcode]
+                return {"gkstatus":enumdict["Success"], "gkresult": items}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
-	@view_config(request_method='GET',request_param='attach=image', renderer='json')
-	def getattachment(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails['auth'] == False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				ur = getUserRole(authDetails["userid"])
-				urole = ur["gkresult"]
-				dcid = self.request.params["dcid"]
-				delchalData = self.con.execute(select([delchal.c.dcno, delchal.c.attachment,delchal.c.cancelflag]).where(and_(delchal.c.dcid == dcid)))
-				attachment = delchalData.fetchone()
-				return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"], "dcno": attachment["dcno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
 
-	@view_config(request_method='DELETE', renderer ='json')
-	def deleteDelchal(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"]==False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				dataset = self.request.json_body
-				dataset["canceldate"]=datetime.now().date()
-				result = self.con.execute(delchal.update().where(delchal.c.dcid==dataset["dcid"]).values(dataset))
-				stockcancel = {"dcinvtnflag":40}
-				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["dcid"],stock.c.dcinvtnflag==4)).values(stockcancel))
-				return {"gkstatus":enumdict["Success"]}
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["ActionDisallowed"]}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
 
-	@view_config(request_method='GET',request_param='action=getdcinvprods', renderer='json')
-	def getdcinvproducts(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return {"gkstatus": enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails['auth'] == False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				dcid = self.request.params["dcid"]
-				items = {}
-				stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.dcinvtnflag == 4, stock.c.dcinvtnid == dcid)))
-				for stockrow in stockdata:
-					productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
-					productdesc = productdata.fetchone()
-					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
-					unitnamrrow = uomresult.fetchone()
-					items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
-				result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
-				linkedinvoices = result.fetchall()
-				#linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
-				for invoice in linkedinvoices:
-					invprods = invoice[1]
-					try:
-						for productcode in invprods.keys():
-							items[int(productcode)]["qty"] -= float(invprods[productcode])
-					except:
-						pass
-				if len(linkedinvoices) != 0:
-					for productcode in items.keys():
-						if items[productcode]["qty"] == 0:
-							del items[productcode]
-				return {"gkstatus":enumdict["Success"], "gkresult": items}
-			except:
-				return {"gkstatus":enumdict["ConnectionFailed"]}
-			finally:
-				self.con.close()
 
