@@ -120,3 +120,51 @@ class api_rejectionnote(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    @view_config(request_method='GET',request_param="type=single", renderer ='json')
+    def getRejectionNote(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.rnid==self.request.params["rnid"]))
+                rejectionnotedata = result.fetchone()
+                issuerdata = self.con.execute(select([users.c.username]).where(users.c.userid == rejectionnote["issuerid"]))
+                issuerdata = issuerdata.fetchone()
+                rejectionnotedata.update({"issuername": issuerdata["username"]})
+                if rejectionnotedata["dcid"] != None:
+                    typeoftrans = {"1":"Approval", "2":"Consignment","3":"Free Replacement","4": "Sales","5":"Sample"}
+                    dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==rejectionnotedata["dcid"]))
+                    dcdata = dcdata.fetchone()
+                    custdata = self.con.execute("select custname, custstate, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(rejectionnotedata["dcid"]))
+                    custdata = custdata.fetchone()
+                    rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":dcdata["dcdate"], "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custstate":custdata["custstate"], "custtin":custdata["custtan"]})
+                if rejectionnotedata["invid"] != None:
+                    invdata = self.con.execute(select([invoice.c.invoiceno, invoice.c.invoicedate]).where(invoice.c.invid==rejectionnotedata["invid"]))
+                    invdata = invdata.fetchone()
+                    rejectionnotedata.update({"invno":invdata["invoiceno"], "invdate":invdata["invoicedate"]})
+                items = {}
+                stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==18,stock.c.dcinvtnid==self.request.params["rnid"])))
+                for stockrow in stockdata:
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
+                    productdesc = productdata.fetchone()
+                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    unitnamrrow = uomresult.fetchone()
+                    items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                    goiddata = stockrow["goid"]
+                rejectionnotedata.update({"rejected":items})
+                if goiddata!=None:
+                    godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
+                    goname = godata.fetchone()
+                    rejectednotedata.update({"goid": goiddata, "goname": goname["goname"], "gostate": goname["state"]})
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": rejectionnotedata}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
