@@ -557,7 +557,8 @@ rejectionnote = Table('rejectionnote',metadata,
 	Column('rejected', JSONB),
 	Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
 	Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
-	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	UniqueConstraint('rnno','orgcode'),
     Index("rejection_note","orgcode","rejected")
 	)
