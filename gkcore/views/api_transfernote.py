@@ -33,7 +33,7 @@ from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ ,exc
+from sqlalchemy import and_ ,exc , or_
 from datetime import datetime,date
 import jwt
 import gkcore
@@ -194,9 +194,57 @@ class api_transfernote(object):
                return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                self.con.close()
+    @view_config(request_method='GET',request_param='type=list',renderer='json')
+    def listofTransferNotes(self):
+        """
+        This method returns  all existing transfernotes within a given period.
+        If an id of a godown is received it will return all transfernotes involving that godown.
+        The result will be a list of dictionaries.
+        Each dictionary will have hey value pairs as illustrated below :-
+        {""transfernoteno": transfernote no,"transfernoteid": transfernote id, "transfernotedate":transfernote date,"fromgodown":name and address of godown from which goods are dispatched,"togodown":name and address of godown to which goods are dispatched, "quantity":total quantity, "products":list of products}"}
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                startDate =datetime.strptime(str(self.request.params["startdate"]),"%Y-%m-%d")
+                endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
+                if self.request.params.has_key("goid"):
+                    tngodown = int(self.request.params["goid"])
+                    result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(transfernote.c.transfernotedate))
+                else:
+                    result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(transfernote.c.transfernotedate))
 
-
-
+                tn = []
+                for row in result:
+                    stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode==authDetails["orgcode"], stock.c.dcinvtnid == row["transfernoteid"], stock.c.dcinvtnflag == 20)).distinct())
+                    quantity = 0.00
+                    products = []
+                    for data in stockdata:
+                        productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == data["productcode"], product.c.orgcode == authDetails["orgcode"])))
+                        productdetails = productdata.fetchone()
+                        products.append(productdetails["productdesc"])
+                        quantity = quantity + float(data["qty"])
+                    fromgodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["fromgodown"], godown.c.orgcode == authDetails["orgcode"])))
+                    fromgodowndata = fromgodown.fetchone()
+                    fromgodowndesc = fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
+                    togodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["togodown"], godown.c.orgcode == authDetails["orgcode"])))
+                    togodowndata = togodown.fetchone()
+                    togodowndesc = togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
+                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "quantity":quantity, "products":products})
+                self.con.close()
+                return {"gkstatus":enumdict["Success"], "gkresult":tn}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_param='received=true',request_method='PUT', renderer='json')
     def editransfernote(self):
