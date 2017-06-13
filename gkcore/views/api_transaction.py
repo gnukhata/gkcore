@@ -210,7 +210,11 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"],"invid":row["invid"],"instrumentno":row["instrumentno"],"bankname":row["bankname"],"branchname":row["branchname"], "instrumentdate":datetime.strftime(row["instrumentdate"],"%d-%m-%Y")}
+				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"],"invid":row["invid"],"instrumentno":row["instrumentno"],"bankname":row["bankname"],"branchname":row["branchname"]}
+				if row["instrumentdate"]:
+					 voucher["instrumentdate"]= datetime.strftime(row["instrumentdate"],"%d-%m-%Y")
+				else:
+					voucher["instrumentdate"]=""
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher,"userrole":urole["userrole"]}
 			except:
