@@ -59,7 +59,7 @@ class api_organisation(object):
 		"""
 		self.con = eng.connect()
 		try:
-            self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
+			self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
 			self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
 			self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
 			self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
