@@ -115,7 +115,7 @@ class api_rejectionnote(object):
             try:
                 self.con = eng.connect()
                 result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.orgcode==authDetails["orgcode"]).order_by(rejectionnote.c.rnno))
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result.fetchall() }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
