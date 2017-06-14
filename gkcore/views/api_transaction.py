@@ -116,7 +116,9 @@ class api_transaction(object):
 					instrumentdate=dataset["instrumentdate"]
 					dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
 
+				print "before insert"
 				result = self.con.execute(vouchers.insert(),[dataset])
+				print "after insert"
 				for drkeys in drs.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
 					accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
