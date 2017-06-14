@@ -548,7 +548,7 @@ log = Table('log',metadata,
 	)
 
 """Table to store Rejection Note
-This table will store all the rejected products from invoice or delivery note
+This table will store invoice or delivery note id against which rejection note prepared
 inout is a flag to indicate rejection in or out. in = 9, out = 15"""
 rejectionnote = Table('rejectionnote',metadata,
 	Column('rnid',Integer,primary_key=True),
