@@ -139,7 +139,7 @@ class api_rejectionnote(object):
                 issuerdata = issuerdata.fetchone()
                 rejectionnotedata.update({"issuername": issuerdata["username"]})
                 if rejectionnotedata["dcid"] != None:
-                    typeoftrans = {"1":"Approval", "2":"Consignment","3":"Free Replacement","4": "Sales","5":"Sample"}
+                    typeoftrans = {"1":"Approval", "3":"Consignment","5":"Free Replacement","4": "Sales","19":"Sample"}
                     dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==rejectionnotedata["dcid"]))
                     dcdata = dcdata.fetchone()
                     custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(rejectionnotedata["dcid"]))
