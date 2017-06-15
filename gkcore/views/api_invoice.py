@@ -459,7 +459,7 @@ The bills grid calld gkresult will return a list as it's value.
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
@@ -476,7 +476,38 @@ The bills grid calld gkresult will return a list as it's value.
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode, invoice.c.orgcode == orgcode, invoice.c.invid == dcinv.c.invid, invoice.c.invoicedate <= new_inputdate)))
 					invidresult = invidresult.fetchall()
 					if len(invidresult) == 0:
-						pass
+						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
+						dcprodresult = dcprodresult.fetchall()
+						#This code is for rejection note
+						#even if an invoice is not prepared and rejection note prepared for whole delivery note then it should not come into unbilled delivery note.
+						allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.rndate <= new_inputdate, rejectionnote.c.dcid == dcid[0])))
+						allrnidres = allrnidres.fetchall()
+						rnprodresult = []
+						#get stock respected to all rejection notes
+						for rnid in allrnidres:
+							temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+							temp = temp.fetchall()
+							rnprodresult.append(temp)
+						matchedproducts = []
+						remainingproducts = {}
+						totalqtyofdcprod = {}
+						for eachitem in dcprodresult:
+							totalqtyofdcprod.update({eachitem[0]:eachitem[1]})
+						for row in rnprodresult:
+							for prodc, qty in row:
+								if prodc in remainingproducts:
+									remainingproducts[prodc] = float(remainingproducts[prodc]) + float(qty)
+									if float(remainingproducts[prodc]) >= float(totalqtyofdcprod[prodc]):
+										matchedproducts.append(prodc)
+										del remainingproducts[prodc]
+								elif float(qty) >= float(totalqtyofdcprod[prodc]):
+									matchedproducts.append(prodc)
+								else:
+									remainingproducts.update({prodc:float(qty)})
+						if len(matchedproducts) == len(dcprodresult):
+							#Now we have got the delchals, for which invoices are also sent completely.
+							alldcids.remove(dcid)
+							i-=1
 					else:
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
 						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
@@ -574,9 +605,9 @@ The bills grid calld gkresult will return a list as it's value.
 							srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			#except exc.IntegrityError:
+			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
-			#except:
+			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-			#finally:
+			finally:
 				self.con.close()
