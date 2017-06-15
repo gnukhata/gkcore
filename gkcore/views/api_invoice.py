@@ -23,6 +23,8 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Mohd. Talha Pawaty" <mtalha456@gmail.com>
+"Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
 """
 
 
@@ -47,9 +49,6 @@ class api_invoice(object):
 		self.request = Request
 		self.request = request
 		self.con = Connection
-
-
-			
 	@view_config(request_method='POST',renderer='json')
 	def addInvoice(self):
 		try:
@@ -77,6 +76,7 @@ class api_invoice(object):
 						dcinvdataset["dcid"]=invdataset["dcid"]
 						dcinvdataset["invid"]=invoiceid["invid"]
 						dcinvdataset["orgcode"]=invdataset["orgcode"]
+						dcinvdataset["invprods"] = stockdataset["items"]
 						result = self.con.execute(dcinv.insert(),[dcinvdataset])
 						if result.rowcount ==1:
 							return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
@@ -116,7 +116,6 @@ class api_invoice(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-
 	@view_config(request_method='PUT', renderer='json')
 	def editInvoice(self):
 		try:
@@ -174,14 +173,19 @@ class api_invoice(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-
 	@view_config(request_method='PUT',request_param='type=bwa',renderer='json')
 	def updatePayment(self):
 		"""
-		purpose: updates the total payed amount for a certain bill or invoice.
+		purpose: updates the total payed amount for a certain bill or invoice or puts it on account for custommer/supplyer.
 		Description:
 		The function will take invid and amount received.
-		Will update the invoice table.
+		The function also takes a flag called payflag.
+		This flag will have the value 1:advance,2:billwise,15:on-account.
+		If payflag = 2 then function will update the invoice table,
+		with the given amount by incrementing paydamount for the given invoice.
+		Else the amount will be added to either advamce for value 1 and onaccamt for value 15,
+		Both in customer table, which implies that csid must be needed.
+There will be an icFlag which will determine if it's  an incrementing or decrement.
 		"""
 		try:
 			token = self.request.headers["gktoken"]
@@ -193,21 +197,36 @@ class api_invoice(object):
 		else:
 			try:
 				self.con = eng.connect()
-				invid = int(self.request.params["invid"])
+				payflag = int(self.request.params["payflag"])
 				pdamt = float(self.request.params["pdamt"])
-				result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
+				if payflag == 1:
+					icFlag =int( self.request.params["icflag"])
+					custid = int(self.request.params["custid"])
+					if icFlag == 9:
+						result = self.con.execute("update customerandsupplier set advamt = advamt + %f where custid = %d"%(pdamt,custid))
+					else:
+						result = self.con.execute("update customerandsupplier set advamt = advamt - %f where custid = %d"%(pdamt,custid))
+				if payflag == 15:
+					icFlag = int(self.request.params["icflag"])
+					custid = int(self.request.params["custid"])
+					if icFlag == 9:
+						result = self.con.execute("update customerandsupplier set onaccamt = onaccamt + %f where custid = %d"%(pdamt,custid))
+					else:
+						result = self.con.execute("update customerandsupplier set onaccamt = onaccamt - %f where custid = %d"%(pdamt,custid))
+				if payflag == 2:
+					invid = int(self.request.params["invid"])
+					result = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(pdamt,invid))
 				return {"gkstatus":enumdict["Success"]}
-				
+
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
 			except:
-				result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-			
-		
-		
+
+
+
 
 
 	@view_config(request_method='GET',request_param="inv=single", renderer ='json')
@@ -226,6 +245,7 @@ class api_invoice(object):
 				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
 				row = result.fetchone()
 				items = row["contents"]
+				freeitems = row["freeqty"]
 				if row["icflag"]==3:
 					invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
 					if row["cancelflag"]==1:
@@ -271,6 +291,7 @@ class api_invoice(object):
 					unitnamrrow = uomresult.fetchone()
 					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"]}
 				invc["contents"] = items
+				invc["freeqty"] = freeitems
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
@@ -282,13 +303,13 @@ class api_invoice(object):
 		"""
 		Purpose: gets list of unpaid bills for a given customerandsupplier or supplier.
 		Takes the person's id and returns a grid containing bills.
-Apart from the bills it also returns customerandsupplier or supplyer name. 
+Apart from the bills it also returns customerandsupplier or supplyer name.
 		Description:
 		The function will take customerandsupplier or supplier id while orgcode is  taken from token.
 		The invoice table will be scanned for all the bills concerning the party.
 		If the total amount is greater than amountpaid(which is 0 by default ) then the bill qualifies to be returned.
 		The function will return json object with gkstatus,csName:name of the party and gkresult:grid of bills.
-The bills grid calld gkresult will return a list as it's value. 
+The bills grid calld gkresult will return a list as it's value.
 		The columns will be as follows:
 		Bill no., Bill date, Customer/ supplier name,total amount and outstanding.
 		the outstanding is calculated as total - amountpaid.
@@ -318,16 +339,16 @@ The bills grid calld gkresult will return a list as it's value.
 				custNameData = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == self.request.params["custid"]))
 				custnameRecord = custNameData.fetchone()
 				csName = custnameRecord["custname"]
-				gkresult = {"csname":csName,"unpaidbills":bills} 
+				gkresult = {"csname":csName,"unpaidbills":bills}
 				return{"gkstatus":enumdict["Success"],"gkresult":gkresult}
-		  	except exc.IntegrityError:
+			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
 
-				
+
 
 
 	@view_config(request_method='GET',request_param="inv=all", renderer ='json')
@@ -420,6 +441,119 @@ The bills grid calld gkresult will return a list as it's value.
 					stockcancel = {"dcinvtnflag":30}
 				result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==dataset["icflag"])).values(stockcancel))
 				return {"gkstatus":enumdict["Success"]}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET', request_param="unbilled_delnotes", renderer ='json')
+	def unbilled_delnotes(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				orgcode = authDetails["orgcode"]
+				dataset = self.request.json_body
+				inputdate = dataset["inputdate"]
+				new_inputdate = dataset["inputdate"]
+				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
+				dc_unbilled = []
+				alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
+				alldcids = alldcids.fetchall()
+				dcResult = []
+				i = 0
+				while(i < len(alldcids)):
+					dcid = alldcids[i]
+					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode, invoice.c.orgcode == orgcode, invoice.c.invid == dcinv.c.invid, invoice.c.invoicedate <= new_inputdate)))
+					invidresult = invidresult.fetchall()
+					if len(invidresult) == 0:
+						pass
+					else:
+						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
+						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
+						dcprodresult = dcprodresult.fetchall()
+						#I am assuming :productcode must be distinct. So, I haven't applied distinct construct.
+						#what if dcprodresult or invprodresult is empty?
+						invprodresult = []
+						for invid in invidresult:
+							temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invid == invoice.c.invid)))
+							temp = temp.fetchall()
+							#Below two lines are intentionally repeated. It's not a mistake.
+							temp = temp[0]
+							temp = temp[0]
+							invprodresult.append(temp)
+						#Now we have to compare the two results: dcprodresult and invprodresult
+						#I assume that the delchal must have at most only one entry for a particular product. If not, then it's a bug and needs to be rectified.
+						#But, in case of invprodresult, there can be more than one productcodes mentioned. This is because, with one delchal, there can be many invoices linked.
+						matchedproducts = []
+						remainingproducts = {}
+						for eachitem in dcprodresult:
+						#dcprodresult is a list of tuples. eachitem is one such tuple.
+							for eachinvoice in invprodresult:
+							#invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
+								for eachproductcode in eachinvoice.keys():
+									#eachitem[0] is unique. It's not repeated.
+									dcprodcode = eachitem[0]
+									if int(dcprodcode) == int(eachproductcode):
+										#this means that the product in delchal matches with the product in invoice
+										#now we will check its quantity
+										invqty = eachinvoice[eachproductcode].values()[0]
+										dcqty = eachitem[1]
+										if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
+											#this means the quantity of current individual product is matched exactly
+											matchedproducts.append(int(eachproductcode))
+										elif float(dcqty) > float(invqty):
+											#this means current invoice has not billed the whole product quantity.
+											if dcprodcode in remainingproducts.keys():
+												if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
+													matchedproducts.append(int(eachproductcode))
+													#whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
+													del remainingproducts[int(eachproductcode)]
+												else:
+													#It must not be the case that below addition is greater than dcqty.
+													remainingproducts[dcprodcode] = (float(remainingproducts[dcprodcode]) + float(invqty))
+											else:
+												remainingproducts.update({dcprodcode:float(invqty)})
+										else:
+											#"dcqty < invqty" should never happen.
+											# It could happen when multiple delivery chalans have only one invoice.
+											pass
+
+						if len(matchedproducts) == len(dcprodresult):
+							#Now we have got the delchals, for which invoices are also sent completely.
+							alldcids.remove(dcid)
+							i-=1
+					i+=1
+					pass
+
+				for eachdcid in alldcids:
+					singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
+					singledcResult = singledcResult.fetchone()
+					dcResult.append(singledcResult)
+
+				temp_dict = {}
+				srno = 1
+				for row in dcResult:
+						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+						if temp_dict["dcflag"] == 19:
+							#We don't have to consider sample.
+							temp_dict["dcflag"] = "Sample"
+						elif temp_dict["dcflag"]== 6:
+							#we ignore this as well
+							temp_dict["dcflag"] = "Free Replacement"
+						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] !="Free Replacement":
+							dc_unbilled.append(temp_dict)
+							srno += 1
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:

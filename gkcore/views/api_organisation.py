@@ -60,9 +60,31 @@ class api_organisation(object):
 		self.con = eng.connect()
 		try:
 			self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
+			self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
+			self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
+			self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
+			self.con.execute(select(gkdb.dcinv.c.invprods))
+			self.con.execute(select(gkdb.organisation.c.logo))
+			self.con.execute(select(gkdb.vouchers.c.instrumentno))
 			#self.con.close()
 			#return 0
 		except:
+			self.con.execute("alter table vouchers add instrumentno text")
+			self.con.execute("alter table vouchers add branchname text")
+			self.con.execute("alter table vouchers add bankname text")
+			self.con.execute("alter table vouchers add instrumentdate timestamp")
+			self.con.execute("alter table organisation add logo json")
+			self.con.execute("alter table dcinv add invprods jsonb")
+			self.con.execute("alter table transfernote add duedate timestamp")
+			self.con.execute("alter table transfernote add grace integer")
+			self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
+			self.con.execute("alter table customerandsupplier add onaccamt numeric default 0.00")
+			self.con.execute("alter table transfernote add fromgodown integer")
+			self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
+			self.con.execute("alter table transfernote drop column canceldate")
+			self.con.execute("alter table transfernote drop column cancelflag")
+			self.con.execute("alter table invoice add freeqty jsonb")
+			self.con.execute("alter table invoice add amountpaid numeric default 0.00")
 			self.con.execute("alter table stock add stockdate timestamp")
 			self.con.execute("alter table delchal add attachment json")
 			self.con.execute("alter table delchal add attachmentcount integer default 0")
@@ -85,7 +107,6 @@ class api_organisation(object):
 		finally:
 			self.con.close()
 			return 0
-
 
 	@view_config(request_method='GET', renderer ='json')
 	def getOrgs(self):
@@ -363,10 +384,8 @@ class api_organisation(object):
 				else:
 					orgfcradate=row["orgfcradate"]
 
-
 				orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"]}
 				self.con.close()
-#				print orgDetails
 				return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
 			except:
 				self.con.close()
@@ -495,4 +514,22 @@ class api_organisation(object):
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
 
-				
+	@view_config(route_name='organisation', request_method='GET',request_param='attach=image', renderer='json')
+	def getattachment(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				result = self.con.execute(select([gkdb.organisation.c.logo]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+				row=result.fetchone()
+				return {"logo":row["logo"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
+			finally:
+				self.con.close()

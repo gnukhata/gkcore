@@ -228,7 +228,6 @@ class category(object):
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
 			try:
-				print "single type"
 				self.con = eng.connect()
 				category_code = self.request.params['categorycode']
 				result = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.categorycode  == category_code) )
