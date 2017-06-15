@@ -72,7 +72,7 @@ class api_organisation(object):
 			#self.con.close()
 			#return 0
 		except:
-			self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid), foreign key (invid) references invoice(invid), foreign key (issuerid) references users(userid), foreign key (orgcode) references organisation(orgcode), unique(rnno, orgcode))")
+			self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 0")
             self.con.execute("alter table organisation add billflag integer default 0")
 			self.con.execute("alter table vouchers add instrumentno text")
