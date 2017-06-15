@@ -253,18 +253,20 @@ class api_transfernote(object):
                     stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode==authDetails["orgcode"], stock.c.dcinvtnid == row["transfernoteid"], stock.c.dcinvtnflag == 20)).distinct())
                     quantity = 0.00
                     products = []
+                    productqty = []
                     for data in stockdata:
                         productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == data["productcode"], product.c.orgcode == authDetails["orgcode"])))
                         productdetails = productdata.fetchone()
                         products.append(productdetails["productdesc"])
                         quantity = quantity + float(data["qty"])
+                        productqty.append({"productdesc":productdetails["productdesc"], "quantity":"%.2f"%float(data["qty"])})
                     fromgodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["fromgodown"], godown.c.orgcode == authDetails["orgcode"])))
                     fromgodowndata = fromgodown.fetchone()
                     fromgodowndesc = fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
                     togodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["togodown"], godown.c.orgcode == authDetails["orgcode"])))
                     togodowndata = togodown.fetchone()
                     togodowndesc = togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
-                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "quantity":quantity, "products":products, "numberofproducts":len(products), "srno":srno})
+                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "quantity":"%.2f"%quantity, "products":products, "numberofproducts":len(products), "productqty":productqty, "receivedflag":row["recieved"], "srno":srno})
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
