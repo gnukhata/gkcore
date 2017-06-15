@@ -227,7 +227,7 @@ class api_transfernote(object):
         If an id of a godown is received it will return all transfernotes involving that godown.
         The result will be a list of dictionaries.
         Each dictionary will have hey value pairs as illustrated below :-
-        {""transfernoteno": transfernote no,"transfernoteid": transfernote id, "transfernotedate":transfernote date,"fromgodown":name and address of godown from which goods are dispatched,"togodown":name and address of godown to which goods are dispatched, "quantity":total quantity, "products":list of products}"}
+        {""transfernoteno": transfernote no,"transfernoteid": transfernote id, "transfernotedate":transfernote date,"fromgodown":name and address of godown from which goods are dispatched,"togodown":name and address of godown to which goods are dispatched, "products":details of products,"status": Received/Pending}"}
         """
         try:
             token = self.request.headers["gktoken"]
@@ -251,22 +251,20 @@ class api_transfernote(object):
                 srno = 1
                 for row in result:
                     stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode==authDetails["orgcode"], stock.c.dcinvtnid == row["transfernoteid"], stock.c.dcinvtnflag == 20)).distinct())
-                    quantity = 0.00
-                    products = []
                     productqty = []
                     for data in stockdata:
-                        productdata = self.con.execute(select([product.c.productdesc]).where(and_(product.c.productcode == data["productcode"], product.c.orgcode == authDetails["orgcode"])))
+                        productdata = self.con.execute(select([product.c.productdesc, product.c.uomid]).where(and_(product.c.productcode == data["productcode"], product.c.orgcode == authDetails["orgcode"])))
                         productdetails = productdata.fetchone()
-                        products.append(productdetails["productdesc"])
-                        quantity = quantity + float(data["qty"])
-                        productqty.append({"productdesc":productdetails["productdesc"], "quantity":"%.2f"%float(data["qty"])})
+                        uomdata = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == productdetails["uomid"]))
+                        uomdetails = uomdata.fetchone()
+                        productqty.append({"productdesc":productdetails["productdesc"], "quantity":"%.2f"%float(data["qty"]), "uom":uomdetails["unitname"]})
                     fromgodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["fromgodown"], godown.c.orgcode == authDetails["orgcode"])))
                     fromgodowndata = fromgodown.fetchone()
                     fromgodowndesc = fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
                     togodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["togodown"], godown.c.orgcode == authDetails["orgcode"])))
                     togodowndata = togodown.fetchone()
                     togodowndesc = togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
-                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "quantity":"%.2f"%quantity, "products":products, "numberofproducts":len(products), "productqty":productqty, "receivedflag":row["recieved"], "srno":srno})
+                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "productqty":productqty, "receivedflag":row["recieved"], "srno":srno})
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
