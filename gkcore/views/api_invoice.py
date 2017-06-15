@@ -25,11 +25,12 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
 "Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
+"Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, rejectionnote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -458,7 +459,7 @@ The bills grid calld gkresult will return a list as it's value.
 		if authDetails["auth"]==False:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				orgcode = authDetails["orgcode"]
 				dataset = self.request.json_body
@@ -495,8 +496,10 @@ The bills grid calld gkresult will return a list as it's value.
 						#But, in case of invprodresult, there can be more than one productcodes mentioned. This is because, with one delchal, there can be many invoices linked.
 						matchedproducts = []
 						remainingproducts = {}
+						totalqtyofdcprod = {}
 						for eachitem in dcprodresult:
 						#dcprodresult is a list of tuples. eachitem is one such tuple.
+							totalqtyofdcprod.update({eachitem[0]:eachitem[1]})
 							for eachinvoice in invprodresult:
 							#invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
 								for eachproductcode in eachinvoice.keys():
@@ -527,6 +530,23 @@ The bills grid calld gkresult will return a list as it's value.
 											# It could happen when multiple delivery chalans have only one invoice.
 											pass
 
+						#This code is for rejection note
+						allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.rndate <= new_inputdate, rejectionnote.c.dcid == dcid[0])))
+						allrnidres = allrnidres.fetchall()
+						rnprodresult = []
+						#get stock respected to all rejection notes
+						for rnid in allrnidres:
+							temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+							temp = temp.fetchall()
+							rnprodresult.append(temp)
+						for row in rnprodresult:
+							for prodc, qty in row:
+								if prodc in remainingproducts:
+									remainingproducts[prodc] = float(remainingproducts[prodc]) + float(qty)
+									if float(remainingproducts[prodc]) >= float(totalqtyofdcprod[prodc]):
+										matchedproducts.append(prodc)
+										del remainingproducts[prodc]
+
 						if len(matchedproducts) == len(dcprodresult):
 							#Now we have got the delchals, for which invoices are also sent completely.
 							alldcids.remove(dcid)
@@ -554,9 +574,9 @@ The bills grid calld gkresult will return a list as it's value.
 							srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-			except exc.IntegrityError:
+			#except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
-			except:
+			#except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
-			finally:
+			#finally:
 				self.con.close()
