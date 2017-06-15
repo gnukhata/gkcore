@@ -592,7 +592,8 @@ The bills grid calld gkresult will return a list as it's value.
 
 				temp_dict = {}
 				srno = 1
-				for row in dcResult:
+				if dataset["type"] == "invoice":
+					for row in dcResult:
 						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
 						if temp_dict["dcflag"] == 19:
 							#We don't have to consider sample.
@@ -603,6 +604,12 @@ The bills grid calld gkresult will return a list as it's value.
 						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] !="Free Replacement":
 							dc_unbilled.append(temp_dict)
 							srno += 1
+				else:
+					#type=rejection note
+					for row in dcResult:
+						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+						dc_unbilled.append(temp_dict)
+						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except exc.IntegrityError:
