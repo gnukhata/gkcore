@@ -110,7 +110,15 @@ class api_transaction(object):
 				dataset["orgcode"] = authDetails["orgcode"]
 				drs = dataset["drs"]
 				crs = dataset["crs"]
+
+
+				if dataset["instrumentdate"]!=None:
+					instrumentdate=dataset["instrumentdate"]
+					dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+
+
 				result = self.con.execute(vouchers.insert(),[dataset])
+
 				for drkeys in drs.keys():
 					self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
 					accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
@@ -187,6 +195,7 @@ class api_transaction(object):
 				voucherCode = self.request.params["code"]
 				result = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode,vouchers.c.invid,vouchers.c.instrumentno,vouchers.c.bankname,vouchers.c.branchname,vouchers.c.instrumentdate]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchercode==voucherCode )) )
 				row = result.fetchone()
+				print row["instrumentno"]
 				rawDr = dict(row["drs"])
 				rawCr = dict(row["crs"])
 				finalDR = {}
@@ -203,7 +212,11 @@ class api_transaction(object):
 
 				if row["narration"]=="null":
 					row["narration"] =""
-				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"],"invid":row["invid"]}
+				voucher = {"project":row["projectcode"],"vouchercode":row["vouchercode"],"attachmentcount":row["attachmentcount"],"vouchernumber":row["vouchernumber"],"voucherdate":datetime.strftime(row["voucherdate"],"%d-%m-%Y"),"narration":row["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":row["prjdrs"],"prjcrs":row["prjcrs"],"vouchertype":row["vouchertype"],"delflag":row["delflag"],"orgcode":row["orgcode"],"status":row["lockflag"],"invid":row["invid"],"instrumentno":row["instrumentno"],"bankname":row["bankname"],"branchname":row["branchname"]}
+				if row["instrumentdate"]:
+					 voucher["instrumentdate"]= datetime.strftime(row["instrumentdate"],"%d-%m-%Y")
+				else:
+					voucher["instrumentdate"]=""
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult":voucher,"userrole":urole["userrole"]}
 			except:
