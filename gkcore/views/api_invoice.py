@@ -606,13 +606,82 @@ The bills grid calld gkresult will return a list as it's value.
 							srno += 1
 				else:
 					#type=rejection note
-                    #Here even delivery type sample and free Replacement can also be rejected.
+					#Here even delivery type sample and free Replacement can also be rejected.
 					for row in dcResult:
 						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
 						dc_unbilled.append(temp_dict)
 						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	'''This mehtod gives all invoices which are not fully rejected yet. It is used in rejection note, to prepare rejection note against these invoices'''
+	@view_config(request_method='GET', request_param="type=nonrejected", renderer ='json')
+	def nonRejected(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				orgcode = authDetails["orgcode"]
+				dataset = self.request.json_body
+				new_inputdate = dataset["inputdate"]
+				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
+				inv_nonrejected = []
+				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate)))
+				allinvids = allinvids.fetchall()
+				i = 0
+				while(i < len(allinvids)):
+					invid = allinvids[i]
+					invprodresult = []
+					temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid[0])))
+					temp = temp.fetchall()
+					invprodresult.append(temp[0][0])
+					allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid[0])))
+					allrnidres = allrnidres.fetchall()
+					rnprodresult = []
+					#get stock respected to all rejection notes
+					for rnid in allrnidres:
+						temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+						temp = temp.fetchall()
+						rnprodresult.append(temp)
+					matchedproducts = []
+					remainingproducts = {}
+					totalqtyofdcprod = {}
+					for eachitem in invprodresult:
+						for prodc in eachitem:
+							totalqtyofdcprod.update({prodc:eachitem[prodc].values()[0]})
+					for row in rnprodresult:
+						for prodc, qty in row:
+							if prodc in totalqtyofdcprod:
+								totalqtyofdcprod[prodc] = float(totalqtyofdcprod[prodc]) - float(qty)
+								if float(totalqtyofdcprod[prodc]) <= 0.00:
+									del totalqtyofdcprod[prodc]
+							else:
+								pass
+					if len(totalqtyofdcprod) == 0:
+						allinvids.remove(invid)
+						i-=1
+					i+=1
+				srno = 1
+				for eachinvid in allinvids:
+					singleinvResult = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, customerandsupplier.c.custname, customerandsupplier.c.csflag]).distinct().where(and_(invoice.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachinvid[0] == invoice.c.invid, invoice.c.custid == customerandsupplier.c.custid)))
+					singleinvResult = singleinvResult.fetchone()
+					temp_dict = {"invid": singleinvResult["invid"], "srno": srno, "invoiceno":singleinvResult["invoiceno"], "invoicedate": datetime.strftime(singleinvResult["invoicedate"],"%d-%m-%Y"), "csflag": singleinvResult["csflag"], "custname": singleinvResult["custname"]}
+					inv_nonrejected.append(temp_dict)
+					srno += 1
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
