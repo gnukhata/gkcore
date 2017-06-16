@@ -25,7 +25,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import rejectionnote, stock, customerandsupplier, goprod, users, godown, delchal, invoice, product, unitofmeasurement
+from gkcore.models.gkdb import rejectionnote, stock, customerandsupplier, goprod, users, godown, delchal, invoice, product, unitofmeasurement, dcinv
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -127,7 +127,6 @@ class api_rejectionnote(object):
 	@view_config(request_method='GET',request_param="type=single", renderer ='json')
 	def getRejectionNote(self):
 		try:
-			print "in"
 			token = self.request.headers["gktoken"]
 		except:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
@@ -143,19 +142,25 @@ class api_rejectionnote(object):
 				issuerdata = issuerdata.fetchone()
 				rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"]}
 				rejectionnotedata.update({"issuername": issuerdata["username"]})
-				print rejectionnotedata
+				typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
 				if rejectionnotedata["dcid"] != None:
-					typeoftrans = {"1":"Approval", "3":"Consignment","5":"Free Replacement","4": "Sales","19":"Sample"}
 					dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==rejectionnotedata["dcid"]))
 					dcdata = dcdata.fetchone()
 					custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(rejectionnotedata["dcid"]))
 					custdata = custdata.fetchone()
 					rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]})
-				print rejectionnotedata
 				if rejectionnotedata["invid"] != None:
-					invdata = self.con.execute(select([invoice.c.invoiceno, invoice.c.invoicedate]).where(invoice.c.invid==rejectionnotedata["invid"]))
+					invdata = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate]).where(invoice.c.invid==rejectionnotedata["invid"]))
 					invdata = invdata.fetchone()
 					rejectionnotedata.update({"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y")})
+					dcinvdata = self.con.execute(select([dcinv.c.dcid]).distinct().where(dcinv.c.invid == invdata["invid"]))
+					dcinvdata = dcinvdata.fetchone()
+					if dcinvdata != None:
+						dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==dcinvdata[0]))
+						dcdata = dcdata.fetchone()
+						custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(dcinvdata[0]))
+						custdata = custdata.fetchone()
+						rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]})
 				items = {}
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==18,stock.c.dcinvtnid==self.request.params["rnid"])))
 				for stockrow in stockdata:
@@ -170,7 +175,6 @@ class api_rejectionnote(object):
 					godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
 					goname = godata.fetchone()
 					rejectionnotedata.update({"goid": goiddata, "goname": goname["goname"], "gostate": goname["state"]})
-				print rejectionnotedata
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult": rejectionnotedata}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
