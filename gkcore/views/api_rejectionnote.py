@@ -150,17 +150,17 @@ class api_rejectionnote(object):
 					custdata = custdata.fetchone()
 					rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]})
 				if rejectionnotedata["invid"] != None:
-					invdata = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate]).where(invoice.c.invid==rejectionnotedata["invid"]))
+					invdata = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, invoice.c.custid]).where(invoice.c.invid==rejectionnotedata["invid"]))
 					invdata = invdata.fetchone()
-					rejectionnotedata.update({"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y")})
+					custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid=%d"%int(invdata["custid"]))
+					custdata = custdata.fetchone()
+					rejectionnotedata.update({"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"), "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]})
 					dcinvdata = self.con.execute(select([dcinv.c.dcid]).distinct().where(dcinv.c.invid == invdata["invid"]))
 					dcinvdata = dcinvdata.fetchone()
 					if dcinvdata != None:
 						dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==dcinvdata[0]))
 						dcdata = dcdata.fetchone()
-						custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(dcinvdata[0]))
-						custdata = custdata.fetchone()
-						rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]})
+						rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]]})
 				items = {}
 				stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==18,stock.c.dcinvtnid==self.request.params["rnid"])))
 				for stockrow in stockdata:
