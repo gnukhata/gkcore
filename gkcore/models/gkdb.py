@@ -559,6 +559,6 @@ rejectionnote = Table('rejectionnote',metadata,
 	Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
 	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
-	UniqueConstraint('rnno','orgcode'),
+	UniqueConstraint('rnno','inout', 'orgcode'),
     Index("rejection_note","orgcode")
 	)
