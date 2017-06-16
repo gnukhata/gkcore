@@ -606,6 +606,7 @@ The bills grid calld gkresult will return a list as it's value.
 							srno += 1
 				else:
 					#type=rejection note
+                    #Here even delivery type sample and free Replacement can also be rejected.
 					for row in dcResult:
 						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
 						dc_unbilled.append(temp_dict)
