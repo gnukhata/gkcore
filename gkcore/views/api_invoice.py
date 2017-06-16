@@ -655,21 +655,19 @@ The bills grid calld gkresult will return a list as it's value.
 						temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
 						temp = temp.fetchall()
 						rnprodresult.append(temp)
-					matchedproducts = []
-					remainingproducts = {}
-					totalqtyofdcprod = {}
+					totalqtyofinvprod = {}
 					for eachitem in invprodresult:
 						for prodc in eachitem:
-							totalqtyofdcprod.update({prodc:eachitem[prodc].values()[0]})
+							totalqtyofinvprod.update({int(prodc):eachitem[prodc].values()[0]})
 					for row in rnprodresult:
 						for prodc, qty in row:
-							if prodc in totalqtyofdcprod:
-								totalqtyofdcprod[prodc] = float(totalqtyofdcprod[prodc]) - float(qty)
-								if float(totalqtyofdcprod[prodc]) <= 0.00:
-									del totalqtyofdcprod[prodc]
+							if prodc in totalqtyofinvprod:
+								totalqtyofinvprod[prodc] = float(totalqtyofinvprod[prodc]) - float(qty)
+								if float(totalqtyofinvprod[prodc]) <= 0.00:
+									del totalqtyofinvprod[prodc]
 							else:
 								pass
-					if len(totalqtyofdcprod) == 0:
+					if len(totalqtyofinvprod) == 0:
 						allinvids.remove(invid)
 						i-=1
 					i+=1
