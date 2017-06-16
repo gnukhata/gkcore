@@ -30,7 +30,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, rejectionnote
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -684,5 +684,73 @@ The bills grid calld gkresult will return a list as it's value.
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',request_param='type=nonrejectedinvprods', renderer='json')
+	def nonRejectedInvProds(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				invid = dataset["invid"]
+				invprodresult = []
+				orgcode = authDetails["orgcode"]
+				temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+				temp = temp.fetchall()
+				invprodresult.append(temp[0][0])
+				items = {}
+				for eachitem in invprodresult:
+					for prodc in eachitem:
+						productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==int(prodc)))
+						productdesc = productdata.fetchone()
+						uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+						unitnamrrow = uomresult.fetchone()
+						items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+				allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
+				allrnidres = allrnidres.fetchall()
+				rnprodresult = []
+				#get stock respected to all rejection notes
+				for rnid in allrnidres:
+					temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+					temp = temp.fetchall()
+					rnprodresult.append(temp)
+				for row in rnprodresult:
+					try:
+						for prodc, qty in row:
+							items[int(prodc)]["qty"] -= float(qty)
+					except:
+						pass
+				for productcode in items.keys():
+					if items[productcode]["qty"] == 0:
+						del items[productcode]
+				temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
+				temp = temp.fetchone()
+				dcdetails = {}
+				custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
+				custname = custdata.fetchone()
+				dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"]}
+				if temp:
+					result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
+					delchaldata = result.fetchone()
+					stockdata = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
+					stockdata = stockdata.fetchone()
+					dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
+					godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata[0]))
+					goname = godata.fetchone()
+					dcdetails["goid"] = stockdata[0]
+					dcdetails["goname"] = goname["goname"]
+					dcdetails["gostate"] = goname["state"]
+					dcdetails["goaddr"] = goname["goaddr"]
+				return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
