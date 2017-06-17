@@ -60,6 +60,7 @@ signature = Table('signature', metadata,
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
+ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
 organisation = Table( 'organisation' , metadata,
