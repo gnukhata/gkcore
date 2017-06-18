@@ -2787,8 +2787,6 @@ class api_reports(object):
 								stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
 
 				stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
-
-				print stockReport
 				self.con.close()
 				return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
 			except:
