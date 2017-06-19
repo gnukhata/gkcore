@@ -67,14 +67,14 @@ class api_organisation(object):
 			self.con.execute(select(gkdb.dcinv.c.invprods))
 			self.con.execute(select(gkdb.organisation.c.logo))
 			self.con.execute(select(gkdb.vouchers.c.instrumentno))
-            self.con.execute(select(gkdb.organisation.c.invsflag))
-            self.con.execute(select(gkdb.organisation.c.billflag))
+			self.con.execute(select(gkdb.organisation.c.invsflag))
+			self.con.execute(select(gkdb.organisation.c.billflag))
 			#self.con.close()
 			#return 0
 		except:
 			self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
-            self.con.execute("alter table organisation add invsflag integer default 0")
-            self.con.execute("alter table organisation add billflag integer default 0")
+			self.con.execute("alter table organisation add invsflag integer default 0")
+			self.con.execute("alter table organisation add billflag integer default 0")
 			self.con.execute("alter table vouchers add instrumentno text")
 			self.con.execute("alter table vouchers add branchname text")
 			self.con.execute("alter table vouchers add bankname text")
