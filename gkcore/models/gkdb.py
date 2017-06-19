@@ -306,7 +306,7 @@ The invoice table and this table will be linked in a subsequent table.
 This is done because one invoice may have several dc's attached and for one dc may have several invoices.
 In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
 Another invoice may be issued if the remaining two items are approved by the customer.
-
+dcflag is used for type of transaction: 1 - Approval, 2 - consignment, 3 - Free Replacement, etc.
 """
 delchal = Table('delchal',metadata,
 	Column('dcid',Integer,primary_key=True),
@@ -350,7 +350,7 @@ This table records movement of goods and can give details either on basis of pro
 invoice or dc (which ever is responsible for the movement ),
 or by godown using the goid.
 It has a field for product quantity.
-it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote.
+it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote or rejection note(flag = 18).
 This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
@@ -545,4 +545,20 @@ log = Table('log',metadata,
 	Column('userid',Integer, ForeignKey('users.userid',ondelete="CASCADE")),
 	Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
 	Index("logindex","userid","activity")
+	)
+
+"""Table to store Rejection Note
+This table will store invoice or delivery note id against which rejection note prepared
+inout is a flag to indicate rejection in or out. in = 9, out = 15"""
+rejectionnote = Table('rejectionnote',metadata,
+	Column('rnid',Integer,primary_key=True),
+	Column('rnno',UnicodeText, nullable=False),
+	Column('rndate', DateTime, nullable=False),
+    Column('inout', Integer, nullable=False),
+	Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
+	Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
+	Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
+	UniqueConstraint('rnno','inout', 'orgcode'),
+    Index("rejection_note","orgcode")
 	)
