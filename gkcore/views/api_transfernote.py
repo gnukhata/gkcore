@@ -264,7 +264,7 @@ class api_transfernote(object):
                     togodown = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == row["togodown"], godown.c.orgcode == authDetails["orgcode"])))
                     togodowndata = togodown.fetchone()
                     togodowndesc = togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
-                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "productqty":productqty, "receivedflag":row["recieved"], "srno":srno})
+                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y'),"fromgodown":fromgodowndesc,"togodown":togodowndesc, "productqty":productqty, "numberofproducts":len(productqty), "receivedflag":row["recieved"], "srno":srno})
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
