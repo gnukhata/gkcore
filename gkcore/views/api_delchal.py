@@ -27,7 +27,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod
+from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -92,7 +92,7 @@ class api_delchal(object):
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
                                 if resultgoprod.rowcount == 0:
                                     result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
-                                
+
                     except:
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
                         result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
@@ -313,7 +313,22 @@ class api_delchal(object):
                             items[int(productcode)]["qty"] -= float(invprods[productcode])
                     except:
                         pass
-                if len(linkedinvoices) != 0:
+                #This code is for rejection note
+                allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == authDetails["orgcode"], rejectionnote.c.dcid == dcid)))
+                allrnidres = allrnidres.fetchall()
+                rnprodresult = []
+                #get stock respected to all rejection notes
+                for rnid in allrnidres:
+                    temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == authDetails["orgcode"], stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+                    temp = temp.fetchall()
+                    rnprodresult.append(temp)
+                for row in rnprodresult:
+                    try:
+                        for prodc, qty in row:
+                            items[int(prodc)]["qty"] -= float(qty)
+                    except:
+                        pass
+                if len(linkedinvoices) != 0 or len(rnprodresult) != 0:
                     for productcode in items.keys():
                         if items[productcode]["qty"] == 0:
                             del items[productcode]
@@ -322,7 +337,3 @@ class api_delchal(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-
-
-
-

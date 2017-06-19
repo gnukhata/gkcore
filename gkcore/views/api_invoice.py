@@ -25,11 +25,12 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
 "Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
+"Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -475,7 +476,38 @@ The bills grid calld gkresult will return a list as it's value.
 					invidresult = self.con.execute(select([dcinv.c.invid]).where(and_(dcid[0] == dcinv.c.dcid, dcinv.c.orgcode == orgcode, invoice.c.orgcode == orgcode, invoice.c.invid == dcinv.c.invid, invoice.c.invoicedate <= new_inputdate)))
 					invidresult = invidresult.fetchall()
 					if len(invidresult) == 0:
-						pass
+						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
+						dcprodresult = dcprodresult.fetchall()
+						#This code is for rejection note
+						#even if an invoice is not prepared and rejection note prepared for whole delivery note then it should not come into unbilled delivery note.
+						allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.rndate <= new_inputdate, rejectionnote.c.dcid == dcid[0])))
+						allrnidres = allrnidres.fetchall()
+						rnprodresult = []
+						#get stock respected to all rejection notes
+						for rnid in allrnidres:
+							temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+							temp = temp.fetchall()
+							rnprodresult.append(temp)
+						matchedproducts = []
+						remainingproducts = {}
+						totalqtyofdcprod = {}
+						for eachitem in dcprodresult:
+							totalqtyofdcprod.update({eachitem[0]:eachitem[1]})
+						for row in rnprodresult:
+							for prodc, qty in row:
+								if prodc in remainingproducts:
+									remainingproducts[prodc] = float(remainingproducts[prodc]) + float(qty)
+									if float(remainingproducts[prodc]) >= float(totalqtyofdcprod[prodc]):
+										matchedproducts.append(prodc)
+										del remainingproducts[prodc]
+								elif float(qty) >= float(totalqtyofdcprod[prodc]):
+									matchedproducts.append(prodc)
+								else:
+									remainingproducts.update({prodc:float(qty)})
+						if len(matchedproducts) == len(dcprodresult):
+							#Now we have got the delchals, for which invoices are also sent completely.
+							alldcids.remove(dcid)
+							i-=1
 					else:
 						#invid's will be distinct only. So no problem to explicitly applying distinct clause.
 						dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
@@ -495,8 +527,10 @@ The bills grid calld gkresult will return a list as it's value.
 						#But, in case of invprodresult, there can be more than one productcodes mentioned. This is because, with one delchal, there can be many invoices linked.
 						matchedproducts = []
 						remainingproducts = {}
+						totalqtyofdcprod = {}
 						for eachitem in dcprodresult:
 						#dcprodresult is a list of tuples. eachitem is one such tuple.
+							totalqtyofdcprod.update({eachitem[0]:eachitem[1]})
 							for eachinvoice in invprodresult:
 							#invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
 								for eachproductcode in eachinvoice.keys():
@@ -527,6 +561,23 @@ The bills grid calld gkresult will return a list as it's value.
 											# It could happen when multiple delivery chalans have only one invoice.
 											pass
 
+						#This code is for rejection note
+						allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.rndate <= new_inputdate, rejectionnote.c.dcid == dcid[0])))
+						allrnidres = allrnidres.fetchall()
+						rnprodresult = []
+						#get stock respected to all rejection notes
+						for rnid in allrnidres:
+							temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+							temp = temp.fetchall()
+							rnprodresult.append(temp)
+						for row in rnprodresult:
+							for prodc, qty in row:
+								if prodc in remainingproducts:
+									remainingproducts[prodc] = float(remainingproducts[prodc]) + float(qty)
+									if float(remainingproducts[prodc]) >= float(totalqtyofdcprod[prodc]):
+										matchedproducts.append(prodc)
+										del remainingproducts[prodc]
+
 						if len(matchedproducts) == len(dcprodresult):
 							#Now we have got the delchals, for which invoices are also sent completely.
 							alldcids.remove(dcid)
@@ -541,7 +592,8 @@ The bills grid calld gkresult will return a list as it's value.
 
 				temp_dict = {}
 				srno = 1
-				for row in dcResult:
+				if dataset["type"] == "invoice":
+					for row in dcResult:
 						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
 						if temp_dict["dcflag"] == 19:
 							#We don't have to consider sample.
@@ -552,11 +604,153 @@ The bills grid calld gkresult will return a list as it's value.
 						if temp_dict["dcflag"] != "Sample" and temp_dict["dcflag"] !="Free Replacement":
 							dc_unbilled.append(temp_dict)
 							srno += 1
+				else:
+					#type=rejection note
+					#Here even delivery type sample and free Replacement can also be rejected.
+					for row in dcResult:
+						temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+						dc_unbilled.append(temp_dict)
+						srno += 1
 				self.con.close()
 				return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["ActionDisallowed"]}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	'''This mehtod gives all invoices which are not fully rejected yet. It is used in rejection note, to prepare rejection note against these invoices'''
+	@view_config(request_method='GET', request_param="type=nonrejected", renderer ='json')
+	def nonRejected(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				orgcode = authDetails["orgcode"]
+				dataset = self.request.json_body
+				new_inputdate = dataset["inputdate"]
+				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
+				inv_nonrejected = []
+				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate)))
+				allinvids = allinvids.fetchall()
+				i = 0
+				while(i < len(allinvids)):
+					invid = allinvids[i]
+					invprodresult = []
+					temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid[0])))
+					temp = temp.fetchall()
+					invprodresult.append(temp[0][0])
+					allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid[0])))
+					allrnidres = allrnidres.fetchall()
+					rnprodresult = []
+					#get stock respected to all rejection notes
+					for rnid in allrnidres:
+						temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+						temp = temp.fetchall()
+						rnprodresult.append(temp)
+					totalqtyofinvprod = {}
+					for eachitem in invprodresult:
+						for prodc in eachitem:
+							totalqtyofinvprod.update({int(prodc):eachitem[prodc].values()[0]})
+					for row in rnprodresult:
+						for prodc, qty in row:
+							if prodc in totalqtyofinvprod:
+								totalqtyofinvprod[prodc] = float(totalqtyofinvprod[prodc]) - float(qty)
+								if float(totalqtyofinvprod[prodc]) <= 0.00:
+									del totalqtyofinvprod[prodc]
+							else:
+								pass
+					if len(totalqtyofinvprod) == 0:
+						allinvids.remove(invid)
+						i-=1
+					i+=1
+				srno = 1
+				for eachinvid in allinvids:
+					singleinvResult = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, customerandsupplier.c.custname, customerandsupplier.c.csflag]).distinct().where(and_(invoice.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachinvid[0] == invoice.c.invid, invoice.c.custid == customerandsupplier.c.custid)))
+					singleinvResult = singleinvResult.fetchone()
+					temp_dict = {"invid": singleinvResult["invid"], "srno": srno, "invoiceno":singleinvResult["invoiceno"], "invoicedate": datetime.strftime(singleinvResult["invoicedate"],"%d-%m-%Y"), "csflag": singleinvResult["csflag"], "custname": singleinvResult["custname"]}
+					inv_nonrejected.append(temp_dict)
+					srno += 1
+				self.con.close()
+				return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["ActionDisallowed"]}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
+
+	@view_config(request_method='GET',request_param='type=nonrejectedinvprods', renderer='json')
+	def nonRejectedInvProds(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return {"gkstatus": enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails['auth'] == False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				dataset = self.request.json_body
+				invid = dataset["invid"]
+				invprodresult = []
+				orgcode = authDetails["orgcode"]
+				temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+				temp = temp.fetchall()
+				invprodresult.append(temp[0][0])
+				items = {}
+				for eachitem in invprodresult:
+					for prodc in eachitem:
+						productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==int(prodc)))
+						productdesc = productdata.fetchone()
+						uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+						unitnamrrow = uomresult.fetchone()
+						items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+				allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
+				allrnidres = allrnidres.fetchall()
+				rnprodresult = []
+				#get stock respected to all rejection notes
+				for rnid in allrnidres:
+					temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+					temp = temp.fetchall()
+					rnprodresult.append(temp)
+				for row in rnprodresult:
+					try:
+						for prodc, qty in row:
+							items[int(prodc)]["qty"] -= float(qty)
+					except:
+						pass
+				for productcode in items.keys():
+					if items[productcode]["qty"] == 0:
+						del items[productcode]
+				temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
+				temp = temp.fetchone()
+				dcdetails = {}
+				custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
+				custname = custdata.fetchone()
+				dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"]}
+				if temp:
+					result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
+					delchaldata = result.fetchone()
+					stockdata = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
+					stockdata = stockdata.fetchone()
+					dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
+					godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata[0]))
+					goname = godata.fetchone()
+					dcdetails["goid"] = stockdata[0]
+					dcdetails["goname"] = goname["goname"]
+					dcdetails["gostate"] = goname["state"]
+					dcdetails["goaddr"] = goname["goaddr"]
+				return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
+			except:
+				return {"gkstatus":enumdict["ConnectionFailed"]}
 			finally:
 				self.con.close()
