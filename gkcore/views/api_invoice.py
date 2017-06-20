@@ -806,7 +806,12 @@ The bills grid calld gkresult will return a list as it's value.
 							pass
 					custname = cresult.fetchone()
 					netamt = float(row["invoicetotal"]) - taxamt
-					invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+					if self.request.params["flag"] == 0:
+						invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+					elif self.request.params["flag"] == 1 and custname["csflag"] == 3:
+						invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+					elif self.request.params["flag"] == 2 and custname["csflag"] == 19:
+						invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
 					srno += 1
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
 			except:
