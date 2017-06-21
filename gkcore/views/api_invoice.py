@@ -644,7 +644,7 @@ The bills grid calld gkresult will return a list as it's value.
 				new_inputdate = dataset["inputdate"]
 				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
 				inv_nonrejected = []
-				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate)))
+				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
 				allinvids = allinvids.fetchall()
 				i = 0
 				while(i < len(allinvids)):
