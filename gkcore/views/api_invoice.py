@@ -263,7 +263,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 					if result.rowcount>0:
 						result = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
 						dcnocustid = result.fetchone()
-						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
 						invc["invoiceno"]=row["invoiceno"]
 						invc["invid"]=row["invid"]
@@ -272,10 +272,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 						invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 						invc["custname"]=custname["custname"]
 						invc["custid"]=custname["custid"]
+						invc["custaddr"] = custname["custaddr"]
+						invc["custtin"] = custname["custtan"]
 						invc["state"]=custname["state"]
 						invc["csflag"]=custname["csflag"]
 					else:
-						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
 						invc["invoiceno"]=row["invoiceno"]
 						invc["invid"]=row["invid"]
@@ -285,6 +287,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 						invc["custid"]=custname["custid"]
 						invc["state"]=custname["state"]
 						invc["custaddr"] = custname["custaddr"]
+						invc["custtin"] = custname["custtan"]
 						invc["csflag"]=custname["csflag"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==item))
