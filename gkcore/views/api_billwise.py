@@ -37,7 +37,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import accounts
+from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -51,6 +51,26 @@ It will be used for creating entries in the billwise table and updating it as ne
         self.request = request
         self.con = Connection
         print "billwise initialized"
+    @view_config(request_method='POST',renderor='json')
+    def adjustBills(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataSet = self.request.json_body
+                adjBills = dataSet["adjbills"]
+                for bill in adjBills:
+                    result = self.con.execute(billwise.insert(),[bill])
+                
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+            
 
         
         
