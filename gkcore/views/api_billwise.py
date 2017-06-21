@@ -38,3 +38,19 @@ from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import accounts
+@view_defaults(route_name='billwise')
+class api_billWise(object):
+    """
+    This class is a resource for billwise accounting.
+It will be used for creating entries in the billwise table and updating it as new entries are passed.
+    The invoice table will also be updated every time an adjustment is made.
+    We will have get and post methods.
+    """
+    def __init__(self, request):
+        self.request = Request
+        self.request = request
+        self.con = Connection
+        print "billwise initialized"
+
+        
+        
