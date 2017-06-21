@@ -777,7 +777,7 @@ The bills grid calld gkresult will return a list as it's value.
 			try:
 				self.con = eng.connect()
 				#fetch all invoices
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
 				invoices = []
 				srno = 1
 				#for each invoice
