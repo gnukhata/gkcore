@@ -112,7 +112,7 @@ class api_transaction(object):
 				crs = dataset["crs"]
 
 
-				if dataset["instrumentdate"]!=None:
+				if dataset.has_key("instrumentdate"):
 					instrumentdate=dataset["instrumentdate"]
 					dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
 
