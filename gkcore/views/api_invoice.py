@@ -294,7 +294,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 					productname = result.fetchone()
 					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productname["uomid"]))
 					unitnamrrow = uomresult.fetchone()
-					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"]}
+					tottax = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]])*float(row["tax"][item])/float(100)
+					totamt = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]]) + tottax
+					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt}
 				invc["contents"] = items
 				invc["freeqty"] = freeitems
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
