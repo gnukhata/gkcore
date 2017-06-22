@@ -38,6 +38,7 @@ from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers
+from datetime import datetime, date
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -105,14 +106,21 @@ It will be used for creating entries in the billwise table and updating it as ne
                 self.con = eng.connect()
                 csid =int(self.request.params["csid"])
                 csFlag =int(self.request.params["csflag"])
-                csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d"%(csFlag,csFlag,authDetails["orgcode"]))
+                csn = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == csid, orgcode==authDetails["orgcode"])))
+                csName = csn.fetchone()
+                accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],orgcode== authDetails["orgcode"])))
+                acccode = accData.fetchone()
+                csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
                 csReceipts = csReceiptData.fetchall()
                 unAdjReceipts = []
                 unAdjInvoices = []
                 for rcpt in csReceipts:
-                    qualify = True
                     invs = self.con.execute(select([func.count(billwise.c.invid).label('invFound'),func.sum(billwise.c.adjamount).label("amtAdjusted")]).where(billwise.c.vouchercode == rcpt["vouchercode"]))
-                    
+                    invsData = invs.fetchone()
+                    if int(invsData["invFound"]) > 0:
+                        if rcpt["amt"] == invsData["amtAdjusted"]
+                        continue
+                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],"%d-%m-%Y"),"amtadj":"%.2f"%(rcpt["amt"] - invsData["amtAdjusted"])})
                 
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
