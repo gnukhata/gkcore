@@ -80,7 +80,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         first we provide it a customerandsupplier code.
         Then get all the receipts vouchers for that customer or supplyer.
         now the receipts are filtered on the basis of 2 conditions.
-firstly the vouchers is unused at all.
+        firstly the vouchers is unused at all.
         secondly if it is used then it's total should not be equal to the sum of all adjusted amounts of those invoices which have been adjusted using this vouchers.
         For this we loop through the list of vouchers.
         at the beginning of the loop we set a qualification flag to true.
@@ -103,7 +103,20 @@ firstly the vouchers is unused at all.
         else:
             try:
                 self.con = eng.connect()
-            
+                csid =int(self.request.params["csid"])
+                csFlag =int(self.request.params["csflag"])
+                csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d"%(csFlag,csFlag,authDetails["orgcode"]))
+                csReceipts = csReceiptData.fetchall()
+                unAdjReceipts = []
+                unAdjInvoices = []
+                for rcpt in csReceipts:
+                    qualify = True
+                    invs = self.con.execute(select([func.count(billwise.c.invid).label('invFound'),func.sum(billwise.c.adjamount).label("amtAdjusted")]).where(billwise.c.vouchercode == rcpt["vouchercode"]))
+                    
+                
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                
 
         
         
