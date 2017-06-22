@@ -300,8 +300,8 @@ invoice = Table('invoice',metadata,
     )
 billwise = Table('billwise',metadata,
     Column('billid',Integer,primary_key=True),
-    Column('vouchercode',Integer, ForeignKey(vouchers.vouchercode),nullable=False),
-    Column('invid',Integer,ForeignKey(invoice.invid),nullable=False),
+    Column('vouchercode',Integer, ForeignKey('vouchers.vouchercode'),nullable=False),
+    Column('invid',Integer,ForeignKey('invoice.invid'),nullable=False),
     Column('adjdate',DateTime),
     Column('adjamount',Numeric(12,2),nullable=False)
 )
