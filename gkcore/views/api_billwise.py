@@ -67,6 +67,9 @@ It will be used for creating entries in the billwise table and updating it as ne
                 adjBills = dataSet["adjbills"]
                 for bill in adjBills:
                     result = self.con.execute(billwise.insert(),[bill])
+                    updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
+                return{"gkstatus":enumdict["Success"]}
+            
                 
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
