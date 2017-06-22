@@ -263,7 +263,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 					if result.rowcount>0:
 						result = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
 						dcnocustid = result.fetchone()
-						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
 						invc["invoiceno"]=row["invoiceno"]
 						invc["invid"]=row["invid"]
@@ -272,10 +272,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 						invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
 						invc["custname"]=custname["custname"]
 						invc["custid"]=custname["custid"]
+						invc["custaddr"] = custname["custaddr"]
+						invc["custtin"] = custname["custtan"]
 						invc["state"]=custname["state"]
 						invc["csflag"]=custname["csflag"]
 					else:
-						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+						result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
 						custname = result.fetchone()
 						invc["invoiceno"]=row["invoiceno"]
 						invc["invid"]=row["invid"]
@@ -284,13 +286,17 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 						invc["custname"]=custname["custname"]
 						invc["custid"]=custname["custid"]
 						invc["state"]=custname["state"]
+						invc["custaddr"] = custname["custaddr"]
+						invc["custtin"] = custname["custtan"]
 						invc["csflag"]=custname["csflag"]
 				for item in items.keys():
 					result = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==item))
 					productname = result.fetchone()
 					uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productname["uomid"]))
 					unitnamrrow = uomresult.fetchone()
-					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"]}
+					tottax = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]])*float(row["tax"][item])/float(100)
+					totamt = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]]) + tottax
+					items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt}
 				invc["contents"] = items
 				invc["freeqty"] = freeitems
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
@@ -638,7 +644,7 @@ The bills grid calld gkresult will return a list as it's value.
 				new_inputdate = dataset["inputdate"]
 				new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
 				inv_nonrejected = []
-				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate)))
+				allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
 				allinvids = allinvids.fetchall()
 				i = 0
 				while(i < len(allinvids)):
@@ -771,7 +777,7 @@ The bills grid calld gkresult will return a list as it's value.
 			try:
 				self.con = eng.connect()
 				#fetch all invoices
-				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+				result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
 				invoices = []
 				srno = 1
 				#for each invoice
