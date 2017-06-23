@@ -120,11 +120,11 @@ It will be used for creating entries in the billwise table and updating it as ne
                     amtadj = 0.00
                     if int(invsData["invFound"]) > 0:
                         amtadj = invsData["amtAdjusted"]
-                        if rcpt["amt"] == invsData["amtAdjusted"]:
+                        
+                        if float(rcpt["amt"]) == float(invsData["amtAdjusted"]):
                             continue
                     unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
-                    print unAdjReceipts
-                    print type(unAdjReceipts[0]["voucherdate"])
+                    
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
