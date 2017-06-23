@@ -37,7 +37,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers
+from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts
 from datetime import datetime, date
 @view_defaults(route_name='billwise')
 class api_billWise(object):
@@ -62,7 +62,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+ #           try:
                 self.con = eng.connect()
                 dataSet = self.request.json_body
                 adjBills = dataSet["adjbills"]
@@ -70,8 +70,8 @@ It will be used for creating entries in the billwise table and updating it as ne
                     result = self.con.execute(billwise.insert(),[bill])
                     updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
                 return{"gkstatus":enumdict["Success"]}
-            except:
-                return{"gkstatus":enumdict["ConnectionFailed"]}
+  #          except:
+  #              return{"gkstatus":enumdict["ConnectionFailed"]}
     @view_config(request_method='GET',renderer='json')
     def getUnadjustedBills(self):
         """
@@ -102,13 +102,13 @@ It will be used for creating entries in the billwise table and updating it as ne
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+  #          try:
                 self.con = eng.connect()
                 csid =int(self.request.params["csid"])
                 csFlag =int(self.request.params["csflag"])
-                csn = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == csid, orgcode==authDetails["orgcode"])))
+                csn = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == csid,customerandsupplier.c.orgcode==authDetails["orgcode"])))
                 csName = csn.fetchone()
-                accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],orgcode== authDetails["orgcode"])))
+                accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],accounts.c.orgcode== authDetails["orgcode"])))
                 acccode = accData.fetchone()
                 csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
                 csReceipts = csReceiptData.fetchall()
@@ -126,8 +126,8 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":inv["invoicedate"],"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"receipts":unAdjReceipts,"invoices":unAdjInvoices}
-            except:
-                return{"gkstatus":enumdict["ConnectionFailed"]}
+   #         except:
+   #             return{"gkstatus":enumdict["ConnectionFailed"]}
                 
 
         
