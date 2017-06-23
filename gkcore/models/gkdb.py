@@ -304,7 +304,7 @@ billwise = Table('billwise',metadata,
     Column('invid',Integer,ForeignKey('invoice.invid'),nullable=False),
     Column('adjdate',DateTime),
     Column('adjamount',Numeric(12,2),nullable=False),
-    Column('orgcode',Integer,ForeignKey(organisation.orgcode,ondelete="CASCADE"),nullable=False)
+    Column('orgcode',Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False)
 )
 """
 Table for challan.
