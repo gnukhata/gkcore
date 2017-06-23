@@ -62,7 +62,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
- #           try:
+            try:
                 self.con = eng.connect()
                 dataSet = self.request.json_body
                 adjBills = dataSet["adjbills"]
@@ -70,8 +70,8 @@ It will be used for creating entries in the billwise table and updating it as ne
                     result = self.con.execute(billwise.insert(),[bill])
                     updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
                 return{"gkstatus":enumdict["Success"]}
-  #          except:
-  #              return{"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
     @view_config(request_method='GET',renderer='json')
     def getUnadjustedBills(self):
         """
@@ -102,7 +102,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-  #          try:
+            try:
                 self.con = eng.connect()
                 csid =int(self.request.params["csid"])
                 csFlag =int(self.request.params["csflag"])
@@ -122,14 +122,16 @@ It will be used for creating entries in the billwise table and updating it as ne
                         amtadj = invsData["amtAdjusted"]
                         if rcpt["amt"] == invsData["amtAdjusted"]:
                             continue
-                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],"%d-%m-%Y"),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
+                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
+                    print unAdjReceipts
+                    print type(unAdjReceipts[0]["voucherdate"])
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":inv["invoicedate"],"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"receipts":unAdjReceipts,"invoices":unAdjInvoices}
-   #         except:
-   #             return{"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
                 
 
         
