@@ -54,6 +54,18 @@ It will be used for creating entries in the billwise table and updating it as ne
         print "billwise initialized"
     @view_config(request_method='POST',renderer='json')
     def adjustBills(self):
+        """
+        purpose:
+        adjustment of invoices using a given receipt.
+        Single receipt can be used for one or more invoices.
+        description:
+        this function takes a list of dictionaries containing,
+        *vouchercode,
+        * invid
+        * amount.
+        The amount key is also used to update the payed amount in invoice table.
+        A for loop runs through the list of dictionaries.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
