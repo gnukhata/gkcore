@@ -117,10 +117,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for rcpt in csReceipts:
                     invs = self.con.execute(select([func.count(billwise.c.invid).label('invFound'),func.sum(billwise.c.adjamount).label("amtAdjusted")]).where(billwise.c.vouchercode == rcpt["vouchercode"]))
                     invsData = invs.fetchone()
+                    amtadj = 0.00
                     if int(invsData["invFound"]) > 0:
+                        amtadj = invsData["amtAdjusted"]
                         if rcpt["amt"] == invsData["amtAdjusted"]:
                             continue
-                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],"%d-%m-%Y"),"amtadj":"%.2f"%(float(rcpt["amt"] - invsData["amtAdjusted"]))})
+                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],"%d-%m-%Y"),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
