@@ -135,9 +135,11 @@ class api_transaction(object):
                         vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                         vouchercode =vouchercodedata.fetchone()
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
-                
+
+                vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                vchcode =vchdata.fetchone()
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"vouchercode":int(vouchercode["vcode"])}
+                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
