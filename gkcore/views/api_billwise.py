@@ -136,7 +136,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                         
                         if float(rcpt["amt"]) == float(invsData["amtAdjusted"]):
                             continue
-                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
+                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"vouchernumber":rcpt["vouchernumber"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
                     
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
