@@ -19,10 +19,9 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
-"Ishan Masdekar " <imasdekar@dff.org.in>
-"Navin Karkera" <navin@dff.org.in>
-Prajkta Patkar" <prajkta.patkar007@gmail.com>
+'Abhijith Balan'<abhijith@dff.org.in>
+"Krishnakant Mane" <kk@dff.org.in>
+"Prajkta Patkar" <prajakta@dff.org.in>
 """
 
 from gkcore import eng, enumdict
@@ -123,7 +122,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 csName = csn.fetchone()
                 accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],accounts.c.orgcode== authDetails["orgcode"])))
                 acccode = accData.fetchone()
-                csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                if csFlag == 3:
+                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                if csFlag == 19:
+                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
                 csReceipts = csReceiptData.fetchall()
                 unAdjReceipts = []
                 unAdjInvoices = []
