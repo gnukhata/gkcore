@@ -19,10 +19,9 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
-"Ishan Masdekar " <imasdekar@dff.org.in>
-"Navin Karkera" <navin@dff.org.in>
-Prajkta Patkar" <prajkta.patkar007@gmail.com>
+'Abhijith Balan'<abhijith@dff.org.in>
+"Krishnakant Mane" <kk@dff.org.in>
+"Prajkta Patkar" <prajakta@dff.org.in>
 """
 
 from gkcore import eng, enumdict
@@ -79,6 +78,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 dataSet = self.request.json_body
                 adjBills = dataSet["adjbills"]
                 for bill in adjBills:
+                    bill["orgcode"]= authDetails["orgcode"]
                     result = self.con.execute(billwise.insert(),[bill])
                     updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
                 return{"gkstatus":enumdict["Success"]}
@@ -122,7 +122,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 csName = csn.fetchone()
                 accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],accounts.c.orgcode== authDetails["orgcode"])))
                 acccode = accData.fetchone()
-                csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                if csFlag == 3:
+                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                if csFlag == 19:
+                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
                 csReceipts = csReceiptData.fetchall()
                 unAdjReceipts = []
                 unAdjInvoices = []
@@ -135,13 +138,13 @@ It will be used for creating entries in the billwise table and updating it as ne
                         
                         if float(rcpt["amt"]) == float(invsData["amtAdjusted"]):
                             continue
-                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
+                    unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"vouchernumber":rcpt["vouchernumber"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
                     
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
-                return{"gkstatus":enumdict["Success"],"receipts":unAdjReceipts,"invoices":unAdjInvoices}
+                return{"gkstatus":enumdict["Success"],"vouchers":unAdjReceipts,"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
                 
