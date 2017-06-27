@@ -23,7 +23,6 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-"Mohd. Talha Pawaty" <mtallha456@gmail.com>
 """
 from sqlalchemy.dialects.postgresql.json import JSONB
 
@@ -190,8 +189,6 @@ customerandsupplier = Table('customerandsupplier',metadata,
     Column('custtan',UnicodeText),
     Column('custdoc',JSONB),
     Column('state', UnicodeText),
-    Column('advamt',Numeric(13,2),default=0.00),
-    Column('onaccamt',Numeric(13,2),default=0.00),
     Column('csflag',Integer,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','custname'),
