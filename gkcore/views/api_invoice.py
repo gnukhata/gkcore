@@ -395,14 +395,14 @@ The bills grid calld gkresult will return a list as it's value.
         else:
      #       try:
                 self.con = eng.connect()
-                result = self.con.execute("select invoiceno,invid,invoicedate,custid,invoicetotal from invoice where orgcode = %d and icflag = 9 and invid not in (select invid from vouchers)"%(authDetails["orgcode"]))
+                result = self.con.execute("select invoiceno,invoice.invid,invoicedate,custid,invoicetotal from invoice,vouchers where vouchers.invid != invoice.invid ")
+           #     result = self.con.execute("select invoiceno,invid,invoicedate,custid,invoicetotal from invoice where orgcode = %d and icflag = 9 and invid not in (select invid from vouchers)"%(authDetails["orgcode"]))
                 invoices = []
                 for row in result:
                     result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                    print row
                     custname = result.fetchone()
                     invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"])})
-                    print invoices
+                   # print invoices
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
       #      except:
       #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}

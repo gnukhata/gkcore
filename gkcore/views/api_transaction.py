@@ -107,6 +107,8 @@ class api_transaction(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                print "this is datset"
+                print dataset
                 dataset["orgcode"] = authDetails["orgcode"]
                 drs = dataset["drs"]
                 crs = dataset["crs"]
