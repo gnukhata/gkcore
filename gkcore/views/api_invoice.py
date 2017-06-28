@@ -393,7 +393,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-     #       try:
+            try:
                 self.con = eng.connect()
                 invsData = self.con.execute("select invid from invoice  where orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
@@ -405,10 +405,10 @@ The bills grid calld gkresult will return a list as it's value.
                     invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-      #      except:
-      #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-      #      finally:
-      #          self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
 
 
