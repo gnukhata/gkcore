@@ -396,14 +396,14 @@ The bills grid calld gkresult will return a list as it's value.
      #       try:
                 self.con = eng.connect()
                 invsData = self.con.execute("select invid from invoice  where orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
-
-           #     result = self.con.execute("select invoiceno,invid,invoicedate,custid,invoicetotal from invoice where orgcode = %d and icflag = 9 and invid not in (select invid from vouchers)"%(authDetails["orgcode"]))
                 invoices = []
-                for row in result:
-                    result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                    custname = result.fetchone()
-                    invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"])})
-                   # print invoices
+                for inv in invsData:
+                    filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
+                    invdataset = filteredInvoices.fetchone()
+                    csdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdataset["custid"]))
+                    custname = csdata.fetchone()
+                    invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
+
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
       #      except:
       #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
