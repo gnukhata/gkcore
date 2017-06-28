@@ -395,7 +395,8 @@ The bills grid calld gkresult will return a list as it's value.
         else:
      #       try:
                 self.con = eng.connect()
-                result = self.con.execute("select invoiceno,invoice.invid,invoicedate,custid,invoicetotal from invoice,vouchers where vouchers.invid != invoice.invid ")
+                invsData = self.con.execute("select invid from invoice  where orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+
            #     result = self.con.execute("select invoiceno,invid,invoicedate,custid,invoicetotal from invoice where orgcode = %d and icflag = 9 and invid not in (select invid from vouchers)"%(authDetails["orgcode"]))
                 invoices = []
                 for row in result:
