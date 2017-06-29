@@ -64,7 +64,7 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 
 """
 This table is for storing state information.  
-A state will have its corresponding code with name.qq
+A state will have its corresponding code with name.
 """
 
 state = Table('state',metadata,
@@ -174,6 +174,8 @@ The table is having a json field which has the keys matching the attributes from
 """
 product = Table('product',metadata,
     Column('productcode',Integer,primary_key=True),
+    Column('gscode',UnicodeText),
+    Column('gsflag',Integer),
     Column('productdesc',UnicodeText),
     Column('openingstock', Numeric(13,2),default=0.00),
     Column('specs', JSONB,nullable=False ),
