@@ -63,7 +63,8 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
 """
-This table is for storing state information 
+This table is for storing state information.  
+A state will have its corresponding code with name.qq
 """
 
 state = Table('state',metadata,
