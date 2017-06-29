@@ -321,6 +321,7 @@ billwise = Table('billwise',metadata,
     Column('adjamount',Numeric(12,2),nullable=False),
     Column('orgcode',Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False)
 )
+
 """
 Table for challan.
 This table stores the delivary challans issues when the goods move out.
