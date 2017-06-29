@@ -62,6 +62,16 @@ Every time a new organisation is created or recreated for it's new financial yea
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
+"""
+This table is for storing state information 
+"""
+
+state = Table('state',metadata,
+              Column('stid',Integer,primary_key=True),
+              
+
+    
+)
 organisation = Table( 'organisation' , metadata,
     Column('orgcode',Integer, primary_key=True),
     Column('orgname',UnicodeText, nullable=False),
@@ -90,6 +100,7 @@ organisation = Table( 'organisation' , metadata,
     Column('billflag',Integer,default=1),
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
+    Column('gstin',UnicodeText),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")
