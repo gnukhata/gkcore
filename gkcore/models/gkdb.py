@@ -68,10 +68,10 @@ This table is for storing state information
 
 state = Table('state',metadata,
               Column('stid',Integer,primary_key=True),
-              
-
-    
+              Column('statecode',Integer),
+              Column('statename',UnicodeText) 
 )
+
 organisation = Table( 'organisation' , metadata,
     Column('orgcode',Integer, primary_key=True),
     Column('orgname',UnicodeText, nullable=False),
