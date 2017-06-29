@@ -68,9 +68,9 @@ A state will have its corresponding code with name.
 """
 
 state = Table('state',metadata,
-              Column('stid',Integer,primary_key=True),
-              Column('statecode',Integer),
-              Column('statename',UnicodeText) 
+        Column('stid',Integer,primary_key=True),
+        Column('statecode',Integer),
+        Column('statename',UnicodeText) 
 )
 
 organisation = Table( 'organisation' , metadata,
