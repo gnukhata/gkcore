@@ -136,11 +136,14 @@ class api_product(object):
                 row = result.fetchone()
                 result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                 unitrow= result.fetchone()
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"])}
-                godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
-                godowns = godownswithstock.fetchone()
-                numberofgodowns = godowns["numberofgodowns"]
-                return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
+                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"]),"gsflag":row["gsflag"],"gscode":row["gscode"]}
+                if int(row["gsflag"]) != 19: 
+                    godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
+                    godowns = godownswithstock.fetchone()
+                    numberofgodowns = godowns["numberofgodowns"]
+                    return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
+                else:
+                    return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
