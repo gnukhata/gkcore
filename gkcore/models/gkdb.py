@@ -191,10 +191,12 @@ Table for customers and suppliers.
 We need this data when we sell goods.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
+gstin to store unique code of cust/supp for gst
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
     Column('custname',UnicodeText,nullable=False),
+    Column('gstin',UnicodeText),
     Column('custaddr',UnicodeText),
     Column('custphone',UnicodeText),
     Column('custemail',UnicodeText),
