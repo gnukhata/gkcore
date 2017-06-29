@@ -286,7 +286,7 @@ This has a key as price per unit (ppu) and value as quantity (qty).
 Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
-This field is a dictionary.
+Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
