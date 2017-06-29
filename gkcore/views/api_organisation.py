@@ -61,7 +61,6 @@ class api_organisation(object):
         try:
             print "i am here"
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
-            print ""
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
             self.con.execute(select([func.count(gkdb.product.c.gscode)]))
             self.con.execute(select(gkdb.organisation.c.gstin))
