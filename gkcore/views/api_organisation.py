@@ -79,6 +79,7 @@ class api_organisation(object):
             self.con.execute("alter table delchal drop column issuerid")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+            self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("alter table invoice add consignee jsonb")
             self.con.execute("alter table customerandsupplier add gstin unicodetext")
             self.con.execute("alter table product add gsflag integer")
