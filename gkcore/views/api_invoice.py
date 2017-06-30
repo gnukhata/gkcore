@@ -44,6 +44,10 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+def gst(ProductCode,con):
+    gstData = con.execute(select([product.c.gsflag,product.c.gscode]).where(product.c.productcode == ProductCode))
+    gst = gstData.fetchone()
+    return {"gsflag":gst["gsflag"],"gscode":gst["gscode"]}
 
 @view_defaults(route_name='invoice')
 class api_invoice(object):
