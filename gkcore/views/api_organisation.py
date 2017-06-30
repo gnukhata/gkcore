@@ -82,7 +82,7 @@ class api_organisation(object):
             self.con.execute("alter table organisation add gstin text")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("alter table invoice add consignee jsonb")
-            self.con.execute("alter table customerandsupplier add gstin unicodetext")
+            self.con.execute("alter table customerandsupplier add gstin text")
             self.con.execute("alter table product add gsflag integer")
             self.con.execute("alter table product add gscode text")
             self.con.execute("create table state(stateid serial, statecode integer,statename unicodetext,primary key (stateid))")
