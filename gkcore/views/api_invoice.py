@@ -86,8 +86,8 @@ class api_invoice(object):
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                    else
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                        else:
+                            return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
                     try:
                         if invdataset.has_key('icflag'):
