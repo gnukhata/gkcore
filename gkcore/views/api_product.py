@@ -135,10 +135,16 @@ class api_product(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
-                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
-                unitrow= result.fetchone()
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"]),"gsflag":row["gsflag"],"gscode":row["gscode"]}
-                if int(row["gsflag"]) != 19: 
+                
+                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                if int(row["gsflag"]) == 7:
+                    result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
+                    unitrow= result1.fetchone()
+                    productDetails["specs"] = row["specs"]
+                    productDetails["categorycode"] = row["categorycode"]
+                    productDetails["uomid"]=row["uomid"]
+                    productDetails["unitname"]=row["unitname"]
+                    productDetails["openingstock"]="%.2f"%float(row["openingstock"])
                     godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
                     godowns = godownswithstock.fetchone()
                     numberofgodowns = godowns["numberofgodowns"]
