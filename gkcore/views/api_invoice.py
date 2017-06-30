@@ -86,7 +86,7 @@ class api_invoice(object):
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                    else:
+                    else
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
                     try:
@@ -95,11 +95,13 @@ class api_invoice(object):
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             for item in items.keys():
-                                stockdataset["productcode"] = item
-                                stockdataset["qty"] = items[item].values()[0]
-                                stockdataset["dcinvtnflag"] = "3"
-                                stockdataset["stockdate"] = invoiceid["invoicedate"]
-                                result = self.con.execute(stock.insert(),[stockdataset])
+                                gstResult = gst(item,con)
+                                if int(gstResult["gsflag"]) == 7:
+                                    stockdataset["productcode"] = item
+                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["dcinvtnflag"] = "3"
+                                    stockdataset["stockdate"] = invoiceid["invoicedate"]
+                                    result = self.con.execute(stock.insert(),[stockdataset])
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -107,10 +109,12 @@ class api_invoice(object):
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
-                                stockdataset["productcode"] = item
-                                stockdataset["qty"] = items[item].values()[0]
-                                stockdataset["dcinvtnflag"] = "9"
-                                result = self.con.execute(stock.insert(),[stockdataset])
+                                gstResult = gst(item,con)
+                                if int(gstResult["gsflag"]) == 7:
+                                    stockdataset["productcode"] = item
+                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["dcinvtnflag"] = "9"
+                                    result = self.con.execute(stock.insert(),[stockdataset])
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                     except:
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
