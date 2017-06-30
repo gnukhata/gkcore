@@ -91,7 +91,8 @@ class api_product(object):
                 for row in results:
                     unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitofmeasurement = unitsofmeasurement.fetchone()
-                    unitname = unitofmeasurement["unitname"]
+                    if unitofmeasurement != None:
+                        unitname = unitofmeasurement["unitname"]
                     if row["categorycode"]!=None:
                         categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
                         category = categories.fetchone()
