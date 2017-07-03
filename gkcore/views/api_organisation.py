@@ -71,6 +71,9 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table delchal drop column issuerid")
+            self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+            self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
             self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 1")
