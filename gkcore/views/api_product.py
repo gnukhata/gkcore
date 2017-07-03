@@ -143,7 +143,7 @@ class api_product(object):
                     productDetails["specs"] = row["specs"]
                     productDetails["categorycode"] = row["categorycode"]
                     productDetails["uomid"]=row["uomid"]
-                    productDetails["unitname"]=unitname["unitname"]
+                    productDetails["unitname"]=unitrow["unitname"]
                     productDetails["openingstock"]="%.2f"%float(row["openingstock"])
                     godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
                     godowns = godownswithstock.fetchone()
