@@ -911,10 +911,21 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con = eng.connect()
                 if int(Request.params["taxflag"]) == 22:
                     #this is VAT.
-                    if request.params["source"] == request.params["destination"]
-                    taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(Request.params["productcode"]))))
-                    taxData = taxResult.fetchone()
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%taxData["taxrate"]}}
+                    if request.params["source"] == request.params["destination"]:
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(Request.params["productcode"]))))
+                        taxData = taxResult.fetchone()
+                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
+                    else:
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == int(Request.params["productcode"]))))
+                        taxData = taxResult.fetchone()
+                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"CVAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
+                else:
+                    #since it is not 22 means it is 7 = "GST".
+                    
+                    
+                    
+                    
+                        
                     
             except:
                 
