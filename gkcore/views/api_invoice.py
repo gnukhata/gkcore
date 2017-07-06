@@ -913,6 +913,9 @@ The bills grid calld gkresult will return a list as it's value.
                     #this is VAT.
                     if request.params["source"] == request.params["destination"]
                     taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(Request.params["productcode"]))))
+                    taxData = taxResult.fetchone()
+                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%taxData["taxrate"]}}
+                    
             except:
                 
 
