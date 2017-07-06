@@ -884,3 +884,21 @@ The bills grid calld gkresult will return a list as it's value.
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(request_method='GET',request_param='type=caltax',renderer='json')
+    def calTex(self):
+        """
+        Purpose:
+        Takes the product code and returns tax rate based on inter or intra state basis.
+        Description:
+        This function takes product code, custermer and supplier states and taxflag as parameters and 
+        returns the tax rate (either GST or VAT).
+        The function searches the tax table for the tax rate given the productcode.
+        If GST is sent as taxflag then IGST is returned for inter state sales.
+        For this the 2 states provided as parameters must be different.
+        If it is intra state then IGST is divided by 2 and the values are sent as CGST and SGST.
+        Returns the taxname and tax rate as dictionary in gkresult.
+
+        """
+
+        
