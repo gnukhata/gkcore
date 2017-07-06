@@ -31,7 +31,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -898,7 +898,22 @@ The bills grid calld gkresult will return a list as it's value.
         For this the 2 states provided as parameters must be different.
         If it is intra state then IGST is divided by 2 and the values are sent as CGST and SGST.
         Returns the taxname and tax rate as dictionary in gkresult.
-
         """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                if int(Request.params["taxflag"]) == 22:
+                    #this is VAT.
+                    if request.params["source"] == request.params["destination"]
+                    taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(Request.params["productcode"]))))
+            except:
+                
 
         
