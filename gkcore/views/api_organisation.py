@@ -25,7 +25,6 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 """
 
-
 from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
@@ -59,6 +58,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
             self.con.execute(select(gkdb.organisation.c.gstin))
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
@@ -76,6 +76,8 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add reversecharge text, add bankdetails jsonb")
+            self.con.execute("alter table invoice add reversecharge text")
             self.con.execute("alter table delchal drop column issuerid")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")

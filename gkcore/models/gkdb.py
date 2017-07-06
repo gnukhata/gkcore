@@ -287,6 +287,7 @@ Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
 Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
+Bankdetails is a dictionary will have bankname,accountno. and ifsccode.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -309,6 +310,8 @@ invoice = Table('invoice',metadata,
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
     Column('consignee',JSONB),
     Column('freeqty',JSONB),
+    Column('reversecharge',UnicodeText),
+    Column('bankdetails',JSONB),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
