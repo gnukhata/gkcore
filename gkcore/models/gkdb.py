@@ -279,6 +279,7 @@ vouchers=Table('vouchers', metadata,
 """
 Table for storing invoice records.
 Every row represents one invoice.
+taxflag states which tax is applied to products/services. Default value is set as 22 for VAT and if it is GST 7 will be set as taxflag.
 Apart from the number and date, we also have a json field called contents.
 This field is a nested dictionary.
 The key of this field is the productcode while value is another dictionary.
@@ -293,6 +294,7 @@ invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
     Column('invoiceno',UnicodeText,nullable=False),
     Column('invoicedate',DateTime,nullable=False),
+    Column('taxflag',Integer,default=22),
     Column('contents',JSONB),
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
