@@ -924,7 +924,7 @@ The bills grid calld gkresult will return a list as it's value.
                     if request.params["source"] == request.params["destination"]:
                         #this is IGST.
                         taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(Request.params["productcode"]))))
-                                                taxData = taxResult.fetchone()
+                        taxData = taxResult.fetchone()
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
                     else:
                         #this is SGST and CGST.
