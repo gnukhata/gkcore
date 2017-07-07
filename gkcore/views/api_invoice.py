@@ -936,6 +936,6 @@ The bills grid calld gkresult will return a list as it's value.
                         #so when u see taxname is sgst then cgst with same rate is asumed.                                                
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
             except:
-                
+                return{"gkstatus":enumdict["ConnectionFailed"]}
 
         
