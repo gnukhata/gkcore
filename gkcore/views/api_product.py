@@ -64,7 +64,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+    #        try:
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -85,7 +85,7 @@ class api_product(object):
                         products = result.fetchone()
                         results.append(products)
                 else:
-                    results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                    results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
                 products = []
                 srno=1
                 for row in results:
@@ -114,11 +114,11 @@ class api_product(object):
                     products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
                     srno = srno+1
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+    #        except:
+    #            self.con.close()
+    #            return {"gkstatus":enumdict["ConnectionFailed"]}
+    #        finally:
+    #            self.con.close()
 
 
     @view_config(request_param='qty=single', request_method='GET',renderer='json')
