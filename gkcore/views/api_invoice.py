@@ -309,6 +309,13 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
+                        inv["reversecharge"] = row["reversecharge"]
+                        inv["bankdetails"] = row["bankdetails"]
+                        inv["taxflag"] = row["taxflag"]
+                        inv["taxstate"] = row["taxstate"]
+                        inv["dateofsupply"] = row["dateofsupply"]
+                        inv["transportationmode"] = inv["transportationmode"]
+                        inv["vehicleno"] = row["vehicleno"]
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }                        
                     else:
                         tottax = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]])*float(row["tax"][item])/float(100)
@@ -316,6 +323,13 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"productdesc":productname["productdesc"],"taxamount":row["tax"][item], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
+                        inv["reversecharge"] = row["reversecharge"]
+                        inv["bankdetails"] = row["bankdetails"]
+                        inv["taxflag"] = row["taxflag"]
+                        inv["taxstate"] = row["taxstate"]
+                        inv["dateofsupply"] = row["dateofsupply"]
+                        inv["transportationmode"] = inv["transportationmode"]
+                        inv["vehicleno"] = row["vehicleno"]
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }                        
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
