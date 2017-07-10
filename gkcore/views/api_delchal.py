@@ -177,7 +177,7 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+        #    try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
@@ -190,8 +190,9 @@ class api_delchal(object):
                     flag = 4
                 stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["dcid"])))
                 for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"] ,product.c.gsflag==7)))
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
+                    print productdesc
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
                     items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
@@ -224,10 +225,10 @@ class api_delchal(object):
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+        #    except:
+        #        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+        #    finally:
+        #        self.con.close()
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
     def getLastDelChalDetails(self):
@@ -298,7 +299,7 @@ class api_delchal(object):
                 items = {}
                 stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.dcinvtnflag == 4, stock.c.dcinvtnid == dcid)))
                 for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()

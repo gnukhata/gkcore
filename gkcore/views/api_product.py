@@ -64,7 +64,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-    #        try:
+            try:
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -114,11 +114,11 @@ class api_product(object):
                     products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
                     srno = srno+1
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
-    #        except:
-    #            self.con.close()
-    #            return {"gkstatus":enumdict["ConnectionFailed"]}
-    #        finally:
-    #            self.con.close()
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
 
     @view_config(request_param='qty=single', request_method='GET',renderer='json')
@@ -135,7 +135,7 @@ class api_product(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
-                
+
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
                 if int(row["gsflag"]) == 7:
                     result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
