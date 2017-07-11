@@ -88,7 +88,7 @@ class api_customer(object):
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.customerandsupplier]).where(gkdb.customerandsupplier.c.custid == dataset["custid"] ))
                 row = result.fetchone()
-                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"] }
+                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"] }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
