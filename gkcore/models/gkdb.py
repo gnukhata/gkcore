@@ -317,6 +317,7 @@ invoice = Table('invoice',metadata,
     Column('transportationmode',UnicodeText),
     Column('vehicleno',UnicodeText),
     Column('dateofsupply',DateTime),
+    Column('discount',Numeric(5,2),default=0.00),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
