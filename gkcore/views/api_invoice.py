@@ -249,7 +249,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+     #       try:
                 self.con = eng.connect()
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
@@ -309,14 +309,17 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
-                        inv["reversecharge"] = row["reversecharge"]
-                        inv["discount"] = row["discount"]
-                        inv["bankdetails"] = row["bankdetails"]
-                        inv["taxflag"] = row["taxflag"]
-                        inv["taxstate"] = row["taxstate"]
-                        inv["dateofsupply"] = row["dateofsupply"]
-                        inv["transportationmode"] = inv["transportationmode"]
-                        inv["vehicleno"] = row["vehicleno"]
+                        invc["reversecharge"] = row["reversecharge"]
+                        invc["discount"] = "%.2f"%float(row["discount"])
+                        invc["bankdetails"] = row["bankdetails"]
+                        invc["taxflag"] = row["taxflag"]
+                        invc["taxstate"] = row["taxstate"]
+                        if row["dateofsupply"] != None:
+                            invc["dateofsupply"] = datetime.strftime(row["dateofsupply"],'%d-%m-%Y')
+                        else:
+                            invc["dateofsupply"] = ""
+                        invc["transportationmode"] = row["transportationmode"]
+                        invc["vehicleno"] = row["vehicleno"]
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }                        
                     else:
                         tottax = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]])*float(row["tax"][item])/float(100)
@@ -324,19 +327,23 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"productdesc":productname["productdesc"],"taxamount":row["tax"][item], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
-                        inv["reversecharge"] = row["reversecharge"]
-                        inv["discount"] = row["discount"]
-                        inv["bankdetails"] = row["bankdetails"]
-                        inv["taxflag"] = row["taxflag"]
-                        inv["taxstate"] = row["taxstate"]
-                        inv["dateofsupply"] = row["dateofsupply"]
-                        inv["transportationmode"] = inv["transportationmode"]
-                        inv["vehicleno"] = row["vehicleno"]
+                        invc["reversecharge"] = row["reversecharge"]
+                        invc["discount"] ="%.2f"%float(row["discount"])
+                        invc["bankdetails"] = row["bankdetails"]
+                        invc["taxflag"] = row["taxflag"]
+                        invc["taxstate"] = row["taxstate"]
+                        if row["dateofsupply"] != None:
+                            invc["dateofsupply"] = datetime.strftime(row["dateofsupply"],'%d-%m-%Y')
+                        else:
+                            invc["dateofsupply"] = ""
+                            
+                        invc["transportationmode"] = row["transportationmode"]
+                        invc["vehicleno"] = row["vehicleno"]
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }                        
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+      #      except:
+      #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+      #      finally:
+      #          self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
