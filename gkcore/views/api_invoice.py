@@ -925,27 +925,27 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                if int(Request.params["taxflag"]) == 22:
+                if int(self.request.params["taxflag"]) == 22:
                     #this is VAT.
-                    if request.params["source"] == request.params["destination"]:
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(Request.params["productcode"]))))
+                    if self.request.params["source"] == self.request.params["destination"]:
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(self.request.params["productcode"]))))
                         taxData = taxResult.fetchone()
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
                     else:
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == int(Request.params["productcode"]))))
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == int(self.request.params["productcode"]))))
                         taxData = taxResult.fetchone()
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"CVAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
                 else:
                     #since it is not 22 means it is 7 = "GST".
-                    if request.params["source"] == request.params["destination"]:
+                    if self.request.params["source"] == self.request.params["destination"]:
                         #this is IGST.
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(Request.params["productcode"]))))
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
                         taxData = taxResult.fetchone()
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
                     else:
                         #this is SGST and CGST.
                         #IGST / 2 = SGST and CGST.
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(Request.params["productcode"]))))
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
                         taxData = taxResult.fetchone()
                         gst = float(taxData["IGST"]) /2
                         #note although we are returning only SGST, same rate applies to CGST.
