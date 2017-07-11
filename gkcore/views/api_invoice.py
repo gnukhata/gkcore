@@ -310,6 +310,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
                         inv["reversecharge"] = row["reversecharge"]
+                        inv["discount"] = row["discount"]
                         inv["bankdetails"] = row["bankdetails"]
                         inv["taxflag"] = row["taxflag"]
                         inv["taxstate"] = row["taxstate"]
@@ -324,6 +325,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
                         inv["reversecharge"] = row["reversecharge"]
+                        inv["discount"] = row["discount"]
                         inv["bankdetails"] = row["bankdetails"]
                         inv["taxflag"] = row["taxflag"]
                         inv["taxstate"] = row["taxstate"]
