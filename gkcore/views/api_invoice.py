@@ -954,7 +954,7 @@ The bills grid calld gkresult will return a list as it's value.
                         #IGST / 2 = SGST and CGST.
                         taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
                         taxData = taxResult.fetchone()
-                        gst = float(taxData["IGST"]) /2
+                        gst = float(taxData["taxrate"]) /2
                         #note although we are returning only SGST, same rate applies to CGST.
                         #so when u see taxname is sgst then cgst with same rate is asumed.                                                
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
