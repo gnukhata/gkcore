@@ -85,7 +85,16 @@ class api_product(object):
                         products = result.fetchone()
                         results.append(products)
                 else:
-                    results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                    invdc = 9
+                    try:
+                        invdc = int(self.request.params["invdc"])
+                    except:
+                        invdc = 9
+                    if invdc == 4:
+                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                    if invdc == 9:
+                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                    
                 products = []
                 srno=1
                 for row in results:
@@ -93,6 +102,8 @@ class api_product(object):
                     unitofmeasurement = unitsofmeasurement.fetchone()
                     if unitofmeasurement != None:
                         unitname = unitofmeasurement["unitname"]
+                    else:
+                        unitname = ""
                     if row["categorycode"]!=None:
                         categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
                         category = categories.fetchone()
