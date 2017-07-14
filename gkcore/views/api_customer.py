@@ -107,16 +107,16 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+       #     try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
                 return {"gkstatus":enumdict["Success"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+        #    except:
+         #       return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+         #   finally:
+          #      self.con.close()
     @view_config(request_param="qty=custall", request_method='GET', renderer ='json')
     def getAllCustomers(self):
         try:
