@@ -212,7 +212,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
     UniqueConstraint('orgcode','custname','custemail','csflag'),
     UniqueConstraint('orgcode','custname','custpan','csflag'),
     UniqueConstraint('orgcode','custname','custtan','csflag'),
-    UniqueConstraint('orgcode','gstin'),
+    UniqueConstraint('orgcode','custname','gstin'),
     Index("customer_supplier_orgcodeindex","orgcode")
     )
 """ table to store accounts.
