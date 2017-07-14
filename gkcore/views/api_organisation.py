@@ -86,7 +86,7 @@ class api_organisation(object):
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("alter table invoice add consignee jsonb")
             self.con.execute("alter table customerandsupplier add gstin text")
-            self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custid,gstin)")
+            self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
             self.con.execute("alter table product add gsflag integer")
             self.con.execute("update product set gsflag = 7")
             self.con.execute("alter table product add gscode text")
