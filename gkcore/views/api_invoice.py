@@ -910,7 +910,7 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con.close()
 
     @view_config(request_method='GET',request_param='type=caltax',renderer='json')
-    def calTex(self):
+    def calTax(self):
         """
         Purpose:
         Takes the product code and returns tax rate based on inter or intra state basis.
@@ -946,11 +946,6 @@ The bills grid calld gkresult will return a list as it's value.
                 else:
                     #since it is not 22 means it is 7 = "GST".
                     if self.request.params["source"] == self.request.params["destination"]:
-                        #this is IGST.
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
-                        taxData = taxResult.fetchone()
-                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
-                    else:
                         #this is SGST and CGST.
                         #IGST / 2 = SGST and CGST.
                         taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
@@ -959,6 +954,12 @@ The bills grid calld gkresult will return a list as it's value.
                         #note although we are returning only SGST, same rate applies to CGST.
                         #so when u see taxname is sgst then cgst with same rate is asumed.                                                
                         return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
+                    else:
+                        #this is IGST.
+                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
+                        taxData = taxResult.fetchone()
+                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
+                        
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
 
