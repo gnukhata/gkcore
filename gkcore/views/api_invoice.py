@@ -250,7 +250,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-     #       try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
@@ -311,7 +311,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
                         invc["reversecharge"] = row["reversecharge"]
-                        invc["discount"] = "%.2f"%float(row["discount"])
                         invc["bankdetails"] = row["bankdetails"]
                         invc["taxflag"] = row["taxflag"]
                         invc["taxstate"] = row["taxstate"]
@@ -329,7 +328,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
                         invc["reversecharge"] = row["reversecharge"]
-                        invc["discount"] ="%.2f"%float(row["discount"])
                         invc["bankdetails"] = row["bankdetails"]
                         invc["taxflag"] = row["taxflag"]
                         invc["taxstate"] = row["taxstate"]
@@ -341,10 +339,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invc["transportationmode"] = row["transportationmode"]
                         invc["vehicleno"] = row["vehicleno"]
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }                        
-      #      except:
-      #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-      #      finally:
-      #          self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
