@@ -254,8 +254,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 self.con = eng.connect()
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
-                row = result.fetchone()
-                                        
+                invrow = result.fetchone()
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"icflag":invrow["icflag"],"invoicetotal":invrow["invoicetotal"],"freeqty":invrow["freeqty"],"discount":invrow["discount"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
