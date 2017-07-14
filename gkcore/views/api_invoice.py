@@ -257,6 +257,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 row = result.fetchone()
                 items = row["contents"]
                 freeitems = row["freeqty"]
+                discount = row["discount"]
                 if row["icflag"]==3:
                     invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
                     if row["cancelflag"]==1:
@@ -310,6 +311,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
+                        invc["discount"] = discount
                         invc["reversecharge"] = row["reversecharge"]
                         invc["bankdetails"] = row["bankdetails"]
                         invc["taxflag"] = row["taxflag"]
@@ -327,6 +329,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         items[item]= {"priceperunit":items[item].keys()[0],"productdesc":productname["productdesc"],"taxamount":row["tax"][item], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt,"gscode":productname["gscode"],"gsflag":productname["gsflag"]}
                         invc["contents"] = items
                         invc["freeqty"] = freeitems
+                        invc["discount"] = discount
                         invc["reversecharge"] = row["reversecharge"]
                         invc["bankdetails"] = row["bankdetails"]
                         invc["taxflag"] = row["taxflag"]
