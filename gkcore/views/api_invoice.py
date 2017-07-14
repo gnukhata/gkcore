@@ -1,4 +1,5 @@
 
+
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -95,7 +96,7 @@ class api_invoice(object):
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             for item in items.keys():
-                                gstResult = gst(item,con)
+                                gstResult = gst(item,self.con)
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = items[item].values()[0]
@@ -109,7 +110,7 @@ class api_invoice(object):
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
-                                gstResult = gst(item,con)
+                                gstResult = gst(item,self.con)
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = items[item].values()[0]
