@@ -192,7 +192,7 @@ class api_product(object):
                 self.con = eng.connect()
                 return calTax(int(self.request.params["taxflag"]),self.request.params["source"],self.request.params["destination"],int(self.request.params["productcode"]),self.con)
                 
-        except:
+            except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
