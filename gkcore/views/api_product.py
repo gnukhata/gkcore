@@ -30,7 +30,8 @@ Contributors:
 
 from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
-from gkcore import eng, enumdict,calTax
+from gkcore.views.api_tax import calTax
+from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, distinct
@@ -167,6 +168,38 @@ class api_product(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+    @view_config(request_method='GET',request_param='type=pt',renderer='json')
+    def getTaxForProduct(self):
+        """
+        Purpose: returns either VAT or GST for a selected product based on product code and state.
+        description:
+        This function takes productcode,source and destination states,
+        (called source and destination as params).
+        Also takes taxflag.
+        The function makes calld to the global function calTax found in api_tax.
+        Will return a dictionary containing the tax name and rate.
+        Please refer calTax in api_tax for details.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                return calTax(int(self.request.params["taxflag"]),self.request.params["source"],self.request.params["destination"],int(self.request.params["productcode"]),self.con)
+                
+        except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+        
+        
 
 
     @view_config(request_method='GET', request_param='by=category',renderer='json')
