@@ -31,7 +31,7 @@ Contributors:
 """
 
 
-from gkcore import eng, enumdict
+from gkcore import eng, enumdict,calTax
 from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax
 from sqlalchemy.sql import select
 import json
@@ -255,7 +255,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
                 invrow = result.fetchone()
-                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"icflag":invrow["icflag"],"invoicetotal":invrow["invoicetotal"],"freeqty":invrow["freeqty"],"discount":invrow["discount"]}
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"icflag":invrow["icflag"],"invoicetotal":invrow["invoicetotal"],"freeqty":invrow["freeqty"],"discount":invrow["discount"],"bakdetails":invrow["bankdetails"]}
+                
+                    
+                
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
@@ -823,59 +826,4 @@ The bills grid calld gkresult will return a list as it's value.
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-
-    @view_config(request_method='GET',request_param='type=caltax',renderer='json')
-    def calTax(self):
-        """
-        Purpose:
-        Takes the product code and returns tax rate based on inter or intra state basis.
-        Description:
-        This function takes product code, custermer and supplier states and taxflag as parameters and 
-        returns the tax rate (either GST or VAT).
-        The function searches the tax table for the tax rate given the productcode.
-        If GST is sent as taxflag then IGST is returned for inter state sales.
-        For this the 2 states provided as parameters must be different.
-        If it is intra state then IGST is divided by 2 and the values are sent as CGST and SGST.
-        Returns the taxname and tax rate as dictionary in gkresult.
-        """
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                if int(self.request.params["taxflag"]) == 22:
-                    #this is VAT.
-                    if self.request.params["source"] == self.request.params["destination"]:
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == int(self.request.params["productcode"]))))
-                        taxData = taxResult.fetchone()
-                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
-                    else:
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == int(self.request.params["productcode"]))))
-                        taxData = taxResult.fetchone()
-                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"CVAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
-                else:
-                    #since it is not 22 means it is 7 = "GST".
-                    if self.request.params["source"] == self.request.params["destination"]:
-                        #this is SGST and CGST.
-                        #IGST / 2 = SGST and CGST.
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
-                        taxData = taxResult.fetchone()
-                        gst = float(taxData["taxrate"]) /2
-                        #note although we are returning only SGST, same rate applies to CGST.
-                        #so when u see taxname is sgst then cgst with same rate is asumed.                                                
-                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
-                    else:
-                        #this is IGST.
-                        taxResult = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == int(self.request.params["productcode"]))))
-                        taxData = taxResult.fetchone()
-                        return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
-                        
-            except:
-                return{"gkstatus":enumdict["ConnectionFailed"]}
-
         
