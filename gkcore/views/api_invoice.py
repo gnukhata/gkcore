@@ -31,8 +31,9 @@ Contributors:
 """
 
 
-from gkcore import eng, enumdict,calTax
+from gkcore import eng, enumdict
 from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax
+from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
