@@ -55,7 +55,7 @@ def calTax(taxflag,source,destination,productcode,con):
             if taxflag == 22:
                 #this is VAT.
                 if source == destination:
-                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == productcode)))
+                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == productcode,tax.c.state == source)))
                     taxData = taxResult.fetchone()
                     return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
                 else:
