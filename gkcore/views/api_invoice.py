@@ -257,6 +257,22 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
                 invrow = result.fetchone()
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"icflag":invrow["icflag"],"invoicetotal":invrow["invoicetotal"],"freeqty":invrow["freeqty"],"discount":invrow["discount"],"bakdetails":invrow["bankdetails"]}
+                #contents is a nested dictionary from invoice table.
+                #It contains productcode as the key with a value as a dictionary.
+                #this dictionary has two key value pare, priceperunit and quantity.
+                contentsData = invrow["contents"]
+                #invContents is the finally dictionary which will not just have the dataset from original contents,
+                #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam  
+                invContents = {}
+                for pc in contentsData.keys():
+                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode == pc))
+                    prodrow = prod.fetchone()
+                    desc = prodrow["productdesc"]
+                    um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                    unitrow = um.fetchone()
+                    unitofmeasurement = unitrow["unitname"]
+                    
+                    
                 
                     
                 
