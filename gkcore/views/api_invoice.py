@@ -264,11 +264,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 #invContents is the finally dictionary which will not just have the dataset from original contents,
                 #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam  
                 invContents = {}
-                #get the dictionaries of discount and access it inside the loop for one product each.
+                #get the dictionary of discount and access it inside the loop for one product each.
                 #do the same with freeqty.
                 discounts = invrow["discount"]
                 freeqtys = invrow["freeqty"]
-                
+                #now looping through the contents.
+                #pc will have the productcode which will be the ke in invContents.
                 for pc in contentsData.keys():
                     prod = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode == pc))
                     prodrow = prod.fetchone()
@@ -276,6 +277,14 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                     unitrow = um.fetchone()
                     unitofmeasurement = unitrow["unitname"]
+                    taxableAmount = (float(contentsData[pc][contentsData[pc].keys()[0]]) - freqtys[pc]) * float(contentsData[pc].keys()[0]) - float(discounts[pc])
+                    print taxableAmount
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    if int(invrow["taxflag"]) == 22:
+                        taxRate =  float(invrow["tax"]["pc"])
+                        totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
+                        
                     
                     
                 
