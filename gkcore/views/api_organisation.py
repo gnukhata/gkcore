@@ -77,7 +77,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
-            
+            self.con.execute("alter table invoice drop column cancelflag,drop column canceldate")
             self.con.execute("alter table invoice add discount jsonb,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
             self.con.execute("alter table delchal drop column issuerid")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
