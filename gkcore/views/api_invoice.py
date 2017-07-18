@@ -285,8 +285,14 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         taxRate =  float(invrow["tax"]["pc"])
                         totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
                     else:
-                        TaxData = calTax(7)
-                        
+                        TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
+                        taxResult = TaxData["gkresult"]
+                        taxRate = int(taxResult["taxrate"])
+                        if taxResult["taxname"] == "IGST":
+                            totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
+                        else:
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
+                            
                         
                     
                     
