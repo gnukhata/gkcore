@@ -284,6 +284,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"]["pc"])
                         totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
+                    else:
+                        TaxData = calTax(7)
+                        
                         
                     
                     
