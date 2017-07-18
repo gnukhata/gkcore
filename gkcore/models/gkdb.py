@@ -290,6 +290,8 @@ So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
 Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
 Bankdetails is a dictionary will have bankname,accountno. and ifsccode.
+taxstate is a destination sate.
+sourcestate is source state from where invoice is initiated
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -304,6 +306,7 @@ invoice = Table('invoice',metadata,
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
     Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
