@@ -67,7 +67,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+       #     try:
                 self.con = eng.connect()
                 dtset = self.request.json_body
                 dcinvdataset={}
@@ -122,12 +122,12 @@ class api_invoice(object):
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+        #    except exc.IntegrityError:
+        #        return {"gkstatus":enumdict["DuplicateEntry"]}
+        #    except:
+        #        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+        #    finally:
+        #        self.con.close()
     @view_config(request_method='PUT', renderer='json')
     def editInvoice(self):
         try:
@@ -251,7 +251,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+         #   try:
                 self.con = eng.connect()
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
@@ -276,17 +276,18 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     desc = prodrow["productdesc"]
                     um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                     unitrow = um.fetchone()
-                    unitofmeasurement = unitrow["unitname"]
-                    taxableAmount = (float(contentsData[pc][contentsData[pc].keys()[0]]) - freqtys[pc]) * float(contentsData[pc].keys()[0]) - float(discounts[pc])
+                    unitofMeasurement = unitrow["unitname"]
+                    taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqtys[pc])) * float(contentsData[pc].keys()[0])) - float(discounts[pc])
                     print taxableAmount
                     taxRate = 0.00
                     totalAmount = 0.00
                     if int(invrow["taxflag"]) == 22:
-                        taxRate =  float(invrow["tax"]["pc"])
+                        taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * (taxRate/100))
                         totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
                     else:
                         TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
+                        print TaxData
                         taxResult = TaxData["gkresult"]
                         taxRate = int(taxResult["taxrate"])
                         if taxResult["taxname"] == "IGST":
@@ -295,17 +296,17 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         else:
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
-                    invContents[pc] = {"proddesc":desc,"uom":unitofmeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                    invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                         
                     
+                inv["invcontents"] = invContents
+                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
                     
                 
-                    
-                
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+          #  except:
+          #      return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+          #  finally:
+          #      self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
