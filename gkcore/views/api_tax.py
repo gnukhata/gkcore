@@ -65,7 +65,7 @@ def calTax(taxflag,source,destination,productcode,con):
             else:
                 #since it is not 22 means it is 7 = "GST".
                 if source == destination:
-                    print "in sgst"
+                    
                     #this is SGST and CGST.
                     #IGST / 2 = SGST and CGST.
                     taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
