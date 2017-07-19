@@ -51,35 +51,37 @@ def calTax(taxflag,source,destination,productcode,con):
         If it is intra state then IGST is divided by 2 and the values are sent as CGST and SGST.
         Returns the taxname and tax rate as dictionary in gkresult.
         """
-        try:
-            if taxflag == 22:
-                #this is VAT.
-                if source == destination:
-                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == productcode,tax.c.state == source)))
-                    taxData = taxResult.fetchone()
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
-                else:
-                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == productcode)))
-                    taxData = taxResult.fetchone()
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"CVAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
+   #     try:
+        print taxflag , source ,destination,productcode 
+        if taxflag == 22:
+            #this is VAT.
+            if source == destination:
+                taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'VAT',tax.c.productcode == productcode,tax.c.state == source)))
+                taxData = taxResult.fetchone()
+                return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"VAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
             else:
-                #since it is not 22 means it is 7 = "GST".
-                if source == destination:
-                    #this is SGST and CGST.
-                    #IGST / 2 = SGST and CGST.
-                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
-                    taxData = taxResult.fetchone()
-                    gst = float(taxData["taxrate"]) /2
-                    #note although we are returning only SGST, same rate applies to CGST.
-                    #so when u see taxname is sgst then cgst with same rate is asumed.                                                
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
-                else:
-                    #this is IGST.
-                    taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
-                    taxData = taxResult.fetchone()
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
-        except:
-            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+                taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'CVAT',tax.c.productcode == productcode)))
+                taxData = taxResult.fetchone()
+                return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"CVAT","taxrate":"%.2f"%float(taxData["taxrate"])}}
+        else:
+            #since it is not 22 means it is 7 = "GST".
+            if source == destination:
+                print "in sgst"
+                #this is SGST and CGST.
+                #IGST / 2 = SGST and CGST.
+                taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
+                taxData = taxResult.fetchone()
+                gst = float(taxData["taxrate"]) /2
+                #note although we are returning only SGST, same rate applies to CGST.
+                #so when u see taxname is sgst then cgst with same rate is asumed.                                                
+                return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
+            else:
+                #this is IGST.
+                taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
+                taxData = taxResult.fetchone()
+                return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
+    #    except:
+    #        return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
     
 
 @view_defaults(route_name='tax')
