@@ -256,7 +256,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 dataset = self.request.params["invid"]
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
                 invrow = result.fetchone()
-                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"sourcestate":invrow["sourcestate"],"destinationstate":invrow["taxstate"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
                 #contents is a nested dictionary from invoice table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pare, priceperunit and quantity.
