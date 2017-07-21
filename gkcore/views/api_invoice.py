@@ -32,7 +32,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -53,8 +53,8 @@ def gst(ProductCode,con):
 
 def getStateCode(StateName,con):
 	stateData = con.execute(select([state.c.statecode]).where(state.c.statename == StateName))
-	state = stateData.fetchone()
-	return {"statecode":state["statecode"]}
+	staterow = stateData.fetchone()
+	return {"statecode":staterow["statecode"]}
 
 @view_defaults(route_name='invoice')
 class api_invoice(object):
@@ -72,7 +72,7 @@ class api_invoice(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			try:
+			#try:
 				self.con = eng.connect()
 				dtset = self.request.json_body
 				dcinvdataset={}
@@ -127,12 +127,12 @@ class api_invoice(object):
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
 						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			except exc.IntegrityError:
-				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
+			#except exc.IntegrityError:
+				#return {"gkstatus":enumdict["DuplicateEntry"]}
+			#except:
+				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			#finally:
+				#self.con.close()
 	@view_config(request_method='PUT', renderer='json')
 	def editInvoice(self):
 		try:
@@ -257,8 +257,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 				dataset = self.request.params["invid"]
 				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
 				invrow = result.fetchone()
-				sourcestatename = getStateCode(invrow["sourcestate"],self.con)
-				taxstatename = getStateCode(invrow["taxstate"],self.con)
+				sourcestatename = ""
+				taxstatename = ""
+				if invrow["sourcestate"] != None:
+					sourcestatename = getStateCode(invrow["sourcestate"],self.con)
+				if invrow["taxstate"] != None:
+					taxstatename = getStateCode(invrow["taxstate"],self.con)
 				inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"sourcestate":invrow["sourcestate"],"destinationstate":invrow["taxstate"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
 				#contents is a nested dictionary from invoice table.
 				#It contains productcode as the key with a value as a dictionary.
