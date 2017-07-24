@@ -256,19 +256,19 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 		else:
 			try:
 				self.con = eng.connect()
-				dataset = self.request.params["invid"]
-				result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
+   				result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
 				invrow = result.fetchone()
-				sourcestatename = ""
-				taxstatename = ""
-				if invrow["sourcestate"] != None:
-					sourcestatename = getStateCode(invrow["sourcestate"],self.con)
-				if invrow["taxstate"] != None:
-					taxstatename = getStateCode(invrow["taxstate"],self.con)
-				inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"sourcestate":invrow["sourcestate"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
-                if invrow["icflag"]==9:
+				inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+                
+                if invrow["sourcestate"] != None:
+					inv["sourcestate"] = invrow["sourcestate"]
+                    inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)
+				if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
-                    inv["destinationstate"]=invrow["taxstate"]
+                    if invrow["taxstate"] != None:
+                        inv["destinationstate"]=invrow["taxstate"]
+                        inv["taxstatecode"] = getStateCode(invrow["taxstate"],self.con)
+                        
                     result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
                     if result.rowcount>0:
