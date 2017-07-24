@@ -56,6 +56,8 @@ def getStateCode(StateName,con):
 	staterow = stateData.fetchone()
 	return {"statecode":staterow["statecode"]}
 
+
+
 @view_defaults(route_name='invoice')
 class api_invoice(object):
 	def __init__(self,request):
@@ -72,7 +74,7 @@ class api_invoice(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				dtset = self.request.json_body
 				dcinvdataset={}
@@ -127,12 +129,12 @@ class api_invoice(object):
 						result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
 						result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
 						return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#except exc.IntegrityError:
-				#return {"gkstatus":enumdict["DuplicateEntry"]}
-			#except:
-				#return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
-				#self.con.close()
+			except exc.IntegrityError:
+				return {"gkstatus":enumdict["DuplicateEntry"]}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 	@view_config(request_method='PUT', renderer='json')
 	def editInvoice(self):
 		try:
@@ -263,7 +265,37 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 					sourcestatename = getStateCode(invrow["sourcestate"],self.con)
 				if invrow["taxstate"] != None:
 					taxstatename = getStateCode(invrow["taxstate"],self.con)
-				inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"sourcestate":invrow["sourcestate"],"destinationstate":invrow["taxstate"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+				inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"sourcestate":invrow["sourcestate"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+                if invrow["icflag"]==9:
+                    inv["issuername"]=invrow["issuername"]
+                    inv["destinationstate"]=invrow["taxstate"]
+                    result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
+                    dcid = result.fetchone()
+                    if result.rowcount>0:
+                        result = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
+                        dcnocustid = result.fetchone()
+                        result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                        custname = result.fetchone()
+                        inv["dcid"]=dcid["dcid"]
+                        inv["dcno"]=dcnocustid["dcno"]
+                        inv["custname"]=custname["custname"]
+                        inv["custid"]=custname["custid"]
+                        inv["custaddr"] = custname["custaddr"]
+                        inv["custtin"] = custname["custtan"]
+                        inv["gstin"] = custname["gstin"]
+                        inv["state"]=custname["state"]
+                        inv["csflag"]=custname["csflag"]
+                     else:
+                        result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                        custname = result.fetchone()
+                        #inv["orderid"]=invrow["orderid"]
+                        inv["custname"]=custname["custname"]
+                        inv["custid"]=custname["custid"]
+                        inv["state"]=custname["state"]
+                        inv["custaddr"] = custname["custaddr"]
+                        inv["custtin"] = custname["custtan"]
+                        inv["gstin"] = custname["gstin"]
+                        inv["csflag"]=custname["csflag"]
 				#contents is a nested dictionary from invoice table.
 				#It contains productcode as the key with a value as a dictionary.
 				#this dictionary has two key value pare, priceperunit and quantity.
