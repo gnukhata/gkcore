@@ -1,5 +1,3 @@
-
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -28,6 +26,7 @@ Contributors:
 "Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Prajkta Patkar" <prajakta@dff.org.in>
+"Reshma Bhatwadekar" <bhatawadekar1reshma@gmail.com>
 """
 
 
@@ -254,11 +253,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-     #       try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
-                print invrow["custid"]
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
@@ -268,7 +266,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
                         inv["taxstatecode"] = getStateCode(invrow["taxstate"],self.con)
-                        
                         
                     result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
@@ -284,8 +281,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
                         custSupDetails["gstin"] = custData["gstin"]
-                        
-                        
                     
                     inv["custSupDetails"] = custSupDetails
                 #contents is a nested dictionary from invoice table.
@@ -308,14 +303,21 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                     unitrow = um.fetchone()
                     unitofMeasurement = unitrow["unitname"]
-                    taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqtys[pc])) * float(contentsData[pc].keys()[0])) - float(discounts[pc])
+                    if discounts != None:
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqtys[pc])) * float(contentsData[pc].keys()[0])) - float(discounts[pc])
+                    else:
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqtys[pc])) * float(contentsData[pc].keys()[0]))
                     taxRate = 0.00
                     totalAmount = 0.00
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
                         totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        if discounts != None:
+                            invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        else:
+                            invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":0.00,"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            
                     else:
                         TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
                         taxResult = TaxData["gkresult"]
@@ -326,13 +328,16 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         else:
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        if discounts != None:
+                            invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        else:
+                            invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqtys[pc])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":0.00,"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-      #      except:
-      #          return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-      #      finally:
-      #          self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
