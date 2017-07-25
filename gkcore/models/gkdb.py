@@ -101,7 +101,7 @@ organisation = Table( 'organisation' , metadata,
     Column('billflag',Integer,default=1),
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
-    Column('gstin',UnicodeText),
+    Column('gstin',JSONB),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")
@@ -189,15 +189,16 @@ product = Table('product',metadata,
     )
 """
 Table for customers and suppliers.
-We need this data when we sell goods.
+We need this data when we sell goods or service.
+Also when we purchase the same.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
-gstin to store unique code of cust/supp for gst
+gstin to store unique code of cust/supp for gst for every state (json)
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
     Column('custname',UnicodeText,nullable=False),
-    Column('gstin',UnicodeText),
+    Column('gstin',JSONB),
     Column('custaddr',UnicodeText),
     Column('custphone',UnicodeText),
     Column('custemail',UnicodeText),
