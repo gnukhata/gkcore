@@ -263,6 +263,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
+                    inv["consignee"] = invrow["consignee"]
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
                         inv["taxstatecode"] = getStateCode(invrow["taxstate"],self.con)["statecode"]
@@ -324,7 +325,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
                         totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                     else:
                         TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
@@ -337,7 +338,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
                         
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                         
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
