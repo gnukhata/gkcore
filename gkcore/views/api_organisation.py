@@ -117,6 +117,8 @@ class api_organisation(object):
             self.con.execute("insert into state( statecode, statename)values(36, 'Telangana')")
             self.con.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
             self.con.execute("alter table invoice drop column cancelflag,drop column canceldate")
+            # this is to clean null and empty values during old vat based invoices
+            self.con.execute("update invoice set taxstate = null where taxstate = '' or taxstate = 'none'")
             self.con.execute("alter table invoice add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
             self.con.execute("update invoice set column taxflag = 22 ")
             self.con.execute("alter table delchal drop column issuerid")
