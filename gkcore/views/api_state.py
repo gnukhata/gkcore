@@ -63,6 +63,8 @@ class api_state(object):
                 stateData = self.con.execute(select([state]))
                 getStateData = stateData.fetchall()
                 states = {}
-                for state in getStateData:
-                    states[state["statecode"]] = state["statename"]
-                print states
+                for st in getStateData:
+                    states[st["statecode"]] = st["statename"]
+                return {"gkstatus":enumdict["Success"], "gkresult": states}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
