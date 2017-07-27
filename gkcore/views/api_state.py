@@ -46,25 +46,23 @@ class api_state(object):
         print "state initialized"
 
     @view_config(request_method='GET',renderer='json')
-        def getAllStates(self):
-            """
-            This function returns a dictionary having statecode as key and its corresponding statename as value.
-            """
+    def getAllStates(self):
+        """
+        This function returns a dictionary having statecode as key and its corresponding statename as value.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
             try:
-                token = self.request.headers["gktoken"]
-            except:
-                return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-            authDetails = authCheck(token)
-            if authDetails["auth"]==False:
-                return {"gkstatus":enumdict["UnauthorisedAccess"]}
-            else:
-                try:
-                    self.con = eng.connect()
-                    stateData = self.con.execute(select([state]))
-                    getStateData = stateData.fetchall()
-                    print getStateData
-                    states = {}
-                    for state in getStateData:
-                        states[state["statecode"]] = state["statename"]
-                        print states
-
+                self.con = eng.connect()
+                stateData = self.con.execute(select([state]))
+                getStateData = stateData.fetchall()
+                states = {}
+                for state in getStateData:
+                    states[state["statecode"]] = state["statename"]
+                print states
