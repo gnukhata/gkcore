@@ -91,7 +91,7 @@ def main(global_config, **settings):
     config.add_route("log", "/log")
     config.add_route("rejectionnote", "/rejectionnote")
     config.add_route('billwise','/billwise')
-    config.add.route("state","/state")
+    config.add_route("state","/state")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

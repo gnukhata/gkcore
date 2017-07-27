@@ -45,7 +45,7 @@ class api_state(object):
         self.con = Connection
         print "state initialized"
 
-        @view_config(request_method='GET',renderer='json')
+    @view_config(request_method='GET',renderer='json')
         def getAllStates(self):
             """
             This function returns a dictionary having statecode as key and its corresponding statename as value.
@@ -66,5 +66,5 @@ class api_state(object):
                     states = {}
                     for state in getStateData:
                         states[state["statecode"]] = state["statename"]
-                    print states
+                        print states
 
