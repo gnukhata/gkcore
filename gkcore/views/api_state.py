@@ -48,7 +48,7 @@ class api_state(object):
     @view_config(request_method='GET',renderer='json')
     def getAllStates(self):
         """
-        This function returns a dictionary having statecode as key and its corresponding statename as value.
+        This function returns a list of dictionaries having statecode as key and its corresponding statename as value.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -60,11 +60,11 @@ class api_state(object):
         else:
             try:
                 self.con = eng.connect()
-                stateData = self.con.execute(select([state]))
+                stateData = self.con.execute(select([state]).order_by(state.c.statename))
                 getStateData = stateData.fetchall()
-                states = {}
+                states = []
                 for st in getStateData:
-                    states[st["statecode"]] = st["statename"]
+                    states.append({st["statecode"]: st["statename"]})  
                 return {"gkstatus":enumdict["Success"], "gkresult": states}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
