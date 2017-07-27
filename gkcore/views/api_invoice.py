@@ -263,7 +263,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
+                    inv["designation"]=invrow["designation"]
                     inv["consignee"] = invrow["consignee"]
+                    inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
+                    inOutData = inOut.fetchone()
+                    inv["inoutflag"] = int(inOutData["inout"])
+                    
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
                         inv["taxstatecode"] = getStateCode(invrow["taxstate"],self.con)["statecode"]

@@ -389,7 +389,7 @@ This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
 This is always the case when we purchase goods.
-The inout field is self explainatory.
+The inout field for in = 9 is stored and out = 15.
 """
 stock = Table('stock',metadata,
     Column('stockid',Integer,primary_key=True),
