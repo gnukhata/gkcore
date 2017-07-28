@@ -272,7 +272,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
-                        inv["taxstatecode"] = getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        inv["taxstatecode"] = taxStateCode
                         
                     result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
@@ -287,7 +288,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        custSupDetails["gstin"] = custData["gstin"]
+                        print custData["gstin"][taxStateCode]
+                        custSupDetails["custgstin"] = custData["gstin"][taxStateCode]
+                    
                     
                     inv["custSupDetails"] = custSupDetails
                 #contents is a nested dictionary from invoice table.
