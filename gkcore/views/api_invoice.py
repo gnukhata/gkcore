@@ -288,8 +288,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        print custData["gstin"][taxStateCode]
-                        custSupDetails["custgstin"] = custData["gstin"][taxStateCode]
+                        print json.loads(custData["gstin"])
+                        print type(json.loads(custData["gstin"]))
+                        st = unicode([taxStateCode])
+                        custSupDetails["custgstin"] = json.loads(custData["gstin"])[st]
                     
                     
                     inv["custSupDetails"] = custSupDetails
