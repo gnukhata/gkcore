@@ -265,6 +265,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["issuername"]=invrow["issuername"]
                     inv["designation"]=invrow["designation"]
                     inv["consignee"] = invrow["consignee"]
+                    inv["attachmentcount"] = invrow["attachmentcount"]
                     inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
                     inOutData = inOut.fetchone()
                     inv["inoutflag"] = int(inOutData["inout"])
