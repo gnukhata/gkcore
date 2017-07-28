@@ -313,9 +313,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         freeqty = freeqtys[pc]
                     else:
                         freeqty = 0.00
-                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode == pc))
+                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                     prodrow = prod.fetchone()
-                    desc = prodrow["productdesc"]
                     if int(prodrow["gsflag"]) == 7:
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
@@ -330,7 +329,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
                         totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                     else:
                         TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
@@ -343,7 +342,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
                         
-                        invContents[pc] = {"proddesc":desc,"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                         
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
