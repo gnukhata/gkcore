@@ -852,7 +852,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+      #      try:
                 self.con = eng.connect()
                 #fetch all invoices
                 result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
@@ -870,17 +870,25 @@ The bills grid calld gkresult will return a list as it's value.
                     #fetch all delivery challans for an invoice.
                     for dc in dcresult:
                         godownres = self.con.execute("select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"%int(dc["dcid"]))
-                        godownres = godownres.fetchone()
+                        godownresult = godownres.fetchone()
+                        if godownresult != None:
+                            godownname = godownresult["goname"]
+                            godownaddrs = godownresult["goaddr"]
+                            godowns = godowns + godownname + "("+ godownaddrs + ")"
+                        else:
+                            godownname = ""
+                            godownaddrs = ""
+                            godowns = ""
                         delchalres = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"], delchal.c.dcid == dc["dcid"])))
                         delchalres = delchalres.fetchone()
                         if i == len(dcresult):
                             dcno =  dcno + delchalres["dcno"]
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y'))
-                            godowns = godowns + godownres["goname"] + "("+ godownres["goaddr"] + ")"
+                            
                         else:
                             dcno =  dcno + delchalres["dcno"] + ", "
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y')) + ", "
-                            godowns = godowns + godownres["goname"] + "("+ godownres["goaddr"] + "), "
+                            
                         i += 1
                     cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
                     taxamt = 0.00
@@ -910,7 +918,7 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+       #     except:
+       #         return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+       #     finally:
+       #         self.con.close()
