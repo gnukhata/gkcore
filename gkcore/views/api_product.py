@@ -30,6 +30,7 @@ Contributors:
 
 from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
@@ -85,13 +86,25 @@ class api_product(object):
                         products = result.fetchone()
                         results.append(products)
                 else:
-                    results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                    invdc = 9
+                    try:
+                        invdc = int(self.request.params["invdc"])
+                    except:
+                        invdc = 9
+                    if invdc == 4:
+                        results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                    if invdc == 9:
+                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc,gkdb.product.c.gsflag, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                    
                 products = []
                 srno=1
                 for row in results:
                     unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitofmeasurement = unitsofmeasurement.fetchone()
-                    unitname = unitofmeasurement["unitname"]
+                    if unitofmeasurement != None:
+                        unitname = unitofmeasurement["unitname"]
+                    else:
+                        unitname = ""
                     if row["categorycode"]!=None:
                         categories = self.con.execute(select([gkdb.categorysubcategories.c.categoryname]).where(gkdb.categorysubcategories.c.categorycode==row["categorycode"]))
                         category = categories.fetchone()
@@ -110,7 +123,7 @@ class api_product(object):
                         stockoutsum = productstockout.fetchone()
                         if stockoutsum["sumofouts"]!=None:
                             openingStock = openingStock - stockoutsum["sumofouts"]
-                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock)})
+                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"]})
                     srno = srno+1
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
             except:
@@ -134,18 +147,60 @@ class api_product(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
-                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
-                unitrow= result.fetchone()
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "specs": row["specs"], "categorycode": row["categorycode"],"uomid":row["uomid"],"unitname":unitrow["unitname"],"openingstock":"%.2f"%float(row["openingstock"])}
-                godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
-                godowns = godownswithstock.fetchone()
-                numberofgodowns = godowns["numberofgodowns"]
-                return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
+
+                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                if int(row["gsflag"]) == 7:
+                    result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
+                    unitrow= result1.fetchone()
+                    productDetails["specs"] = row["specs"]
+                    productDetails["categorycode"] = row["categorycode"]
+                    productDetails["uomid"]=row["uomid"]
+                    productDetails["gsflag"]=row["gsflag"]
+                    productDetails["unitname"]=unitrow["unitname"]
+                    productDetails["openingstock"]="%.2f"%float(row["openingstock"])
+                    godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
+                    godowns = godownswithstock.fetchone()
+                    numberofgodowns = godowns["numberofgodowns"]
+                    return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
+                else:
+                    return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+    @view_config(request_method='GET',request_param='type=pt',renderer='json')
+    def getTaxForProduct(self):
+        """
+        Purpose: returns either VAT or GST for a selected product based on product code and state.
+        description:
+        This function takes productcode,source and destination states,
+        (called source and destination as params).
+        Also takes taxflag.
+        The function makes calld to the global function calTax found in api_tax.
+        Will return a dictionary containing the tax name and rate.
+        Please refer calTax in api_tax for details.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                return calTax(int(self.request.params["taxflag"]),self.request.params["source"],self.request.params["destination"],int(self.request.params["productcode"]),self.con)
+                
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+        
+        
 
 
     @view_config(request_method='GET', request_param='by=category',renderer='json')

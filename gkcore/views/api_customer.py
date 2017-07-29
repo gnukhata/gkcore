@@ -20,7 +20,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
+"Krishnakant Mane" <kk@dff.org.in>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
@@ -88,7 +88,7 @@ class api_customer(object):
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.customerandsupplier]).where(gkdb.customerandsupplier.c.custid == dataset["custid"] ))
                 row = result.fetchone()
-                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"] }
+                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"] }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -113,6 +113,8 @@ class api_customer(object):
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
                 return {"gkstatus":enumdict["Success"]}
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:

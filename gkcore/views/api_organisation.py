@@ -23,8 +23,9 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+'Prajkta Patkar'<prajkta@dff.org.in>
+'Reshma Bhatwadekar'<bhatawadekar1reshma@gmail.com>
 """
-
 
 from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
@@ -59,6 +60,12 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.state.c.statecode)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
+            self.con.execute(select(gkdb.organisation.c.gstin))
+            self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
+            self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
+            self.con.execute(select([func.count(gkdb.product.c.gscode)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
             self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
@@ -71,9 +78,60 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
+            self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
+            self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
+            self.con.execute("insert into state( statecode, statename)values(3, 'Punjab')")
+            self.con.execute("insert into state( statecode, statename)values(4, 'Chandigarh')")
+            self.con.execute("insert into state( statecode, statename)values(5, 'Uttranchal')")
+            self.con.execute("insert into state( statecode, statename)values(6, 'Haryana')")
+            self.con.execute("insert into state( statecode, statename)values(7, 'Delhi')")
+            self.con.execute("insert into state( statecode, statename)values(8, 'Rajasthan')")
+            self.con.execute("insert into state( statecode, statename)values(9, 'Uttar Pradesh')")
+            self.con.execute("insert into state( statecode, statename)values(10, 'Bihar')")
+            self.con.execute("insert into state( statecode, statename)values(11, 'Sikkim')")
+            self.con.execute("insert into state( statecode, statename)values(12, 'Arunachal Pradesh')")
+            self.con.execute("insert into state( statecode, statename)values(13, 'Nagaland')")
+            self.con.execute("insert into state( statecode, statename)values(14, 'Manipur')")
+            self.con.execute("insert into state( statecode, statename)values(15, 'Mizoram')")
+            self.con.execute("insert into state( statecode, statename)values(16, 'Tripura')")
+            self.con.execute("insert into state( statecode, statename)values(17, 'Meghalaya')")
+            self.con.execute("insert into state( statecode, statename)values(18, 'Assam')")
+            self.con.execute("insert into state( statecode, statename)values(19, 'West Bengal')")
+            self.con.execute("insert into state( statecode, statename)values(20, 'Jharkhand')")
+            self.con.execute("insert into state( statecode, statename)values(21, 'Odisha')")
+            self.con.execute("insert into state( statecode, statename)values(22, 'Chhattisgarh')")
+            self.con.execute("insert into state( statecode, statename)values(23, 'Madhya Pradesh')")
+            self.con.execute("insert into state( statecode, statename)values(24, 'Gujarat')")
+            self.con.execute("insert into state( statecode, statename)values(25, 'Daman and Diu')")
+            self.con.execute("insert into state( statecode, statename)values(26, 'Dadra and Nagar Haveli')")
+            self.con.execute("insert into state( statecode, statename)values(27, 'Maharashtra')")
+            self.con.execute("insert into state( statecode, statename)values(28, 'Andhra Pradesh')")
+            self.con.execute("insert into state( statecode, statename)values(29, 'Karnataka')")
+            self.con.execute("insert into state( statecode, statename)values(30, 'Goa')")
+            self.con.execute("insert into state( statecode, statename)values(31, 'Lakshdweep')")
+            self.con.execute("insert into state( statecode, statename)values(32, 'Kerala')")
+            self.con.execute("insert into state( statecode, statename)values(33, 'Tamil Nadu')")
+            self.con.execute("insert into state( statecode, statename)values(34, 'Pondicherry')")
+            self.con.execute("insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')")
+            self.con.execute("insert into state( statecode, statename)values(36, 'Telangana')")
+            self.con.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
+            self.con.execute("alter table invoice drop column cancelflag,drop column canceldate")
+            # this is to clean null and empty values during old vat based invoices
+            self.con.execute("update invoice set taxstate = null where taxstate = '' or taxstate = 'none'")
+            self.con.execute("alter table invoice add consignee jsonb, add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
+            self.con.execute("update invoice set taxflag = 22 ")
             self.con.execute("alter table delchal drop column issuerid")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+            self.con.execute("alter table organisation add gstin jsonb")
+            self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
+            self.con.execute("alter table customerandsupplier add gstin jsonb")
+            self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
+            self.con.execute("alter table product add gsflag integer")
+            self.con.execute("update product set gsflag = 7")
+            self.con.execute("alter table product add gscode text")
+            self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
             self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 1")
@@ -112,6 +170,7 @@ class api_organisation(object):
             self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
             self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+            
             #return 0
         finally:
             self.con.close()
@@ -191,8 +250,8 @@ class api_organisation(object):
             except:
                 inventoryMigration(self.con,eng)
             try:
-                con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
-                con.execute(select([gkdb.transfernote.c.recieveddate]))
+                self.con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+                self.con.execute(select([gkdb.transfernote.c.recieveddate]))
             except:
                 addFields(self.con,eng)
 
@@ -392,8 +451,10 @@ class api_organisation(object):
                     orgfcradate=""
                 else:
                     orgfcradate=row["orgfcradate"]
+                if(row["gstin"]==None):
+                    gstin=""
 
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:

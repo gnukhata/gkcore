@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -27,11 +26,13 @@ Contributors:
 "Vaibhav Kurhe" <vaibhav.kurhe@gmail.com>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Prajkta Patkar" <prajakta@dff.org.in>
+"Reshma Bhatwadekar" <bhatawadekar1reshma@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state
+from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -44,6 +45,17 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+def gst(ProductCode,con):
+    gstData = con.execute(select([product.c.gsflag,product.c.gscode]).where(product.c.productcode == ProductCode))
+    gst = gstData.fetchone()
+    return {"gsflag":gst["gsflag"],"gscode":gst["gscode"]}
+
+def getStateCode(StateName,con):
+    stateData = con.execute(select([state.c.statecode]).where(state.c.statename == StateName))
+    staterow = stateData.fetchone()
+    return {"statecode":staterow["statecode"]}
+
+
 
 @view_defaults(route_name='invoice')
 class api_invoice(object):
@@ -82,8 +94,8 @@ class api_invoice(object):
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                    else:
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                        else:
+                            return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
                     try:
                         if invdataset.has_key('icflag'):
@@ -91,11 +103,13 @@ class api_invoice(object):
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             for item in items.keys():
-                                stockdataset["productcode"] = item
-                                stockdataset["qty"] = items[item].values()[0]
-                                stockdataset["dcinvtnflag"] = "3"
-                                stockdataset["stockdate"] = invoiceid["invoicedate"]
-                                result = self.con.execute(stock.insert(),[stockdataset])
+                                gstResult = gst(item,self.con)
+                                if int(gstResult["gsflag"]) == 7:
+                                    stockdataset["productcode"] = item
+                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["dcinvtnflag"] = "3"
+                                    stockdataset["stockdate"] = invoiceid["invoicedate"]
+                                    result = self.con.execute(stock.insert(),[stockdataset])
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -103,10 +117,12 @@ class api_invoice(object):
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
-                                stockdataset["productcode"] = item
-                                stockdataset["qty"] = items[item].values()[0]
-                                stockdataset["dcinvtnflag"] = "9"
-                                result = self.con.execute(stock.insert(),[stockdataset])
+                                gstResult = gst(item,self.con)
+                                if int(gstResult["gsflag"]) == 7:
+                                    stockdataset["productcode"] = item
+                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["dcinvtnflag"] = "9"
+                                    result = self.con.execute(stock.insert(),[stockdataset])
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                     except:
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
@@ -227,10 +243,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
             finally:
                 self.con.close()
 
-
-
-
-
     @view_config(request_method='GET',request_param="inv=single", renderer ='json')
     def getInvoiceDetails(self):
         try:
@@ -243,64 +255,133 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.params["invid"]
-                result = self.con.execute(select([invoice]).where(invoice.c.invid==dataset))
-                row = result.fetchone()
-                items = row["contents"]
-                freeitems = row["freeqty"]
-                if row["icflag"]==3:
-                    invc = {"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
-                    if row["cancelflag"]==1:
-                        invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
-                    invc["invoiceno"]=row["invoiceno"]
-                    invc["invid"]=row["invid"]
-                    invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
-                else:
-                    invc = {"issuername":row["issuername"],"designation":row["designation"],"taxstate":row["taxstate"],"cancelflag":row["cancelflag"],"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]}
-                    if row["cancelflag"]==1:
-                        invc["canceldate"] = datetime.strftime(row["canceldate"],'%d-%m-%Y')
-                    result = self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==row["invid"]))
+                result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
+                invrow = result.fetchone()
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+                if invrow["sourcestate"] != None:
+                    inv["sourcestate"] = invrow["sourcestate"]
+                    inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                    sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                if invrow["icflag"]==9:
+                    inv["issuername"]=invrow["issuername"]
+                    inv["designation"]=invrow["designation"]
+                    inv["consignee"] = invrow["consignee"]
+                    inv["attachmentcount"] = invrow["attachmentcount"]
+                    inv["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
+                    inv["transportationmode"] = invrow["transportationmode"]
+                    inv["vehicleno"] = invrow["vehicleno"]
+                    inv["reversecharge"] = invrow["reversecharge"]
+                    inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
+                    inOutData = inOut.fetchone()
+                    if inOutData != None:
+                        inv["inoutflag"] = int(inOutData["inout"])
+                    
+                    if invrow["taxstate"] != None:
+                        inv["destinationstate"]=invrow["taxstate"]
+                        taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        inv["taxstatecode"] = taxStateCode
+                        
+                    result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
                     if result.rowcount>0:
-                        result = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
-                        dcnocustid = result.fetchone()
-                        result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                        custname = result.fetchone()
-                        invc["invoiceno"]=row["invoiceno"]
-                        invc["invid"]=row["invid"]
-                        invc["dcid"]=dcid["dcid"]
-                        invc["dcno"]=dcnocustid["dcno"]
-                        invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
-                        invc["custname"]=custname["custname"]
-                        invc["custid"]=custname["custid"]
-                        invc["custaddr"] = custname["custaddr"]
-                        invc["custtin"] = custname["custtan"]
-                        invc["state"]=custname["state"]
-                        invc["csflag"]=custname["csflag"]
+                        dc = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
+                        delchalData = dc.fetchone()                      
+                        inv["dcid"]=dcid["dcid"]
+                        inv["dcno"]=delchalData["dcno"]
+                        inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==dcid["dcid"]))
+                        inOutData = inOut.fetchone()
+                        if inOutData != None:
+                            inv["inoutflag"] = int(inOutData["inout"])
+                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                    custData = custandsup.fetchone()
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
+                    if custData["custtan"] != None:
+                        custSupDetails["custtin"] = custData["custtan"]
+                    if custData["gstin"] != None:
+                        if int(custData["csflag"]) == 3 :
+                           try:
+                               custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                           except:
+                               custSupDetails["custgstin"] = None
+                        else:
+                            try:
+                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            except:
+                                custSupDetails["custgstin"] = None
+
+                    
+                    inv["custSupDetails"] = custSupDetails
+                #contents is a nested dictionary from invoice table.
+                #It contains productcode as the key with a value as a dictionary.
+                #this dictionary has two key value pare, priceperunit and quantity.
+                contentsData = invrow["contents"]
+                #invContents is the finally dictionary which will not just have the dataset from original contents,
+                #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
+                invContents = {}
+                #get the dictionary of discount and access it inside the loop for one product each.
+                #do the same with freeqty.
+                totalDisc = 0.00
+                totalTaxableVal = 0.00
+                totalTaxAmt = 0.00
+                discounts = invrow["discount"]
+                freeqtys = invrow["freeqty"]
+                #now looping through the contents.
+                #pc will have the productcode which will be the ke in invContents.
+                for pc in contentsData.keys():
+                    #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
+                    if discounts != None:
+                        discount = discounts[pc]
                     else:
-                        result = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                        custname = result.fetchone()
-                        invc["invoiceno"]=row["invoiceno"]
-                        invc["invid"]=row["invid"]
-                        invc["orderid"]=row["orderid"]
-                        invc["invoicedate"]=datetime.strftime(row["invoicedate"],'%d-%m-%Y')
-                        invc["custname"]=custname["custname"]
-                        invc["custid"]=custname["custid"]
-                        invc["state"]=custname["state"]
-                        invc["custaddr"] = custname["custaddr"]
-                        invc["custtin"] = custname["custtan"]
-                        invc["csflag"]=custname["csflag"]
-                for item in items.keys():
-                    result = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==item))
-                    productname = result.fetchone()
-                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productname["uomid"]))
-                    unitnamrrow = uomresult.fetchone()
-                    tottax = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]])*float(row["tax"][item])/float(100)
-                    totamt = float(items[item].keys()[0])*float(items[item][items[item].keys()[0]]) + tottax
-                    items[item]= {"priceperunit":items[item].keys()[0],"qty":items[item][items[item].keys()[0]],"productdesc":productname["productdesc"],"taxamount":row["tax"][item],"unitname":unitnamrrow["unitname"], "tottax":"%.2f"%tottax, "totalamt":"%.2f"%totamt}
-                invc["contents"] = items
-                invc["freeqty"] = freeitems
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invc }
+                        discount = 0.00
+
+                    if freeqtys != None:
+                        freeqty = freeqtys[pc]
+                    else:
+                        freeqty = 0.00
+                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                    prodrow = prod.fetchone()
+                    if int(prodrow["gsflag"]) == 7:
+                        um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                        unitrow = um.fetchone()
+                        unitofMeasurement = unitrow["unitname"]
+                    else:
+                        unitofMeasurement = ""
+                    taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
+                       
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    if int(invrow["taxflag"]) == 22:
+                        taxRate =  float(invrow["tax"][pc])
+                        taxAmount = (taxableAmount * float(taxRate/100))
+                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+
+                    else:
+                        TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
+                        taxResult = TaxData["gkresult"]
+                        taxRate = float(taxResult["taxrate"])
+                        inv["taxname"] = taxResult["taxname"]
+                        if taxResult["taxname"] == "IGST":
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
+                        else:
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
+                    
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        
+                        
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                inv["totaldiscount"] = "%.2f"% (float(totalDisc))
+                inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                inv["invcontents"] = invContents
+                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
@@ -396,7 +477,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                invsData = self.con.execute("select invid from invoice  where orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+                invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
                 for inv in invsData:
                     filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
@@ -735,7 +816,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+        #    try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -788,10 +869,10 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+         #   except:
+         #       return {"gkstatus":enumdict["ConnectionFailed"]}
+         #   finally:
+         #       self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
@@ -806,7 +887,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+      #      try:
                 self.con = eng.connect()
                 #fetch all invoices
                 result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
@@ -824,17 +905,25 @@ The bills grid calld gkresult will return a list as it's value.
                     #fetch all delivery challans for an invoice.
                     for dc in dcresult:
                         godownres = self.con.execute("select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"%int(dc["dcid"]))
-                        godownres = godownres.fetchone()
+                        godownresult = godownres.fetchone()
+                        if godownresult != None:
+                            godownname = godownresult["goname"]
+                            godownaddrs = godownresult["goaddr"]
+                            godowns = godowns + godownname + "("+ godownaddrs + ")"
+                        else:
+                            godownname = ""
+                            godownaddrs = ""
+                            godowns = ""
                         delchalres = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"], delchal.c.dcid == dc["dcid"])))
                         delchalres = delchalres.fetchone()
                         if i == len(dcresult):
                             dcno =  dcno + delchalres["dcno"]
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y'))
-                            godowns = godowns + godownres["goname"] + "("+ godownres["goaddr"] + ")"
+                            
                         else:
                             dcno =  dcno + delchalres["dcno"] + ", "
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y')) + ", "
-                            godowns = godowns + godownres["goname"] + "("+ godownres["goaddr"] + "), "
+                            
                         i += 1
                     cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
                     taxamt = 0.00
@@ -864,7 +953,7 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+       #     except:
+       #         return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+       #     finally:
+       #         self.con.close()

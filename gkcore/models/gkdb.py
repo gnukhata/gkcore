@@ -62,6 +62,16 @@ Every time a new organisation is created or recreated for it's new financial yea
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
+"""
+This table is for storing state information.  
+A state will have its corresponding code with name.
+"""
+
+state = Table('state',metadata,
+        Column('statecode',Integer),
+        Column('statename',UnicodeText) 
+)
+
 organisation = Table( 'organisation' , metadata,
     Column('orgcode',Integer, primary_key=True),
     Column('orgname',UnicodeText, nullable=False),
@@ -90,6 +100,7 @@ organisation = Table( 'organisation' , metadata,
     Column('billflag',Integer,default=1),
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
+    Column('gstin',JSONB),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")
@@ -159,14 +170,17 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
+gscode is to store gstin or accounting service code, gsflag is 7 for gstin and 19 for service code. 
 """
 product = Table('product',metadata,
     Column('productcode',Integer,primary_key=True),
+    Column('gscode',UnicodeText),
+    Column('gsflag',Integer),
     Column('productdesc',UnicodeText),
     Column('openingstock', Numeric(13,2),default=0.00),
-    Column('specs', JSONB,nullable=False ),
+    Column('specs', JSONB),
     Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
-    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE"),nullable=False),
+    Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE")),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('categorycode','productdesc'),
     Index("product_orgcodeindex","orgcode"),
@@ -174,13 +188,16 @@ product = Table('product',metadata,
     )
 """
 Table for customers and suppliers.
-We need this data when we sell goods.
+We need this data when we sell goods or service.
+Also when we purchase the same.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
+gstin to store unique code of cust/supp for gst for every state (json)
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
     Column('custname',UnicodeText,nullable=False),
+    Column('gstin',JSONB),
     Column('custaddr',UnicodeText),
     Column('custphone',UnicodeText),
     Column('custemail',UnicodeText),
@@ -195,6 +212,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
     UniqueConstraint('orgcode','custname','custemail','csflag'),
     UniqueConstraint('orgcode','custname','custpan','csflag'),
     UniqueConstraint('orgcode','custname','custtan','csflag'),
+    UniqueConstraint('orgcode','custname','gstin'),
     Index("customer_supplier_orgcodeindex","orgcode")
     )
 """ table to store accounts.
@@ -262,6 +280,7 @@ vouchers=Table('vouchers', metadata,
 """
 Table for storing invoice records.
 Every row represents one invoice.
+taxflag states which tax is applied to products/services. Default value is set as 22 for VAT and if it is GST 7 will be set as taxflag.
 Apart from the number and date, we also have a json field called contents.
 This field is a nested dictionary.
 The key of this field is the productcode while value is another dictionary.
@@ -269,28 +288,38 @@ This has a key as price per unit (ppu) and value as quantity (qty).
 Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
-This field is a dictionary.
+Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
+Bankdetails is a dictionary will have bankname,accountno. and ifsccode.
+taxstate is a destination sate.
+sourcestate is source state from where invoice is initiated
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
     Column('invoiceno',UnicodeText,nullable=False),
     Column('invoicedate',DateTime,nullable=False),
+    Column('taxflag',Integer,default=22),
     Column('contents',JSONB),
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
     Column('tax', JSONB),
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
-    Column('cancelflag',Integer,default=0),
-    Column('canceldate',DateTime),
     Column('icflag',Integer,default=9),
     Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
+    Column('consignee',JSONB),
     Column('freeqty',JSONB),
+    Column('reversecharge',UnicodeText),
+    Column('bankdetails',JSONB),
+    Column('transportationmode',UnicodeText),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('discount',JSONB),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
@@ -303,6 +332,7 @@ billwise = Table('billwise',metadata,
     Column('adjamount',Numeric(12,2),nullable=False),
     Column('orgcode',Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False)
 )
+
 """
 Table for challan.
 This table stores the delivary challans issues when the goods move out.
@@ -326,7 +356,6 @@ delchal = Table('delchal',metadata,
     Column('modeoftransport', UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
-    Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
@@ -360,7 +389,7 @@ This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
 This is always the case when we purchase goods.
-The inout field is self explainatory.
+The inout field for in = 9 is stored and out = 15.
 """
 stock = Table('stock',metadata,
     Column('stockid',Integer,primary_key=True),
