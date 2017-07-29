@@ -267,7 +267,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["designation"]=invrow["designation"]
                     inv["consignee"] = invrow["consignee"]
                     inv["attachmentcount"] = invrow["attachmentcount"]
-                    inv["dateofsupply"]= invrow["dateofsupply"]
+                    inv["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
                     inv["transportationmode"] = invrow["transportationmode"]
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
