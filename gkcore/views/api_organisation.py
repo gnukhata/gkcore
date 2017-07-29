@@ -123,7 +123,7 @@ class api_organisation(object):
             # this is to clean null and empty values during old vat based invoices
             self.con.execute("update invoice set taxstate = null where taxstate = '' or taxstate = 'none'")
             self.con.execute("alter table invoice add consignee jsonb, add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
-            self.con.execute("update invoice set column taxflag = 22 ")
+            self.con.execute("update invoice set taxflag = 22 ")
             self.con.execute("alter table delchal drop column issuerid")
            # self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
            # self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
