@@ -261,6 +261,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                    sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
                     inv["designation"]=invrow["designation"]
@@ -288,8 +289,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        custSupDetails["custgstin"] = json.loads(custData["gstin"])[str(taxStateCode)]
-                    
+                        if int(custData["csflag"]) == 3 :
+                           custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                        else:
+                            custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+
                     
                     inv["custSupDetails"] = custSupDetails
                 #contents is a nested dictionary from invoice table.
