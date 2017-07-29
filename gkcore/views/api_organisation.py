@@ -59,9 +59,7 @@ class api_organisation(object):
         If it is not present it means that this is an upgrade.
         """
         self.con = eng.connect()
-        print "In gkupgrade"
         try:
-            print "Entered into try"
             self.con.execute(select([func.count(gkdb.state.c.statecode)]))
             self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
             self.con.execute(select(gkdb.organisation.c.gstin))
@@ -80,7 +78,6 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
-            print "starting to upgrade"
             self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
             self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
             self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
@@ -129,7 +126,6 @@ class api_organisation(object):
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("alter table organisation add gstin jsonb")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
-            #self.con.execute("alter table invoice add consignee jsonb")
             self.con.execute("alter table customerandsupplier add gstin jsonb")
             self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
             self.con.execute("alter table product add gsflag integer")
@@ -174,7 +170,7 @@ class api_organisation(object):
             self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
             self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-            print "Upgradation done"
+            
             #return 0
         finally:
             self.con.close()
@@ -228,7 +224,7 @@ class api_organisation(object):
     @view_config(request_method='POST',renderer='json')
     def postOrg(self):
 
-   #     try:
+        try:
             self.con = eng.connect()
             dataset = self.request.json_body
             orgdata = dataset["orgdetails"]
@@ -249,10 +245,10 @@ class api_organisation(object):
                     sig = {"secretcode":privatekey}
                     gkcore.secret = privatekey
                     result = self.con.execute(gkdb.signature.insert(),[sig])
-          #  try:
-            self.con.execute(select([gkdb.organisation.c.invflag]))
-          #  except:
-               # inventoryMigration(self.con,eng)
+            try:
+                self.con.execute(select([gkdb.organisation.c.invflag]))
+            except:
+                inventoryMigration(self.con,eng)
             try:
                 self.con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
                 self.con.execute(select([gkdb.transfernote.c.recieveddate]))
@@ -263,104 +259,104 @@ class api_organisation(object):
             if result.rowcount==1:
                 code = self.con.execute(select([gkdb.organisation.c.orgcode]).where(and_(gkdb.organisation.c.orgname==orgdata["orgname"], gkdb.organisation.c.orgtype==orgdata["orgtype"], gkdb.organisation.c.yearstart==orgdata["yearstart"], gkdb.organisation.c.yearend==orgdata["yearend"])))
                 orgcode = code.fetchone()
-            #    try:
-                currentassets= {"groupname":"Current Assets","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),currentassets)
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Bank","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Cash","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Inventory","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Loans & Advance","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Debtors","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+                try:
+                    currentassets= {"groupname":"Current Assets","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),currentassets)
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Bank","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Cash","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Inventory","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Loans & Advance","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Debtors","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
 
-                currentliability= {"groupname":"Current Liabilities","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),currentliability)
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liabilities",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
+                    currentliability= {"groupname":"Current Liabilities","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),currentliability)
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liabilities",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
 
-                directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),directexpense)
+                    directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),directexpense)
 
-                directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),directincome)
+                    directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),directincome)
 
-                fixedassets= {"groupname":"Fixed Assets","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),fixedassets)
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Fixed Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Building","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Furniture","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Land","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Plant & Machinery","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+                    fixedassets= {"groupname":"Fixed Assets","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),fixedassets)
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Fixed Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Building","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Furniture","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Land","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Plant & Machinery","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
 
-                indirectexpense= {"groupname":"Indirect Expense","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),indirectexpense)
+                    indirectexpense= {"groupname":"Indirect Expense","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),indirectexpense)
 
-                indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
+                    indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
 
-                investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Investments",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Investment in Bank Deposits","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Investment in Shares & Debentures","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}, ])
+                    investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Investments",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Investment in Bank Deposits","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Investment in Shares & Debentures","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}, ])
 
-                loansasset= {"groupname":"Loans(Asset)","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),loansasset)
+                    loansasset= {"groupname":"Loans(Asset)","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),loansasset)
 
-                loansliab= {"groupname":"Loans(Liability)","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),loansliab)
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Loans(Liability)",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Secured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Unsecured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+                    loansliab= {"groupname":"Loans(Liability)","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),loansliab)
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Loans(Liability)",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Secured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Unsecured","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
 
-                reserves= {"groupname":"Reserves","orgcode":orgcode["orgcode"]}
-                result = self.con.execute(gkdb.groupsubgroups.insert(),reserves)
+                    reserves= {"groupname":"Reserves","orgcode":orgcode["orgcode"]}
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),reserves)
 
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                if orgdata["orgtype"] == "Profit Making":
-                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Capital","orgcode":orgcode["orgcode"]},{"groupname":"Miscellaneous Expenses(Asset)","orgcode":orgcode["orgcode"]}])
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    if orgdata["orgtype"] == "Profit Making":
+                        result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Capital","orgcode":orgcode["orgcode"]},{"groupname":"Miscellaneous Expenses(Asset)","orgcode":orgcode["orgcode"]}])
 
-                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
 
-                else:
-                    result = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
-
-                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
-
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Inventory",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}])
-
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                grpcode = result.fetchone()
-                result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
-
-
-
-                userdata["orgcode"] = orgcode["orgcode"]
-                userdata["userrole"] = -1
-                result = self.con.execute(gkdb.users.insert().values(username = userdata["username"], userpassword=userdata["userpassword"], userrole = -1, userquestion = userdata["userquestion"], useranswer = userdata["useranswer"], orgcode=userdata["orgcode"]))
-                if result.rowcount==1:
-                    result = self.con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==userdata["username"], gkdb.users.c.userpassword== userdata["userpassword"], gkdb.users.c.orgcode==userdata["orgcode"])) )
-                    if result.rowcount == 1:
-                        record = result.fetchone()
-
-                        token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-                        self.con.close()
-                        return {"gkstatus":enumdict["Success"],"token":token }
                     else:
-                        self.con.close()
-                        return {"gkstatus":enumdict["ConnectionFailed"]}
-                else:
-                        self.con.close()
-                        return {"gkstatus":enumdict["ConnectionFailed"]}
-             #   except:
-             #       result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==orgcode["orgcode"]))
-             #       self.con.close()
-             #       return {"gkstatus":enumdict["ConnectionFailed"]}
+                        result = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
+
+                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Inventory",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = result.fetchone()
+                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+
+
+
+                    userdata["orgcode"] = orgcode["orgcode"]
+                    userdata["userrole"] = -1
+                    result = self.con.execute(gkdb.users.insert().values(username = userdata["username"], userpassword=userdata["userpassword"], userrole = -1, userquestion = userdata["userquestion"], useranswer = userdata["useranswer"], orgcode=userdata["orgcode"]))
+                    if result.rowcount==1:
+                        result = self.con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==userdata["username"], gkdb.users.c.userpassword== userdata["userpassword"], gkdb.users.c.orgcode==userdata["orgcode"])) )
+                        if result.rowcount == 1:
+                            record = result.fetchone()
+
+                            token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+                            self.con.close()
+                            return {"gkstatus":enumdict["Success"],"token":token }
+                        else:
+                            self.con.close()
+                            return {"gkstatus":enumdict["ConnectionFailed"]}
+                    else:
+                            self.con.close()
+                            return {"gkstatus":enumdict["ConnectionFailed"]}
+                except:
+                    result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==orgcode["orgcode"]))
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"]}
             else:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-      #  except:
-      #      self.con.close()
-       #     return {"gkstatus":enumdict["ConnectionFailed"]}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(route_name='organisation', request_method='GET',renderer='json')
     def getOrg(self):
