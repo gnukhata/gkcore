@@ -802,7 +802,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+        #    try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -855,10 +855,10 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+         #   except:
+         #       return {"gkstatus":enumdict["ConnectionFailed"]}
+         #   finally:
+         #       self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
