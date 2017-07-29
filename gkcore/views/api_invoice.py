@@ -253,7 +253,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-         #   try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -273,7 +273,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["reversecharge"] = invrow["reversecharge"]
                     inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
                     inOutData = inOut.fetchone()
-                    inv["inoutflag"] = int(inOutData["inout"])
+                    if inOutData != None:
+                        inv["inoutflag"] = int(inOutData["inout"])
                     
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
@@ -286,7 +287,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         dc = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
                         delchalData = dc.fetchone()                      
                         inv["dcid"]=dcid["dcid"]
-                        inv["dcno"]=delchalData["dcno"]   
+                        inv["dcno"]=delchalData["dcno"]
+                        inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==dcid["dcid"]))
+                        inOutData = inOut.fetchone()
+                        if inOutData != None:
+                            inv["inoutflag"] = int(inOutData["inout"])
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
@@ -294,9 +299,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
                         if int(custData["csflag"]) == 3 :
-                           custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                           try:
+                               custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                           except:
+                               custSupDetails["custgstin"] = None
                         else:
-                            custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            try:
+                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            except:
+                                custSupDetails["custgstin"] = None
 
                     
                     inv["custSupDetails"] = custSupDetails
@@ -368,10 +379,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-          #  except:
-          #      return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-          #  finally:
-          #      self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
