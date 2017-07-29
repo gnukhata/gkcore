@@ -125,8 +125,8 @@ class api_organisation(object):
             self.con.execute("alter table invoice add consignee jsonb, add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
             self.con.execute("update invoice set column taxflag = 22 ")
             self.con.execute("alter table delchal drop column issuerid")
-            self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
-            self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+           # self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+           # self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("alter table organisation add gstin jsonb")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             #self.con.execute("alter table invoice add consignee jsonb")
@@ -256,11 +256,11 @@ class api_organisation(object):
             self.con.execute(select([gkdb.organisation.c.invflag]))
           #  except:
                # inventoryMigration(self.con,eng)
-          #  try:
-            con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
-            con.execute(select([gkdb.transfernote.c.recieveddate]))
-          #  except:
-            #    addFields(self.con,eng)
+            try:
+                self.con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+                self.con.execute(select([gkdb.transfernote.c.recieveddate]))
+            except:
+                addFields(self.con,eng)
 
             result = self.con.execute(gkdb.organisation.insert(),[orgdata])
             if result.rowcount==1:
