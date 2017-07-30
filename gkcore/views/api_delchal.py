@@ -299,11 +299,11 @@ class api_delchal(object):
                 items = {}
                 stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.dcinvtnflag == 4, stock.c.dcinvtnid == dcid)))
                 for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gscode]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
-                    items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                    items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
                 result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
                 linkedinvoices = result.fetchall()
                 #linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
