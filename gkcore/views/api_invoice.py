@@ -345,7 +345,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
-                        print contentsData[pc][contentsData[pc].keys()[0]]
                         taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
