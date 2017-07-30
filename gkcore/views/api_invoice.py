@@ -253,7 +253,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+        #    try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -267,7 +267,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["designation"]=invrow["designation"]
                     inv["consignee"] = invrow["consignee"]
                     inv["attachmentcount"] = invrow["attachmentcount"]
-                    inv["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
+                    if invrow["dateofsupply"] != None:
+                        inv["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
                     inv["transportationmode"] = invrow["transportationmode"]
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
@@ -344,9 +345,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
+                        print contentsData[pc][contentsData[pc].keys()[0]]
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
-                    taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
+                        taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                    
                        
                     taxRate = 0.00
                     totalAmount = 0.00
@@ -382,10 +386,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+         #   except:
+         #       return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+         #   finally:
+         #       self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
