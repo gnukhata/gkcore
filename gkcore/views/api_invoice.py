@@ -269,6 +269,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["attachmentcount"] = invrow["attachmentcount"]
                     if invrow["dateofsupply"] != None:
                         inv["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
+                    else:
+                        inv["dateofsupply"] = ""
                     inv["transportationmode"] = invrow["transportationmode"]
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
