@@ -42,6 +42,43 @@ print "database created successfully"
 eng.execute("alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)")
 eng.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
 eng.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+eng.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
+eng.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
+eng.execute("insert into state( statecode, statename)values(3, 'Punjab')")
+eng.execute("insert into state( statecode, statename)values(4, 'Chandigarh')")
+eng.execute("insert into state( statecode, statename)values(5, 'Uttranchal')")
+eng.execute("insert into state( statecode, statename)values(6, 'Haryana')")
+eng.execute("insert into state( statecode, statename)values(7, 'Delhi')")
+eng.execute("insert into state( statecode, statename)values(8, 'Rajasthan')")
+eng.execute("insert into state( statecode, statename)values(9, 'Uttar Pradesh')")
+eng.execute("insert into state( statecode, statename)values(10, 'Bihar')")
+eng.execute("insert into state( statecode, statename)values(11, 'Sikkim')")
+eng.execute("insert into state( statecode, statename)values(12, 'Arunachal Pradesh')")
+eng.execute("insert into state( statecode, statename)values(13, 'Nagaland')")
+eng.execute("insert into state( statecode, statename)values(14, 'Manipur')")
+eng.execute("insert into state( statecode, statename)values(15, 'Mizoram')")
+eng.execute("insert into state( statecode, statename)values(16, 'Tripura')")
+eng.execute("insert into state( statecode, statename)values(17, 'Meghalaya')")
+eng.execute("insert into state( statecode, statename)values(18, 'Assam')")
+eng.execute("insert into state( statecode, statename)values(19, 'West Bengal')")
+eng.execute("insert into state( statecode, statename)values(20, 'Jharkhand')")
+eng.execute("insert into state( statecode, statename)values(21, 'Odisha')")
+eng.execute("insert into state( statecode, statename)values(22, 'Chhattisgarh')")
+eng.execute("insert into state( statecode, statename)values(23, 'Madhya Pradesh')")
+eng.execute("insert into state( statecode, statename)values(24, 'Gujarat')")
+eng.execute("insert into state( statecode, statename)values(25, 'Daman and Diu')")
+eng.execute("insert into state( statecode, statename)values(26, 'Dadra and Nagar Haveli')")
+eng.execute("insert into state( statecode, statename)values(27, 'Maharashtra')")
+eng.execute("insert into state( statecode, statename)values(28, 'Andhra Pradesh')")
+eng.execute("insert into state( statecode, statename)values(29, 'Karnataka')")
+eng.execute("insert into state( statecode, statename)values(30, 'Goa')")
+eng.execute("insert into state( statecode, statename)values(31, 'Lakshdweep')")
+eng.execute("insert into state( statecode, statename)values(32, 'Kerala')")
+eng.execute("insert into state( statecode, statename)values(33, 'Tamil Nadu')")
+eng.execute("insert into state( statecode, statename)values(34, 'Pondicherry')")
+eng.execute("insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')")
+eng.execute("insert into state( statecode, statename)values(36, 'Telangana')")
+eng.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
 try:
 	eng.execute("alter table transfernote add recieveddate date")
 	eng.execute("alter table delchal add noofpackages int")
@@ -49,6 +86,6 @@ try:
 except:
 	pass
 
-	
+
 
 print "secret signature generated"
