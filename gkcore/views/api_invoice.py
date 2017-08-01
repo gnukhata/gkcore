@@ -548,9 +548,9 @@ The bills grid calld gkresult will return a list as it's value.
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 invid = self.request.params["invid"]
-                invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
+                invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment]).where(and_(invoice.c.invid == invid)))
                 attachment = invoiceData.fetchone()
-                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"],"userrole":urole["userrole"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
