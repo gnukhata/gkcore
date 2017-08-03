@@ -807,10 +807,15 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier,invoice.c.icflag,invoice.c.invflag]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for row in allinv:
+                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == row)))
+                    rejectedNotes = rejectedResult.fetchall()
+                    
+                    
+                    
                     
                     
                     
