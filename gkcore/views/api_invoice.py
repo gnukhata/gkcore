@@ -811,20 +811,22 @@ The bills grid calld gkresult will return a list as it's value.
                 allinv = invResult.fetchall()
                 allinvids = []
                 for row in allinv:
-                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == row)))
+                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == row)))
                     rejectedNotes = rejectedResult.fetchall()
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-
-
-
-
-
+                    gscounter = 0
+                    for c in allinv["contents"]:
+                        qty = contents[c].values()
+                        # for goods quantity will not be 0 anytime
+                        if qty[0] != 0:
+                            # check whether this product is rejected before.
+                            for rn in rejectedNotes["rejprods"]:
+                                if rn.has_key(c):
+                                    rejectedQty = rejectedQty + int(rn[c])
+                            qtyRejectable = qty - rejectedQty
+                            #avlContents {"productcode":"rejectable qty"}
+                            avlContents[c] = qtyRejectable
+                            
+                                
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
