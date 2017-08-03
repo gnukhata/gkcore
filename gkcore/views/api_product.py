@@ -426,7 +426,7 @@ class api_product(object):
 					gstorvatflag=29
 				elif(gstdate<=financialStart and gstdate<financialEnd):
 					gstorvatflag=7
-				return {"gkresult":str(gstorvatflag)}
+				return {"vatorgstflag":str(gstorvatflag)}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
