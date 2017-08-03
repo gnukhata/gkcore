@@ -402,6 +402,16 @@ class api_product(object):
 
 	@view_config(request_method='GET',request_param='tax=vatorgst',renderer='json')
 	def getvatorgst(self):
+		"""
+		Purpose:
+		To determine what kind of tax will be applible to the goods of corresponding organisation.
+		Description:
+		This function uses orgcode of organisation and will fetch it's financialStart and financialEnddate.
+		gstdate as "01/07/2017" is used which is compared with financialStart and financialEnd based on this gstorvatflag changes as following:
+		gstorvatflag=7 (means GST is applible)
+		gstorvatflag=22 (means VAT is applible)
+		gstorvatflag=29 (GST and VAT are applible)
+		"""
 		try:
 			token=self.request.headers["gktoken"]
 		except :
@@ -422,11 +432,11 @@ class api_product(object):
 
 				if (gstdate>financialStart and gstdate>financialEnd):
 					gstorvatflag=22
-				elif(gstdate>financialStart and gstdate<financialEnd) :
+				elif(gstdate>financialStart and gstdate<=financialEnd) :
 					gstorvatflag=29
-				elif(gstdate<=financialStart and gstdate<financialEnd):
+				elif(gstdate<=financialStart and gstdate<=financialEnd):
 					gstorvatflag=7
-				return {"vatorgstflag":str(gstorvatflag)}
+				return {"gkstatus":enumdict["Success"],"gkresult":str(gstorvatflag)}
 			except:
 				return {"gkstatus":enumdict["ConnectionFailed"] }
 			finally:
