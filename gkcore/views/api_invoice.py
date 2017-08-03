@@ -811,47 +811,17 @@ The bills grid calld gkresult will return a list as it's value.
                 dataset = self.request.json_body
                 new_inputdate = dataset["inputdate"]
                 new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
-                inv_nonrejected = []
-                allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
-                allinvids = allinvids.fetchall()
-                i = 0
-                while(i < len(allinvids)):
-                    invid = allinvids[i]
-                    invprodresult = []
-                    temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid[0])))
-                    temp = temp.fetchall()
-                    invprodresult.append(temp[0][0])
-                    allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid[0])))
-                    allrnidres = allrnidres.fetchall()
-                    rnprodresult = []
-                    #get stock respected to all rejection notes
-                    for rnid in allrnidres:
-                        temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
-                        temp = temp.fetchall()
-                        rnprodresult.append(temp)
-                    totalqtyofinvprod = {}
-                    for eachitem in invprodresult:
-                        for prodc in eachitem:
-                            totalqtyofinvprod.update({int(prodc):eachitem[prodc].values()[0]})
-                    for row in rnprodresult:
-                        for prodc, qty in row:
-                            if prodc in totalqtyofinvprod:
-                                totalqtyofinvprod[prodc] = float(totalqtyofinvprod[prodc]) - float(qty)
-                                if float(totalqtyofinvprod[prodc]) <= 0.00:
-                                    del totalqtyofinvprod[prodc]
-                            else:
-                                pass
-                    if len(totalqtyofinvprod) == 0:
-                        allinvids.remove(invid)
-                        i-=1
-                    i+=1
-                srno = 1
-                for eachinvid in allinvids:
-                    singleinvResult = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, customerandsupplier.c.custname, customerandsupplier.c.csflag]).distinct().where(and_(invoice.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachinvid[0] == invoice.c.invid, invoice.c.custid == customerandsupplier.c.custid)))
-                    singleinvResult = singleinvResult.fetchone()
-                    temp_dict = {"invid": singleinvResult["invid"], "srno": srno, "invoiceno":singleinvResult["invoiceno"], "invoicedate": datetime.strftime(singleinvResult["invoicedate"],"%d-%m-%Y"), "csflag": singleinvResult["csflag"], "custname": singleinvResult["custname"]}
-                    inv_nonrejected.append(temp_dict)
-                    srno += 1
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
+                allinvids = invResult.fetchall()
+
+                for row in allinvids:
+                    
+
+
+
+
+
+                
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
             except exc.IntegrityError:
