@@ -807,11 +807,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                orgcode = authDetails["orgcode"]
-                dataset = self.request.json_body
-                new_inputdate = dataset["inputdate"]
-                new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.contents]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinvids = invResult.fetchall()
 
                 for row in allinvids:
