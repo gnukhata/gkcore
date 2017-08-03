@@ -809,6 +809,7 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con = eng.connect()
                 invResult = self.con.execute(select([invoice.c.invid,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
+                allinvids = []
                 for row in allinv:
                     
                     
