@@ -815,13 +815,13 @@ The bills grid calld gkresult will return a list as it's value.
                     rejectedNotes = rejectedResult.fetchall()
                     gscounter = 0
                     for c in row["contents"]:
-                        qty = row["contents"][c].values()[0]
+                        qty = float(row["contents"][c].values()[0])
                         # for goods quantity will not be 0 anytime
                         if qty != 0:
                             # check whether this product is rejected before.
-                            for rn in rejectedNotes["rejprods"]:
-                                if rn.has_key(c):
-                                    rejectedQty = rejectedQty + int(rn[c])
+                            for rejrow in rejectedNotes:
+                                if rejrow["rejprods"].has_key(c):
+                                    rejectedQty = rejectedQty + float(rejrow["rejprods"][c])
                             qtyRejectable = qty - rejectedQty
                             #avlContents structure will be {"productcode":"rejectable qty"}
                             avlContents[c] = qtyRejectable
