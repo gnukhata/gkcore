@@ -814,10 +814,10 @@ The bills grid calld gkresult will return a list as it's value.
                     rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == row)))
                     rejectedNotes = rejectedResult.fetchall()
                     gscounter = 0
-                    for c in allinv["contents"]:
-                        qty = contents[c].values()
+                    for c in row["contents"]:
+                        qty = row["contents"][c].values()[0]
                         # for goods quantity will not be 0 anytime
-                        if qty[0] != 0:
+                        if qty != 0:
                             # check whether this product is rejected before.
                             for rn in rejectedNotes["rejprods"]:
                                 if rn.has_key(c):
