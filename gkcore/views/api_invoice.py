@@ -837,7 +837,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                                 rejContents[c] =  qty
                     if gscounter > 0:
-                        allinvids.append()
+                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"rejcontent":rejContent})
 
 
                 self.con.close()
