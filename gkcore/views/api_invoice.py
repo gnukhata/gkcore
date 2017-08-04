@@ -823,10 +823,9 @@ The bills grid calld gkresult will return a list as it's value.
                                 if rn.has_key(c):
                                     rejectedQty = rejectedQty + int(rn[c])
                             qtyRejectable = qty - rejectedQty
-                            #avlContents {"productcode":"rejectable qty"}
+                            #avlContents structure will be {"productcode":"rejectable qty"}
                             avlContents[c] = qtyRejectable
                             
-                                
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
