@@ -825,18 +825,23 @@ The bills grid calld gkresult will return a list as it's value.
                             #if there are no rejections then just add the quantity directly to the rejContents.
                             if rejectedNotes.rowcount() == 0:
                                 rejContents[c] = qty
+                                
                             else:
+                                
                                 #Now query each note to see if this product is partially or fully rejected.
+
                                 for rejrow in rejectedNotes:
-                                    if rejrow["rejprods"].has_key(c):
+                                    rejdict = rejrow["rejprods"]
+                                    if rejdict.has_key(c):
                                         qty = qty - float(rejrow["rejprods"][c])
-                            qtyRejectable = qty - rejectedQty
-                            #avlContents structure will be {"productcode":"rejectable qty"}
-                            avlContents[c] = qtyRejectable
-                            
-                
+
+                                rejContents[c] =  qty
+                    if gscounter > 0:
+                        allinvids.append()
+
+
                 self.con.close()
-                return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
+                return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
@@ -860,6 +865,7 @@ The bills grid calld gkresult will return a list as it's value.
                 invid = dataset["invid"]
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
+                
                 temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 temp = temp.fetchall()
                 invprodresult.append(temp[0][0])
