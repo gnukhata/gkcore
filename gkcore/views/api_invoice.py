@@ -829,7 +829,7 @@ The bills grid calld gkresult will return a list as it's value.
                                 #Now query each note to see if this product is partially or fully rejected.
                                 for rejrow in rejectedNotes:
                                     if rejrow["rejprods"].has_key(c):
-                                    rejectedQty = rejectedQty + float(rejrow["rejprods"][c])
+                                        qty = qty - float(rejrow["rejprods"][c])
                             qtyRejectable = qty - rejectedQty
                             #avlContents structure will be {"productcode":"rejectable qty"}
                             avlContents[c] = qtyRejectable
