@@ -810,17 +810,25 @@ The bills grid calld gkresult will return a list as it's value.
                 invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier,invoice.c.icflag,invoice.c.invflag]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
-                for row in allinv:
-                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == row)))
+                for invrow in allinv:
+                    #keep an empty dictionary for rejectable products.
+                    rejContents = {}
+                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
                     rejectedNotes = rejectedResult.fetchall()
                     gscounter = 0
-                    for c in row["contents"]:
-                        qty = float(row["contents"][c].values()[0])
+                    for c in invrow["contents"].keys():
+                        qty = float(invrow["contents"][c].values()[0])
                         # for goods quantity will not be 0 anytime
-                        if qty != 0:
+                        if qty > 0:
+                            gscounter = gscounter + 1
                             # check whether this product is rejected before.
-                            for rejrow in rejectedNotes:
-                                if rejrow["rejprods"].has_key(c):
+                            #if there are no rejections then just add the quantity directly to the rejContents.
+                            if rejectedNotes.rowcount() == 0:
+                                rejContents[c] = qty
+                            else:
+                                #Now query each note to see if this product is partially or fully rejected.
+                                for rejrow in rejectedNotes:
+                                    if rejrow["rejprods"].has_key(c):
                                     rejectedQty = rejectedQty + float(rejrow["rejprods"][c])
                             qtyRejectable = qty - rejectedQty
                             #avlContents structure will be {"productcode":"rejectable qty"}
