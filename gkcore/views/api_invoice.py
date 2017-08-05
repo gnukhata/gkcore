@@ -807,7 +807,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier,invoice.c.icflag,invoice.c.invflag]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier,invoice.c.taxflag]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for invrow in allinv:
@@ -837,6 +837,27 @@ The bills grid calld gkresult will return a list as it's value.
 
                                 rejContents[c] =  qty
                     if gscounter > 0:
+                        custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                        custData = custandsup.fetchone()
+                        custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
+
+                        if invrow["taxflag"] == 
+                    
+                    if custData["custtan"] != None:
+                        custSupDetails["custtin"] = custData["custtan"]
+                    if custData["gstin"] != None:
+                        if int(custData["csflag"]) == 3 :
+                           try:
+                               custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                           except:
+                               custSupDetails["custgstin"] = None
+                        else:
+                            try:
+                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            except:
+                                custSupDetails["custgstin"] = None
+                        
+                        
                         allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"rejcontent":rejContent})
 
 
