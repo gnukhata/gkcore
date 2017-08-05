@@ -805,9 +805,9 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+         #   try:
                 self.con = eng.connect()
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.customerandsupplier,invoice.c.taxflag]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for invrow in allinv:
@@ -823,7 +823,7 @@ The bills grid calld gkresult will return a list as it's value.
                             gscounter = gscounter + 1
                             # check whether this product is rejected before.
                             #if there are no rejections then just add the quantity directly to the rejContents.
-                            if rejectedNotes.rowcount() == 0:
+                            if rejectedResult.rowcount == 0:
                                 rejContents[c] = qty
                                 
                             else:
@@ -841,34 +841,44 @@ The bills grid calld gkresult will return a list as it's value.
                         custData = custandsup.fetchone()
                         custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
 
-                        if invrow["taxflag"] == 
-                    
-                    if custData["custtan"] != None:
-                        custSupDetails["custtin"] = custData["custtan"]
-                    if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
-                           try:
-                               custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
-                           except:
-                               custSupDetails["custgstin"] = None
+                        if int(invrow["taxflag"]) == 22:
+                            if custData["custtan"] != None:
+                                custSupDetails["custtin"] = custData["custtan"]
+                                custSupDetails["custstate"] = custData["state"]
                         else:
-                            try:
-                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
-                            except:
-                                custSupDetails["custgstin"] = None
+                            if invrow["sourcestate"] != None:
+                                sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                                custSupDetails["custstate"] = invrow["sourcestate"]
+                            if invrow["taxstate"] != None:
+                                taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
+                                custSupDetails["custstate"] = invrow["taxstate"]
+                            if custData["gstin"] != None:
+                                if int(custData["csflag"]) == 3 :
+                                    try:
+                                        custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                                        
+                                    except:
+                                        custSupDetails["custgstin"] = None
+                                        custSupDetails["custstate"] = None
+                                else:
+                                    try:
+                                        custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                                        
+                                    except:
+                                        custSupDetails["custgstin"] = None
+                                        custSupDetails["custstate"] = None
+                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
                         
-                        
-                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":invrow["invoicedate"],"rejcontent":rejContent})
 
-
+                print allinvids        
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+           # except exc.IntegrityError:
+           #     return {"gkstatus":enumdict["ActionDisallowed"]}
+           # except:
+           #     return {"gkstatus":enumdict["ConnectionFailed"] }
+           # finally:
+           #     self.con.close()
 
     @view_config(request_method='GET',request_param='type=nonrejectedinvprods', renderer='json')
     def nonRejectedInvProds(self):
