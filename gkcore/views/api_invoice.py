@@ -245,6 +245,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
     @view_config(request_method='GET',request_param="inv=single", renderer ='json')
     def getInvoiceDetails(self):
+        """
+        purpose: gets details on an invoice given it's invid.
+        The details include related customer or supplier details as well as calculation of amount.
+        Description:
+        This function returns a single record as key:value pare for an invoice given it's invid.
+        Depending on the invoice type it will return the details on customer or supplier.
+        It also calculates total amount, taxable amount with all the taxes.
+        The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc. 
+    """
         try:
             token = self.request.headers["gktoken"]
         except:
