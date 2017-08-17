@@ -906,7 +906,7 @@ The bills grid calld gkresult will return a list as it's value.
       #      try:
                 self.con = eng.connect()
                 #fetch all invoices
-                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty, invoice.c.taxflag, invoice.c.taxstate, invoice.c.sourcestate, invoice.c.discount]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
@@ -945,14 +945,17 @@ The bills grid calld gkresult will return a list as it's value.
                     taxamt = 0.00
                     #calculate tax amount of an invoice.
                     for product in row["contents"].iterkeys():
-                        try:
+                        #try:
                             taxrate = "%.2f"%float(row["tax"][product])
+                            discount =0.00
                             for productprice in row["contents"][product].iterkeys():
                                 ppu = productprice
-                                #freeqty is subtracted
-                                qty = float(row["contents"][product][productprice]) - float(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0.00
+                                if row["discount"].has_key(product):
+                                    discount = float(row["discount"][product])
+                                    ppu = float(ppu) - discount
+                                qty = float(row["contents"][product][productprice])
                                 taxamt = taxamt + float("%.2f"%((float("%.2f"%float(ppu)) * float("%.2f"%float(qty)) * float(taxrate))/float(100)))
-                        except:
+                        #except:
                             pass
                     custname = cresult.fetchone()
                     netamt = float(row["invoicetotal"]) - taxamt
