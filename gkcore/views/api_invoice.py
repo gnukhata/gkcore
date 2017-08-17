@@ -252,7 +252,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         This function returns a single record as key:value pare for an invoice given it's invid.
         Depending on the invoice type it will return the details on customer or supplier.
         It also calculates total amount, taxable amount with all the taxes.
-        The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc. 
+        The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc.
+        Note: the details such as state code, place of supplyer etc depends on the tax type.
+        The above mentioned and some more fields are only returned if the tax is GST.
     """
         try:
             token = self.request.headers["gktoken"]
@@ -356,7 +358,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
                         taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
