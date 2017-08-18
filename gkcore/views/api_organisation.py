@@ -78,6 +78,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
             self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
             self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")

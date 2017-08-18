@@ -245,6 +245,17 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
     @view_config(request_method='GET',request_param="inv=single", renderer ='json')
     def getInvoiceDetails(self):
+        """
+        purpose: gets details on an invoice given it's invid.
+        The details include related customer or supplier details as well as calculation of amount.
+        Description:
+        This function returns a single record as key:value pare for an invoice given it's invid.
+        Depending on the invoice type it will return the details on customer or supplier.
+        It also calculates total amount, taxable amount with all the taxes.
+        The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc.
+        Note: the details such as state code, place of supplyer etc depends on the tax type.
+        The above mentioned and some more fields are only returned if the tax is GST.
+    """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -253,7 +264,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-        #    try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -347,7 +358,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]]) - float(freeqty)) * float(contentsData[pc].keys()[0])) - float(discount)
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
                         taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
@@ -387,10 +398,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-         #   except:
-         #       return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-         #   finally:
-         #       self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
@@ -537,9 +548,9 @@ The bills grid calld gkresult will return a list as it's value.
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 invid = self.request.params["invid"]
-                invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment,invoice.c.cancelflag]).where(and_(invoice.c.invid == invid)))
+                invoiceData = self.con.execute(select([invoice.c.invoiceno, invoice.c.attachment]).where(and_(invoice.c.invid == invid)))
                 attachment = invoiceData.fetchone()
-                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"], "cancelflag":attachment["cancelflag"],"userrole":urole["userrole"]}
+                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"invoiceno":attachment["invoiceno"],"userrole":urole["userrole"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
@@ -821,7 +832,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-        #    try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -874,10 +885,10 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
-         #   except:
-         #       return {"gkstatus":enumdict["ConnectionFailed"]}
-         #   finally:
-         #       self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
@@ -892,14 +903,18 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-      #      try:
+            try:
                 self.con = eng.connect()
                 #fetch all invoices
-                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty, invoice.c.taxflag, invoice.c.taxstate, invoice.c.sourcestate, invoice.c.discount]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
                 for row in result:
+                    if row["sourcestate"] != None:
+                        sourceStateCode = getStateCode(row["sourcestate"],self.con)["statecode"]
+                    if row["taxstate"] != None:
+                        destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
                     dcno = ""
                     dcdate = ""
                     godowns = ""
@@ -930,35 +945,57 @@ The bills grid calld gkresult will return a list as it's value.
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y')) + ", "
                             
                         i += 1
-                    cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==row["custid"]))
                     taxamt = 0.00
                     #calculate tax amount of an invoice.
                     for product in row["contents"].iterkeys():
                         try:
                             taxrate = "%.2f"%float(row["tax"][product])
+                            discount =0.00
                             for productprice in row["contents"][product].iterkeys():
                                 ppu = productprice
-                                #freeqty is subtracted
-                                qty = float(row["contents"][product][productprice]) - float(row["freeqty"][product]) if row["freeqty"].has_key(product) else 0.00
+                                if row["discount"].has_key(product):
+                                    discount = float(row["discount"][product])
+                                    ppu = float(ppu) - discount
+                                qty = float(row["contents"][product][productprice])
                                 taxamt = taxamt + float("%.2f"%((float("%.2f"%float(ppu)) * float("%.2f"%float(qty)) * float(taxrate))/float(100)))
                         except:
                             pass
-                    custname = cresult.fetchone()
                     netamt = float(row["invoicetotal"]) - taxamt
+                    cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
+                    customerdetails = cresult.fetchone()
+                    #TIN/GSTIN of customer/supplier is found out.
+                    if int(row["taxflag"]) == 7:
+                        if int(customerdetails["csflag"]) == 3 :
+                           try:
+                               custtin = customerdetails["gstin"][str(destinationStateCode)]
+                           except:
+                               custtin = None
+                        else:
+                            try:
+                                custtin = customerdetails["gstin"][str(sourceStateCode)]
+                            except:
+                                custtin = None
+                    else:
+                        try:
+                            custtin  = customerdetails["custtan"]
+                        except:
+                            custtin = None
+                                
+
                     #flag=0, all invoices.
                     if self.request.params["flag"] == "0":
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                     #flag=1, sales invoices
-                    elif self.request.params["flag"] == "1" and custname["csflag"] == 3:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+                    elif self.request.params["flag"] == "1" and customerdetails["csflag"] == 3:
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                     #flag=2, purchase invoices.
-                    elif self.request.params["flag"] == "2" and custname["csflag"] == 19:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":custname["custname"],"csflag":custname["csflag"],"custtin":custname["custtan"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
+                    elif self.request.params["flag"] == "2" and customerdetails["csflag"] == 19:
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-       #     except:
-       #         return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-       #     finally:
-       #         self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
