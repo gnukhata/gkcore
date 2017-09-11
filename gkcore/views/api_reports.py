@@ -2991,7 +2991,7 @@ class api_reports(object):
                 totalinward = 0.00
                 totaloutward = 0.00
                 if productCode != "all":
-                    openingStockResult = self.con.execute(select([product.c.openingstock,product.c.productdesc]).where(and_(product.c.productcode == productCode, product.c.orgcode == orgcode)))
+                    openingStockResult = self.con.execute(select([product.c.openingstock,product.c.productdesc]).where(and_(product.c.productcode == productCode, product.c.gsflag == 7 ,product.c.orgcode == orgcode)))
                     osRow =openingStockResult.fetchone()
                     openingStock = osRow["openingstock"]
                     prodName = osRow["productdesc"]
@@ -3051,7 +3051,7 @@ class api_reports(object):
                     self.con.close()
                     return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
                 if productCode == "all":
-                    products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(product.c.orgcode == orgcode))
+                    products = self.con.execute(select([product.c.openingstock,product.c.productcode,product.c.productdesc]).where(and_(product.c.orgcode == orgcode,product.c.gsflag == 7)))
                     prodDesc =  products.fetchall()
                     srno = 1
                     for row in prodDesc:
