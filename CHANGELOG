@@ -20,7 +20,7 @@
 *List of transfernotes report.
 *New columns in organisation table invsflag and billwiseflag to set Organisation preferences.
 *List of invoices report.
-*Removed issuerid collumn from delchal table.
+*Removed issuerid column from delchal table.
 *Gst compatibility work includes Multiple gstin column in customerandsupplier and organisation table.
 *New columns consignee,freeqty,vehicle no,reversecharge,bank details transportation mode, date of supply ,discount added in invoice table Complete revamp of  invoice code.
 *new columns gscode and gsflag added in product table , also api_product modified to post and get services when organisation comes under gst taxation.
