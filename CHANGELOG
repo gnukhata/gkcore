@@ -1,3 +1,35 @@
+[21-September-2017 Release 4.25]
+*Gkupgrade modified as per modifications in gkdb
+*List of users report
+*Function in api_godown modified to get number of product a content.
+*Api for billwise accounting
+*List of vouchers in chronological order.
+*Get function in api_log modified to get godowns associated with a godown in charge and sr no.
+*Edit function of category modified to edit/delete/added child categories tax and specifications when its parent category's parameters are edited.
+*Godown in charge user access corrected.
+*Function to get customer details when account code is recieved and matches the same.
+*Fromgodown column added in transfernote table and api also revamped.
+*Function corrected to get godown wise product.
+*Altered sales and purchase rules so that new sub-groups can also be added.
+*Category wise stock on hand report.
+*Sales and purchase registers.
+*Modified unbilled deliveries function.
+*Logo column added in organisation also api modified accordingly.
+*Goprod table and functions related to it modified.
+*Bank name,branch name,instrumentno,instrumentdate to store Bank details [Instrument details] in vouchers also functions get and post changed accordingly.
+*List of transfernotes report.
+*New columns in organisation table invsflag and billwiseflag to set Organisation preferences.
+*List of invoices report.
+*Removed issuerid collumn from delchal table.
+*Gst compatibility work includes Multiple gstin column in customerandsupplier and organisation table.
+*New columns consignee,freeqty,vehicle no,reversecharge,bank details transportation mode, date of supply ,discount added in invoice table Complete revamp of  invoice code.
+*new columns gscode and gsflag added in product table , also api_product modified to post and get services when organisation comes under gst taxation.
+*Function to get GST or VAT type for respective organisation.
+*State table created and insert statements written to populate table by state and it's stateid.
+*Function modified to get just products and both.
+	
+	
+
 [8-April-2017 Release 4.0 Update]
 *Altered rules for sales and purchase for gst/vat implementations.
 *Closing balance function now provides balance types (Dr/Cr) along with the balance.  
