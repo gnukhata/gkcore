@@ -23,7 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-
+"Prajkta Patkar"<prajakta@dff.org.in>
 
 
 Main entry point:
@@ -41,15 +41,18 @@ from webob import request
 from webob.request import Request
 from wsgicors import CORS
 try:
-	eng = dbconnect()
-	resultset = eng.execute("select * from signature")
-	row = resultset.fetchone()
-	secret = row[0]
-	#print secret
+    eng = dbconnect()
+    resultset = eng.execute("select * from signature")
+    row = resultset.fetchone()
+    secret = row[0]
+    #print secret
 except:
-	secret = ""
+    secret = ""
 
 enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4, "ActionDisallowed":5}
+
+
+                        
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
@@ -86,7 +89,9 @@ def main(global_config, **settings):
     config.add_route("discrepancynote","/discrepancynote")
     config.add_route("tax","/tax")
     config.add_route("log", "/log")
-
+    config.add_route("rejectionnote", "/rejectionnote")
+    config.add_route('billwise','/billwise')
+    config.add_route("state","/state")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
