@@ -302,7 +302,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         delchalData = dc.fetchone()                      
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
-                        inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==dcid["dcid"]))
+                        inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==dcid["dcid"], stock.c.dcinvtnflag==4)))
                         inOutData = inOut.fetchone()
                         if inOutData != None:
                             inv["inoutflag"] = int(inOutData["inout"])
