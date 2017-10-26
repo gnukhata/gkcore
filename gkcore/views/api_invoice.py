@@ -388,12 +388,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         if taxResult.has_key('IGST'):
                             taxname = "IGST" 
                             taxRate = float(taxResult["IGST"])
-                            print taxRate
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + taxAmount + cessAmount
-                            print totalAmount
                         else:
+                            print "SGST"
                             taxname = "SGST"
+                            taxRate = float(taxResult["SGST"])
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
                     
