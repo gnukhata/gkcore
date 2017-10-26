@@ -66,6 +66,12 @@ def calTax(taxflag,source,destination,productcode,con):
                     return{"gkstatus":enumdict["Success"],"gkresult":{"CVAT":"%.2f"%float(taxData["taxrate"])}}
             else:
                 #since it is not 22 means it is 7 = "GST".
+                #Also we will need CESS in Both Inter and Intra State GST.
+                CESSResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == "CESS",tax.c.productcode == productcode)))
+                if CESSResult.rowcount > 0:
+                    cessRow = CESSResult.fetchone()
+                    cessData ="%.2f"%float(cessRow["taxrate"])
+                
                 if source == destination:
                     
                     #this is SGST and CGST.
@@ -75,12 +81,12 @@ def calTax(taxflag,source,destination,productcode,con):
                     gst = float(taxData["taxrate"]) /2
                     #note although we are returning only SGST, same rate applies to CGST.
                     #so when u see taxname is sgst then cgst with same rate is asumed.                                                
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"SGST","taxrate":"%.2f"%float(gst)}}
+                    return{"gkstatus":enumdict["Success"],"gkresult":{"SGST":"%.2f"%float(gst),"CESS":cessData}}
                 else:
                     #this is IGST.
                     taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
                     taxData = taxResult.fetchone()
-                    return{"gkstatus":enumdict["Success"],"gkresult":{"taxname":"IGST","taxrate":"%.2f"%float(taxData["taxrate"])}}
+                    return{"gkstatus":enumdict["Success"],"gkresult":{"IGST":"%.2f"%float(taxData["taxrate"]),"CESS":cessData}}
         except:
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
     
