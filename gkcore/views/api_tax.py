@@ -84,7 +84,7 @@ def calTax(taxflag,source,destination,productcode,con):
                     #note although we are returning only SGST, same rate applies to CGST.
                     #so when u see taxname is sgst then cgst with same rate is asumed.
                     taxDict["SGST"] = gst
-                    return{"gkstatus":enumdict["Success"],"gkresult":taxDict}}
+                    return{"gkstatus":enumdict["Success"],"gkresult":taxDict}
                 else:
                     #this is IGST.
                     taxResult = con.execute(select([tax.c.taxrate]).where(and_(tax.c.taxname == 'IGST',tax.c.productcode == productcode)))
