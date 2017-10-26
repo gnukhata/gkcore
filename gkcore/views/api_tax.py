@@ -21,7 +21,7 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
-"Prajkta Patkar"<prajkta.patkar007@gmail.com>
+"Prajkta Patkar"<prajakta@dff.org.in>
 "Bhagyashree Pandhare"<bhagya.pandhare@openmailbox.org>
 """
 
