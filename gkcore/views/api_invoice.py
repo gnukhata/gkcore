@@ -264,7 +264,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-         #   try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -408,7 +408,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-           # except:
+            except:
            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
            # finally:
            #     self.con.close()
