@@ -23,7 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-'Prajkta Patkar'<prajkta@dff.org.in>
+'Prajkta Patkar'<prajakta@dff.org.in>
 'Reshma Bhatwadekar'<bhatawadekar1reshma@gmail.com>
 """
 
@@ -60,6 +60,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
             self.con.execute(select([func.count(gkdb.state.c.statecode)]))
             self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
             self.con.execute(select(gkdb.organisation.c.gstin))
@@ -78,6 +79,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add cess jsonb")
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
             self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
