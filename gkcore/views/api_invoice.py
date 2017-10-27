@@ -409,9 +409,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
-           #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-           # finally:
-           #     self.con.close()
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
