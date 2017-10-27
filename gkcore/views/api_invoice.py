@@ -337,6 +337,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 totalDisc = 0.00
                 totalTaxableVal = 0.00
                 totalTaxAmt = 0.00
+                totalCessAmt = 0.00
                 discounts = invrow["discount"]
                 freeqtys = invrow["freeqty"]
                 #now looping through the contents.
@@ -380,10 +381,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         taxResult = TaxData["gkresult"]
                         cessRate = 0.00
                         cessAmount = 0.00
+                        cessVal = 0.00
                         taxname = ""
                         if taxResult.has_key('CESS'):
                             cessVal = float(taxResult["CESS"])
                             cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
                          
                         if taxResult.has_key('IGST'):
                             taxname = "IGST" 
@@ -391,7 +394,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + taxAmount + cessAmount
                         else:
-                            print "SGST"
                             taxname = "SGST"
                             taxRate = float(taxResult["SGST"])
                             taxAmount = (taxableAmount * (taxRate/100))
@@ -402,10 +404,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxAmt = totalTaxAmt + taxAmount
                         
                         
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                inv['taxname'] = taxname
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
