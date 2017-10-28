@@ -370,6 +370,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
                         totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
