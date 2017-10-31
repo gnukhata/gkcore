@@ -171,8 +171,11 @@ class api_product(object):
                         for usergodown in usergodowmns["gkresult"]:
                             godownswithstock = self.con.execute(select([gkdb.goprod.c.goid]).where(and_(gkdb.goprod.c.productcode==self.request.params["productcode"], gkdb.goprod.c.goid==usergodown["goid"])))
                             usergodownwithstock = godownswithstock.fetchone()
-                            if usergodownwithstock['goid']:
-                                numberofgodowns = numberofgodowns + 1
+                            try:
+                                if usergodownwithstock['goid']:
+                                    numberofgodowns = numberofgodowns + 1
+                            except:
+                                continue
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
                 else:
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
