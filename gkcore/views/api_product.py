@@ -259,11 +259,24 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 productcode = self.request.params["productcode"]
-                result = self.con.execute(select([goprod]).where(goprod.c.productcode == productcode))
-                godowns = []
-                for row in result:
-                    goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
-                    godowns.append(goDownDetails)
+                userrole = getUserRole(authDetails["userid"])
+                if int(userrole["gkresult"]["userrole"]) != 3:
+                    result = self.con.execute(select([goprod]).where(goprod.c.productcode == productcode))
+                    godowns = []
+                    for row in result:
+                        goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
+                        godowns.append(goDownDetails)
+                else:
+                    usergodowns = getusergodowns(authDetails["userid"])
+                    godowns = []
+                    for usergodown in usergodowns["gkresult"]:
+                        thisgodown = self.con.execute(select([goprod]).where(and_(goprod.c.productcode == productcode, goprod.c.goid == usergodown["goid"])))
+                        thisgodown = thisgodown.fetchone()
+                        try:
+                            goDownDetails = {"goid":thisgodown["goid"], "goopeningstock":"%.2f"%float(thisgodown["goopeningstock"]), "productcode":thisgodown["productcode"]}
+                            godowns.append(goDownDetails)
+                        except:
+                            continue
                 return {"gkstatus":enumdict["Success"],"gkresult":godowns}
             except:
                 self.con.close()
