@@ -160,9 +160,19 @@ class api_product(object):
                     productDetails["gsflag"]=row["gsflag"]
                     productDetails["unitname"]=unitrow["unitname"]
                     productDetails["openingstock"]="%.2f"%float(row["openingstock"])
-                    godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
-                    godowns = godownswithstock.fetchone()
-                    numberofgodowns = godowns["numberofgodowns"]
+                    userrole = getUserRole(authDetails["userid"])
+                    if int(userrole["gkresult"]["userrole"]) != 3:
+                        godownswithstock = self.con.execute(select([func.count(gkdb.goprod.c.productcode).label("numberofgodowns")]).where(gkdb.goprod.c.productcode==self.request.params["productcode"]))
+                        godowns = godownswithstock.fetchone()
+                        numberofgodowns = godowns["numberofgodowns"]
+                    else:
+                        usergodowmns = getusergodowns(authDetails["userid"])
+                        numberofgodowns = 0
+                        for usergodown in usergodowmns["gkresult"]:
+                            godownswithstock = self.con.execute(select([gkdb.goprod.c.goid]).where(and_(gkdb.goprod.c.productcode==self.request.params["productcode"], gkdb.goprod.c.goid==usergodown["goid"])))
+                            usergodownwithstock = godownswithstock.fetchone()
+                            if usergodownwithstock['goid']:
+                                numberofgodowns = numberofgodowns + 1
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
                 else:
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
