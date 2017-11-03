@@ -216,13 +216,13 @@ class api_godown(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				result = getusergodowns(self.request.params["userid"])
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
-			#except:
+			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
+			finally:
 				self.con.close()
 
 
