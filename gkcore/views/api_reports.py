@@ -3905,7 +3905,8 @@ free replacement or sample are those which are excluded.
                             print "now we are in inner most loop"
                             discamt = 0.00
                             taxrate = "%.2f"%float(row["tax"][pc])
-                            print"row[cess][pc]"
+                            print taxrate
+                           # print"row[cess][pc]"
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
@@ -3929,28 +3930,31 @@ free replacement or sample are those which are excluded.
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
-                           # print taxrate
-                            if taxdata.has_key(str(taxrate)) and taxrate != "0.00":
-                                taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                            #    print taxamount
-                            #    print taxdata
-                                taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                            else:
-                                taxdata.update({taxrate:"%.2f"%taxamount})
-                                taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                            print taxrate
+                            if taxrate != "0.00":
+                                print "i am here"
+                                if taxdata.has_key(str(taxrate)):
+                                    taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+                                #    print taxamount
+                                #    print taxdata
+                                    taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                else:
+                                    taxdata.update({taxrate:"%.2f"%taxamount})
+                                    taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
 
-                            '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                            if taxrate not in taxcolumns and taxrate != "0.00":
-                                taxcolumns.append(taxrate)
-                                totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
-                                totalrow["tax"].update({taxrate:"%.2f"%taxamount})
-                            else:
-                                totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
-                                totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
+                                '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
+                                if taxrate not in taxcolumns:
+                                    taxcolumns.append(taxrate)
+                                    print taxcolumns
+                                    totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
+                                    totalrow["tax"].update({taxrate:"%.2f"%taxamount})
+                                else:
+                                    totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
+                                    totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
                            # print "i canceldate come here"
                            # print row["cess"][pc]
                             if row["cess"] != None:
-                                print "cess found"
+                            #    print "cess found"
                                 cessrate = "%.2f"%float(row["cess"][pc])   
                                 if taxdata.has_key(str(cessrate)):
                                     taxdata[cessrate]="%.2f"%(float(taxdata[cessrate]) + taxamount)
@@ -3968,6 +3972,7 @@ free replacement or sample are those which are excluded.
                                     totalrow["tax"][cessrate] =  "%.2f"%(float(totalrow["tax"][cessrate]) + taxamount)
                         invoicedata["tax"] = taxdata
                         invoicedata["taxamount"] = taxamountdata
+                        print taxdata
                         spdata.append(invoicedata)
                         srno += 1
                 #    except:
