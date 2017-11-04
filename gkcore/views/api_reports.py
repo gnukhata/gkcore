@@ -3845,11 +3845,11 @@ free replacement or sample are those which are excluded.
                 taxcolumns = []
                 #sales register(flag = 0)
                 if int(self.request.params["flag"]) == 0:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
                 
                 #purchase register(flag = 1)
                 elif int(self.request.params["flag"]) == 1:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
                 
                 
                 
@@ -3898,7 +3898,7 @@ free replacement or sample are those which are excluded.
                         '''for each product in invoice.
                         row["contents"] is JSONB which has format like this - {"22": {"20.00": "2"}, "61": {"100.00": "1"}} where 22 and 61 is productcode, {"20.00": "2"}
                         here 20.00 is price per unit and quantity is 2.
-                        The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products'''
+                        The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate'''
                         
                         for pc in row["contents"].iterkeys():
                             
@@ -3916,7 +3916,7 @@ free replacement or sample are those which are excluded.
                                 gspc = self.con.execute(select([product.c.gsflag]).where(product.c.productcode==pc))
                                 flag = gspc.fetchone()
                                 if int(flag["gsflag"]) == 7:
-                                    qty = float(row["contents"][pc][pcprice]) - float(row["freeqty"][pc]) if row["freeqty"].has_key(pc) else 0.00
+                                    qty = float(row["contents"][pc][pcprice]) 
                                     taxamount = (float(ppu) - float(discamt)) * float(qty)
                                     #(((float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))) * float("%.2f"%float(qty))
                                 else:
