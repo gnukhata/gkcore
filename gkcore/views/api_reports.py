@@ -3851,18 +3851,17 @@ free replacement or sample are those which are excluded.
                 elif int(self.request.params["flag"]) == 1:
                     invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
                 
-                
-                
+            
                 srno = 1
                 '''This totalrow dictionary is used for very last row of report which contains sum of all columns in report'''
                 totalrow = {"grossamount":"0.00", "taxfree":"0.00", "tax": {}, "taxamount":{}}
                 #for each invoice
                 result = invquery.fetchall()
                 for row in result:
-                    print row["invoiceno"]
-                    try:
+                     
+                   # try:
                         disc = row["discount"]
-              
+
                         if int(row["taxflag"]) == 7:
                             destinationstate = row["taxstate"]
                             destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
@@ -3884,6 +3883,7 @@ free replacement or sample are those which are excluded.
                                 except:
                                     invoicedata["custgstin"] = None
 
+                       # print invoicedata
                         totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
                         qty = 0.00
                         ppu = 0.00
@@ -3900,17 +3900,16 @@ free replacement or sample are those which are excluded.
                         row["contents"] is JSONB which has format like this - {"22": {"20.00": "2"}, "61": {"100.00": "1"}} where 22 and 61 is productcode, {"20.00": "2"}
                         here 20.00 is price per unit and quantity is 2.
                         The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate'''
-                        
+                        #print row["contents"].keys()
                         for pc in row["contents"].iterkeys():
-                            
+                            print "now we are in inner most loop"
                             discamt = 0.00
                             taxrate = "%.2f"%float(row["tax"][pc])
-                            cessrate = "%.2f"%float(row["cess"][pc])
+                            print"row[cess][pc]"
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
                                 discamt = 0.00
-
                                 
                             for pcprice in row["contents"][pc].iterkeys():
                                 ppu = pcprice
@@ -3930,45 +3929,52 @@ free replacement or sample are those which are excluded.
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
-                            print taxrate
-                            if taxdata.has_key(str(taxrate)):
+                           # print taxrate
+                            if taxdata.has_key(str(taxrate)) and taxrate != "0.00":
                                 taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                print taxamount
-                                print taxdata
+                            #    print taxamount
+                            #    print taxdata
                                 taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
                             else:
                                 taxdata.update({taxrate:"%.2f"%taxamount})
                                 taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
 
-                            if taxdata.has_key(str(cessrate)):
-                                taxdata[cessrate]="%.2f"%(float(taxdata[cessrate]) + taxamount)
-                                taxamountdata[cessrate]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
-                            else:
-                                taxdata.update({cessrate:"%.2f"%taxamount})
-                                taxamountdata.update({cessrate:"%.2f"%(taxamount*float(cessrate)/100.00)})
                             '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                            if taxrate not in taxcolumns:
+                            if taxrate not in taxcolumns and taxrate != "0.00":
                                 taxcolumns.append(taxrate)
                                 totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
                                 totalrow["tax"].update({taxrate:"%.2f"%taxamount})
                             else:
                                 totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
                                 totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
-                            if cessrate not in taxcolumns:
-                                taxcolumns.append(cessrate)
-                                totalrow["taxamount"].update({cessrate:"%.2f"%float(taxamountdata[cessrate])})
-                                totalrow["tax"].update({cessrate:"%.2f"%taxamount})
-                            else:
-                                totalrow["taxamount"][cessrate] = "%.2f"%(float(totalrow["taxamount"][cessrate]) + float(taxamount*float(cessrate)/100.00))
-                                totalrow["tax"][cessrate] =  "%.2f"%(float(totalrow["tax"][cessrate]) + taxamount)
+                           # print "i canceldate come here"
+                           # print row["cess"][pc]
+                            if row["cess"] != None:
+                                print "cess found"
+                                cessrate = "%.2f"%float(row["cess"][pc])   
+                                if taxdata.has_key(str(cessrate)):
+                                    taxdata[cessrate]="%.2f"%(float(taxdata[cessrate]) + taxamount)
+                                    taxamountdata[cessrate]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
+                                else:
+                                    taxdata.update({cessrate:"%.2f"%taxamount})
+                                    taxamountdata.update({cessrate:"%.2f"%(taxamount*float(cessrate)/100.00)})
+
+                                if cessrate not in taxcolumns:
+                                    taxcolumns.append(cessrate)
+                                    totalrow["taxamount"].update({cessrate:"%.2f"%float(taxamountdata[cessrate])})
+                                    totalrow["tax"].update({cessrate:"%.2f"%taxamount})
+                                else:
+                                    totalrow["taxamount"][cessrate] = "%.2f"%(float(totalrow["taxamount"][cessrate]) + float(taxamount*float(cessrate)/100.00))
+                                    totalrow["tax"][cessrate] =  "%.2f"%(float(totalrow["tax"][cessrate]) + taxamount)
                         invoicedata["tax"] = taxdata
                         invoicedata["taxamount"] = taxamountdata
                         spdata.append(invoicedata)
                         srno += 1
-                    except:
-                        pass
+                #    except:
+                #        pass 
                 taxcolumns.sort(reverse=True)
-                
+                a = {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
+                #print a
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
