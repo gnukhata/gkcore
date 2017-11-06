@@ -39,6 +39,8 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
+from gkcore.views.api_user import getUserRole
+from gkcore.views.api_godown import getusergodowns
 
 @view_defaults(route_name='transfernote')
 class api_transfernote(object):
