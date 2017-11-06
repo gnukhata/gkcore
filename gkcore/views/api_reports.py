@@ -3969,9 +3969,7 @@ free replacement or sample are those which are excluded.
                     except:
                         pass
  
-                taxcolumns.sort(key=float)
-                a = {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
-               
+                taxcolumns.sort(key=float) 
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
