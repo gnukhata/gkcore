@@ -39,7 +39,6 @@ from datetime import datetime,date
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
 
 @view_defaults(route_name='transfernote')
@@ -122,10 +121,30 @@ class api_transfernote(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteid,transfernote.c.transfernoteno]).where(and_(transfernote.c.recieved==False,transfernote.c.orgcode==authDetails["orgcode"])).order_by(transfernote.c.transfernotedate))
+                '''
+                Retreiving date, id, number and togodown of all transfernotes.
+                '''
+                result = self.con.execute(select([transfernote.c.transfernotedate,transfernote.c.transfernoteid,transfernote.c.transfernoteno,transfernote.c.togodown]).where(and_(transfernote.c.recieved==False,transfernote.c.orgcode==authDetails["orgcode"])).order_by(transfernote.c.transfernotedate))
+                '''
+                A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
+                If user is not a godown keeper this list will be empty.
+                '''
+                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+                '''
+                If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
+                Otherwise all transfernotes that have not been received are returned.
+                '''
                 tn = []
-                for row in result:
-                    tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})
+                if usergodowmns:
+                    godowns = []
+                    for godown in usergodowmns:
+                        godowns.append(godown["goid"])
+                    for row in result:
+                        if row["togodown"] in godowns:
+                            tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})
+                else:
+                     for row in result:
+                        tn.append({"transfernoteno": row["transfernoteno"],"transfernoteid": row["transfernoteid"], "transfernotedate":datetime.strftime(row["transfernotedate"],'%d-%m-%Y')})   
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
             except:
