@@ -353,3 +353,23 @@ class api_user(object):
                     return  {"gkstatus":  enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(route_name='user', request_method='GET', request_param='type=role', renderer='json')
+    def getRole(self):
+        try:
+            token=self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                userrole = getUserRole(authDetails["userid"])
+                if userrole["gkstatus"] == 0:
+                    return {"gkresult":userrole["gkresult"]["userrole"], "gkstatus":userrole["gkstatus"]}
+                else:
+                    return  {"gkstatus":userrole["gkstatus"]}
+
+            except:
+                return  {"gkstatus":  enumdict["ConnectionFailed"]}
