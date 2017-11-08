@@ -465,11 +465,22 @@ class api_organisation(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-
-
-
-
-
+    @view_config(request_method="GET",renderer="json",request_param="osg=true")
+    def getOrgStateGstin(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con =eng.connect()
+                gstinResult = self.con.execute("select gstin ->>'%s' as stgstin from organisation where orgcode = %d and statecode = %d"%(authDetails["orgcode"],self.request.params["statecode"] ) )
+                gstinrow = gstinResult.fetchone()
+                
+                return{"gkstatus":enumdict["Succes"],"gkresult":str(gstinrow["stgstin"])}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+                
     @view_config(request_method='PUT', renderer='json')
     def putOrg(self):
         token = self.request.headers['gktoken']
