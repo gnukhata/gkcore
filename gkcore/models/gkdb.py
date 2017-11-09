@@ -295,6 +295,7 @@ Bankdetails is a dictionary will have bankname,accountno., branchname and ifscco
 taxstate is a destination sate.
 sourcestate is source state from where invoice is initiated.
 Structure of a tax field is {productcode:taxrate}
+save orgstategstin of sourcestate for organisation. 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -311,6 +312,7 @@ invoice = Table('invoice',metadata,
     Column('icflag',Integer,default=9),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),

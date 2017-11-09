@@ -20,11 +20,11 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
+"Krishnakant Mane" <kkmane@riseup.net>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 'Prajkta Patkar'<prajakta@dff.org.in>
-'Reshma Bhatwadekar'<bhatawadekar1reshma@gmail.com>
+'Reshma Bhatwadekar'<reshma_b@riseup.net>
 """
 
 from pyramid.view import view_defaults,  view_config
@@ -60,6 +60,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
             self.con.execute(select([func.count(gkdb.state.c.statecode)]))
             self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
@@ -79,6 +80,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add orgstategstin text")
             self.con.execute("alter table invoice add cess jsonb")
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
@@ -463,11 +465,24 @@ class api_organisation(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-
-
-
-
-
+    @view_config(request_method="GET",renderer="json",request_param="osg=true")
+    def getOrgStateGstin(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con =eng.connect()
+                gstinResult = self.con.execute("select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(int(self.request.params["statecode"]),int(self.request.params["statecode"]),int(authDetails["orgcode"])))
+                gstinval = ""
+                if gstinResult.rowcount > 0 :
+                    gstinrow = gstinResult.fetchone()
+                    gstinval = str(gstinrow["stgstin"])
+                return{"gkstatus":enumdict["Success"],"gkresult":gstinval}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+                
     @view_config(request_method='PUT', renderer='json')
     def putOrg(self):
         token = self.request.headers['gktoken']
