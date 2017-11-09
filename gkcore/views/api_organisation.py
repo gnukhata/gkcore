@@ -20,11 +20,11 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
+"Krishnakant Mane" <kkmane@riseup.net>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 'Prajkta Patkar'<prajakta@dff.org.in>
-'Reshma Bhatwadekar'<bhatawadekar1reshma@gmail.com>
+'Reshma Bhatwadekar'<reshma_b@riseup.net>
 """
 
 from pyramid.view import view_defaults,  view_config
@@ -475,7 +475,7 @@ class api_organisation(object):
           #  try:
                 self.con =eng.connect()
                 print self.request.params["statecode"]
-                gstinResult = self.con.execute("select gstin ->>'%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(int(self.request.params["statecode"]),int(authDetails["orgcode"]) ) )
+                gstinResult = self.con.execute("select gstin ->> %d as stgstin from organisation where gstin ? %d and orgcode = %d "%(int(self.request.params["statecode"]),int(authDetails["orgcode"])) )
                 
                 gstinval = ""
                 if gstinResult.rowcount()>0 :
