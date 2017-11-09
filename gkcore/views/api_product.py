@@ -81,7 +81,8 @@ class api_product(object):
                         proCode = self.con.execute(select([gkdb.goprod.c.productcode]).where(gkdb.goprod.c.goid==record2))
                         proCodes = proCode.fetchall()
                         for record3 in proCodes:
-                            productCodes.append(record3["productcode"])
+                            if record3["productcode"] not in productCodes:
+                                productCodes.append(record3["productcode"])
                     results = []
                     for record4 in productCodes:
                         result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.gsflag]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
