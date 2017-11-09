@@ -475,7 +475,7 @@ class api_organisation(object):
           #  try:
                 self.con =eng.connect()
                 print self.request.params["statecode"]
-                gstinResult = self.con.execute("select gstin ->> %d as stgstin from organisation where gstin ? %d and orgcode = %d "%(int(self.request.params["statecode"]),int(authDetails["orgcode"])) )
+                gstinResult = self.con.execute("select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(self.request.params["statecode"],self.request.params["statecode"],int(authDetails["orgcode"])))
                 
                 gstinval = ""
                 if gstinResult.rowcount()>0 :
