@@ -472,17 +472,15 @@ class api_organisation(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-          #  try:
+            try:
                 self.con =eng.connect()
-                print self.request.params["statecode"]
-                gstinResult = self.con.execute("select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(self.request.params["statecode"],self.request.params["statecode"],int(authDetails["orgcode"])))
-                
+                gstinResult = self.con.execute("select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(int(self.request.params["statecode"]),int(self.request.params["statecode"]),int(authDetails["orgcode"])))
                 gstinval = ""
-                if gstinResult.rowcount()>0 :
+                if gstinResult.rowcount > 0 :
                     gstinrow = gstinResult.fetchone()
                     gstinval = str(gstinrow["stgstin"])
-                return{"gkstatus":enumdict["Succes"],"gkresult":gstinval}
-           # except:
+                return{"gkstatus":enumdict["Success"],"gkresult":gstinval}
+            except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
                 
     @view_config(request_method='PUT', renderer='json')
