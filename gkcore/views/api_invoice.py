@@ -264,7 +264,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+        #    try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -367,6 +367,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                        
                     taxRate = 0.00
                     totalAmount = 0.00
+                    taxRate =  float(invrow["tax"][pc])
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
@@ -384,27 +385,25 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if taxResult.has_key('CESS'):
-                            cessVal = float(taxResult["CESS"])
+                        if invrow["cess"] != None:
+                            cessVal = float(invrow["cess"][pc])
                             cessAmount = (taxableAmount * (cessVal/100))
                             totalCessAmt = totalCessAmt + cessAmount
-                         
-                        if taxResult.has_key('IGST'):
-                            taxname = "IGST" 
-                            taxRate = float(taxResult["IGST"])
+
+                        if invrow["sourcestate"] == invrow["taxstate"]:
+                            taxname = "IGST"
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + taxAmount + cessAmount
                         else:
                             taxname = "SGST"
-                            taxRate = float(taxResult["SGST"])
+                            taxRate = (taxRate/2)
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
-                    
+  
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        
-                        
+
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
@@ -413,10 +412,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+         #   except:
+         #       return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+         #   finally:
+         #       self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
