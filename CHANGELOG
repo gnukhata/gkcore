@@ -1,3 +1,13 @@
+[10-November-2017 Release 4.25 Update]
+* Permissions to Godown In Charge modified.
+* CESS field added in invoice and cash memo.
+* Sales and purchase register now reflects along with CESS.
+* Gkupgrade modified as per modifications in gkdb.
+* Transfer Note get all function modified.
+* A function to get user role.
+* Get all delchal function.
+* Minor bugs solved.
+
 [21-September-2017 Release 4.25]
 *Gkupgrade modified as per modifications in gkdb
 *List of users report
