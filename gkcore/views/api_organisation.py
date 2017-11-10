@@ -80,6 +80,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("update invoice set reversecharge = '0'" )
             self.con.execute("alter table invoice add orgstategstin text")
             self.con.execute("alter table invoice add cess jsonb")
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
