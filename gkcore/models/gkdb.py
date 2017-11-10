@@ -291,9 +291,11 @@ Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
 Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
-Bankdetails is a dictionary will have bankname,accountno. and ifsccode.
+Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
 taxstate is a destination sate.
-sourcestate is source state from where invoice is initiated
+sourcestate is source state from where invoice is initiated.
+Structure of a tax field is {productcode:taxrate}
+save orgstategstin of sourcestate for organisation. 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -304,11 +306,13 @@ invoice = Table('invoice',metadata,
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
     Column('tax', JSONB),
+    Column('cess',JSONB),
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),

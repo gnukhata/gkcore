@@ -268,7 +268,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
-                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"]}
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"]}
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -302,7 +302,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         delchalData = dc.fetchone()                      
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
-                        inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==dcid["dcid"]))
+                        inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==dcid["dcid"], stock.c.dcinvtnflag==4)))
                         inOutData = inOut.fetchone()
                         if inOutData != None:
                             inv["inoutflag"] = int(inOutData["inout"])
@@ -337,6 +337,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 totalDisc = 0.00
                 totalTaxableVal = 0.00
                 totalTaxAmt = 0.00
+                totalCessAmt = 0.00
                 discounts = invrow["discount"]
                 freeqtys = invrow["freeqty"]
                 #now looping through the contents.
@@ -369,6 +370,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
                         totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
@@ -378,24 +380,37 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     else:
                         TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
                         taxResult = TaxData["gkresult"]
-                        taxRate = float(taxResult["taxrate"])
-                        inv["taxname"] = taxResult["taxname"]
-                        if taxResult["taxname"] == "IGST":
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if taxResult.has_key('CESS'):
+                            cessVal = float(taxResult["CESS"])
+                            cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
+                         
+                        if taxResult.has_key('IGST'):
+                            taxname = "IGST" 
+                            taxRate = float(taxResult["IGST"])
                             taxAmount = (taxableAmount * (taxRate/100))
-                            totalAmount = taxableAmount + (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + taxAmount + cessAmount
                         else:
+                            taxname = "SGST"
+                            taxRate = float(taxResult["SGST"])
                             taxAmount = (taxableAmount * (taxRate/100))
-                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
                     
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
                         
                         
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxResult["taxname"],"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                inv['taxname'] = taxname
                 inv["invcontents"] = invContents
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
@@ -471,9 +486,16 @@ The bills grid calld gkresult will return a list as it's value.
                 result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in result:
-                    result = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                    custname = result.fetchone()
-                    invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                    customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                    custname = customer.fetchone()
+                    if self.request.params.has_key('type'):
+                        if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
+                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                        elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
+                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                    else:
+                        invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}

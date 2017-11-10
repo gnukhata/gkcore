@@ -40,6 +40,7 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+from gkcore.views.api_godown import getusergodowns
 
 @view_defaults(route_name='delchal')
 class api_delchal(object):
@@ -155,12 +156,39 @@ class api_delchal(object):
         else:
             try:
                 self.con = eng.connect()
+                '''
+                Retreiving details of all delivery notes.
+                '''
                 result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+                '''
+                An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
+                Loop is used to go through the result, fetch customer/supplier data and append them to the list.
+                Each entry in the list is in the form of a dictionary. See line 171 to find the structure of the dictionary.
+                '''
                 delchals = []
-                for row in result:
-                    custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                    custrow = custdata.fetchone()
-                    delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'), "attachmentcount":row["attachmentcount"]})
+                '''
+                A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
+                If user is not a godown keeper this list will be empty.
+                If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
+                '''
+                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+                if usergodowmns:
+                    godowns = []
+                    for godown in usergodowmns:
+                        godowns.append(godown["goid"])
+                    for row in result:
+                        delchalgodown = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnid == row["dcid"], stock.c.dcinvtnflag == 4)))
+                        delchalgodata = delchalgodown.fetchone()
+                        delchalgoid = delchalgodata["goid"]
+                        if delchalgoid in godowns:
+                            custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                            custrow = custdata.fetchone()
+                            delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'), "attachmentcount":row["attachmentcount"]})
+                else:
+                    for row in result:
+                        custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                        custrow = custdata.fetchone()
+                        delchals.append({"dcid":row["dcid"],"dcno":row["dcno"],"custname":custrow["custname"],"csflag":custrow["csflag"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'), "attachmentcount":row["attachmentcount"]})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":delchals }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -177,7 +205,7 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-        #    try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
@@ -192,7 +220,6 @@ class api_delchal(object):
                 for stockrow in stockdata:
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
-                    print productdesc
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
                     items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
@@ -225,10 +252,10 @@ class api_delchal(object):
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
-        #    except:
-        #        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-        #    finally:
-        #        self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
     def getLastDelChalDetails(self):
