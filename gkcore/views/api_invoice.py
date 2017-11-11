@@ -367,6 +367,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                        
                     taxRate = 0.00
                     totalAmount = 0.00
+                    taxRate =  float(invrow["tax"][pc])
                     if int(invrow["taxflag"]) == 22:
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (taxableAmount * float(taxRate/100))
@@ -378,33 +379,29 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                     else:
-                        TaxData = calTax(7,invrow["sourcestate"],invrow["taxstate"],pc,self.con)
-                        taxResult = TaxData["gkresult"]
                         cessRate = 0.00
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if taxResult.has_key('CESS'):
-                            cessVal = float(taxResult["CESS"])
+                        if invrow["cess"] != None:
+                            cessVal = float(invrow["cess"][pc])
                             cessAmount = (taxableAmount * (cessVal/100))
                             totalCessAmt = totalCessAmt + cessAmount
-                         
-                        if taxResult.has_key('IGST'):
-                            taxname = "IGST" 
-                            taxRate = float(taxResult["IGST"])
+
+                        if invrow["sourcestate"] != invrow["taxstate"]:
+                            taxname = "IGST"
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + taxAmount + cessAmount
                         else:
                             taxname = "SGST"
-                            taxRate = float(taxResult["SGST"])
+                            taxRate = (taxRate/2)
                             taxAmount = (taxableAmount * (taxRate/100))
                             totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
-                    
+  
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        
-                        
+
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
@@ -412,6 +409,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
+
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
