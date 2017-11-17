@@ -63,7 +63,10 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
             self.con.execute(select([func.count(gkdb.state.c.statecode)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
+            countResult = self.con.execute(select([func.count(gkdb.invoice.c.reversecharge).label('revcount')]))
+            countData = countResult.fetchone()
+            if int(countData["revcount"]) > 0:
+                self.con.execute("update invoice set reversecharge = '0'" )
             self.con.execute(select(gkdb.organisation.c.gstin))
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
@@ -80,7 +83,6 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
-            self.con.execute("update invoice set reversecharge = '0'" )
             self.con.execute("alter table invoice add orgstategstin text")
             self.con.execute("alter table invoice add cess jsonb")
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
