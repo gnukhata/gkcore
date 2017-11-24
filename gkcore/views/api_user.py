@@ -109,6 +109,9 @@ class api_user(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+    """
+    Following function is to retrive user data.
+    """
     @view_config(route_name='user', request_method='GET',renderer='json')
     def getUser(self):
         try:
@@ -121,15 +124,31 @@ class api_user(object):
         else:
             try:
                 self.con = eng.connect()
+                print "i am here "
+                # get necessary user data by comparing userid
+                print authDetails["userid"]
                 result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 row = result.fetchone()
-                User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"], "userpassword":row["userpassword"]}
+                User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
+                if(row["userrole"] == -1):
+                    User["userroleName"]= "Admin"
+                elif(row["userrole"] == 0):
+                    User["userroleName"] = "Manager"
+                elif(row["userrole"] == 1):
+                    User["userroleName"] = "Operator"
+                elif(row["userrole"] == 2):
+                    urole = "Internal Auditor"
+                    
+                # -1 = admin,1 = operator,2 = manager , 3 = godown in charge
+                # if user is godown in-charge we need to retrive associated godown/s
                 if User["userrole"] == 3:
+                    User["userroleName"] = "Godown In Charge"
                     usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == authDetails["userid"]))
                     goids = usgo.fetchall()
                     userGodowns = {}
                     for g in goids:
                         godownid = g["goid"]
+                        # now we have associated godown ids, by which we can get godown name
                         godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
                         gNameRow = godownData.fetchone()
                         userGodowns[godownid] = gNameRow["goname"]
@@ -140,6 +159,7 @@ class api_user(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+                
     @view_config(request_method='PUT', renderer='json')
     def editUser(self):
         try:
