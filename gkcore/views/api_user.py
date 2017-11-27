@@ -24,6 +24,8 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
+Prajkta Patkar <prajakta@dff.org.in>
+
 """
 
 
@@ -110,13 +112,12 @@ class api_user(object):
             finally:
                 self.con.close()
     """
-    Following function is to retrive user data.
+    Following function is to retrive user data.It needs userid & only admin can view data.
     """
     @view_config(route_name='user', request_method='GET',renderer='json')
     def getUser(self):
         try:
             token = self.request.headers["gktoken"]
-            print token
         except:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
@@ -125,37 +126,39 @@ class api_user(object):
         else:
             try:
                 self.con = eng.connect()
-                print "i am here "
                 # get necessary user data by comparing userid
-                print authDetails["userid"]
-                result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.params["userid"] ))
-                row = result.fetchone()
-                User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
-                if(row["userrole"] == -1):
-                    User["userroleName"]= "Admin"
-                elif(row["userrole"] == 0):
-                    User["userroleName"] = "Manager"
-                elif(row["userrole"] == 1):
-                    User["userroleName"] = "Operator"
-                elif(row["userrole"] == 2):
-                    urole = "Internal Auditor"
-                    
-                # -1 = admin,1 = operator,2 = manager , 3 = godown in charge
-                # if user is godown in-charge we need to retrive associated godown/s
-                if User["userrole"] == 3:
-                    User["userroleName"] = "Godown In Charge"
-                    usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == authDetails["userid"]))
-                    goids = usgo.fetchall()
-                    userGodowns = {}
-                    for g in goids:
-                        godownid = g["goid"]
-                        # now we have associated godown ids, by which we can get godown name
-                        godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
-                        gNameRow = godownData.fetchone()
-                        userGodowns[godownid] = gNameRow["goname"]
-                    User["godowns"] = userGodowns
+                if authDetails["userid"] == -1 :
+                    result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.params["userid"] ))
+                    row = result.fetchone()
+                    User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
+                    if(row["userrole"] == -1):
+                        User["userroleName"]= "Admin"
+                    elif(row["userrole"] == 0):
+                        User["userroleName"] = "Manager"
+                    elif(row["userrole"] == 1):
+                        User["userroleName"] = "Operator"
+                    elif(row["userrole"] == 2):
+                        urole = "Internal Auditor"
 
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+                    # -1 = admin,1 = operator,2 = manager , 3 = godown in charge
+                    # if user is godown in-charge we need to retrive associated godown/s
+                    if User["userrole"] == 3:
+                        User["userroleName"] = "Godown In Charge"
+                        usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == authDetails["userid"]))
+                        goids = usgo.fetchall()
+                        userGodowns = {}
+                        for g in goids:
+                            godownid = g["goid"]
+                            # now we have associated godown ids, by which we can get godown name
+                            godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
+                            gNameRow = godownData.fetchone()
+                            userGodowns[godownid] = gNameRow["goname"]
+                        User["godowns"] = userGodowns
+
+                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
+                    
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
