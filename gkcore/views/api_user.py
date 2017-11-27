@@ -116,6 +116,7 @@ class api_user(object):
     def getUser(self):
         try:
             token = self.request.headers["gktoken"]
+            print token
         except:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
@@ -127,7 +128,7 @@ class api_user(object):
                 print "i am here "
                 # get necessary user data by comparing userid
                 print authDetails["userid"]
-                result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == authDetails["userid"] ))
+                result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.params["userid"] ))
                 row = result.fetchone()
                 User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
                 if(row["userrole"] == -1):
