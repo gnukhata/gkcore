@@ -115,7 +115,7 @@ class api_user(object):
     Following function is to retrive user data.It needs userid & only admin can view data of other users.
     """
     @view_config(route_name='user', request_method='GET', request_param = "userAllData",renderer='json')
-    def getUser(self):
+    def getUserAllData(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -140,7 +140,7 @@ class api_user(object):
                     elif(row["userrole"] == 1):
                         User["userroleName"] = "Operator"
                     elif(row["userrole"] == 2):
-                        urole = "Internal Auditor"
+                        User["userroleName"] = "Internal Auditor"
 
                     # -1 = admin,1 = operator,2 = manager , 3 = godown in charge
                     # if user is godown in-charge we need to retrive associated godown/s
@@ -399,3 +399,39 @@ class api_user(object):
 
             except:
                 return  {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    """This function sends basic data of user like username ,userrole """
+    @view_config(request_method='GET',request_param = "user=single" ,renderer ='json')
+    def getDataofUser(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                #there is only one possibility for a catch which is failed connection to db.
+                #Retrieve data of that user whose userid is sent
+                result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userrole]).where(gkdb.users.c.userid==authDetails["userid"]))
+                row = result.fetchone()
+                userData = {"username":row["username"],"userrole":row["userrole"]}
+                if(row["userrole"] == -1):
+                    userData["userroleName"]= "Admin"
+                elif(row["userrole"] == 0):
+                    userData["userroleName"] = "Manager"
+                elif(row["userrole"] == 1):
+                    userData["userroleName"] = "Operator"
+                elif(row["userrole"] == 2):
+                    userData["userroleName"] = "Internal Auditor"
+                elif(row["userrole"] == 3):
+                    userData["userroleName"] = "Godown In Charge"
+                
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":userData }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+    
