@@ -112,7 +112,7 @@ class api_user(object):
             finally:
                 self.con.close()
     """
-    Following function is to retrive user data.It needs userid & only admin can view data.
+    Following function is to retrive user data.It needs userid & only admin can view data of other users.
     """
     @view_config(route_name='user', request_method='GET',renderer='json')
     def getUser(self):
@@ -127,7 +127,10 @@ class api_user(object):
             try:
                 self.con = eng.connect()
                 # get necessary user data by comparing userid
-                if authDetails["userid"] == -1 :
+                print authDetails["userid"]
+                user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+                userRole = user.fetchone()
+                if userRole[0]==-1:
                     result = self.con.execute(select([gkdb.users]).where(gkdb.users.c.userid == self.request.params["userid"] ))
                     row = result.fetchone()
                     User = {"userid":row["userid"], "username":row["username"], "userrole":row["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
