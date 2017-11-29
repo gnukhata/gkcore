@@ -206,6 +206,7 @@ class api_user(object):
                 result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
                 users = []
                 for row in result:
+                    # Specify user role
                     if(row["userrole"] == -1):
                         userroleName = "Admin"
                     elif(row["userrole"] == 0):
