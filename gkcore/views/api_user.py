@@ -206,7 +206,17 @@ class api_user(object):
                 result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
                 users = []
                 for row in result:
-                    users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"]})
+                    if(row["userrole"] == -1):
+                        userroleName = "Admin"
+                    elif(row["userrole"] == 0):
+                        userroleName = "Manager"
+                    elif(row["userrole"] == 1):
+                        userroleName = "Operator"
+                    elif(row["userrole"] == 2):
+                        userroleName = "Internal Auditor"
+                    elif(row["userrole"] == 3):
+                        userroleName = "Godown In Charge"
+                    users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"],"userrolename": userroleName})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -428,7 +438,6 @@ class api_user(object):
                     userData["userroleName"] = "Internal Auditor"
                 elif(row["userrole"] == 3):
                     userData["userroleName"] = "Godown In Charge"
-                
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":userData }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
