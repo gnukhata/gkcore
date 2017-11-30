@@ -1,5 +1,5 @@
 """
-Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2013, 2014, 2015, 2016, 2017 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -154,7 +154,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         Purpose:
         Gets the list of unadjusted invoices.
         Description:
-        An invoice is considered unadjusted if it has not been paid or payment for it has not been received.
+        An invoice is considered unadjusted if it has not been paid or payment for it has not been received completely.
         These are adjusted either while creating vouchers or while doing bill wise accounting.
         This function returns a list of all unadjusted or partially adjusted bills of an organisation.
         """
@@ -173,6 +173,39 @@ It will be used for creating entries in the billwise table and updating it as ne
                 # Fetching id, number, date, total amount and amount paid of all unpaid invoices.
                 # It is unadjusted if invoice total is greater that amount paid.
                 invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
+                invoicesData = invoices.fetchall()
+                # Appending dictionaries into empty list.
+                # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
+                for inv in invoicesData:
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
+                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+    @view_config(request_method='GET',renderer='json', request_param="type=pending")
+    def getallPendingBills(self):
+        """
+        Purpose:
+        Gets the list of pending invoices.
+        Description:
+        An invoice is considered pending if it has not been paid or no payment for it has not been received.
+        These are adjusted either while creating vouchers or while doing bill wise accounting.
+        This function returns a list of all pending bills of an organisation.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                # An empty list into which pending invoices shall be appended.
+                unAdjInvoices = []
+                # Fetching id, number, date, total amount and amount paid of all unpaid invoices.
+                # It is pending if invoice total is greater that amount paid.
+                invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.amountpaid == 0, invoice.c.orgcode == authDetails["orgcode"])))
                 invoicesData = invoices.fetchall()
                 # Appending dictionaries into empty list.
                 # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
