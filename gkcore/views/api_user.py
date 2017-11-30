@@ -24,7 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
-Prajkta Patkar <prajakta@dff.org.in>
+"Prajkta Patkar" <prajakta@dff.org.in>
 
 """
 
@@ -158,6 +158,66 @@ class api_user(object):
                         User["godowns"] = userGodowns
 
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
+                    
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+    """
+    Following function is to get all users data having same user role .It needs userrole & only admin can view data of other users.
+    """
+    @view_config(route_name='user', request_method='GET', request_param = "sameRoleUsers",renderer='json')
+    def getAllUsersData(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                # get user role to validate.
+                # only admin can view all users entire data
+                user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+                userRole = user.fetchone()
+                if userRole[0]==-1:
+                    # get all users having same user role.
+                    result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userquestion,gkdb.users.c.useranswer]).where(and_(gkdb.users.c.userrole == self.request.params["userrole"] , gkdb.users.c.orgcode == authDetails["orgcode"])))
+                    userData = result.fetchall()
+                    usersList = []
+                    for row in userData :
+                        User = {"userid":row["userid"], "username":row["username"], "userrole":self.request.params["userrole"], "userquestion":row["userquestion"], "useranswer":row["useranswer"]}
+                        # -1 = admin, 0 = Manager ,1 = operator,2 = Internal Auditor , 3 = godown in charge
+                        if int(self.request.params["userrole"]) == -1:
+                            User["userroleName"]= "Admin"
+                        elif int(self.request.params["userrole"] == 0):
+                            User["userroleName"] = "Manager"
+                        elif int(self.request.params["userrole"] == 1):
+                            User["userroleName"] = "Operator"
+                        elif int(self.request.params["userrole"] == 2):
+                            User["userroleName"] = "Internal Auditor"
+                        # if user is godown in-charge we need to retrive associated godown/s
+            
+                        elif int(self.request.params["userrole"]) == 3:
+                            User["userroleName"] = "Godown In Charge"
+                            usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == row["userid"]))
+                            goids = usgo.fetchall()
+                            userGodowns = {}
+                            for g in goids:
+                                godownid = g["goid"]
+                                # now we have associated godown ids, by which we can get godown name
+                                godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
+                                gNameRow = godownData.fetchone()
+                                userGodowns[godownid] = gNameRow["goname"]
+                            User["godowns"] = userGodowns
+                        usersList.append(User)
+
+                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usersList}
                 else:
                     return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
                     

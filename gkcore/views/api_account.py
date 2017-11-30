@@ -24,7 +24,8 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-Prajkta Patkar" <prajakta@dff.org.in>
+"Prajkta Patkar" <prajakta@dff.org.in>
+"Prajkta Patkar" <prajkta.patkar007@gmail.com>
 """
 
 from gkcore import eng, enumdict
