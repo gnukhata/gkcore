@@ -179,7 +179,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in invoicesData:
                     custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
                     customerdata = custData.fetchone()
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "customername":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -214,7 +214,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in invoicesData:
                     custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
                     customerdata = custData.fetchone()
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "customername":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
