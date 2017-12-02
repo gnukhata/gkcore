@@ -231,6 +231,7 @@ class api_delchal(object):
                                     "dcflag":delchaldata["dcflag"],
                                     "issuername":delchaldata["issuername"],
                                     "designation":delchaldata["designation"],
+                                    "consignee":delchaldata["consignee"],
                                     "dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
                                     "custid":delchaldata["custid"],"custname":custname["custname"],
                                     "custstate":custname["state"],
