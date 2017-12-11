@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -23,6 +24,8 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Reshma Bhatawade" <reshma_b@riseup.net>
+
 """
 
 
@@ -231,6 +234,7 @@ class api_delchal(object):
                                     "dcflag":delchaldata["dcflag"],
                                     "issuername":delchaldata["issuername"],
                                     "designation":delchaldata["designation"],
+                                    "consignee":delchaldata["consignee"],
                                     "dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
                                     "custid":delchaldata["custid"],"custname":custname["custname"],
                                     "custstate":custname["state"],

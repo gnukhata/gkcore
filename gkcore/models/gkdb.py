@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -361,6 +362,7 @@ delchal = Table('delchal',metadata,
     Column('noofpackages', Integer, nullable=False),
     Column('modeoftransport', UnicodeText),
     Column('attachment',JSON),
+    Column('consignee',JSONB),
     Column('attachmentcount',Integer,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
