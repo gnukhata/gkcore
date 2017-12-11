@@ -146,7 +146,7 @@ class api_user(object):
                     # if user is godown in-charge we need to retrive associated godown/s
                     if User["userrole"] == 3:
                         User["userroleName"] = "Godown In Charge"
-                        usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.users.c.userid == authDetails["userid"]))
+                        usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.usergodown.c.userid == self.request.params["userid"]))
                         goids = usgo.fetchall()
                         userGodowns = {}
                         for g in goids:
