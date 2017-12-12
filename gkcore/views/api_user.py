@@ -250,6 +250,45 @@ class api_user(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    
+    @view_config(request_method='PUT', request_param='editdata' ,renderer='json')
+    def addedituser(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAcces"]}
+        else:
+            try:
+                self.con =eng.connect()
+                user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+                userRole = getUserRole(authDetails["userid"])
+                dataset = self.request.json_body
+                print dataset["userrole"]
+                if userRole["gkresult"]["userrole"] == -1:
+                    dataset["orgcode"] = authDetails["orgcode"]
+                    if dataset["userrole"]== "3":
+                        result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
+                        golist = tuple(dataset.pop("golist"))
+                        result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                        userdata = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset["orgcode"])))
+                        userRow = userdata.fetchone()
+                        lastid = userRow["userid"]
+                        for goid in golist:
+                            godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
+                            result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                    else:
+                        result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
     @view_config(request_method='GET', renderer ='json')
     def getAllUsers(self):
         try:
