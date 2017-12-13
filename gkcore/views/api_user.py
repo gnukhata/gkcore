@@ -251,7 +251,12 @@ class api_user(object):
             finally:
                 self.con.close()
 
-    
+    """
+        This function update user in the users table.
+        It may also have a list of goids for the godowns associated with this user.
+        This is only true if goflag is True.
+        The frontend must send the role as Godown In Charge for this.
+"""
     @view_config(request_method='PUT', request_param='editdata' ,renderer='json')
     def addedituser(self):
         try:
@@ -264,26 +269,27 @@ class api_user(object):
         else:
             try:
                 self.con =eng.connect()
-                user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = getUserRole(authDetails["userid"])
                 dataset = self.request.json_body
-                print dataset["userrole"]
+                print dataset
                 if userRole["gkresult"]["userrole"] == -1:
                     dataset["orgcode"] = authDetails["orgcode"]
-                    if dataset["userrole"]== "3":
+                    if int(dataset["userrole"])== 3:
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
                         golist = tuple(dataset.pop("golist"))
+                        print golist
                         result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-                        userdata = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset["orgcode"])))
-                        userRow = userdata.fetchone()
-                        lastid = userRow["userid"]
+                        lastid = dataset["userid"]
                         for goid in golist:
                             godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
                             result = self.con.execute(gkdb.usergodown.insert(),[godata])
                     else:
                         result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                    return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
