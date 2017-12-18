@@ -285,7 +285,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["transportationmode"] = invrow["transportationmode"]
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
-                    inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
+                    inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==self.request.params["invid"], stock.c.dcinvtnflag==9)))
                     inOutData = inOut.fetchone()
                     if inOutData != None:
                         inv["inoutflag"] = int(inOutData["inout"])
