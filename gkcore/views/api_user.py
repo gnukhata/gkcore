@@ -241,6 +241,8 @@ class api_user(object):
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
+                print dataset
+                print authDetails["userid"]
                 if userRole[0]==-1 or int(authDetails["userid"])==int(dataset["userid"]):
                     result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
                     return {"gkstatus":enumdict["Success"]}
@@ -248,6 +250,29 @@ class api_user(object):
                     return {"gkstatus":  enumdict["BadPrivilege"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+    @view_config(request_method='POST', request_param="userloginstatus",renderer='json')
+    def userLoginstatus(self):
+        try:
+            self.con = eng.connect()
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAcces"]}
+        else:
+            try:
+                dataset = self.request.json_body
+                result = self.con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==authDetails["orgcode"])) )
+                if result.rowcount == 1:
+                    return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":  enumdict["BadPrivilege"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
@@ -271,23 +296,28 @@ class api_user(object):
                 self.con =eng.connect()
                 userRole = getUserRole(authDetails["userid"])
                 dataset = self.request.json_body
+                print dataset
                 if userRole["gkresult"]["userrole"] == -1:
                     dataset["orgcode"] = authDetails["orgcode"]
                     #This is give userrole of old user  
-                    originalrole = getuserrole(dataset[userid])
-                    if int(originalrole ==3):
+                    originalrole = getUserRole(dataset["userid"])
+                    if int(userRole["gkresult"]["userrole"]==3):
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
-                    #this is give userrole of new user    
-                    if int(dataset["userrole"])== 3:
-                        golist = tuple(dataset.pop("golist"))
-                        result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-                        lastid = dataset["userid"]
-                        for goid in golist:
-                            godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
-                            result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                    #this is give userrole of new user
+                    if dataset.has_key("userrole"):
+                        if int(dataset["userrole"])== 3:
+                            golist = tuple(dataset.pop("golist"))
+                            result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                            lastid = dataset["userid"]
+                            for goid in golist:
+                                godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
+                                result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                        else:
+                            result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
+                            return {"gkstatus":enumdict["Success"]}
                     else:
                         result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-                    return {"gkstatus":enumdict["Success"]}
+                        return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ActionDisallowed"]}
             except exc.IntegrityError:
@@ -533,9 +563,9 @@ class api_user(object):
                 self.con = eng.connect()
                 #there is only one possibility for a catch which is failed connection to db.
                 #Retrieve data of that user whose userid is sent
-                result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userrole]).where(gkdb.users.c.userid==authDetails["userid"]))
+                result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userrole, gkdb.users.c.userid]).where(gkdb.users.c.userid==authDetails["userid"]))
                 row = result.fetchone()
-                userData = {"username":row["username"],"userrole":row["userrole"]}
+                userData = {"username":row["username"],"userrole":row["userrole"],"userid":row["userid"]}
                 if(row["userrole"] == -1):
                     userData["userroleName"]= "Admin"
                 elif(row["userrole"] == 0):
