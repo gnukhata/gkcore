@@ -298,10 +298,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
                     if result.rowcount>0:
-                        dc = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
+                        dc = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate]).where(delchal.c.dcid==dcid["dcid"]))
                         delchalData = dc.fetchone()                      
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
+                        inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
                         inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==dcid["dcid"], stock.c.dcinvtnflag==4)))
                         inOutData = inOut.fetchone()
                         if inOutData != None:
