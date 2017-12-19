@@ -285,7 +285,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["transportationmode"] = invrow["transportationmode"]
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
-                    inOut = self.con.execute(select([stock.c.inout]).where(stock.c.dcinvtnid==self.request.params["invid"]))
+                    inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==self.request.params["invid"], stock.c.dcinvtnflag==9)))
                     inOutData = inOut.fetchone()
                     if inOutData != None:
                         inv["inoutflag"] = int(inOutData["inout"])
@@ -308,7 +308,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             inv["inoutflag"] = int(inOutData["inout"])
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
+                    custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
@@ -323,7 +324,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             except:
                                 custSupDetails["custgstin"] = None
 
-                    
                     inv["custSupDetails"] = custSupDetails
                 #contents is a nested dictionary from invoice table.
                 #It contains productcode as the key with a value as a dictionary.
