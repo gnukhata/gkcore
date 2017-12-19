@@ -252,7 +252,7 @@ class api_user(object):
                 self.con.close()
 
     """
-        This function update user in the users table.
+        Following function update user in the users table.
         It may also have a list of goids for the godowns associated with this user.
         This is only true if goflag is True.
         The frontend must send the role as Godown In Charge for this.
@@ -271,13 +271,15 @@ class api_user(object):
                 self.con =eng.connect()
                 userRole = getUserRole(authDetails["userid"])
                 dataset = self.request.json_body
-                print dataset
                 if userRole["gkresult"]["userrole"] == -1:
                     dataset["orgcode"] = authDetails["orgcode"]
-                    if int(dataset["userrole"])== 3:
+                    #This is give userrole of old user  
+                    originalrole = getuserrole(dataset[userid])
+                    if int(originalrole ==3):
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
+                    #this is give userrole of new user    
+                    if int(dataset["userrole"])== 3:
                         golist = tuple(dataset.pop("golist"))
-                        print golist
                         result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
                         lastid = dataset["userid"]
                         for goid in golist:
