@@ -72,6 +72,7 @@ class api_transaction(object):
         Purpose:
         Generates a new vouchernumber based on vouchertype and max count for that type.
         """
+        initialType = ""
         if voucherType == "Journal":
             initialType = "jr"
         if voucherType == "Contra":
@@ -100,12 +101,14 @@ class api_transaction(object):
         else:
             vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
             vchCode = vchCodeResult.fetchone()
-            initialType = initialType + str(vchCode)
+            initialType = initialType + str(vchCode["vcode"])
+        return initialType
 
             
     @view_config(request_method='POST',renderer='json')
     def addVoucher(self):
         """
+
         Purpose:
         adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
         Description:
