@@ -134,6 +134,12 @@ class api_invoice(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    '''
+    This is a function to update an invoice.
+    This function is primarily used to enable editing of invoices.
+    It receives a dictionary with information regarding an invoice, changes to be made in stock if any and delivery notes linked if any.
+    '''
     @view_config(request_method='PUT', renderer='json')
     def editInvoice(self):
         try:
@@ -146,13 +152,17 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
+                # Data is stored in a variable dtset.
                 dtset = self.request.json_body
+                # Empty dictionary to store details of delivery challan linked if any.
                 dcinvdataset={}
+                # Details of invoice and stock are stored in separate variables.
                 invdataset = dtset["invoice"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
+                # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
                 try:
                     deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
                 except:
@@ -161,6 +171,7 @@ class api_invoice(object):
                     deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
                 except:
                     pass
+                # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
                 if invdataset.has_key("dcid"):
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
                     dcinvdataset["orgcode"]=invdataset["orgcode"]
@@ -170,7 +181,8 @@ class api_invoice(object):
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         return {"gkstatus":enumdict["Success"]}
                     except:
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] } 
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
                 else:
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
