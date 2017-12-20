@@ -154,7 +154,7 @@ class api_transaction(object):
                 if dataset.has_key("vouchernumber") == False:
                     voucherType = dataset["vouchertype"]
                     vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
-                    dataset["vouchernumber"] = initialType
+                    dataset["vouchernumber"] = vchNo
                      
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
