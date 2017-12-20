@@ -150,7 +150,7 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
-                # generate voucher number if it is sent.
+                # generate voucher number if it is not sent.
                 if dataset.has_key("vouchernumber") == False:
                     vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
                     dataset["vouchernumber"] = initialType
