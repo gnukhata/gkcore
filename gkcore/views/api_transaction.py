@@ -67,7 +67,7 @@ class api_transaction(object):
         self.request = Request
         self.request = request
         self.con = Connection
-    def __genVoucherNumber(self,voucherType,con):
+    def __genVoucherNumber(self,voucherType,orgcode,con):
         """
         Purpose:
         Generates a new vouchernumber based on vouchertype and max count for that type.
@@ -150,6 +150,11 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+                # generate voucher number if it is sent.
+                if dataset.has_key("vouchernumber") == False:
+                    vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
+                    dataset["vouchernumber"] = initialType
+                     
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
