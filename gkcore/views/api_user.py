@@ -241,8 +241,6 @@ class api_user(object):
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-                print dataset
-                print authDetails["userid"]
                 if userRole[0]==-1 or int(authDetails["userid"])==int(dataset["userid"]):
                     result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
                     return {"gkstatus":enumdict["Success"]}
@@ -252,8 +250,11 @@ class api_user(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+    """
+    Following function check status (i.e valid or not) of field current password in edituser.  
+"""
 
-    @view_config(request_method='POST', request_param="userloginstatus",renderer='json')
+    @view_config(request_method='POST', request_param="userloginstatus", renderer='json')
     def userLoginstatus(self):
         try:
             self.con = eng.connect()
@@ -279,11 +280,10 @@ class api_user(object):
     """
         Following function update user in the users table.
         It may also have a list of goids for the godowns associated with this user.
-        This is only true if goflag is True.
         The frontend must send the role as Godown In Charge for this.
 """
     @view_config(request_method='PUT', request_param='editdata' ,renderer='json')
-    def addedituser(self):
+    def updateuser(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -296,22 +296,22 @@ class api_user(object):
                 self.con =eng.connect()
                 userRole = getUserRole(authDetails["userid"])
                 dataset = self.request.json_body
-                print dataset
                 if userRole["gkresult"]["userrole"] == -1:
                     dataset["orgcode"] = authDetails["orgcode"]
                     #This is give userrole of old user  
                     originalrole = getUserRole(dataset["userid"])
-                    if int(userRole["gkresult"]["userrole"]==3):
+                    if int(originalrole["gkresult"]["userrole"]==3):
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
-                    #this is give userrole of new user
+                    #This is give userrole of new user
                     if dataset.has_key("userrole"):
                         if int(dataset["userrole"])== 3:
-                            golist = tuple(dataset.pop("golist"))
+                            golists = tuple(dataset.pop("golist"))
                             result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
-                            lastid = dataset["userid"]
-                            for goid in golist:
-                                godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
+                            currentid = dataset["userid"]
+                            for goid in golists:
+                                godata = {"userid":currentid,"goid":goid,"orgcode":dataset["orgcode"]}
                                 result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                            return {"gkstatus":enumdict["Success"]}
                         else:
                             result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
                             return {"gkstatus":enumdict["Success"]}
@@ -323,9 +323,9 @@ class api_user(object):
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+               return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
-                self.con.close()
+               self.con.close()
 
     @view_config(request_method='GET', renderer ='json')
     def getAllUsers(self):
