@@ -25,6 +25,7 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Mohd. Talha Pawaty" <mtalha456@gmail.com>
 "Prajkta Patkar" <prajakta@dff.org.in>
+"Nitesh Chaughule" <nitesh@disroot.org>
 
 """
 
