@@ -67,7 +67,7 @@ class api_transaction(object):
         self.request = Request
         self.request = request
         self.con = Connection
-    def __genVoucherNumber(self,voucherType,orgcode,con):
+    def __genVoucherNumber(self,con,voucherType,orgcode):
         """
         Purpose:
         Generates a new vouchernumber based on vouchertype and max count for that type.
