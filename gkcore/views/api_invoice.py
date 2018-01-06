@@ -176,6 +176,7 @@ class api_invoice(object):
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
                     dcinvdataset["orgcode"]=invdataset["orgcode"]
                     dcinvdataset["invid"]=invdataset["invid"]
+                    dcinvdataset["invprods"] = stockdataset["items"]
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
