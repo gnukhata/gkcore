@@ -112,17 +112,17 @@ class api_rejectionnote(object):
 		if authDetails["auth"] == False:
 			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
 		else:
-			#try:
+			try:
 				self.con = eng.connect()
 				result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.orgcode==authDetails["orgcode"]).order_by(rejectionnote.c.rnno))
 				rnotes = []
 				for row in result:
 					rnotes.append({"rnid":row["rnid"],"rnno":row["rnno"], "inout":row["inout"], "dcid":row["dcid"], "invid":row["invid"], "rndate":datetime.strftime(row["rndate"],'%d-%m-%Y')})
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":rnotes}
-			#except:
-			#	return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			#finally:
-			#	self.con.close()
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+				self.con.close()
 
 	@view_config(request_method='GET',request_param="type=single", renderer ='json')
 	def getRejectionNote(self):
