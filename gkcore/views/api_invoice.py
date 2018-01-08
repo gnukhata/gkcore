@@ -134,6 +134,12 @@ class api_invoice(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    '''
+    This is a function to update an invoice.
+    This function is primarily used to enable editing of invoices.
+    It receives a dictionary with information regarding an invoice, changes to be made in stock if any and delivery notes linked if any.
+    '''
     @view_config(request_method='PUT', renderer='json')
     def editInvoice(self):
         try:
@@ -146,48 +152,56 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
+                # Data is stored in a variable dtset.
                 dtset = self.request.json_body
+                # Empty dictionary to store details of delivery challan linked if any.
                 dcinvdataset={}
+                # Details of invoice and stock are stored in separate variables.
                 invdataset = dtset["invoice"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
-                result = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
+                # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
+                try:
+                    deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
+                except:
+                    pass
+                try:
+                    deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
+                except:
+                    pass
+                # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
                 if invdataset.has_key("dcid"):
-                    dcid = invdataset.pop("dcid")
-                    result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                    invdataset["dcid"] = dcid
-                    if result.rowcount == 1:
-                        dcinvdataset["dcid"]=invdataset["dcid"]
-                        dcinvdataset["orgcode"]=invdataset["orgcode"]
-                        dcinvdataset["invid"]=invdataset["invid"]
+                    dcinvdataset["dcid"]=invdataset.pop("dcid")
+                    dcinvdataset["orgcode"]=invdataset["orgcode"]
+                    dcinvdataset["invid"]=invdataset["invid"]
+                    dcinvdataset["invprods"] = stockdataset["items"]
+                    try:
+                        updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         return {"gkstatus":enumdict["Success"]}
-                    else:
+                    except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
                 else:
                     try:
-                        result = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+                        updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
                         stockdataset["stockdate"] = invoiceid["invoicedate"]
+                        stockdataset["dcinvtnflag"] = "9"
                         for item in items.keys():
                             stockdataset["productcode"] = item
                             stockdataset["qty"] = items[item].values()[0]
-                            stockdataset["dcinvtnflag"] = "9"
                             result = self.con.execute(stock.insert(),[stockdataset])
                         return {"gkstatus":enumdict["Success"]}
                     except:
-                        result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                        result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
-                result = self.con.execute(invoice.delete().where(invoice.c.invid==invdataset["invid"]))
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
@@ -298,10 +312,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     result =self.con.execute(select([dcinv.c.dcid]).where(dcinv.c.invid==invrow["invid"]))
                     dcid = result.fetchone()
                     if result.rowcount>0:
-                        dc = self.con.execute(select([delchal.c.dcno]).where(delchal.c.dcid==dcid["dcid"]))
+                        dc = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate]).where(delchal.c.dcid==dcid["dcid"]))
                         delchalData = dc.fetchone()                      
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
+                        inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
                         inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==dcid["dcid"], stock.c.dcinvtnflag==4)))
                         inOutData = inOut.fetchone()
                         if inOutData != None:
