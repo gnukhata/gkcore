@@ -24,6 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
+'Prajkta Patkar' <prajkta@riseup.net>
 """
 
 
@@ -85,13 +86,13 @@ class api_transaction(object):
             initialType = "sl"
         if voucherType == "purchase":
             initialType = "pu"
-        if voucherType == "credit Note":
+        if voucherType == "creditnote":
             initialType = "cn"
-        if voucherType == "debit Note":
+        if voucherType == "debitnote":
             initialType = "dn"
-        if voucherType == "sale Return":
+        if voucherType == "salereturn":
             initialType = "sr"
-        if voucherType == "purchase Return":
+        if voucherType == "purchasereturn":
             initialType = "pr"
 
         vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
