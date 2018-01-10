@@ -805,20 +805,25 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-         #   try:
+            try:
                 self.con = eng.connect()
                 invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
+                print allinv
                 allinvids = []
                 for invrow in allinv:
                     #keep an empty dictionary for rejectable products.
                     rejContents = {}
                     rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
                     rejectedNotes = rejectedResult.fetchall()
+                    print "Rejection Notes:-"
+                    print rejectedNotes
                     gscounter = 0
                     for c in invrow["contents"].keys():
+                        print c
                         qty = float(invrow["contents"][c].values()[0])
                         # for goods quantity will not be 0 anytime
+                        print qty
                         if qty > 0:
                             gscounter = gscounter + 1
                             # check whether this product is rejected before.
@@ -837,6 +842,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                                 rejContents[c] =  qty
                     if gscounter > 0:
+                        print rejContents
                         custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                         custData = custandsup.fetchone()
                         custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
@@ -873,12 +879,12 @@ The bills grid calld gkresult will return a list as it's value.
                 print allinvids        
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
-           # except exc.IntegrityError:
-           #     return {"gkstatus":enumdict["ActionDisallowed"]}
-           # except:
-           #     return {"gkstatus":enumdict["ConnectionFailed"] }
-           # finally:
-           #     self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param='type=nonrejectedinvprods', renderer='json')
     def nonRejectedInvProds(self):
