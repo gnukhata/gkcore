@@ -73,25 +73,25 @@ class api_transaction(object):
         Generates a new vouchernumber based on vouchertype and max count for that type.
         """
         initialType = ""
-        if voucherType == "Journal":
+        if voucherType == "journal":
             initialType = "jr"
-        if voucherType == "Contra":
+        if voucherType == "contra":
             initialType = "cr"
-        if voucherType == "Payment":
+        if voucherType == "payment":
             initialType = "pt"
-        if voucherType == "Receipt":
+        if voucherType == "receipt":
             initialType = "rt"
-        if voucherType == "Sales":
+        if voucherType == "sales":
             initialType = "sl"
-        if voucherType == "Purchase":
+        if voucherType == "purchase":
             initialType = "pu"
-        if voucherType == "Credit Note":
+        if voucherType == "credit Note":
             initialType = "cn"
-        if voucherType == "Debit Note":
+        if voucherType == "debit Note":
             initialType = "dn"
-        if voucherType == "Sale Return":
+        if voucherType == "sale Return":
             initialType = "sr"
-        if voucherType == "Purchase Return":
+        if voucherType == "purchase Return":
             initialType = "pr"
 
         vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
