@@ -67,11 +67,48 @@ class api_transaction(object):
         self.request = Request
         self.request = request
         self.con = Connection
+    def __genVoucherNumber(self,con,voucherType,orgcode):
+        """
+        Purpose:
+        Generates a new vouchernumber based on vouchertype and max count for that type.
+        """
+        initialType = ""
+        if voucherType == "journal":
+            initialType = "jr"
+        if voucherType == "contra":
+            initialType = "cr"
+        if voucherType == "payment":
+            initialType = "pt"
+        if voucherType == "receipt":
+            initialType = "rt"
+        if voucherType == "sales":
+            initialType = "sl"
+        if voucherType == "purchase":
+            initialType = "pu"
+        if voucherType == "credit Note":
+            initialType = "cn"
+        if voucherType == "debit Note":
+            initialType = "dn"
+        if voucherType == "sale Return":
+            initialType = "sr"
+        if voucherType == "purchase Return":
+            initialType = "pr"
 
+        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCount = vchCountResult.fetchone()
+        if vchCount["vcount"] == 0:
+            initialType = initialType + "1"
+        else:
+            vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
+            vchCode = vchCodeResult.fetchone()
+            initialType = initialType + str(vchCode["vcode"])
+        return initialType
 
+            
     @view_config(request_method='POST',renderer='json')
     def addVoucher(self):
         """
+
         Purpose:
         adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
         Description:
@@ -113,6 +150,12 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+                # generate voucher number if it is not sent.
+                if dataset.has_key("vouchernumber") == False:
+                    voucherType = dataset["vouchertype"]
+                    vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
+                    dataset["vouchernumber"] = vchNo
+                     
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
