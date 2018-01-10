@@ -1,4 +1,4 @@
-[9-January-2018 Release 4.50]
+[10-January-2018 Release 4.50]
 * Refinement in Transaction API
 * Function in Transaction API to auto generate Voucher No.
 * Function in Bill Wise API that returns all unpaid invoices.
