@@ -1,4 +1,6 @@
 [9-January-2018 Release 4.50]
+* Refinement in Transaction API
+* Function in Transaction API to auto generate Voucher No.
 * Function in Bill Wise API that returns all unpaid invoices.
 * Function in Bill Wise API that returns both unpaid and partially paid invoices.
 * Function in User API that returns list of users having same role and their role.
