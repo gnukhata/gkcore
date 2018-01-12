@@ -809,21 +809,21 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con = eng.connect()
                 invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
-                print allinv
+                #print allinv
                 allinvids = []
                 for invrow in allinv:
                     #keep an empty dictionary for rejectable products.
                     rejContents = {}
                     rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
                     rejectedNotes = rejectedResult.fetchall()
-                    print "Rejection Notes:-"
-                    print rejectedNotes
+                    #print "Rejection Notes:-"
+                    #print rejectedNotes
                     gscounter = 0
                     for c in invrow["contents"].keys():
-                        print c
+                        #print c
                         qty = float(invrow["contents"][c].values()[0])
                         # for goods quantity will not be 0 anytime
-                        print qty
+                        #print qty
                         if qty > 0:
                             gscounter = gscounter + 1
                             # check whether this product is rejected before.
@@ -842,7 +842,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                                 rejContents[c] =  qty
                     if gscounter > 0:
-                        print rejContents
+                        #print rejContents
                         custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                         custData = custandsup.fetchone()
                         custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
@@ -876,7 +876,7 @@ The bills grid calld gkresult will return a list as it's value.
                         allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
                         
 
-                print allinvids        
+                #print allinvids        
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
             except exc.IntegrityError:
@@ -905,22 +905,39 @@ The bills grid calld gkresult will return a list as it's value.
                 
                 temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 temp = temp.fetchall()
+                print "temp"
+                print temp
                 invprodresult.append(temp[0][0])
                 items = {}
                 for eachitem in invprodresult:
                     for prodc in eachitem:
-                        productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==int(prodc)))
+                        print "prodc"
+                        print prodc
+                        productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode==int(prodc)))
                         productdesc = productdata.fetchone()
-                        uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
-                        unitnamrrow = uomresult.fetchone()
-                        items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
-                allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
-                allrnidres = allrnidres.fetchall()
+                        print "productdesc"
+                        print productdesc
+                        print "gsflag"
+                        print productdesc["gsflag"]
+                        if productdesc["gsflag"] == 7:
+                            uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                            unitnamrrow = uomresult.fetchone()
+                            print "unitnamrrow"
+                            print unitnamrrow
+                            items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                            print "items"
+                            print items[int(prodc)]
+                            allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
+                            allrnidres = allrnidres.fetchall()
+                            print "allrnidres"
+                            print allrnidres
                 rnprodresult = []
                 #get stock respected to all rejection notes
                 for rnid in allrnidres:
                     temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
                     temp = temp.fetchall()
+                    print "temp2"
+                    print temp
                     rnprodresult.append(temp)
                 for row in rnprodresult:
                     try:
@@ -933,10 +950,14 @@ The bills grid calld gkresult will return a list as it's value.
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
                 temp = temp.fetchone()
+                print "temp3"
+                print temp
                 dcdetails = {}
-                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
+                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
                 custname = custdata.fetchone()
-                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"]}
+                print "custname"
+                print custname
+                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "gstin":custname["gstin"]}
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
