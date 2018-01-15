@@ -704,7 +704,7 @@ class api_transaction(object):
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-       #     try:
+            try:
                 self.con = eng.connect()
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
@@ -731,6 +731,6 @@ class api_transaction(object):
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
-        #    except:
-        #        self.con.close()
-        #        return {"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
