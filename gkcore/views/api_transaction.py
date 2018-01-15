@@ -721,8 +721,6 @@ class api_transaction(object):
                     rawCr = dict(voucher["crs"])
                     finalDR = {}
                     finalCR = {}
-                    tdr=0.00
-                    tcr=0.00
                     for Dac in rawDr.keys():
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Dac)))
                         account = accname.fetchone()
@@ -731,31 +729,6 @@ class api_transaction(object):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Cac)))
                         account = accname.fetchone()
                         finalCR[account["accountname"]]=rawDr[Cac]
-                        
-                    """
-                    if(len(rawDr)>1):
-                        drcount=account["accountname"]+" + "+str(len(rawDr)-1)
-
-                        for d in rawDr:
-
-                            tdr = tdr+float(rawDr[d])
-
-                        finalDR["%s"%(drcount)] = tdr
-                    else:
-                       finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
-                   
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
-                    account = accname.fetchone()
-
-                    if(len(rawCr)>1):
-                        crcount=account["accountname"]+" + "+str(len(rawCr)-1)
-
-                        for d in rawCr:
-
-                            tcr = tcr+float(rawCr[d])
-                        finalCR["%s"%(crcount)] = tcr
-                    else:
-                        finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]] """
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
