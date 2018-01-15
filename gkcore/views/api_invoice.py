@@ -896,41 +896,47 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
+                print "invid"
+                print invid
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 
                 temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
-                temp = temp.fetchall()
+                temp = temp.fetchone()
                 print "temp"
-                print temp
-                invprodresult.append(temp[0][0])
+                print temp["contents"]
+                invprodresult.append(temp["contents"])
+                qtyc =temp["contents"]
+                print qtyc
                 items = {}
-                for eachitem in invprodresult:
-                    for prodc in eachitem:
-                        print "prodc"
-                        print prodc
-                        productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode==int(prodc)))
-                        productdesc = productdata.fetchone()
-                        print "productdesc"
-                        print productdesc
-                        print "gsflag"
-                        print productdesc["gsflag"]
-                        if productdesc["gsflag"] == 7:
-                            uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
-                            unitnamrrow = uomresult.fetchone()
-                            print "unitnamrrow"
-                            print unitnamrrow
-                            items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
-                            print "items"
-                            print items[int(prodc)]
-                            allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
-                            allrnidres = allrnidres.fetchall()
-                            print "allrnidres"
-                            print allrnidres
+                print temp["contents"].keys()
+                for eachitem in qtyc.keys():
+                    print "eachitem"
+                    print eachitem
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
+                    productdesc = productdata.fetchone()
+                    if productdesc == None :
+                        continue
+                    print "productdesc"
+                    print productdesc
+                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    unitnamrrow = uomresult.fetchone()
+                    print "unitnamrrow"
+                    print unitnamrrow
+                    result = qtyc[eachitem].values()[0]
+                    print "result"
+                    print result
+                    items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                    print "items"
+                    print items[int(eachitem)]
+                    allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
+                    allrnidres = allrnidres.fetchall()
+                    print "allrnidres"
+                    print allrnidres
                 rnprodresult = []
                 #get stock respected to all rejection notes
                 for rnid in allrnidres:
@@ -942,7 +948,7 @@ The bills grid calld gkresult will return a list as it's value.
                 for row in rnprodresult:
                     try:
                         for prodc, qty in row:
-                            items[int(prodc)]["qty"] -= float(qty)
+                            items[int(eachitem)]["qty"] -= float(qty)
                     except:
                         pass
                 for productcode in items.keys():
@@ -971,10 +977,10 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            #except:
+             #   return {"gkstatus":enumdict["ConnectionFailed"]}
+            #finally:
+             #   self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
