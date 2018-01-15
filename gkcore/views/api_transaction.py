@@ -473,8 +473,6 @@ class api_transaction(object):
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
-                print fromDate
-                print toDate
                 vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
@@ -706,11 +704,10 @@ class api_transaction(object):
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+       #     try:
                 self.con = eng.connect()
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
-                print self.request.params["from"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
                 vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.vouchertype,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
@@ -725,15 +722,15 @@ class api_transaction(object):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Dac)))
                         account = accname.fetchone()
                         finalDR[account["accountname"]]=rawDr[Dac]
-                    for Cac in rawDr.keys():
+                    for Cac in rawCr.keys():
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Cac)))
                         account = accname.fetchone()
-                        finalCR[account["accountname"]]=rawDr[Cac]
+                        finalCR[account["accountname"]]=rawCr[Cac]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+        #    except:
+        #        self.con.close()
+        #        return {"gkstatus":enumdict["ConnectionFailed"]}
