@@ -905,15 +905,15 @@ The bills grid calld gkresult will return a list as it's value.
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 
-                temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
-                temp = temp.fetchone()
-                print "temp"
-                print temp["contents"]
-                invprodresult.append(temp["contents"])
-                qtyc =temp["contents"]
+                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+                invData = temp.fetchone()
+                print "invData"
+                print invData
+                invprodresult.append(invData["contents"])
+                qtyc =invData["contents"]
                 print qtyc
                 items = {}
-                print temp["contents"].keys()
+                print invData["contents"].keys()
                 for eachitem in qtyc.keys():
                     print "eachitem"
                     print eachitem
@@ -959,11 +959,41 @@ The bills grid calld gkresult will return a list as it's value.
                 print "temp3"
                 print temp
                 dcdetails = {}
-                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
+                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
                 print "custname"
                 print custname
-                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "gstin":custname["gstin"]}
+                custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
+                print custsupstatecodedata
+                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "gstin":custname["gstin"],"custsupstatecodedata":custsupstatecodedata}
+                print "dcdetails"
+                print dcdetails
+                if int(invData["taxflag"]) == 22:
+                    if custname["custtan"] != None:
+                        dcdetails["custtin"] = custname["custtan"]
+                        dcdetails["custstate"] = custname["state"]
+                    else:
+                        if invData["sourcestate"] != None:
+                            sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
+                            dcdetails["custstate"] = invData["sourcestate"]
+                        if invData["taxstate"] != None:
+                            taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
+                            dcdetails["custstate"] = invData["taxstate"]
+                        if custname["gstin"] != None:
+                            if int(custname["csflag"]) == 3 :
+                                try:
+                                    dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
+                                        
+                                except:
+                                    dcdetails["custgstin"] = None
+                                    dcdetails["custstate"] = None
+                            else:
+                                try:
+                                    dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
+                                        
+                                except:
+                                    dcdetails["custgstin"] = None
+                                    dcdetails["custstate"] = None
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
