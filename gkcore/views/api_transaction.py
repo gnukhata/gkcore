@@ -728,7 +728,7 @@ class api_transaction(object):
                         finalCR[account["accountname"]]=rawCr[Cac]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
-                    voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
+                    voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"voucherno":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%Y-%m-%d"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
             except:
