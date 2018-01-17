@@ -905,7 +905,7 @@ The bills grid calld gkresult will return a list as it's value.
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 
-                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.tax,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
                 print "invData"
                 print invData
@@ -933,6 +933,11 @@ The bills grid calld gkresult will return a list as it's value.
                     items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
                     print "items"
                     print items[int(eachitem)]
+                    """taxRate = 0.00
+                    if int(invData["taxflag"]) == 22:
+                        taxRate =  float(invrow["tax"][eachitem])
+                        taxname = 'VAT'
+                    """
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
                     print "allrnidres"
