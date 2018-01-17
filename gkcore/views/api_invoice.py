@@ -959,41 +959,42 @@ The bills grid calld gkresult will return a list as it's value.
                 print "temp3"
                 print temp
                 dcdetails = {}
-                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.custaddr, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
+                custdata = self.con.execute(select([customerandsupplier]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
                 print "custname"
                 print custname
                 custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
                 print custsupstatecodedata
-                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "gstin":custname["gstin"],"custsupstatecodedata":custsupstatecodedata}
+                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"],"custsupstatecodedata":custsupstatecodedata,"taxflag":invData["taxflag"]}
                 print "dcdetails"
                 print dcdetails
                 if int(invData["taxflag"]) == 22:
                     if custname["custtan"] != None:
                         dcdetails["custtin"] = custname["custtan"]
                         dcdetails["custstate"] = custname["state"]
-                    else:
-                        if invData["sourcestate"] != None:
-                            sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
-                            dcdetails["custstate"] = invData["sourcestate"]
-                        if invData["taxstate"] != None:
-                            taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
-                            dcdetails["custstate"] = invData["taxstate"]
-                        if custname["gstin"] != None:
-                            if int(custname["csflag"]) == 3 :
-                                try:
-                                    dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
-                                        
-                                except:
-                                    dcdetails["custgstin"] = None
-                                    dcdetails["custstate"] = None
-                            else:
-                                try:
-                                    dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
-                                        
-                                except:
-                                    dcdetails["custgstin"] = None
-                                    dcdetails["custstate"] = None
+                else:
+                    if invData["sourcestate"] != None:
+                        sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
+                        dcdetails["custstate"] = invData["sourcestate"]
+                    if invData["taxstate"] != None:
+                        taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
+                        dcdetails["custstate"] = invData["taxstate"]
+                    if custname["gstin"] != None:
+                        if int(custname["csflag"]) == 3 :
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None
+                                dcdetails["custstate"] = None
+                        else:
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None
+                                dcdetails["custstate"] = None
+                    print dcdetails
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
@@ -1005,7 +1006,7 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["goid"] = stockdata[0]
                     dcdetails["goname"] = goname["goname"]
                     dcdetails["gostate"] = goname["state"]
-                    dcdetails["goaddr"] = goname["goaddr"]
+                    dcdetails["goaddr"] = goname["goaddr"]    
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
             #except:
              #   return {"gkstatus":enumdict["ConnectionFailed"]}
