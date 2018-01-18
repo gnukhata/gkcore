@@ -905,7 +905,7 @@ The bills grid calld gkresult will return a list as it's value.
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 
-                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.tax,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.tax,invoice.c.cess,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
                 print "invData"
                 print invData
@@ -930,14 +930,26 @@ The bills grid calld gkresult will return a list as it's value.
                     result = qtyc[eachitem].values()[0]
                     print "result"
                     print result
-                    items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                    taxRate = 0.00
+                    if int(invData["taxflag"]) == 22:
+                        taxRate =  float(invData["tax"][eachitem])
+                        taxname = 'VAT'
+                        items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":"VAT","taxrate":"%.2f"% (float(taxRate))}
+                    else:
+                        cessRate = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if invData["cess"] != None:
+                            cessVal = float(invData["cess"][eachitem])
+
+                        if invData["sourcestate"] != invData["taxstate"]:
+                            taxname = "IGST"
+                        else:
+                            taxname = "SGST"
+                            taxRate = (taxRate/2)
+                        items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
                     print "items"
                     print items[int(eachitem)]
-                    """taxRate = 0.00
-                    if int(invData["taxflag"]) == 22:
-                        taxRate =  float(invrow["tax"][eachitem])
-                        taxname = 'VAT'
-                    """
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
                     print "allrnidres"
