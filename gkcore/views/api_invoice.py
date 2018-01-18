@@ -931,9 +931,9 @@ The bills grid calld gkresult will return a list as it's value.
                     print "result"
                     print result
                     taxRate = 0.00
+                    taxRate =  float(invData["tax"][eachitem])
                     if int(invData["taxflag"]) == 22:
-                        taxRate =  float(invData["tax"][eachitem])
-                        taxname = 'VAT'
+                        taxname = "VAT"
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":"VAT","taxrate":"%.2f"% (float(taxRate))}
                     else:
                         cessRate = 0.00
@@ -947,6 +947,7 @@ The bills grid calld gkresult will return a list as it's value.
                         else:
                             taxname = "SGST"
                             taxRate = (taxRate/2)
+                        print "Tax Rate: %s"%str(taxRate)
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
                     print "items"
                     print items[int(eachitem)]
@@ -1023,7 +1024,7 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["goid"] = stockdata[0]
                     dcdetails["goname"] = goname["goname"]
                     dcdetails["gostate"] = goname["state"]
-                    dcdetails["goaddr"] = goname["goaddr"]    
+                    dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
             #except:
              #   return {"gkstatus":enumdict["ConnectionFailed"]}
