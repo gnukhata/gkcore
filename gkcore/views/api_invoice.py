@@ -809,7 +809,6 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con = eng.connect()
                 invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
-                #print allinv
                 allinvids = []
                 for invrow in allinv:
                     #keep an empty dictionary for rejectable products.
@@ -900,36 +899,22 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
-                print "invid"
-                print invid
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 
                 temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.tax,invoice.c.cess,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
-                print "invData"
-                print invData
                 invprodresult.append(invData["contents"])
                 qtyc =invData["contents"]
-                print qtyc
                 items = {}
-                print invData["contents"].keys()
                 for eachitem in qtyc.keys():
-                    print "eachitem"
-                    print eachitem
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     if productdesc == None :
                         continue
-                    print "productdesc"
-                    print productdesc
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
-                    print "unitnamrrow"
-                    print unitnamrrow
                     result = qtyc[eachitem].values()[0]
-                    print "result"
-                    print result
                     taxRate = 0.00
                     taxRate =  float(invData["tax"][eachitem])
                     if int(invData["taxflag"]) == 22:
@@ -947,21 +932,14 @@ The bills grid calld gkresult will return a list as it's value.
                         else:
                             taxname = "SGST"
                             taxRate = (taxRate/2)
-                        print "Tax Rate: %s"%str(taxRate)
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
-                    print "items"
-                    print items[int(eachitem)]
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
-                    print "allrnidres"
-                    print allrnidres
                 rnprodresult = []
                 #get stock respected to all rejection notes
                 for rnid in allrnidres:
                     temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
                     temp = temp.fetchall()
-                    print "temp2"
-                    print temp
                     rnprodresult.append(temp)
                 for row in rnprodresult:
                     try:
@@ -974,18 +952,11 @@ The bills grid calld gkresult will return a list as it's value.
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
                 temp = temp.fetchone()
-                print "temp3"
-                print temp
                 dcdetails = {}
                 custdata = self.con.execute(select([customerandsupplier]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
-                print "custname"
-                print custname
                 custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
-                print custsupstatecodedata
                 dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"],"custsupstatecodedata":custsupstatecodedata,"taxflag":invData["taxflag"]}
-                print "dcdetails"
-                print dcdetails
                 if int(invData["taxflag"]) == 22:
                     if custname["custtan"] != None:
                         dcdetails["custtin"] = custname["custtan"]
@@ -1012,7 +983,6 @@ The bills grid calld gkresult will return a list as it's value.
                             except:
                                 dcdetails["custgstin"] = None
                                 dcdetails["custstate"] = None
-                    print dcdetails
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
