@@ -44,6 +44,7 @@ from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields
+from gkcore.views.api_invoice import getStateCode 
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -471,6 +472,52 @@ class api_organisation(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", renderer="json", request_param="billingdetails")
+    def getbillingdetails(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                #gkdb.organisation.c.orgstate==self.request.params["statecode"]
+                row = result.fetchone()
+                if(row["orgaddr"]==None):
+                    orgaddr=""
+                else:
+                    orgaddr=row["orgaddr"]
+                if(row["orgpincode"]==None):
+                    orgpincode=""
+                else:
+                    orgpincode=row["orgpincode"]
+                if(row["orgstate"]==None):
+                    orgstate=""
+                else:
+                    orgstate = row["orgstate"]
+                    orgstatecode = getStateCode(orgstate,self.con)["statecode"]
+                if(row["orgwebsite"]==None):
+                    orgwebsite=""
+                else:
+                    orgwebsite=row["orgwebsite"]
+                if(row["orgpan"]==None):
+                    orgpan=""
+                else:
+                    orgpan=row["orgpan"]
+                if(row["gstin"]==None):
+                    gstin=""
+                else:
+                    gstin = row["gstin"][str(orgstatecode)]
+
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "gstin":gstin}
+                
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+        
     @view_config(request_method="GET",renderer="json",request_param="osg=true")
     def getOrgStateGstin(self):
         token = self.request.headers['gktoken']
