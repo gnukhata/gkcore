@@ -990,15 +990,19 @@ The bills grid calld gkresult will return a list as it's value.
                             #Fetching GSFlag of product.
                             psdetails = self.con.execute(select([product.c.gsflag]).where(product.c.productcode == productservice))
                             gsflag = psdetails.fetchone()["gsflag"]
+                            #Fetching discount and price for each product.
+                            #Taxabe amount is also found out considering whether the item is a product/service
                             for productprice in row["contents"][productservice].iterkeys():
                                 ppu = productprice
                                 if row["discount"].has_key(productservice):
                                     discount = float(row["discount"][productservice])
                                 qty = float(row["contents"][productservice][productprice])
+                                #Calculating taxable amount(variable taxablevalue)
                                 if int(gsflag) == 7:
                                     taxablevalue = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty))) - float("%.2f"%float(discount))
                                 else:
                                     taxablevalue = float("%.2f"%float(ppu)) - float("%.2f"%float(discount))
+                                #Calculating tax amount.
                                 taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100)))
                         except:
                             pass
