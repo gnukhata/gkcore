@@ -983,17 +983,23 @@ The bills grid calld gkresult will return a list as it's value.
                         i += 1
                     taxamt = 0.00
                     #calculate tax amount of an invoice.
-                    for product in row["contents"].iterkeys():
+                    for productservice in row["contents"].iterkeys():
                         try:
-                            taxrate = "%.2f"%float(row["tax"][product])
+                            taxrate = "%.2f"%float(row["tax"][productservice])
                             discount =0.00
-                            for productprice in row["contents"][product].iterkeys():
+                            #Fetching GSFlag of product.
+                            psdetails = self.con.execute(select([product.c.gsflag]).where(product.c.productcode == productservice))
+                            gsflag = psdetails.fetchone()["gsflag"]
+                            for productprice in row["contents"][productservice].iterkeys():
                                 ppu = productprice
-                                if row["discount"].has_key(product):
-                                    discount = float(row["discount"][product])
-                                    ppu = float(ppu) - discount
-                                qty = float(row["contents"][product][productprice])
-                                taxamt = taxamt + float("%.2f"%((float("%.2f"%float(ppu)) * float("%.2f"%float(qty)) * float(taxrate))/float(100)))
+                                if row["discount"].has_key(productservice):
+                                    discount = float(row["discount"][productservice])
+                                qty = float(row["contents"][productservice][productprice])
+                                if int(gsflag) == 7:
+                                    taxablevalue = (float("%.2f"%float(ppu)) * float("%.2f"%float(qty))) - float("%.2f"%float(discount))
+                                else:
+                                    taxablevalue = float("%.2f"%float(ppu)) - float("%.2f"%float(discount))
+                                taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100)))
                         except:
                             pass
                     netamt = float(row["invoicetotal"]) - taxamt
