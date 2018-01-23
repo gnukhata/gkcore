@@ -102,6 +102,7 @@ organisation = Table( 'organisation' , metadata,
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
     Column('gstin',JSONB),
+    Column('bankdetails',JSON),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")

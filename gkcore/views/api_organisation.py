@@ -62,6 +62,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select(gkdb.organisation.c.bankdetails))
             self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
             self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
@@ -86,6 +87,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table organisation add bankdetails json")
             self.con.execute("alter table delchal add consignee jsonb")
             self.con.execute("alter table invoice add orgstategstin text")
             self.con.execute("alter table invoice add cess jsonb")
@@ -473,6 +475,10 @@ class api_organisation(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
+        """
+        This function returns Organisation Details for Invoicing.
+        'statecode' receiving from frontend view and orgnisation details sent to the frontend.   
+        """
     @view_config(request_method="GET", renderer="json", request_param="billingdetails")
     def getbillingdetails(self):
         token = self.request.headers['gktoken']
@@ -509,15 +515,27 @@ class api_organisation(object):
                     orgpan=""
                 else:
                     orgpan=row["orgpan"]
+                if(row["orgtelno"]==None):
+                    orgtelno=""
+                else:
+                    orgtelno=row["orgtelno"]
+                if(row["orgemail"]==None):
+                    orgemail=""
+                else:
+                    orgemail=row["orgemail"]
                 if(row["gstin"]==None):
                     gstin=""
                 elif(row["gstin"].has_key(str(statecode))):
                     gstin = row["gstin"][str(statecode)]
                 else:
                     gstin=""
+                if(row["bankdetails"]==None):
+                    bankdetails = ""
+                else:
+                    bankdetails = row["bankdetails"]
 
-                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity}
-                
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
+                print orgDetails
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
