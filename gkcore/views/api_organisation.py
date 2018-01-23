@@ -482,9 +482,13 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
+                statecode =self.request.params["statecode"]
                 result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
-                #gkdb.organisation.c.orgstate==self.request.params["statecode"]
                 row = result.fetchone()
+                if(row["orgcity"]==None):
+                    orgcity=""
+                else:
+                    orgcity=row["orgcity"]
                 if(row["orgaddr"]==None):
                     orgaddr=""
                 else:
@@ -497,7 +501,6 @@ class api_organisation(object):
                     orgstate=""
                 else:
                     orgstate = row["orgstate"]
-                    orgstatecode = getStateCode(orgstate,self.con)["statecode"]
                 if(row["orgwebsite"]==None):
                     orgwebsite=""
                 else:
@@ -508,10 +511,12 @@ class api_organisation(object):
                     orgpan=row["orgpan"]
                 if(row["gstin"]==None):
                     gstin=""
+                elif(row["gstin"].has_key(str(statecode))):
+                    gstin = row["gstin"][str(statecode)]
                 else:
-                    gstin = row["gstin"][str(orgstatecode)]
+                    gstin=""
 
-                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "gstin":gstin}
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
