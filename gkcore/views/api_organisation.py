@@ -477,7 +477,7 @@ class api_organisation(object):
 
         """
         This function returns Organisation Details for Invoicing.
-        'statecode' receiving from frontend view and orgnisation details sent to the frontend.   
+        'statecode' receiving from frontend view & depending on statecode gstin will get.
         """
     @view_config(request_method="GET", renderer="json", request_param="billingdetails")
     def getbillingdetails(self):
@@ -535,7 +535,6 @@ class api_organisation(object):
                     bankdetails = row["bankdetails"]
 
                 orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
-                print orgDetails
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
