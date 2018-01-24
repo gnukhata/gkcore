@@ -297,7 +297,8 @@ Bankdetails is a dictionary will have bankname,accountno., branchname and ifscco
 taxstate is a destination sate.
 sourcestate is source state from where invoice is initiated.
 Structure of a tax field is {productcode:taxrate}
-save orgstategstin of sourcestate for organisation. 
+save orgstategstin of sourcestate for organisation.
+paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'. 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -328,6 +329,7 @@ invoice = Table('invoice',metadata,
     Column('vehicleno',UnicodeText),
     Column('dateofsupply',DateTime),
     Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
