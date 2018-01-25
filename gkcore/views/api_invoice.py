@@ -942,7 +942,7 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 #fetch all invoices
-                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal, invoice.c.contents, invoice.c.tax, invoice.c.freeqty, invoice.c.taxflag, invoice.c.taxstate, invoice.c.sourcestate, invoice.c.discount]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
@@ -986,6 +986,9 @@ The bills grid calld gkresult will return a list as it's value.
                     for productservice in row["contents"].iterkeys():
                         try:
                             taxrate = "%.2f"%float(row["tax"][productservice])
+                            cessrate = 0.00
+                            if row["cess"].has_key(productservice):
+                                cessrate = "%.2f"%float(row["cess"][productservice])
                             discount =0.00
                             #Fetching GSFlag of product.
                             psdetails = self.con.execute(select([product.c.gsflag]).where(product.c.productcode == productservice))
@@ -1003,7 +1006,7 @@ The bills grid calld gkresult will return a list as it's value.
                                 else:
                                     taxablevalue = float("%.2f"%float(ppu)) - float("%.2f"%float(discount))
                                 #Calculating tax amount.
-                                taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100)))
+                                taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100))) + float("%.2f"%((taxablevalue * float(cessrate))/float(100)))
                         except:
                             pass
                     netamt = float(row["invoicetotal"]) - taxamt
