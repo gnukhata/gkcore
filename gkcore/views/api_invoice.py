@@ -268,6 +268,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         Depending on the invoice type it will return the details on customer or supplier.
         It also calculates total amount, taxable amount with all the taxes.
         The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc.
+        if address equal to none then send null value otherwise respected address.
         Note: the details such as state code, place of supplyer etc depends on the tax type.
         The above mentioned and some more fields are only returned if the tax is GST.
     """
@@ -288,6 +289,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                     sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                if invrow["address"] == None:
+                    inv["address"]= ""
+                else:
+                    inv["address"]=invrow["address"]
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
                     inv["designation"]=invrow["designation"]

@@ -59,6 +59,7 @@ signature = Table('signature', metadata,
     Column('secretcode',UnicodeText, primary_key=True))
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
+bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
@@ -197,6 +198,7 @@ Also when we purchase the same.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
 gstin to store unique code of cust/supp for gst for every state (json)
+Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
