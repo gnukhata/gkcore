@@ -44,6 +44,7 @@ from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields
+from gkcore.views.api_invoice import getStateCode 
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -61,6 +62,10 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select(gkdb.invoice.c.address))
+            self.con.execute(select(gkdb.customerandsupplier.c.bankdetails))
+            self.con.execute(select(gkdb.invoice.c.paymentmode))
+            self.con.execute(select(gkdb.organisation.c.bankdetails))
             self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
             self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
@@ -85,6 +90,10 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add address text")
+            self.con.execute("alter table customerandsupplier add bankdetails jsonb")
+            self.con.execute("alter table invoice add paymentmode integer")
+            self.con.execute("alter table organisation add bankdetails json")
             self.con.execute("alter table delchal add consignee jsonb")
             self.con.execute("alter table invoice add orgstategstin text")
             self.con.execute("alter table invoice add cess jsonb")
@@ -471,6 +480,72 @@ class api_organisation(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+
+        """
+        This function returns Organisation Details for Invoicing.
+        'statecode' receiving from frontend view & depending on statecode gstin will get.
+        """
+    @view_config(request_method="GET", renderer="json", request_param="billingdetails")
+    def getbillingdetails(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                statecode =self.request.params["statecode"]
+                result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                row = result.fetchone()
+                if(row["orgcity"]==None):
+                    orgcity=""
+                else:
+                    orgcity=row["orgcity"]
+                if(row["orgaddr"]==None):
+                    orgaddr=""
+                else:
+                    orgaddr=row["orgaddr"]
+                if(row["orgpincode"]==None):
+                    orgpincode=""
+                else:
+                    orgpincode=row["orgpincode"]
+                if(row["orgstate"]==None):
+                    orgstate=""
+                else:
+                    orgstate = row["orgstate"]
+                if(row["orgwebsite"]==None):
+                    orgwebsite=""
+                else:
+                    orgwebsite=row["orgwebsite"]
+                if(row["orgpan"]==None):
+                    orgpan=""
+                else:
+                    orgpan=row["orgpan"]
+                if(row["orgtelno"]==None):
+                    orgtelno=""
+                else:
+                    orgtelno=row["orgtelno"]
+                if(row["orgemail"]==None):
+                    orgemail=""
+                else:
+                    orgemail=row["orgemail"]
+                if(row["gstin"]==None):
+                    gstin=""
+                elif(row["gstin"].has_key(str(statecode))):
+                    gstin = row["gstin"][str(statecode)]
+                else:
+                    gstin=""
+                if(row["bankdetails"]==None):
+                    bankdetails = ""
+                else:
+                    bankdetails = row["bankdetails"]
+
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+        
     @view_config(request_method="GET",renderer="json",request_param="osg=true")
     def getOrgStateGstin(self):
         token = self.request.headers['gktoken']

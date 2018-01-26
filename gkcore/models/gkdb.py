@@ -59,6 +59,7 @@ signature = Table('signature', metadata,
     Column('secretcode',UnicodeText, primary_key=True))
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
+bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
@@ -102,6 +103,7 @@ organisation = Table( 'organisation' , metadata,
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
     Column('gstin',JSONB),
+    Column('bankdetails',JSON),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")
@@ -196,6 +198,7 @@ Also when we purchase the same.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
 gstin to store unique code of cust/supp for gst for every state (json)
+Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
@@ -210,6 +213,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
     Column('custdoc',JSONB),
     Column('state', UnicodeText),
     Column('csflag',Integer,nullable=False),
+    Column('bankdetails',JSONB),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','custname'),
     UniqueConstraint('orgcode','custname','custemail','csflag'),
@@ -296,7 +300,8 @@ Bankdetails is a dictionary will have bankname,accountno., branchname and ifscco
 taxstate is a destination sate.
 sourcestate is source state from where invoice is initiated.
 Structure of a tax field is {productcode:taxrate}
-save orgstategstin of sourcestate for organisation. 
+save orgstategstin of sourcestate for organisation.
+paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'. 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -327,6 +332,8 @@ invoice = Table('invoice',metadata,
     Column('vehicleno',UnicodeText),
     Column('dateofsupply',DateTime),
     Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
+    Column('address',UnicodeText),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
