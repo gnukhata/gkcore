@@ -487,17 +487,35 @@ class api_product(object):
         else:
             try:
                 self.con=eng.connect()
-                results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid, gkdb.product.c.gscode]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
                 products = []
                 for row in results:
-                    unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
-                    unitofmeasurement = unitsofmeasurement.fetchone()
-                    if unitofmeasurement != None:
-                        unitname = unitofmeasurement["unitname"]
-                    else:
-                        unitname = ""
-                    products.append({"unitname":unitname, "productcode": row["productcode"], "productdesc":row["productdesc"],"gsflag":row["gsflag"], "hsncode":row["gscode"]})
+                    products.append({"productcode": row["productcode"], "productdesc":row["productdesc"]})
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    @view_config(request_method='GET', request_param='type=hsnuom', renderer ='json')
+    def gethsnuom(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con=eng.connect()
+                product = self.con.execute(select([gkdb.unitofmeasurement.c.uomid,gkdb.product.c.gscode]).where(and_(gkdb.product.c.productcode==self.request.params["productcode"],gkdb.product.c.orgcode==authDetails["orgcode"])))
+                productdetails = product.fetchone()
+                uom = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==productdetails["uomid"]))
+                unitname = uom.fetchone()
+                productDetails={"unitname": unitname["unitname"],"gscode":productdetails["gscode"]}
+                return {"gkstatus":enumdict["Success"], "gkresult":productDetails}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
