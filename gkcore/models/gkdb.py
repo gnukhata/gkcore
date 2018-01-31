@@ -334,6 +334,7 @@ invoice = Table('invoice',metadata,
     Column('discount',JSONB),
     Column('paymentmode',Integer,default=2),
     Column('address',UnicodeText),
+    Column('inoutflag',Integer),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")

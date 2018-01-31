@@ -90,6 +90,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add inoutflag integer")
             self.con.execute("alter table invoice add address text")
             self.con.execute("alter table customerandsupplier add bankdetails jsonb")
             self.con.execute("alter table invoice add paymentmode integer")
