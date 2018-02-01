@@ -116,7 +116,11 @@ class api_customer(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
+                custcode = dataset["custid"]
+                if dataset.has_key('bankdetails'):
+                    result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
+                else :
+                    self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custcode))
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
