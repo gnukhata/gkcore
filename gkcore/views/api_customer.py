@@ -100,8 +100,6 @@ class api_customer(object):
             finally:
                 self.con.close()
 
-
-
     @view_config(request_method='PUT', renderer='json')
     def editCustomerSupplier(self):
         try:
@@ -120,6 +118,9 @@ class api_customer(object):
                 if dataset.has_key('bankdetails'):
                     result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
                 else :
+                    """
+                    if bankdetails are null it sends null values to the bankdetails.
+"""
                     self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custcode))
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
