@@ -1,4 +1,5 @@
 
+
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -521,3 +522,30 @@ class api_product(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+
+    @view_config(request_method='POST', request_param='type=addstock', renderer='json')
+    def addstock(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+             try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                orgcode=authDetails["orgcode"]
+                goid=dataset["goid"]
+                productDetails=dataset["productdetails"]
+                for product in productDetails:
+                    details={"goid":goid,"goopeningstock":productDetails[product],"productcode":product,"orgcode":orgcode}
+                    result=self.con.execute(gkdb.goprod.insert(),[details])
+                return {"gkstatus":enumdict["Success"]}
+             except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+             finally:
+                self.con.close()
+
