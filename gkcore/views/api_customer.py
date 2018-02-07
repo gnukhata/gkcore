@@ -115,12 +115,9 @@ class api_customer(object):
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
-                if dataset.has_key('bankdetails'):
-                    result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
-                else :
-                    """
-                    if bankdetails are null it sends null values to the bankdetails.
-"""
+                result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid==dataset["custid"]).values(dataset))
+                if 'bankdetails' not in dataset:
+                    #if bankdetails are null it sends null values to the bankdetails.
                     self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custcode))
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
