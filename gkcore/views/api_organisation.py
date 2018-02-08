@@ -569,12 +569,13 @@ class api_organisation(object):
                 return{"gkstatus":enumdict["Success"],"gkresult":gstinval}
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
-                
+    #code for saving null values of bankdetails and updation in database
+    #variable created for orgcode so that query will work easily
     @view_config(request_method='PUT', renderer='json')
     def putOrg(self):
         token = self.request.headers['gktoken']
         authDetails = authCheck(token)
-        orgcode=authDetails['orgcode']
+        orgcode=authDetails['orgcode'] 
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
