@@ -91,6 +91,18 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
             self.con.execute("alter table invoice add inoutflag integer")
+            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid]).where(and_(gkdb.invoice.c.inoutflag == None)))
+            dict = allinvoice.fetchall()
+            for singleinv in dict:
+                sincustid = singleinv["custid"]
+                invid1=singleinv["invid"]
+                cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(and_(gkdb.customerandsupplier.c.custid == sincustid)))
+                csflagsingle = cussupdata.fetchone()
+                for cussup in csflagsingle:
+                    if cussup==19:
+                        self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid1))
+                    else:
+                        self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid1))
             self.con.execute("alter table invoice add address text")
             self.con.execute("alter table customerandsupplier add bankdetails jsonb")
             self.con.execute("alter table invoice add paymentmode integer")

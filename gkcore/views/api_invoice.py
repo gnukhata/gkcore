@@ -268,7 +268,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         Depending on the invoice type it will return the details on customer or supplier.
         It also calculates total amount, taxable amount with all the taxes.
         The function returns a nested dictionary with dicts for products with their costing details, free quantyty etc.
-        if address equal to none then send null value otherwise respected address.
+        If address equal to none then send null value otherwise respected address.
+        "inoutflag" gives invoice is in or out (i.e Purchase or Sale) for sales invoice "inoutflag"=15 and for Purchase invoice "inoutflag"=9.
         Note: the details such as state code, place of supplyer etc depends on the tax type.
         The above mentioned and some more fields are only returned if the tax is GST.
     """
@@ -306,11 +307,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["vehicleno"] = invrow["vehicleno"]
                     inv["reversecharge"] = invrow["reversecharge"]
                     inv["inoutflag"] = invrow["inoutflag"]
-                    #inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==self.request.params["invid"], stock.c.dcinvtnflag==9)))
-                    #inOutData = inOut.fetchone()
-                    #if inOutData != None:
-                    #    inv["inoutflag"] = int(inOutData["inout"])
-                        
                     if invrow["taxstate"] != None:
                         inv["destinationstate"]=invrow["taxstate"]
                         taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
@@ -324,10 +320,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
-                        inOut = self.con.execute(select([stock.c.inout]).where(and_(stock.c.dcinvtnid==dcid["dcid"], stock.c.dcinvtnflag==4)))
-                        inOutData = inOut.fetchone()
-                        if inOutData != None:
-                            inv["inoutflag"] = int(inOutData["inout"])
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]

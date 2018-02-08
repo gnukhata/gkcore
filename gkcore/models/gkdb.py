@@ -301,7 +301,8 @@ taxstate is a destination sate.
 sourcestate is source state from where invoice is initiated.
 Structure of a tax field is {productcode:taxrate}
 save orgstategstin of sourcestate for organisation.
-paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'. 
+paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'.
+inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
