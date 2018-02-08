@@ -62,10 +62,10 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
-            self.con.execute(select(gkdb.invoice.c.address))
-            self.con.execute(select(gkdb.customerandsupplier.c.bankdetails))
-            self.con.execute(select(gkdb.invoice.c.paymentmode))
-            self.con.execute(select(gkdb.organisation.c.bankdetails))
+            self.con.execute(select([func.count(gkdb.invoice.c.address)]))
+            self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.bankdetails)]))
             self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
             self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
