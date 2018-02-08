@@ -93,6 +93,20 @@ class api_organisation(object):
             self.con.execute("alter table invoice add address text")
             self.con.execute("alter table customerandsupplier add bankdetails jsonb")
             self.con.execute("alter table invoice add paymentmode integer")
+            #Code for assinging paymentmode where paymentmode is blank and bank details are present.
+            bankresult = self.con.execute(select([gkdb.invoice.c.invid,gkdb.invoice.c.bankdetails]).where(gkdb.invoice.c.paymentmode == None))
+            #Fetching invid,bankdetails using fetchall() method in list.for loop is used to fetch each record in bankresult.
+            dict = bankresult.fetchall()
+            for invdata in dict:
+                #Storing account number,ifsc number,invoice id in invaccno,invifsc,invoid respectively
+                invaccno = invdata["bankdetails"]["accountno"]
+                invifsc = invdata["bankdetails"]["ifsc"] 
+                invoid = invdata["invid"]
+                #Checking for bankdetails,if accountno and ifsc are present then set paymentmode=2 else set paymentmode=3. 
+                if (invaccno == "" or invifsc == ""):
+                    self.con.execute("update invoice set paymentmode=3 where invid = %d"%int(invoid))
+                else:
+                    self.con.execute("update invoice set paymentmode=2 where invid = %d"%int(invoid))
             self.con.execute("alter table organisation add bankdetails json")
             self.con.execute("alter table delchal add consignee jsonb")
             self.con.execute("alter table invoice add orgstategstin text")
