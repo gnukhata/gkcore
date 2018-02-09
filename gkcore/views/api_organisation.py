@@ -62,6 +62,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.address)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
             self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
@@ -91,12 +92,12 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
             self.con.execute("alter table invoice add inoutflag integer")
-            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid]).where(and_(gkdb.invoice.c.inoutflag == None)))
+            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid]).where(gkdb.invoice.c.inoutflag == None))
             dict = allinvoice.fetchall()
             for singleinv in dict:
                 sincustid = singleinv["custid"]
                 invid1=singleinv["invid"]
-                cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(and_(gkdb.customerandsupplier.c.custid == sincustid)))
+                cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
                 csflagsingle = cussupdata.fetchone()
                 for cussup in csflagsingle:
                     if cussup==19:
