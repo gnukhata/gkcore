@@ -62,10 +62,10 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
-            self.con.execute(select(gkdb.invoice.c.address))
-            self.con.execute(select(gkdb.customerandsupplier.c.bankdetails))
-            self.con.execute(select(gkdb.invoice.c.paymentmode))
-            self.con.execute(select(gkdb.organisation.c.bankdetails))
+            self.con.execute(select([func.count(gkdb.invoice.c.address)]))
+            self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.bankdetails)]))
             self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
             self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
@@ -474,7 +474,13 @@ class api_organisation(object):
                 if(row["gstin"]==None):
                     gstin=""
 
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"]}
+                if(row["bankdetails"]==None):
+                   bankdetails=""
+                else:
+                    bankdetails=row["bankdetails"]
+                 
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"]}
+                
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
@@ -563,11 +569,13 @@ class api_organisation(object):
                 return{"gkstatus":enumdict["Success"],"gkresult":gstinval}
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
-                
+    #code for saving null values of bankdetails and updation in database
+    #variable created for orgcode so that query will work easily
     @view_config(request_method='PUT', renderer='json')
     def putOrg(self):
         token = self.request.headers['gktoken']
         authDetails = authCheck(token)
+        orgcode=authDetails['orgcode'] 
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
@@ -578,6 +586,8 @@ class api_organisation(object):
                 dataset = self.request.json_body
                 if userRole[0]==-1:
                     result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
+                    if 'bankdetails' not in dataset:
+                        self.con.execute("update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"%int(orgcode))
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
