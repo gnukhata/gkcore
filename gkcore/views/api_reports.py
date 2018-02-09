@@ -3972,7 +3972,7 @@ free replacement or sample are those which are excluded.
 
                                     if taxname not in taxcolumns:
                                         taxcolumns.append(taxname)
-                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[cessrate])})
+                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
                                         totalrow["tax"].update({taxname:"%.2f"%taxamount})
                                     else:
                                         totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][cessrate]) + float(taxamount*float(cessrate)/100.00))
@@ -3986,7 +3986,7 @@ free replacement or sample are those which are excluded.
                    # except:
                    #     pass
  
-                taxcolumns.sort(key=float)
+                taxcolumns.sort()
                 print "This is spdata %s"%(spdata)
                 print "This is totalrow %s"%(totalrow)
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
