@@ -64,11 +64,28 @@ Every time a new organisation is created or recreated for it's new financial yea
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
+"""This table is for DRCR Note"""
+drcr =  Table('drcr', metadata,             
+    Column('drcrid',Integer,primary_key=True),
+    Column('drcrno',UnicodeText, nullable=False),
+    Column('drcrdate',DateTime,nullable=False),
+    Column('drcrno',UnicodeText, nullable=False),
+    Column('dctypeflag', Integer, default=3),
+    Column('caseflag', Integer, default=3),
+    Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
+    Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
+    Column('totreduct',numeric(13,2),default=0.00),
+    Column('contents',JSONB),
+    Column('gstreduct',numeric(13,2),default=0.00),          
+    Column('issuername',UnicodeText),
+    Column('designation',UnicodeText)
+)
+
+
 """
 This table is for storing state information.  
 A state will have its corresponding code with name.
 """
-
 state = Table('state',metadata,
         Column('statecode',Integer),
         Column('statename',UnicodeText) 
