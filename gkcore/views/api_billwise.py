@@ -31,7 +31,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc,alias, or_, func
+from sqlalchemy import and_, exc,alias, or_, func, desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -260,27 +260,12 @@ It will be used for creating entries in the billwise table and updating it as ne
             try:
                 self.con = eng.connect()
                 csid =int(self.request.params["csid"])
-                csFlag =int(self.request.params["csflag"])
-                csn = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == csid,customerandsupplier.c.orgcode==authDetails["orgcode"])))
-                csName = csn.fetchone()
-                accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],accounts.c.orgcode== authDetails["orgcode"])))
-                acccode = accData.fetchone()
-                if csFlag == 3:
-                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
-                if csFlag == 19:
-                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
-                csReceipts = csReceiptData.fetchall()
+                orderflag = int(self.request.params["orderflag"])
                 unAdjInvoices = []
-                for rcpt in csReceipts:
-                    invs = self.con.execute(select([func.count(billwise.c.invid).label('invFound'),func.sum(billwise.c.adjamount).label("amtAdjusted")]).where(billwise.c.vouchercode == rcpt["vouchercode"]))
-                    invsData = invs.fetchone()
-                    amtadj = 0.00
-                    if int(invsData["invFound"]) > 0:
-                        amtadj = invsData["amtAdjusted"]
-                        
-                        if float(rcpt["amt"]) == float(invsData["amtAdjusted"]):
-                            continue                    
-                csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
+                if orderflag == 1:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                else:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
