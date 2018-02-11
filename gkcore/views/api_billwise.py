@@ -231,23 +231,12 @@ It will be used for creating entries in the billwise table and updating it as ne
     def getOnlyUnadjustedBills(self):
         """
         Purpose:
-        Gets the list of unadjusted receipts and invoices.
-        description:
-        first we provide it a customerandsupplier code.
-        Then get all the receipts vouchers for that customer or supplyer.
-        now the receipts are filtered on the basis of 2 conditions.
-        firstly the vouchers is unused at all.
-        secondly if it is used then it's total should not be equal to the sum of all adjusted amounts of those invoices which have been adjusted using this vouchers.
-        For this we loop through the list of vouchers.
-        at the beginning of the loop we set a qualification flag to true.
-        we will have a nested set of 2 if conditions.
-        first we check if the given vouchers is present in the billwise table or not.
-        if it is present then the secondly if conditions checks
-        if the total amountpaid in the vouchers is equal to the sum of invoices as mentioned above.
-        if this condition too is satisfied then the flag is set to false.
-        if any of this conditions fail then flag remains true.
-        finaly there will be a 3rd if condition which checks this flag.
-        if it is true then the vouchers is added to the list to be returned.
+        Gets the list of invoices for a customer/supplier in the order of balance amount.
+        Description:
+        We receive customer id and orderflag. The value of orderflag is 1 for ascending order and 4 for descending.
+        Data of invoices for the customer that are not fully paid are fetched in the order of balance amount.
+        If orderflag is not 1 they are fetched in the descending order.
+        A list of dictionaries is then returned where each dictionary contains data regarding an invoice.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -267,8 +256,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 else:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
                 csInvoicesData = csInvoices.fetchall()
+                srno = 1
                 for inv in csInvoicesData:
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "srno":srno})
+                    srno = srno + 1
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
