@@ -3860,10 +3860,15 @@ free replacement or sample are those which are excluded.
                 result = invquery.fetchall()
                 for row in result:
                     #try:
+                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
+                        rowcust = custdata.fetchone()
+                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
+
                         taxname = ""
+                        disc = row["discount"]
                         if int(row["taxflag"]) == 22:
                             taxname = "% VAT"
-                        disc = row["discount"]
+                                
                         if int(row["taxflag"]) == 7:
                             destinationstate = row["taxstate"]
                             destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
@@ -3873,7 +3878,19 @@ free replacement or sample are those which are excluded.
                                 taxname = "% IGST "
                             if destinationstate == sourcestate:
                                 taxname = "% SGST"
-                        
+                            if rowcust["gstin"] != None:
+                                if int(rowcust["csflag"]) == 3 :
+                                   try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
+                                   except:
+                                        invoicedata["custgstin"] = ""
+                                else:
+                                    try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(sourceStateCode)]
+                                    except:
+                                        invoicedata["custgstin"] = ""
+
+                                        '''  
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
@@ -3887,7 +3904,7 @@ free replacement or sample are those which are excluded.
                                 try:
                                     invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
                                 except:
-                                    invoicedata["custgstin"] = None
+                                    invoicedata["custgstin"] = None'''
 
                         totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
                         qty = 0.00
@@ -3936,11 +3953,8 @@ free replacement or sample are those which are excluded.
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
 
-                          #  if taxname == "SGST":
-                          #      taxrate = taxrate/2.00
-                       #     taxname = str(taxrate) + taxname
                             if taxrate != "0.00":
-                                if taxname == "IGST" or taxname == "VAT":
+                                if taxname !="% SGST":
                                     taxname = str(taxrate) + taxname
                                     if taxdata.has_key(str(taxname)):
                                         taxdata[taxname]="%.2f"%(float(taxdata[taxrate]) + taxamount)
@@ -3960,8 +3974,10 @@ free replacement or sample are those which are excluded.
                                         totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
 
 
-                                else:
+                                if taxname == "% SGST":
+                                    print taxrate
                                     taxrate = taxrate/2
+                                    print taxrate
                                     sgstTax = str(taxrate) + "% SGST"
                                     cgstTax = str(taxrate) + "% CGST"
                                     if taxdata.has_key(sgstTax):
