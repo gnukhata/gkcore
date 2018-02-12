@@ -76,6 +76,7 @@ drcr =  Table('drcr', metadata,
     Column('drcrid',Integer,primary_key=True),
     Column('drcrno',UnicodeText, nullable=False),
     Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
+    Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('drcrdate',DateTime,nullable=False),
     Column('dctypeflag', Integer, default=3),
@@ -83,7 +84,8 @@ drcr =  Table('drcr', metadata,
     Column('taxflag',Integer,default=22),
     Column('tax', JSONB),
     Column('totreduct',Numeric(13,2),default=0.00),
-    Column('contents',JSONB),        
+    Column('contents',JSONB),
+    Column('drcrref',Integer)
    )
 
 

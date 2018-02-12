@@ -30,12 +30,15 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                self.con.execute(drcr.insert(),[dataset])
-            #except exc.IntegrityError:
+                dataset["orgcode"] = authDetails["orgcode"]
+                result=self.con.execute(drcr.insert(),[dataset])
+            except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
-            #finally:
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
                 
