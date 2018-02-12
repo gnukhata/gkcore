@@ -92,14 +92,18 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
             self.con.execute("alter table invoice add inoutflag integer")
+            #This code will assign inoutflag for invoice where inoutflag is blank.
             allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid]).where(gkdb.invoice.c.inoutflag == None))
+            #Here we fetching all "custid" and "invid".
             dict = allinvoice.fetchall()
             for singleinv in dict:
                 sincustid = singleinv["custid"]
                 invid1=singleinv["invid"]
                 cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
+                #Here we fetching all "csflag" on the basis of "sincustid" (i.e "custid")
                 csflagsingle = cussupdata.fetchone()
                 for cussup in csflagsingle:
+                    #if "csflag" is 19 (i.e "supplier") then set inoutflag=9 (i.e "in") else "csflag" is 3 (i.e "customer" and set "inoutflag=15" (i.e "out"))
                     if cussup==19:
                         self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid1))
                     else:
