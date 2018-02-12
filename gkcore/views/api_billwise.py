@@ -263,3 +263,41 @@ It will be used for creating entries in the billwise table and updating it as ne
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='GET',renderer='json', request_param="type=onlybillsforall")
+    def getOnlyUnadjustedBillsForAll(self):
+        """
+        Purpose:
+        Gets the list of invoices for all customers and suppliers in the order of balance amount.
+        Description:
+        We receive orderflag. The value of orderflag is 1 for ascending order and 4 for descending.
+        Data of invoices for the  all customers and suppliers that are not fully paid are fetched in the order of balance amount.
+        If orderflag is not 1 they are fetched in the descending order.
+        A list of dictionaries is then returned where each dictionary contains data regarding an invoice.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orderflag = int(self.request.params["orderflag"])
+                unAdjInvoices = []
+                if orderflag == 1:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                else:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
+                csInvoicesData = csInvoices.fetchall()
+                srno = 1
+                for inv in csInvoicesData:
+                    csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
+                    csDetails = csd.fetchone()
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"] , "srno":srno})
+                    srno = srno + 1
+                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
