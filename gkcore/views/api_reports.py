@@ -3861,6 +3861,8 @@ free replacement or sample are those which are excluded.
                 for row in result:
                     #try:
                         taxname = ""
+                        if int(row["taxflag"]) == 22:
+                            taxname = "% VAT"
                         disc = row["discount"]
                         if int(row["taxflag"]) == 7:
                             destinationstate = row["taxstate"]
@@ -3871,8 +3873,6 @@ free replacement or sample are those which are excluded.
                                 taxname = "% IGST "
                             if destinationstate == sourcestate:
                                 taxname = "% SGST"
-                        if int(row["taxflag"]) == 22:
-                            taxname = "% VAT"
                         
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
@@ -3967,26 +3967,26 @@ free replacement or sample are those which are excluded.
                                     if taxdata.has_key(sgstTax):
                                         taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
                                         taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                                        taxcolumns.append(sgstTax)
-                                        totalrow["taxamount"].update({sgstTax:"%.2f"%float(taxamountdata[sgstTax])})
-                                        totalrow["tax"].update({sgstTax:"%.2f"%taxamount})
+                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
                                     else:
                                         taxdata.update({sgstTax:"%.2f"%taxamount})
                                         taxamountdata.update({sgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
-                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
-
+                                        taxcolumns.append(sgstTax)
+                                        totalrow["taxamount"].update({sgstTax:"%.2f"%float(taxamountdata[sgstTax])})
+                                        totalrow["tax"].update({sgstTax:"%.2f"%taxamount})
+                                        
                                     if taxdata.has_key(cgstTax):
-                                        taxdata[taxname]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                        taxamountdata[taxname]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                                        taxcolumns.append(taxname)
-                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
-                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
+                                        taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
+                                        taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        totalrow["taxamount"][cgstTax] = "%.2f"%(float(totalrow["taxamount"][cgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][cgstTax] =  "%.2f"%(float(totalrow["tax"][cgstTax]) + taxamount)
                                     else:
-                                        taxdata.update({taxname:"%.2f"%taxamount})
-                                        taxamountdata.update({taxname:"%.2f"%(taxamount*float(taxrate)/100.00)})
-                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
+                                        taxdata.update({cgstTax:"%.2f"%taxamount})
+                                        taxamountdata.update({cgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        taxcolumns.append(cgstTax)
+                                        totalrow["taxamount"].update({cgstTax:"%.2f"%float(taxamountdata[cgstTax])})
+                                        totalrow["tax"].update({cgstTax:"%.2f"%taxamount})
 
 
                                     
