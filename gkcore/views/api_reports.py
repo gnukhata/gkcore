@@ -3836,7 +3836,7 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 '''This is a list of dictionaries. Each dictionary contains details of an invoice, like-invoiceno, invdate,
                 customer or supllier name, TIN, then total amount of invoice in rs then different tax rates and their respective amounts
@@ -3859,7 +3859,7 @@ free replacement or sample are those which are excluded.
                 #for each invoice
                 result = invquery.fetchall()
                 for row in result:
-                    #try:
+                    try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
@@ -4041,15 +4041,13 @@ free replacement or sample are those which are excluded.
                         invoicedata["taxamount"] = taxamountdata
                         spdata.append(invoicedata)
                         srno += 1
-                   # except:
-                   #     pass
+                    except:
+                        pass
  
                 taxcolumns.sort()
-                print "This is spdata %s"%(spdata)
-                print "This is totalrow %s"%(totalrow)
-                print taxcolumns
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
-           # except:
-           #     return {"gkstatus":enumdict["ConnectionFailed"] }
-           # finally:
-           #     self.con.close()
+
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
