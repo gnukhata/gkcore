@@ -3974,9 +3974,7 @@ free replacement or sample are those which are excluded.
 
 
                                 if taxname == "% SGST":
-                                    print taxrate
                                     taxrate = taxrate/2
-                                    print taxrate
                                     sgstTax = "%.2f"%taxrate + "% SGST"
                                     cgstTax = "%.2f"%taxrate + "% CGST"
                                     if taxdata.has_key(sgstTax):
