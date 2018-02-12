@@ -64,7 +64,14 @@ Every time a new organisation is created or recreated for it's new financial yea
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
-"""This table is for DRCR Note"""
+"""
+This table is for stroring records of debit note and credit note.
+Structure of a tax field is {productcode:taxrate}.
+In this we have json field that is contents.
+This field is a nested dictionary.
+The key of this field is the productcode while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty) of product.
+"""
 drcr =  Table('drcr', metadata,             
     Column('drcrid',Integer,primary_key=True),
     Column('drcrno',UnicodeText, nullable=False),
@@ -72,6 +79,8 @@ drcr =  Table('drcr', metadata,
     Column('dctypeflag', Integer, default=3),
     Column('caseflag', Integer, default=3),
     Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
+    Column('tax', JSONB),
+    Column('taxflag',Integer,default=22),   
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('contents',JSONB),
