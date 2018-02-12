@@ -3927,7 +3927,6 @@ free replacement or sample are those which are excluded.
                            
                             discamt = 0.00
                             taxrate = float(row["tax"][pc])
-                            print type(taxrate)
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
@@ -3947,15 +3946,15 @@ free replacement or sample are those which are excluded.
                                     # (float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))
 
                             
-                            if taxrate == "0.00":
+                            if taxrate == 0.00:
                                 invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
 
-                            if taxrate != "0.00":
+                            if taxrate != 0.00:
                                 if taxname !="% SGST":
-                                    taxname = str(taxrate) + taxname
+                                    taxname = "%.2f"%taxrate + taxname
                                     if taxdata.has_key(str(taxname)):
                                         taxdata[taxname]="%.2f"%(float(taxdata[taxrate]) + taxamount)
                                         taxamountdata[taxname]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
@@ -3978,46 +3977,41 @@ free replacement or sample are those which are excluded.
                                     print taxrate
                                     taxrate = taxrate/2
                                     print taxrate
-                                    sgstTax = str(taxrate) + "% SGST"
-                                    cgstTax = str(taxrate) + "% CGST"
+                                    sgstTax = "%.2f"%taxrate + "% SGST"
+                                    cgstTax = "%.2f"%taxrate + "% CGST"
                                     if taxdata.has_key(sgstTax):
                                         taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
                                         taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
+                                        
                                     else:
                                         taxdata.update({sgstTax:"%.2f"%taxamount})
                                         taxamountdata.update({sgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+                                        
+                                    if sgstTax not in taxcolumns:
                                         taxcolumns.append(sgstTax)
                                         totalrow["taxamount"].update({sgstTax:"%.2f"%float(taxamountdata[sgstTax])})
                                         totalrow["tax"].update({sgstTax:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
                                         
                                     if taxdata.has_key(cgstTax):
                                         taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
                                         taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                                        totalrow["taxamount"][cgstTax] = "%.2f"%(float(totalrow["taxamount"][cgstTax]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][cgstTax] =  "%.2f"%(float(totalrow["tax"][cgstTax]) + taxamount)
+                                        
                                     else:
                                         taxdata.update({cgstTax:"%.2f"%taxamount})
                                         taxamountdata.update({cgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+
+                                    if cgstTax not in taxcolumns:
                                         taxcolumns.append(cgstTax)
                                         totalrow["taxamount"].update({cgstTax:"%.2f"%float(taxamountdata[cgstTax])})
                                         totalrow["tax"].update({cgstTax:"%.2f"%taxamount})
-
-
-                                    
-
-                                        """
-
-                                    '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                                    if taxname not in taxcolumns:
-                                        taxcolumns.append(taxname)
-                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
-                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
                                     else:
-                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)"""
-
+                                        totalrow["taxamount"][cgstTax] = "%.2f"%(float(totalrow["taxamount"][cgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][cgstTax] =  "%.2f"%(float(totalrow["tax"][cgstTax]) + taxamount)
 
                                     
                             if row["taxflag"] == 22:
@@ -4053,6 +4047,7 @@ free replacement or sample are those which are excluded.
                 taxcolumns.sort()
                 print "This is spdata %s"%(spdata)
                 print "This is totalrow %s"%(totalrow)
+                print taxcolumns
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
            # except:
            #     return {"gkstatus":enumdict["ConnectionFailed"] }
