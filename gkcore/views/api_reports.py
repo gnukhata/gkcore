@@ -3866,6 +3866,7 @@ free replacement or sample are those which are excluded.
 
                         taxname = ""
                         disc = row["discount"]
+                        #Decide tax type from taxflag
                         if int(row["taxflag"]) == 22:
                             taxname = "% VAT"
                                 
@@ -3874,10 +3875,12 @@ free replacement or sample are those which are excluded.
                             destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
                             sourcestate = row["sourcestate"]
                             sourceStateCode = getStateCode(row["sourcestate"],self.con)["statecode"]
+                            # Gst has 2 types of tax Inter State(IGST) & Intra state(SGST & CGST).
                             if destinationstate != sourcestate :
                                 taxname = "% IGST "
                             if destinationstate == sourcestate:
                                 taxname = "% SGST"
+                            # Get GSTIN on the basis of Customer / Supplier role. 
                             if rowcust["gstin"] != None:
                                 if int(rowcust["csflag"]) == 3 :
                                    try:
@@ -3890,22 +3893,8 @@ free replacement or sample are those which are excluded.
                                     except:
                                         invoicedata["custgstin"] = ""
 
-                                        '''  
-                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
-                        rowcust = custdata.fetchone()
-                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
-                        if rowcust["gstin"] != None:
-                            if int(rowcust["csflag"]) == 3 :
-                               try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                               except:
-                                    invoicedata["custgstin"] = None
-                            else:
-                                try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                                except:
-                                    invoicedata["custgstin"] = None'''
 
+                        # Calculate total grossamount of all invoices.
                         totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
                         qty = 0.00
                         ppu = 0.00
@@ -3924,7 +3913,6 @@ free replacement or sample are those which are excluded.
                         The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate'''
                         
                         for pc in row["contents"].iterkeys():
-                           
                             discamt = 0.00
                             taxrate = float(row["tax"][pc])
                             if disc != None:
@@ -3937,21 +3925,23 @@ free replacement or sample are those which are excluded.
     
                                 gspc = self.con.execute(select([product.c.gsflag]).where(product.c.productcode==pc))
                                 flag = gspc.fetchone()
+                                # Check for product & service.
+                                # In case of service quantity is not present.
                                 if int(flag["gsflag"]) == 7:
-                                    qty = float(row["contents"][pc][pcprice]) 
+                                    qty = float(row["contents"][pc][pcprice])
+                                    # Taxable value of a product is calculated as (Price per unit * Quantity) - Discount 
                                     taxamount = (float(ppu) * float(qty)) - float(discamt) 
-                                    #(((float("%.2f"%float(ppu))) * float("%.2f"%float(qty))- (float("%.2f"%float(discamt))))
                                 else:
+                                    # Taxable value for service.
                                     taxamount = float(ppu) - float(discamt)
-                                    # (float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))
-
-                            
+                            #There is a possibility of tax free product or service. This needs to be mention seperately.
+                            #For this condition tax is saved as 0.00 in tax field of invoice.
                             if taxrate == 0.00:
                                 invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
-
+                            # When tax type is IGST or VAT.
                             if taxrate != 0.00:
                                 if taxname !="% SGST":
                                     taxname = "%.2f"%taxrate + taxname
@@ -3972,7 +3962,7 @@ free replacement or sample are those which are excluded.
                                         totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(taxrate)/100.00))
                                         totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
 
-
+                                # when tax type is SGST & CGST , Tax rate needs to be diveded by 2.
                                 if taxname == "% SGST":
                                     taxrate = taxrate/2
                                     sgstTax = "%.2f"%taxrate + "% SGST"
@@ -4014,7 +4004,7 @@ free replacement or sample are those which are excluded.
                                     
                             if row["taxflag"] == 22:
                                 continue
-
+                            # Cess is a different type of TAX, only present in GST invoice.
                             if row["cess"] != None:
                                 cessrate = "%.2f"%float(row["cess"][pc])
                                 taxname = str(cessrate) + "% CESS"
