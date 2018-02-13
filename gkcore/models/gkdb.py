@@ -533,6 +533,7 @@ goprod = Table('goprod',metadata,
     Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
     Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('goid','productcode','orgcode'),
     Index("godown_product","productcode")
     )
 #now table for user godown rights.
