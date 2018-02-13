@@ -376,6 +376,7 @@ delchal = Table('delchal',metadata,
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
+    Column('inoutflag',Integer,nullable=False),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
