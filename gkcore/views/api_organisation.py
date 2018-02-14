@@ -53,7 +53,6 @@ class api_organisation(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "Organisation initialized"
     def gkUpgrade(self):
         """
         This function will be called only once while upgrading gnukhata.
@@ -62,6 +61,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.delchal.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.address)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
@@ -91,6 +91,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table delchal add inoutflag integer")
             self.con.execute("alter table invoice add inoutflag integer")
             #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
             allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
