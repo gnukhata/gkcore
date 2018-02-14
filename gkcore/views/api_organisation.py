@@ -62,6 +62,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.address)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
             self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
@@ -90,6 +91,28 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table invoice add inoutflag integer")
+            #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
+            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
+            #Here we fetching all "custid", "icflag" and "invid".
+            dict = allinvoice.fetchall()
+            for singleinv in dict:
+                sincustid = singleinv["custid"]
+                invid=singleinv["invid"]
+                icflag = singleinv["icflag"]
+                #First we checking the icflag (i.e 3 for "cashmemo", 9 for "invoice")
+                if icflag == 3:
+                    self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
+                else:
+                    cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
+                    #Here we fetching all "csflag" on the basis of "sincustid" (i.e "custid")
+                    csflagsingle = cussupdata.fetchone()
+                    for cussup in csflagsingle:
+                        #if "csflag" is 19 (i.e "supplier") then set inoutflag=9 (i.e "in") else "csflag" is 3 (i.e "customer" and set "inoutflag=15" (i.e "out"))
+                        if cussup==19:
+                            self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid))
+                        else:
+                            self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
             self.con.execute("alter table invoice add address text")
             self.con.execute("alter table customerandsupplier add bankdetails jsonb")
             self.con.execute("alter table invoice add paymentmode integer")
