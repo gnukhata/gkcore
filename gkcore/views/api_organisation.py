@@ -26,6 +26,7 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 'Prajkta Patkar'<prajakta@dff.org.in>
 'Reshma Bhatwadekar'<reshma_b@riseup.net>
+"Sanket Kolnoorkar"<Sanketf123@gmail.com>
 """
 
 from pyramid.view import view_defaults,  view_config
@@ -53,7 +54,6 @@ class api_organisation(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "Organisation initialized"
     def gkUpgrade(self):
         """
         This function will be called only once while upgrading gnukhata.
@@ -62,6 +62,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.delchal.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.address)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
@@ -91,6 +92,20 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table delchal add inoutflag integer")
+            #This code will assign inoutflag for delivery chalan where inoutflag is blank.
+            alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
+            #here we will be fetching all the delchal data
+            delchals = alldelchal.fetchall()
+            print delchals
+            for delchal in delchals:
+                delchalid = int(delchal["dcid"])
+                print delchalid
+                stockdata = self.con.execute(select([gkdb.stock.c.inout]).where(and_(gkdb.stock.c.dcinvtnid == delchalid, gkdb.stock.c.dcinvtnflag == 4)))
+                inout = stockdata.fetchone()
+                inoutflag = inout["inout"]
+                print inoutflag
+                self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
             self.con.execute("alter table invoice add inoutflag integer")
             #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
             allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))

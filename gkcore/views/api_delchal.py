@@ -25,9 +25,8 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Reshma Bhatawade" <reshma_b@riseup.net>
-
+"Sanket Kolnoorkar" <sanketf123@gmail.com>
 """
-
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote
@@ -53,12 +52,13 @@ class api_delchal(object):
         self.con = Connection
 
     """
-    create method for delchal resource.
+create method for delchal resource.
     stock table is also updated after delchal entry is made.
         -delchal id goes in dcinvtnid column of stock table.
         -dcinvtnflag column will be set to 4 for delivery challan entry.
     If stock table insert fails then the delchal entry will be deleted.
     """
+    #added delchal dataset and stockdata dataset in post method.
     @view_config(request_method='POST',renderer='json')
     def adddelchal(self):
         try:
@@ -72,14 +72,14 @@ class api_delchal(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                delchaldata = dataset["delchaldata"]
+                delchaldata = dataset["delchaldata"]                
                 stockdata = dataset["stockdata"]
+                inoutflag=stockdata["inout"]
                 delchaldata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
                 if delchaldata["dcflag"]==19:
                     delchaldata["issuerid"] = authDetails["userid"]
                 result = self.con.execute(delchal.insert(),[delchaldata])
-
                 if result.rowcount==1:
                     dciddata = self.con.execute(select([delchal.c.dcid,delchal.c.dcdate]).where(and_(delchal.c.orgcode==authDetails["orgcode"],delchal.c.dcno==delchaldata["dcno"],delchal.c.custid==delchaldata["custid"])))
                     dcidrow = dciddata.fetchone()
@@ -103,7 +103,7 @@ class api_delchal(object):
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     return {"gkstatus":enumdict["Success"]}
                 else:
-                    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }#
+                    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
@@ -241,9 +241,10 @@ class api_delchal(object):
                                     "cancelflag":delchaldata["cancelflag"],
                                     "noofpackages":delchaldata["noofpackages"],
                                     "modeoftransport": delchaldata["modeoftransport"],
-                                    "attachmentcount": delchaldata["attachmentcount"]
-                                    },
-                                "stockdata":{
+                                    "attachmentcount": delchaldata["attachmentcount"],
+                                    "inoutflag": delchaldata["inoutflag"] #added inoutflag in get method
+                                },
+                            "stockdata":{
                                     "inout":stockinout,"items":items
                                     }}
                 if delchaldata["cancelflag"] ==1:
