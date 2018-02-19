@@ -42,7 +42,6 @@ def inventoryMigration(con,eng):
     con.execute("alter table organisation add column invflag Integer default 0 ")
     con.execute("alter table vouchers add column invid Integer")
     con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
-    con.execute("alter table drcr add  foreign key (drcrref) references drcr(drcrid)")
     try:
         con.execute("select themename from users")
     except:

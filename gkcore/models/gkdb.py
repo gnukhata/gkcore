@@ -85,7 +85,8 @@ drcr =  Table('drcr', metadata,
     Column('tax', JSONB),
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('contents',JSONB),
-    Column('drcrref',Integer)
+    Column('reference',JSONB),
+    Column('attachment',JSON)
    )
 
 
