@@ -26,6 +26,7 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 'Prajkta Patkar'<prajakta@dff.org.in>
 'Reshma Bhatwadekar'<reshma_b@riseup.net>
+"Sanket Kolnoorkar"<Sanketf123@gmail.com>
 """
 
 from pyramid.view import view_defaults,  view_config
