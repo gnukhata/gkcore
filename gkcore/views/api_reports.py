@@ -3859,30 +3859,42 @@ free replacement or sample are those which are excluded.
                 #for each invoice
                 result = invquery.fetchall()
                 for row in result:
-                    
                     try:
+                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
+                        rowcust = custdata.fetchone()
+                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
+
+                        taxname = ""
                         disc = row["discount"]
+                        #Decide tax type from taxflag
+                        if int(row["taxflag"]) == 22:
+                            taxname = "% VAT"
+                                
                         if int(row["taxflag"]) == 7:
                             destinationstate = row["taxstate"]
                             destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
                             sourcestate = row["sourcestate"]
                             sourceStateCode = getStateCode(row["sourcestate"],self.con)["statecode"]
-                            
-                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
-                        rowcust = custdata.fetchone()
-                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
-                        if rowcust["gstin"] != None:
-                            if int(rowcust["csflag"]) == 3 :
-                               try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                               except:
-                                    invoicedata["custgstin"] = None
-                            else:
-                                try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                                except:
-                                    invoicedata["custgstin"] = None
+                            # Gst has 2 types of tax Inter State(IGST) & Intra state(SGST & CGST).
+                            if destinationstate != sourcestate :
+                                taxname = "% IGST "
+                            if destinationstate == sourcestate:
+                                taxname = "% SGST"
+                            # Get GSTIN on the basis of Customer / Supplier role. 
+                            if rowcust["gstin"] != None:
+                                if int(rowcust["csflag"]) == 3 :
+                                   try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
+                                   except:
+                                        invoicedata["custgstin"] = ""
+                                else:
+                                    try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(sourceStateCode)]
+                                    except:
+                                        invoicedata["custgstin"] = ""
 
+
+                        # Calculate total grossamount of all invoices.
                         totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
                         qty = 0.00
                         ppu = 0.00
@@ -3902,7 +3914,7 @@ free replacement or sample are those which are excluded.
                         
                         for pc in row["contents"].iterkeys():
                             discamt = 0.00
-                            taxrate = "%.2f"%float(row["tax"][pc])
+                            taxrate = float(row["tax"][pc])
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
@@ -3910,61 +3922,107 @@ free replacement or sample are those which are excluded.
                                 
                             for pcprice in row["contents"][pc].iterkeys():
                                 ppu = pcprice
-                                
+    
                                 gspc = self.con.execute(select([product.c.gsflag]).where(product.c.productcode==pc))
                                 flag = gspc.fetchone()
+                                # Check for product & service.
+                                # In case of service quantity is not present.
                                 if int(flag["gsflag"]) == 7:
-                                    qty = float(row["contents"][pc][pcprice]) 
+                                    qty = float(row["contents"][pc][pcprice])
+                                    # Taxable value of a product is calculated as (Price per unit * Quantity) - Discount 
                                     taxamount = (float(ppu) * float(qty)) - float(discamt) 
-                                    #(((float("%.2f"%float(ppu))) * float("%.2f"%float(qty))- (float("%.2f"%float(discamt))))
                                 else:
+                                    # Taxable value for service.
                                     taxamount = float(ppu) - float(discamt)
-                                    # (float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))
-                            
-                            if taxrate == "0.00":
+                            #There is a possibility of tax free product or service. This needs to be mention seperately.
+                            #For this condition tax is saved as 0.00 in tax field of invoice.
+                            if taxrate == 0.00:
                                 invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
-                            if taxrate != "0.00":
-                                
-                                if taxdata.has_key(str(taxrate)):
-                                    taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                    taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                                    
-                                else:
-                                    taxdata.update({taxrate:"%.2f"%taxamount})
-                                    taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
-                                    
-                                '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                                if taxrate not in taxcolumns:
-                                    taxcolumns.append(taxrate)
-                                    totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
-                                    totalrow["tax"].update({taxrate:"%.2f"%taxamount})
-                                else:
-                                    totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
-                                    totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
+                            # When tax type is IGST or VAT.
+                            if taxrate != 0.00:
+                                if taxname !="% SGST":
+                                    taxname = "%.2f"%taxrate + taxname
+                                    if taxdata.has_key(str(taxname)):
+                                        taxdata[taxname]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+                                        taxamountdata[taxname]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
 
+                                    else:
+                                        taxdata.update({taxname:"%.2f"%taxamount})
+                                        taxamountdata.update({taxname:"%.2f"%(taxamount*float(taxrate)/100.00)})
+
+                                    '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
+                                    if taxname not in taxcolumns:
+                                        taxcolumns.append(taxname)
+                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
+                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
+
+                                # when tax type is SGST & CGST , Tax rate needs to be diveded by 2.
+                                if taxname == "% SGST":
+                                    taxrate = taxrate/2
+                                    sgstTax = "%.2f"%taxrate + "% SGST"
+                                    cgstTax = "%.2f"%taxrate + "% CGST"
+                                    if taxdata.has_key(sgstTax):
+                                        taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
+                                        taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        
+                                    else:
+                                        taxdata.update({sgstTax:"%.2f"%taxamount})
+                                        taxamountdata.update({sgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+                                        
+                                    if sgstTax not in taxcolumns:
+                                        taxcolumns.append(sgstTax)
+                                        totalrow["taxamount"].update({sgstTax:"%.2f"%float(taxamountdata[sgstTax])})
+                                        totalrow["tax"].update({sgstTax:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
+                                        
+                                    if taxdata.has_key(cgstTax):
+                                        taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
+                                        taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        
+                                    else:
+                                        taxdata.update({cgstTax:"%.2f"%taxamount})
+                                        taxamountdata.update({cgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+
+                                    if cgstTax not in taxcolumns:
+                                        taxcolumns.append(cgstTax)
+                                        totalrow["taxamount"].update({cgstTax:"%.2f"%float(taxamountdata[cgstTax])})
+                                        totalrow["tax"].update({cgstTax:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][cgstTax] = "%.2f"%(float(totalrow["taxamount"][cgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][cgstTax] =  "%.2f"%(float(totalrow["tax"][cgstTax]) + taxamount)
+
+                                    
                             if row["taxflag"] == 22:
                                 continue
-
+                            # Cess is a different type of TAX, only present in GST invoice.
                             if row["cess"] != None:
                                 cessrate = "%.2f"%float(row["cess"][pc])
+                                taxname = str(cessrate) + "% CESS"
                                 if cessrate != "0.00":
-                                    if taxdata.has_key(str(cessrate)):
-                                        taxdata[cessrate]="%.2f"%(float(taxdata[cessrate]) + taxamount)
-                                        taxamountdata[cessrate]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
+                                    if taxdata.has_key(str(taxname)):
+                                        taxdata[taxname]="%.2f"%(float(taxdata[cessrate]) + taxamount)
+                                        taxamountdata[taxname]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
                                     else:
-                                        taxdata.update({cessrate:"%.2f"%taxamount})
-                                        taxamountdata.update({cessrate:"%.2f"%(taxamount*float(cessrate)/100.00)})
+                                        taxdata.update({taxname:"%.2f"%taxamount})
+                                        taxamountdata.update({taxname:"%.2f"%(taxamount*float(cessrate)/100.00)})
 
-                                    if cessrate not in taxcolumns:
-                                        taxcolumns.append(cessrate)
-                                        totalrow["taxamount"].update({cessrate:"%.2f"%float(taxamountdata[cessrate])})
-                                        totalrow["tax"].update({cessrate:"%.2f"%taxamount})
+                                    if taxname not in taxcolumns:
+                                        taxcolumns.append(taxname)
+                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
+                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
                                     else:
-                                        totalrow["taxamount"][cessrate] = "%.2f"%(float(totalrow["taxamount"][cessrate]) + float(taxamount*float(cessrate)/100.00))
-                                        totalrow["tax"][cessrate] =  "%.2f"%(float(totalrow["tax"][cessrate]) + taxamount)
+                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(cessrate)/100.00))
+                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
 
                         
                         invoicedata["tax"] = taxdata
@@ -3974,8 +4032,9 @@ free replacement or sample are those which are excluded.
                     except:
                         pass
  
-                taxcolumns.sort(key=float)
+                taxcolumns.sort()
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
+
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
