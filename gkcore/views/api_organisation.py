@@ -103,6 +103,8 @@ class api_organisation(object):
                 inout = stockdata.fetchone()
                 inoutflag = inout["inout"]
                 self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
+
+            self.con.execute("alter table goprod add UNIQUE('goid','productcode','orgcode')")
             self.con.execute("alter table invoice add inoutflag integer")
             #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
             allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
