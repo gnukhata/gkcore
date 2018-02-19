@@ -499,6 +499,9 @@ class api_product(object):
             finally:
                 self.con.close()
 
+    '''
+    This function is written for fetching the HSN code, UOM automatically when product is selected.
+    '''
     @view_config(request_method='GET', request_param='type=hsnuom', renderer ='json')
     def gethsnuom(self):
         try:
@@ -523,7 +526,9 @@ class api_product(object):
             finally:
                 self.con.close()
 
-
+    '''
+    This is a function for saving opening stock for the selected product
+    ''' 
     @view_config(request_method='POST', request_param='type=addstock', renderer='json')
     def addstock(self):
         try:
