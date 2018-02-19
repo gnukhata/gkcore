@@ -542,8 +542,11 @@ class api_product(object):
                 productDetails=dataset["productdetails"]
                 for product in productDetails:
                     details={"goid":goid,"goopeningstock":productDetails[product],"productcode":product,"orgcode":orgcode}
-                    result=self.con.execute(gkdb.goprod.insert(),[details])
-                return {"gkstatus":enumdict["Success"]}
+                    try:
+                        result=self.con.execute(gkdb.goprod.insert(),[details])
+                        return {"gkstatus":enumdict["Success"]}
+                    except exc.IntegrityError:
+                        return {"gkstatus":enumdict["DuplicateEntry"]}
              except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
              finally:
