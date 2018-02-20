@@ -475,7 +475,10 @@ class api_product(object):
     This is a function to fetch all products of an organisation.
     A godown keeper can usally access the list of products that are present in the godowns assigned to him.
     This function lets a godown keeper access the list of all products in an organisation.
+    Also function added so that godown incharge cannot access products which are already having openingStock
+    in addstock popup modal.
     '''
+
     @view_config(request_method='GET', request_param='list=all', renderer ='json')
     def getProductList(self):
         try:
@@ -486,7 +489,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -509,11 +512,11 @@ class api_product(object):
                         if row["productcode"] not in productCodes:
                             products.append({"productcode": row["productcode"], "productdesc":row["productdesc"]})
                     return {"gkstatus":enumdict["Success"], "gkresult":products}
-            #except:
-            #    self.con.close()
-            #    return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
-            #    self.con.close()
+            except:
+               self.con.close()
+               return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     '''
     This function is written for fetching the HSN code, UOM automatically when product is selected.
