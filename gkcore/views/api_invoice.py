@@ -188,6 +188,13 @@ class api_invoice(object):
                 else:
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+                        #Code for updating bankdetails when user switch to cash payment from bank.
+                        getpaymentmode = int(invdataset["paymentmode"]) #Loading paymentmode.
+                        idinv = int(invdataset["invid"])   #Loading invoiceid.
+                        #checking paymentmod whether it is 2 or 3 (i.e. 2 for bank and 3 for cash).
+                        if getpaymentmode == 3:
+                            #Updating bankdetails to NULL if paymentmod is 3.
+                            updatebankdetails = self.con.execute("update invoice set bankdetails = NULL where invid = %d"%(idinv))
                         result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
