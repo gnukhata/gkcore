@@ -84,6 +84,27 @@ class api_drcr(object):
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
                 self.con.close()
+
+    @view_config(request_method='GET',request_param='attach=image', renderer='json')
+    def getattachment(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails['auth'] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                drcrid = self.request.params["drcrid"]
+                drcrData = self.con.execute(select([drcr.c.drcrno, drcr.c.attachment]).where(drcr.c.drcrid == drcrid))
+                attachment = drcrData.fetchone()
+                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"drcrno":attachment["drcrno"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
                 
 
 
