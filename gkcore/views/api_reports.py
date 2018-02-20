@@ -4039,3 +4039,31 @@ free replacement or sample are those which are excluded.
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()     
+
+                
+
+    @view_config(request_param="type=GSTCalc", renderer='json')
+    def GSTCalc:
+        """
+        Purpose:
+        takes list of accounts for CGST,SGST,IGST and SESS at Input and Output side,
+        Returns list of accounts with their closing balances.
+        Description:
+        This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
+        The function takes json_body which will have 8 key: value pares.
+        Each  key denoting the tax and value will be list of accounts.
+        The keys of this json_body will be as follows.
+        * CGSTIn,
+        * CGSTOut,
+        * SGSTIn,
+        * SGSTOut,
+        * IGSTIn,
+        * IGSTOut,
+        * CESSIn,
+        * CESSOut.
+        Function will also need the range for which calculatBalance is to be called for getting actual balances.
+        The function will loop through every list getting closing balance for all the accounts.
+        Then it will sum up all the balances for that list.
+        
+"""
+
