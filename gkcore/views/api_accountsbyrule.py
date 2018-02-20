@@ -113,7 +113,7 @@ class api_accountsbyrule(object):
                         return {"gkstatus":enumdict["ConnectionFailed"]}
                 if self.request.params['side']=="Cr":
                     try:
-                        accs = self.con.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                        accs = self.con.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Direct Income','Indirect Income','Direct Expense','Indirect Expense')or subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income','Direct Expense','Indirect Expense' and orgcode = %d)) and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
                         list = []
                         for row in accs:
                             list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
