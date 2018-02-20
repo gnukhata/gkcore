@@ -160,9 +160,14 @@ create method for delchal resource.
             try:
                 self.con = eng.connect()
                 '''
-                Retreiving details of all delivery notes.
+                given below is the condition to check the values is delivery in,out or all.
+                if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
                 '''
-                result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+                if self.request.params.has_key("inoutflag"):
+                    result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(and_(delchal.c.inoutflag==int(self.request.params["inoutflag"]),delchal.c.orgcode==authDetails["orgcode"])))
+                else:
+                    result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
+                 
                 '''
                 An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
                 Loop is used to go through the result, fetch customer/supplier data and append them to the list.
@@ -197,6 +202,7 @@ create method for delchal resource.
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+                    
 
     @view_config(request_method='GET',request_param="delchal=single", renderer ='json')
     def getdelchal(self):
