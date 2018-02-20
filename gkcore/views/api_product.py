@@ -486,18 +486,34 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con=eng.connect()
-                results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
-                products = []
-                for row in results:
-                    products.append({"productcode": row["productcode"], "productdesc":row["productdesc"]})
-                return {"gkstatus":enumdict["Success"], "gkresult":products}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                userrole = getUserRole(authDetails["userid"])
+                gorole = userrole["gkresult"]
+                if gorole["userrole"]==3:
+                    uId = getusergodowns(authDetails["userid"])
+                    gid=[]
+                    for record1 in uId["gkresult"]:
+                        gid.append(record1["goid"])
+                    productCodes=[]
+                    for record2 in gid:
+                        proCode = self.con.execute(select([gkdb.goprod.c.productcode]).where(gkdb.goprod.c.goid==record2))
+                        proCodes = proCode.fetchall()
+                        for record3 in proCodes:
+                            if record3["productcode"] not in productCodes:
+                                productCodes.append(record3["productcode"])
+                    print productCodes
+                    results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                    products = []
+                    for row in results:
+                        if row["productcode"] not in productCodes:
+                            products.append({"productcode": row["productcode"], "productdesc":row["productdesc"]})
+                    return {"gkstatus":enumdict["Success"], "gkresult":products}
+            #except:
+            #    self.con.close()
+            #    return {"gkstatus":enumdict["ConnectionFailed"]}
+            #finally:
+            #    self.con.close()
 
     '''
     This function is written for fetching the HSN code, UOM automatically when product is selected.
