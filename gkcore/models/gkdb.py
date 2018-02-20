@@ -86,7 +86,8 @@ drcr =  Table('drcr', metadata,
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('contents',JSONB),
     Column('reference',JSONB),
-    Column('attachment',JSON)
+    Column('attachment',JSON),
+    Column('userid',Integer,ForeignKey('users.userid'))          
    )
 
 

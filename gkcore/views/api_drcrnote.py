@@ -1,5 +1,5 @@
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice,tax, state, drcr,customerandsupplier
+from gkcore.models.gkdb import invoice,tax, state, drcr,customerandsupplier,users
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -59,21 +59,27 @@ class api_drcr(object):
                 self.con = eng.connect()
                 resultdrcr=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
                 drcrrow=resultdrcr.fetchone()
-                drcrdata = {"drcrid":drcrrow["drcrid"],"taxflag":drcrrow["taxflag"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"taxflag":drcrrow["taxflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"invid":drcrrow["invid"],"tax":drcrrow["tax"],"contents":drcrrow["contents"],"drcrref":drcrrow["drcrref"]}
+                drcrdata = {"drcrid":drcrrow["drcrid"],"taxflag":drcrrow["taxflag"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"taxflag":drcrrow["taxflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"invid":drcrrow["invid"],"tax":drcrrow["tax"],"contents":drcrrow["contents"],"reference":drcrrow["reference"],"userid":drcrrow["userid"]}
                 
                 print "\n \n drcr data"+str(drcrdata)
                 
                 resultinv=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=resultinv.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"address":invrow["address"],"issuername":invrow["issuername"],"designation":invrow["designation"]}
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"]}
 
                 print " \n \n invoice data"+str(invdata)                
 
-                resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.state,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==invrow["custid"]))
+                resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=resultcust.fetchone()
-                custdata={"custid":custrow["custid"],"custname":custrow["custname"],"state":custrow["state"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
+                custdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
                 
                 print "\n \n this is customer data "+str(custdata)
+
+                resultuser=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
+                userrow=resultuser.fetchone()
+                userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
+
+                print "\n \n user data "+str(userdata)
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
