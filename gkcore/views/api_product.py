@@ -505,7 +505,6 @@ class api_product(object):
                         for record3 in proCodes:
                             if record3["productcode"] not in productCodes:
                                 productCodes.append(record3["productcode"])
-                    print productCodes
                     results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
                     products = []
                     for row in results:
