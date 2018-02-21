@@ -13,6 +13,7 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+from gkcore.views.api_invoice import getStateCode
 
 @view_defaults(route_name='drcrnote')
 class api_drcr(object):
@@ -60,26 +61,42 @@ class api_drcr(object):
                 resultdrcr=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
                 drcrrow=resultdrcr.fetchone()
                 drcrdata = {"drcrid":drcrrow["drcrid"],"taxflag":drcrrow["taxflag"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"taxflag":drcrrow["taxflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"invid":drcrrow["invid"],"tax":drcrrow["tax"],"contents":drcrrow["contents"],"reference":drcrrow["reference"],"userid":drcrrow["userid"]}
-                
                 print "\n \n drcr data"+str(drcrdata)
+                invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
+                invrow=invresult.fetchone()
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"sourcestate":invrow["sourcestate"],"taxstate":invrow["taxstate"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"]}
                 
-                resultinv=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
-                invrow=resultinv.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"]}
-
+                if invrow["sourcestate"] != None:
+                    invdata["sourcestate"] = invrow["sourcestate"]
+                    invdata["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                    sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                if invrow["taxstate"] != None:
+                        invdata["destinationstate"]=invrow["taxstate"]
+                        taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        invdata["taxstatecode"] = taxStateCode
+                        
                 print " \n \n invoice data"+str(invdata)                
-
-                resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan]).where(customerandsupplier.c.custid==invrow["custid"]))
+                resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=resultcust.fetchone()
-                custdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
-                
-                print "\n \n this is customer data "+str(custdata)
-
+                if custrow["csflag"] == 3:
+                    custdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
+                    print "\n \n this is customer data "+str(custdata)
+                else:
+                    suppdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
+                    print "\n \n this is supp data "+str(suppdata)
                 resultuser=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
                 userrow=resultuser.fetchone()
                 userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
-
                 print "\n \n user data "+str(userdata)
+                #to extract issuername and designation from invoice and user login
+                if invrow["inoutflag"]==15:
+                    invdata["issuername"]=invrow["issuername"]
+                    invdata["designation"]=invrow["designation"]
+                    print "invdata sale "+str(invdata)
+                else:
+                    invdata["issuername"]=userrow["username"]
+                    invdata["designation"]=userrow["userrole"]
+                    print "invdata"+str(invdata)
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
