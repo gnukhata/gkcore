@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -25,7 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
-"Prajkta Patkar" <prajkta.patkar007@gmail.com>
+"Prajkta Patkar" <prajkta@riseup.com>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Parabjyot Singh" <parabjyot1996@gmail.com>
 "Rahul Chaurasiya" <crahul4133@gmail.com>
@@ -4046,7 +4045,7 @@ free replacement or sample are those which are excluded.
     def GSTCalc:
         """
         Purpose:
-        takes list of accounts for CGST,SGST,IGST and SESS at Input and Output side,
+        takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
         Returns list of accounts with their closing balances.
         Description:
         This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
@@ -4066,4 +4065,25 @@ free replacement or sample are those which are excluded.
         Then it will sum up all the balances for that list.
         
 """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                startDate = dataset["startdate"]
+                endDate = dataset["endDate"]
+                CGSTIn = dataset["cgstin"]
+                CGSTOut = dataset["cgstout"]
+        * SGSTIn
+        * SGSTOut,
+        * IGSTIn,
+        * IGSTOut,
+        * CESSIn,
+        * CESSOut
 
