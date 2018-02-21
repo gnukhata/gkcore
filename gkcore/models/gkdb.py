@@ -88,7 +88,7 @@ drcr =  Table('drcr', metadata,
     Column('reference',JSONB),
     Column('attachment',JSON),
     Column('userid',Integer,ForeignKey('users.userid')),
-    UniqueConstraint('orgcode','drcrno','drcrid','dctypeflag')
+    UniqueConstraint('orgcode','drcrno','dctypeflag')
    )
 
 
