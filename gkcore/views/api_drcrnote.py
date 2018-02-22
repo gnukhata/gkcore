@@ -1,5 +1,5 @@
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice,tax, state, drcr,customerandsupplier,users
+from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -64,16 +64,24 @@ class api_drcr(object):
                 print "\n \n drcr data"+str(drcrdata)
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"sourcestate":invrow["sourcestate"],"taxstate":invrow["taxstate"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"]}
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"]}  
                 
-                if invrow["sourcestate"] != None:
-                    invdata["sourcestate"] = invrow["sourcestate"]
-                    invdata["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                if invrow["taxstate"] != None:
-                        invdata["destinationstate"]=invrow["taxstate"]
-                        taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
-                        invdata["taxstatecode"] = taxStateCode
+                a=9
+                if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
+                    if a==9:
+                        invdata["sourcestate"] = invrow["sourcestate"]
+                        sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                        invdata["sourcestatecode"] = sourceStateCode
+                        invdata["taxstate"]=invrow["taxstate"]
+                        taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        invdata["taxstatecode"]=taxStateCode
+                    else:
+                        invdata["sourcestate"]=invrow["taxstate"]
+                        sourceStateCode= getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        invdata["sourcestatecode"] = sourceStateCode
+                        invdata["taxstate"]=invrow["sourcestate"]
+                        taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                        invdata["taxstatecode"]=taxStateCode                                           
                         
                 print " \n \n invoice data"+str(invdata)                
                 resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
@@ -89,14 +97,15 @@ class api_drcr(object):
                 userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
                 print "\n \n user data "+str(userdata)
                 #to extract issuername and designation from invoice and user login
-                if invrow["inoutflag"]==15:
+                a=15
+                if a==15:
                     invdata["issuername"]=invrow["issuername"]
                     invdata["designation"]=invrow["designation"]
                     print "invdata sale "+str(invdata)
                 else:
                     invdata["issuername"]=userrow["username"]
                     invdata["designation"]=userrow["userrole"]
-                    print "invdata"+str(invdata)
+                    print "invdata"+str(invdata)                
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
@@ -122,7 +131,54 @@ class api_drcr(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
+    def getAlldrcr(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            #try:
+                self.con = eng.connect()
+                result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
+                data = []
+                for row in result:
+                    #invoice,cust
+                    inv=self.con.execute(select([invoice.c.invid,invoice.c.custid]).where(invoice.c.invid==row["invid"]))
+                    invdata=inv.fetchone()
+                   # print "\n \n invdata from all ="+str(invdata)
+                    custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
+                    custsuppdata= custsupp.fetchone()
+                    #print "\n \n custdata from all ="+str(custsuppdata)
+                    if self.request.params.has_key('drcrflagstatus'):
+                        if self.request.params["drcrflagstatus"] =='4':
+                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):                            
+                                if self.request.params.has_key('caseflagstatus'):
+                                    if self.request.params["caseflagstatus"]=='0':
+                                        print " \n \n 4 12  0"
+                                    else:
+                                        print "2"
+                                elif self.request.params["drcrflagstatus"] == '3':
+                                    if self.request.params.has_key('caseflagstatus'):
+                                        if self.request.params["caseflagstatus"]=='1':
+                                            print "1"
+                                        else:
+                                            print "3"                                                         
                 
+
+
+
+
+            #return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+            #except:
+                #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            #finally:
+                self.con.close()
+
 
 
     
