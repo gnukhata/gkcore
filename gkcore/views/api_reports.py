@@ -4076,8 +4076,13 @@ free replacement or sample are those which are excluded.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["endDate"]
+                result = self.con.execute(select([yearstart.c.organisation]).where([orgcode.c.organisation == authDetails["orgcode"]]))
+                fStart = result.fetchone()
+                financialStart = fStart["yearstart"]
+                
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
                 SGSTIn = dataset["sgstin"]
@@ -4086,4 +4091,19 @@ free replacement or sample are those which are excluded.
                 IGSTOut = dataset["igstout"]
                 CESSIn = dataset["cessin"]
                 CESSOut = dataset["cessout"]
+
+                #Declare public variables
+                totalCGSTIn = 0.00
+                totalSGSTout = 0.00
+                totalSGSTIn = 0.00
+                totalSGSTout = 0.00
+                totalIGSTIn = 0.00
+                totalIGSTout = 0.00
+                totalCESSIn = 0.00
+                totalCESSOut = 0.00
+                gstDict = {}
                 
+                for n in CGSTIn:
+                    calbalData = calculateBalance(self.con,accountCode, financialStart, startDate, endDate)
+                    totalCGSTIn = totalCGSTIn + calbalData["curbal"]
+                    
