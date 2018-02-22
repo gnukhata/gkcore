@@ -4042,7 +4042,7 @@ free replacement or sample are those which are excluded.
                 
 
     @view_config(request_param="type=GSTCalc", renderer='json')
-    def GSTCalc:
+    def GSTCalc(self):
         """
         Purpose:
         takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
@@ -4080,10 +4080,10 @@ free replacement or sample are those which are excluded.
                 endDate = dataset["endDate"]
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
-        * SGSTIn
-        * SGSTOut,
-        * IGSTIn,
-        * IGSTOut,
-        * CESSIn,
-        * CESSOut
-
+                SGSTIn = dataset["sgstin"]
+                SGSTOut = dataset["sgstout"]
+                IGSTIn = dataset["igstin"]
+                IGSTOut = dataset["igstout"]
+                CESSIn = dataset["cessin"]
+                CESSOut = dataset["cessout"]
+                
