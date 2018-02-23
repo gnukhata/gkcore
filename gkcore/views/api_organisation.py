@@ -764,3 +764,25 @@ class api_organisation(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+    #Code for fetching organisations bankdetails depending on organisation code. 
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='orgbankdetails' , renderer='json')
+    def getorgbankdetails(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.organisation.c.bankdetails]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                row = result.fetchone()
+                if(row["bankdetails"]==None):
+                    bankdetails = ""
+                else:
+                    bankdetails = row["bankdetails"]
+
+                orgbankDetails={"bankdetails":bankdetails}
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkbankdata":orgbankDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
