@@ -111,27 +111,6 @@ class api_drcr(object):
             #finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param='attach=image', renderer='json')
-    def getattachment(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails['auth'] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                drcrid = self.request.params["drcrid"]
-                drcrData = self.con.execute(select([drcr.c.drcrno, drcr.c.attachment]).where(drcr.c.drcrid == drcrid))
-                attachment = drcrData.fetchone()
-                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"drcrno":attachment["drcrno"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
     @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
     def getAlldrcr(self):
         try:
@@ -144,34 +123,38 @@ class api_drcr(object):
         else:
             #try:
                 self.con = eng.connect()
-                result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
-                data = []
+                result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
+                drcrdata = []
                 for row in result:
                     #invoice,cust
-                    inv=self.con.execute(select([invoice.c.invid,invoice.c.custid]).where(invoice.c.invid==row["invid"]))
+                    inv=self.con.execute(select([invoice.c.custid]).where(invoice.c.invid==row["invid"]))
                     invdata=inv.fetchone()
-                   # print "\n \n invdata from all ="+str(invdata)
+                    # print "\n \n invdata from all ="+str(invdata)
                     custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
                     custsuppdata= custsupp.fetchone()
                     #print "\n \n custdata from all ="+str(custsuppdata)
-                    if self.request.params.has_key('drcrflagstatus'):
-                        if self.request.params["drcrflagstatus"] =='4':
-                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):                            
+                    if self.request.params.has_key('drcrflagstatus'):                        
+                        if int(self.request.params["drcrflagstatus"]) ==4 and custsuppdata["csflag"]==19:
+                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
                                 if self.request.params.has_key('caseflagstatus'):
-                                    if self.request.params["caseflagstatus"]=='0':
-                                        print " \n \n 4 12  0"
-                                    else:
-                                        print "2"
-                                elif self.request.params["drcrflagstatus"] == '3':
-                                    if self.request.params.has_key('caseflagstatus'):
-                                        if self.request.params["caseflagstatus"]=='1':
-                                            print "1"
-                                        else:
-                                            print "3"                                                         
-                
-
-
-
+                                    
+                                    if int(self.request.params["caseflagstatus"])==0 or int(self.request.params["caseflagstatus"])==2:
+                                        print "0 and 2 and supp data \n \n "
+                                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                        print "\n \n supp data"+str(drcrdata)
+                                        
+                        elif int(self.request.params["drcrflagstatus"]) == 3 and custsuppdata["csflag"]==3:
+                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
+                                if self.request.params.has_key('caseflagstatus'):
+                                    if int(self.request.params["caseflagstatus"])==1 or int(self.request.params["caseflagstatus"])==3:
+                                        print "1 and 3  cust data"
+                                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                        print "\n \n cust data"+str(drcrdata)
+                                                                                     
+                    else:
+                        print "all datata"
+                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                        
 
             #return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             #except:
