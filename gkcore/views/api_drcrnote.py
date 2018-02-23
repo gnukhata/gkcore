@@ -81,19 +81,18 @@ class api_drcr(object):
                         invdata["sourcestatecode"] = sourceStateCode
                         invdata["taxstate"]=invrow["sourcestate"]
                         taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                        invdata["taxstatecode"]=taxStateCode                                           
-                        
-                print " \n \n invoice data"+str(invdata)                
-                resultcust=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
-                custrow=resultcust.fetchone()
+                        invdata["taxstatecode"]=taxStateCode                                                    
+                print " \n \n invoice data"+str(invdata)
+                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                custrow=custresult.fetchone()
                 if custrow["csflag"] == 3:
                     custdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
                     print "\n \n this is customer data "+str(custdata)
                 else:
                     suppdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
                     print "\n \n this is supp data "+str(suppdata)
-                resultuser=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
-                userrow=resultuser.fetchone()
+                userresult=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
+                userrow=userresult.fetchone()
                 userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
                 print "\n \n user data "+str(userdata)
                 #to extract issuername and designation from invoice and user login
@@ -156,7 +155,7 @@ class api_drcr(object):
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                         
 
-            #return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             #finally:
