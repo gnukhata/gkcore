@@ -60,12 +60,25 @@ class api_drcr(object):
                 self.con = eng.connect()
                 resultdrcr=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
                 drcrrow=resultdrcr.fetchone()
-                drcrdata = {"drcrid":drcrrow["drcrid"],"taxflag":drcrrow["taxflag"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"taxflag":drcrrow["taxflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"invid":drcrrow["invid"],"tax":drcrrow["tax"],"contents":drcrrow["contents"],"reference":drcrrow["reference"],"userid":drcrrow["userid"]}
-                print "\n \n drcr data"+str(drcrdata)
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"issuername":invrow["issuername"],"designation":invrow["designation"],"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"]}  
-                
+                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                custrow=custresult.fetchone()
+                n=15
+                if drcrrow["dctypeflag"]==3 and n==15:
+                    if drcrrow["caseflag"] == 1 or drcrrow["caseflag"] == 3:
+                        
+                        print "FROM 3 15 1 3"
+                        
+                elif drcrrow["dctypeflag"]==4 or n==9 :
+                    if drcrrow["caseflag"] == 0 or drcrrow["caseflag"] == 2:
+                        print "FROM 4 9 0 AND 2"
+               
+
+                     
+                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"invid":drcrrow["invid"],"contents":drcrrow["contents"],"reference":drcrrow["reference"]}
+                print "\n \n drcr data"+str(drcrdata)
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"custid":invrow["custid"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"]}  
                 a=9
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
                     if a==9:
@@ -83,8 +96,6 @@ class api_drcr(object):
                         taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
                         invdata["taxstatecode"]=taxStateCode                                                    
                 print " \n \n invoice data"+str(invdata)
-                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
-                custrow=custresult.fetchone()
                 if custrow["csflag"] == 3:
                     custdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
                     print "\n \n this is customer data "+str(custdata)
@@ -135,8 +146,7 @@ class api_drcr(object):
                     if self.request.params.has_key('drcrflagstatus'):                        
                         if int(self.request.params["drcrflagstatus"]) ==4 and custsuppdata["csflag"]==19:
                             if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
-                                if self.request.params.has_key('caseflagstatus'):
-                                    
+                                if self.request.params.has_key('caseflagstatus'): 
                                     if int(self.request.params["caseflagstatus"])==0 or int(self.request.params["caseflagstatus"])==2:
                                         print "0 and 2 and supp data \n \n "
                                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
@@ -155,7 +165,7 @@ class api_drcr(object):
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                         
 
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
+                #return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             #finally:
