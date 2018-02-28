@@ -68,26 +68,7 @@ class api_drcr(object):
                 custSupDetails={}
                 drcrdata={}
                 #common data
-                #a is inoutflag and srcstate and taxstate
-                a=9
-                if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
-                    if a==9 :
-                        invdata["sourcestate"] = invrow["sourcestate"]
-                        sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                        invdata["sourcestatecode"] = sourceStateCode
-                        invdata["taxstate"]=invrow["taxstate"]
-                        taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
-                        invdata["taxstatecode"]=taxStateCode
-                        
-                    else:
-                        invdata["sourcestate"]=invrow["taxstate"]
-                        sourceStateCode= getStateCode(invrow["taxstate"],self.con)["statecode"]
-                        invdata["sourcestatecode"] = sourceStateCode
-                        invdata["taxstate"]=invrow["sourcestate"]
-                        taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                        invdata["taxstatecode"]=taxStateCode
-
-                #cust and supp data
+                 #cust and supp data
                 if custrow["csflag"]==3:
                     #customer data
                     custsuppdata={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
@@ -99,7 +80,7 @@ class api_drcr(object):
                     print "\n \n this is supp data "+str(custsuppdata)
 
                     
-                #tan and gstin
+                #tin and gstin
                 if custsuppdata["custtan"] != None:
                     custSupDetails["custtin"] = custsuppdata["custtan"]
                     if custsuppdata["gstin"] != None:
@@ -122,9 +103,29 @@ class api_drcr(object):
                 userresult=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
                 userrow=userresult.fetchone()
                 userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
-                #print "\n \n user data "+str(userdata)
+                print "\n \n user data "+str(userdata)
                
 
+                #a is inoutflag and srcstate and taxstate
+                a=9
+                if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
+                    if a==9 :
+                        invdata["sourcestate"] = invrow["sourcestate"]
+                        sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                        invdata["sourcestatecode"] = sourceStateCode
+                        invdata["taxstate"]=invrow["taxstate"]
+                        taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        invdata["taxstatecode"]=taxStateCode
+                        
+                    else:
+                        invdata["sourcestate"]=invrow["taxstate"]
+                        sourceStateCode= getStateCode(invrow["taxstate"],self.con)["statecode"]
+                        invdata["sourcestatecode"] = sourceStateCode
+                        invdata["taxstate"]=invrow["sourcestate"]
+                        taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                        invdata["taxstatecode"]=taxStateCode
+
+               
 
                 #all data checked using flag
                 #n is inout flag
@@ -274,22 +275,18 @@ class api_drcr(object):
                     if self.request.params.has_key('drcrflagstatus'):                        
                         if int(self.request.params["drcrflagstatus"]) ==4 and custsuppdata["csflag"]==19:
                             if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
-                                if self.request.params.has_key('caseflagstatus'): 
-                                    if int(self.request.params["caseflagstatus"])==0 or int(self.request.params["caseflagstatus"])==2:
-                                        print "0 and 2 and supp data \n \n "
-                                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                                        print "\n \n supp data"+str(drcrdata)
+                                print "debit supp data \n \n "
+                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                print "\n \n supp data"+str(drcrdata)
                                         
                         elif int(self.request.params["drcrflagstatus"]) == 3 and custsuppdata["csflag"]==3:
                             if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
-                                if self.request.params.has_key('caseflagstatus'):
-                                    if int(self.request.params["caseflagstatus"])==1 or int(self.request.params["caseflagstatus"])==3:
-                                        print "1 and 3  cust data"
-                                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                                        print "\n \n cust data"+str(drcrdata)
+                                print "credit cust data"
+                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                print "\n \n cust data"+str(drcrdata)
                                                                                      
                     else:
-                        print "all datata"
+                        print "all datata if dctypeflag doed not have key"
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                         
 
@@ -298,7 +295,36 @@ class api_drcr(object):
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             #finally:
                 self.con.close()
+    '''
+    Deleteing drcr on the basis of reference and drcrid
+    '''
+    @view_config(request_method='DELETE', renderer ='json')
+    def deletedrcr(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			#try:
+			    self.con = eng.connect()
+                dataset = self.request.json_body
+                result=self.con.execute(select([drcr.c.drcrid,drcr.c.reference]).where(drcr.c.drcrid==dataset["drcrid"]))
+                row=result.fetchone()                
+                if not row["reference"]:
+                     result = self.con.execute(drcr.delete().where(drcr.c.drcrid==dataset["drcrid"]))
+                else:
+                    print "not"
+                #return {"gkstatus":enumdict["Success"]}
+			#except exc.IntegrityError:
+			#return {"gkstatus":enumdict["ActionDisallowed"]}
+			#except:
+			#return {"gkstatus":enumdict["ConnectionFailed"] }
+			#finally:
+                self.con.close()
 
-
+    
 
     
