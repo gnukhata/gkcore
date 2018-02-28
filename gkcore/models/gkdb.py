@@ -65,33 +65,6 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
 
 """
-This table is for stroring records of debit note and credit note.
-Structure of a tax field is {productcode:taxrate} and it is for calculating reduction of tax(VAT/GST).
-In this we have json field that is contents.
-This field is a nested dictionary.
-The key of this field is the productcode while value is another dictionary.
-This has a key as price per unit (ppu) and value as quantity (qty) of product.
-"""
-drcr =  Table('drcr', metadata,             
-    Column('drcrid',Integer,primary_key=True),
-    Column('drcrno',UnicodeText, nullable=False),
-    Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
-    Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
-    Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
-    Column('drcrdate',DateTime,nullable=False),
-    Column('dctypeflag', Integer, default=3),
-    Column('caseflag', Integer, default=3),
-    Column('totreduct',Numeric(13,2),default=0.00),
-    Column('contents',JSONB),
-    Column('reference',JSONB),
-    Column('attachment',JSON),
-    Column('attachmentcount',Integer,default=0),
-    Column('userid',Integer,ForeignKey('users.userid')),
-    UniqueConstraint('orgcode','drcrno','dctypeflag')
-   )
-
-
-"""
 This table is for storing state information.  
 A state will have its corresponding code with name.
 """
@@ -658,3 +631,31 @@ rejectionnote = Table('rejectionnote',metadata,
     UniqueConstraint('rnno','inout', 'orgcode'),
     Index("rejection_note","orgcode")
     )
+
+"""
+This table is for stroring records of debit note and credit note.
+Structure of a tax field is {productcode:taxrate} and it is for calculating reduction of tax(VAT/GST).
+In this we have json field that is contents.
+This field is a nested dictionary.
+The key of this field is the productcode while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty) of product.
+"""
+drcr =  Table('drcr', metadata,             
+    Column('drcrid',Integer,primary_key=True),
+    Column('drcrno',UnicodeText, nullable=False),
+    Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
+    Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
+    Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
+    Column('drcrdate',DateTime,nullable=False),
+    Column('dctypeflag', Integer, default=3),
+    Column('caseflag', Integer, default=3),
+    Column('totreduct',Numeric(13,2),default=0.00),
+    Column('contents',JSONB),
+    Column('reference',JSONB),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('userid',Integer,ForeignKey('users.userid')),
+    UniqueConstraint('orgcode','drcrno','dctypeflag')
+   )
+
+
