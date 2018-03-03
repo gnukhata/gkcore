@@ -347,7 +347,26 @@ class api_drcr(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-
-    
+                
+    '''Update for debit and credit note.'''
+    @view_config(request_method='PUT', renderer='json')
+    def editDrCrNote(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                result = self.con.execute(drcr.update().where(drcr.c.drcrid==dataset["drcrid"]).values(dataset))
+                return {"gkstatus":enumdict["Success"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     
