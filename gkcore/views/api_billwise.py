@@ -39,6 +39,7 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts
 from datetime import datetime, date
+from operator import itemgetter
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -274,6 +275,8 @@ It will be used for creating entries in the billwise table and updating it as ne
         If typeflag is 1 data of invoices for the  all customers and suppliers that are not fully paid are fetched in order of balance amount.
         If orderflag is 4 they are fetched in the descending order.
         If typeflag is 4 invoices are fetched in order of due date.
+        If it is 3 invoices are fetched normally and sorted later in the order of customer/supplier name.
+        This is done so because name of customer/supplier is not stored in invoice table but in customerandsupplier table.
         A list of dictionaries is then returned where each dictionary contains data regarding an invoice.
         """
         try:
@@ -288,22 +291,37 @@ It will be used for creating entries in the billwise table and updating it as ne
                 self.con = eng.connect()
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
+                # Empty list for storing incoices
                 unAdjInvoices = []
+                # Invoices in ascending order of amount.
                 if orderflag == 1 and typeflag == 1:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                # Invoices in descending order of amount.
                 if orderflag == 4 and typeflag == 1:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicedate)))
+                # Invoices in ascending order of due date.
                 if orderflag == 1 and typeflag == 4:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicedate))
+                # Invoices in descending order of due date.
                 if orderflag == 4 and typeflag == 4:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
-                csInvoicesData = csInvoices.fetchall()
+                # Unsorted invoices to be sorted later in the order of customer/supplier name.
+                if typeflag == 3:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
+                    csInvoicesData = csInvoices.fetchall()
                 srno = 1
                 for inv in csInvoicesData:
                     csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
                     csDetails = csd.fetchone()
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"] , "srno":srno})
                     srno = srno + 1
+                # List of dictionaries unAdjInvoices is sorted in order of key custname.
+                if typeflag == 3 and orderflag == 1:
+                    newlistofinvs = sorted(unAdjInvoices, key=itemgetter('custname'))
+                    unAdjInvoices = newlistofinvs
+                if typeflag == 3 and orderflag == 4:
+                    newlistofinvs = sorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
+                    unAdjInvoices = newlistofinvs
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
