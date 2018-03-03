@@ -268,11 +268,12 @@ It will be used for creating entries in the billwise table and updating it as ne
     def getOnlyUnadjustedBillsForAll(self):
         """
         Purpose:
-        Gets the list of invoices for all customers and suppliers in the order of balance amount.
+        Gets the list of invoices for all customers and suppliers in the order of balance amount and due date.
         Description:
-        We receive orderflag. The value of orderflag is 1 for ascending order and 4 for descending.
-        Data of invoices for the  all customers and suppliers that are not fully paid are fetched in the order of balance amount.
-        If orderflag is not 1 they are fetched in the descending order.
+        We receive orderflag and typeflag. The value of orderflag is 1 for ascending order and 4 for descending.
+        If typeflag is 1 data of invoices for the  all customers and suppliers that are not fully paid are fetched in order of balance amount.
+        If orderflag is 4 they are fetched in the descending order.
+        If typeflag is 4 invoices are fetched in order of due date.
         A list of dictionaries is then returned where each dictionary contains data regarding an invoice.
         """
         try:
@@ -286,10 +287,15 @@ It will be used for creating entries in the billwise table and updating it as ne
             try:
                 self.con = eng.connect()
                 orderflag = int(self.request.params["orderflag"])
+                typeflag = int(self.request.params["typeflag"])
                 unAdjInvoices = []
-                if orderflag == 1:
+                if orderflag == 1 and typeflag == 1:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
-                else:
+                if orderflag == 4 and typeflag == 1:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicedate)))
+                if orderflag == 1 and typeflag == 4:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicedate))
+                if orderflag == 4 and typeflag == 4:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
                 csInvoicesData = csInvoices.fetchall()
                 srno = 1
