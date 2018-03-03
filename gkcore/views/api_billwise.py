@@ -40,6 +40,7 @@ from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts
 from datetime import datetime, date
 from operator import itemgetter
+from natsort import natsorted
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -317,10 +318,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                     srno = srno + 1
                 # List of dictionaries unAdjInvoices is sorted in order of key custname.
                 if typeflag == 3 and orderflag == 1:
-                    newlistofinvs = sorted(unAdjInvoices, key=itemgetter('custname'))
+                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'))
                     unAdjInvoices = newlistofinvs
                 if typeflag == 3 and orderflag == 4:
-                    newlistofinvs = sorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
+                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
                     unAdjInvoices = newlistofinvs
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:

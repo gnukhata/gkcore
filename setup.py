@@ -44,6 +44,7 @@ requires = [
     'pyjwt',
     'pycrypto',
     'supervisor',
+    'natsort'
 ]
 
 setup(name='gkcore',
