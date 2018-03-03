@@ -262,6 +262,94 @@ create method for delchal resource.
                     singledelchal["delchaldata"]["goid"]=goiddata
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
+
+                #contents is a nested dictionary from invoice table.
+                #It contains productcode as the key with a value as a dictionary.
+                #this dictionary has two key value pare, priceperunit and quantity.
+                contentsData = delchaldata["contents"]
+                #delchalContents is the finally dictionary which will not just have the dataset from original contents,
+                #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxamount
+                delchalContents = {}
+                #get the dictionary of discount and access it inside the loop for one product each.
+                #do the same with freeqty.
+                totalDisc = 0.00
+                totalTaxableVal = 0.00
+                totalTaxAmt = 0.00
+                totalCessAmt = 0.00
+                discounts = delchaldata["discount"]
+                freeqtys = delchaldata["freeqty"]
+                #now looping through the contents.
+                #pc will have the productcode which will be the key in delchalContents.
+                for pc in contentsData.keys():
+                    #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
+                    if discounts != None:
+                        discount = discounts[pc]
+                    else:
+                        discount = 0.00
+
+                    if freeqtys != None:
+                        freeqty = freeqtys[pc]
+                    else:
+                        freeqty = 0.00
+                    #uomid=unit of measurment
+                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                    prodrow = prod.fetchone()
+                    # For 'Goods'
+                    if int(prodrow["gsflag"]) == 7:
+                        um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                        unitrow = um.fetchone()
+                        unitofMeasurement = unitrow["unitname"]
+                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                    # For 'Service'
+                    else:
+                        unitofMeasurement = ""
+                        taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                        
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate =  float(delchaldata["tax"][pc])
+                    if int(delchaldata["taxflag"]) == 22:
+                        taxRate =  float(delchaldata["tax"][pc])
+                        taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
+                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+
+                    else:
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if delchaldata["cess"] != None:
+                            cessVal = float(delchaldata["cess"][pc])
+                            cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
+
+                        if delchaldata["sourcestate"] != delchaldata["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            taxRate = (taxRate/2)
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+  
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+
+                        delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
+                singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                singledelchal['taxname'] = taxname
+                singledelchal["delchalContents"] = delchalContents
+
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
