@@ -37,10 +37,12 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts
+from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts,organisation
 from datetime import datetime, date
 from operator import itemgetter
 from natsort import natsorted
+import openpyxl
+from openpyxl.styles import Font, Alignment
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -326,3 +328,106 @@ It will be used for creating entries in the billwise table and updating it as ne
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='GET', request_param="type=spreadsheet", renderer="json")
+    def spreadsheetForReport(self):
+        """
+        Purpose:
+        Gets the list of invoices for all customers and suppliers in the order of balance amount and due date.
+        Description:
+        We receive orderflag and typeflag. The value of orderflag is 1 for ascending order and 4 for descending.
+        If typeflag is 1 data of invoices for the  all customers and suppliers that are not fully paid are fetched in order of balance amount.
+        If orderflag is 4 they are fetched in the descending order.
+        If typeflag is 4 invoices are fetched in order of due date.
+        If it is 3 invoices are fetched normally and sorted later in the order of customer/supplier name.
+        This is done so because name of customer/supplier is not stored in invoice table but in customerandsupplier table.
+        A list of dictionaries is then returned where each dictionary contains data regarding an invoice.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orderflag = int(self.request.params["orderflag"])
+                typeflag = int(self.request.params["typeflag"])
+                orderdict = {1:"Ascending", 4:"Descending"}
+                typedict = {1:"Amount", 3:"Customer/Supplier Name", 4:"Due"}
+                billwisewb = openpyxl.Workbook()
+                billwisewb.create_sheet()
+                sheet = billwisewb.active
+                sheet.title = "List of Unpaid Invoices"
+                sheet.column_dimensions['A'].width = 8
+                sheet.column_dimensions['B'].width = 18
+                sheet.column_dimensions['C'].width = 14
+                sheet.column_dimensions['D'].width = 24
+                sheet.column_dimensions['E'].width = 16
+                sheet.column_dimensions['F'].width = 16
+                sheet.merge_cells('A1:F2')
+                orgdata = self.con.execute(select([organisation.c.orgname, organisation.c.yearstart, organisation.c.yearend]).where(organisation.c.orgcode==authDetails["orgcode"]))
+                orgdetails = orgdata.fetchone()
+                sheet['A1'].font = Font(size='16',bold=True)
+                sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
+                sheet['A1'] = orgdetails["orgname"] + ' (FY: ' + datetime.strftime(orgdetails["yearstart"],'%d-%m-%Y') + ' to ' + datetime.strftime(orgdetails["yearend"],'%d-%m-%Y') +')'
+                sheet.merge_cells('A3:F3')
+                sheet['A3'].font = Font(size='12',bold=True)
+                sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
+                sheet['A3'] = 'List of Unpaid Invoices'
+                sheet.merge_cells('A4:F4')
+                sheet['A4'] = 'Period: '
+                sheet['A5'] = 'Sr. No. '
+                sheet['B5'] = 'Invoice No'
+                sheet['C5'] = 'Invoice Date'
+                sheet['D5'] = 'Cust/Supp Name'
+                sheet['E5'] = 'Invoice Amount'
+                sheet['F5'] = 'Amount Pending'
+                # Empty list for storing incoices
+                unAdjInvoices = []
+                # Invoices in ascending order of amount.
+                if orderflag == 1 and typeflag == 1:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                # Invoices in descending order of amount.
+                if orderflag == 4 and typeflag == 1:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicedate)))
+                # Invoices in ascending order of due date.
+                if orderflag == 1 and typeflag == 4:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicedate))
+                # Invoices in descending order of due date.
+                if orderflag == 4 and typeflag == 4:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
+                # Unsorted invoices to be sorted later in the order of customer/supplier name.
+                if typeflag == 3:
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
+                    csInvoicesData = csInvoices.fetchall()
+                srno = 1
+                for inv in csInvoicesData:
+                    csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
+                    csDetails = csd.fetchone()
+                    unAdjInvoices.append({"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"] , "srno":srno})
+                    srno = srno + 1
+                # List of dictionaries unAdjInvoices is sorted in order of key custname.
+                if typeflag == 3 and orderflag == 1:
+                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'))
+                    unAdjInvoices = newlistofinvs
+                if typeflag == 3 and orderflag == 4:
+                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
+                    unAdjInvoices = newlistofinvs
+                row = 6
+                for uninv in unAdjInvoices:
+                    sheet['A'+str(row)] = uninv['srno']
+                    sheet['B'+str(row)] = uninv['invoiceno']
+                    sheet['C'+str(row)] = uninv['invoicedate']
+                    sheet['D'+str(row)] = uninv['custname']
+                    sheet['E'+str(row)] = uninv['invoiceamount']
+                    sheet['F'+str(row)] = uninv['balanceamount']
+                    row = row + +1
+                billwisewb.save('report.xlsx')
+                headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(bf),'Content-Disposition': 'attachment; filename=AllLedger.xlsx', 'Set-Cookie':'fileDownload=true; path=/'}
+                return Response(headerlist=headerList.items())
+            except:
+                print "Spreadsheet not created."
+                return {"gkstatus":3}
