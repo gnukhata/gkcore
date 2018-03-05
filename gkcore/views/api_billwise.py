@@ -370,21 +370,26 @@ It will be used for creating entries in the billwise table and updating it as ne
                 sheet.merge_cells('A1:F2')
                 orgdata = self.con.execute(select([organisation.c.orgname, organisation.c.yearstart, organisation.c.yearend]).where(organisation.c.orgcode==authDetails["orgcode"]))
                 orgdetails = orgdata.fetchone()
-                sheet['A1'].font = Font(size='16',bold=True)
+                sheet['A1'].font = Font(name='Liberation Serif',size='16',bold=True)
                 sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
                 sheet['A1'] = orgdetails["orgname"] + ' (FY: ' + datetime.strftime(orgdetails["yearstart"],'%d-%m-%Y') + ' to ' + datetime.strftime(orgdetails["yearend"],'%d-%m-%Y') +')'
                 sheet.merge_cells('A3:F3')
-                sheet['A3'].font = Font(size='12',bold=True)
+                sheet['A3'].font = Font(name='Liberation Serif',size='14',bold=True)
                 sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
                 sheet['A3'] = 'List of Unpaid Invoices'
                 sheet.merge_cells('A4:F4')
                 sheet['A4'] = 'Period: '
+                sheet['A4'].font = Font(name='Liberation Serif',size='14',bold=True)
                 sheet['A5'] = 'Sr. No. '
                 sheet['B5'] = 'Invoice No'
                 sheet['C5'] = 'Invoice Date'
                 sheet['D5'] = 'Cust/Supp Name'
                 sheet['E5'] = 'Invoice Amount'
                 sheet['F5'] = 'Amount Pending'
+                titlerow = sheet.row_dimensions[5]
+                titlerow.font = Font(name='Liberation Serif',size=12,bold=True)
+                sheet.column_dimensions['E'].alignment = Alignment(horizontal='right')
+                sheet.column_dimensions['F'].alignment = Alignment(horizontal='right')
                 # Empty list for storing incoices
                 unAdjInvoices = []
                 # Invoices in ascending order of amount.
@@ -418,6 +423,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                     unAdjInvoices = newlistofinvs
                 row = 6
                 for uninv in unAdjInvoices:
+                    sheet.row_dimensions[row].font = Font(name='Liberation Serif')
                     sheet['A'+str(row)] = uninv['srno']
                     sheet['B'+str(row)] = uninv['invoiceno']
                     sheet['C'+str(row)] = uninv['invoicedate']
