@@ -272,9 +272,9 @@ class api_drcr(object):
                     custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
                     custsuppdata= custsupp.fetchone()
                     #print "\n \n custdata from all ="+str(custsuppdata)
-                    if self.request.params.has_key('drcrflagstatus'):                        
-                        if int(self.request.params["drcrflagstatus"]) ==4 and custsuppdata["csflag"]==19:
-                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
+                    if self.request.params.has_key('drcrflag'):                        
+                        if int(self.request.params["drcrflag"]) ==4 and custsuppdata["csflag"]==19:
+                            if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
                                 print "debit supp data \n \n "
                                 drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                 print "\n \n supp data"+str(drcrdata)
