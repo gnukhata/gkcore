@@ -295,23 +295,26 @@ It will be used for creating entries in the billwise table and updating it as ne
                 self.con = eng.connect()
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
+                # Period for which this report is created is determined by startdate and enddate. They are formatted as YYYY-MM-DD.
+                startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
+                enddate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 # Empty list for storing incoices
                 unAdjInvoices = []
                 # Invoices in ascending order of amount.
                 if orderflag == 1 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
                 # Invoices in descending order of amount.
                 if orderflag == 4 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicedate)))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(desc(invoice.c.invoicedate)))
                 # Invoices in ascending order of due date.
                 if orderflag == 1 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(invoice.c.invoicedate))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(invoice.c.invoicedate))
                 # Invoices in descending order of due date.
                 if orderflag == 4 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
                 # Unsorted invoices to be sorted later in the order of customer/supplier name.
                 if typeflag == 3:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)))
                 csInvoicesData = csInvoices.fetchall()
                 srno = 1
                 for inv in csInvoicesData:
@@ -351,8 +354,8 @@ It will be used for creating entries in the billwise table and updating it as ne
                 self.con = eng.connect()
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
-                yearstart = datetime.strptime(self.request.params["yearstart"],"%Y-%m-%d")
-                yearend = datetime.strptime(self.request.params["yearend"],"%Y-%m-%d")
+                startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
+                enddate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 # A workbook is opened.
                 billwisewb = openpyxl.Workbook()
                 # A new sheet is created.
@@ -382,7 +385,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
                 sheet['A3'] = 'List of Unpaid Invoices'
                 sheet.merge_cells('A4:F4')
-                sheet['A4'] = 'Period: ' + datetime.strftime(yearstart,'%d-%m-%Y') + ' to ' + datetime.strftime(yearend,'%d-%m-%Y')
+                sheet['A4'] = 'Period: ' + str(self.request.params["startdate"]) + ' to ' + str(self.request.params["enddate"])
                 sheet['A4'].font = Font(name='Liberation Serif',size='14',bold=True)
                 sheet['A4'].alignment = Alignment(horizontal = 'center', vertical='center')
                 sheet['A5'] = 'Sr. No. '
@@ -401,19 +404,19 @@ It will be used for creating entries in the billwise table and updating it as ne
                 unAdjInvoices = []
                 # Invoices in ascending order of amount.
                 if orderflag == 1 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > yearstart, invoice.c.invoicedate < yearend)).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
                 # Invoices in descending order of amount.
                 if orderflag == 4 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > yearstart, invoice.c.invoicedate < yearend)).order_by(desc(invoice.c.invoicedate)))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(desc(invoice.c.invoicedate)))
                 # Invoices in ascending order of due date.
                 if orderflag == 1 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > yearstart, invoice.c.invoicedate < yearend)).order_by(invoice.c.invoicedate))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(invoice.c.invoicedate))
                 # Invoices in descending order of due date.
                 if orderflag == 4 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > yearstart, invoice.c.invoicedate < yearend)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
                 # Unsorted invoices to be sorted later in the order of customer/supplier name.
                 if typeflag == 3:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > yearstart, invoice.c.invoicedate < yearend)))
+                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate > startdate, invoice.c.invoicedate < enddate)))
                 csInvoicesData = csInvoices.fetchall()
                 srno = 1
                 for inv in csInvoicesData:
