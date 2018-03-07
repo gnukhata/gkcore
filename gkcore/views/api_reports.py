@@ -4063,8 +4063,9 @@ free replacement or sample are those which are excluded.
         Function will also need the range for which calculatBalance is to be called for getting actual balances.
         The function will loop through every list getting closing balance for all the accounts.
         Then it will sum up all the balances for that list.
-        
-"""
+        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.........}
+        """
+
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -4082,7 +4083,8 @@ free replacement or sample are those which are excluded.
                 result = self.con.execute(select([yearstart.c.organisation]).where([orgcode.c.organisation == authDetails["orgcode"]]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
-                
+
+                #get list of accountCodes for each type of taxes for their input and output taxes.
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
                 SGSTIn = dataset["sgstin"]
@@ -4092,8 +4094,9 @@ free replacement or sample are those which are excluded.
                 CESSIn = dataset["cessin"]
                 CESSOut = dataset["cessout"]
 
-                #Declare public variables
+                #Declare public variables to store total
                 totalCGSTIn = 0.00
+                totalCGSTOut = 0.00
                 totalSGSTout = 0.00
                 totalSGSTIn = 0.00
                 totalSGSTout = 0.00
@@ -4103,7 +4106,9 @@ free replacement or sample are those which are excluded.
                 totalCESSOut = 0.00
                 gstDict = {}
                 
-                for n in CGSTIn:
-                    calbalData = calculateBalance(self.con,accountCode, financialStart, startDate, endDate)
+                for cin in CGSTIn:
+                    calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
+                    # get account name from accountcode.
+                    accN = self.con.execute(select([account.c.gsflag]).where(product.c.productcode==pc))
                     totalCGSTIn = totalCGSTIn + calbalData["curbal"]
                     
