@@ -490,3 +490,15 @@ class api_rollclose(object):
 				print E
 				self.con.close()
 				return {"gkstatus":enumdict["ConnectionFailed"]}
+
+    def getNextOrgCode(self,prevOrgCode,con):
+        """
+        Purpose:
+        gets the orgcode for the given organization for subsequent financial year.
+        description:
+        When user does a rollover for an organisation without closing books,
+        then we need to reset the opening balances for all accounts after closing books.
+        This function will provide the needed orgcode of the organisation for the subsequent financialstart.
+        The function will take orgcode of the organisation who's books were just closed.
+        Then will return the subsequent orgcode.
+        """
