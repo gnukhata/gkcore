@@ -4112,13 +4112,25 @@ free replacement or sample are those which are excluded.
                     # get account name from accountcode.
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
                     accName = accN.fetchone()
+                    #fill dictionary with account name and its balance.
                     cgstin[accName["accountname"]] = calbalData["curbal"]
+                    # calculate total cgst in amount by adding balance of each account in every iteration.
                     totalCGSTIn = totalCGSTIn + calbalData["curbal"]
-                cgstin["totalCGSTIn"] =totalCGSTIn
+                # Populate dictionary to be returned with cgstin and total values
                 gstDict["cgstin"] = cgstin
+                gstDict["totalCGSTIn"] = totalCGSTIn
 
                 
-                
+                cgstout = {}
+                for cout in CGSTOut:
+                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
+                    accName = accN.fetchone()
+                    cgstout[accName["accountname"]] = calbalData["curbal"]
+                    totalCGSTOut = totalCGSTIn + calbalData["curbal"]
+                cgstin["totalCGSTOut"] =totalCGSTOut
+                gstDict["cgstout"] = cgstout
+
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
