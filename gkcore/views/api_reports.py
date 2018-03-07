@@ -4063,7 +4063,8 @@ free replacement or sample are those which are excluded.
         Function will also need the range for which calculatBalance is to be called for getting actual balances.
         The function will loop through every list getting closing balance for all the accounts.
         Then it will sum up all the balances for that list.
-        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.....,"cgstpayable":value,"sgstpayable":value,....,"cgstcrdfwd":value,"sgstcrdfwd":value,.....}
+        Then it will compare total in amount with total out amount and will decide if it is payable or carried forward.
+        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.....,"cgstpayable":value,"sgstpayable":value,        ....,"cgstcrdfwd":value,"sgstcrdfwd":value,.....}
         """
 
         try:
@@ -4148,7 +4149,6 @@ free replacement or sample are those which are excluded.
                     cgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["cgstpayable"] = cgstPayable
 
-
                 # For state tax
                 sgstin = {}
                 for sin in SGSTIn:
@@ -4189,7 +4189,7 @@ free replacement or sample are those which are excluded.
                     totalIGSTIn = totalIGSTIn + calbalData["curbal"]
                 gstDict["igstin"] = igstin
                 gstDict["totalIGSTIn"] = totalIGSTIn
-
+                
                 igstout = {}
                 for iout in IGSTOut:
                     calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
@@ -4237,10 +4237,7 @@ free replacement or sample are those which are excluded.
                     cessPayable = totalCESSOut - totalCESSIn
                     gstDict ["cesspayable"] = cessPayable
 
-    
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
-                
-
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
