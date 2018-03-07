@@ -97,14 +97,11 @@ class api_organisation(object):
             alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
             #here we will be fetching all the delchal data
             delchals = alldelchal.fetchall()
-            print delchals
             for delchal in delchals:
                 delchalid = int(delchal["dcid"])
-                print delchalid
                 stockdata = self.con.execute(select([gkdb.stock.c.inout]).where(and_(gkdb.stock.c.dcinvtnid == delchalid, gkdb.stock.c.dcinvtnflag == 4)))
                 inout = stockdata.fetchone()
                 inoutflag = inout["inout"]
-                print inoutflag
                 self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
             self.con.execute("alter table invoice add inoutflag integer")
             #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
