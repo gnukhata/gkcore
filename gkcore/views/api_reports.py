@@ -4080,13 +4080,11 @@ free replacement or sample are those which are excluded.
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                print authDetails["orgcode"]
                 
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
-                print "I retived year start from"
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
-                print "Here you got fstart"
+                
                 #get list of accountCodes for each type of taxes for their input and output taxes.
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
@@ -4107,6 +4105,7 @@ free replacement or sample are those which are excluded.
                 totalIGSTOut = 0.00
                 totalCESSIn = 0.00
                 totalCESSOut = 0.00
+                # These variables are to store Payable and carried forward amount
                 cgstPayable = 0.00
                 cgstCrdFwd = 0.00
                 sgstPayable = 0.00
@@ -4189,7 +4188,6 @@ free replacement or sample are those which are excluded.
                     accName = accN.fetchone()
                     igstin[accName["accountname"]] = calbalData["curbal"]
                     totalIGSTIn = totalIGSTIn + calbalData["curbal"]
-                # Populate dictionary to be returned with cgstin and total values
                 gstDict["igstin"] = igstin
                 gstDict["totalIGSTIn"] = totalIGSTIn
 
@@ -4205,15 +4203,42 @@ free replacement or sample are those which are excluded.
 
                 # calculate carried forward amount or payable.
                 if totalIGSTIn > totalIGSTOut :
-                    sgstCrdFwd = totalIGSTIn - totalIGSTOut
-                    gstDict ["igstcrdfwd"] = igstCrdFwd
+                    igstCrdFwd = totalIGSTIn - totalIGSTOut
+                    gstDict["IgstCrdFwd"] = igstCrdFwd
                 else:
-                    sgstPayable = totalIGSTOut - totalIGSTIn
-                    gstDict ["igstpayable"] = igstPayable
+                    igstPayable = totalIGSTOut - totalIGSTIn
+                    gstDict["igstPayable"] = igstPayable
 
-                
-                
-                    
+                # For cess tax
+                cssin = {}
+                for csin in CESSIn:
+                    calbalData = calculateBalance(self.con,csin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csin)))
+                    accName = accN.fetchone()
+                    cssin[accName["accountname"]] = calbalData["curbal"]
+                    totalCESSIn = totalCESSIn + calbalData["curbal"]
+                gstDict["cessin"] = cssin
+                gstDict["totalCESSIn"] = totalCESSIn
+
+                cssout = {}
+                for csout in CESSOut:
+                    calbalData = calculateBalance(self.con,csout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
+                    accName = accN.fetchone()
+                    cssout[accName["accountname"]] = calbalData["curbal"]
+                    totalSGSTOut = totalCESSOut + calbalData["curbal"]
+                gstDict["cessout"] = cssout
+                gstDict["totalCESSOut"] =totalCESSOut
+
+                # calculate carried forward amount or payable.
+                if totalCESSIn > totalCESSOut :
+                    cessCrdFwd = totalCESSIn - totalCESSOut
+                    gstDict ["cessCrdFwd"] = cessCrdFwd
+                else:
+                    cessPayable = totalCESSOut - totalCESSIn
+                    gstDict ["cesspayable"] = cessPayable
+
+    
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
                 
 
