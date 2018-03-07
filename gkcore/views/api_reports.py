@@ -4074,25 +4074,28 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+         #   try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
-                endDate = dataset["endDate"]
-                result = self.con.execute(select([yearstart.c.organisation]).where([orgcode.c.organisation == authDetails["orgcode"]]))
+                endDate = dataset["enddate"]
+                print authDetails["orgcode"]
+                
+                result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
+                print "I retived year start from"
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
-
+                print "Here you got fstart"
                 #get list of accountCodes for each type of taxes for their input and output taxes.
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
-                SGSTIn = dataset["sgstin"]
-                SGSTOut = dataset["sgstout"]
-                IGSTIn = dataset["igstin"]
-                IGSTOut = dataset["igstout"]
-                CESSIn = dataset["cessin"]
-                CESSOut = dataset["cessout"]
+                #SGSTIn = dataset["sgstin"]
+                #SGSTOut = dataset["sgstout"]
+                #IGSTIn = dataset["igstin"]
+                #IGSTOut = dataset["igstout"]
+                #CESSIn = dataset["cessin"]
+                #CESSOut = dataset["cessout"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
@@ -4104,6 +4107,8 @@ free replacement or sample are those which are excluded.
                 totalIGSTout = 0.00
                 totalCESSIn = 0.00
                 totalCESSOut = 0.00
+                cgstPayable = 0.00
+                cgstCrdFwd = 0.00
                 gstDict = {}
 
                 cgstin = {}
@@ -4120,21 +4125,31 @@ free replacement or sample are those which are excluded.
                 gstDict["cgstin"] = cgstin
                 gstDict["totalCGSTIn"] = totalCGSTIn
 
-                
                 cgstout = {}
                 for cout in CGSTOut:
                     calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
                     accName = accN.fetchone()
                     cgstout[accName["accountname"]] = calbalData["curbal"]
-                    totalCGSTOut = totalCGSTIn + calbalData["curbal"]
-                cgstin["totalCGSTOut"] =totalCGSTOut
+                    totalCGSTOut = totalCGSTOut + calbalData["curbal"]
                 gstDict["cgstout"] = cgstout
+                gstDict["totalCGSTOut"] =totalCGSTOut
 
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+                # calculate carried forward amount or payable.
+                if totalCGSTIn > totalCGSTOut :
+                    cgstCrdFwd = totalCGSTIn - totalCGSTOut
+                    gstDict ["cgstcrdfwd"] = cgstCrdFwd
+                else:
+                    cgstPayable = totalCGSTOut - totalCGSTIn
+                    gstDict ["cgstpayable"] = cgstPayable
+                    
+                return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
+                
+
+          #  except:
+          #      return {"gkstatus":enumdict["ConnectionFailed"] }
+          #  finally:
+          #      self.con.close()
 
             
                     
