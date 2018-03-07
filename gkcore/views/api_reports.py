@@ -4092,23 +4092,29 @@ free replacement or sample are those which are excluded.
                 CGSTOut = dataset["cgstout"]
                 SGSTIn = dataset["sgstin"]
                 SGSTOut = dataset["sgstout"]
-                #IGSTIn = dataset["igstin"]
-                #IGSTOut = dataset["igstout"]
-                #CESSIn = dataset["cessin"]
-                #CESSOut = dataset["cessout"]
+                IGSTIn = dataset["igstin"]
+                IGSTOut = dataset["igstout"]
+                CESSIn = dataset["cessin"]
+                CESSOut = dataset["cessout"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
                 totalCGSTOut = 0.00
-                totalSGSTout = 0.00
+                totalSGSTOut = 0.00
                 totalSGSTIn = 0.00
-                totalSGSTout = 0.00
+                totalSGSTOut = 0.00
                 totalIGSTIn = 0.00
-                totalIGSTout = 0.00
+                totalIGSTOut = 0.00
                 totalCESSIn = 0.00
                 totalCESSOut = 0.00
                 cgstPayable = 0.00
                 cgstCrdFwd = 0.00
+                sgstPayable = 0.00
+                sgstCrdFwd = 0.00
+                igstPayable = 0.00
+                igstCrdFwd = 0.00
+                cessPayable = 0.00
+                cessCrdFwd = 0.00
                 gstDict = {}
 
                 cgstin = {}
@@ -4158,7 +4164,8 @@ free replacement or sample are those which are excluded.
 
                 sgstout = {}
                 for sout in SGSTOut:
-                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
+                    print"I am in SGSTOut"
+                    calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
                     accName = accN.fetchone()
                     sgstout[accName["accountname"]] = calbalData["curbal"]
@@ -4173,6 +4180,38 @@ free replacement or sample are those which are excluded.
                 else:
                     sgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["sgstpayable"] = sgstPayable
+
+                # For Inter state tax
+                igstin = {}
+                for iin in IGSTIn:
+                    calbalData = calculateBalance(self.con,iin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iin)))
+                    accName = accN.fetchone()
+                    igstin[accName["accountname"]] = calbalData["curbal"]
+                    totalIGSTIn = totalIGSTIn + calbalData["curbal"]
+                # Populate dictionary to be returned with cgstin and total values
+                gstDict["igstin"] = igstin
+                gstDict["totalIGSTIn"] = totalIGSTIn
+
+                igstout = {}
+                for iout in IGSTOut:
+                    calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
+                    accName = accN.fetchone()
+                    igstout[accName["accountname"]] = calbalData["curbal"]
+                    totalIGSTOut = totalSGSTOut + calbalData["curbal"]
+                gstDict["igstout"] = igstout
+                gstDict["totalIGSTOut"] =totalIGSTOut
+
+                # calculate carried forward amount or payable.
+                if totalIGSTIn > totalIGSTOut :
+                    sgstCrdFwd = totalIGSTIn - totalIGSTOut
+                    gstDict ["igstcrdfwd"] = igstCrdFwd
+                else:
+                    sgstPayable = totalIGSTOut - totalIGSTIn
+                    gstDict ["igstpayable"] = igstPayable
+
+                
                 
                     
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
