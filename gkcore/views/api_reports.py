@@ -4074,7 +4074,7 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-         #   try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 # Retrived individual data from dictionary
@@ -4163,7 +4163,6 @@ free replacement or sample are those which are excluded.
 
                 sgstout = {}
                 for sout in SGSTOut:
-                    print"I am in SGSTOut"
                     calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
                     accName = accN.fetchone()
@@ -4242,10 +4241,10 @@ free replacement or sample are those which are excluded.
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
                 
 
-          #  except:
-          #      return {"gkstatus":enumdict["ConnectionFailed"] }
-          #  finally:
-          #      self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
             
                     
