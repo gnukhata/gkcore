@@ -51,6 +51,7 @@ from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 
+
 """
 purpose:
 This class is the resource to generate reports,
@@ -4039,3 +4040,8 @@ free replacement or sample are those which are excluded.
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+
+     
+     
+     

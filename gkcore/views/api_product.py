@@ -472,11 +472,9 @@ class api_product(object):
                 self.con.close()
 
     '''
-    This is a function to fetch all products of an organisation.
-    A godown keeper can usally access the list of products that are present in the godowns assigned to him.
+    A godown keeper can only access the list of products that are present in the godowns assigned to him.
     This function lets a godown keeper access the list of all products in an organisation.
-    Also function added so that godown incharge cannot access products which are already having openingStock
-    in addstock popup modal.
+    Also, godown incharge cannot access products which are already having openingStock.
     '''
 
     @view_config(request_method='GET', request_param='list=all', renderer ='json')
