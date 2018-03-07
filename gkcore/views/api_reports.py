@@ -4090,8 +4090,8 @@ free replacement or sample are those which are excluded.
                 #get list of accountCodes for each type of taxes for their input and output taxes.
                 CGSTIn = dataset["cgstin"]
                 CGSTOut = dataset["cgstout"]
-                #SGSTIn = dataset["sgstin"]
-                #SGSTOut = dataset["sgstout"]
+                SGSTIn = dataset["sgstin"]
+                SGSTOut = dataset["sgstout"]
                 #IGSTIn = dataset["igstin"]
                 #IGSTOut = dataset["igstout"]
                 #CESSIn = dataset["cessin"]
@@ -4142,6 +4142,38 @@ free replacement or sample are those which are excluded.
                 else:
                     cgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["cgstpayable"] = cgstPayable
+
+
+                # For state tax
+                sgstin = {}
+                for sin in SGSTIn:
+                    calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
+                    accName = accN.fetchone()
+                    sgstin[accName["accountname"]] = calbalData["curbal"]
+                    totalSGSTIn = totalSGSTIn + calbalData["curbal"]
+                # Populate dictionary to be returned with cgstin and total values
+                gstDict["sgstin"] = sgstin
+                gstDict["totalSGSTIn"] = totalSGSTIn
+
+                sgstout = {}
+                for sout in SGSTOut:
+                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
+                    accName = accN.fetchone()
+                    sgstout[accName["accountname"]] = calbalData["curbal"]
+                    totalSGSTOut = totalSGSTOut + calbalData["curbal"]
+                gstDict["sgstout"] = sgstout
+                gstDict["totalSGSTOut"] =totalSGSTOut
+
+                # calculate carried forward amount or payable.
+                if totalSGSTIn > totalSGSTOut :
+                    sgstCrdFwd = totalSGSTIn - totalSGSTOut
+                    gstDict ["sgstcrdfwd"] = sgstCrdFwd
+                else:
+                    sgstPayable = totalCGSTOut - totalCGSTIn
+                    gstDict ["sgstpayable"] = sgstPayable
+                
                     
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
                 
