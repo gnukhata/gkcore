@@ -548,9 +548,6 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
-
-
-
     @view_config(request_method='GET',request_param="cash=all", renderer ='json')
     def getAllcashmemos(self):
         try:
@@ -563,7 +560,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3)).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in result:
                     invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y')})
@@ -571,7 +568,7 @@ The bills grid calld gkresult will return a list as it's value.
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
-                self.con.close()
+                 self.con.close()
 
     @view_config(request_method='GET',request_param='attach=image', renderer='json')
     def getattachment(self):
