@@ -44,6 +44,7 @@ from natsort import natsorted
 import openpyxl
 from openpyxl.styles import Font, Alignment
 import base64
+import os
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -471,6 +472,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 xlsxdata = base64.b64encode(reportxslx.read())
                 # Closing file.
                 reportxslx.close()
+                os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
             except:
                 print "Spreadsheet not created."
