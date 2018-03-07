@@ -4063,7 +4063,7 @@ free replacement or sample are those which are excluded.
         Function will also need the range for which calculatBalance is to be called for getting actual balances.
         The function will loop through every list getting closing balance for all the accounts.
         Then it will sum up all the balances for that list.
-        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.........}
+        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.....,"cgstpayable":value,"sgstpayable":value,....,"cgstcrdfwd":value,"sgstcrdfwd":value,.....}
         """
 
         try:
@@ -4105,10 +4105,24 @@ free replacement or sample are those which are excluded.
                 totalCESSIn = 0.00
                 totalCESSOut = 0.00
                 gstDict = {}
-                
+
+                cgstin = {}
                 for cin in CGSTIn:
                     calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
                     # get account name from accountcode.
-                    accN = self.con.execute(select([account.c.gsflag]).where(product.c.productcode==pc))
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
+                    accName = accN.fetchone()
+                    cgstin[accName["accountname"]] = calbalData["curbal"]
                     totalCGSTIn = totalCGSTIn + calbalData["curbal"]
+                cgstin["totalCGSTIn"] =totalCGSTIn
+                gstDict["cgstin"] = cgstin
+
+                
+                
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+            
                     
