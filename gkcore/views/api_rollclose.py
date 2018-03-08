@@ -507,6 +507,11 @@ class api_rollclose(object):
         endYear = curEndRow["yearend"]
         nextYearStart = endYear + timedelta(days=1)
         nextYearEnd = nextYearStart + timedelta(days=364)
+        nxtOrgCodeRecord = con.execute(select([organisation.c.orgcode]).where(_and(organisation.c.yearstart == nextYearStart, organisation.c.yearend  == nextYearEnd)))
+        nxtOrgCodeRow = nxtOrgCodeRecord.fetchone()
+        nxtOrgcode = nxtOrgCodeRow["orgcode"]
+        return nxtOrgcode
+        
         
         
 
