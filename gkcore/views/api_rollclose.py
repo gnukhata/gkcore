@@ -502,3 +502,12 @@ class api_rollclose(object):
         The function will take orgcode of the organisation who's books were just closed.
         Then will return the subsequent orgcode.
         """
+        curEndYearRecord = con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+        curEndRow = curEndYearRecord.fetchone()
+        endYear = curEndRow["yearend"]
+        nextYearStart = endYear + timedelta(days=1)
+        nextYearEnd = nextYearStart + timedelta(days=364)
+        
+        
+
+        
