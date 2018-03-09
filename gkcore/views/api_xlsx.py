@@ -42,22 +42,30 @@ from openpyxl.styles import Font, Alignment
 import base64
 import os
 
+@view_defaults(route_name='worksheet')
+class api_spreadsheet(object):
+    def __init__(self, request):
+        self.request = Request
+        self.request = request
+        self.con = Connection
+        print "sheet initialized"
 
-@view_config(request_method='GET', request_param="type=sprdsheet", renderer="json")
-def spreadsheetForUserreport(self):
-     try:
-         token = self.request.headers["gktoken"]
-     except:
-         return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+
+    @view_config(route_name='worksheet',request_method='GET', request_param="type=sprdsheet", renderer="json")
+    def spreadsheetForListOfUsers(self):
+         try:
+             token = self.request.headers["gktoken"]
+         except:
+             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
          authDetails = authCheck(token)
          if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+             return {"gkstatus":enumdict["UnauthorisedAccess"]}
          else:
-            try:
+             #try:
                 self.con = eng.connect()
                  # A workbook is opened.
                 userwb = openpyxl.Workbook()
-                # A new sheet is created.
+                 # A new sheet is created.
                 userwb.create_sheet()
                 # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
                 sheet = userwb.active
@@ -65,43 +73,84 @@ def spreadsheetForUserreport(self):
                 sheet.title = "List of Users"
                 sheet.column_dimensions['A'].width = 8
                 sheet.column_dimensions['B'].width = 18
-                sheet.column_dimensions['C'].width = 14
-                sheet.column_dimensions['D'].width = 24
+                sheet.column_dimensions['C'].width = 24
+                sheet.column_dimensions['D'].width = 44
                 # Cells of first two rows are merged to display organisation details properly.
-                sheet.merge_cells('A1:D2')
+                sheet.merge_cells('A1:G2')
                 # Name and Financial Year of organisation is fetched to be displayed on the first row.
                 orgdata = self.con.execute(select([organisation.c.orgname, organisation.c.yearstart, organisation.c.yearend]).where(organisation.c.orgcode==authDetails["orgcode"]))
                 orgdetails = orgdata.fetchone()
-                
-                # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
+                 # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
                 sheet['A1'].font = Font(name='Liberation Serif',size='16',bold=True)
                 sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
                 # Organisation name and financial year are displayed.
                 sheet['A1'] = orgdetails["orgname"] + ' (FY: ' + datetime.strftime(orgdetails["yearstart"],'%d-%m-%Y') + ' to ' + datetime.strftime(orgdetails["yearend"],'%d-%m-%Y') +')'
-                sheet.merge_cells('A3:D3')
+                sheet.merge_cells('A3:G3')
                 sheet['A3'].font = Font(name='Liberation Serif',size='14',bold=True)
                 sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
-                sheet['A3'] = 'List of Unpaid Invoices'
-                sheet.merge_cells('A4:D4')
-                sheet['A4'] = 'Period: ' + str(self.request.params["startdate"]) + ' to ' + str(self.request.params["enddate"])
-                sheet['A4'].font = Font(name='Liberation Serif',size='14',bold=True)
-                sheet['A4'].alignment = Alignment(horizontal = 'center', vertical='center')
-                sheet['A5'] = 'Sr. No. '
-                sheet['B5'] = 'User Name'
-                sheet['C5'] = 'User Role'
-                sheet['D5'] = 'Associated Godown(s)'
-                titlerow = sheet.row_dimensions[5]
+                sheet['A3'] = 'List of Users'
+                sheet.merge_cells('A3:G3')
+                sheet['A4'] = 'Sr. No.'
+                sheet['B4'] = 'User Name'
+                sheet['C4'] = 'User Role'
+                sheet['D4'] = 'Associated Godown(s)'
+                titlerow = sheet.row_dimensions[4]
                 titlerow.font = Font(name='Liberation Serif',size=12,bold=True)
-                 # Saving the xlsx file.
+                result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
+                #users = []
+                srno = 1
+                for row in result:
+                    godowns = []
+                    urole = ""
+                    if(row["userrole"] == -1):
+                        urole = "Admin"
+                    elif(row["userrole"] == 0):
+                        urole = "Manager"
+                    elif(row["userrole"] == 1):
+                        urole = "Operator"
+                    elif(row["userrole"] == 2):
+                        urole = "Internal Auditor"
+                    else:
+                        urole = "Godown In Charge"
+                        godownresult = self.con.execute(select([gkdb.usergodown.c.goid]).where(and_(gkdb.usergodown.c.orgcode==authDetails["orgcode"], gkdb.usergodown.c.userid==row["userid"])))
+                    users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns, "noofgodowns": len(godowns)})
+                    for goid in godownresult:
+                            godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
+                            goname = godownnameres.fetchone()
+                            godowns.append(str(goname["goname"] + "(" +goname["goaddr"]+")"))
+                    #users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns, "noofgodowns": len(godowns)})
+                    srno += 1
+                row=5
+                for user in users:
+                    sheet['A'+str(row)] = user['srno']
+                    sheet['A'+str(row)].alignment = Alignment(horizontal='left')
+                    sheet['A'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                    sheet['B'+str(row)] = user['username']
+                    sheet['B'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                    sheet['C'+str(row)] = user['userrole']
+                    sheet['C'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                    gostring = ""
+                    i = 0
+                    for godown in user["godowns"]:
+                        if i == user["noofgodowns"]:
+                            gostring += godown
+                        else:
+                            gostring = gostring + godown + ","
+                        i += 1
+                    print user["godowns"]
+                    sheet['D'+str(row)] = gostring
+                    sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                    row = row + +1
+                #Saving the xlsx file.
                 userwb.save('report.xlsx')
-                # Opening xlsx file in read only mode.
+                #Opening xlsx file in read only mode.
                 reportxslx = open("report.xlsx","r")
-                # Encoding xlsx file in base64 format.
+                    # Encoding xlsx file in base64 format.
                 xlsxdata = base64.b64encode(reportxslx.read())
-                # Closing file.
+                    # Closing file.
                 reportxslx.close()
-                os.remove("report.xlsx")
+                #os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
-            except:
+             #except:
                 print "Spreadsheet not created."
                 return {"gkstatus":3}
