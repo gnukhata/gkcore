@@ -69,12 +69,13 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 delchaldata = dataset["delchaldata"]                
                 stockdata = dataset["stockdata"]
                 inoutflag=stockdata["inout"]
+                items = delchaldata["contents"]
                 delchaldata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
                 if delchaldata["dcflag"]==19:
@@ -86,11 +87,13 @@ create method for delchal resource.
                     stockdata["dcinvtnid"] = dcidrow["dcid"]
                     stockdata["dcinvtnflag"] = 4
                     stockdata["stockdate"] = dcidrow["dcdate"]
-                    items = stockdata.pop("items")
+                    #items = stockdata.pop("contents")
                     try:
                         for key in items.keys():
+                            print "yes"
                             stockdata["productcode"] = key
-                            stockdata["qty"] = items[key]
+                            stockdata["qty"] = items[key].values()[0]
+                            print stockdata["qty"]
                             result = self.con.execute(stock.insert(),[stockdata])
                             if stockdata.has_key("goid"):
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
@@ -104,11 +107,11 @@ create method for delchal resource.
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
+            #except exc.IntegrityError:
+            #    return {"gkstatus":enumdict["DuplicateEntry"]}
+            #except:
+            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            #finally:
                 self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
