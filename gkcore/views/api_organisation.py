@@ -62,6 +62,8 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.delchal.c.vehicleno)]))
+            self.con.execute(select([func.count(gkdb.delchal.c.dateofsupply)]))
             self.con.execute(select([func.count(gkdb.delchal.c.delchaltotal)]))
             self.con.execute(select([func.count(gkdb.delchal.c.discount)]))
             self.con.execute(select([func.count(gkdb.delchal.c.freeqty)]))
@@ -102,6 +104,8 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table delchal add vehicleno text")
+            self.con.execute("alter table delchal add dateofsupply timestamp")
             self.con.execute("alter table delchal add delchaltotal numeric(13,2)")
             self.con.execute("alter table delchal add discount jsonb")
             self.con.execute("alter table delchal add freeqty jsonb")

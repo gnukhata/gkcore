@@ -43,6 +43,7 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
+from gkcore.views.api_invoice import getStateCode
 
 @view_defaults(route_name='delchal')
 class api_delchal(object):
@@ -69,7 +70,7 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 delchaldata = dataset["delchaldata"]                
@@ -107,11 +108,11 @@ create method for delchal resource.
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
@@ -221,8 +222,24 @@ create method for delchal resource.
                 self.con = eng.connect()
                 result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
-                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state]).where(customerandsupplier.c.custid==delchaldata["custid"]))
-                custname = custdata.fetchone()
+                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==delchaldata["custid"]))
+                custData = custandsup.fetchone()
+                custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                if custData["custtan"] != None:
+                    custSupDetails["custtin"] = custData["custtan"]
+                    if custData["gstin"] != None:
+                        if int(custData["csflag"]) == 3 :
+                            try:
+                                custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                            except:
+                                custSupDetails["custgstin"] = None
+                        else:
+                            try:
+                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            except:
+                                custSupDetails["custgstin"] = None
+                    
                 items = {}
                 if delchaldata["cancelflag"]==1:
                     flag = 40
@@ -230,11 +247,6 @@ create method for delchal resource.
                     flag = 4
                 stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["dcid"])))
                 for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
-                    productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
-                    unitnamrrow = uomresult.fetchone()
-                    items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
                     stockinout = stockrow["inout"]
                     goiddata = stockrow["goid"]
                 singledelchal = {"delchaldata":{
@@ -243,19 +255,19 @@ create method for delchal resource.
                                     "dcflag":delchaldata["dcflag"],
                                     "issuername":delchaldata["issuername"],
                                     "designation":delchaldata["designation"],
+                                    "orggstin":delchaldata["orgstategstin"],
                                     "consignee":delchaldata["consignee"],
                                     "dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
-                                    "custid":delchaldata["custid"],"custname":custname["custname"],
-                                    "custstate":custname["state"],
+                                    "custSupDetails":custSupDetails,
+                                    "taxflag":delchaldata["taxflag"],
                                     "cancelflag":delchaldata["cancelflag"],
                                     "noofpackages":delchaldata["noofpackages"],
                                     "modeoftransport": delchaldata["modeoftransport"],
+                                    "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
-                                    "inoutflag": delchaldata["inoutflag"] #added inoutflag in get method
-                                },
-                            "stockdata":{
-                                    "inout":stockinout,"items":items
-                                    }}
+                                    "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
+                                    "inout":stockinout
+                                }}
                 if delchaldata["cancelflag"] ==1:
                     singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')
 
@@ -266,6 +278,17 @@ create method for delchal resource.
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
 
+                if delchaldata["taxstate"] != None:
+                    singledelchal["destinationstate"]=delchaldata["taxstate"]
+                    taxStateCode =  getStateCode(delchaldata["taxstate"],self.con)["statecode"]
+                    singledelchal["taxstatecode"] = taxStateCode
+
+                if delchaldata["dateofsupply"] != None:
+                        singledelchal["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
+                else:
+                        singledelchal["dateofsupply"] = ""
+
+                #..........................................Delchal ProductCode Info....................
                 #contents is a nested dictionary from invoice table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pare, priceperunit and quantity.
