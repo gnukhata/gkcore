@@ -101,7 +101,6 @@ class api_spreadsheet(object):
                 userroles={-1:"Admin",0:"Manager",1:"Operator",2:"Internal Auditor",3:"Godown In Charge"}
                 for user in result:
                     urole=userroles[user["userrole"]]
-                    print urole
                     sheet['A'+str(row)] = srno
                     sheet['A'+str(row)].alignment = Alignment(horizontal='left')
                     sheet['A'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
@@ -118,9 +117,10 @@ class api_spreadsheet(object):
                             if godownindex == 0:
                                 gostring= gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")"))
                             else:
-                                gostring=  gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")")) + ' ,' 
+                                gostring=  gostring +  ', ' + (str(goname["goname"] + "(" +goname["goaddr"]+")")) 
                             godownindex = godownindex + 1
-                    sheet['D'+str(row)] = gostring
+                    if godownindex > 0:
+                        sheet['D'+str(row)] = gostring
                     sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
                     row = row + 1
                     srno += 1
@@ -132,7 +132,7 @@ class api_spreadsheet(object):
                 xlsxdata = base64.b64encode(reportxslx.read())
                     # Closing file.
                 reportxslx.close()
-                #os.remove("report.xlsx")
+                os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
              except:
                 print "Spreadsheet not created."
