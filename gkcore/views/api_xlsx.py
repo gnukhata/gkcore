@@ -48,7 +48,6 @@ class api_spreadsheet(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "sheet initialized"
 
 
     @view_config(route_name='worksheet',request_method='GET', request_param="type=sprdsheet", renderer="json")
@@ -61,7 +60,7 @@ class api_spreadsheet(object):
          if authDetails["auth"]==False:
              return {"gkstatus":enumdict["UnauthorisedAccess"]}
          else:
-             #try:
+             try:
                 self.con = eng.connect()
                  # A workbook is opened.
                 userwb = openpyxl.Workbook()
@@ -97,50 +96,34 @@ class api_spreadsheet(object):
                 titlerow = sheet.row_dimensions[4]
                 titlerow.font = Font(name='Liberation Serif',size=12,bold=True)
                 result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
-                #users = []
                 srno = 1
-                for row in result:
-                    godowns = []
-                    urole = ""
-                    if(row["userrole"] == -1):
-                        urole = "Admin"
-                    elif(row["userrole"] == 0):
-                        urole = "Manager"
-                    elif(row["userrole"] == 1):
-                        urole = "Operator"
-                    elif(row["userrole"] == 2):
-                        urole = "Internal Auditor"
-                    else:
-                        urole = "Godown In Charge"
-                        godownresult = self.con.execute(select([gkdb.usergodown.c.goid]).where(and_(gkdb.usergodown.c.orgcode==authDetails["orgcode"], gkdb.usergodown.c.userid==row["userid"])))
-                    users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns, "noofgodowns": len(godowns)})
-                    for goid in godownresult:
-                            godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
-                            goname = godownnameres.fetchone()
-                            godowns.append(str(goname["goname"] + "(" +goname["goaddr"]+")"))
-                    #users.append({"srno": srno, "userid":row["userid"], "username":row["username"], "userrole":urole, "godowns":godowns, "noofgodowns": len(godowns)})
-                    srno += 1
                 row=5
-                for user in users:
-                    sheet['A'+str(row)] = user['srno']
+                userroles={-1:"Admin",0:"Manager",1:"Operator",2:"Internal Auditor",3:"Godown In Charge"}
+                for user in result:
+                    urole=userroles[user["userrole"]]
+                    print urole
+                    sheet['A'+str(row)] = srno
                     sheet['A'+str(row)].alignment = Alignment(horizontal='left')
                     sheet['A'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
                     sheet['B'+str(row)] = user['username']
                     sheet['B'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['C'+str(row)] = user['userrole']
+                    sheet['C'+str(row)] = urole
                     sheet['C'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                    godownresult = self.con.execute(select([gkdb.usergodown.c.goid]).where(and_(gkdb.usergodown.c.orgcode==authDetails["orgcode"], gkdb.usergodown.c.userid==user["userid"])))
                     gostring = ""
-                    i = 0
-                    for godown in user["godowns"]:
-                        if i == user["noofgodowns"]:
-                            gostring += godown
-                        else:
-                            gostring = gostring + godown + ","
-                        i += 1
-                    print user["godowns"]
+                    godownindex = 0
+                    for goid in godownresult:
+                            godownnameres = self.con.execute(select([gkdb.godown.c.goname, gkdb.godown.c.goaddr]).where(gkdb.godown.c.goid==goid[0]))
+                            goname = godownnameres.fetchone()
+                            if godownindex == 0:
+                                gostring= gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")"))
+                            else:
+                                gostring= ' ,' + gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")"))
+                            godownindex = godownindex + 1
                     sheet['D'+str(row)] = gostring
                     sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    row = row + +1
+                    row = row + 1
+                    srno += 1
                 #Saving the xlsx file.
                 userwb.save('report.xlsx')
                 #Opening xlsx file in read only mode.
@@ -149,8 +132,8 @@ class api_spreadsheet(object):
                 xlsxdata = base64.b64encode(reportxslx.read())
                     # Closing file.
                 reportxslx.close()
-                #os.remove("report.xlsx")
+                os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
-             #except:
+             except:
                 print "Spreadsheet not created."
                 return {"gkstatus":3}
