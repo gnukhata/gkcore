@@ -118,7 +118,7 @@ class api_spreadsheet(object):
                             if godownindex == 0:
                                 gostring= gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")"))
                             else:
-                                gostring= ' ,' + gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")"))
+                                gostring=  gostring + (str(goname["goname"] + "(" +goname["goaddr"]+")")) + ' ,' 
                             godownindex = godownindex + 1
                     sheet['D'+str(row)] = gostring
                     sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
@@ -132,7 +132,7 @@ class api_spreadsheet(object):
                 xlsxdata = base64.b64encode(reportxslx.read())
                     # Closing file.
                 reportxslx.close()
-                os.remove("report.xlsx")
+                #os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
              except:
                 print "Spreadsheet not created."
