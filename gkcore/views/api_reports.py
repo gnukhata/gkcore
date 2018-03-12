@@ -4081,20 +4081,20 @@ free replacement or sample are those which are excluded.
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                
+                taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
-                CGSTIn = dataset["cgstin"]
-                CGSTOut = dataset["cgstout"]
-                SGSTIn = dataset["sgstin"]
-                SGSTOut = dataset["sgstout"]
-                IGSTIn = dataset["igstin"]
-                IGSTOut = dataset["igstout"]
-                CESSIn = dataset["cessin"]
-                CESSOut = dataset["cessout"]
+                CGSTIn = taxAcc["cgstin"]
+                CGSTOut = taxAcc["cgstout"]
+                SGSTIn = taxAcc["sgstin"]
+                SGSTOut = taxAcc["sgstout"]
+                IGSTIn = taxAcc["igstin"]
+                IGSTOut = taxAcc["igstout"]
+                CESSIn = taxAcc["cessin"]
+                CESSOut = taxAcc["cessout"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
