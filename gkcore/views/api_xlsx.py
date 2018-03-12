@@ -44,14 +44,21 @@ import os
 
 @view_defaults(route_name='worksheet')
 class api_spreadsheet(object):
+    """
+    This class is a resource for spreadsheet.
+It will be used for creating entries in the table and updating it as new entries are passed.
+    We will have get and post methods.
+    """
     def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
-
-
     @view_config(route_name='worksheet',request_method='GET', request_param="type=sprdsheet", renderer="json")
     def spreadsheetForListOfUsers(self):
+         """
+         Purpose:
+         Gets the list of users  in spreadsheet(XLSX) format.
+         """
          try:
              token = self.request.headers["gktoken"]
          except:
@@ -62,9 +69,9 @@ class api_spreadsheet(object):
          else:
              try:
                 self.con = eng.connect()
-                 # A workbook is opened.
+                # A workbook is opened.
                 userwb = openpyxl.Workbook()
-                 # A new sheet is created.
+                # A new sheet is created.
                 userwb.create_sheet()
                 # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
                 sheet = userwb.active
@@ -79,7 +86,7 @@ class api_spreadsheet(object):
                 # Name and Financial Year of organisation is fetched to be displayed on the first row.
                 orgdata = self.con.execute(select([organisation.c.orgname, organisation.c.yearstart, organisation.c.yearend]).where(organisation.c.orgcode==authDetails["orgcode"]))
                 orgdetails = orgdata.fetchone()
-                 # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
+                # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
                 sheet['A1'].font = Font(name='Liberation Serif',size='16',bold=True)
                 sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
                 # Organisation name and financial year are displayed.
@@ -99,6 +106,7 @@ class api_spreadsheet(object):
                 srno = 1
                 row=5
                 userroles={-1:"Admin",0:"Manager",1:"Operator",2:"Internal Auditor",3:"Godown In Charge"}
+                #Looping to store the data in the cells and apply styles.
                 for user in result:
                     urole=userroles[user["userrole"]]
                     sheet['A'+str(row)] = srno
@@ -128,12 +136,11 @@ class api_spreadsheet(object):
                 userwb.save('report.xlsx')
                 #Opening xlsx file in read only mode.
                 reportxslx = open("report.xlsx","r")
-                    # Encoding xlsx file in base64 format.
+                # Encoding xlsx file in base64 format.
                 xlsxdata = base64.b64encode(reportxslx.read())
-                    # Closing file.
+                # Closing file.
                 reportxslx.close()
                 os.remove("report.xlsx")
                 return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
              except:
-                print "Spreadsheet not created."
                 return {"gkstatus":3}
