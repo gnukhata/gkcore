@@ -35,6 +35,8 @@ class api_drcr(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                if dataset["dctypeflag"]=="4":
+                    dataset["userid"]=authDetails["userid"]
                 result=self.con.execute(drcr.insert(),[dataset])
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -107,9 +109,9 @@ class api_drcr(object):
                
 
                 #a is inoutflag and srcstate and taxstate
-                a=9
+                
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
-                    if a==9 :
+                    if int(invrow["inoutflag"])==9 :
                         invdata["sourcestate"] = invrow["sourcestate"]
                         sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                         invdata["sourcestatecode"] = sourceStateCode
@@ -129,8 +131,8 @@ class api_drcr(object):
 
                 #all data checked using flag
                 #n is inout flag
-                n=15
-                if drcrrow["dctypeflag"]==3 and n==15:
+                
+                if drcrrow["dctypeflag"]==3 and  int(invrow["inoutflag"])==15:
                     #to extract issuername and designation from invoice and user login
                     invdata["issuername"]=invrow["issuername"]
                     invdata["designation"]=invrow["designation"]
@@ -144,7 +146,7 @@ class api_drcr(object):
                     elif drcrrow["caseflag"] == 3 :
                         print "from 3 15 3 rejection"
                         
-                elif drcrrow["dctypeflag"]==4 and n==9 :
+                elif drcrrow["dctypeflag"]==4 and int(invrow["inoutflag"])==9 :
                     #to extract issuername and designation from invoice and user login
                     invdata["issuername"]=userrow["username"]
                     invdata["designation"]=userrow["userrole"]
@@ -244,9 +246,9 @@ class api_drcr(object):
                 drcrdata['taxname'] = taxname
                 drcrdata["drcrcontents"] = drcrContents
                 print drcrdata
-                #return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
+                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
             #except:
-                #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
                 self.con.close()
 
