@@ -4124,30 +4124,30 @@ free replacement or sample are those which are excluded.
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
                     accName = accN.fetchone()
                     #fill dictionary with account name and its balance.
-                    cgstin[accName["accountname"]] = calbalData["curbal"]
+                    cgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     # calculate total cgst in amount by adding balance of each account in every iteration.
                     totalCGSTIn = totalCGSTIn + calbalData["curbal"]
                 # Populate dictionary to be returned with cgstin and total values
                 gstDict["cgstin"] = cgstin
-                gstDict["totalCGSTIn"] = totalCGSTIn
+                gstDict["totalCGSTIn"] = "%.2f"%(float(totalCGSTIn))
 
                 cgstout = {}
                 for cout in CGSTOut:
                     calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
                     accName = accN.fetchone()
-                    cgstout[accName["accountname"]] = calbalData["curbal"]
+                    cgstout[accName["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
                     totalCGSTOut = totalCGSTOut + calbalData["curbal"]
                 gstDict["cgstout"] = cgstout
-                gstDict["totalCGSTOut"] =totalCGSTOut
+                gstDict["totalCGSTOut"] ="%.2f"%(float(totalCGSTOut))
 
                 # calculate carried forward amount or payable.
                 if totalCGSTIn > totalCGSTOut :
                     cgstCrdFwd = totalCGSTIn - totalCGSTOut
-                    gstDict ["cgstcrdfwd"] = cgstCrdFwd
+                    gstDict ["cgstcrdfwd"] = "%.2f"%(float(cgstCrdFwd))
                 else:
                     cgstPayable = totalCGSTOut - totalCGSTIn
-                    gstDict ["cgstpayable"] = cgstPayable
+                    gstDict ["cgstpayable"] = "%.2f"%(float(cgstPayable))
 
                 # For state tax
                 sgstin = {}
@@ -4155,30 +4155,30 @@ free replacement or sample are those which are excluded.
                     calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
                     accName = accN.fetchone()
-                    sgstin[accName["accountname"]] = calbalData["curbal"]
+                    sgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalSGSTIn = totalSGSTIn + calbalData["curbal"]
                 # Populate dictionary to be returned with cgstin and total values
                 gstDict["sgstin"] = sgstin
-                gstDict["totalSGSTIn"] = totalSGSTIn
+                gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
 
                 sgstout = {}
                 for sout in SGSTOut:
                     calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
                     accName = accN.fetchone()
-                    sgstout[accName["accountname"]] = calbalData["curbal"]
+                    sgstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalSGSTOut = totalSGSTOut + calbalData["curbal"]
                 gstDict["sgstout"] = sgstout
-                gstDict["totalSGSTOut"] =totalSGSTOut
+                gstDict["totalSGSTOut"] ="%.2f"%(float(totalSGSTOut))
 
                 
                 # calculate carried forward amount or payable.
                 if totalSGSTIn > totalSGSTOut :
                     sgstCrdFwd = totalSGSTIn - totalSGSTOut
-                    gstDict ["sgstcrdfwd"] = sgstCrdFwd
+                    gstDict ["sgstcrdfwd"] = "%.2f"%(float(sgstCrdFwd))
                 else:
                     sgstPayable = totalSGSTOut - totalSGSTIn
-                    gstDict ["sgstpayable"] = sgstPayable
+                    gstDict ["sgstpayable"] = "%.2f"%(float(sgstPayable))
 
                 # For Inter state tax
                 igstin = {}
@@ -4186,28 +4186,28 @@ free replacement or sample are those which are excluded.
                     calbalData = calculateBalance(self.con,iin, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iin)))
                     accName = accN.fetchone()
-                    igstin[accName["accountname"]] = calbalData["curbal"]
+                    igstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalIGSTIn = totalIGSTIn + calbalData["curbal"]
                 gstDict["igstin"] = igstin
-                gstDict["totalIGSTIn"] = totalIGSTIn
+                gstDict["totalIGSTIn"] = "%.2f"%(float(totalIGSTIn))
                 
                 igstout = {}
                 for iout in IGSTOut:
                     calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
                     accName = accN.fetchone()
-                    igstout[accName["accountname"]] = calbalData["curbal"]
+                    igstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalIGSTOut = totalIGSTOut + calbalData["curbal"]
                 gstDict["igstout"] = igstout
-                gstDict["totalIGSTOut"] =totalIGSTOut
+                gstDict["totalIGSTOut"] ="%.2f"%(float(totalIGSTOut))
 
                 # calculate carried forward amount or payable.
                 if totalIGSTIn > totalIGSTOut :
                     igstCrdFwd = totalIGSTIn - totalIGSTOut
-                    gstDict["IgstCrdFwd"] = igstCrdFwd
+                    gstDict["IgstCrdFwd"] = "%.2f"%(float(igstCrdFwd))
                 else:
                     igstPayable = totalIGSTOut - totalIGSTIn
-                    gstDict["IgstPayable"] = igstPayable
+                    gstDict["IgstPayable"] = "%.2f"%(float(igstPayable))
 
                 # For cess tax
                 cssin = {}
@@ -4215,30 +4215,28 @@ free replacement or sample are those which are excluded.
                     calbalData = calculateBalance(self.con,csin, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csin)))
                     accName = accN.fetchone()
-                    cssin[accName["accountname"]] = calbalData["curbal"]
+                    cssin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalCESSIn = totalCESSIn + calbalData["curbal"]
                 gstDict["cessin"] = cssin
-                gstDict["totalCESSIn"] = totalCESSIn
+                gstDict["totalCESSIn"] = "%.2f"%(float(totalCESSIn))
 
                 cssout = {}
                 for csout in CESSOut:
                     calbalData = calculateBalance(self.con,csout, financialStart, startDate, endDate)
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
                     accName = accN.fetchone()
-                    cssout[accName["accountname"]] = calbalData["curbal"]
+                    cssout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                     totalCESSOut = totalCESSOut + calbalData["curbal"]
                 gstDict["cessout"] = cssout
-                gstDict["totalCESSOut"] =totalCESSOut
+                gstDict["totalCESSOut"] ="%.2f"%(float(totalCESSOut))
 
                 # calculate carried forward amount or payable.
                 if totalCESSIn > totalCESSOut :
                     cessCrdFwd = totalCESSIn - totalCESSOut
-                    gstDict ["cessCrdFwd"] = cessCrdFwd
+                    gstDict ["cessCrdFwd"] = "%.2f"%(float(cessCrdFwd))
                 else:
                     cessPayable = totalCESSOut - totalCESSIn
-                    gstDict ["cesspayable"] = cessPayable
-
-                print gstDict
+                    gstDict ["cesspayable"] = "%.2f"%(float(cessPayable))
 
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
             except:
