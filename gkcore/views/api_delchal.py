@@ -58,6 +58,7 @@ create method for delchal resource.
         -delchal id goes in dcinvtnid column of stock table.
         -dcinvtnflag column will be set to 4 for delivery challan entry.
     If stock table insert fails then the delchal entry will be deleted.
+    It's return also 'dcid' to front end.
     """
     #added delchal dataset and stockdata dataset in post method.
     @view_config(request_method='POST',renderer='json')
@@ -88,7 +89,6 @@ create method for delchal resource.
                     stockdata["dcinvtnid"] = dcidrow["dcid"]
                     stockdata["dcinvtnflag"] = 4
                     stockdata["stockdate"] = dcidrow["dcdate"]
-                    #items = stockdata.pop("contents")
                     try:
                         for key in items.keys():
                             stockdata["productcode"] = key
@@ -205,7 +205,12 @@ create method for delchal resource.
             finally:
                 self.con.close()
                     
-
+    """
+    This function returns the single delivery challan data to frontend depends on 'dcid;.
+    if for given dcid 'contents' field not available then 'stockdata' will return, else 'delchalContents' will return.
+    we also return the 'delchalflag' for 'Old' and 'new' deliverychallan. for 'Old deliverychallan' delchalflag is '15',
+    and for 'New deliverychallan' delchalflag is '14' set.
+    """
     @view_config(request_method='GET',request_param="delchal=single", renderer ='json')
     def getdelchal(self):
         try:
@@ -216,7 +221,7 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
@@ -396,10 +401,10 @@ create method for delchal resource.
                     singledelchal['taxname'] = taxname
                     singledelchal["delchalContents"] = delchalContents
 
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
