@@ -73,7 +73,7 @@ create method for delchal resource.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                delchaldata = dataset["delchaldata"]                
+                delchaldata = dataset["delchaldata"]
                 stockdata = dataset["stockdata"]
                 inoutflag=stockdata["inout"]
                 items = delchaldata["contents"]
@@ -91,16 +91,14 @@ create method for delchal resource.
                     #items = stockdata.pop("contents")
                     try:
                         for key in items.keys():
-                            print "yes"
                             stockdata["productcode"] = key
                             stockdata["qty"] = items[key].values()[0]
-                            print stockdata["qty"]
                             result = self.con.execute(stock.insert(),[stockdata])
                             if stockdata.has_key("goid"):
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
                                 if resultgoprod.rowcount == 0:
                                     result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
-
+                        return {"gkstatus":enumdict["Success"],"gkresult":dcidrow["dcid"]}
                     except:
                         result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==dcidrow["dcid"],stock.c.dcinvtnflag==4)))
                         result = self.con.execute(delchal.delete().where(delchal.c.dcid==dcidrow["dcid"]))
@@ -218,28 +216,10 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchal]).where(delchal.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
-                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==delchaldata["custid"]))
-                custData = custandsup.fetchone()
-                custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
-                if custData["custtan"] != None:
-                    custSupDetails["custtin"] = custData["custtan"]
-                    if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
-                            try:
-                                custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
-                            except:
-                                custSupDetails["custgstin"] = None
-                        else:
-                            try:
-                                custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
-                            except:
-                                custSupDetails["custgstin"] = None
-                    
                 items = {}
                 if delchaldata["cancelflag"]==1:
                     flag = 40
@@ -258,7 +238,6 @@ create method for delchal resource.
                                     "orggstin":delchaldata["orgstategstin"],
                                     "consignee":delchaldata["consignee"],
                                     "dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
-                                    "custSupDetails":custSupDetails,
                                     "taxflag":delchaldata["taxflag"],
                                     "cancelflag":delchaldata["cancelflag"],
                                     "noofpackages":delchaldata["noofpackages"],
@@ -266,120 +245,149 @@ create method for delchal resource.
                                     "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
-                                    "inout":stockinout
+                                    "inout":stockinout,
                                 }}
+
+                if delchaldata["delchaltotal"] != None:
+                    singledelchal["delchaldata"]["delchaltotal"] =delchaldata["delchaltotal"] 
+                
                 if delchaldata["cancelflag"] ==1:
                     singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')
 
                 if goiddata!=None:
-                    godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
+                    godata = self.con.execute(select([godown.c.goname,godown.c.state,godown.c.goaddr]).where(godown.c.goid==goiddata))
                     goname = godata.fetchone()
                     singledelchal["delchaldata"]["goid"]=goiddata
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
+                    singledelchal["delchaldata"]["goaddr"]=goname["goaddr"]
 
                 if delchaldata["taxstate"] != None:
                     singledelchal["destinationstate"]=delchaldata["taxstate"]
                     taxStateCode =  getStateCode(delchaldata["taxstate"],self.con)["statecode"]
                     singledelchal["taxstatecode"] = taxStateCode
 
+                if delchaldata["sourcestate"] != None:
+                    singledelchal["sourcestate"] = delchaldata["sourcestate"]
+                    singledelchal["sourcestatecode"] = getStateCode(delchaldata["sourcestate"],self.con)["statecode"]
+                    sourceStateCode = getStateCode(delchaldata["sourcestate"],self.con)["statecode"]
+
                 if delchaldata["dateofsupply"] != None:
-                        singledelchal["dateofsupply"]=datetime.strftime(invrow["dateofsupply"],"%d-%m-%Y")
+                        singledelchal["dateofsupply"]=datetime.strftime(delchaldata["dateofsupply"],"%d-%m-%Y")
                 else:
                         singledelchal["dateofsupply"] = ""
+
+                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==delchaldata["custid"]))
+                custData = custandsup.fetchone()
+                custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                singledelchal["custSupDetails"] = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                if custData["custtan"] != None:
+                    singledelchal["custSupDetails"]["custtin"] = custData["custtan"]
+                    if custData["gstin"] != None:
+                        if int(custData["csflag"]) == 3 :
+                            try:
+                                singledelchal["custSupDetails"]["custgstin"] = custData["gstin"][str(taxStateCode)]
+                            except:
+                                singledelchal["custSupDetails"]["custgstin"] = None
+                        else:
+                            try:
+                                singledelchal["custSupDetails"]["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                            except:
+                                singledelchal["custSupDetails"]["custgstin"] = None
 
                 #..........................................Delchal ProductCode Info....................
                 #contents is a nested dictionary from invoice table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pare, priceperunit and quantity.
-                contentsData = delchaldata["contents"]
-                #delchalContents is the finally dictionary which will not just have the dataset from original contents,
-                #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxamount
-                delchalContents = {}
-                #get the dictionary of discount and access it inside the loop for one product each.
-                #do the same with freeqty.
-                totalDisc = 0.00
-                totalTaxableVal = 0.00
-                totalTaxAmt = 0.00
-                totalCessAmt = 0.00
-                discounts = delchaldata["discount"]
-                freeqtys = delchaldata["freeqty"]
-                #now looping through the contents.
-                #pc will have the productcode which will be the key in delchalContents.
-                for pc in contentsData.keys():
-                    #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
-                    if discounts != None:
-                        discount = discounts[pc]
-                    else:
-                        discount = 0.00
-
-                    if freeqtys != None:
-                        freeqty = freeqtys[pc]
-                    else:
-                        freeqty = 0.00
-                    #uomid=unit of measurment
-                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
-                    prodrow = prod.fetchone()
-                    # For 'Goods'
-                    if int(prodrow["gsflag"]) == 7:
-                        um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
-                        unitrow = um.fetchone()
-                        unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
-                    # For 'Service'
-                    else:
-                        unitofMeasurement = ""
-                        taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
-                        
-                    taxRate = 0.00
-                    totalAmount = 0.00
-                    taxRate =  float(delchaldata["tax"][pc])
-                    if int(delchaldata["taxflag"]) == 22:
-                        taxRate =  float(delchaldata["tax"][pc])
-                        taxAmount = (taxableAmount * float(taxRate/100))
-                        taxname = 'VAT'
-                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
-                        totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + taxableAmount
-                        totalTaxAmt = totalTaxAmt + taxAmount
-                        delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
-
-                    else:
-                        cessRate = 0.00
-                        cessAmount = 0.00
-                        cessVal = 0.00
-                        taxname = ""
-                        if delchaldata["cess"] != None:
-                            cessVal = float(delchaldata["cess"][pc])
-                            cessAmount = (taxableAmount * (cessVal/100))
-                            totalCessAmt = totalCessAmt + cessAmount
-
-                        if delchaldata["sourcestate"] != delchaldata["taxstate"]:
-                            taxname = "IGST"
-                            taxAmount = (taxableAmount * (taxRate/100))
-                            totalAmount = taxableAmount + taxAmount + cessAmount
+                if delchaldata["contents"]!=None:
+                    contentsData = delchaldata["contents"]
+                    #delchalContents is the finally dictionary which will not just have the dataset from original contents,
+                    #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxamount
+                    delchalContents = {}
+                    #get the dictionary of discount and access it inside the loop for one product each.
+                    #do the same with freeqty.
+                    totalDisc = 0.00
+                    totalTaxableVal = 0.00
+                    totalTaxAmt = 0.00
+                    totalCessAmt = 0.00
+                    discounts = delchaldata["discount"]
+                    freeqtys = delchaldata["freeqty"]
+                    #now looping through the contents.
+                    #pc will have the productcode which will be the key in delchalContents.
+                    for pc in contentsData.keys():
+                        #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
+                        if discounts != None:
+                            discount = discounts[pc]
                         else:
-                            taxname = "SGST"
-                            taxRate = (taxRate/2)
-                            taxAmount = (taxableAmount * (taxRate/100))
-                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
-  
-                        totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + taxableAmount
-                        totalTaxAmt = totalTaxAmt + taxAmount
+                            discount = 0.00
 
-                        delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
-                singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
-                singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
-                singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
-                singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
-                singledelchal['taxname'] = taxname
-                singledelchal["delchalContents"] = delchalContents
+                        if freeqtys != None:
+                            freeqty = freeqtys[pc]
+                        else:
+                            freeqty = 0.00
+                        #uomid=unit of measurment
+                        prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                        prodrow = prod.fetchone()
+                        # For 'Goods'
+                        if int(prodrow["gsflag"]) == 7:
+                            um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                            unitrow = um.fetchone()
+                            unitofMeasurement = unitrow["unitname"]
+                            taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                        # For 'Service'
+                        else:
+                            unitofMeasurement = ""
+                            taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                        
+                        taxRate = 0.00
+                        totalAmount = 0.00
+                        taxRate =  float(delchaldata["tax"][pc])
+                        if int(delchaldata["taxflag"]) == 22:
+                            taxRate =  float(delchaldata["tax"][pc])
+                            taxAmount = (taxableAmount * float(taxRate/100))
+                            taxname = 'VAT'
+                            totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                            totalDisc = totalDisc + float(discount)
+                            totalTaxableVal = totalTaxableVal + taxableAmount
+                            totalTaxAmt = totalTaxAmt + taxAmount
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+
+                        else:
+                            cessRate = 0.00
+                            cessAmount = 0.00
+                            cessVal = 0.00
+                            taxname = ""
+                            if delchaldata["cess"] != None:
+                                cessVal = float(delchaldata["cess"][pc])
+                                cessAmount = (taxableAmount * (cessVal/100))
+                                totalCessAmt = totalCessAmt + cessAmount
+
+                            if delchaldata["sourcestate"] != delchaldata["taxstate"]:
+                                taxname = "IGST"
+                                taxAmount = (taxableAmount * (taxRate/100))
+                                totalAmount = taxableAmount + taxAmount + cessAmount
+                            else:
+                                taxname = "SGST"
+                                taxRate = (taxRate/2)
+                                taxAmount = (taxableAmount * (taxRate/100))
+                                totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+  
+                            totalDisc = totalDisc + float(discount)
+                            totalTaxableVal = totalTaxableVal + taxableAmount
+                            totalTaxAmt = totalTaxAmt + taxAmount
+
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                    singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
+                    singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                    singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                    singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                    singledelchal['taxname'] = taxname
+                    singledelchal["delchalContents"] = delchalContents
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
+            #except:
+            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            #finally:
                 self.con.close()
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
