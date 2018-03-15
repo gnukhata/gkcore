@@ -1,4 +1,5 @@
 
+
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -469,3 +470,105 @@ class api_product(object):
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    '''
+    A godown keeper can only access the list of products that are present in the godowns assigned to him.
+    This function lets a godown keeper access the list of all products in an organisation.
+    Also, godown incharge cannot access products which are already having openingStock.
+    '''
+
+    @view_config(request_method='GET', request_param='list=all', renderer ='json')
+    def getProductList(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con=eng.connect()
+                userrole = getUserRole(authDetails["userid"])
+                gorole = userrole["gkresult"]
+                if gorole["userrole"]==3:
+                    uId = getusergodowns(authDetails["userid"])
+                    gid=[]
+                    for record1 in uId["gkresult"]:
+                        gid.append(record1["goid"])
+                    productCodes=[]
+                    for record2 in gid:
+                        proCode = self.con.execute(select([gkdb.goprod.c.productcode]).where(gkdb.goprod.c.goid==record2))
+                        proCodes = proCode.fetchall()
+                        for record3 in proCodes:
+                            if record3["productcode"] not in productCodes:
+                                productCodes.append(record3["productcode"])
+                    results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.productdesc]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                    products = []
+                    for row in results:
+                        if row["productcode"] not in productCodes:
+                            products.append({"productcode": row["productcode"], "productdesc":row["productdesc"]})
+                    return {"gkstatus":enumdict["Success"], "gkresult":products}
+            except:
+               self.con.close()
+               return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    '''
+    This function is written for fetching the HSN code, UOM automatically when product is selected.
+    '''
+    @view_config(request_method='GET', request_param='type=hsnuom', renderer ='json')
+    def gethsnuom(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con=eng.connect()
+                product = self.con.execute(select([gkdb.unitofmeasurement.c.uomid,gkdb.product.c.gscode]).where(and_(gkdb.product.c.productcode==self.request.params["productcode"],gkdb.product.c.orgcode==authDetails["orgcode"])))
+                productdetails = product.fetchone()
+                uom = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==productdetails["uomid"]))
+                unitname = uom.fetchone()
+                productDetails={"unitname": unitname["unitname"],"gscode":productdetails["gscode"]}
+                return {"gkstatus":enumdict["Success"], "gkresult":productDetails}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    '''
+    This is a function for saving opening stock for the selected product
+    ''' 
+    @view_config(request_method='POST', request_param='type=addstock', renderer='json')
+    def addstock(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+             try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                orgcode=authDetails["orgcode"]
+                goid=dataset["goid"]
+                productDetails=dataset["productdetails"]
+                for product in productDetails:
+                    details={"goid":goid,"goopeningstock":productDetails[product],"productcode":product,"orgcode":orgcode}
+                    result=self.con.execute(gkdb.goprod.insert(),[details])
+                return {"gkstatus":enumdict["Success"]}
+             except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+             except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+             finally:
+                self.con.close()
+

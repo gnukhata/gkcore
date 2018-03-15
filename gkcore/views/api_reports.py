@@ -4038,4 +4038,4 @@ free replacement or sample are those which are excluded.
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
-                self.con.close()
+                self.con.close()     

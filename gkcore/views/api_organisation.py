@@ -92,7 +92,9 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
             self.con.execute("alter table delchal add inoutflag integer")
+            
             #This code will assign inoutflag for delivery chalan where inoutflag is blank.
             alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
             #here we will be fetching all the delchal data
@@ -240,7 +242,7 @@ class api_organisation(object):
             self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             
-            #return 0
+            return 0
         finally:
             self.con.close()
             return 0
