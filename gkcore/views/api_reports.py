@@ -4197,7 +4197,7 @@ free replacement or sample are those which are excluded.
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
                     accName = accN.fetchone()
                     igstout[accName["accountname"]] = calbalData["curbal"]
-                    totalIGSTOut = totalSGSTOut + calbalData["curbal"]
+                    totalIGSTOut = totalIGSTOut + calbalData["curbal"]
                 gstDict["igstout"] = igstout
                 gstDict["totalIGSTOut"] =totalIGSTOut
 
