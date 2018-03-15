@@ -245,11 +245,11 @@ create method for delchal resource.
                                     "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
-                                    "inout":stockinout,
+                                    "inout":stockinout
                                 }}
 
                 if delchaldata["delchaltotal"] != None:
-                    singledelchal["delchaldata"]["delchaltotal"] =delchaldata["delchaltotal"] 
+                    singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
                 
                 if delchaldata["cancelflag"] ==1:
                     singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')
@@ -281,6 +281,7 @@ create method for delchal resource.
                 custData = custandsup.fetchone()
                 custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
                 singledelchal["custSupDetails"] = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                singledelchal["custSupDetails"]["custid"] = delchaldata["custid"]
                 if custData["custtan"] != None:
                     singledelchal["custSupDetails"]["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
@@ -299,7 +300,18 @@ create method for delchal resource.
                 #contents is a nested dictionary from invoice table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pare, priceperunit and quantity.
+                if delchaldata["contents"] == None:
+                    singledelchal["delchalflag"]=15
+                    stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==flag,stock.c.dcinvtnid==self.request.params["dcid"])))
+                for stockrow in stockdata:
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
+                    productdesc = productdata.fetchone()
+                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    unitnamrrow = uomresult.fetchone()
+                    items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                singledelchal["stockdata"]=items
                 if delchaldata["contents"]!=None:
+                    singledelchal["delchalflag"]=14
                     contentsData = delchaldata["contents"]
                     #delchalContents is the finally dictionary which will not just have the dataset from original contents,
                     #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxamount
