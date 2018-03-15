@@ -53,7 +53,7 @@ It will be used for creating entries in the table and updating it as new entries
         self.request = Request
         self.request = request
         self.con = Connection
-    @view_config(route_name='worksheet',request_method='GET', request_param="type=sprdsheet", renderer="json")
+    @view_config(route_name='worksheet',request_method='GET', request_param="type=listofusers", renderer="json")
     def spreadsheetForListOfUsers(self):
          """
          Purpose:
