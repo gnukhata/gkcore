@@ -294,12 +294,13 @@ class category(object):
         else:
             try:
                 self.con = eng.connect()
+                
                 #category_code = self.request.params['categorycode']
-                self.con.execute("select DISTINCT categorysubcategories.categorycode as c from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
+                ("select DISTINCT categorysubcategories.categorycode as c from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
 
-
+                
                 row = result.fetchone()
-                category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
+                #category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
                 return{"gkstatus":enumdict["Success"],"gkresult":category}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
