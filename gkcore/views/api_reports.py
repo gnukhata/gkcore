@@ -4171,12 +4171,13 @@ free replacement or sample are those which are excluded.
                 gstDict["sgstout"] = sgstout
                 gstDict["totalSGSTOut"] =totalSGSTOut
 
+                
                 # calculate carried forward amount or payable.
                 if totalSGSTIn > totalSGSTOut :
                     sgstCrdFwd = totalSGSTIn - totalSGSTOut
                     gstDict ["sgstcrdfwd"] = sgstCrdFwd
                 else:
-                    sgstPayable = totalCGSTOut - totalCGSTIn
+                    sgstPayable = totalSGSTOut - totalSGSTIn
                     gstDict ["sgstpayable"] = sgstPayable
 
                 # For Inter state tax
@@ -4236,6 +4237,8 @@ free replacement or sample are those which are excluded.
                 else:
                     cessPayable = totalCESSOut - totalCESSIn
                     gstDict ["cesspayable"] = cessPayable
+
+                print gstDict
 
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
             except:
