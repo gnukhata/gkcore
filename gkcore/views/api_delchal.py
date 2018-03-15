@@ -171,7 +171,7 @@ create method for delchal resource.
                 '''
                 An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
                 Loop is used to go through the result, fetch customer/supplier data and append them to the list.
-                Each entry in the list is in the form of a dictionary. See line 171 to find the structure of the dictionary.
+                Each entry in the list is in the form of a dictionary. 
                 '''
                 delchals = []
                 '''
