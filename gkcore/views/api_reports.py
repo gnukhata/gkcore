@@ -4207,7 +4207,7 @@ free replacement or sample are those which are excluded.
                     gstDict["IgstCrdFwd"] = igstCrdFwd
                 else:
                     igstPayable = totalIGSTOut - totalIGSTIn
-                    gstDict["igstPayable"] = igstPayable
+                    gstDict["IgstPayable"] = igstPayable
 
                 # For cess tax
                 cssin = {}
@@ -4226,7 +4226,7 @@ free replacement or sample are those which are excluded.
                     accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
                     accName = accN.fetchone()
                     cssout[accName["accountname"]] = calbalData["curbal"]
-                    totalSGSTOut = totalCESSOut + calbalData["curbal"]
+                    totalCESSOut = totalCESSOut + calbalData["curbal"]
                 gstDict["cessout"] = cssout
                 gstDict["totalCESSOut"] =totalCESSOut
 
