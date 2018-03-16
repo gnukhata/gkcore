@@ -300,7 +300,7 @@ class api_drcr(object):
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                         
 
-                #return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             #finally:
