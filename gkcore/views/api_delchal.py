@@ -241,7 +241,6 @@ create method for delchal resource.
                                     "issuername":delchaldata["issuername"],
                                     "designation":delchaldata["designation"],
                                     "orggstin":delchaldata["orgstategstin"],
-                                    "consignee":delchaldata["consignee"],
                                     "dcdate":datetime.strftime(delchaldata["dcdate"],'%d-%m-%Y'),
                                     "taxflag":delchaldata["taxflag"],
                                     "cancelflag":delchaldata["cancelflag"],
@@ -252,6 +251,9 @@ create method for delchal resource.
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
                                     "inout":stockinout
                                 }}
+
+                if delchaldata["consignee"]!=None:
+                    singledelchal["delchaldata"]["consignee"]=delchaldata["consignee"]
 
                 if delchaldata["delchaltotal"] != None:
                     singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
