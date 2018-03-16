@@ -396,6 +396,12 @@ class api_rollclose(object):
                         cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"Entry for recording Deficit For The Year","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
                         result = self.con.execute(vouchers.insert(),[cljv])
                 result = self.con.execute(organisation.update().where(organisation.c.orgcode==orgCode).values({"booksclosedflag":1}))
+                #check if rollclose is true.
+                ROData = self.con.execute(select([organ.c.roflag]).where(organisation.c.orgcode == orgCode))
+                ROFlagRow = ROData.fetchone()
+                roStatus = ROFlagRow["roflag"]
+                if roStatus == 1:
+                    accList = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == orgCode))
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
