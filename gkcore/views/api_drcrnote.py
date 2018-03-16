@@ -289,8 +289,8 @@ class api_drcr(object):
                                 drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                 print "\n \n supp data"+str(drcrdata)
                                         
-                        elif int(self.request.params["drcrflagstatus"]) == 3 and custsuppdata["csflag"]==3:
-                            if int(self.request.params["drcrflagstatus"])==int(row["dctypeflag"]):
+                        elif int(self.request.params["drcrflag"]) == 3 and custsuppdata["csflag"]==3:
+                            if int(self.request.params["drcrflag"])==int(row["drcrflag"]):
                                 print "credit cust data"
                                 drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                 print "\n \n cust data"+str(drcrdata)
