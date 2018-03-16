@@ -254,7 +254,7 @@ class api_drcr(object):
             drcrdata["drcrcontents"] = drcrContents
             drcrdata["reductval"]=idrateData
             print drcrdata
-            #return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
+            return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
@@ -286,18 +286,18 @@ class api_drcr(object):
                         if int(self.request.params["drcrflag"]) ==4 and custsuppdata["csflag"]==19:
                             if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
                                 print "debit supp data \n \n "
-                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                 print "\n \n supp data"+str(drcrdata)
                                         
                         elif int(self.request.params["drcrflag"]) == 3 and custsuppdata["csflag"]==3:
                             if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
                                 print "credit cust data"
-                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                 print "\n \n cust data"+str(drcrdata)
                                                                                      
                     else:
                         print "all datata if dctypeflag doed not have key"
-                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":row["drcrdate"],"dctypeflag":row["dctypeflag"],"totreduct":row["totreduct"],"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                                         
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
