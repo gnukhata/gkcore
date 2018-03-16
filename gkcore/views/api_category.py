@@ -34,7 +34,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, distinct,join
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc,alias, or_, func
@@ -292,18 +292,27 @@ class category(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
-                
-                #category_code = self.request.params['categorycode']
-                ("select DISTINCT categorysubcategories.categorycode as c from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
-
-                
-                row = result.fetchone()
-                #category = {"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"]}
+                subcategoryof=""
+                result=self.con.execute("select DISTINCT categorysubcategories.categorycode from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
+                print result
+                category=[]
+                for data in result:
+                    result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode,gkdb.categorysubcategories.c.subcategoryof]).where(and_(gkdb.categorysubcategories.c.categorycode==data["categorycode"],gkdb.categorysubcategories.c.subcategoryof== data["categorycode"])))
+                    row = result1.fetchone()
+                    print row["subcategoryof"]
+                    if row["subcategoryof"]:
+                        #category["subcategoryof"] = request.params["subcategoryof"]
+    
+                       #subcategoryof=row["subcategoryof"]
+                        countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== data["categorycode"]))
+                    countrow = countResult.fetchone()
+                    subcount = countrow["subcount"]       
+                    category.append({"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
                 return{"gkstatus":enumdict["Success"],"gkresult":category}
-            except:
+            #except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
+            #finally:
                 self.con.close()
 
