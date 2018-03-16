@@ -282,6 +282,10 @@ class category(object):
             finally:
                 self.con.close()
 
+    """ 
+    This function is written for accessing the list of editable categories only which are editable
+    in editcategory module.
+    """                                  
     @view_config(request_method='GET',request_param="type=editablecat",renderer='json')
     def editCategorylist(self):
         try:
@@ -292,27 +296,21 @@ class category(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
-                subcategoryof=""
                 result=self.con.execute("select DISTINCT categorysubcategories.categorycode from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
-                print result
                 category=[]
                 for data in result:
-                    result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode,gkdb.categorysubcategories.c.subcategoryof]).where(and_(gkdb.categorysubcategories.c.categorycode==data["categorycode"],gkdb.categorysubcategories.c.subcategoryof== data["categorycode"])))
+                    result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode]).where(gkdb.categorysubcategories.c.categorycode==data["categorycode"]))
                     row = result1.fetchone()
-                    print row["subcategoryof"]
-                    if row["subcategoryof"]:
-                        #category["subcategoryof"] = request.params["subcategoryof"]
-    
-                       #subcategoryof=row["subcategoryof"]
-                        countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== data["categorycode"]))
+                    result2 = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.subcategoryof == data["categorycode"]))
+                    countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== data["categorycode"]))
                     countrow = countResult.fetchone()
                     subcount = countrow["subcount"]       
-                    category.append({"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcategoryof":row["subcategoryof"],"subcount":subcount})
+                    category.append({"categorycode":row["categorycode"],"categoryname":row["categoryname"],"subcount":subcount})
                 return{"gkstatus":enumdict["Success"],"gkresult":category}
-            #except:
+            except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
-            #finally:
+            finally:
                 self.con.close()
 
