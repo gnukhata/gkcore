@@ -268,7 +268,9 @@ create method for delchal resource.
                     singledelchal["delchaldata"]["goname"]=goname["goname"]
                     singledelchal["delchaldata"]["gostate"]=goname["state"]
                     singledelchal["delchaldata"]["goaddr"]=goname["goaddr"]
-
+                else:
+                    singledelchal["delchaldata"]["goid"]=""
+                    
                 if delchaldata["taxstate"] != None:
                     singledelchal["destinationstate"]=delchaldata["taxstate"]
                     taxStateCode =  getStateCode(delchaldata["taxstate"],self.con)["statecode"]
