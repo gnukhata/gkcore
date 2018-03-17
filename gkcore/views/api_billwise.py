@@ -276,10 +276,8 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if orderflag == 4 and typeflag == 4:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicedate)))
                 csInvoicesData = csInvoices.fetchall()
-                srno = 1
                 for inv in csInvoicesData:
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "srno":srno})
-                    srno = srno + 1
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -311,6 +309,9 @@ It will be used for creating entries in the billwise table and updating it as ne
                 inoutflag = int(self.request.params["inoutflag"])
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
+                inouts= {9:"Purchase", 15:"Sale"}
+                orders = {1:"Ascending", 2:"Descending"}
+                types = {1:"Amount Wise", 3:"Party Wise", 4:"Due Wise"}
                 # Period for which this report is created is determined by startdate and enddate. They are formatted as YYYY-MM-DD.
                 startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 enddate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
@@ -332,12 +333,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 3:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)))
                 csInvoicesData = csInvoices.fetchall()
-                srno = 1
                 for inv in csInvoicesData:
                     csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
                     csDetails = csd.fetchone()
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"] , "srno":srno})
-                    srno = srno + 1
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
                 # List of dictionaries unAdjInvoices is sorted in order of key custname.
                 if typeflag == 3 and orderflag == 1:
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'))
@@ -345,7 +344,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 3 and orderflag == 4:
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
                     unAdjInvoices = newlistofinvs
-                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices, "inout":inouts[inoutflag], "type":types[typeflag], "order":orders[orderflag]}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
 
