@@ -41,10 +41,6 @@ from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,
 from datetime import datetime, date
 from operator import itemgetter
 from natsort import natsorted
-import openpyxl
-from openpyxl.styles import Font, Alignment
-import base64
-import os
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -89,8 +85,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     result = self.con.execute(billwise.insert(),[bill])
                     updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
                 return{"gkstatus":enumdict["Success"]}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
     @view_config(request_method='GET',renderer='json')
     def getUnadjustedBills(self):
         """
@@ -152,8 +152,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"vouchers":unAdjReceipts,"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=all")
     def getallUnadjustedBills(self):
@@ -188,8 +192,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     customerdata = custData.fetchone()
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
     @view_config(request_method='GET',renderer='json', request_param="type=pending")
     def getallPendingBills(self):
         """
@@ -230,8 +238,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     else:
                         unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=onlybills")
     def getOnlyUnadjustedBills(self):
@@ -279,8 +291,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=onlybillsforall")
     def getOnlyUnadjustedBillsForAll(self):
@@ -345,5 +361,9 @@ It will be used for creating entries in the billwise table and updating it as ne
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
                     unAdjInvoices = newlistofinvs
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices, "inout":inouts[inoutflag], "type":types[typeflag], "order":orders[orderflag]}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
