@@ -163,7 +163,10 @@ class api_drcr(object):
                     print ("tA 19",str(taxableAmount))
                     reductprice = (float(contentsData[pc][contentsData[pc].keys()[0]]) * float(idrateData[pc]))
                     print reductprice
-                    newtaxableamnt=taxableAmount-reductprice
+                    if int(drcrrow["dctypeflag"]) == 3 :
+                        newtaxableamnt=taxableAmount-reductprice
+                    else :
+                        newtaxableamnt=taxableAmount+reductprice
                     print ("newtamnt",str(newtaxableamnt))
                     #taxflag checked to check vat and gst
                     taxRate = 0.00
