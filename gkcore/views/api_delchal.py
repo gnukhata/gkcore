@@ -76,7 +76,8 @@ create method for delchal resource.
                 dataset = self.request.json_body
                 delchaldata = dataset["delchaldata"]
                 stockdata = dataset["stockdata"]
-                inoutflag=stockdata["inout"]
+                freeqty= delchaldata["freeqty"]
+                inoutflag= stockdata["inout"]
                 items = delchaldata["contents"]
                 delchaldata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
@@ -90,9 +91,10 @@ create method for delchal resource.
                     stockdata["dcinvtnflag"] = 4
                     stockdata["stockdate"] = dcidrow["dcdate"]
                     try:
+                        
                         for key in items.keys():
                             stockdata["productcode"] = key
-                            stockdata["qty"] = items[key].values()[0]
+                            stockdata["qty"] = float(items[key].values()[0])+float(freeqty[key])
                             result = self.con.execute(stock.insert(),[stockdata])
                             if stockdata.has_key("goid"):
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
