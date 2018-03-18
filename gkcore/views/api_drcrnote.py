@@ -31,7 +31,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
@@ -39,11 +39,11 @@ class api_drcr(object):
                     dataset["userid"]=authDetails["userid"]
                 result=self.con.execute(drcr.insert(),[dataset])
                 return {"gkstatus":enumdict["Success"]}
-            #except exc.IntegrityError:
-                #return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
-                #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
                 
     @view_config(request_method='GET',request_param="drcr=single", renderer ='json')
@@ -66,7 +66,11 @@ class api_drcr(object):
                 invdata={}
                 custSupDetails={}
                 drcrdata={}
-                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"contents":drcrrow["contents"],"reference":drcrrow["reference"],"reduct":drcrrow["reductionval"]}
+                if drcrrow["reference"] == None:
+                    drcrdata["reference"]= ""
+                else:
+                    drcrdata["reference"]=drcrrow["reference"]
+                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"contents":drcrrow["contents"],"reduct":drcrrow["reductionval"]}
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
                 invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"]}  
@@ -80,12 +84,12 @@ class api_drcr(object):
                         invdata["taxstatecode"]=taxStateCode
                 custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=custresult.fetchone()
-                custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
+                custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtin":custrow["custtan"]}
                 print "custsupDATA \n "
                 print custSupDetails
                 #tin and gstin
-                if custSupDetails["custtan"] != None:
-                    custSupDetails["custtin"] = custSupDetails["custtan"]
+                if custSupDetails["custtin"] != None:
+                    custSupDetails["custtin"] = custSupDetails["custtin"]
                 if custSupDetails["gstin"] != None:
                     if int(custrow["csflag"]) == 3 :
                         try:
