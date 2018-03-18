@@ -250,24 +250,16 @@ class api_drcr(object):
                     custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
                     custsuppdata= custsupp.fetchone()
                     #print "\n \n custdata from all ="+str(custsuppdata)
-                    if self.request.params.has_key('drcrflag'):                        
-                        if int(self.request.params["drcrflag"]) ==4 and custsuppdata["csflag"]==19:
-                            if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
-                                print "debit supp data \n \n "
-                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                                print "\n \n supp data"+str(drcrdata)
-                                        
-                        elif int(self.request.params["drcrflag"]) == 3 and custsuppdata["csflag"]==3:
-                            if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
-                                print "credit cust data"
-                                drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                                print "\n \n cust data"+str(drcrdata)
-                                                                                     
+                    if self.request.params.has_key('drcrflag'):                       
+                        if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
+                            print "debit supp data \n \n "
+                            drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                            print "\n \n supp data"+str(drcrdata) 
                     else:
                         print "all datata if dctypeflag doed not have key"
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                                        
-
+                    print "ALL DRCRDATA"      
+                    print drcrdata
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
