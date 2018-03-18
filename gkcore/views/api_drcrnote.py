@@ -212,17 +212,17 @@ class api_drcr(object):
                         totalTaxableVal = totalTaxableVal + newtaxableamnt
                         totalTaxAmt = totalTaxAmt + taxAmount
                         drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
-                    drcrdata["totaldiscount"] = "%.2f"% (float(totalDisc))
-                    drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
-                    drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
-                    drcrdata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
-                    drcrdata['taxname'] = taxname
-                    drcrdata["drcrcontents"] = drcrContents
-                    drcrdata["reductval"]=idrateData
-                    drcrdata["invdata"]=invdata
-                    print "drcrdata"
-                    print drcrdata
-                    return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
+                drcrdata["totaldiscount"] = "%.2f"% (float(totalDisc))
+                drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                drcrdata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                drcrdata['taxname'] = taxname
+                drcrdata["drcrcontents"] = drcrContents
+                drcrdata["reductval"]=idrateData
+                drcrdata["invdata"]=invdata
+                print "drcrdata"
+                print drcrdata
+                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
             #except:
                 #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
@@ -252,9 +252,8 @@ class api_drcr(object):
                     #print "\n \n custdata from all ="+str(custsuppdata)
                     if self.request.params.has_key('drcrflag'):                       
                         if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
-                            print "debit supp data \n \n "
+                            print "supp data \n \n "
                             drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                            print "\n \n supp data"+str(drcrdata) 
                     else:
                         print "all datata if dctypeflag doed not have key"
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
