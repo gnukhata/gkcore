@@ -72,21 +72,12 @@ class api_drcr(object):
                 invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"]}  
                 print " \n \n invoice data"+str(invdata)
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
-                    if int(invrow["inoutflag"])==9 :
                         invdata["sourcestate"] = invrow["sourcestate"]
                         sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
                         invdata["sourcestatecode"] = sourceStateCode
                         invdata["taxstate"]=invrow["taxstate"]
                         taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
                         invdata["taxstatecode"]=taxStateCode
-                        
-                    else:
-                        invdata["sourcestate"]=invrow["taxstate"]
-                        sourceStateCode= getStateCode(invrow["taxstate"],self.con)["statecode"]
-                        invdata["sourcestatecode"] = sourceStateCode
-                        invdata["taxstate"]=invrow["sourcestate"]
-                        taxStateCode=getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                        invdata["taxstatecode"]=taxStateCode    
                 custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=custresult.fetchone()
                 custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtan":custrow["custtan"]}
@@ -95,17 +86,17 @@ class api_drcr(object):
                 #tin and gstin
                 if custSupDetails["custtan"] != None:
                     custSupDetails["custtin"] = custSupDetails["custtan"]
-                    if custSupDetails["gstin"] != None:
-                        if int(custrow["csflag"]) == 3 :
-                            try:
-                                custSupDetails["custgstin"] = custsuppdata["gstin"][str(taxStateCode)]
-                            except:
-                                custSupDetails["custgstin"] = None
-                        else:
-                            try:
-                                custSupDetails["custgstin"] = custsuppdata["gstin"][str(sourceStateCode)]
-                            except:
-                                custSupDetails["custgstin"] = None
+                if custSupDetails["gstin"] != None:
+                    if int(custrow["csflag"]) == 3 :
+                        try:
+                            custSupDetails["custgstin"] = custrow["gstin"][str(taxStateCode)]
+                        except:
+                            custSupDetails["custgstin"] = None
+                    else:
+                        try:
+                            custSupDetails["custgstin"] = custrow["gstin"][str(sourceStateCode)]
+                        except:
+                            custSupDetails["custgstin"] = None
                 drcrdata["custSupDetails"] = custSupDetails              
 
                 #all data checked using flag
@@ -142,25 +133,25 @@ class api_drcr(object):
                 #pc will have the productcode which will be the key in drcrContents.
                 for pc in contentsData.keys():
                     if discounts != None:
-                        discount=discounts[pc]
-                        print "hiiii"
+                        discount=discounts[pc]                        
                     else:
                         discount= 0.00
-                        
                     prodresult = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                     prodrow = prodresult.fetchone()
                     #product or service check and taxableAmount calculate=newppu*newqty
                     taxRate = 0.00
                     totalAmount = 0.00
                     taxRate =  float(invrow["tax"][pc])
-                    
                     if int(invrow["taxflag"]) == 22:
                         umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
     	                umrow = umresult.fetchone()
                         unitofMeasurement = umrow["unitname"]
                         taxableAmount=((float(contentsData[pc][contentsData[pc].keys()[0]]))*float(contentsData[pc].keys()[0]))-float(discount)
                         reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
-                        newtaxableamnt=taxableAmount+reductprice
+                        if drcrrow["dctypeflag"]==4:
+                            newtaxableamnt=taxableAmount+reductprice
+                        else:
+                            newtaxableamnt=taxableAmount-reductprice
                         taxRate =  float(invrow["tax"][pc])
                         taxAmount = (newtaxableamnt * float(taxRate/100))
                         taxname = 'VAT'
@@ -180,13 +171,19 @@ class api_drcr(object):
                             umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
     	                    umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
-                            newtaxableamnt=taxableAmount+reductprice
+                            if drcrrow["dctypeflag"]==4:
+                                newtaxableamnt=taxableAmount+reductprice
+                            else:
+                                newtaxableamnt=taxableAmount-reductprice
                             print ("tA 7",str(taxableAmount))
                             print "rr from g"
                             print reductprice
                         else:
                             unitofMeasurement = ""
-                            newtaxableamnt = float(contentsData[pc].keys()[0])+(float(idrateData[pc]))- float(discount)
+                            if drcrrow["dctypeflag"]==4:
+                                newtaxableamnt = float(contentsData[pc].keys()[0])+(float(idrateData[pc]))- float(discount)
+                            else:
+                                newtaxableamnt = float(contentsData[pc].keys()[0])-(float(idrateData[pc]))- float(discount)
                         cessRate = 0.00
                         cessAmount = 0.00
                         cessVal = 0.00
@@ -240,6 +237,8 @@ class api_drcr(object):
         else:
             #try:
                 self.con = eng.connect()
+                print "from data"
+                        
                 result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
                 drcrdata = []
                 for row in result:
