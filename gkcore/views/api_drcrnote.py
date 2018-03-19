@@ -1,3 +1,29 @@
+"""
+Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+  This file is part of GNUKhata:A modular,robust and Free Accounting System.
+
+  GNUKhata is Free Software; you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation; either version 3 of
+  the License, or (at your option) any later version.
+
+  GNUKhata is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+
+  You should have received a copy of the GNU Affero General Public
+  License along with GNUKhata (COPYING); if not, write to the
+  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+  Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
+
+
+Contributors:
+"Krishnakant Mane" <kk@gmail.com>
+"Reshma Bhatwadekar" <reshma@dff.org.in>
+"Vasudha Kadge" <kadge.vasudha@gmail.com>
+"""
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users,product,unitofmeasurement
 from gkcore.views.api_tax  import calTax
@@ -50,6 +76,10 @@ class api_drcr(object):
     def getDrCrDetails(self):
         """
         purpose: gets details of single debit or credit note from it's drcrid.
+        The details include related customer or supplier and sales or purchase invoice details as well as calculation of amount.
+        Description:
+        This function returns a single record as key:value pare for debit-credit note given it's drcrid.
+        Depending on the dctypeflag it will return the details of Sales/Purchase Invoice and customer or supplier.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -59,7 +89,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 drcrresult=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
                 drcrrow=drcrresult.fetchone()
@@ -123,7 +153,7 @@ class api_drcr(object):
                 contentsData = drcrrow["contents"]
                 idrateData=drcrrow["reductionval"]
                 #invContents is the finally dictionary which will not just have the dataset from original contents,
-                #but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
+                #but also productdesc,unitname,discount,taxname,taxrate,amount and taxamount
                 drcrContents = {}
                 idrate={}
                 #get the dictionary of discount and access it inside the loop for one product each.
@@ -160,8 +190,6 @@ class api_drcr(object):
                         taxAmount = (newtaxableamnt * float(taxRate/100))
                         taxname = 'VAT'
                         totalAmount = float(newtaxableamnt) + (float(newtaxableamnt) * float(taxRate/100))
-                        print "tA"
-                        print totalAmount
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + newtaxableamnt
                         totalTaxAmt = totalTaxAmt + taxAmount
@@ -179,9 +207,6 @@ class api_drcr(object):
                                 newtaxableamnt=taxableAmount+reductprice
                             else:
                                 newtaxableamnt=taxableAmount-reductprice
-                            print ("tA 7",str(taxableAmount))
-                            print "rr from g"
-                            print reductprice
                         else:
                             unitofMeasurement = ""
                             if drcrrow["dctypeflag"]==4:
@@ -205,10 +230,7 @@ class api_drcr(object):
                             taxname = "SGST"
                             taxRate = (taxRate/2)
                             taxAmount = (newtaxableamnt * (taxRate/100))
-                            totalAmount = newtaxableamnt + (newtaxableamnt * ((taxRate * 2)/100)) + cessAmount
-
-                    #taxflag checked to check vat and gst    
-                   
+                            totalAmount = newtaxableamnt + (newtaxableamnt * ((taxRate * 2)/100)) + cessAmount                   
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + newtaxableamnt
                         totalTaxAmt = totalTaxAmt + taxAmount
@@ -221,12 +243,10 @@ class api_drcr(object):
                 drcrdata["drcrcontents"] = drcrContents
                 drcrdata["reductval"]=idrateData
                 drcrdata["invdata"]=invdata
-                print "drcrdata"
-                print drcrdata
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
-            #except:
-                #return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
                 
     @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
@@ -239,7 +259,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 print "from data"
                         
@@ -249,23 +269,17 @@ class api_drcr(object):
                     #invoice,cust
                     inv=self.con.execute(select([invoice.c.custid]).where(invoice.c.invid==row["invid"]))
                     invdata=inv.fetchone()
-                    # print "\n \n invdata from all ="+str(invdata)
                     custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
                     custsuppdata= custsupp.fetchone()
-                    #print "\n \n custdata from all ="+str(custsuppdata)
                     if self.request.params.has_key('drcrflag'):                       
                         if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
-                            print "supp data \n \n "
                             drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                     else:
-                        print "all datata if dctypeflag doed not have key"
                         drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                    print "ALL DRCRDATA"      
-                    print drcrdata
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
-            #except:
-                #return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            #finally:
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
                 self.con.close()
     '''
     Deleteing drcr on the basis of reference and drcrid
@@ -280,7 +294,7 @@ class api_drcr(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 result=self.con.execute(select([drcr.c.drcrid,drcr.c.reference]).where(drcr.c.drcrid==dataset["drcrid"]))
@@ -289,12 +303,12 @@ class api_drcr(object):
                      result = self.con.execute(drcr.delete().where(drcr.c.drcrid==dataset["drcrid"]))
                 else:
                     print "not"
-                #return {"gkstatus":enumdict["Success"]}
-            #except exc.IntegrityError:
-            #return {"gkstatus":enumdict["ActionDisallowed"]}
-            #except:
-            #return {"gkstatus":enumdict["ConnectionFailed"] }
-            #finally:
+                return {"gkstatus":enumdict["Success"]}
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
 
     @view_config(request_method='GET',request_param='attach=image', renderer='json')
