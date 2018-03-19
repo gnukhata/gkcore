@@ -634,11 +634,15 @@ rejectionnote = Table('rejectionnote',metadata,
 
 """
 This table is for stroring records of debit note and credit note.
-Structure of a tax field is {productcode:taxrate} and it is for calculating reduction of tax(VAT/GST).
+dctypeflag is used to decide whether it is debit note or credit note.(debit note=4 & credit note=3)xx
 In this we have json field that is contents.
 This field is a nested dictionary.
 The key of this field is the productcode while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty) of product.
+'reference' is in json form.
+It has key as ref. no. and date as value.
+credited and debited value gives reduction value.
+taxable value and tax amount gives totreduct value i.e (total value)
 """
 drcr =  Table('drcr', metadata,             
     Column('drcrid',Integer,primary_key=True),
