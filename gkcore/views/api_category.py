@@ -298,11 +298,13 @@ class category(object):
         else:
             try:
                 self.con = eng.connect()
+                #This query for getting the list of categories which are editable i.e.category which are associated with the products are discarded from the list.
                 result=self.con.execute("select DISTINCT categorysubcategories.categorycode from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
                 category=[]
                 for data in result:
                     result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode]).where(gkdb.categorysubcategories.c.categorycode==data["categorycode"]))
                     row = result1.fetchone()
+                    #These queries are for getting subcategories and their count which are associated with the category. 
                     result2 = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.subcategoryof == data["categorycode"]))
                     countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== data["categorycode"]))
                     countrow = countResult.fetchone()
