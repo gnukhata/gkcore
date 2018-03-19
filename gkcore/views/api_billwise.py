@@ -41,10 +41,6 @@ from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,
 from datetime import datetime, date
 from operator import itemgetter
 from natsort import natsorted
-import openpyxl
-from openpyxl.styles import Font, Alignment
-import base64
-import os
 @view_defaults(route_name='billwise')
 class api_billWise(object):
     """
@@ -89,8 +85,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     result = self.con.execute(billwise.insert(),[bill])
                     updres = self.con.execute("update invoice set amountpaid = amountpaid + %f where invid = %d"%(float(bill["adjamount"]),bill["invid"]))
                 return{"gkstatus":enumdict["Success"]}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
     @view_config(request_method='GET',renderer='json')
     def getUnadjustedBills(self):
         """
@@ -152,8 +152,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                 for inv in csInvoicesData:
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"vouchers":unAdjReceipts,"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=all")
     def getallUnadjustedBills(self):
@@ -188,8 +192,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     customerdata = custData.fetchone()
                     unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
     @view_config(request_method='GET',renderer='json', request_param="type=pending")
     def getallPendingBills(self):
         """
@@ -230,8 +238,12 @@ It will be used for creating entries in the billwise table and updating it as ne
                     else:
                         unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=onlybills")
     def getOnlyUnadjustedBills(self):
@@ -276,13 +288,15 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if orderflag == 4 and typeflag == 4:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicedate)))
                 csInvoicesData = csInvoices.fetchall()
-                srno = 1
                 for inv in csInvoicesData:
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "srno":srno})
-                    srno = srno + 1
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"]))})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',renderer='json', request_param="type=onlybillsforall")
     def getOnlyUnadjustedBillsForAll(self):
@@ -311,6 +325,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 inoutflag = int(self.request.params["inoutflag"])
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
+                # Dictionaries for inoutflag, orderflag and typeflag. Keys are integer values of flags and values corresponding strings.
+                inouts= {9:"Purchase", 15:"Sale"}
+                orders = {1:"Ascending", 4:"Descending"}
+                types = {1:"Amount Wise", 3:"Party Wise", 4:"Due Wise"}
                 # Period for which this report is created is determined by startdate and enddate. They are formatted as YYYY-MM-DD.
                 startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 enddate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
@@ -332,12 +350,10 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 3:
                     csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)))
                 csInvoicesData = csInvoices.fetchall()
-                srno = 1
                 for inv in csInvoicesData:
                     csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
                     csDetails = csd.fetchone()
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"] , "srno":srno})
-                    srno = srno + 1
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
                 # List of dictionaries unAdjInvoices is sorted in order of key custname.
                 if typeflag == 3 and orderflag == 1:
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'))
@@ -345,141 +361,11 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 3 and orderflag == 4:
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
                     unAdjInvoices = newlistofinvs
-                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
+                # List of outstanding invoices is returned together with strings that appear in heading.
+                return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices, "inout":inouts[inoutflag], "type":types[typeflag], "order":orders[orderflag]}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
-
-    @view_config(request_method='GET', request_param="type=spreadsheet", renderer="json")
-    def spreadsheetForReport(self):
-        """
-        Purpose:
-        Gets the list of invoices for all customers and suppliers in the order of balance amount and due date in spreadsheet(XLSX) format.
-        Description:
-        For documentation regarding how data is fetched refer the function above(getOnlyUnadjustedBillsForAll).
-        Documentation regarding generation of spreadsheet is given inline.
-        """
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                inoutflag = int(self.request.params["inoutflag"])
-                orderflag = int(self.request.params["orderflag"])
-                typeflag = int(self.request.params["typeflag"])
-                startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
-                enddate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
-                # A workbook is opened.
-                billwisewb = openpyxl.Workbook()
-                # A new sheet is created.
-                billwisewb.create_sheet()
-                # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
-                sheet = billwisewb.active
-                # Title of the sheet and width of columns are set.
-                sheet.title = "List of Unpaid Invoices"
-                sheet.column_dimensions['A'].width = 8
-                sheet.column_dimensions['B'].width = 18
-                sheet.column_dimensions['C'].width = 14
-                sheet.column_dimensions['D'].width = 24
-                sheet.column_dimensions['E'].width = 16
-                sheet.column_dimensions['F'].width = 16
-                # Cells of first two rows are merged to display organisation details properly.
-                sheet.merge_cells('A1:F2')
-                # Name and Financial Year of organisation is fetched to be displayed on the first row.
-                orgdata = self.con.execute(select([organisation.c.orgname, organisation.c.yearstart, organisation.c.yearend]).where(organisation.c.orgcode==authDetails["orgcode"]))
-                orgdetails = orgdata.fetchone()
-                # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
-                sheet['A1'].font = Font(name='Liberation Serif',size='16',bold=True)
-                sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
-                # Organisation name and financial year are displayed.
-                sheet['A1'] = orgdetails["orgname"] + ' (FY: ' + datetime.strftime(orgdetails["yearstart"],'%d-%m-%Y') + ' to ' + datetime.strftime(orgdetails["yearend"],'%d-%m-%Y') +')'
-                sheet.merge_cells('A3:F3')
-                sheet['A3'].font = Font(name='Liberation Serif',size='14',bold=True)
-                sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
-                invtype = 'Sale'
-                if inoutflag == 9:
-                    invtype = 'Purchase'
-                sheet['A3'] = 'List of Outstanding %s Invoices'%str(invtype)
-                sheet.merge_cells('A4:F4')
-                sheet['A4'] = 'Period: ' + str(self.request.params["startdate"]) + ' to ' + str(self.request.params["enddate"])
-                sheet['A4'].font = Font(name='Liberation Serif',size='14',bold=True)
-                sheet['A4'].alignment = Alignment(horizontal = 'center', vertical='center')
-                sheet['A5'] = 'Sr. No. '
-                sheet['B5'] = 'Invoice No'
-                sheet['C5'] = 'Invoice Date'
-                sheet['D5'] = 'Cust/Supp Name'
-                sheet['E5'] = 'Invoice Amount'
-                sheet['F5'] = 'Amount Pending'
-                titlerow = sheet.row_dimensions[5]
-                titlerow.font = Font(name='Liberation Serif',size=12,bold=True)
-                sheet['E5'].alignment = Alignment(horizontal='right')
-                sheet['F5'].alignment = Alignment(horizontal='right')
-                sheet['E5'].font = Font(name='Liberation Serif',size=12,bold=True)
-                sheet['F5'].font = Font(name='Liberation Serif',size=12,bold=True)
-                # Empty list for storing incoices
-                unAdjInvoices = []
-                # Invoices in ascending order of amount.
-                if orderflag == 1 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicetotal - invoice.c.amountpaid))
-                # Invoices in descending order of amount.
-                if orderflag == 4 and typeflag == 1:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)))
-                # Invoices in ascending order of due date.
-                if orderflag == 1 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate))
-                # Invoices in descending order of due date.
-                if orderflag == 4 and typeflag == 4:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicedate)))
-                # Unsorted invoices to be sorted later in the order of customer/supplier name.
-                if typeflag == 3:
-                    csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)))
-                csInvoicesData = csInvoices.fetchall()
-                srno = 1
-                for inv in csInvoicesData:
-                    csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
-                    csDetails = csd.fetchone()
-                    unAdjInvoices.append({"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoiceamount":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"] , "srno":srno})
-                    srno = srno + 1
-                # List of dictionaries unAdjInvoices is sorted in order of key custname.
-                if typeflag == 3 and orderflag == 1:
-                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'))
-                    unAdjInvoices = newlistofinvs
-                if typeflag == 3 and orderflag == 4:
-                    newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
-                    unAdjInvoices = newlistofinvs
-                row = 6
-                # Looping each dictionaries in list unAdjInvoices to store data in cells and apply styles.
-                for uninv in unAdjInvoices:
-                    sheet['A'+str(row)] = uninv['srno']
-                    sheet['A'+str(row)].alignment = Alignment(horizontal='left')
-                    sheet['A'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['B'+str(row)] = uninv['invoiceno']
-                    sheet['B'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['C'+str(row)] = uninv['invoicedate']
-                    sheet['C'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['D'+str(row)] = uninv['custname']
-                    sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['E'+str(row)] = uninv['invoiceamount']
-                    sheet['F'+str(row)] = uninv['balanceamount']
-                    sheet['E'+str(row)].alignment = Alignment(horizontal='right')
-                    sheet['F'+str(row)].alignment = Alignment(horizontal='right')
-                    sheet['E'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    sheet['F'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
-                    row = row + +1
-                # Saving the xlsx file.
-                billwisewb.save('report.xlsx')
-                # Opening xlsx file in read only mode.
-                reportxslx = open("report.xlsx","r")
-                # Encoding xlsx file in base64 format.
-                xlsxdata = base64.b64encode(reportxslx.read())
-                # Closing file.
-                reportxslx.close()
-                os.remove("report.xlsx")
-                return {"gkstatus":enumdict["Success"],"gkdata":xlsxdata}
-            except:
-                print "Spreadsheet not created."
-                return {"gkstatus":3}
+                self.con.close()
+            finally:
+                self.con.close()
