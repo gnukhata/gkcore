@@ -62,6 +62,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.delchal.c.taxflag)]))
             self.con.execute(select([func.count(gkdb.delchal.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
             self.con.execute(select([func.count(gkdb.invoice.c.address)]))
@@ -92,9 +93,9 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
             self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
             self.con.execute("alter table delchal add inoutflag integer")
-            
             #This code will assign inoutflag for delivery chalan where inoutflag is blank.
             alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
             #here we will be fetching all the delchal data

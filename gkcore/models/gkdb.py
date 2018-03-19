@@ -358,12 +358,20 @@ This is done because one invoice may have several dc's attached and for one dc m
 In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
 Another invoice may be issued if the remaining two items are approved by the customer.
 dcflag is used for type of transaction: 1 - Approval, 2 - consignment, 3 - Free Replacement, etc.
+taxflag states which tax is applied to products/services. Default value is set as 22 for VAT and for GST 7 will be set as taxflag.
+Also we have json field called 'contents' which is nested dictionary.
+The key of this field is the 'productcode' while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty).
 """
 delchal = Table('delchal',metadata,
     Column('dcid',Integer,primary_key=True),
     Column('dcno',UnicodeText,nullable=False),
     Column('dcdate',DateTime,nullable=False),
     Column('dcflag',Integer,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
     Column('cancelflag',Integer,default=0),
@@ -372,6 +380,14 @@ delchal = Table('delchal',metadata,
     Column('modeoftransport', UnicodeText),
     Column('attachment',JSON),
     Column('consignee',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('freeqty',JSONB),
+    Column('discount',JSONB),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('delchaltotal', Numeric(13,2), nullable=False),
     Column('attachmentcount',Integer,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
