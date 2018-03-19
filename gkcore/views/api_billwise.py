@@ -325,8 +325,9 @@ It will be used for creating entries in the billwise table and updating it as ne
                 inoutflag = int(self.request.params["inoutflag"])
                 orderflag = int(self.request.params["orderflag"])
                 typeflag = int(self.request.params["typeflag"])
+                # Dictionaries for inoutflag, orderflag and typeflag. Keys are integer values of flags and values corresponding strings.
                 inouts= {9:"Purchase", 15:"Sale"}
-                orders = {1:"Ascending", 2:"Descending"}
+                orders = {1:"Ascending", 4:"Descending"}
                 types = {1:"Amount Wise", 3:"Party Wise", 4:"Due Wise"}
                 # Period for which this report is created is determined by startdate and enddate. They are formatted as YYYY-MM-DD.
                 startdate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
@@ -360,6 +361,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 3 and orderflag == 4:
                     newlistofinvs = natsorted(unAdjInvoices, key=itemgetter('custname'), reverse=True)
                     unAdjInvoices = newlistofinvs
+                # List of outstanding invoices is returned together with strings that appear in heading.
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices, "inout":inouts[inoutflag], "type":types[typeflag], "order":orders[orderflag]}
                 self.con.close()
             except:
