@@ -165,7 +165,7 @@ class api_drcr(object):
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + newtaxableamnt
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(newtaxableamnt))}
                         idrate[pc]={"reductionval":reduct}
                     else:
                         taxableAmount=((float(contentsData[pc][contentsData[pc].keys()[0]]  )) *( float(contentsData[pc].keys()[0]) )-(float(discount)))
@@ -212,7 +212,7 @@ class api_drcr(object):
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + newtaxableamnt
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(newtaxableamnt))}
                 drcrdata["totaldiscount"] = "%.2f"% (float(totalDisc))
                 drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
