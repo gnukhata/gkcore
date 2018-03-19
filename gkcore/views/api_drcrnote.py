@@ -78,8 +78,16 @@ class api_drcr(object):
         purpose: gets details of single debit or credit note from it's drcrid.
         The details include related customer or supplier and sales or purchase invoice details as well as calculation of amount.
         Description:
-        This function returns a single record as key:value pare for debit-credit note given it's drcrid.
-        Depending on the dctypeflag it will return the details of Sales/Purchase Invoice and customer or supplier.
+        This function returns a single record as key:value pair for debit-credit note given it's drcrid.
+        Depending upon dctypeflag(for credit note it is "3" and for debit note it is"4")it will return the details of debit note and credit note.
+        It also calculates total amount, taxable amount, new taxable amount, total debited/credited value with all the taxes.
+        The function returns a dictionary with the details of debit & credit note.
+        If reference equal to none then send null value otherwise respected reference credit/debit note number and credit/debit note date.
+        Formulae:
+        taxableAmount = (qty * priceperunit)-discount
+        reductprice = qty * reductval
+        newtaxableamnt = taxableAmount + reductprice (for dctypeflag=4)
+        newtaxableamnt = taxableAmount - reductprice (for dctypeflag=3)
         """
         try:
             token = self.request.headers["gktoken"]
@@ -91,20 +99,23 @@ class api_drcr(object):
         else:
             try:
                 self.con = eng.connect()
+                #taken credit/debit note data on the basis on drcrid
                 drcrresult=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
                 drcrrow=drcrresult.fetchone()
                 invdata={}
                 custSupDetails={}
                 drcrdata={}
+                #reference is a dictionary which contains reference number as key and reference date as value.
+                #if reference field is not None then send refernce dictionary.
                 if drcrrow["reference"] == None:
                     drcrdata["reference"]= ""
                 else:
                     drcrdata["reference"]=drcrrow["reference"]
                 drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"contents":drcrrow["contents"],"reduct":drcrrow["reductionval"]}
+                #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
                 invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"]}  
-                print " \n \n invoice data"+str(invdata)
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
                         invdata["sourcestate"] = invrow["sourcestate"]
                         sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -112,12 +123,11 @@ class api_drcr(object):
                         invdata["taxstate"]=invrow["taxstate"]
                         taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
                         invdata["taxstatecode"]=taxStateCode
+                #taken data of customerandsupplier on the basis of custid
                 custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=custresult.fetchone()
                 custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtin":custrow["custtan"]}
-                print "custsupDATA \n "
-                print custSupDetails
-                #tin and gstin
+                #tin and gstin checked.
                 if custSupDetails["custtin"] != None:
                     custSupDetails["custtin"] = custSupDetails["custtin"]
                 if custSupDetails["gstin"] != None:
@@ -133,27 +143,29 @@ class api_drcr(object):
                             custSupDetails["custgstin"] = None
                 drcrdata["custSupDetails"] = custSupDetails              
 
-                #all data checked using flag
+                #all data checked using inout flag,
                 if int(invrow["inoutflag"])==15:
-                    #to extract issuername and designation from invoice and user login
+                    #if inoutflag=15 then issuername and designation is same as invoice details
                     invdata["issuername"]=invrow["issuername"]
                     invdata["designation"]=invrow["designation"]
                 elif int(invrow["inoutflag"])==9 :
+                    #if inoutflag=9 then issuername and designation is taken from login details.
                     #user deatils
                     userresult=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
                     userrow=userresult.fetchone()
                     userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
-                    #to extract issuername and designation from invoice and user login
                     invdata["issuername"]=userrow["username"]
                     invdata["designation"]=userrow["userrole"]
+                    
                 #calculations 
                 #contents is a nested dictionary from drcr table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pair, priceperunit and quantity.
                 contentsData = drcrrow["contents"]
                 idrateData=drcrrow["reductionval"]
-                #invContents is the finally dictionary which will not just have the dataset from original contents,
+                #drcrdata is the final dictionary which will not just have the dataset from original contents,
                 #but also productdesc,unitname,discount,taxname,taxrate,amount and taxamount
+                #invdata containing invoice details.
                 drcrContents = {}
                 idrate={}
                 #get the dictionary of discount and access it inside the loop for one product each.
@@ -164,7 +176,7 @@ class api_drcr(object):
                 discounts = invrow["discount"]
                 reduct=drcrrow["reductionval"]
                 
-                #pc will have the productcode which will be the key in drcrContents.
+                #pc will have the productcode which will be the key in contentsData.
                 for pc in contentsData.keys():
                     if discounts != None:
                         discount=discounts[pc]                        
@@ -261,8 +273,6 @@ class api_drcr(object):
         else:
             try:
                 self.con = eng.connect()
-                print "from data"
-                        
                 result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
                 drcrdata = []
                 for row in result:
@@ -282,7 +292,8 @@ class api_drcr(object):
             finally:
                 self.con.close()
     '''
-    Deleteing drcr on the basis of reference and drcrid
+    Deleteing drcr on the basis of reference field and drcrid
+    if credit/debit note number is not used as reference then it can be deleted.
     '''
     @view_config(request_method='DELETE', renderer ='json')
     def deletedrcr(self):
@@ -301,8 +312,6 @@ class api_drcr(object):
                 row=result.fetchone()                
                 if not row["reference"]:
                      result = self.con.execute(drcr.delete().where(drcr.c.drcrid==dataset["drcrid"]))
-                else:
-                    print "not"
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["ActionDisallowed"]}
@@ -333,8 +342,10 @@ class api_drcr(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-                
-    '''Update for debit and credit note.'''
+    '''This is a function to update .
+    This function is primarily used to enable editing of debit and credit note.
+    It receives a dictionary with information regarding debit and credit note
+        Update for debit and credit note.'''
     @view_config(request_method='PUT', renderer='json')
     def editDrCrNote(self):
         try:
