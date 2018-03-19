@@ -71,7 +71,7 @@ class api_unitOfMeasurement(object):
                 self.con.close()
     """
     This function includes subcount of unit of measurement which 
-    are associated with the products.
+    are associated with the products for hiding delete button.
     """           
     @view_config(request_param="qty=single", request_method='GET',renderer='json')
     def getUnitOfMeasurement(self):
