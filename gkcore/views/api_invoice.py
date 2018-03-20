@@ -79,6 +79,7 @@ class api_invoice(object):
                 dtset = self.request.json_body
                 dcinvdataset={}
                 invdataset = dtset["invoice"]
+                freeqty = invdataset["freeqty"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
@@ -107,7 +108,7 @@ class api_invoice(object):
                                 gstResult = gst(item,self.con)
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
-                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invoiceid["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
@@ -121,7 +122,7 @@ class api_invoice(object):
                                 gstResult = gst(item,self.con)
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
-                                    stockdataset["qty"] = items[item].values()[0]
+                                    stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(stock.insert(),[stockdataset])
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
