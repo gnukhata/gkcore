@@ -27,6 +27,8 @@ Contributors:
 'Prajkta Patkar'<prajakta@dff.org.in>
 'Reshma Bhatwadekar'<reshma_b@riseup.net>
 "Sanket Kolnoorkar"<Sanketf123@gmail.com>
+'Aditya Shukla' <adityashukla9158.as@gmail.com>
+
 """
 
 from pyramid.view import view_defaults,  view_config
