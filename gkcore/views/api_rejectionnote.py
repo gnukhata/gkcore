@@ -189,8 +189,14 @@ class api_rejectionnote(object):
                         dcdata = dcdata.fetchone()
                         rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]]})
                     #nested Dictionary
+                    rejqty = rndata["rejprods"]
                     rejectionData = invdata["contents"]
+                    discounts = invdata["discount"]
                     for pc in rejectionData.keys():
+                        if discounts != None:
+                            discount = discounts[pc]
+                        else:
+                            discount = 0.00
                         print"hello"
                         prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                         prodrow = prod.fetchone()
@@ -198,10 +204,14 @@ class api_rejectionnote(object):
                             um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            #taxableAmount = ((float(rejectionData[pc][rejectionData[pc].keys()[0]])) * float(rejectionData[pc].keys()[0])) - float(discount)
+                            print float(rejectionData[pc][rejectionData[pc].keys()[0]])
+                            print float(rejectionData[pc].keys()[0])
+                            taxableAmount = ((float(rejectionData[pc][rejectionData[pc].keys()[0]])) * float(rejectionData[pc].keys()[0])) - float(discount)
+                            totalrejamt = (float(rejectionData[pc][rejectionData[pc].keys()[0]])) * (float(rejqty[pc]))
                         else:
                             unitofMeasurement = ""
-                            #taxableAmount = float(rejectionData[pc].keys()[0]) - float(discount)
+                            taxableAmount = float(rejectionData[pc].keys()[0]) - float(discount)
+                            #totalrejamt = 
                     
                 #Product Description
                 items = {}
