@@ -79,11 +79,10 @@ class api_rejectionnote(object):
                     stockdata["dcinvtnid"] = rnidrow["rnid"]
                     stockdata["dcinvtnflag"] = 18
                     stockdata["stockdate"] = rnidrow["rndate"]
-                    items = stockdata.pop("items")
                     try:
                         for key in items.keys():
                             stockdata["productcode"] = key
-                            stockdata["qty"] = items[key]
+                            stockdata["qty"] = float(items[key].values()[0])
                             result = self.con.execute(stock.insert(),[stockdata])
                             if stockdata.has_key("goid"):
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
@@ -142,7 +141,7 @@ class api_rejectionnote(object):
                 rndata = result.fetchone()
                 issuerdata = self.con.execute(select([users.c.username]).where(users.c.userid == rndata["issuerid"]))
                 issuerdata = issuerdata.fetchone()
-                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"taxflag":rndata["taxflag"]}
+                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"]}
                 rejectionnotedata.update({"issuername": issuerdata["username"]})
                 typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
                 """
@@ -322,7 +321,6 @@ class api_rejectionnote(object):
                 rejectionnotedata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 rejectionnotedata['taxname'] = taxname
                 rejectionnotedata["rejcontents"] = rejcontents
->>>>>>> 'getRejectionNote' function will get all data for given 'delivery id' and 'invoice id'.
                     
                 #Product Description
                 items = {}
