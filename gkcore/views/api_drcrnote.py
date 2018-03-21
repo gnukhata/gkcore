@@ -115,7 +115,7 @@ class api_drcr(object):
                 #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"]}  
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"],"orgstategstin":invrow["orgstategstin"]}  
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
                         invdata["sourcestate"] = invrow["sourcestate"]
                         sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
