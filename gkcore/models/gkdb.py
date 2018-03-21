@@ -336,6 +336,7 @@ invoice = Table('invoice',metadata,
     Column('paymentmode',Integer,default=2),
     Column('address',UnicodeText),
     Column('inoutflag',Integer),
+    Column('invoicetotalword', UnicodeText),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
