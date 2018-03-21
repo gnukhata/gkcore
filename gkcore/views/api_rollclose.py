@@ -402,6 +402,13 @@ class api_rollclose(object):
                 roStatus = ROFlagRow["roflag"]
                 if roStatus == 1:
                     accList = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == orgCode))
+                    accData = accList.fetchall()
+                    closedAccounts = {}
+                    RoOrgCode = getNextOrgCode(orgCode,con)
+                    roAccListData = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == RoOrgCode))
+                    roAccList = roAccListData.fetchall()
+                    for acc in closedAccounts:
+                        
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
