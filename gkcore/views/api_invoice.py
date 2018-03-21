@@ -909,20 +909,27 @@ The bills grid calld gkresult will return a list as it's value.
                 discounts = invData["discount"]
                 items = {}
                 for eachitem in qtyc.keys():
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     if productdesc == None :
                         continue
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
+                    freeqtys = invData["freeqty"]
                     if discounts != None:
                         discount = discounts[eachitem]
                     else:
                         discount = 0.00
-                    result = qtyc[eachitem].values()[0]
+                    if freeqtys != None:
+                        freeqty = freeqtys[eachitem]
+                    else:
+                        freeqty = 0.00
+                    items[int(eachitem)]={}
+                    result = "%.2f"%float(qtyc[eachitem].values()[0])
                     ppu = qtyc[eachitem].keys()[0]
                     taxRate = 0.00
                     taxRate = float(invData["tax"][eachitem])
+                    """
                     if int(invData["taxflag"]) == 22:
                         taxname = "VAT"
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":"VAT","taxrate":"%.2f"% (float(taxRate))}
@@ -939,26 +946,76 @@ The bills grid calld gkresult will return a list as it's value.
                             taxname = "SGST"
                             taxRate = (taxRate/2)
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
+                    """
                     #Checking Rejection Note Qty.
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
-                rnprodresult = []
-                #get stock respected to all rejection notes
-                for rnid in allrnidres:
-                    #checking in rnid into stock table 
-                    temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
-                    temp = temp.fetchall()
-                    rnprodresult.append(temp)
-                for row in rnprodresult:
-                    try:
-                        for prodc, qty in row:
-                            print qty
-                            items[int(eachitem)]["qty"] -= float(qty)
-                    except:
-                        pass
-                taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
-                print taxableAmount
+                    rnprodresult = []
+                    #get stock respected to all rejection notes
+                    for rnid in allrnidres:
+                        #checking in rnid into stock table 
+                        temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+                        temp = temp.fetchall()
+                        rnprodresult.append(temp)
+                    for row in rnprodresult:
+                        try:
+                            for prodc, qty in row:
+                                print qty
+                                result -= float(qty)
+                        except:
+                            pass
+                    items[int(eachitem)]["qty"]=result
+                    totalDisc = 0.00
+                    totalTaxableVal = 0.00
+                    totalTaxAmt = 0.00
+                    totalCessAmt = 0.00
+                    taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate =  float(invData["tax"][eachitem])
+                    if int(invData["taxflag"]) == 22:
+                        taxRate =  float(invData["tax"][eachitem])
+                        taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
+                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"qty":float(items[int(eachitem)]["qty"]),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                    else:
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if invData["cess"] != None:
+                            cessVal = float(invData["cess"][eachitem])
+                            cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
+
+                        if invData["sourcestate"] != invData["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            taxRate = (taxRate/2)
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+  
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+
+                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                #items["sum"]["totaldiscount"] = "%.2f"% (float(totalDisc))
+                #items["sum"]["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                #items["sum"]["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                #items["sum"]["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                #items["sum"]['taxname'] = taxname
+                print items
+                
                 for productcode in items.keys():
+                    print productcode
                     if items[productcode]["qty"] == 0:
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
