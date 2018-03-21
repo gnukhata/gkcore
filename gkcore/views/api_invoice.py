@@ -901,11 +901,12 @@ The bills grid calld gkresult will return a list as it's value.
                 invid = dataset["invid"]
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
-                
-                temp = self.con.execute(select([invoice.c.contents,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.tax,invoice.c.cess,invoice.c.taxstate]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+                temp = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
                 invprodresult.append(invData["contents"])
                 qtyc =invData["contents"]
+                print qtyc
+                discounts = invData["discount"]
                 items = {}
                 for eachitem in qtyc.keys():
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
@@ -914,9 +915,14 @@ The bills grid calld gkresult will return a list as it's value.
                         continue
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
+                    if discounts != None:
+                        discount = discounts[eachitem]
+                    else:
+                        discount = 0.00
                     result = qtyc[eachitem].values()[0]
+                    ppu = qtyc[eachitem].keys()[0]
                     taxRate = 0.00
-                    taxRate =  float(invData["tax"][eachitem])
+                    taxRate = float(invData["tax"][eachitem])
                     if int(invData["taxflag"]) == 22:
                         taxname = "VAT"
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":"VAT","taxrate":"%.2f"% (float(taxRate))}
@@ -933,20 +939,25 @@ The bills grid calld gkresult will return a list as it's value.
                             taxname = "SGST"
                             taxRate = (taxRate/2)
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
+                    #Checking Rejection Note Qty.
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
                 rnprodresult = []
                 #get stock respected to all rejection notes
                 for rnid in allrnidres:
+                    #checking in rnid into stock table 
                     temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
                     temp = temp.fetchall()
                     rnprodresult.append(temp)
                 for row in rnprodresult:
                     try:
                         for prodc, qty in row:
+                            print qty
                             items[int(eachitem)]["qty"] -= float(qty)
                     except:
                         pass
+                taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
+                print taxableAmount
                 for productcode in items.keys():
                     if items[productcode]["qty"] == 0:
                         del items[productcode]
@@ -995,6 +1006,7 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["goname"] = goname["goname"]
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
+                print items
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
             #except:
              #   return {"gkstatus":enumdict["ConnectionFailed"]}
