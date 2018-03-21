@@ -837,7 +837,7 @@ The bills grid calld gkresult will return a list as it's value.
                                 for rejrow in rejectedNotes:
                                     rejdict = rejrow["rejprods"]
                                     if rejdict.has_key(c):
-                                        qty = qty - float(rejrow["rejprods"][c])
+                                        qty = qty - float(rejrow["rejprods"][c].values()[0])
 
                                 rejContents[c] =  qty
                     if gscounter > 0:
@@ -999,7 +999,7 @@ The bills grid calld gkresult will return a list as it's value.
             #except:
              #   return {"gkstatus":enumdict["ConnectionFailed"]}
             #finally:
-             #   self.con.close()
+                self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
