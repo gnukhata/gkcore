@@ -299,7 +299,8 @@ class category(object):
             try:
                 self.con = eng.connect()
                 #This query for getting the list of categories which are editable i.e.category which are associated with the products are discarded from the list.
-                result=self.con.execute("select DISTINCT categorysubcategories.categorycode from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
+                catresult=self.con.execute("select DISTINCT categorysubcategories.categorycode from categorysubcategories LEFT JOIN product ON categorysubcategories.categorycode = product.categorycode where product.categorycode is null")
+                result=catresult.fetchall();
                 category=[]
                 for data in result:
                     result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode]).where(gkdb.categorysubcategories.c.categorycode==data["categorycode"]))
