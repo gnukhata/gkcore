@@ -49,7 +49,7 @@ from monthdelta import monthdelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
-
+from natsort import natsorted
 """
 purpose:
 This class is the resource to generate reports,
@@ -4003,26 +4003,27 @@ free replacement or sample are those which are excluded.
                                     
                             if row["taxflag"] == 22:
                                 continue
+                            
+                            Cessname = ""
                             # Cess is a different type of TAX, only present in GST invoice.
                             if row["cess"] != None:
                                 cessrate = "%.2f"%float(row["cess"][pc])
-                                taxname = str(cessrate) + "% CESS"
+                                Cessname = str(cessrate) + "% CESS"
                                 if cessrate != "0.00":
-                                    if taxdata.has_key(str(taxname)):
-                                        taxdata[taxname]="%.2f"%(float(taxdata[cessrate]) + taxamount)
-                                        taxamountdata[taxname]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
+                                    if taxdata.has_key(str(Cessname)):
+                                        taxdata[Cessname]="%.2f"%(float(taxdata[cessrate]) + taxamount)
+                                        taxamountdata[Cessname]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
                                     else:
-                                        taxdata.update({taxname:"%.2f"%taxamount})
-                                        taxamountdata.update({taxname:"%.2f"%(taxamount*float(cessrate)/100.00)})
+                                        taxdata.update({Cessname:"%.2f"%taxamount})
+                                        taxamountdata.update({Cessname:"%.2f"%(taxamount*float(cessrate)/100.00)})
 
-                                    if taxname not in taxcolumns:
-                                        taxcolumns.append(taxname)
-                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
-                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
+                                    if Cessname not in taxcolumns:
+                                        taxcolumns.append(Cessname)
+                                        totalrow["taxamount"].update({Cessname:"%.2f"%float(taxamountdata[Cessname])})
+                                        totalrow["tax"].update({Cessname:"%.2f"%taxamount})
                                     else:
-                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(cessrate)/100.00))
-                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
-
+                                        totalrow["taxamount"][Cessname] = "%.2f"%(float(totalrow["taxamount"][Cessname]) + float(taxamount*float(cessrate)/100.00))
+                                        totalrow["tax"][Cessname] =  "%.2f"%(float(totalrow["tax"][Cessname]) + taxamount)
                         
                         invoicedata["tax"] = taxdata
                         invoicedata["taxamount"] = taxamountdata
