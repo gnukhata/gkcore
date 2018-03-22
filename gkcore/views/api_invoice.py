@@ -907,14 +907,14 @@ The bills grid calld gkresult will return a list as it's value.
                 qtyc =invData["contents"]
                 print qtyc
                 discounts = invData["discount"]
-                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"]}
+                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"],"invoicetotal":float(invData["invoicetotal"])}
                 if invData["sourcestate"] != None or invData["taxstate"] !=None:
                     invDetails["sourcestate"] = invData["sourcestate"]
-                    sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
-                    invDetails["sourcestatecode"] = sourceStateCode
                     invDetails["taxstate"]=invData["taxstate"]
                     taxStateCode=getStateCode(invData["taxstate"],self.con)["statecode"]
                     invDetails["taxstatecode"]=taxStateCode
+                if invData["address"]!="":
+                    invDetails["address"]=invData["address"]
 
                 items = {}
                 for eachitem in qtyc.keys():
@@ -924,6 +924,7 @@ The bills grid calld gkresult will return a list as it's value.
                         continue
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
+                    uom = unitnamrrow["unitname"]
                     freeqtys = invData["freeqty"]
                     if discounts != None:
                         discount = discounts[eachitem]
@@ -936,9 +937,10 @@ The bills grid calld gkresult will return a list as it's value.
                     items[int(eachitem)]={}
                     result = "%.2f"%float(qtyc[eachitem].values()[0])
                     ppu = qtyc[eachitem].keys()[0]
+                    """
                     taxRate = 0.00
                     taxRate = float(invData["tax"][eachitem])
-                    """
+                    
                     if int(invData["taxflag"]) == 22:
                         taxname = "VAT"
                         items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":"VAT","taxrate":"%.2f"% (float(taxRate))}
@@ -949,12 +951,12 @@ The bills grid calld gkresult will return a list as it's value.
                         if invData["cess"] != None:
                             cessVal = float(invData["cess"][eachitem])
 
-                        if invData["sourcestate"] != invData["taxstate"]:
-                            taxname = "IGST"
-                        else:
-                            taxname = "SGST"
-                            taxRate = (taxRate/2)
-                        items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"cessrate":"%.2f"%(float(cessVal))}
+                       if invData["sourcestate"] != invData["taxstate"]:
+                           taxname = "IGST"
+                       else:
+                           taxname = "SGST"
+                           taxRate = (taxRate/2)
+                       items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate))}
                     """
                     #Checking Rejection Note Qty.
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
@@ -990,7 +992,7 @@ The bills grid calld gkresult will return a list as it's value.
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"qty":float(items[int(eachitem)]["qty"]),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"feeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"uom":uom}
                     else:
                         cessRate = 0.00
                         cessAmount = 0.00
@@ -1015,7 +1017,7 @@ The bills grid calld gkresult will return a list as it's value.
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
-                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"totaldiscount":"%.2f"% (float(totalDisc)),"totaltaxablevalue":"%.2f"% (float(totalTaxableVal)),"totaltaxamt":"%.2f"% (float(totalTaxAmt)),"totalcessamt":"%.2f"% (float(totalCessAmt))}
+                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"totaldiscount":"%.2f"% (float(totalDisc)),"totaltaxablevalue":"%.2f"% (float(totalTaxableVal)),"totaltaxamt":"%.2f"% (float(totalTaxAmt)),"totalcessamt":"%.2f"% (float(totalCessAmt)),"uom":uom}
                 
                 for productcode in items.keys():
                     print productcode
