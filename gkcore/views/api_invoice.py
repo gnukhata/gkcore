@@ -895,7 +895,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -907,6 +907,15 @@ The bills grid calld gkresult will return a list as it's value.
                 qtyc =invData["contents"]
                 print qtyc
                 discounts = invData["discount"]
+                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"]}
+                if invData["sourcestate"] != None or invData["taxstate"] !=None:
+                    invDetails["sourcestate"] = invData["sourcestate"]
+                    sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
+                    invDetails["sourcestatecode"] = sourceStateCode
+                    invDetails["taxstate"]=invData["taxstate"]
+                    taxStateCode=getStateCode(invData["taxstate"],self.con)["statecode"]
+                    invDetails["taxstatecode"]=taxStateCode
+
                 items = {}
                 for eachitem in qtyc.keys():
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
@@ -964,7 +973,7 @@ The bills grid calld gkresult will return a list as it's value.
                                 result -= float(qty)
                         except:
                             pass
-                    items[int(eachitem)]["qty"]=result
+                    items[int(eachitem)]={"qty":"%.2f"%float(result)}
                     totalDisc = 0.00
                     totalTaxableVal = 0.00
                     totalTaxAmt = 0.00
@@ -1006,13 +1015,7 @@ The bills grid calld gkresult will return a list as it's value.
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
-                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
-                #items["sum"]["totaldiscount"] = "%.2f"% (float(totalDisc))
-                #items["sum"]["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
-                #items["sum"]["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
-                #items["sum"]["totalcessamt"] = "%.2f"% (float(totalCessAmt))
-                #items["sum"]['taxname'] = taxname
-                print items
+                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"uom":unitnamrrow["unitname"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"totaldiscount":"%.2f"% (float(totalDisc)),"totaltaxablevalue":"%.2f"% (float(totalTaxableVal)),"totaltaxamt":"%.2f"% (float(totalTaxAmt)),"totalcessamt":"%.2f"% (float(totalCessAmt))}
                 
                 for productcode in items.keys():
                     print productcode
@@ -1063,11 +1066,10 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["goname"] = goname["goname"]
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
-                print items
-                return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
-            #except:
-             #   return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
+                return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
+            except:
+               return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
                 self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
