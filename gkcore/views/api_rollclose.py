@@ -403,11 +403,12 @@ class api_rollclose(object):
                 if roStatus == 1:
                     accList = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == orgCode))
                     accData = accList.fetchall()
-                    closedAccounts = {}
                     RoOrgCode = getNextOrgCode(orgCode,con)
-                    roAccListData = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == RoOrgCode))
-                    roAccList = roAccListData.fetchall()
-                    for acc in closedAccounts:
+                    for acc in accData:
+                        #we must compare if the rolled over organisation contains all these accounts.
+                        newAccData = self.con.execute(select([accounts.c.accountcode]).where)
+                        
+                    
                         
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
