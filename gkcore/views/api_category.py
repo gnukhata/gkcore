@@ -305,8 +305,7 @@ class category(object):
                 for data in result:
                     result1=self.con.execute(select([gkdb.categorysubcategories.c.categoryname,gkdb.categorysubcategories.c.categorycode]).where(gkdb.categorysubcategories.c.categorycode==data["categorycode"]))
                     row = result1.fetchone()
-                    #These queries are for getting subcategories and their count which are associated with the category. 
-                    result2 = self.con.execute(select([gkdb.categorysubcategories]).where(gkdb.categorysubcategories.c.subcategoryof == data["categorycode"]))
+                    #This query is for getting subcategories and their count which are associated with the category. 
                     countResult = self.con.execute(select([func.count(gkdb.categorysubcategories.c.categorycode).label('subcount') ]).where(gkdb.categorysubcategories.c.subcategoryof== data["categorycode"]))
                     countrow = countResult.fetchone()
                     subcount = countrow["subcount"]       
