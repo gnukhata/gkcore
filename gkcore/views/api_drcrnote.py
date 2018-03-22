@@ -111,11 +111,13 @@ class api_drcr(object):
                     drcrdata["reference"]= ""
                 else:
                     drcrdata["reference"]=drcrrow["reference"]
-                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"contents":drcrrow["contents"],"reduct":drcrrow["reductionval"]}
+                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"caseflag":drcrrow["caseflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"]}
                 #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"],"orgstategstin":invrow["orgstategstin"]}  
+                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"],"orgstategstin":invrow["orgstategstin"]}
+                drcrdata["contents"] = invrow["contents"]
+                contentsData = invrow["contents"]
                 if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
                         invdata["sourcestate"] = invrow["sourcestate"]
                         sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -161,7 +163,6 @@ class api_drcr(object):
                 #contents is a nested dictionary from drcr table.
                 #It contains productcode as the key with a value as a dictionary.
                 #this dictionary has two key value pair, priceperunit and quantity.
-                contentsData = drcrrow["contents"]
                 idrateData=drcrrow["reductionval"]
                 #drcrdata is the final dictionary which will not just have the dataset from original contents,
                 #but also productdesc,unitname,discount,taxname,taxrate,amount and taxamount
@@ -174,10 +175,9 @@ class api_drcr(object):
                 totalTaxAmt = 0.00
                 totalCessAmt = 0.00
                 discounts = invrow["discount"]
-                reduct=drcrrow["reductionval"]
                 
                 #pc will have the productcode which will be the key in contentsData.
-                for pc in contentsData.keys():
+                for pc in idrateData.keys():
                     if discounts != None:
                         discount=discounts[pc]                        
                     else:
@@ -192,62 +192,47 @@ class api_drcr(object):
                         umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
     	                umrow = umresult.fetchone()
                         unitofMeasurement = umrow["unitname"]
-                        taxableAmount=((float(contentsData[pc][contentsData[pc].keys()[0]]))*float(contentsData[pc].keys()[0]))-float(discount)
                         reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
-                        if drcrrow["dctypeflag"]==4:
-                            newtaxableamnt=taxableAmount+reductprice
-                        else:
-                            newtaxableamnt=taxableAmount-reductprice
                         taxRate =  float(invrow["tax"][pc])
-                        taxAmount = (newtaxableamnt * float(taxRate/100))
+                        taxAmount = (reductprice * float(taxRate/100))
                         taxname = 'VAT'
-                        totalAmount = float(newtaxableamnt) + (float(newtaxableamnt) * float(taxRate/100))
+                        totalAmount = reductprice + taxAmount
                         totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + newtaxableamnt
+                        totalTaxableVal = totalTaxableVal + reductprice
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(newtaxableamnt))}
-                        idrate[pc]={"reductionval":reduct}
+                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(taxAmount))}
+                        idrate[pc]={"reductionval":idrateData}
                     else:
-                        taxableAmount=((float(contentsData[pc][contentsData[pc].keys()[0]]  )) *( float(contentsData[pc].keys()[0]) )-(float(discount)))
-                        reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
+                        reductprice=float(contentsData[pc][contentsData[pc].keys()[0]])*float(idrateData[pc])
                             
                         if int(prodrow["gsflag"]) == 7:
                             umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
     	                    umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
-                            if drcrrow["dctypeflag"]==4:
-                                newtaxableamnt=taxableAmount+reductprice
-                            else:
-                                newtaxableamnt=taxableAmount-reductprice
                         else:
                             unitofMeasurement = ""
-                            if drcrrow["dctypeflag"]==4:
-                                newtaxableamnt = float(contentsData[pc].keys()[0])+(float(idrateData[pc]))- float(discount)
-                            else:
-                                newtaxableamnt = float(contentsData[pc].keys()[0])-(float(idrateData[pc]))- float(discount)
                         cessRate = 0.00
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
                         if invrow["cess"] != None:
                             cessVal = float(invrow["cess"][pc])
-                            cessAmount = (newtaxableamnt * (cessVal/100))
+                            cessAmount = (reductprice * (cessVal/100))
                             totalCessAmt = totalCessAmt + cessAmount
 
                         if invrow["sourcestate"] != invrow["taxstate"]:
                             taxname = "IGST"
-                            taxAmount = (newtaxableamnt * (taxRate/100))
-                            totalAmount = newtaxableamnt + taxAmount + cessAmount
+                            taxAmount = (reductprice * (taxRate/100))
+                            totalAmount = reductprice + taxAmount + cessAmount
                         else:
                             taxname = "SGST"
-                            taxRate = (taxRate/2)
-                            taxAmount = (newtaxableamnt * (taxRate/100))
-                            totalAmount = newtaxableamnt + (newtaxableamnt * ((taxRate * 2)/100)) + cessAmount                   
+                            # SGST and CGST rates are equal and exactly half the IGST rate.
+                            taxAmount = (reductprice * (taxRate/200))
+                            totalAmount = reductprice + taxAmount + cessAmount                   
                         totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + newtaxableamnt
+                        totalTaxableVal = totalTaxableVal + reductprice
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(newtaxableamnt))}
-                drcrdata["totaldiscount"] = "%.2f"% (float(totalDisc))
+                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(reductprice))}
                 drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 drcrdata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
