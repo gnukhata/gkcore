@@ -406,7 +406,11 @@ class api_rollclose(object):
                     RoOrgCode = getNextOrgCode(orgCode,con)
                     for acc in accData:
                         #we must compare if the rolled over organisation contains all these accounts.
-                        newAccData = self.con.execute(select([accounts.c.accountcode]).where)
+                        newAccData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accname == acc["accname"], accounts.c.orgcode == RoOrgCode)))
+                        if newAccData.rowcount == 0:
+                            #this means  we first need to created this account for the rolled over org.
+                            #called closebook and get the balance.
+                            
                         
                     
                         
