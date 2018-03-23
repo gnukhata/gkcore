@@ -105,13 +105,13 @@ class api_drcr(object):
                 invdata={}
                 custSupDetails={}
                 drcrdata={}
+                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"]}
                 #reference is a dictionary which contains reference number as key and reference date as value.
                 #if reference field is not None then send refernce dictionary.
                 if drcrrow["reference"] == None:
                     drcrdata["reference"]= ""
                 else:
                     drcrdata["reference"]=drcrrow["reference"]
-                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"]}
                 #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
                 invrow=invresult.fetchone()
