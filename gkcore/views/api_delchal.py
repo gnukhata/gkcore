@@ -476,7 +476,7 @@ create method for delchal resource.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dcid = self.request.params["dcid"]
                 items = {}
@@ -489,6 +489,7 @@ create method for delchal resource.
                     items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
                 result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
                 linkedinvoices = result.fetchall()
+                print linkedinvoices
                 #linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
                 for invoice in linkedinvoices:
                     invprods = invoice[1]
@@ -517,7 +518,7 @@ create method for delchal resource.
                         if items[productcode]["qty"] == 0:
                             del items[productcode]
                 return {"gkstatus":enumdict["Success"], "gkresult": items}
-            except:
+            #except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
+            #finally:
                 self.con.close()

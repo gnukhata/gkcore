@@ -63,7 +63,7 @@ class api_rejectionnote(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 rejectionnotedata = dataset["rejectionnotedata"]
@@ -78,7 +78,7 @@ class api_rejectionnote(object):
                     rnidrow = rniddata.fetchone()
                     stockdata["dcinvtnid"] = rnidrow["rnid"]
                     stockdata["dcinvtnflag"] = 18
-                    stockdata["stockdate"] = rnidrow["rndate"]
+                    stockdata["stockdata"] = rnidrow["rndate"]
                     try:
                         for key in items.keys():
                             stockdata["productcode"] = key
@@ -96,11 +96,11 @@ class api_rejectionnote(object):
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #except exc.IntegrityError:
+            except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
+            except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
+            finally:
                 self.con.close()
 
     @view_config(request_method='GET',request_param="type=all", renderer ='json')
@@ -141,7 +141,7 @@ class api_rejectionnote(object):
                 rndata = result.fetchone()
                 issuerdata = self.con.execute(select([users.c.username]).where(users.c.userid == rndata["issuerid"]))
                 issuerdata = issuerdata.fetchone()
-                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"]}
+                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"rejectedtotal":"%.2f"% float(rndata["rejectedtotal"])}
                 rejectionnotedata.update({"issuername": issuerdata["username"]})
                 typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
                 """
@@ -234,7 +234,9 @@ class api_rejectionnote(object):
                 if rejectionnotedata["invid"] != None:
                     invdata = self.con.execute(select([invoice]).where(invoice.c.invid==rejectionnotedata["invid"]))
                     invdata = invdata.fetchone()
-                    rejinvdata={"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"),"taxflag":invdata["taxflag"],"tax":invdata["tax"]}
+                    rejinvdata={"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"),"taxflag":invdata["taxflag"],"tax":invdata["tax"],"orgstategstin":invdata["orgstategstin"],}
+                    if invdata["address"]!=None:
+                        rejinvdata["address"]=invdata["address"]
                     if invdata["sourcestate"] != None or invdata["taxstate"] !=None:
                         rejinvdata["sourcestate"] = invdata["sourcestate"]
                         sourceStateCode = getStateCode(invdata["sourcestate"],self.con)["statecode"]

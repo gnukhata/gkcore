@@ -895,7 +895,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -906,7 +906,7 @@ The bills grid calld gkresult will return a list as it's value.
                 invprodresult.append(invData["contents"])
                 qtyc =invData["contents"]
                 discounts = invData["discount"]
-                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"],"invoicetotal":float(invData["invoicetotal"])}
+                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"],"invoicetotal":float(invData["invoicetotal"]),"orgstategstin":invData["orgstategstin"]}
                 if invData["sourcestate"] != None or invData["taxstate"] !=None:
                     invDetails["sourcestate"] = invData["sourcestate"]
                     invDetails["taxstate"]=invData["taxstate"]
@@ -962,9 +962,12 @@ The bills grid calld gkresult will return a list as it's value.
                            taxRate = (taxRate/2)
                        items[int(eachitem)] = {"qty":"%.2f"%float(result),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"taxname":taxname,"taxrate":"%.2f"% (float(taxRate))}
                     """
+                    items[int(eachitem)] = {"qty":"%.2f"%float(result)}
                     #Checking Rejection Note Qty.
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
                     allrnidres = allrnidres.fetchall()
+                    print "allrnidres"
+                    print allrnidres
                     rnprodresult = []
                     #get stock respected to all rejection notes
                     for rnid in allrnidres:
@@ -972,14 +975,14 @@ The bills grid calld gkresult will return a list as it's value.
                         temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
                         temp = temp.fetchall()
                         rnprodresult.append(temp)
-                    for row in rnprodresult:
-                        try:
-                            for prodc, qty in row:
-                                print qty
-                                result -= float(qty)
-                        except:
-                            pass
-                    items[int(eachitem)]={"qty":"%.2f"%float(result)}
+                        print rnprodresult
+                        for row in rnprodresult:
+                            try:
+                                for prodc, qty in row:
+                                    result = float(items[prodc]["qty"]) - float(qty)
+                            except:
+                                pass
+                        items[int(eachitem)]={"qty":"%.2f"%float(result)}
                     taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
                     taxRate = 0.00
                     totalAmount = 0.00
@@ -1024,7 +1027,6 @@ The bills grid calld gkresult will return a list as it's value.
                 invDetails["totaltaxamt"]="%.2f"% (float(totalTaxAmt))
                 invDetails["totalcessamt"]="%.2f"% (float(totalCessAmt))
                 for productcode in items.keys():
-                    print productcode
                     if items[productcode]["qty"] == 0:
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
@@ -1073,9 +1075,9 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
-            except:
-               return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
+            #except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            #finally:
                 self.con.close()
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
