@@ -23,6 +23,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Reshma Bhatwadekar" <reshma@dff.org.in>
 "Vasudha Kadge" <kadge.vasudha@gmail.com>
+'Abhijith Balan'<abhijith@dff.org.in>
 """
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users,product,unitofmeasurement
@@ -61,8 +62,6 @@ class api_drcr(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                if dataset["dctypeflag"]=="4":
-                    dataset["userid"]=authDetails["userid"]
                 result=self.con.execute(drcr.insert(),[dataset])
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
@@ -97,7 +96,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 #taken credit/debit note data on the basis on drcrid
                 drcrresult=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
@@ -190,7 +189,7 @@ class api_drcr(object):
                     taxRate =  float(invrow["tax"][pc])
                     if int(invrow["taxflag"]) == 22:
                         umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
-    	                umrow = umresult.fetchone()
+                        umrow = umresult.fetchone()
                         unitofMeasurement = umrow["unitname"]
                         reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
                         taxRate =  float(invrow["tax"][pc])
@@ -207,7 +206,7 @@ class api_drcr(object):
                             
                         if int(prodrow["gsflag"]) == 7:
                             umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
-    	                    umrow = umresult.fetchone()
+                            umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
                         else:
                             unitofMeasurement = ""
@@ -241,10 +240,10 @@ class api_drcr(object):
                 drcrdata["reductval"]=idrateData
                 drcrdata["invdata"]=invdata
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            #except:
+             #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+           # finally:
+            #    self.con.close()
                 
     @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
     def getAlldrcr(self):
