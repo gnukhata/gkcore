@@ -634,15 +634,15 @@ rejectionnote = Table('rejectionnote',metadata,
 
 """
 This table is for stroring records of debit note and credit note.
-dctypeflag is used to decide whether it is debit note or credit note.(debit note=4 & credit note=3)xx
-In this we have json field that is contents.
-This field is a nested dictionary.
-The key of this field is the productcode while value is another dictionary.
-This has a key as price per unit (ppu) and value as quantity (qty) of product.
-'reference' is in json form.
-It has key as ref. no. and date as value.
-credited and debited value gives reduction value.
-taxable value and tax amount gives totreduct value i.e (total value)
+The dctypeflag is used to decide whether it is debit note or credit note.(debit note=4 & credit note=3).
+Debit/Credit Note number is stored in drcrno and drcrdate fields respectively.
+These may be issued when there is differnce is taxable amount or when quantity is rejected.
+If they are issued against an invoice its id is stored in invid.
+If they are issued against a rejection note its id is stored in rnid.
+Quantity or Price of each product changed is stored in reductionval as values in a dictionary where keys are productcodes.
+Debit/Credit Note reference if any is stored in reference field.
+Documents attached is stored in attachment and its count stored in attachmentcount.
+Storing userid helps access username and userrole.
 """
 drcr =  Table('drcr', metadata,             
     Column('drcrid',Integer,primary_key=True),
@@ -652,7 +652,6 @@ drcr =  Table('drcr', metadata,
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('drcrdate',DateTime,nullable=False),
     Column('dctypeflag', Integer, default=3),
-    Column('caseflag', Integer),
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('reductionval',JSONB),
     Column('reference',JSONB),
