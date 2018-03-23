@@ -647,7 +647,7 @@ Storing userid helps access username and userrole.
 drcr =  Table('drcr', metadata,             
     Column('drcrid',Integer,primary_key=True),
     Column('drcrno',UnicodeText, nullable=False),
-    Column('invid', Integer, ForeignKey('invoice.invid'),nullable=False),
+    Column('invid', Integer, ForeignKey('invoice.invid')),
     Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('drcrdate',DateTime,nullable=False),
@@ -659,7 +659,8 @@ drcr =  Table('drcr', metadata,
     Column('attachmentcount',Integer,default=0),
     Column('userid',Integer,ForeignKey('users.userid')),
     UniqueConstraint('orgcode','drcrno','dctypeflag'),
-    UniqueConstraint('orgcode','invid','dctypeflag')
+    UniqueConstraint('orgcode','invid','dctypeflag'),
+    UniqueConstraint('orgcode','rnid','dctypeflag')
    )
 
 
