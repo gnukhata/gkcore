@@ -639,7 +639,7 @@ Debit/Credit Note number is stored in drcrno and drcrdate fields respectively.
 These may be issued when there is differnce is taxable amount or when quantity is rejected.
 If they are issued against an invoice its id is stored in invid.
 If they are issued against a rejection note its id is stored in rnid.
-Quantity or Price of each product changed is stored in reductionval as values in a dictionary where keys are productcodes.
+Debited/Credited value of each product is stored in reductionval as values in a dictionary where keys are productcodes.
 Debit/Credit Note reference if any is stored in reference field.
 Documents attached is stored in attachment and its count stored in attachmentcount.
 Storing userid helps access username and userrole.
