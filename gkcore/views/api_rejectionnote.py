@@ -124,7 +124,16 @@ class api_rejectionnote(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-                
+
+    """
+        This function gives details of Rejection Note from it's rnid.
+        The details include related customer or supplier and sales or purchase invoice details.
+        Calculation done on rejected quantity.
+        It also calculates total amount, taxable amount, new taxable amount value with all the taxes.
+        'rejectionnotedata' dictionary contains all details in which 'rejinvdata' contains invoice data related to requested 'rnid' and
+        'rejcontents' contains 'rejected quantity' with calculation of tax and tax amounts. 
+        
+    """
     @view_config(request_method='GET',request_param="type=single", renderer ='json')
     def getRejectionNote(self):
         try:
@@ -139,10 +148,9 @@ class api_rejectionnote(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.rnid==self.request.params["rnid"]))
                 rndata = result.fetchone()
-                issuerdata = self.con.execute(select([users.c.username]).where(users.c.userid == rndata["issuerid"]))
+                issuerdata = self.con.execute(select([users.c.username,users.c.userrole]).where(users.c.userid == rndata["issuerid"]))
                 issuerdata = issuerdata.fetchone()
                 rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"rejectedtotal":"%.2f"% float(rndata["rejectedtotal"])}
-                rejectionnotedata.update({"issuername": issuerdata["username"]})
                 typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
                 """
                 If rejection_note created against the delivery Note.
@@ -234,7 +242,13 @@ class api_rejectionnote(object):
                 if rejectionnotedata["invid"] != None:
                     invdata = self.con.execute(select([invoice]).where(invoice.c.invid==rejectionnotedata["invid"]))
                     invdata = invdata.fetchone()
-                    rejinvdata={"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"),"taxflag":invdata["taxflag"],"tax":invdata["tax"],"orgstategstin":invdata["orgstategstin"],}
+                    rejinvdata={"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"),"taxflag":invdata["taxflag"],"tax":invdata["tax"],"orgstategstin":invdata["orgstategstin"],"inoutflag":invdata["inoutflag"]}
+                    if invdata["inoutflag"] == 15:
+                        rejinvdata["issuername"] = invdata["issuername"]
+                        rejinvdata["designation"] = invdata["designation"]
+                    else:
+                        rejinvdata["issuername"] = issuerdata["username"]
+                        rejinvdata["designation"] = issuerdata["userrole"]
                     if invdata["address"]!=None:
                         rejinvdata["address"]=invdata["address"]
                     if invdata["sourcestate"] != None or invdata["taxstate"] !=None:
