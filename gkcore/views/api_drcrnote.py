@@ -91,7 +91,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 #taken credit/debit note data on the basis on drcrid
                 drcrresult=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
@@ -194,7 +194,7 @@ class api_drcr(object):
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + reductprice
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(taxAmount))}
+                        drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(reductprice))}
                         idrate[pc]={"reductionval":idrateData}
                     else:   
                         if int(prodrow["gsflag"]) == 7:
@@ -235,10 +235,10 @@ class api_drcr(object):
                 drcrdata["reductval"]=idrateData
                 drcrdata["invdata"]=invdata
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
-            #except:
-             #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-           # finally:
-            #    self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
                 
     @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
     def getAlldrcr(self):
