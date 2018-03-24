@@ -82,11 +82,6 @@ class api_drcr(object):
         It also calculates total amount, taxable amount, new taxable amount, total debited/credited value with all the taxes.
         The function returns a dictionary with the details of debit & credit note.
         If reference equal to none then send null value otherwise respected reference credit/debit note number and credit/debit note date.
-        Formulae:
-        taxableAmount = (qty * priceperunit)-discount
-        reductprice = qty * reductval
-        newtaxableamnt = taxableAmount + reductprice (for dctypeflag=4)
-        newtaxableamnt = taxableAmount - reductprice (for dctypeflag=3)
         """
         try:
             token = self.request.headers["gktoken"]
@@ -201,15 +196,15 @@ class api_drcr(object):
                         totalTaxAmt = totalTaxAmt + taxAmount
                         drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(taxAmount))}
                         idrate[pc]={"reductionval":idrateData}
-                    else:
-                        reductprice=float(contentsData[pc][contentsData[pc].keys()[0]])*float(idrateData[pc])
-                            
+                    else:   
                         if int(prodrow["gsflag"]) == 7:
                             umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
+                            reductprice=float(contentsData[pc][contentsData[pc].keys()[0]])*float(idrateData[pc])
                         else:
                             unitofMeasurement = ""
+                            reductprice=float(idrateData[pc])
                         cessRate = 0.00
                         cessAmount = 0.00
                         cessVal = 0.00
@@ -227,7 +222,7 @@ class api_drcr(object):
                             taxname = "SGST"
                             # SGST and CGST rates are equal and exactly half the IGST rate.
                             taxAmount = (reductprice * (taxRate/200))
-                            totalAmount = reductprice + taxAmount + cessAmount                   
+                            totalAmount = reductprice + (2*taxAmount) + cessAmount                   
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + reductprice
                         totalTaxAmt = totalTaxAmt + taxAmount
