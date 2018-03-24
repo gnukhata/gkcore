@@ -1,7 +1,7 @@
-
 """
-Copyright (C) 2013, 2014, 2015, 2016, Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs 
+Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -16,8 +16,8 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs
 
   You should have received a copy of the GNU Affero General Public
   License along with GNUKhata (COPYING); if not, write to the
-  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-  Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
+  Free Software Foundation, Inc.,51 Franklin Street, 
+  Fifth Floor, Boston, MA 02110, United States
 
 
 Contributors:
@@ -25,7 +25,6 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Prajkta Patkar" <prajakta@dff.org.in>
-"Prajkta Patkar" <prajkta.patkar007@gmail.com>
 """
 
 from gkcore import eng, enumdict
