@@ -68,7 +68,6 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 This table is for storing state information.  
 A state will have its corresponding code with name.
 """
-
 state = Table('state',metadata,
         Column('statecode',Integer),
         Column('statename',UnicodeText) 
@@ -632,3 +631,36 @@ rejectionnote = Table('rejectionnote',metadata,
     UniqueConstraint('rnno','inout', 'orgcode'),
     Index("rejection_note","orgcode")
     )
+
+"""
+This table is for stroring records of debit note and credit note.
+The dctypeflag is used to decide whether it is debit note or credit note.(debit note=4 & credit note=3).
+Debit/Credit Note number is stored in drcrno and drcrdate fields respectively.
+These may be issued when there is differnce is taxable amount or when quantity is rejected.
+If they are issued against an invoice its id is stored in invid.
+If they are issued against a rejection note its id is stored in rnid.
+Debited/Credited value of each product is stored in reductionval as values in a dictionary where keys are productcodes.
+Debit/Credit Note reference if any is stored in reference field.
+Documents attached is stored in attachment and its count stored in attachmentcount.
+Storing userid helps access username and userrole.
+"""
+drcr =  Table('drcr', metadata,             
+    Column('drcrid',Integer,primary_key=True),
+    Column('drcrno',UnicodeText, nullable=False),
+    Column('invid', Integer, ForeignKey('invoice.invid')),
+    Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
+    Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
+    Column('drcrdate',DateTime,nullable=False),
+    Column('dctypeflag', Integer, default=3),
+    Column('totreduct',Numeric(13,2),default=0.00),
+    Column('reductionval',JSONB),
+    Column('reference',JSONB),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('userid',Integer,ForeignKey('users.userid')),
+    UniqueConstraint('orgcode','drcrno','dctypeflag'),
+    UniqueConstraint('orgcode','invid','dctypeflag'),
+    UniqueConstraint('orgcode','rnid','dctypeflag')
+   )
+
+
