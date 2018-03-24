@@ -64,6 +64,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.rejectionnote.c.rejprods)]))
             self.con.execute(select([func.count(gkdb.drcr.c.drcrid)]))
             self.con.execute(select([func.count(gkdb.invoice.c.invoicetotalword)]))
             self.con.execute(select([func.count(gkdb.delchal.c.taxflag)]))
@@ -97,6 +98,7 @@ class api_organisation(object):
             self.con.execute(select(gkdb.organisation.c.billflag))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
             self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))");
             self.con.execute("alter table invoice add invoicetotalword text")
             self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
@@ -211,7 +213,7 @@ class api_organisation(object):
             self.con.execute("alter table product add gscode text")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
-            self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
+            self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 1")
             self.con.execute("alter table organisation add billflag integer default 1")
             self.con.execute("alter table vouchers add instrumentno text")

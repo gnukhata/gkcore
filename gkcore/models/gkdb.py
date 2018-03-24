@@ -618,15 +618,19 @@ log = Table('log',metadata,
 
 """Table to store Rejection Note
 This table will store invoice or delivery note id against which rejection note prepared
-inout is a flag to indicate rejection in or out. in = 9, out = 15"""
+inout is a flag to indicate rejection in or out. in = 9, out = 15
+rejprods is to store productcode as key and rejected quantity as value
+"""
 rejectionnote = Table('rejectionnote',metadata,
     Column('rnid',Integer,primary_key=True),
     Column('rnno',UnicodeText, nullable=False),
     Column('rndate', DateTime, nullable=False),
     Column('inout', Integer, nullable=False),
+    Column('rejprods',JSONB,nullable=False),
     Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
     Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
     Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('rejectedtotal',Numeric(13,2), nullable=False),
     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
     UniqueConstraint('rnno','inout', 'orgcode'),
     Index("rejection_note","orgcode")

@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state, users
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -807,53 +807,70 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                orgcode = authDetails["orgcode"]
-                dataset = self.request.json_body
-                new_inputdate = dataset["inputdate"]
-                new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
-                inv_nonrejected = []
-                allinvids = self.con.execute(select([invoice.c.invid]).distinct().where(and_(invoice.c.orgcode == orgcode, invoice.c.invoicedate <= new_inputdate, invoice.c.icflag == 9)))
-                allinvids = allinvids.fetchall()
-                i = 0
-                while(i < len(allinvids)):
-                    invid = allinvids[i]
-                    invprodresult = []
-                    temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid[0])))
-                    temp = temp.fetchall()
-                    invprodresult.append(temp[0][0])
-                    allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid[0])))
-                    allrnidres = allrnidres.fetchall()
-                    rnprodresult = []
-                    #get stock respected to all rejection notes
-                    for rnid in allrnidres:
-                        temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
-                        temp = temp.fetchall()
-                        rnprodresult.append(temp)
-                    totalqtyofinvprod = {}
-                    for eachitem in invprodresult:
-                        for prodc in eachitem:
-                            totalqtyofinvprod.update({int(prodc):eachitem[prodc].values()[0]})
-                    for row in rnprodresult:
-                        for prodc, qty in row:
-                            if prodc in totalqtyofinvprod:
-                                totalqtyofinvprod[prodc] = float(totalqtyofinvprod[prodc]) - float(qty)
-                                if float(totalqtyofinvprod[prodc]) <= 0.00:
-                                    del totalqtyofinvprod[prodc]
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                allinv = invResult.fetchall()
+                allinvids = []
+                for invrow in allinv:
+                    #keep an empty dictionary for rejectable products.
+                    rejContents = {}
+                    rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
+                    rejectedNotes = rejectedResult.fetchall()
+                    gscounter = 0
+                    for c in invrow["contents"].keys():
+                        qty = float(invrow["contents"][c].values()[0])
+                        # for goods quantity will not be 0 anytime
+                        if qty > 0:
+                            gscounter = gscounter + 1
+                            # check whether this product is rejected before.
+                            #if there are no rejections then just add the quantity directly to the rejContents.
+                            if rejectedResult.rowcount == 0:
+                                rejContents[c] = qty
+                                
                             else:
-                                pass
-                    if len(totalqtyofinvprod) == 0:
-                        allinvids.remove(invid)
-                        i-=1
-                    i+=1
-                srno = 1
-                for eachinvid in allinvids:
-                    singleinvResult = self.con.execute(select([invoice.c.invid, invoice.c.invoiceno, invoice.c.invoicedate, customerandsupplier.c.custname, customerandsupplier.c.csflag]).distinct().where(and_(invoice.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachinvid[0] == invoice.c.invid, invoice.c.custid == customerandsupplier.c.custid)))
-                    singleinvResult = singleinvResult.fetchone()
-                    temp_dict = {"invid": singleinvResult["invid"], "srno": srno, "invoiceno":singleinvResult["invoiceno"], "invoicedate": datetime.strftime(singleinvResult["invoicedate"],"%d-%m-%Y"), "csflag": singleinvResult["csflag"], "custname": singleinvResult["custname"]}
-                    inv_nonrejected.append(temp_dict)
-                    srno += 1
+                                
+                                #Now query each note to see if this product is partially or fully rejected.
+
+                                for rejrow in rejectedNotes:
+                                    rejdict = rejrow["rejprods"]
+                                    if rejdict.has_key(c):
+                                        qty = qty - float(rejrow["rejprods"][c].values()[0])
+
+                                rejContents[c] =  qty
+                    if gscounter > 0:
+                        custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                        custData = custandsup.fetchone()
+                        custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
+
+                        if int(invrow["taxflag"]) == 22:
+                            if custData["custtan"] != None:
+                                custSupDetails["custtin"] = custData["custtan"]
+                                custSupDetails["custstate"] = custData["state"]
+                        else:
+                            if invrow["sourcestate"] != None:
+                                sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
+                                custSupDetails["custstate"] = invrow["sourcestate"]
+                            if invrow["taxstate"] != None:
+                                taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
+                                custSupDetails["custstate"] = invrow["taxstate"]
+                            if custData["gstin"] != None:
+                                if int(custData["csflag"]) == 3 :
+                                    try:
+                                        custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                                        
+                                    except:
+                                        custSupDetails["custgstin"] = None
+                                        custSupDetails["custstate"] = None
+                                else:
+                                    try:
+                                        custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                                        
+                                    except:
+                                        custSupDetails["custgstin"] = None
+                                        custSupDetails["custstate"] = None
+                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
+                                
                 self.con.close()
-                return {"gkstatus":enumdict["Success"], "gkresult": inv_nonrejected}
+                return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
@@ -861,6 +878,15 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
+    """
+        This function gives details of single rejection note from it's invid.
+        The details include related customer or supplier and sales or purchase invoice details as well as calculation of amount.
+        It also calculates total amount, taxable amount, new taxable amount with all the taxes.
+        The function returns a dictionary with the details.
+        'item' dictionary contains details product and tax calculation values.
+        'delchal' dictionary contains 'customerandsupplier details.
+        'invDetails' dictionary contains request invoice details.
+    """
     @view_config(request_method='GET',request_param='type=nonrejectedinvprods', renderer='json')
     def nonRejectedInvProds(self):
         try:
@@ -877,40 +903,152 @@ The bills grid calld gkresult will return a list as it's value.
                 invid = dataset["invid"]
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
-                temp = self.con.execute(select([invoice.c.contents]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
-                temp = temp.fetchall()
-                invprodresult.append(temp[0][0])
+                userId = authDetails["userid"]
+                userdetails = self.con.execute(select([users.c.userid, users.c.username,users.c.userrole]).where(users.c.userid == userId))
+                userDetails = userdetails.fetchone()
+                temp = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
+                invData = temp.fetchone()
+                invprodresult.append(invData["contents"])
+                qtyc =invData["contents"]
+                discounts = invData["discount"]
+                invDetails={"invno":invData["invoiceno"], "invdate":datetime.strftime(invData["invoicedate"],"%d-%m-%Y"),"taxflag":invData["taxflag"],"tax":invData["tax"],"invoicetotal":float(invData["invoicetotal"]),"orgstategstin":invData["orgstategstin"],"inoutflag":invData["inoutflag"]}
+                if invData["inoutflag"] == 15:
+                    invDetails["issuername"] = invData["issuername"]
+                    invDetails["designation"] = invData["designation"]
+                else:
+                    invDetails["issuername"] = userDetails["username"]
+                    invDetails["designation"] = userDetails["userrole"]
+                if invData["sourcestate"] != None or invData["taxstate"] !=None:
+                    invDetails["sourcestate"] = invData["sourcestate"]
+                    invDetails["taxstate"]=invData["taxstate"]
+                    taxStateCode=getStateCode(invData["taxstate"],self.con)["statecode"]
+                    invDetails["taxstatecode"]=taxStateCode
+                if invData["address"]!="":
+                    invDetails["address"]=invData["address"]
+
+                totalDisc = 0.00
+                totalTaxableVal = 0.00
+                totalTaxAmt = 0.00
+                totalCessAmt = 0.00
+ 
                 items = {}
-                for eachitem in invprodresult:
-                    for prodc in eachitem:
-                        productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==int(prodc)))
-                        productdesc = productdata.fetchone()
-                        uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
-                        unitnamrrow = uomresult.fetchone()
-                        items[int(prodc)] = {"qty":float("%.2f"%float(eachitem[prodc].values()[0])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
-                allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
-                allrnidres = allrnidres.fetchall()
-                rnprodresult = []
-                #get stock respected to all rejection notes
-                for rnid in allrnidres:
-                    temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
-                    temp = temp.fetchall()
-                    rnprodresult.append(temp)
-                for row in rnprodresult:
-                    try:
-                        for prodc, qty in row:
-                            items[int(prodc)]["qty"] -= float(qty)
-                    except:
-                        pass
+                for eachitem in qtyc.keys():
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
+                    productdesc = productdata.fetchone()
+                    if productdesc == None :
+                        continue
+                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    unitnamrrow = uomresult.fetchone()
+                    uom = unitnamrrow["unitname"]
+                    freeqtys = invData["freeqty"]
+                    if discounts != None:
+                        discount = discounts[eachitem]
+                    else:
+                        discount = 0.00
+                    if freeqtys != None:
+                        freeqty = freeqtys[eachitem]
+                    else:
+                        freeqty = 0.00
+                    items[int(eachitem)]={}
+                    result = "%.2f"%float(qtyc[eachitem].values()[0])
+                    ppu = qtyc[eachitem].keys()[0]                   
+                    items[int(eachitem)] = {"qty":"%.2f"%float(result)}
+                    #Checking Rejection Note Qty.
+                    allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
+                    allrnidres = allrnidres.fetchall()
+                    rnprodresult = []
+                    #get stock respected to all rejection notes
+                    for rnid in allrnidres:
+                        #checking in rnid into stock table 
+                        temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
+                        temp = temp.fetchall()
+                        rnprodresult.append(temp)
+                        for row in rnprodresult:
+                            try:
+                                for prodc, qty in row:
+                                    result = float(items[prodc]["qty"]) - float(qty)
+                            except:
+                                pass
+                        items[int(eachitem)]={"qty":"%.2f"%float(result)}
+                    taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate =  float(invData["tax"][eachitem])
+                    if int(invData["taxflag"]) == 22:
+                        taxRate =  float(invData["tax"][eachitem])
+                        taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
+                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"feeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"uom":uom}
+                    else:
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if invData["cess"] != None:
+                            cessVal = float(invData["cess"][eachitem])
+                            cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
+
+                        if invData["sourcestate"] != invData["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            taxRate = (taxRate/2)
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+  
+                        totalDisc = totalDisc + float(discount)
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+
+                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"uom":uom}
+
+                invDetails["totaldiscount"]="%.2f"% (float(totalDisc))
+                invDetails["totaltaxablevalue"]="%.2f"% (float(totalTaxableVal))
+                invDetails["totaltaxamt"]="%.2f"% (float(totalTaxAmt))
+                invDetails["totalcessamt"]="%.2f"% (float(totalCessAmt))
                 for productcode in items.keys():
                     if items[productcode]["qty"] == 0:
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
                 temp = temp.fetchone()
                 dcdetails = {}
-                custdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.custaddr, customerandsupplier.c.custtan]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid))))
+                custdata = self.con.execute(select([customerandsupplier]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
-                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"]}
+                custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
+                dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"],"custsupstatecodedata":custsupstatecodedata,"taxflag":invData["taxflag"]}
+                if int(invData["taxflag"]) == 22:
+                    if custname["custtan"] != None:
+                        dcdetails["custtin"] = custname["custtan"]
+                        dcdetails["custstate"] = custname["state"]
+                else:
+                    if invData["sourcestate"] != None:
+                        sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
+                        dcdetails["custstate"] = invData["sourcestate"]
+                    if invData["taxstate"] != None:
+                        taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
+                        dcdetails["custstate"] = invData["taxstate"]
+                    if custname["gstin"] != None:
+                        if int(custname["csflag"]) == 3 :
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None
+                                dcdetails["custstate"] = None
+                        else:
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None
+                                dcdetails["custstate"] = None
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
@@ -923,11 +1061,12 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdetails["goname"] = goname["goname"]
                     dcdetails["gostate"] = goname["state"]
                     dcdetails["goaddr"] = goname["goaddr"]
-                return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails}
+                return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+                
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
