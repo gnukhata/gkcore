@@ -352,6 +352,7 @@ class api_organisation(object):
                     grpcode = result.fetchone()
                     result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
 
+                    # Create Direct expense group , get it's group code and create subgroups under it.
                     directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),directexpense)
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Expense", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
@@ -359,7 +360,7 @@ class api_organisation(object):
                     DEGRPCode = DEGrpCodeData["groupcode"]
                     DESubGroups = [{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}]
                     insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}])
-
+ 
                     directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),directincome)
                     results = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Income", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
