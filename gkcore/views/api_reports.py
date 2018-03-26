@@ -2437,6 +2437,14 @@ class api_reports(object):
                 difference = 0.00
                 profit = ""
                 loss = ""
+                directIncome ={}
+                grpDIbalance = 0.00
+                directExpense ={}
+                grpDEbalance = 0.00
+                indirectIncome ={}
+                grpIIbalance = 0.00
+                indirectExpense ={}
+                grpIEbalance = 0.00
                 if (orgtype == "Profit Making"):
                     profit = "Profit"
                     loss = "Loss"
