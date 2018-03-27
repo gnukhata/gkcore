@@ -2463,6 +2463,16 @@ class api_reports(object):
                     DESUBDict = {}
                     DESubBal = 0.00
                     for desubacc in DESubAccs:
+                        calbalData = calculateBalance(self.con,desubacc[accountcode], financialStart, financialStart, calculateTo)
+                        DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        DESubBal = DESubBal + float(calbalData["curbal"])
+                    # This is balance of sub group
+                    DESUBDict["balance"] = "%.2f"%(float(DESubBal))
+                    # This is balance of main group 
+                    grpDEbalance = grpDEbalance + float(DESubBal)
+                    directExpense[DESub["groupname"]] = DESUBDict
+                    
+                    
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
