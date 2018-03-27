@@ -2458,7 +2458,11 @@ class api_reports(object):
                 for DESub in DESubGroups:
                     #Start looping with the subgroup in hand,
                     #and get it's list of accounts.
-                    DESubAccsData =  
+                    DESubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DESub["groupcode"])))
+                    DESubAccs = DESubAccsData.fetchall()
+                    DESUBDict = {}
+                    DESubBal = 0.00
+                    for desubacc in DESubAccs:
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
 
