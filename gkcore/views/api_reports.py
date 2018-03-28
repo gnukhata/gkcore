@@ -2429,7 +2429,7 @@ class api_reports(object):
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
-                calculateTo = calculateTo
+                #calculateTo = calculateTo
                 incomeTotal = 0.00
                 expenseTotal = 0.00
                 difference = 0.00
@@ -2464,7 +2464,6 @@ class api_reports(object):
                     DESubBal = 0.00
                     
                     for desubacc in DESubAccs:
-                        print desubacc
                         calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
                         DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         DESubBal = DESubBal + float(calbalData["curbal"])
