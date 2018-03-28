@@ -2473,10 +2473,34 @@ class api_reports(object):
                     grpDEbalance = grpDEbalance + float(DESubBal)
                     directExpense[DESub["groupname"]] = DESUBDict
                     directExpense["direxpbal"] = grpDEbalance
+
+                # Calculation for Direct Income
+                DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
+                DISubGroups = DISubGroupsData.fetchall()
+                #now we have list of subgroups under Direct Expense.
+                #We will loop through each and get list of their accounts.
+                for DISub in DISubGroups:
+                    #Start looping with the subgroup in hand,
+                    #and get it's list of accounts.
+                    DISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DISub["groupcode"])))
+                    DISubAccs = DISubAccsData.fetchall()
+                    DISUBDict = {}
+                    DISubBal = 0.00
+                    
+                    for disubacc in DISubAccs:
+                        calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
+                        DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        DISubBal = DISubBal + float(calbalData["curbal"])
+                    # This is balance of sub group
+                    DISUBDict["balance"] = "%.2f"%(float(DISubBal))
+                    # This is balance of main group 
+                    grpDIbalance = grpDIbalance + float(DISubBal)
+                    directIncome[DISub["groupname"]] = DISUBDict
+                    directIncome["dirincmbal"] = grpDIbalance
                     
                     
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"gkresult":{"Direct Expense":directExpense,}}
+                return {"gkstatus":enumdict["Success"],"gkresult":{"Direct Expense":directExpense,"Direct Income":directIncome}}
 
 
            # except:
