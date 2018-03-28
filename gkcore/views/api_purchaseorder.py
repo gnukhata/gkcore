@@ -160,11 +160,11 @@ class api_purchaseorder(object):
             result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid==self.request.params["orderid"]))
             podata = result.fetchone()
             schedule = podata["schedule"]
-            details={}
-            productinf={}
+            details={}          #Stores schedule
+            productinf={}       #Stores productdesc and unitofmeasurement.
             for key in schedule:
                 details[key] = {"productname":schedule[key],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"staggered":schedule[key]["staggered"],"rateperunit":schedule[key]["rateperunit"]}
-                
+                #Productname and unitofMeasurement depending on productcode. 
                 prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode == key))
                 prodrow = prod.fetchone()
                 if int(prodrow["gsflag"]) == 7:
@@ -184,14 +184,14 @@ class api_purchaseorder(object):
                 #"issuername":podata["issuername"],
                 #"designation":podata["designation"],
                 "schedule":details,
-                "taxstate":podata["taxstate"],
+                #"taxstate":podata["taxstate"],
                 "psflag":podata["psflag"],
                 "csid":podata["csid"],
                 "togodown":podata["togodown"],
                 "taxflag" :podata["taxflag"],
                 "tax" :podata["tax"],
                 "purchaseordertotal" :"%.2f"%float(podata["purchaseordertotal"]),
-                "sourcestate" :podata["sourcestate"],
+                #"sourcestate" :podata["sourcestate"],
                 "prgstategstin" :podata["orgstategstin"],
                 "consignee" :podata["consignee"],
                 "freeqty" :podata["freeqty"],
@@ -209,10 +209,20 @@ class api_purchaseorder(object):
                 po["issuername"]=podata["issuername"]
                 po["designation"]=podata["designation"]
                 po["address"]=podata["address"]
-            #Customer And Suppliers details    
+                
+            #If sourcestate and taxstate are present.
+            if podata["sourcestate"] != None:
+                    po["sourcestate"] = podata["sourcestate"]
+                    po["sourcestatecode"] = getStateCode(podata["sourcestate"],self.con)["statecode"]
+                    sourceStateCode = getStateCode(podata["sourcestate"],self.con)["statecode"]
+            if podata["taxstate"] != None:
+                        po["destinationstate"]=podata["taxstate"]
+                        taxStateCode =  getStateCode(podata["taxstate"],self.con)["statecode"]
+                        po["taxstatecode"] = taxStateCode
+                        
+            #Customer And Supplier details    
             custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
             custData = custandsup.fetchone()
-            print custData
             custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
             custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
             if custData["custtan"] != None:
