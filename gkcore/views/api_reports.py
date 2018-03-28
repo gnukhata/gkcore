@@ -2430,7 +2430,7 @@ class api_reports(object):
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 #calculateTo = calculateTo
-                gkresult = {}
+                result = {}
                 incomeTotal = 0.00
                 expenseTotal = 0.00
                 difference = 0.00
@@ -2452,6 +2452,7 @@ class api_reports(object):
                     profit = "Surplus"
                     loss = "Deficit"
                     pnlAccountname = "Income & Expenditure"
+                # Get all subgroups with their group code and group name under Group Direct Expense
                 DESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
                 DESubGroups = DESubGroupsData.fetchall()
                 #now we have list of subgroups under Direct Expense.
@@ -2460,22 +2461,36 @@ class api_reports(object):
                     #Start looping with the subgroup in hand,
                     #and get it's list of accounts.
                     DESubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DESub["groupcode"])))
-                    DESubAccs = DESubAccsData.fetchall()
-                    DESUBDict = {}
-                    DESubBal = 0.00
+                    if DESubAccsData.rowcount > 0:
+                        DESubAccs = DESubAccsData.fetchall()
+                        DESUBDict = {}
+                        DESubBal = 0.00
                     
-                    for desubacc in DESubAccs:
-                        calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
-                        DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        DESubBal = DESubBal + float(calbalData["curbal"])
-                    # This is balance of sub group
-                    DESUBDict["balance"] = "%.2f"%(float(DESubBal))
-                    # This is balance of main group 
-                    grpDEbalance = grpDEbalance + float(DESubBal)
-                    directExpense[DESub["groupname"]] = DESUBDict
-                    directExpense["direxpbal"] = grpDEbalance
+                        for desubacc in DESubAccs:
+                            calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            DESubBal = DESubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        DESUBDict["balance"] = "%.2f"%(float(DESubBal))
+                        # This is balance of main group 
+                        grpDEbalance = grpDEbalance + float(DESubBal)
+                        directExpense[DESub["groupname"]] = DESUBDict
+                    else:
+                        continue
+                            
 
-                gkresult["Direct Expens"] = directExpense
+                getDEAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
+                if getDEAccData.rowcount > 0:
+                    deAccData = getDEAccData.fetchall()
+                    for deAcc in deAccData:
+                        calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        if calbalData["curbal"] == 0.00:
+                            continue
+                        directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                directExpense["direxpbal"] = grpDEbalance
+                result["Direct Expense"] = directExpense
+                
                 # Calculation for Direct Income
                 DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
                 DISubGroups = DISubGroupsData.fetchall()
@@ -2499,17 +2514,18 @@ class api_reports(object):
                     grpDIbalance = grpDIbalance + float(DISubBal)
                     directIncome[DISub["groupname"]] = DISUBDict
                     directIncome["dirincmbal"] = grpDIbalance
-                gkresult["Direct Income"] = directIncome
+                result["Direct Income"] = directIncome
                 if grpDIbalance > grpDEbalance:
                     grsProfit = grpDIbalance - grpDEbalance
-                    gkresult["grossprofitcf"] = grsProfit
+                    result["grossprofitcf"] = grsProfit
                 else:
                     grsLoss = grpDEbalance - grpDIbalance
-                    gkresult["grosslossbf"] = grsLoss
+                    result["grosslossbf"] = grsLoss
+                
                     
                     
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"Direct Expense":directExpense,"Direct Income":directIncome,}
+                return {"gkstatus":enumdict["Success"],"gkresult":result}
 
 
            # except:
