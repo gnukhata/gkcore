@@ -2468,6 +2468,8 @@ class api_reports(object):
                     
                         for desubacc in DESubAccs:
                             calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
                             DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                             DESubBal = DESubBal + float(calbalData["curbal"])
                         # This is balance of sub group
