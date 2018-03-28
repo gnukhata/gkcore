@@ -2473,11 +2473,11 @@ class api_reports(object):
                     # This is balance of main group 
                     grpDEbalance = grpDEbalance + float(DESubBal)
                     directExpense[DESub["groupname"]] = DESUBDict
-                    directExpense[DESub["grpDEbalance"]] = grpDEbalance
+                    directExpense["direxpbal"] = grpDEbalance
                     
                     
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"gkresult":directExpense}
+                return {"gkstatus":enumdict["Success"],"gkresult":{"Direct Expense":directExpense,}}
 
 
            # except:
