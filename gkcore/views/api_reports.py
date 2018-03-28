@@ -2430,6 +2430,7 @@ class api_reports(object):
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 #calculateTo = calculateTo
+                gkresult = {}
                 incomeTotal = 0.00
                 expenseTotal = 0.00
                 difference = 0.00
@@ -2474,6 +2475,7 @@ class api_reports(object):
                     directExpense[DESub["groupname"]] = DESUBDict
                     directExpense["direxpbal"] = grpDEbalance
 
+                gkresult["Direct Expens"] = directExpense
                 # Calculation for Direct Income
                 DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
                 DISubGroups = DISubGroupsData.fetchall()
@@ -2497,10 +2499,17 @@ class api_reports(object):
                     grpDIbalance = grpDIbalance + float(DISubBal)
                     directIncome[DISub["groupname"]] = DISUBDict
                     directIncome["dirincmbal"] = grpDIbalance
+                gkresult["Direct Income"] = directIncome
+                if grpDIbalance > grpDEbalance:
+                    grsProfit = grpDIbalance - grpDEbalance
+                    gkresult["grossprofitcf"] = grsProfit
+                else:
+                    grsLoss = grpDEbalance - grpDIbalance
+                    gkresult["grosslossbf"] = grsLoss
                     
                     
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"gkresult":{"Direct Expense":directExpense,"Direct Income":directIncome}}
+                return {"gkstatus":enumdict["Success"],"Direct Expense":directExpense,"Direct Income":directIncome,}
 
 
            # except:
