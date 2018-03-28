@@ -2474,7 +2474,7 @@ class api_reports(object):
                     
                     
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
+                return {"gkstatus":enumdict["Success"],"gkresult":directExpense}
 
 
             except:
