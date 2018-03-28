@@ -2420,7 +2420,7 @@ class api_reports(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+          #  try:
 
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
@@ -2462,8 +2462,10 @@ class api_reports(object):
                     DESubAccs = DESubAccsData.fetchall()
                     DESUBDict = {}
                     DESubBal = 0.00
+                    
                     for desubacc in DESubAccs:
-                        calbalData = calculateBalance(self.con,desubacc[accountcode], financialStart, financialStart, calculateTo)
+                        print desubacc
+                        calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
                         DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         DESubBal = DESubBal + float(calbalData["curbal"])
                     # This is balance of sub group
@@ -2471,15 +2473,16 @@ class api_reports(object):
                     # This is balance of main group 
                     grpDEbalance = grpDEbalance + float(DESubBal)
                     directExpense[DESub["groupname"]] = DESUBDict
+                    directExpense[DESub["grpDEbalance"]] = grpDEbalance
                     
                     
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":directExpense}
 
 
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+           # except:
+           #     self.con.close()
+           #     return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param='type=deletedvoucher', renderer='json')
     def getdeletedVoucher(self):
