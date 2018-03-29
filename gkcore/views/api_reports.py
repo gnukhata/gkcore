@@ -2491,7 +2491,7 @@ class api_reports(object):
                             continue
                         directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         grpDEbalance = grpDEbalance + float(calbalData["curbal"])
-                directExpense["direxpbal"] = grpDEbalance
+                directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
                 result["Direct Expense"] = directExpense
                 
                 # Calculation for Direct Income
@@ -2535,17 +2535,15 @@ class api_reports(object):
                         else:
                             continue
                                 
-                directIncome["dirincmbal"] = grpDIbalance    
+                directIncome["dirincmbal"] = "%.2f"%(float( grpDIbalance))    
                 result["Direct Income"] = directIncome
                         
                 if grpDIbalance > grpDEbalance:
-                    print grpDIbalance
-                    print grpDEbalance
                     grsProfit = grpDIbalance - grpDEbalance
-                    result["grossprofitcf"] = grsProfit
+                    result["grossprofitcf"] = "%.2f"%(float( grsProfit))
                 else:
                     grsLoss = grpDEbalance - grpDIbalance
-                    result["grosslossbf"] = grsLoss
+                    result["grosslossbf"] = "%.2f"%(float( grsLoss))
                 
                     
                     
