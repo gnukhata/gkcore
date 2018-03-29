@@ -2452,6 +2452,7 @@ class api_reports(object):
                     profit = "Surplus"
                     loss = "Deficit"
                     pnlAccountname = "Income & Expenditure"
+                    
                 # Get all subgroups with their group code and group name under Group Direct Expense
                 DESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
                 DESubGroups = DESubGroupsData.fetchall()
@@ -2479,8 +2480,8 @@ class api_reports(object):
                         directExpense[DESub["groupname"]] = DESUBDict
                     else:
                         continue
-                            
 
+                # Now consider those accounts which are directly created under Direct Expense group
                 getDEAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
@@ -2494,30 +2495,52 @@ class api_reports(object):
                 result["Direct Expense"] = directExpense
                 
                 # Calculation for Direct Income
+                # Same procedure as Direct Expense. 
                 DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
                 DISubGroups = DISubGroupsData.fetchall()
-                #now we have list of subgroups under Direct Expense.
+                #now we have list of subgroups under Direct Income.
                 #We will loop through each and get list of their accounts.
                 for DISub in DISubGroups:
                     #Start looping with the subgroup in hand,
                     #and get it's list of accounts.
                     DISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DISub["groupcode"])))
-                    DISubAccs = DISubAccsData.fetchall()
-                    DISUBDict = {}
-                    DISubBal = 0.00
+                    if DISubAccsData.rowcount > 0:
+                        
+                        DISubAccs = DISubAccsData.fetchall()
+                        DISUBDict = {}
+                        DISubBal = 0.00
                     
-                    for disubacc in DISubAccs:
-                        calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
-                        DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        DISubBal = DISubBal + float(calbalData["curbal"])
-                    # This is balance of sub group
-                    DISUBDict["balance"] = "%.2f"%(float(DISubBal))
-                    # This is balance of main group 
-                    grpDIbalance = grpDIbalance + float(DISubBal)
-                    directIncome[DISub["groupname"]] = DISUBDict
-                    directIncome["dirincmbal"] = grpDIbalance
+                        for disubacc in DISubAccs:
+                            calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            DISubBal = DISubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        DISUBDict["balance"] = "%.2f"%(float(DISubBal))
+                        # This is balance of main group 
+                        grpDIbalance = grpDIbalance + float(DISubBal)
+                        directIncome[DISub["groupname"]] = DISUBDict
+                        
+                getDIAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
+                if getDIAccData.rowcount > 0:
+                    diAccData = getDIAccData.fetchall()
+                    for diAcc in diAccData:
+                        if diAcc["accountname"] != pnlAccountname:
+                            calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                        else:
+                            continue
+                                
+                directIncome["dirincmbal"] = grpDIbalance    
                 result["Direct Income"] = directIncome
+                        
                 if grpDIbalance > grpDEbalance:
+                    print grpDIbalance
+                    print grpDEbalance
                     grsProfit = grpDIbalance - grpDEbalance
                     result["grossprofitcf"] = grsProfit
                 else:
