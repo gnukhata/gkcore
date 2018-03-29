@@ -2420,7 +2420,7 @@ class api_reports(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-          #  try:
+            try:
 
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
@@ -2432,7 +2432,8 @@ class api_reports(object):
                 #calculateTo = calculateTo
                 result = {}
                 grsD = 0.00
-                grsI = 0.00
+                income = 0.00
+                expense = 0.00
                 profit = ""
                 loss = ""
                 directIncome ={}
@@ -2584,70 +2585,68 @@ class api_reports(object):
                         grpIEbalance = grpIEbalance + float(calbalData["curbal"])
                 indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
                 result["Indirect Expense"] = indirectExpense
-                '''
-                # Calculation for Direct Income
+                
+                # Calculation for Indirect Income
                 # Same procedure as Direct Expense. 
-                DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
-                DISubGroups = DISubGroupsData.fetchall()
-                #now we have list of subgroups under Direct Income.
+                IISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"%(orgcode,orgcode))
+                IISubGroups = IISubGroupsData.fetchall()
+                #now we have list of subgroups under Indirect Income.
                 #We will loop through each and get list of their accounts.
-                for DISub in DISubGroups:
+                for IISub in IISubGroups:
                     #Start looping with the subgroup in hand,
                     #and get it's list of accounts.
-                    DISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DISub["groupcode"])))
-                    if DISubAccsData.rowcount > 0:
+                    IISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == IISub["groupcode"])))
+                    if IISubAccsData.rowcount > 0:
                         
-                        DISubAccs = DISubAccsData.fetchall()
-                        DISUBDict = {}
-                        DISubBal = 0.00
+                        IISubAccs = IISubAccsData.fetchall()
+                        IISUBDict = {}
+                        IISubBal = 0.00
                     
-                        for disubacc in DISubAccs:
-                            calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
+                        for iisubacc in IISubAccs:
+                            calbalData = calculateBalance(self.con,iisubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DISubBal = DISubBal + float(calbalData["curbal"])
+                            IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            IISubBal = IISubBal + float(calbalData["curbal"])
                         # This is balance of sub group
-                        DISUBDict["balance"] = "%.2f"%(float(DISubBal))
+                        IISUBDict["balance"] = "%.2f"%(float(IISubBal))
                         # This is balance of main group 
-                        grpDIbalance = grpDIbalance + float(DISubBal)
-                        directIncome[DISub["groupname"]] = DISUBDict
+                        grpIIbalance = grpIIbalance + float(IISubBal)
+                        indirectIncome[IISub["groupname"]] = IISUBDict
                         
-                getDIAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
+                getIIAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"%(orgcode,orgcode))
                 if getDIAccData.rowcount > 0:
-                    diAccData = getDIAccData.fetchall()
-                    for diAcc in diAccData:
-                        if diAcc["accountname"] != pnlAccountname:
-                            calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
-                            if calbalData["curbal"] == 0.00:
-                                continue
-                            directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            grpDIbalance = grpDIbalance + float(calbalData["curbal"])
-                        else:
+                    iiAccData = getIIAccData.fetchall()
+                    for iiAcc in iiAccData:
+                        calbalData = calculateBalance(self.con,iiAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        if calbalData["curbal"] == 0.00:
                             continue
+                        indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        grpIIbalance = grpIIbalance + float(calbalData["curbal"])
                                 
-                directIncome["dirincmbal"] = "%.2f"%(float( grpDIbalance))    
-                result["Direct Income"] = directIncome
-                        
-                if grpDIbalance > grpDEbalance:
-                    grsD = grpDIbalance - grpDEbalance
-                    result["grossprofitcf"] = "%.2f"%(float( grsProfit))
-                    result["totalD"] = "%.2f"%(float( grsDIbalance))
+                indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
+                result["Indirect Income"] = indirectIncome
+                     
+                # Calculate difference between Indirect Income & Indirect Expense. 
+                grsI = grpIIbalance - grpIEbalance
+
+                income = grpDIbalance + grpIIbalance
+                expense = grpDEbalance + grpIEbalance
+                #Calculate Profit and Loss
+                if income > expense:
+                    netProfit = income - expense
+                    result["netprofit"] = "%.2f"%(float(netProfit))
                 else:
-                    grsD = grpDEbalance - grpDIbalance
-                    result["grosslossbf"] = "%.2f"%(float( grsLoss))
-                    result["totalD"] =  "%.2f"%(float( grsDEbalance))
-                '''
-                
-                    
+                    netLoss = expense - income
+                    result["netloss"] = "%.2f"%(float(netLoss))
                     
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":result}
 
 
-           # except:
-           #     self.con.close()
-           #     return {"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param='type=deletedvoucher', renderer='json')
     def getdeletedVoucher(self):
