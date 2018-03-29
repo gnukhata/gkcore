@@ -28,6 +28,7 @@ Contributors:
 'Reshma Bhatwadekar'<reshma_b@riseup.net>
 "Sanket Kolnoorkar"<Sanketf123@gmail.com>
 'Aditya Shukla' <adityashukla9158.as@gmail.com>
+'Pravin Dake' <pravindake24@gmail.com>
 
 """
 
@@ -83,20 +84,19 @@ class api_organisation(object):
             countData = countResult.fetchone()
             if int(countData["revcount"]) > 0:
                 self.con.execute("update invoice set reversecharge = '0'" )
-            self.con.execute(select(gkdb.organisation.c.gstin))
+            self.con.execute(select([func.count(gkdb.organisation.c.gstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
             self.con.execute(select([func.count(gkdb.product.c.gscode)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
             self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
-            self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
-            self.con.execute(select(gkdb.dcinv.c.invprods))
-            self.con.execute(select(gkdb.organisation.c.logo))
-            self.con.execute(select(gkdb.vouchers.c.instrumentno))
-            self.con.execute(select(gkdb.organisation.c.invsflag))
-            self.con.execute(select(gkdb.organisation.c.billflag))
+            self.con.execute(select([func.count(gkdb.dcinv.c.invprods)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.logo)]))
+            self.con.execute(select([func.count(gkdb.vouchers.c.instrumentno)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.invsflag)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
             self.con.execute("drop table purchaseorder cascade")
@@ -230,8 +230,6 @@ class api_organisation(object):
             self.con.execute("alter table dcinv add invprods jsonb")
             self.con.execute("alter table transfernote add duedate timestamp")
             self.con.execute("alter table transfernote add grace integer")
-            self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
-            self.con.execute("alter table customerandsupplier add onaccamt numeric default 0.00")
             self.con.execute("alter table transfernote add fromgodown integer")
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             self.con.execute("alter table transfernote drop column canceldate")
