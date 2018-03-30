@@ -419,6 +419,9 @@ class api_rollclose(object):
                             # This is structure of account data {u'accountname': u'ICICI', u'openingbal': u'550.00', 'orgcode': 31, u'groupcode': u'1180'}
                             dataset = {"accountname":accData["accountname"],"openingbal":closBal,"groupcode":grpCD,"orgcode":RoOrgCode}
                             insACC = self.con.execute(gkdb.accounts.insert(),[dataset])
+                        else:
+                            newAcc = newAccData.fetchone()
+                            updateData = self.con.execute(accounts.update().where(accounts.c.accountcode==newAcc["accountcode"]).values(openingbal=closbal))
                             
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}

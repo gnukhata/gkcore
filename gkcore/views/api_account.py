@@ -259,6 +259,7 @@ class api_account(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                print dataset
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
