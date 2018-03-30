@@ -98,13 +98,15 @@ class api_purchaseorder(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
+                if "psflag" in self.request.params:
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid]).where(and_(purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
+                else:
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
                 allposo = []
                 for row in result:
                     custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
                     custrow = custdata.fetchone()
-                    allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"creditperiod": custrow["creditperiod"],"payterms": row["payterms"],"modeoftransport":row["modeoftransport"],"designation":["designation"],
-                                        "schedule":row["schedule"],"taxstate":row["taxstate"],"psflag":row["psflag"]})
+                    allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"customer":custrow["custname"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allposo}
             except:
@@ -112,39 +114,6 @@ class api_purchaseorder(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-
-    @view_config(request_method='GET',request_param='psflag',renderer='json')
-    def getposo(self):
-
-        """
-        This function gives all purchaseorder or salesorder by matching parameter psflag
-        """
-        try:
-
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                psflagdata =int(self.request.params["psflag"])
-                result=self.con.execute(select([purchaseorder.c.orderid,purchaseorder.c.orderno,purchaseorder.c.orderdate,purchaseorder.c.csid]).where(and_(purchaseorder.c.psflag == psflagdata,purchaseorder.c.orgcode==authDetails["orgcode"])))
-                po =[]
-                for row in result:
-                    custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
-                    custrow = custdata.fetchone()
-                    po.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate":datetime.strftime(row["orderdate"],'%d-%m-%Y') ,"custname": custrow["custname"]})
-                return {"gkstatus":enumdict["Success"],"gkresult":po}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-                
 
     @view_config(request_method='GET',request_param="poso=single", renderer ='json')
     def getSingleposo(self):
