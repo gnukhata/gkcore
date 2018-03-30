@@ -407,13 +407,19 @@ class api_rollclose(object):
                     for acc in accData:
                         #we must compare if the rolled over organisation contains all these accounts.
                         newAccData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accname == acc["accname"], accounts.c.orgcode == RoOrgCode)))
+                        #called closebook and get the balance.
+                        calBalData = calculateBalance(self.con,accData["accountcode"],str(startDate) ,str(startDate) ,str(endDate))
+                        closBal = calBalData["curbal"]
                         if newAccData.rowcount == 0:
                             #this means  we first need to created this account for the rolled over org.
-                            #called closebook and get the balance.
+                            grpResult = self.con.execute("select groupname from groupsubgroups where orgcode = %d and groupcode = (select groupcode from accounts where accountcode = %d and orgcode = %d)"%(orgcode,accData["accountcode"],orgcode))
+                            grpName = grpResult.fetchone()
+                            newGrpResult = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode == RoOrgCode,groupsubgroups.c.groupname == grpName["groupname"])))
+                            grpCD = newGrpResult.fetchone()
+                            # This is structure of account data {u'accountname': u'ICICI', u'openingbal': u'550.00', 'orgcode': 31, u'groupcode': u'1180'}
+                            dataset = {"accountname":accData["accountname"],"openingbal":closBal,"groupcode":grpCD,"orgcode":RoOrgCode}
+                            insACC = self.con.execute(gkdb.accounts.insert(),[dataset])
                             
-                        
-                    
-                        
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:

@@ -90,6 +90,7 @@ class api_account(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                print dataset
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
