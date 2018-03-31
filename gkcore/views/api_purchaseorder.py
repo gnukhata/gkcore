@@ -132,7 +132,9 @@ class api_purchaseorder(object):
             details={}          #Stores schedule
             productinf={}       #Stores productdesc and unitofmeasurement.
             for key in schedule:
-                details[key] = {"productname":schedule[key],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"staggered":schedule[key]["staggered"],"rateperunit":schedule[key]["rateperunit"]}
+                details[key] = {"productname":schedule[key],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"rateperunit":schedule[key]["rateperunit"]}
+                if "staggered" in schedule[key]:
+                    details[key]["staggered"] = schedule[key]["staggered"]
                 #Productname and unitofMeasurement depending on productcode. 
                 prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode == key))
                 prodrow = prod.fetchone()
@@ -142,9 +144,8 @@ class api_purchaseorder(object):
                     unitofMeasurement = unitrow["unitname"]
                 else:
                     unitofMeasurement = ""
-                productinf[key]={"productdesc":prodrow["productdesc"],"productuomid":prodrow["uomid"],"unitofmeasurement":unitofMeasurement} 
-
-            po = {
+                productinf[key]={"productdesc":prodrow["productdesc"],"productuomid":prodrow["uomid"],"unitofmeasurement":unitofMeasurement}
+            purchaseorderdetails = {
                 "orderno":podata["orderno"],
                 "orderdate": datetime.strftime(podata["orderdate"],"%d-%m-%Y"),
                 "creditperiod":podata["creditperiod"],
@@ -167,27 +168,29 @@ class api_purchaseorder(object):
                 "reversecharge" :podata["reversecharge"],
                 "bankdetails" :podata["bankdetails"],
                 "vehicleno" :podata["vehicleno"],
-                "dateofsupply" :datetime.strftime(podata["dateofsupply"],"%d-%m-%Y"),
                 "discount" :podata["discount"],
                 "paymentmode" :podata["paymentmode"],
-                #"address" :podata["address"],
                 "orgcode" :podata["orgcode"],
                 "productinf":productinf
                 }
+            if podata["address"]:
+                purchaseorderdetails["address"] = podata["address"]
+            if podata["dateofsupply"]:
+                purchaseorderdetails["dateofsupply"] = datetime.strftime(podata["dateofsupply"],"%d-%m-%Y")
             if podata["psflag"] == 16:
-                po["issuername"]=podata["issuername"]
-                po["designation"]=podata["designation"]
-                po["address"]=podata["address"]
+                purchaseorderdetails["issuername"]=podata["issuername"]
+                purchaseorderdetails["designation"]=podata["designation"]
+                purchaseorderdetails["address"]=podata["address"]
                 
             #If sourcestate and taxstate are present.
             if podata["sourcestate"] != None:
-                    po["sourcestate"] = podata["sourcestate"]
-                    po["sourcestatecode"] = getStateCode(podata["sourcestate"],self.con)["statecode"]
+                    purchaseorderdetails["sourcestate"] = podata["sourcestate"]
+                    purchaseorderdetails["sourcestatecode"] = getStateCode(podata["sourcestate"],self.con)["statecode"]
                     sourceStateCode = getStateCode(podata["sourcestate"],self.con)["statecode"]
             if podata["taxstate"] != None:
-                        po["destinationstate"]=podata["taxstate"]
+                        purchaseorderdetails["destinationstate"]=podata["taxstate"]
                         taxStateCode =  getStateCode(podata["taxstate"],self.con)["statecode"]
-                        po["taxstatecode"] = taxStateCode
+                        purchaseorderdetails["taxstatecode"] = taxStateCode
                         
             #Customer And Supplier details    
             custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
@@ -208,8 +211,8 @@ class api_purchaseorder(object):
                     except:
                         custSupDetails["custgstin"] = None
 
-                    po["custSupDetails"] = custSupDetails
-            return {"gkstatus":enumdict["Success"],"gkresult":po}
+                    purchaseorderdetails["custSupDetails"] = custSupDetails
+            return {"gkstatus":enumdict["Success"],"gkresult":purchaseorderdetails}
             self.con.close()
 
 
