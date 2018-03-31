@@ -125,96 +125,147 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid==self.request.params["orderid"]))
-            podata = result.fetchone()
-            schedule = podata["schedule"]
-            details={}          #Stores schedule
-            productinf={}       #Stores productdesc and unitofmeasurement.
-            for key in schedule:
-                details[key] = {"productname":schedule[key],"packages":schedule[key]["packages"],"rateperunit":schedule[key]["rateperunit"],"quantity":schedule[key]["quantity"],"rateperunit":schedule[key]["rateperunit"]}
-                if "staggered" in schedule[key]:
-                    details[key]["staggered"] = schedule[key]["staggered"]
-                #Productname and unitofMeasurement depending on productcode. 
-                prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag]).where(product.c.productcode == key))
-                prodrow = prod.fetchone()
-                if int(prodrow["gsflag"]) == 7:
-                    um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
-                    unitrow = um.fetchone()
-                    unitofMeasurement = unitrow["unitname"]
-                else:
-                    unitofMeasurement = ""
-                productinf[key]={"productdesc":prodrow["productdesc"],"productuomid":prodrow["uomid"],"unitofmeasurement":unitofMeasurement}
-            purchaseorderdetails = {
-                "orderno":podata["orderno"],
-                "orderdate": datetime.strftime(podata["orderdate"],"%d-%m-%Y"),
-                "creditperiod":podata["creditperiod"],
-                "payterms":podata["payterms"],
-                "modeoftransport":podata["modeoftransport"],
-                #"issuername":podata["issuername"],
-                #"designation":podata["designation"],
-                "schedule":details,
-                #"taxstate":podata["taxstate"],
-                "psflag":podata["psflag"],
-                "csid":podata["csid"],
-                "togodown":podata["togodown"],
-                "taxflag" :podata["taxflag"],
-                "tax" :podata["tax"],
-                "purchaseordertotal" :"%.2f"%float(podata["purchaseordertotal"]),
-                #"sourcestate" :podata["sourcestate"],
-                "prgstategstin" :podata["orgstategstin"],
-                "consignee" :podata["consignee"],
-                "freeqty" :podata["freeqty"],
-                "reversecharge" :podata["reversecharge"],
-                "bankdetails" :podata["bankdetails"],
-                "vehicleno" :podata["vehicleno"],
-                "discount" :podata["discount"],
-                "paymentmode" :podata["paymentmode"],
-                "orgcode" :podata["orgcode"],
-                "productinf":productinf
-                }
-            if podata["address"]:
-                purchaseorderdetails["address"] = podata["address"]
-            if podata["dateofsupply"]:
-                purchaseorderdetails["dateofsupply"] = datetime.strftime(podata["dateofsupply"],"%d-%m-%Y")
-            if podata["psflag"] == 16:
-                purchaseorderdetails["issuername"]=podata["issuername"]
-                purchaseorderdetails["designation"]=podata["designation"]
-                purchaseorderdetails["address"]=podata["address"]
-                
-            #If sourcestate and taxstate are present.
-            if podata["sourcestate"] != None:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([purchaseorder]).where(purchaseorder.c.orderid==self.request.params["orderid"]))
+                podata = result.fetchone()
+                purchaseorderdetails = {
+                    "orderno":podata["orderno"],
+                    "orderdate": datetime.strftime(podata["orderdate"],"%d-%m-%Y"),
+                    "creditperiod":podata["creditperiod"],
+                    "payterms":podata["payterms"],
+                    "modeoftransport":podata["modeoftransport"],
+                    "psflag":podata["psflag"],
+                    "csid":podata["csid"],
+                    "togodown":podata["togodown"],
+                    "taxflag" :podata["taxflag"],
+                    "tax" :podata["tax"],
+                    "purchaseordertotal" :"%.2f"%float(podata["purchaseordertotal"]),
+                    "orgstategstin" :podata["orgstategstin"],
+                    "consignee" :podata["consignee"],
+                    "reversecharge" :podata["reversecharge"],
+                    "bankdetails" :podata["bankdetails"],
+                    "vehicleno" :podata["vehicleno"],
+                    "paymentmode" :podata["paymentmode"],
+                    "orgcode" :podata["orgcode"],
+                    }
+                if podata["address"]!=None:
+                    purchaseorderdetails["address"] = podata["address"]
+                if podata["dateofsupply"]!=None:
+                    purchaseorderdetails["dateofsupply"] = datetime.strftime(podata["dateofsupply"],"%d-%m-%Y")
+                if podata["psflag"] == 16:
+                    purchaseorderdetails["issuername"]=podata["issuername"]
+                    purchaseorderdetails["designation"]=podata["designation"]
+                    purchaseorderdetails["address"]=podata["address"]
+
+                #If sourcestate and taxstate are present.
+                if podata["sourcestate"] != None:
                     purchaseorderdetails["sourcestate"] = podata["sourcestate"]
                     purchaseorderdetails["sourcestatecode"] = getStateCode(podata["sourcestate"],self.con)["statecode"]
                     sourceStateCode = getStateCode(podata["sourcestate"],self.con)["statecode"]
-            if podata["taxstate"] != None:
-                        purchaseorderdetails["destinationstate"]=podata["taxstate"]
-                        taxStateCode =  getStateCode(podata["taxstate"],self.con)["statecode"]
-                        purchaseorderdetails["taxstatecode"] = taxStateCode
-                        
-            #Customer And Supplier details    
-            custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
-            custData = custandsup.fetchone()
-            custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-            custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
-            if custData["custtan"] != None:
-                custSupDetails["custtin"] = custData["custtan"]
-            if custData["gstin"] != None:
-                if int(custData["csflag"]) == 3 :
-                    try:
-                        custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
-                    except:
-                        custSupDetails["custgstin"] = None
-                else:
-                    try:
-                        custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
-                    except:
-                        custSupDetails["custgstin"] = None
+                if podata["taxstate"] != None:
+                    purchaseorderdetails["destinationstate"]=podata["taxstate"]
+                    taxStateCode =  getStateCode(podata["taxstate"],self.con)["statecode"]
+                    purchaseorderdetails["taxstatecode"] = taxStateCode
 
-                    purchaseorderdetails["custSupDetails"] = custSupDetails
-            return {"gkstatus":enumdict["Success"],"gkresult":purchaseorderdetails}
-            self.con.close()
+                #Customer And Supplier details    
+                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
+                custData = custandsup.fetchone()
+                custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                if custData["custtan"] != None:
+                    custSupDetails["custtin"] = custData["custtan"]
+                if custData["gstin"] != None:
+                    if int(custData["csflag"]) == 3 :
+                        try:
+                            custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
+                        except:
+                            custSupDetails["custgstin"] = None
+                    else:
+                        try:
+                            custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
+                        except:
+                            custSupDetails["custgstin"] = None
+                purchaseorderdetails["custSupDetails"] = custSupDetails
+                schedule = podata["schedule"]
+                details={}          #Stores schedule
+                totalDisc = 0.00
+                totalTaxableVal = 0.00
+                totalTaxAmt = 0.00
+                totalCessAmt = 0.00
+                discounts = podata["discount"]
+                freeqtys = podata["freeqty"]
+                for productCode in schedule:
+                    if discounts != None:
+                        discount = discounts[productCode]
+                    else:
+                        discount = 0.00
 
+                    if freeqtys != None:
+                        freeqty = freeqtys[productCode]
+                    else:
+                        freeqty = 0.00
+                    #Productname and unitofMeasurement depending on productcode. 
+                    prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == productCode))
+                    prodrow = prod.fetchone()
+                    if int(prodrow["gsflag"]) == 7:
+                        um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                        unitrow = um.fetchone()
+                        unitofMeasurement = unitrow["unitname"]
+                        taxableAmount = ((float(schedule[productCode]["rateperunit"])) * float(schedule[productCode]["quantity"])) - float(discount)
+                    else:
+                        unitofMeasurement = ""
+                        taxableAmount = float(schedule[productCode]["rateperunit"]) - float(discount)
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate =  float(podata["tax"][productCode])
+                    if int(podata["taxflag"]) == 22:
+                        taxRate =  float(podata["tax"][productCode])
+                        taxAmount = (taxableAmount * float(taxRate/100))
+                        taxname = 'VAT'
+                        totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                        totalDisc = totalDisc + float(podata["discount"][productCode])
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        details[productCode] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(schedule[productCode]["quantity"])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(schedule[productCode]["rateperunit"])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+
+                    else:
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if podata["cess"] != None:
+                            cessVal = float(podata["cess"][productCode])
+                            cessAmount = (taxableAmount * (cessVal/100))
+                            totalCessAmt = totalCessAmt + cessAmount
+
+                        if podata["sourcestate"] != podata["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            taxRate = (taxRate/2)
+                            taxAmount = (taxableAmount * (taxRate/100))
+                            totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+
+                        totalDisc = totalDisc + float(podata["discount"][productCode])
+                        totalTaxableVal = totalTaxableVal + taxableAmount
+                        totalTaxAmt = totalTaxAmt + taxAmount
+
+                        details[productCode] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(schedule[productCode]["quantity"])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(schedule[productCode]["rateperunit"])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                    if "staggered" in schedule[productCode]:
+                        details[productCode]["staggered"] = schedule[productCode]["staggered"]
+                purchaseorderdetails["totaldiscount"] = "%.2f"% (float(totalDisc))
+                purchaseorderdetails["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
+                purchaseorderdetails["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
+                purchaseorderdetails["totalcessamt"] = "%.2f"% (float(totalCessAmt))
+                purchaseorderdetails['taxname'] = taxname
+                purchaseorderdetails["schedule"] = details
+                return {"gkstatus":enumdict["Success"],"gkresult":purchaseorderdetails}
+                self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
 
     @view_config(request_method='PUT',renderer='json')
     def editPurchaseOrder(self):
