@@ -397,7 +397,7 @@ class api_rollclose(object):
                         result = self.con.execute(vouchers.insert(),[cljv])
                 result = self.con.execute(organisation.update().where(organisation.c.orgcode==orgCode).values({"booksclosedflag":1}))
                 #check if rollclose is true.
-                ROData = self.con.execute(select([organ.c.roflag]).where(organisation.c.orgcode == orgCode))
+                ROData = self.con.execute(select([organisation.c.roflag]).where(organisation.c.orgcode == orgCode))
                 ROFlagRow = ROData.fetchone()
                 roStatus = ROFlagRow["roflag"]
                 if roStatus == 1:
