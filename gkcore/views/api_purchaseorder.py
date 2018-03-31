@@ -33,7 +33,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
-from gkcore.models.gkdb import purchaseorder,invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state, users
+from gkcore.models.gkdb import purchaseorder, stock, product, customerandsupplier, unitofmeasurement, godown, tax, state, users
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
@@ -137,7 +137,6 @@ class api_purchaseorder(object):
                     "modeoftransport":podata["modeoftransport"],
                     "psflag":podata["psflag"],
                     "csid":podata["csid"],
-                    "togodown":podata["togodown"],
                     "taxflag" :podata["taxflag"],
                     "tax" :podata["tax"],
                     "purchaseordertotal" :"%.2f"%float(podata["purchaseordertotal"]),
@@ -167,7 +166,11 @@ class api_purchaseorder(object):
                     purchaseorderdetails["destinationstate"]=podata["taxstate"]
                     taxStateCode =  getStateCode(podata["taxstate"],self.con)["statecode"]
                     purchaseorderdetails["taxstatecode"] = taxStateCode
-
+                if podata["togodown"] !=None:
+                    godowndata = self.con.execute(select([godown.c.goname, godown.c.goaddr]).where(and_(godown.c.goid == podata["togodown"], godown.c.orgcode == authDetails["orgcode"])))
+                    godowndetails = godowndata.fetchone()
+                    purchaseorderdetails["goname"] = godowndetails["goname"]
+                    purchaseorderdetails["goaddr"] = godowndetails["goaddr"]
                 #Customer And Supplier details    
                 custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
                 custData = custandsup.fetchone()
