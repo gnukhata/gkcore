@@ -22,10 +22,10 @@ Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
-"Ishan Masdekar " <imasdekar@dff.org.in>
-"Navin Karkera" <navin@dff.org.in>
+"Abhijith Balan" <abhijith@dff.org.in>
 "Pornima Kolte <pornima@openmailbox.org>"
 "Prajkta Patkar<prajkta.patkar007@gmail.com>"
+"Pravin Dake" <pravindake24@gmail.com>
 """
 
 
@@ -99,14 +99,14 @@ class api_purchaseorder(object):
             try:
                 self.con = eng.connect()
                 if "psflag" in self.request.params:
-                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid]).where(and_(purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(and_(purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
                 else:
-                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
                 allposo = []
                 for row in result:
                     custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))
                     custrow = custdata.fetchone()
-                    allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"customer":custrow["custname"]})
+                    allposo.append({"orderid":row["orderid"],"orderno": row["orderno"], "orderdate": datetime.strftime(row["orderdate"],'%d-%m-%Y'),"attachmentcount":row["attachmentcount"],"customer":custrow["custname"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allposo}
             except:
@@ -140,6 +140,7 @@ class api_purchaseorder(object):
                     "taxflag" :podata["taxflag"],
                     "tax" :podata["tax"],
                     "purchaseordertotal" :"%.2f"%float(podata["purchaseordertotal"]),
+                    "pototalwords":podata["pototalwords"],
                     "orgstategstin" :podata["orgstategstin"],
                     "consignee" :podata["consignee"],
                     "reversecharge" :podata["reversecharge"],
@@ -269,6 +270,26 @@ class api_purchaseorder(object):
                 self.con.close()
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
+    @view_config(request_method='GET',request_param='attach=image', renderer='json')
+    def getattachment(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails['auth'] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orderid = self.request.params["orderid"]
+                purchaseorderData = self.con.execute(select([purchaseorder.c.orderno, purchaseorder.c.attachment]).where(and_(purchaseorder.c.orderid == orderid)))
+                attachment = purchaseorderData.fetchone()
+                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"orderno":attachment["orderno"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='PUT',renderer='json')
     def editPurchaseOrder(self):
