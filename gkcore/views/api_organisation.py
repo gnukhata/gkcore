@@ -28,6 +28,7 @@ Contributors:
 'Reshma Bhatwadekar'<reshma_b@riseup.net>
 "Sanket Kolnoorkar"<Sanketf123@gmail.com>
 'Aditya Shukla' <adityashukla9158.as@gmail.com>
+'Pravin Dake' <pravindake24@gmail.com>
 
 """
 
@@ -64,6 +65,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.purchaseorder.c.purchaseordertotal)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rejprods)]))
             self.con.execute(select([func.count(gkdb.drcr.c.drcrid)]))
             self.con.execute(select([func.count(gkdb.invoice.c.invoicetotalword)]))
@@ -82,24 +84,28 @@ class api_organisation(object):
             countData = countResult.fetchone()
             if int(countData["revcount"]) > 0:
                 self.con.execute("update invoice set reversecharge = '0'" )
-            self.con.execute(select(gkdb.organisation.c.gstin))
+            self.con.execute(select([func.count(gkdb.organisation.c.gstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
             self.con.execute(select([func.count(gkdb.product.c.gscode)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
             self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
-            self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
-            self.con.execute(select(gkdb.dcinv.c.invprods))
-            self.con.execute(select(gkdb.organisation.c.logo))
-            self.con.execute(select(gkdb.vouchers.c.instrumentno))
-            self.con.execute(select(gkdb.organisation.c.invsflag))
-            self.con.execute(select(gkdb.organisation.c.billflag))
+            self.con.execute(select([func.count(gkdb.dcinv.c.invprods)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.logo)]))
+            self.con.execute(select([func.count(gkdb.vouchers.c.instrumentno)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.invsflag)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("drop table purchaseorder cascade")
+            self.con.execute("create table purchaseorder(orderid serial, orderno text not null, orderdate timestamp not null, creditperiod text, payterms text, modeoftransport text, issuername text, designation text, schedule jsonb, taxstate text, psflag integer not null, csid integer, togodown integer, taxflag integer default 22, tax jsonb, cess jsonb,purchaseordertotal numeric(13,2) not null, pototalwords text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 22, address text, orgcode integer not null, primary key(orderid), foreign key (csid) references customerandsupplier(custid) ON DELETE CASCADE, foreign key (togodown) references godown(goid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+            self.con.execute("create index purchaseorder_orgcodeindex on purchaseorder using btree(orgcode)")
+            self.con.execute("create index purchaseorder_date on purchaseorder using btree(orderdate)")
+            self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
             self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
-            self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))");
+            self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
             self.con.execute("alter table invoice add invoicetotalword text")
             self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
             self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
@@ -213,7 +219,7 @@ class api_organisation(object):
             self.con.execute("alter table product add gscode text")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
-            self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
+            self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 1")
             self.con.execute("alter table organisation add billflag integer default 1")
             self.con.execute("alter table vouchers add instrumentno text")
@@ -224,8 +230,6 @@ class api_organisation(object):
             self.con.execute("alter table dcinv add invprods jsonb")
             self.con.execute("alter table transfernote add duedate timestamp")
             self.con.execute("alter table transfernote add grace integer")
-            self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
-            self.con.execute("alter table customerandsupplier add onaccamt numeric default 0.00")
             self.con.execute("alter table transfernote add fromgodown integer")
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             self.con.execute("alter table transfernote drop column canceldate")
@@ -237,17 +241,6 @@ class api_organisation(object):
             self.con.execute("alter table delchal add attachmentcount integer default 0")
             self.con.execute("alter table invoice add attachment json")
             self.con.execute("alter table invoice add attachmentcount integer default 0")
-            self.con.execute("alter table purchaseorder add creditperiod text")
-            self.con.execute("alter table purchaseorder add taxstate text")
-            self.con.execute("alter table purchaseorder add togodown integer")
-            self.con.execute("alter table purchaseorder drop column schedule")
-            self.con.execute("alter table purchaseorder add schedule jsonb")
-            self.con.execute("alter table purchaseorder drop column maxdate")
-            self.con.execute("alter table purchaseorder drop column datedelivery")
-            self.con.execute("alter table purchaseorder drop column deliveryplaceaddr")
-            self.con.execute("alter table purchaseorder drop column tax")
-            self.con.execute("alter table purchaseorder drop column productdetails")
-            self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
             self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             
