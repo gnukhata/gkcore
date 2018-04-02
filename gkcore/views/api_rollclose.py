@@ -23,6 +23,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Navin Karkera" <navin@dff.org.in>
+'Prajkta Patkar'<prajkta@riseup.net>
 """
 
 
