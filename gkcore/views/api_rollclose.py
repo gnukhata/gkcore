@@ -91,6 +91,7 @@ class api_rollclose(object):
                 self.con = eng.connect()
                 orgCode = int(authDetails["orgcode"])
                 endDate = self.request.params["financialend"]
+                closBal = 0.00
                 blacktransactionsdata = self.con.execute(select([func.count(vouchers.c.vouchercode).label('blackcount')]).where(and_(vouchers.c.voucherdate>endDate,vouchers.c.orgcode==orgCode)))
                 blacktransactions = blacktransactionsdata.fetchone()
                 if blacktransactions["blackcount"]>0:
@@ -145,7 +146,6 @@ class api_rollclose(object):
                     cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
                     result = self.con.execute(vouchers.insert(),[cljv])
                 plResult = calculateBalance(self.con,closingAccountCode, startDate, startDate, endDate)
-#               print plResult["baltype"]
                 startEndRow["orgtype"]
                 groupCodeData = self.con.execute("select groupcode from groupsubgroups where groupname = 'Reserves' and orgcode = %d"%(orgCode) )
                 gcRecord = groupCodeData.fetchone()
@@ -402,27 +402,28 @@ class api_rollclose(object):
                 ROFlagRow = ROData.fetchone()
                 roStatus = ROFlagRow["roflag"]
                 if roStatus == 1:
-                    accList = self.con.execute(select([accounts.c.accname,accounts.c.accountcode]).where(accounts.c.orgcode == orgCode))
+                    accList = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(accounts.c.orgcode == orgCode))
                     accData = accList.fetchall()
-                    RoOrgCode = getNextOrgCode(orgCode,con)
+                    RoOrgCode = self.getNextOrgCode(orgCode,self.con)
                     for acc in accData:
                         #we must compare if the rolled over organisation contains all these accounts.
-                        newAccData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accname == acc["accname"], accounts.c.orgcode == RoOrgCode)))
+                        newAccData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == acc["accountname"], accounts.c.orgcode == RoOrgCode)))
                         #called closebook and get the balance.
-                        calBalData = calculateBalance(self.con,accData["accountcode"],str(startDate) ,str(startDate) ,str(endDate))
+                        calBalData = calculateBalance(self.con,acc["accountcode"],startDate,startDate,endDate)
                         closBal = calBalData["curbal"]
                         if newAccData.rowcount == 0:
                             #this means  we first need to created this account for the rolled over org.
-                            grpResult = self.con.execute("select groupname from groupsubgroups where orgcode = %d and groupcode = (select groupcode from accounts where accountcode = %d and orgcode = %d)"%(orgcode,accData["accountcode"],orgcode))
+                            grpResult = self.con.execute("select groupname from groupsubgroups where orgcode = %d and groupcode = (select groupcode from accounts where accountcode = %d and orgcode = %d)"%(orgCode,acc["accountcode"],orgCode))
                             grpName = grpResult.fetchone()
                             newGrpResult = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode == RoOrgCode,groupsubgroups.c.groupname == grpName["groupname"])))
                             grpCD = newGrpResult.fetchone()
                             # This is structure of account data {u'accountname': u'ICICI', u'openingbal': u'550.00', 'orgcode': 31, u'groupcode': u'1180'}
-                            dataset = {"accountname":accData["accountname"],"openingbal":closBal,"groupcode":grpCD,"orgcode":RoOrgCode}
-                            insACC = self.con.execute(gkdb.accounts.insert(),[dataset])
+                            
+                            dataset = {"accountname":acc["accountname"],"openingbal":closBal,"groupcode":grpCD["groupcode"],"orgcode":RoOrgCode}
+                            insACC = self.con.execute(accounts.insert(),[dataset])
                         else:
                             newAcc = newAccData.fetchone()
-                            updateData = self.con.execute(accounts.update().where(accounts.c.accountcode==newAcc["accountcode"]).values(openingbal=closbal))
+                            updateData = self.con.execute(accounts.update().where(accounts.c.accountcode==newAcc["accountcode"]).values(openingbal=closBal))
                             
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
@@ -537,12 +538,12 @@ class api_rollclose(object):
         The function will take orgcode of the organisation who's books were just closed.
         Then will return the subsequent orgcode.
         """
-        curEndYearRecord = con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+        curEndYearRecord = con.execute(select([organisation.c.yearend,organisation.c.orgname]).where(organisation.c.orgcode == prevOrgCode))
         curEndRow = curEndYearRecord.fetchone()
         endYear = curEndRow["yearend"]
         nextYearStart = endYear + timedelta(days=1)
         nextYearEnd = nextYearStart + timedelta(days=364)
-        nxtOrgCodeRecord = con.execute(select([organisation.c.orgcode]).where(_and(organisation.c.yearstart == nextYearStart, organisation.c.yearend  == nextYearEnd)))
+        nxtOrgCodeRecord = con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.yearstart == nextYearStart, organisation.c.yearend  == nextYearEnd,organisation.c.orgname == curEndRow["orgname"])))
         nxtOrgCodeRow = nxtOrgCodeRecord.fetchone()
         nxtOrgcode = nxtOrgCodeRow["orgcode"]
         return nxtOrgcode
