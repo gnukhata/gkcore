@@ -87,7 +87,7 @@ class api_rollclose(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 orgCode = int(authDetails["orgcode"])
                 endDate = self.request.params["financialend"]
@@ -146,7 +146,6 @@ class api_rollclose(object):
                     cljv = {"vouchernumber":voucherNumber,"voucherdate":voucherDate,"entrydate":entryDate,"narration":"jv for closing books","drs":drs,"crs":crs,"vouchertype":"journal","orgcode":orgCode}
                     result = self.con.execute(vouchers.insert(),[cljv])
                 plResult = calculateBalance(self.con,closingAccountCode, startDate, startDate, endDate)
-#               print plResult["baltype"]
                 startEndRow["orgtype"]
                 groupCodeData = self.con.execute("select groupcode from groupsubgroups where groupname = 'Reserves' and orgcode = %d"%(orgCode) )
                 gcRecord = groupCodeData.fetchone()
@@ -419,7 +418,8 @@ class api_rollclose(object):
                             newGrpResult = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode == RoOrgCode,groupsubgroups.c.groupname == grpName["groupname"])))
                             grpCD = newGrpResult.fetchone()
                             # This is structure of account data {u'accountname': u'ICICI', u'openingbal': u'550.00', 'orgcode': 31, u'groupcode': u'1180'}
-                            dataset = {"accountname":acc["accountname"],"openingbal":closBal,"groupcode":grpCD,"orgcode":RoOrgCode}
+                            
+                            dataset = {"accountname":acc["accountname"],"openingbal":closBal,"groupcode":grpCD["groupcode"],"orgcode":RoOrgCode}
                             insACC = self.con.execute(accounts.insert(),[dataset])
                         else:
                             newAcc = newAccData.fetchone()
@@ -427,10 +427,10 @@ class api_rollclose(object):
                             
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            #except Exception as E:
-            #    print E
-            #    self.con.close()
-            #    return {"gkstatus":enumdict["ConnectionFailed"]}
+            except Exception as E:
+                print E
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param='task=rollover',renderer='json')
     def rollOver(self):
@@ -538,12 +538,12 @@ class api_rollclose(object):
         The function will take orgcode of the organisation who's books were just closed.
         Then will return the subsequent orgcode.
         """
-        curEndYearRecord = con.execute(select([organisation.c.yearend]).where(organisation.c.orgcode == prevOrgCode))
+        curEndYearRecord = con.execute(select([organisation.c.yearend,organisation.c.orgname]).where(organisation.c.orgcode == prevOrgCode))
         curEndRow = curEndYearRecord.fetchone()
         endYear = curEndRow["yearend"]
         nextYearStart = endYear + timedelta(days=1)
         nextYearEnd = nextYearStart + timedelta(days=364)
-        nxtOrgCodeRecord = con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.yearstart == nextYearStart, organisation.c.yearend  == nextYearEnd)))
+        nxtOrgCodeRecord = con.execute(select([organisation.c.orgcode]).where(and_(organisation.c.yearstart == nextYearStart, organisation.c.yearend  == nextYearEnd,organisation.c.orgname == curEndRow["orgname"])))
         nxtOrgCodeRow = nxtOrgCodeRecord.fetchone()
         nxtOrgcode = nxtOrgCodeRow["orgcode"]
         return nxtOrgcode
