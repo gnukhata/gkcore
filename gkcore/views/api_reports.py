@@ -2545,7 +2545,7 @@ class api_reports(object):
                 else:
                     grsD = grpDEbalance - grpDIbalance
                     result["grosslossbf"] = "%.2f"%(float( grsD))
-                    result["totalD"] =  "%.2f"%(float( grsDEbalance))
+                    result["totalD"] =  "%.2f"%(float( grpDEbalance))
                     
                 ''' ################   Indirect Income & Indirect Expense  ################ '''
                 # Get all subgroups with their group code and group name under Group Direct Expense
