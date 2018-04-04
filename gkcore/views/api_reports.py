@@ -2404,13 +2404,13 @@ class api_reports(object):
         this function is called when the type=profitloss is passed to the /report url.
         the orgcode is extracted from the header
         calculateTo date is extracted from the request_params
-        the accountcodes under the groups direct income and direct expense are extracted from the database.
+        the accounts and subgroups  under the groups direct income and direct expense are extracted from the database.
         then these codes are sent to the calculateBalance function which returns their current balances.
         the total of these balances give the gross profit/loss of the organisation.
-        then the accountcodes under the indirect income and indirect expense are extracted from the database.
+        then the accounts and subgroups under the indirect income and indirect expense are extracted from the database.
         and sent to the calculateBalance function along with the financial start and the calculateto date.
         the total of balances of these accounts along with the gross profit/loss gives the net profit/loss of the organisation
-        this list of two dictionaries conatining each account, its respective balance as one dictionary and  gross profit/loss along with the amount and net profit/loss along with the amount also as dictionary is returned.
+        final dictionary will look like as follows : result = {"Direct Income":{"Direct Income Balance":value,"Subgrup Name":{"Account name":Balance,....,"balance":value},"account name":Balance,....}'''''Same for other groups ''''' }"Total":value, "Net Profit":Value}}
         """
         try:
             token = self.request.headers["gktoken"]
