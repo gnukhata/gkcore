@@ -816,27 +816,28 @@ The bills grid calld gkresult will return a list as it's value.
                     rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
                     rejectedNotes = rejectedResult.fetchall()
                     gscounter = 0
-                    for c in invrow["contents"].keys():
-                        qty = float(invrow["contents"][c].values()[0])
+                    for content in invrow["contents"].keys():
+                        qty = float(invrow["contents"][content].values()[0])
                         # for goods quantity will not be 0 anytime
                         if qty > 0:
                             gscounter = gscounter + 1
                             # check whether this product is rejected before.
                             #if there are no rejections then just add the quantity directly to the rejContents.
                             if rejectedResult.rowcount == 0:
-                                rejContents[c] = qty
-                                
+                                rejContents[content] = qty
                             else:
                                 
                                 #Now query each note to see if this product is partially or fully rejected.
 
                                 for rejrow in rejectedNotes:
                                     rejdict = rejrow["rejprods"]
-                                    if rejdict.has_key(c):
-                                        qty = qty - float(rejrow["rejprods"][c].values()[0])
-
-                                rejContents[c] =  qty
-                    if gscounter > 0:
+                                    if rejdict.has_key(content):
+                                        qty = qty - float(rejrow["rejprods"][content].values()[0])
+                                        if qty > 0:
+                                            rejContents[content] =  qty
+                                        else:
+                                            rejContents.pop(content)
+                    if gscounter > 0 and len(rejContents) > 0:
                         custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                         custData = custandsup.fetchone()
                         custSupDetails = {"custname":custData["custname"],"custaddr":custData["custaddr"],"csflag":custData["csflag"]}
@@ -963,12 +964,10 @@ The bills grid calld gkresult will return a list as it's value.
                         temp = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 18, stock.c.dcinvtnid == rnid[0])))
                         temp = temp.fetchall()
                         rnprodresult.append(temp)
-                        for row in rnprodresult:
-                            try:
-                                for prodc, qty in row:
-                                    result = float(items[prodc]["qty"]) - float(qty)
-                            except:
-                                pass
+                        for rnproddata in rnprodresult:
+                            for row in rnproddata:
+                                if int(row["productcode"]) == int(eachitem):
+                                    result = float(items[int(row["productcode"])]["qty"]) - float(row["qty"])
                         items[int(eachitem)]={"qty":"%.2f"%float(result)}
                     taxableAmount = (float(ppu) * float(items[int(eachitem)]["qty"])) - float(discount)
                     taxRate = 0.00
