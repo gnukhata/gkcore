@@ -2636,9 +2636,11 @@ class api_reports(object):
                 if income > expense:
                     netProfit = income - expense
                     result["netprofit"] = "%.2f"%(float(netProfit))
+                    result["Total"] =  "%.2f"%(float(income))
                 else:
                     netLoss = expense - income
                     result["netloss"] = "%.2f"%(float(netLoss))
+                    result["Total"] =  "%.2f"%(float(expense))
                     
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":result}
