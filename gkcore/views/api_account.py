@@ -134,6 +134,34 @@ class api_account(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"] }
 
+    @view_config(request_param="type=getAccCode", request_method='GET',renderer='json')
+    def getCodeofAccount(self):
+        """
+        Purpose:
+        Returns an account code given it's account name.
+        The request_method is  get meaning retriving data.
+        The route_name has been override here to make a special call which does not come under view_default.
+        parameter will be taken from request.matchdict in a get request.
+        Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.accountname==self.request.params["accountname"], gkdb.accounts.c.orgcode==authDetails["orgcode"])))
+                accountcode = result.fetchone()
+                self.con.close()
+                return {"gkstatus": enumdict["Success"], "accountcode":accountcode["accountcode"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+
     @view_config(request_method='GET', renderer ='json')
     def getAllAccounts(self):
         try:
