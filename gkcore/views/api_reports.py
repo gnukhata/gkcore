@@ -3989,23 +3989,23 @@ free replacement or sample are those which are excluded.
                             # When tax type is IGST or VAT.
                             if taxrate != 0.00:
                                 if taxname !="% SGST":
-                                    taxname = "%.2f"%taxrate + taxname
-                                    if taxdata.has_key(str(taxname)):
-                                        taxdata[taxname]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                        taxamountdata[taxname]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                    taxnames = "%.2f"%taxrate + taxname
+                                    if taxdata.has_key(str(taxnames)):
+                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
 
                                     else:
-                                        taxdata.update({taxname:"%.2f"%taxamount})
-                                        taxamountdata.update({taxname:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        taxdata.update({taxnames:"%.2f"%taxamount})
+                                        taxamountdata.update({taxnames:"%.2f"%(taxamount*float(taxrate)/100.00)})
 
                                     '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                                    if taxname not in taxcolumns:
-                                        taxcolumns.append(taxname)
-                                        totalrow["taxamount"].update({taxname:"%.2f"%float(taxamountdata[taxname])})
-                                        totalrow["tax"].update({taxname:"%.2f"%taxamount})
+                                    if taxnames not in taxcolumns:
+                                        taxcolumns.append(taxnames)
+                                        totalrow["taxamount"].update({taxnames:"%.2f"%float(taxamountdata[taxnames])})
+                                        totalrow["tax"].update({taxnames:"%.2f"%taxamount})
                                     else:
-                                        totalrow["taxamount"][taxname] = "%.2f"%(float(totalrow["taxamount"][taxname]) + float(taxamount*float(taxrate)/100.00))
-                                        totalrow["tax"][taxname] =  "%.2f"%(float(totalrow["tax"][taxname]) + taxamount)
+                                        totalrow["taxamount"][taxnames] = "%.2f"%(float(totalrow["taxamount"][taxnames]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][taxnames] =  "%.2f"%(float(totalrow["tax"][taxnames]) + taxamount)
 
                                 # when tax type is SGST & CGST , Tax rate needs to be diveded by 2.
                                 if taxname == "% SGST":
