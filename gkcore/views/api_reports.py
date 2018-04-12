@@ -1,6 +1,6 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
-"Prajkta Patkar" <prajkta.patkar007@gmail.com>
+"Prajkta Patkar" <prajkta@riseup.com>
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Parabjyot Singh" <parabjyot1996@gmail.com>
 "Rahul Chaurasiya" <crahul4133@gmail.com>
@@ -49,7 +49,7 @@ from monthdelta import monthdelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
-
+from natsort import natsorted
 """
 purpose:
 This class is the resource to generate reports,
@@ -2404,13 +2404,13 @@ class api_reports(object):
         this function is called when the type=profitloss is passed to the /report url.
         the orgcode is extracted from the header
         calculateTo date is extracted from the request_params
-        the accountcodes under the groups direct income and direct expense are extracted from the database.
+        the accounts and subgroups  under the groups direct income and direct expense are extracted from the database.
         then these codes are sent to the calculateBalance function which returns their current balances.
         the total of these balances give the gross profit/loss of the organisation.
-        then the accountcodes under the indirect income and indirect expense are extracted from the database.
+        then the accounts and subgroups under the indirect income and indirect expense are extracted from the database.
         and sent to the calculateBalance function along with the financial start and the calculateto date.
         the total of balances of these accounts along with the gross profit/loss gives the net profit/loss of the organisation
-        this list of two dictionaries conatining each account, its respective balance as one dictionary and  gross profit/loss along with the amount and net profit/loss along with the amount also as dictionary is returned.
+        final dictionary will look like as follows : result = {"Direct Income":{"Direct Income Balance":value,"Subgrup Name":{"Account name":Balance,....,"balance":value},"account name":Balance,....}'''''Same for other groups ''''' }"Total":value, "Net Profit":Value}}
         """
         try:
             token = self.request.headers["gktoken"]
@@ -2429,14 +2429,21 @@ class api_reports(object):
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
-                calculateTo = calculateTo
-                expense = []
-                income = []
-                incomeTotal = 0.00
-                expenseTotal = 0.00
-                difference = 0.00
+                #calculateTo = calculateTo
+                result = {}
+                grsD = 0.00
+                income = 0.00
+                expense = 0.00
                 profit = ""
                 loss = ""
+                directIncome ={}
+                grpDIbalance = 0.00
+                directExpense ={}
+                grpDEbalance = 0.00
+                indirectIncome ={}
+                grpIIbalance = 0.00
+                indirectExpense ={}
+                grpIEbalance = 0.00
                 if (orgtype == "Profit Making"):
                     profit = "Profit"
                     loss = "Loss"
@@ -2445,159 +2452,198 @@ class api_reports(object):
                     profit = "Surplus"
                     loss = "Deficit"
                     pnlAccountname = "Income & Expenditure"
-
-                expense.append({"toby":"","accountname":"DIRECT EXPENSE", "amount":"", "accountcode":""})
-                income.append({"toby":"","accountname":"DIRECT INCOME","amount":"", "accountcode":""})
-
-                #Calculate all expense(Direct Expense)
-                accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Expense')) order by accountname;"%(orgcode, orgcode, orgcode))
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-                    if accountDetails["curbal"]==0:
-                        continue
-                    if (accountDetails["baltype"]=="Dr"):
-                        expenseTotal += accountDetails["curbal"]
-                    if (accountDetails["baltype"]=="Cr"):
-                        expenseTotal -= accountDetails["curbal"]
-                    expense.append({"toby":"To,","accountname":accountRow["accountname"], "amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
-
-                #Calculate all income(Direct Income)
-                accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Direct Income')) order by accountname;"%(orgcode, orgcode, orgcode))
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    if accountRow["accountname"]==pnlAccountname:
-                        csAccountcode = self.con.execute("select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"%(orgcode))
-                        csAccountcodeRow = csAccountcode.fetchone()
-                        crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(accountRow["accountcode"]), int(csAccountcodeRow["accountcode"])))
-                        crresultRow = crresult.fetchone()
-                        drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (drs ? '%s') and (crs ? '%s');"%(int(csAccountcodeRow["accountcode"]),str(financialStart), str(calculateTo), int(csAccountcodeRow["accountcode"]), int(accountRow["accountcode"])))
-                        drresultRow = drresult.fetchone()
-                        if crresultRow["total"]==None and drresultRow["total"]!=None:
-                            crResult = 0.00
-                            drResult = drresultRow["total"]
-                        elif drresultRow["total"]==None and crresultRow["total"]!=None:
-                            drResult = 0.00
-                            crResult = crresultRow["total"]
-                        elif drresultRow["total"]==None and crresultRow["total"]==None:
-                            drResult = 0.00
-                            crResult = 0.00
-                        else:
-                            drResult = drresultRow["total"]
-                            crResult = crresultRow["total"]
-                        totalCsAmt = drResult -  crResult
-                        incomeTotal += totalCsAmt
-                        if totalCsAmt!=0:
-                            income.append({"toby":"By", "accountname":"Closing Stock", "amount":"%.2f"%float(totalCsAmt), "accountcode":csAccountcodeRow["accountcode"]})
+                    
+                # Get all subgroups with their group code and group name under Group Direct Expense
+                DESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
+                DESubGroups = DESubGroupsData.fetchall()
+                #now we have list of subgroups under Direct Expense.
+                #We will loop through each and get list of their accounts.
+                for DESub in DESubGroups:
+                    #Start looping with the subgroup in hand,
+                    #and get it's list of accounts.
+                    DESubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DESub["groupcode"])))
+                    if DESubAccsData.rowcount > 0:
+                        DESubAccs = DESubAccsData.fetchall()
+                        DESUBDict = {}
+                        DESubBal = 0.00
+                    
+                        for desubacc in DESubAccs:
+                            calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            DESubBal = DESubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        DESUBDict["balance"] = "%.2f"%(float(DESubBal))
+                        # This is balance of main group 
+                        grpDEbalance = grpDEbalance + float(DESubBal)
+                        directExpense[DESub["groupname"]] = DESUBDict
                     else:
-                        accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-                        if accountDetails["curbal"]==0:
+                        continue
+
+                # Now consider those accounts which are directly created under Direct Expense group
+                getDEAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"%(orgcode,orgcode))
+                if getDEAccData.rowcount > 0:
+                    deAccData = getDEAccData.fetchall()
+                    for deAcc in deAccData:
+                        calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        if calbalData["curbal"] == 0.00:
                             continue
-                        if (accountDetails["baltype"]=="Cr"):
-                            incomeTotal += accountDetails["curbal"]
-                        if (accountDetails["baltype"]=="Dr"):
-                            incomeTotal -= accountDetails["curbal"]
-                        income.append({"toby":"By,","accountname":accountRow["accountname"], "amount":"%.2f"%float(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
-
-                if(expenseTotal > incomeTotal):
-                    difference = expenseTotal - incomeTotal
-                    income.append({"toby":"By,","accountname":"Gross "+loss+" C/F","amount":"%.2f"%float(difference), "accountcode":""})
-                    if len(income)>len(expense):
-                        emptyno = len(income)-len(expense)
-                        for i in range(0,emptyno):
-                            expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    if len(income)<len(expense):
-                        emptyno = len(expense)-len(income)
-                        for i in range(0,emptyno):
-                            income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
-                    income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
-                    expenseTotal = 0.00
-                    expenseTotal = difference
-                    incomeTotal = 0.00
-
-                if(expenseTotal < incomeTotal):
-                    difference = incomeTotal - expenseTotal
-                    expense.append({"toby":"To,","accountname":"Gross "+profit+" C/F","amount":"%.2f"%float(difference), "accountcode":""})
-                    if len(income)>len(expense):
-                        emptyno = len(income)-len(expense)
-                        for i in range(0,emptyno):
-                            expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    if len(income)<len(expense):
-                        emptyno = len(expense)-len(income)
-                        for i in range(0,emptyno):
-                            income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
-                    income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
-                    incomeTotal = 0.00
-                    incomeTotal = difference
-                    expenseTotal = 0.00
-
-
-                expense.append({"toby":"","accountname":"INDIRECT EXPENSE", "amount":"", "accountcode":""})
-                income.append({"toby":"","accountname":"INDIRECT INCOME","amount":"", "accountcode":""})
-                if(expenseTotal > incomeTotal):
-                    expense.append({"toby":"To,","accountname":"Gross "+loss+" B/F","amount":"%.2f"%float(difference), "accountcode":""})
-                if(expenseTotal < incomeTotal):
-                    income.append({"toby":"By,","accountname":"Gross "+profit+" B/F","amount":"%.2f"%float(difference), "accountcode":""})
-                difference = 0.00
-                #Calculate all expense(Indirect Expense)
-                accountcodeData = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Expense')) order by accountname;"%(orgcode, orgcode, orgcode))
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-                    if accountDetails["curbal"]==0:
+                        directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
+                result["Direct Expense"] = directExpense
+                
+                # Calculation for Direct Income
+                # Same procedure as Direct Expense. 
+                DISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
+                DISubGroups = DISubGroupsData.fetchall()
+                #now we have list of subgroups under Direct Income.
+                #We will loop through each and get list of their accounts.
+                for DISub in DISubGroups:
+                    #Start looping with the subgroup in hand,
+                    #and get it's list of accounts.
+                    DISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == DISub["groupcode"])))
+                    if DISubAccsData.rowcount > 0:
+                        
+                        DISubAccs = DISubAccsData.fetchall()
+                        DISUBDict = {}
+                        DISubBal = 0.00
+                    
+                        for disubacc in DISubAccs:
+                            calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            DISubBal = DISubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        DISUBDict["balance"] = "%.2f"%(float(DISubBal))
+                        # This is balance of main group 
+                        grpDIbalance = grpDIbalance + float(DISubBal)
+                        directIncome[DISub["groupname"]] = DISUBDict
+                        
+                getDIAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"%(orgcode,orgcode))
+                if getDIAccData.rowcount > 0:
+                    diAccData = getDIAccData.fetchall()
+                    for diAcc in diAccData:
+                        if diAcc["accountname"] != pnlAccountname:
+                            calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                        else:
+                            continue
+                                
+                directIncome["dirincmbal"] = "%.2f"%(float( grpDIbalance))    
+                result["Direct Income"] = directIncome
+                        
+                if grpDIbalance > grpDEbalance:
+                    grsD = grpDIbalance - grpDEbalance
+                    result["grossprofitcf"] = "%.2f"%(float( grsD))
+                    result["totalD"] = "%.2f"%(float( grpDIbalance))
+                else:
+                    grsD = grpDEbalance - grpDIbalance
+                    result["grosslossbf"] = "%.2f"%(float( grsD))
+                    result["totalD"] =  "%.2f"%(float( grpDEbalance))
+                    
+                ''' ################   Indirect Income & Indirect Expense  ################ '''
+                # Get all subgroups with their group code and group name under Group Direct Expense
+                IESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"%(orgcode,orgcode))
+                IESubGroups = IESubGroupsData.fetchall()
+                for IESub in IESubGroups:
+                    #Start looping with the subgroup in hand,
+                    #and get it's list of accounts.
+                    IESubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == IESub["groupcode"])))
+                    if IESubAccsData.rowcount > 0:
+                        IESubAccs = IESubAccsData.fetchall()
+                        IESUBDict = {}
+                        IESubBal = 0.00
+                        for iesubacc in IESubAccs:
+                            calbalData = calculateBalance(self.con,iesubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            IESubBal = IESubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        IESUBDict["balance"] = "%.2f"%(float(IESubBal))
+                        # This is balance of main group 
+                        grpIEbalance = grpIEbalance + float(IESubBal)
+                        indirectExpense[IESub["groupname"]] = IESUBDict
+                    else:
                         continue
-                    if (accountDetails["baltype"]=="Dr"):
-                        expenseTotal += accountDetails["curbal"]
-                    if (accountDetails["baltype"]=="Cr"):
-                        expenseTotal -= accountDetails["curbal"]
-                    expense.append({"toby":"To,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]),"accountcode":accountRow["accountcode"]})
 
-                #Calculate all income(Indirect Income)
-                accountcodeData = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname = 'Indirect Income')) order by accountname;"%(orgcode, orgcode, orgcode))
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
-                    if accountDetails["curbal"]==0:
-                        continue
-                    if (accountDetails["baltype"]=="Cr"):
-                        incomeTotal += accountDetails["curbal"]
-                    if (accountDetails["baltype"]=="Dr"):
-                        incomeTotal -= accountDetails["curbal"]
-                    income.append({"toby":"By,","accountname":accountRow["accountname"],"amount":"%.2f"%(accountDetails["curbal"]), "accountcode":accountRow["accountcode"]})
+                # Now consider those accounts which are directly created under Direct Expense group
+                getIEAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"%(orgcode,orgcode))
+                if getIEAccData.rowcount > 0:
+                    ieAccData = getIEAccData.fetchall()
+                    for ieAcc in ieAccData:
+                        calbalData = calculateBalance(self.con,ieAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        if calbalData["curbal"] == 0.00:
+                            continue
+                        indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
+                result["Indirect Expense"] = indirectExpense
+                
+                # Calculation for Indirect Income
+                # Same procedure as Direct Expense. 
+                IISubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"%(orgcode,orgcode))
+                IISubGroups = IISubGroupsData.fetchall()
+                #now we have list of subgroups under Indirect Income.
+                #We will loop through each and get list of their accounts.
+                for IISub in IISubGroups:
+                    #Start looping with the subgroup in hand,
+                    #and get it's list of accounts.
+                    IISubAccsData =  self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.orgcode == orgcode, accounts.c.groupcode == IISub["groupcode"])))
+                    if IISubAccsData.rowcount > 0:
+                        
+                        IISubAccs = IISubAccsData.fetchall()
+                        IISUBDict = {}
+                        IISubBal = 0.00
+                    
+                        for iisubacc in IISubAccs:
+                            calbalData = calculateBalance(self.con,iisubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            if calbalData["curbal"] == 0.00:
+                                continue
+                            IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            IISubBal = IISubBal + float(calbalData["curbal"])
+                        # This is balance of sub group
+                        IISUBDict["balance"] = "%.2f"%(float(IISubBal))
+                        # This is balance of main group 
+                        grpIIbalance = grpIIbalance + float(IISubBal)
+                        indirectIncome[IISub["groupname"]] = IISUBDict
+                        
+                getIIAccData = self.con.execute("select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"%(orgcode,orgcode))
+                if getDIAccData.rowcount > 0:
+                    iiAccData = getIIAccData.fetchall()
+                    for iiAcc in iiAccData:
+                        calbalData = calculateBalance(self.con,iiAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        if calbalData["curbal"] == 0.00:
+                            continue
+                        indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                                
+                indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
+                result["Indirect Income"] = indirectIncome
+                     
+                # Calculate difference between Indirect Income & Indirect Expense. 
+                grsI = grpIIbalance - grpIEbalance
 
-                if(expenseTotal > incomeTotal):
-                    difference = expenseTotal - incomeTotal
-                    income.append({"toby":"By,","accountname":"Net "+loss+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
-                    if len(income)>len(expense):
-                        emptyno = len(income)-len(expense)
-                        for i in range(0,emptyno):
-                            expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    if len(income)<len(expense):
-                        emptyno = len(expense)-len(income)
-                        for i in range(0,emptyno):
-                            income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
-                    income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(expenseTotal), "accountcode":""})
-
-                if(expenseTotal < incomeTotal):
-                    difference = incomeTotal - expenseTotal
-                    expense.append({"toby":"To,","accountname":"Net "+profit+" Carried to B/S","amount":"%.2f"%(difference), "accountcode":""})
-                    if len(income)>len(expense):
-                        emptyno = len(income)-len(expense)
-                        for i in range(0,emptyno):
-                            expense.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    if len(income)<len(expense):
-                        emptyno = len(expense)-len(income)
-                        for i in range(0,emptyno):
-                            income.append({"toby":"","accountname":"","amount":".", "accountcode":""})
-                    expense.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
-                    income.append({"toby":"","accountname":"TOTAL","amount":"%.2f"%(incomeTotal), "accountcode":""})
+                income = grpDIbalance + grpIIbalance
+                expense = grpDEbalance + grpIEbalance
+                #Calculate Profit and Loss
+                if income > expense:
+                    netProfit = income - expense
+                    result["netprofit"] = "%.2f"%(float(netProfit))
+                    result["Total"] =  "%.2f"%(float(income))
+                else:
+                    netLoss = expense - income
+                    result["netloss"] = "%.2f"%(float(netLoss))
+                    result["Total"] =  "%.2f"%(float(expense))
+                    
                 self.con.close()
-
-
-                return {"gkstatus":enumdict["Success"],"expense":expense,"income":income}
+                return {"gkstatus":enumdict["Success"],"gkresult":result}
 
 
             except:
@@ -3845,51 +3891,62 @@ free replacement or sample are those which are excluded.
                 taxcolumns = []
                 #sales register(flag = 0)
                 if int(self.request.params["flag"]) == 0:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
                 
                 #purchase register(flag = 1)
                 elif int(self.request.params["flag"]) == 1:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
                 
-                
-                
+            
                 srno = 1
                 '''This totalrow dictionary is used for very last row of report which contains sum of all columns in report'''
                 totalrow = {"grossamount":"0.00", "taxfree":"0.00", "tax": {}, "taxamount":{}}
                 #for each invoice
                 result = invquery.fetchall()
                 for row in result:
-                    
                     try:
+                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
+                        rowcust = custdata.fetchone()
+                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
+
+                        taxname = ""
                         disc = row["discount"]
-              
+                        #Decide tax type from taxflag
+                        if int(row["taxflag"]) == 22:
+                            taxname = "% VAT"
+                                
                         if int(row["taxflag"]) == 7:
                             destinationstate = row["taxstate"]
                             destinationStateCode = getStateCode(row["taxstate"],self.con)["statecode"]
                             sourcestate = row["sourcestate"]
                             sourceStateCode = getStateCode(row["sourcestate"],self.con)["statecode"]
-                            
-                        custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
-                        rowcust = custdata.fetchone()
-                        invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
-                        if rowcust["gstin"] != None:
-                            if int(rowcust["csflag"]) == 3 :
-                               try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                               except:
-                                    invoicedata["custgstin"] = None
-                            else:
-                                try:
-                                    invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
-                                except:
-                                    invoicedata["custgstin"] = None
+                            # Gst has 2 types of tax Inter State(IGST) & Intra state(SGST & CGST).
+                            if destinationstate != sourcestate :
+                                taxname = "% IGST "
+                            if destinationstate == sourcestate:
+                                taxname = "% SGST"
+                            # Get GSTIN on the basis of Customer / Supplier role. 
+                            if rowcust["gstin"] != None:
+                                if int(rowcust["csflag"]) == 3 :
+                                   try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(destinationStateCode)]
+                                   except:
+                                        invoicedata["custgstin"] = ""
+                                else:
+                                    try:
+                                        invoicedata["custgstin"] = rowcust["gstin"][str(sourceStateCode)]
+                                    except:
+                                        invoicedata["custgstin"] = ""
 
+
+                        # Calculate total grossamount of all invoices.
                         totalrow["grossamount"] = "%.2f"%(float(totalrow["grossamount"]) + float("%.2f"%row["invoicetotal"]))
                         qty = 0.00
                         ppu = 0.00
-                        #taxrate is in percentage
+                        #taxrate and cessrate are in percentage
                         taxrate = 0.00
-                        #taxamount is net amount for some tax rate. eg. 2% tax on 200rs. This 200rs is taxamount
+                        cessrate = 0.00
+                        #taxamount is net amount for some tax rate. eg. 2% tax on 200rs. This 200rs is taxamount, i.e. Taxable amount
                         taxamount = 0.00
                         '''This taxdata dictionary has key as taxrate and value as amount of tax to be paid on this rate. eg. {"2.00": "2.80"}'''
                         taxdata = {}
@@ -3898,60 +3955,341 @@ free replacement or sample are those which are excluded.
                         '''for each product in invoice.
                         row["contents"] is JSONB which has format like this - {"22": {"20.00": "2"}, "61": {"100.00": "1"}} where 22 and 61 is productcode, {"20.00": "2"}
                         here 20.00 is price per unit and quantity is 2.
-                        The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products'''
+                        The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate'''
                         
                         for pc in row["contents"].iterkeys():
-                            
                             discamt = 0.00
-                            taxrate = "%.2f"%float(row["tax"][pc])
+                            taxrate = float(row["tax"][pc])
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
                                 discamt = 0.00
-
                                 
                             for pcprice in row["contents"][pc].iterkeys():
                                 ppu = pcprice
-                                #freeqty is subtracted
+    
                                 gspc = self.con.execute(select([product.c.gsflag]).where(product.c.productcode==pc))
                                 flag = gspc.fetchone()
+                                # Check for product & service.
+                                # In case of service quantity is not present.
                                 if int(flag["gsflag"]) == 7:
-                                    qty = float(row["contents"][pc][pcprice]) - float(row["freeqty"][pc]) if row["freeqty"].has_key(pc) else 0.00
-                                    taxamount = (float(ppu) - float(discamt)) * float(qty)
-                                    #(((float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))) * float("%.2f"%float(qty))
+                                    qty = float(row["contents"][pc][pcprice])
+                                    # Taxable value of a product is calculated as (Price per unit * Quantity) - Discount 
+                                    taxamount = (float(ppu) * float(qty)) - float(discamt) 
                                 else:
-                                        taxamount = float(ppu) - float(discamt)
-                                       # (float("%.2f"%float(ppu))) -  (float("%.2f"%float(discamt)))
-                                    
-                            if taxrate == "0.00":
+                                    # Taxable value for service.
+                                    taxamount = float(ppu) - float(discamt)
+                            #There is a possibility of tax free product or service. This needs to be mention seperately.
+                            #For this condition tax is saved as 0.00 in tax field of invoice.
+                            if taxrate == 0.00:
                                 invoicedata["taxfree"] = "%.2f"%((float("%.2f"%float(invoicedata["taxfree"])) + taxamount))
                                 totalrow["taxfree"] = "%.2f"%(float(totalrow["taxfree"]) + taxamount)
                                 continue
                             '''if taxrate appears in this invoice then update invoice tax and taxamount for that rate Otherwise create new entries in respective dictionaries of that invoice'''
-                            if taxdata.has_key(str(taxrate)):
-                                taxdata[taxrate]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                taxamountdata[taxrate]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-                            else:
-                                taxdata.update({taxrate:"%.2f"%taxamount})
-                                taxamountdata.update({taxrate:"%.2f"%(taxamount*float(taxrate)/100.00)})
-                            '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
-                            if taxrate not in taxcolumns:
-                                taxcolumns.append(taxrate)
-                                totalrow["taxamount"].update({taxrate:"%.2f"%float(taxamountdata[taxrate])})
-                                totalrow["tax"].update({taxrate:"%.2f"%taxamount})
-                            else:
-                                totalrow["taxamount"][taxrate] = "%.2f"%(float(totalrow["taxamount"][taxrate]) + float(taxamount*float(taxrate)/100.00))
-                                totalrow["tax"][taxrate] =  "%.2f"%(float(totalrow["tax"][taxrate]) + taxamount)
+                            # When tax type is IGST or VAT.
+                            if taxrate != 0.00:
+                                if taxname !="% SGST":
+                                    taxnames = "%.2f"%taxrate + taxname
+                                    if taxdata.has_key(str(taxnames)):
+                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxrate]) + taxamount)
+                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+
+                                    else:
+                                        taxdata.update({taxnames:"%.2f"%taxamount})
+                                        taxamountdata.update({taxnames:"%.2f"%(taxamount*float(taxrate)/100.00)})
+
+                                    '''if new taxrate appears(in all invoices), ie. we found this rate for the first time then add this column to taxcolumns and also create new entries in tax & taxamount dictionaries Otherwise update existing data'''
+                                    if taxnames not in taxcolumns:
+                                        taxcolumns.append(taxnames)
+                                        totalrow["taxamount"].update({taxnames:"%.2f"%float(taxamountdata[taxnames])})
+                                        totalrow["tax"].update({taxnames:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][taxnames] = "%.2f"%(float(totalrow["taxamount"][taxnames]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][taxnames] =  "%.2f"%(float(totalrow["tax"][taxnames]) + taxamount)
+
+                                # when tax type is SGST & CGST , Tax rate needs to be diveded by 2.
+                                if taxname == "% SGST":
+                                    taxrate = taxrate/2
+                                    sgstTax = "%.2f"%taxrate + "% SGST"
+                                    cgstTax = "%.2f"%taxrate + "% CGST"
+                                    if taxdata.has_key(sgstTax):
+                                        taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
+                                        taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        
+                                    else:
+                                        taxdata.update({sgstTax:"%.2f"%taxamount})
+                                        taxamountdata.update({sgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+                                        
+                                    if sgstTax not in taxcolumns:
+                                        taxcolumns.append(sgstTax)
+                                        totalrow["taxamount"].update({sgstTax:"%.2f"%float(taxamountdata[sgstTax])})
+                                        totalrow["tax"].update({sgstTax:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
+                                        
+                                    if taxdata.has_key(cgstTax):
+                                        taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
+                                        taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        
+                                    else:
+                                        taxdata.update({cgstTax:"%.2f"%taxamount})
+                                        taxamountdata.update({cgstTax:"%.2f"%(taxamount*float(taxrate)/100.00)})
+                                        
+
+                                    if cgstTax not in taxcolumns:
+                                        taxcolumns.append(cgstTax)
+                                        totalrow["taxamount"].update({cgstTax:"%.2f"%float(taxamountdata[cgstTax])})
+                                        totalrow["tax"].update({cgstTax:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][cgstTax] = "%.2f"%(float(totalrow["taxamount"][cgstTax]) + float(taxamount*float(taxrate)/100.00))
+                                        totalrow["tax"][cgstTax] =  "%.2f"%(float(totalrow["tax"][cgstTax]) + taxamount)
+
+                                    
+                            if row["taxflag"] == 22:
+                                continue
+                            
+                            Cessname = ""
+                            # Cess is a different type of TAX, only present in GST invoice.
+                            if row["cess"] != None:
+                                cessrate = "%.2f"%float(row["cess"][pc])
+                                Cessname = str(cessrate) + "% CESS"
+                                if cessrate != "0.00":
+                                    if taxdata.has_key(str(Cessname)):
+                                        taxdata[Cessname]="%.2f"%(float(taxdata[cessrate]) + taxamount)
+                                        taxamountdata[Cessname]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
+                                    else:
+                                        taxdata.update({Cessname:"%.2f"%taxamount})
+                                        taxamountdata.update({Cessname:"%.2f"%(taxamount*float(cessrate)/100.00)})
+
+                                    if Cessname not in taxcolumns:
+                                        taxcolumns.append(Cessname)
+                                        totalrow["taxamount"].update({Cessname:"%.2f"%float(taxamountdata[Cessname])})
+                                        totalrow["tax"].update({Cessname:"%.2f"%taxamount})
+                                    else:
+                                        totalrow["taxamount"][Cessname] = "%.2f"%(float(totalrow["taxamount"][Cessname]) + float(taxamount*float(cessrate)/100.00))
+                                        totalrow["tax"][Cessname] =  "%.2f"%(float(totalrow["tax"][Cessname]) + taxamount)
+                        
                         invoicedata["tax"] = taxdata
                         invoicedata["taxamount"] = taxamountdata
                         spdata.append(invoicedata)
                         srno += 1
                     except:
                         pass
-                taxcolumns.sort(reverse=True)
-                
+ 
+                taxcolumns.sort()
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
+
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()     
+
+                
+
+    @view_config(request_param="type=GSTCalc", renderer='json')
+    def GSTCalc(self):
+        """
+        Purpose:
+        takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
+        Returns list of accounts with their closing balances.
+        Description:
+        This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
+        The function takes json_body which will have 8 key: value pares.
+        Each  key denoting the tax and value will be list of accounts.
+        The keys of this json_body will be as follows.
+        * CGSTIn,
+        * CGSTOut,
+        * SGSTIn,
+        * SGSTOut,
+        * IGSTIn,
+        * IGSTOut,
+        * CESSIn,
+        * CESSOut.
+        Function will also need the range for which calculatBalance is to be called for getting actual balances.
+        The function will loop through every list getting closing balance for all the accounts.
+        Then it will sum up all the balances for that list.
+        Then it will compare total in amount with total out amount and will decide if it is payable or carried forward.
+        Following code will return a dictionary which will have structure like  gstDict = {"cgstin":{"accname":calculated balance,...,"to        talCGSTIn":value},"cgstout":{"accname":calculatebalance ,...,"totalCGSTOut":value},.....,"cgstpayable":value,"sgstpayable":value,        ....,"cgstcrdfwd":value,"sgstcrdfwd":value,.....}
+        """
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                # Retrived individual data from dictionary
+                startDate = dataset["startdate"]
+                endDate = dataset["enddate"]
+                taxAcc = dataset["taxData"]
+                result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
+                fStart = result.fetchone()
+                financialStart = fStart["yearstart"]
+                
+                #get list of accountCodes for each type of taxes for their input and output taxes.
+                CGSTIn = taxAcc["cgstin"]
+                CGSTOut = taxAcc["cgstout"]
+                SGSTIn = taxAcc["sgstin"]
+                SGSTOut = taxAcc["sgstout"]
+                IGSTIn = taxAcc["igstin"]
+                IGSTOut = taxAcc["igstout"]
+                CESSIn = taxAcc["cessin"]
+                CESSOut = taxAcc["cessout"]
+
+                #Declare public variables to store total
+                totalCGSTIn = 0.00
+                totalCGSTOut = 0.00
+                totalSGSTOut = 0.00
+                totalSGSTIn = 0.00
+                totalSGSTOut = 0.00
+                totalIGSTIn = 0.00
+                totalIGSTOut = 0.00
+                totalCESSIn = 0.00
+                totalCESSOut = 0.00
+                # These variables are to store Payable and carried forward amount
+                cgstPayable = 0.00
+                cgstCrdFwd = 0.00
+                sgstPayable = 0.00
+                sgstCrdFwd = 0.00
+                igstPayable = 0.00
+                igstCrdFwd = 0.00
+                cessPayable = 0.00
+                cessCrdFwd = 0.00
+                gstDict = {}
+
+                cgstin = {}
+                for cin in CGSTIn:
+                    calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
+                    # get account name from accountcode.
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
+                    accName = accN.fetchone()
+                    #fill dictionary with account name and its balance.
+                    cgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    # calculate total cgst in amount by adding balance of each account in every iteration.
+                    totalCGSTIn = totalCGSTIn + calbalData["curbal"]
+                # Populate dictionary to be returned with cgstin and total values
+                gstDict["cgstin"] = cgstin
+                gstDict["totalCGSTIn"] = "%.2f"%(float(totalCGSTIn))
+
+                cgstout = {}
+                for cout in CGSTOut:
+                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
+                    accName = accN.fetchone()
+                    cgstout[accName["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
+                    totalCGSTOut = totalCGSTOut + calbalData["curbal"]
+                gstDict["cgstout"] = cgstout
+                gstDict["totalCGSTOut"] ="%.2f"%(float(totalCGSTOut))
+
+                # calculate carried forward amount or payable.
+                if totalCGSTIn > totalCGSTOut :
+                    cgstCrdFwd = totalCGSTIn - totalCGSTOut
+                    gstDict ["cgstcrdfwd"] = "%.2f"%(float(cgstCrdFwd))
+                else:
+                    cgstPayable = totalCGSTOut - totalCGSTIn
+                    gstDict ["cgstpayable"] = "%.2f"%(float(cgstPayable))
+
+                # For state tax
+                sgstin = {}
+                for sin in SGSTIn:
+                    calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
+                    accName = accN.fetchone()
+                    sgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalSGSTIn = totalSGSTIn + calbalData["curbal"]
+                # Populate dictionary to be returned with cgstin and total values
+                gstDict["sgstin"] = sgstin
+                gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
+
+                sgstout = {}
+                for sout in SGSTOut:
+                    calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
+                    accName = accN.fetchone()
+                    sgstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalSGSTOut = totalSGSTOut + calbalData["curbal"]
+                gstDict["sgstout"] = sgstout
+                gstDict["totalSGSTOut"] ="%.2f"%(float(totalSGSTOut))
+
+                
+                # calculate carried forward amount or payable.
+                if totalSGSTIn > totalSGSTOut :
+                    sgstCrdFwd = totalSGSTIn - totalSGSTOut
+                    gstDict ["sgstcrdfwd"] = "%.2f"%(float(sgstCrdFwd))
+                else:
+                    sgstPayable = totalSGSTOut - totalSGSTIn
+                    gstDict ["sgstpayable"] = "%.2f"%(float(sgstPayable))
+
+                # For Inter state tax
+                igstin = {}
+                for iin in IGSTIn:
+                    calbalData = calculateBalance(self.con,iin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iin)))
+                    accName = accN.fetchone()
+                    igstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalIGSTIn = totalIGSTIn + calbalData["curbal"]
+                gstDict["igstin"] = igstin
+                gstDict["totalIGSTIn"] = "%.2f"%(float(totalIGSTIn))
+                
+                igstout = {}
+                for iout in IGSTOut:
+                    calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
+                    accName = accN.fetchone()
+                    igstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalIGSTOut = totalIGSTOut + calbalData["curbal"]
+                gstDict["igstout"] = igstout
+                gstDict["totalIGSTOut"] ="%.2f"%(float(totalIGSTOut))
+
+                # calculate carried forward amount or payable.
+                if totalIGSTIn > totalIGSTOut :
+                    igstCrdFwd = totalIGSTIn - totalIGSTOut
+                    gstDict["IgstCrdFwd"] = "%.2f"%(float(igstCrdFwd))
+                else:
+                    igstPayable = totalIGSTOut - totalIGSTIn
+                    gstDict["IgstPayable"] = "%.2f"%(float(igstPayable))
+
+                # For cess tax
+                cssin = {}
+                for csin in CESSIn:
+                    calbalData = calculateBalance(self.con,csin, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csin)))
+                    accName = accN.fetchone()
+                    cssin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalCESSIn = totalCESSIn + calbalData["curbal"]
+                gstDict["cessin"] = cssin
+                gstDict["totalCESSIn"] = "%.2f"%(float(totalCESSIn))
+
+                cssout = {}
+                for csout in CESSOut:
+                    calbalData = calculateBalance(self.con,csout, financialStart, startDate, endDate)
+                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
+                    accName = accN.fetchone()
+                    cssout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                    totalCESSOut = totalCESSOut + calbalData["curbal"]
+                gstDict["cessout"] = cssout
+                gstDict["totalCESSOut"] ="%.2f"%(float(totalCESSOut))
+
+                # calculate carried forward amount or payable.
+                if totalCESSIn > totalCESSOut :
+                    cessCrdFwd = totalCESSIn - totalCESSOut
+                    gstDict ["cessCrdFwd"] = "%.2f"%(float(cessCrdFwd))
+                else:
+                    cessPayable = totalCESSOut - totalCESSIn
+                    gstDict ["cesspayable"] = "%.2f"%(float(cessPayable))
+
+                return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+            
+                    

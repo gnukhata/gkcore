@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -58,6 +59,7 @@ signature = Table('signature', metadata,
     Column('secretcode',UnicodeText, primary_key=True))
 """ organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
 Also stores other details like the pan or sales tax number.
+bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
 ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 """
@@ -66,7 +68,6 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
 This table is for storing state information.  
 A state will have its corresponding code with name.
 """
-
 state = Table('state',metadata,
         Column('statecode',Integer),
         Column('statename',UnicodeText) 
@@ -101,6 +102,7 @@ organisation = Table( 'organisation' , metadata,
     Column('invsflag',Integer,default=1),
     Column('logo',JSON),
     Column('gstin',JSONB),
+    Column('bankdetails',JSON),
     UniqueConstraint('orgname','orgtype','yearstart'),
     UniqueConstraint('orgname','orgtype','yearend'),
     Index("orgindex", "orgname","yearstart","yearend")
@@ -195,6 +197,7 @@ Also when we purchase the same.
 The reason to store this data is that we may need it in both invoice and delivery chalan.
 Here the csflag is 3 for customer and 19 for supplier
 gstin to store unique code of cust/supp for gst for every state (json)
+Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
 """
 customerandsupplier = Table('customerandsupplier',metadata,
     Column('custid',Integer,primary_key=True),
@@ -209,6 +212,7 @@ customerandsupplier = Table('customerandsupplier',metadata,
     Column('custdoc',JSONB),
     Column('state', UnicodeText),
     Column('csflag',Integer,nullable=False),
+    Column('bankdetails',JSONB),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','custname'),
     UniqueConstraint('orgcode','custname','custemail','csflag'),
@@ -291,9 +295,13 @@ Note that invoice is connected to a voucher.
 So the accounting part is thus connected with stock movement of that cost.
 A new json field called freeqty.
 Consignee (shipped to) is a json field which has name , address, state, statecode,gstin as keys along with its value.
-Bankdetails is a dictionary will have bankname,accountno. and ifsccode.
+Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
 taxstate is a destination sate.
-sourcestate is source state from where invoice is initiated
+sourcestate is source state from where invoice is initiated.
+Structure of a tax field is {productcode:taxrate}
+save orgstategstin of sourcestate for organisation.
+paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'.
+inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -304,11 +312,13 @@ invoice = Table('invoice',metadata,
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
     Column('tax', JSONB),
+    Column('cess',JSONB),
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
@@ -322,6 +332,10 @@ invoice = Table('invoice',metadata,
     Column('vehicleno',UnicodeText),
     Column('dateofsupply',DateTime),
     Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
+    Column('address',UnicodeText),
+    Column('inoutflag',Integer),
+    Column('invoicetotalword', UnicodeText),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
@@ -344,12 +358,20 @@ This is done because one invoice may have several dc's attached and for one dc m
 In a situation where x items have been shipped against a dc, the customer approves only x -2, so the invoice against this dc will have x -2 items.
 Another invoice may be issued if the remaining two items are approved by the customer.
 dcflag is used for type of transaction: 1 - Approval, 2 - consignment, 3 - Free Replacement, etc.
+taxflag states which tax is applied to products/services. Default value is set as 22 for VAT and for GST 7 will be set as taxflag.
+Also we have json field called 'contents' which is nested dictionary.
+The key of this field is the 'productcode' while value is another dictionary.
+This has a key as price per unit (ppu) and value as quantity (qty).
 """
 delchal = Table('delchal',metadata,
     Column('dcid',Integer,primary_key=True),
     Column('dcno',UnicodeText,nullable=False),
     Column('dcdate',DateTime,nullable=False),
     Column('dcflag',Integer,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
     Column('issuername', UnicodeText),
     Column('designation', UnicodeText),
     Column('cancelflag',Integer,default=0),
@@ -357,10 +379,20 @@ delchal = Table('delchal',metadata,
     Column('noofpackages', Integer, nullable=False),
     Column('modeoftransport', UnicodeText),
     Column('attachment',JSON),
+    Column('consignee',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('freeqty',JSONB),
+    Column('discount',JSONB),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('delchaltotal', Numeric(13,2), nullable=False),
     Column('attachmentcount',Integer,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
+    Column('inoutflag',Integer,nullable=False),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
@@ -483,10 +515,27 @@ purchaseorder = Table( 'purchaseorder' , metadata,
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
     Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
-    UniqueConstraint('orderno','orderdate','csid','psflag'),
+    Column('taxflag',Integer,default=22),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
+    Column('purchaseordertotal', Numeric(13,2),nullable=False),
+    Column('pototalwords', UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('consignee',JSONB),
+    Column('freeqty',JSONB),
+    Column('reversecharge',UnicodeText),
+    Column('bankdetails',JSONB),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
+    Column('address',Text),
     Index("purchaseorder_orgcodeindex","orgcode"),
     Index("purchaseorder_date","orderdate"),
-    Index("purchaseorder_togodown",'togodown')
+    Index("purchaseorder_togodown",'togodown')               
 )
 
 
@@ -517,6 +566,7 @@ goprod = Table('goprod',metadata,
     Column('productcode',Integer, ForeignKey('product.productcode', ondelete="CASCADE"), nullable=False),
     Column('goopeningstock',Numeric(13,2),default=0.00,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    UniqueConstraint('goid','productcode','orgcode'),
     Index("godown_product","productcode")
     )
 #now table for user godown rights.
@@ -585,16 +635,53 @@ log = Table('log',metadata,
 
 """Table to store Rejection Note
 This table will store invoice or delivery note id against which rejection note prepared
-inout is a flag to indicate rejection in or out. in = 9, out = 15"""
+inout is a flag to indicate rejection in or out. in = 9, out = 15
+rejprods is to store productcode as key and rejected quantity as value
+"""
 rejectionnote = Table('rejectionnote',metadata,
     Column('rnid',Integer,primary_key=True),
     Column('rnno',UnicodeText, nullable=False),
     Column('rndate', DateTime, nullable=False),
     Column('inout', Integer, nullable=False),
+    Column('rejprods',JSONB,nullable=False),
     Column('dcid',Integer ,ForeignKey('delchal.dcid',ondelete = "CASCADE")),
     Column('invid',Integer ,ForeignKey('invoice.invid',ondelete = "CASCADE")),
     Column('issuerid',Integer,ForeignKey('users.userid',ondelete="CASCADE")),
+    Column('rejectedtotal',Numeric(13,2), nullable=False),
     Column('orgcode',Integer ,ForeignKey('organisation.orgcode',ondelete = "CASCADE"),nullable = False),
     UniqueConstraint('rnno','inout', 'orgcode'),
     Index("rejection_note","orgcode")
     )
+
+"""
+This table is for stroring records of debit note and credit note.
+The dctypeflag is used to decide whether it is debit note or credit note.(debit note=4 & credit note=3).
+Debit/Credit Note number is stored in drcrno and drcrdate fields respectively.
+These may be issued when there is differnce is taxable amount or when quantity is rejected.
+If they are issued against an invoice its id is stored in invid.
+If they are issued against a rejection note its id is stored in rnid.
+Debited/Credited value of each product is stored in reductionval as values in a dictionary where keys are productcodes.
+Debit/Credit Note reference if any is stored in reference field.
+Documents attached is stored in attachment and its count stored in attachmentcount.
+Storing userid helps access username and userrole.
+"""
+drcr =  Table('drcr', metadata,             
+    Column('drcrid',Integer,primary_key=True),
+    Column('drcrno',UnicodeText, nullable=False),
+    Column('invid', Integer, ForeignKey('invoice.invid')),
+    Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
+    Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
+    Column('drcrdate',DateTime,nullable=False),
+    Column('dctypeflag', Integer, default=3),
+    Column('totreduct',Numeric(13,2),default=0.00),
+    Column('reductionval',JSONB),
+    Column('reference',JSONB),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('userid',Integer,ForeignKey('users.userid')),
+    UniqueConstraint('orgcode','drcrno','dctypeflag'),
+    UniqueConstraint('orgcode','invid','dctypeflag'),
+    UniqueConstraint('orgcode','rnid','dctypeflag')
+   )
+
+

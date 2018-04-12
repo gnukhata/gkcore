@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -20,11 +21,15 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 
 
 Contributors:
-"Krishnakant Mane" <kk@gmail.com>
+"Krishnakant Mane" <kkmane@riseup.net>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
-'Prajkta Patkar'<prajkta@dff.org.in>
-'Reshma Bhatwadekar'<bhatawadekar1reshma@gmail.com>
+'Prajkta Patkar'<prajakta@dff.org.in>
+'Reshma Bhatwadekar'<reshma_b@riseup.net>
+"Sanket Kolnoorkar"<Sanketf123@gmail.com>
+'Aditya Shukla' <adityashukla9158.as@gmail.com>
+'Pravin Dake' <pravindake24@gmail.com>
+
 """
 
 from pyramid.view import view_defaults,  view_config
@@ -43,6 +48,7 @@ from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields
+from gkcore.views.api_invoice import getStateCode 
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -51,7 +57,6 @@ class api_organisation(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "Organisation initialized"
     def gkUpgrade(self):
         """
         This function will be called only once while upgrading gnukhata.
@@ -60,24 +65,104 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.organisation.c.bankdetails)]))
+            self.con.execute(select([func.count(gkdb.purchaseorder.c.purchaseordertotal)]))
+            self.con.execute(select([func.count(gkdb.rejectionnote.c.rejprods)]))
+            self.con.execute(select([func.count(gkdb.drcr.c.drcrid)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.invoicetotalword)]))
+            self.con.execute(select([func.count(gkdb.delchal.c.taxflag)]))
+            self.con.execute(select([func.count(gkdb.delchal.c.inoutflag)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.address)]))
+            self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
+            self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
+            self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
             self.con.execute(select([func.count(gkdb.state.c.statecode)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.reversecharge)]))
-            self.con.execute(select(gkdb.organisation.c.gstin))
+            countResult = self.con.execute(select([func.count(gkdb.invoice.c.reversecharge).label('revcount')]))
+            countData = countResult.fetchone()
+            if int(countData["revcount"]) > 0:
+                self.con.execute("update invoice set reversecharge = '0'" )
+            self.con.execute(select([func.count(gkdb.organisation.c.gstin)]))
             self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
             self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
             self.con.execute(select([func.count(gkdb.product.c.gscode)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
             self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
-            self.con.execute(select([func.count(gkdb.customerandsupplier.c.advamt)]))
             self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
-            self.con.execute(select(gkdb.dcinv.c.invprods))
-            self.con.execute(select(gkdb.organisation.c.logo))
-            self.con.execute(select(gkdb.vouchers.c.instrumentno))
-            self.con.execute(select(gkdb.organisation.c.invsflag))
-            self.con.execute(select(gkdb.organisation.c.billflag))
+            self.con.execute(select([func.count(gkdb.dcinv.c.invprods)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.logo)]))
+            self.con.execute(select([func.count(gkdb.vouchers.c.instrumentno)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.invsflag)]))
+            self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table organisation add bankdetails json")
+            self.con.execute("drop table purchaseorder cascade")
+            self.con.execute("create table purchaseorder(orderid serial, orderno text not null, orderdate timestamp not null, creditperiod text, payterms text, modeoftransport text, issuername text, designation text, schedule jsonb, taxstate text, psflag integer not null, csid integer, togodown integer, taxflag integer default 22, tax jsonb, cess jsonb,purchaseordertotal numeric(13,2) not null, pototalwords text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 22, address text, orgcode integer not null, primary key(orderid), foreign key (csid) references customerandsupplier(custid) ON DELETE CASCADE, foreign key (togodown) references godown(goid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+            self.con.execute("create index purchaseorder_orgcodeindex on purchaseorder using btree(orgcode)")
+            self.con.execute("create index purchaseorder_date on purchaseorder using btree(orderdate)")
+            self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
+            self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
+            self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
+            self.con.execute("alter table invoice add invoicetotalword text")
+            self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
+            self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
+            self.con.execute("alter table delchal add inoutflag integer")
+            #This code will assign inoutflag for delivery chalan where inoutflag is blank.
+            alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
+            #here we will be fetching all the delchal data
+            delchals = alldelchal.fetchall()
+            for delchal in delchals:
+                delchalid = int(delchal["dcid"])
+                stockdata = self.con.execute(select([gkdb.stock.c.inout]).where(and_(gkdb.stock.c.dcinvtnid == delchalid, gkdb.stock.c.dcinvtnflag == 4)))
+                inout = stockdata.fetchone()
+                inoutflag = inout["inout"]
+                self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
+            self.con.execute("alter table invoice add inoutflag integer")
+            #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
+            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
+            #Here we fetching all "custid", "icflag" and "invid".
+            dict = allinvoice.fetchall()
+            for singleinv in dict:
+                sincustid = singleinv["custid"]
+                invid=singleinv["invid"]
+                icflag = singleinv["icflag"]
+                #First we checking the icflag (i.e 3 for "cashmemo", 9 for "invoice")
+                if icflag == 3:
+                    self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
+                else:
+                    cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
+                    #Here we fetching all "csflag" on the basis of "sincustid" (i.e "custid")
+                    csflagsingle = cussupdata.fetchone()
+                    for cussup in csflagsingle:
+                        #if "csflag" is 19 (i.e "supplier") then set inoutflag=9 (i.e "in") else "csflag" is 3 (i.e "customer" and set "inoutflag=15" (i.e "out"))
+                        if cussup==19:
+                            self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid))
+                        else:
+                            self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
+            self.con.execute("alter table invoice add address text")
+            self.con.execute("alter table customerandsupplier add bankdetails jsonb")
+            self.con.execute("alter table invoice add paymentmode integer")
+            #Code for assinging paymentmode where paymentmode is blank and bank details are present.
+            bankresult = self.con.execute(select([gkdb.invoice.c.invid,gkdb.invoice.c.bankdetails]).where(gkdb.invoice.c.paymentmode == None))
+            #Fetching invid,bankdetails using fetchall() method in list.for loop is used to fetch each record in bankresult.
+            dict = bankresult.fetchall()
+            for invdata in dict:
+                #Storing account number,ifsc number,invoice id in invaccno,invifsc,invoid respectively
+                invaccno = invdata["bankdetails"]["accountno"]
+                invifsc = invdata["bankdetails"]["ifsc"] 
+                invoid = invdata["invid"]
+                #Checking for bankdetails,if accountno and ifsc are present then set paymentmode=2 else set paymentmode=3. 
+                if (invaccno == "" or invifsc == ""):
+                    self.con.execute("update invoice set paymentmode=3 where invid = %d"%int(invoid))
+                else:
+                    self.con.execute("update invoice set paymentmode=2 where invid = %d"%int(invoid))
+            self.con.execute("alter table delchal add consignee jsonb")
+            self.con.execute("alter table invoice add orgstategstin text")
+            self.con.execute("alter table invoice add cess jsonb")
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
             self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
@@ -134,7 +219,7 @@ class api_organisation(object):
             self.con.execute("alter table product add gscode text")
             self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
             self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
-            self.con.execute("create table rejectionnote(rnid serial, rnno integer not null, rndate timestamp not null, inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
+            self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             self.con.execute("alter table organisation add invsflag integer default 1")
             self.con.execute("alter table organisation add billflag integer default 1")
             self.con.execute("alter table vouchers add instrumentno text")
@@ -145,8 +230,6 @@ class api_organisation(object):
             self.con.execute("alter table dcinv add invprods jsonb")
             self.con.execute("alter table transfernote add duedate timestamp")
             self.con.execute("alter table transfernote add grace integer")
-            self.con.execute("alter table customerandsupplier add advamt numeric default 0.00")
-            self.con.execute("alter table customerandsupplier add onaccamt numeric default 0.00")
             self.con.execute("alter table transfernote add fromgodown integer")
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             self.con.execute("alter table transfernote drop column canceldate")
@@ -158,21 +241,10 @@ class api_organisation(object):
             self.con.execute("alter table delchal add attachmentcount integer default 0")
             self.con.execute("alter table invoice add attachment json")
             self.con.execute("alter table invoice add attachmentcount integer default 0")
-            self.con.execute("alter table purchaseorder add creditperiod text")
-            self.con.execute("alter table purchaseorder add taxstate text")
-            self.con.execute("alter table purchaseorder add togodown integer")
-            self.con.execute("alter table purchaseorder drop column schedule")
-            self.con.execute("alter table purchaseorder add schedule jsonb")
-            self.con.execute("alter table purchaseorder drop column maxdate")
-            self.con.execute("alter table purchaseorder drop column datedelivery")
-            self.con.execute("alter table purchaseorder drop column deliveryplaceaddr")
-            self.con.execute("alter table purchaseorder drop column tax")
-            self.con.execute("alter table purchaseorder drop column productdetails")
-            self.con.execute("alter table purchaseorder add foreign key(togodown) references godown(goid)")
             self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             
-            #return 0
+            return 0
         finally:
             self.con.close()
             return 0
@@ -273,11 +345,20 @@ class api_organisation(object):
                     grpcode = result.fetchone()
                     result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
 
+                    # Create Direct expense group , get it's group code and create subgroups under it.
                     directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),directexpense)
-
+                    result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Expense", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                    DEGrpCodeData = result.fetchone()
+                    DEGRPCode = DEGrpCodeData["groupcode"]
+                    DESubGroups = [{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}]
+                    insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}])
+ 
                     directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),directincome)
+                    results = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Income", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                    DIGrpCodeData = results.fetchone()
+                    insData = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Sales","subgroupof":DIGrpCodeData["groupcode"],"orgcode":orgcode["orgcode"]})
 
                     fixedassets= {"groupname":"Fixed Assets","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),fixedassets)
@@ -455,21 +536,108 @@ class api_organisation(object):
                 if(row["gstin"]==None):
                     gstin=""
 
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"]}
+                if(row["bankdetails"]==None):
+                   bankdetails=""
+                else:
+                    bankdetails=row["bankdetails"]
+                 
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"]}
+                
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
+        """
+        This function returns Organisation Details for Invoicing.
+        'statecode' receiving from frontend view & depending on statecode gstin will get.
+        """
+    @view_config(request_method="GET", renderer="json", request_param="billingdetails")
+    def getbillingdetails(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                statecode =self.request.params["statecode"]
+                result = self.con.execute(select([gkdb.organisation]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                row = result.fetchone()
+                if(row["orgcity"]==None):
+                    orgcity=""
+                else:
+                    orgcity=row["orgcity"]
+                if(row["orgaddr"]==None):
+                    orgaddr=""
+                else:
+                    orgaddr=row["orgaddr"]
+                if(row["orgpincode"]==None):
+                    orgpincode=""
+                else:
+                    orgpincode=row["orgpincode"]
+                if(row["orgstate"]==None):
+                    orgstate=""
+                else:
+                    orgstate = row["orgstate"]
+                if(row["orgwebsite"]==None):
+                    orgwebsite=""
+                else:
+                    orgwebsite=row["orgwebsite"]
+                if(row["orgpan"]==None):
+                    orgpan=""
+                else:
+                    orgpan=row["orgpan"]
+                if(row["orgtelno"]==None):
+                    orgtelno=""
+                else:
+                    orgtelno=row["orgtelno"]
+                if(row["orgemail"]==None):
+                    orgemail=""
+                else:
+                    orgemail=row["orgemail"]
+                if(row["gstin"]==None):
+                    gstin=""
+                elif(row["gstin"].has_key(str(statecode))):
+                    gstin = row["gstin"][str(statecode)]
+                else:
+                    gstin=""
+                if(row["bankdetails"]==None):
+                    bankdetails = ""
+                else:
+                    bankdetails = row["bankdetails"]
 
-
-
-
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+        
+    @view_config(request_method="GET",renderer="json",request_param="osg=true")
+    def getOrgStateGstin(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con =eng.connect()
+                gstinResult = self.con.execute("select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "%(int(self.request.params["statecode"]),int(self.request.params["statecode"]),int(authDetails["orgcode"])))
+                gstinval = ""
+                if gstinResult.rowcount > 0 :
+                    gstinrow = gstinResult.fetchone()
+                    gstinval = str(gstinrow["stgstin"])
+                return{"gkstatus":enumdict["Success"],"gkresult":gstinval}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+    #code for saving null values of bankdetails and updation in database
+    #variable created for orgcode so that query will work easily
     @view_config(request_method='PUT', renderer='json')
     def putOrg(self):
         token = self.request.headers['gktoken']
         authDetails = authCheck(token)
+        orgcode=authDetails['orgcode'] 
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
@@ -480,6 +648,8 @@ class api_organisation(object):
                 dataset = self.request.json_body
                 if userRole[0]==-1:
                     result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
+                    if 'bankdetails' not in dataset:
+                        self.con.execute("update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"%int(orgcode))
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
@@ -604,3 +774,25 @@ class api_organisation(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+    #Code for fetching organisations bankdetails depending on organisation code. 
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='orgbankdetails' , renderer='json')
+    def getorgbankdetails(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.organisation.c.bankdetails]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                row = result.fetchone()
+                if(row["bankdetails"]==None):
+                    bankdetails = ""
+                else:
+                    bankdetails = row["bankdetails"]
+
+                orgbankDetails={"bankdetails":bankdetails}
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkbankdata":orgbankDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}

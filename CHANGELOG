@@ -1,3 +1,42 @@
+[12-April-2018 Release 5.0]
+* Roll over without close book	
+* Debit credit note API
+* Rejection Note API	
+* GST compliant Sales and purchase order API
+* Subgroups under Direct Income and Direct Expenses
+* Altered rules in accounts by rule API
+* Added new columns "invoicetotal","address" in invoice table
+* Profit and loss statement code changed for structured tree format
+* Free quantity and billed quantity also added when stock details   	
+* List of outstanding invoices.
+* GST compliant sales and purchase register
+* Inoutflag for cashmemo and delivery chalan
+* New columns added in delivery note to make it GST compliant
+* GST summary report
+
+	
+[10-January-2018 Release 4.50]
+* Refinement in Transaction API
+* Function in Transaction API to auto generate Voucher No.
+* Function in Bill Wise API that returns all unpaid invoices.
+* Function in Bill Wise API that returns both unpaid and partially paid invoices.
+* Function in User API that returns list of users having same role and their role.
+* Function in User API that returns all data of a user(accessible only to admin).
+* All details of a user can be edited by admin.
+* Consignee details can be added in Delivery Note.
+* Function in Godowns API to return name and address of all godowns that contain products.
+* Modified PUT of Invoice API.
+
+[10-November-2017 Release 4.25 Update]
+* Permissions to Godown In Charge modified.
+* CESS field added in invoice and cash memo.
+* Sales and purchase register now reflects along with CESS.
+* Gkupgrade modified as per modifications in gkdb.
+* Transfer Note get all function modified.
+* A function to get user role.
+* Get all delchal function.
+* Minor bugs solved.
+
 [21-September-2017 Release 4.25]
 *Gkupgrade modified as per modifications in gkdb
 *List of users report

@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs 
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -92,6 +93,7 @@ def main(global_config, **settings):
     config.add_route("rejectionnote", "/rejectionnote")
     config.add_route('billwise','/billwise')
     config.add_route("state","/state")
+    config.add_route("drcrnote","/drcrnote")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

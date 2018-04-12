@@ -1,6 +1,8 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -111,7 +113,7 @@ class api_accountsbyrule(object):
                         return {"gkstatus":enumdict["ConnectionFailed"]}
                 if self.request.params['side']=="Cr":
                     try:
-                        accs = self.con.execute("select accountname , accountcode from accounts where groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                        accs = self.con.execute("select accountname , accountcode from accounts where accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and    groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Direct Income','Indirect Income','Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income','Direct Expense','Indirect Expense') and orgcode = %d) and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"], authDetails["orgcode"]))
                         list = []
                         for row in accs:
                             list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})
@@ -122,6 +124,8 @@ class api_accountsbyrule(object):
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+                
     @view_config(request_param="type=receipt", renderer='json')
     def receipt(self):
         try:
@@ -145,7 +149,7 @@ class api_accountsbyrule(object):
                         return {"gkstatus":enumdict["ConnectionFailed"]}
                 if self.request.params['side']=="Dr":
                     try:
-                        accs = self.con.execute("select accountname , accountcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash')and orgcode = %d ) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                        accs = self.con.execute("select accountname , accountcode from accounts where accountname not in ('Opening Stock','Closing Stock','Stock at the Beginning','Profit & Loss','Income & Expenditure') and    groupcode in (select groupcode from groupsubgroups where groupname in ('Bank','Cash','Direct Income','Indirect Income','Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Income','Indirect Income','Direct Expense','Indirect Expense') and orgcode = %d) and orgcode = %d) and orgcode = %d order by accountname"%(authDetails["orgcode"],authDetails["orgcode"], authDetails["orgcode"]))
                         list = []
                         for row in accs:
                             list.append({"accountname":row["accountname"], "accountcode":row["accountcode"]})

@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs 
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -28,37 +29,37 @@ Contributors:
 from sqlalchemy.engine import create_engine
 from gkcore.models.gkdb import metadata
 def dbconnect():
-	stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
+    stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
-	#engine = Engine
-	engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
-	return engine
+    #engine = Engine
+    engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
+    return engine
 
 def inventoryMigration(con,eng):
-	metadata.create_all(eng)
-	con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
-	con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
-	con.execute("alter table organisation add column invflag Integer default 0 ")
-	con.execute("alter table vouchers add column invid Integer")
-	con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
-	try:
-		con.execute("select themename from users")
-	except:
-		con.execute("alter table users add column themename text default 'Default'")
-	return 0
-	
-	
+    metadata.create_all(eng)
+    con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
+    con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+    con.execute("alter table organisation add column invflag Integer default 0 ")
+    con.execute("alter table vouchers add column invid Integer")
+    con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
+    try:
+        con.execute("select themename from users")
+    except:
+        con.execute("alter table users add column themename text default 'Default'")
+    return 0
+    
+    
 def addFields(con,eng):
-	metadata.create_all(eng)
-	try:
-		con.execute("select noofpackages,modeoftransport from delchal")
-		con.execute("select recieveddate from transfernote")
-	except:
-		con.execute("alter table transfernote add recieveddate date")
-		con.execute("alter table delchal add noofpackages int")
-		con.execute("alter table delchal add modeoftransport text")
-	return 0
-		
+    metadata.create_all(eng)
+    try:
+        con.execute("select noofpackages,modeoftransport from delchal")
+        con.execute("select recieveddate from transfernote")
+    except:
+        con.execute("alter table transfernote add recieveddate date")
+        con.execute("alter table delchal add noofpackages int")
+        con.execute("alter table delchal add modeoftransport text")
+    return 0
+        
 
-	
-	
+    
+    

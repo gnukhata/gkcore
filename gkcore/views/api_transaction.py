@@ -1,6 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
+Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -24,6 +25,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Vanita Rajpurohit" <vanita.rajpurohit9819@gmail.com>
+'Prajkta Patkar' <prajkta@riseup.net>
 """
 
 
@@ -67,11 +69,48 @@ class api_transaction(object):
         self.request = Request
         self.request = request
         self.con = Connection
+    def __genVoucherNumber(self,con,voucherType,orgcode):
+        """
+        Purpose:
+        Generates a new vouchernumber based on vouchertype and max count for that type.
+        """
+        initialType = ""
+        if voucherType == "journal":
+            initialType = "jr"
+        if voucherType == "contra":
+            initialType = "cr"
+        if voucherType == "payment":
+            initialType = "pt"
+        if voucherType == "receipt":
+            initialType = "rt"
+        if voucherType == "sales":
+            initialType = "sl"
+        if voucherType == "purchase":
+            initialType = "pu"
+        if voucherType == "creditnote":
+            initialType = "cn"
+        if voucherType == "debitnote":
+            initialType = "dn"
+        if voucherType == "salereturn":
+            initialType = "sr"
+        if voucherType == "purchasereturn":
+            initialType = "pr"
 
+        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCount = vchCountResult.fetchone()
+        if vchCount["vcount"] == 0:
+            initialType = initialType + "1"
+        else:
+            vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
+            vchCode = vchCodeResult.fetchone()
+            initialType = initialType + str(vchCode["vcode"])
+        return initialType
 
+            
     @view_config(request_method='POST',renderer='json')
     def addVoucher(self):
         """
+
         Purpose:
         adds a new voucher for given organisation and returns success as gkstatus if adding is successful.
         Description:
@@ -113,6 +152,12 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+                # generate voucher number if it is not sent.
+                if dataset.has_key("vouchernumber") == False:
+                    voucherType = dataset["vouchertype"]
+                    vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
+                    dataset["vouchernumber"] = vchNo
+                     
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
@@ -645,4 +690,47 @@ class api_transaction(object):
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
             except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            
+
+    # Get all data of all vouchers for certain period.
+    @view_config(request_method='GET',request_param='getdataby=date', renderer='json')
+    def getAllDataByDate(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails['auth'] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                ur = getUserRole(authDetails["userid"])
+                urole = ur["gkresult"]
+                fromDate = self.request.params["from"]
+                toDate = self.request.params["to"]
+                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.vouchertype,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                voucherRecords = []
+
+                for voucher in vouchersData:
+                    rawDr = dict(voucher["drs"])
+                    rawCr = dict(voucher["crs"])
+                    finalDR = {}
+                    finalCR = {}
+                    for Dac in rawDr.keys():
+                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Dac)))
+                        account = accname.fetchone()
+                        finalDR[account["accountname"]]=rawDr[Dac]
+                    for Cac in rawCr.keys():
+                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Cac)))
+                        account = accname.fetchone()
+                        finalCR[account["accountname"]]=rawCr[Cac]
+                    if voucher["narration"]=="null":
+                        voucher["narration"]=""
+                    voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"voucherno":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%Y-%m-%d"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"vouchertype":voucher["vouchertype"],"orgcode":voucher["orgcode"]})
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
+            except:
+                self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
