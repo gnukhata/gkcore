@@ -2474,8 +2474,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                               DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                               DESubBal = DESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         DESUBDict["balance"] = "%.2f"%(float(DESubBal))
                         # This is balance of main group 
@@ -2492,6 +2496,12 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
+                        if calbalData["baltype"] == "Dr":
+                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            DESubBal = DESubBal + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Cr":
+                            DESUBDict[desubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                            DESubBal = DESubBal - float(calbalData["curbal"])
                         directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         grpDEbalance = grpDEbalance + float(calbalData["curbal"])
                 directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
