@@ -2552,7 +2552,7 @@ class api_reports(object):
                                 grpDIbalance = grpDIbalance + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Dr":
                                 directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                                grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                                grpDIbalance = grpDIbalance - float(calbalData["curbal"])
                         else:
                             continue
                                 
@@ -2611,7 +2611,7 @@ class api_reports(object):
                             grpIEbalance = grpIEbalance + float(calbalData["curbal"])
                         if calbalData["baltype"]== "Cr":
                             indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                            grpIEbalance = grpIEbalance - float(calbalData["curbal"])
                 indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
                 result["Indirect Expense"] = indirectExpense
                 
@@ -2660,7 +2660,7 @@ class api_reports(object):
                             grpIIbalance = grpIIbalance + float(calbalData["curbal"])
                         if calbalData["baltype"] == "Dr":
                             indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                            grpIIbalance = grpIIbalance - float(calbalData["curbal"])
                                 
                 indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
                 result["Indirect Income"] = indirectIncome
