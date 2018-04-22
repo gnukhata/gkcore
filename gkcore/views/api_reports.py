@@ -861,9 +861,10 @@ class api_reports(object):
                                 crresultRow = crresult.fetchone()
                                 rcaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
                                 rcacc= ''.join(rcaccountname.fetchone())
-                                ttlRunDr += float(crresultRow["total"])
-                                rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
-                                rctotal += float(crresultRow["total"])
+                                if crresultRow["total"] != None:
+                                    ttlRunDr += float(crresultRow["total"])
+                                    rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
+                                    rctotal += float(crresultRow["total"])
                         for dr in transaction["drs"]:
                             if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
                                 pyaccountcodes.append(dr)
@@ -871,9 +872,11 @@ class api_reports(object):
                                 drresultRow = drresult.fetchone()
                                 pyaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
                                 pyacc= ''.join(pyaccountname.fetchone())
-                                ttlRunCr += float(drresultRow["total"])
-                                paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
-                                pytotal += float(drresultRow["total"])
+                                if drresultRow["total"]!=None:
+                                    ttlRunCr += float(drresultRow["total"])
+                                    paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
+                                    pytotal += float(drresultRow["total"])
+
                 receiptcf.extend(rctransactionsgrid)
                 paymentcf.extend(closinggrid)
                 if len(receiptcf)>len(paymentcf):
