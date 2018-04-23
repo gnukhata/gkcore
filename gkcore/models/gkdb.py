@@ -70,7 +70,8 @@ A state will have its corresponding code with name.
 """
 state = Table('state',metadata,
         Column('statecode',Integer),
-        Column('statename',UnicodeText) 
+        Column('statename',UnicodeText),
+        Column('abbreviation',UnicodeText)
 )
 
 organisation = Table( 'organisation' , metadata,
