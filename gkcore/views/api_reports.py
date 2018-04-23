@@ -2499,7 +2499,7 @@ class api_reports(object):
                         if calbalData["baltype"] == "Dr":
                             directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         grpDEbalance = grpDEbalance + float(calbalData["curbal"])
-                        if calbalData["balType"] == "Cr":
+                        if calbalData["baltype"] == "Cr":
                             directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         grpDEbalance = grpDEbalance - float(calbalData["curbal"])
                         
