@@ -2498,10 +2498,10 @@ class api_reports(object):
                             continue
                         if calbalData["baltype"] == "Dr":
                             directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                            grpDEbalance = grpDEbalance + float(calbalData["curbal"])
                         if calbalData["baltype"] == "Cr":
                             directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpDEbalance = grpDEbalance - float(calbalData["curbal"])
+                            grpDEbalance = grpDEbalance - float(calbalData["curbal"])
                         
                 directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
                 result["Direct Expense"] = directExpense
