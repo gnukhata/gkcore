@@ -796,3 +796,28 @@ class api_organisation(object):
                 return {"gkstatus":enumdict["Success"],"gkbankdata":orgbankDetails}
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    '''
+    Purpose: Get groupcode of subgroup 'Duties & Taxes'
+    We have a default subgroup 'Duties & Taxes' under group 'Current Liabilities'.
+    All accounts for GST are created under this subgroup.
+    This function returns the groupcode of that subgroup so that front end can trigger creation of accounts.
+    '''
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='getgstgroupcode' , renderer='json')
+    def getGSTGroupCode(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.organisation.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                row = result.fetchone()
+                if(row["groupcode"]!=None):
+                    return {"gkstatus":enumdict["Success"],"groupcode":int(row["groupcode"])}
+                else:
+                    return {"gkstatus":  enumdict["ConnectionFailed"]}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
