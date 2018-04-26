@@ -861,9 +861,10 @@ class api_reports(object):
                                 crresultRow = crresult.fetchone()
                                 rcaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
                                 rcacc= ''.join(rcaccountname.fetchone())
-                                ttlRunDr += float(crresultRow["total"])
-                                rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
-                                rctotal += float(crresultRow["total"])
+                                if crresultRow["total"] != None:
+                                    ttlRunDr += float(crresultRow["total"])
+                                    rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
+                                    rctotal += float(crresultRow["total"])
                         for dr in transaction["drs"]:
                             if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
                                 pyaccountcodes.append(dr)
@@ -871,9 +872,11 @@ class api_reports(object):
                                 drresultRow = drresult.fetchone()
                                 pyaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
                                 pyacc= ''.join(pyaccountname.fetchone())
-                                ttlRunCr += float(drresultRow["total"])
-                                paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
-                                pytotal += float(drresultRow["total"])
+                                if drresultRow["total"]!=None:
+                                    ttlRunCr += float(drresultRow["total"])
+                                    paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
+                                    pytotal += float(drresultRow["total"])
+
                 receiptcf.extend(rctransactionsgrid)
                 paymentcf.extend(closinggrid)
                 if len(receiptcf)>len(paymentcf):
@@ -2420,7 +2423,7 @@ class api_reports(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
 
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
@@ -2471,8 +2474,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                               DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                               DESubBal = DESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         DESUBDict["balance"] = "%.2f"%(float(DESubBal))
                         # This is balance of main group 
@@ -2489,8 +2496,13 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Cr":
+                            directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpDEbalance = grpDEbalance - float(calbalData["curbal"])
+                        
                 directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
                 result["Direct Expense"] = directExpense
                 
@@ -2514,8 +2526,13 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DISubBal = DISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                DISubBal = DISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                DISubBal = DISubBal - float(calbalData["curbal"])
+                                
                         # This is balance of sub group
                         DISUBDict["balance"] = "%.2f"%(float(DISubBal))
                         # This is balance of main group 
@@ -2530,8 +2547,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                grpDIbalance = grpDIbalance - float(calbalData["curbal"])
                         else:
                             continue
                                 
@@ -2548,7 +2569,7 @@ class api_reports(object):
                     result["totalD"] =  "%.2f"%(float( grpDEbalance))
                     
                 ''' ################   Indirect Income & Indirect Expense  ################ '''
-                # Get all subgroups with their group code and group name under Group Direct Expense
+                # Get all subgroups with their group code and group name under Group Indirect Expense
                 IESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"%(orgcode,orgcode))
                 IESubGroups = IESubGroupsData.fetchall()
                 for IESub in IESubGroups:
@@ -2563,8 +2584,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,iesubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            IESubBal = IESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IESubBal = IESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                IESUBDict[iesubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                                IESubBal = IESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         IESUBDict["balance"] = "%.2f"%(float(IESubBal))
                         # This is balance of main group 
@@ -2581,8 +2606,12 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,ieAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"]== "Cr":
+                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIEbalance = grpIEbalance - float(calbalData["curbal"])
                 indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
                 result["Indirect Expense"] = indirectExpense
                 
@@ -2606,8 +2635,13 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,iisubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            IISubBal = IISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IISubBal = IISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IISubBal = IISubBal - float(calbalData["curbal"])
+
                         # This is balance of sub group
                         IISUBDict["balance"] = "%.2f"%(float(IISubBal))
                         # This is balance of main group 
@@ -2621,8 +2655,12 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,iiAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Cr":
+                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIIbalance = grpIIbalance - float(calbalData["curbal"])
                                 
                 indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
                 result["Indirect Income"] = indirectIncome
@@ -2646,9 +2684,9 @@ class api_reports(object):
                 return {"gkstatus":enumdict["Success"],"gkresult":result}
 
 
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+            #except:
+            #    self.con.close()
+            #    return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param='type=deletedvoucher', renderer='json')
     def getdeletedVoucher(self):
