@@ -1239,7 +1239,9 @@ class api_reports(object):
 
                 #Calculate Profit/Loss for the year
                 profit = 0
-                if (expenseTotal > incomeTotal):
+                exp = float("%.2f"%(expenseTotal))
+                incm = float("%.2f"%(incomeTotal))
+                if (exp > incm):
                     profit = expenseTotal - incomeTotal
                     groupWiseTotal -= profit
                     sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":"", "advflag":""})
@@ -1248,7 +1250,7 @@ class api_reports(object):
                     else:
                         sbalanceSheet.append({"groupAccname":"Deficit for the Year:","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2, "advflag":""})
 
-                if (expenseTotal < incomeTotal):
+                if (exp < incm):
                     profit = incomeTotal - expenseTotal
                     groupWiseTotal += profit
                     sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
@@ -1745,6 +1747,7 @@ class api_reports(object):
 
                 #Calculate Profit/Loss for the year
                 profit = 0.00
+                
                 if (expenseTotal > incomeTotal):
                     profit = expenseTotal - incomeTotal
                     sourcegroupWiseTotal -= profit
