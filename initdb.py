@@ -54,7 +54,7 @@ try:
         eng.execute("insert into state( statecode, statename, abbreviation)values(1, 'Jammu and Kashmir', 'JK')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(2, 'Himachal Pradesh', 'HP')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(3, 'Punjab', 'PB')")
-        eng.execute("insert into state( statecode, statename, abbreviation)values(4, 'Chandigarh', 'CG')")
+        eng.execute("insert into state( statecode, statename, abbreviation)values(4, 'Chandigarh', 'CH')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(5, 'Uttarakhand', 'UK')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(6, 'Haryana', 'HR')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(7, 'Delhi', 'DL')")
