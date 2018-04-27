@@ -2589,7 +2589,6 @@ class api_reports(object):
                                 IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                                 IESubBal = IESubBal + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Cr":
-                                print calbalData["curbal"]
                                 IESUBDict[iesubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                 IESubBal = IESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
