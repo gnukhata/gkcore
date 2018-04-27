@@ -823,3 +823,33 @@ class api_organisation(object):
                 self.con.close()
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    '''
+    Purpose: Get all accounts of group 'Current Liabilities' and subgroup 'Duties & Taxes' created for GST.
+    We have a default subgroup 'Duties & Taxes' under group 'Current Liabilities'.
+    All accounts for GST are created under this subgroup.
+    This function returns those accounts.
+    '''
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='getgstaccounts' , renderer='json')
+    def getGSTGaccounts(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                row = result.fetchone()
+                accounts=[]
+                if result.rowcount != 0 and row["groupcode"]!=None:
+                    accountsdata=self.con.execute(select([gkdb.accounts.c.accountname]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"], gkdb.accounts.c.groupcode == row["groupcode"])))
+                    accountslist = accountsdata.fetchall()
+                    for account in accountslist:
+                        accounts.append(account["accountname"])
+                    return {"gkstatus":enumdict["Success"],"accounts":accounts}
+                else:
+                    return {"gkstatus":  enumdict["ConnectionFailed"]}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
