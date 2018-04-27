@@ -798,10 +798,10 @@ class api_organisation(object):
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
 
     '''
-    Purpose: Get groupcode of subgroup 'Duties & Taxes'
+    Purpose: Get groupcode of group 'Current Liabilities' and subgroup 'Duties & Taxes'
     We have a default subgroup 'Duties & Taxes' under group 'Current Liabilities'.
     All accounts for GST are created under this subgroup.
-    This function returns the groupcode of that subgroup so that front end can trigger creation of accounts.
+    This function returns the groupcode of that group and subgroup so that front end can trigger creation of accounts.
     '''
     @view_config(route_name='organisation' , request_method='GET'  , request_param='getgstgroupcode' , renderer='json')
     def getGSTGroupCode(self):
@@ -812,12 +812,14 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.organisation.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                grOup = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Current Liabilities')))
+                grOupName = grOup.fetchone()
                 row = result.fetchone()
-                if(row["groupcode"]!=None):
-                    return {"gkstatus":enumdict["Success"],"groupcode":int(row["groupcode"])}
+                if result.rowcount != 0 and row["groupcode"]!=None:
+                    return {"gkstatus":enumdict["Success"],"subgroupcode":int(row["groupcode"]), "groupcode":int(grOupName["groupcode"])}
                 else:
-                    return {"gkstatus":  enumdict["ConnectionFailed"]}
+                    return {"gkstatus":enumdict["Success"],"subgroupcode":"New", "groupcode":int(grOupName["groupcode"])}
                 self.con.close()
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
