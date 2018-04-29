@@ -234,6 +234,7 @@ accounts = Table('accounts', metadata,
     Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
     Column('openingbal', Numeric(13,2),default=0.00),
     Column('vouchercount', Integer ,default=0),
+    Column('sysaccount', Integer ,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','accountname'),
     Index("accindex","orgcode","accountname")
