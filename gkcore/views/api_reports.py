@@ -2426,8 +2426,7 @@ class api_reports(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
-
+            try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
@@ -2435,7 +2434,6 @@ class api_reports(object):
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
-                #calculateTo = calculateTo
                 result = {}
                 grsD = 0.00
                 income = 0.00
@@ -2481,7 +2479,7 @@ class api_reports(object):
                                DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                                DESubBal = DESubBal + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Cr":
-                               DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                DESubBal = DESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         DESUBDict["balance"] = "%.2f"%(float(DESubBal))
@@ -2503,7 +2501,7 @@ class api_reports(object):
                             directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                             grpDEbalance = grpDEbalance + float(calbalData["curbal"])
                         if calbalData["baltype"] == "Cr":
-                            directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            directExpense[deAcc["accountname"]] = "%.2f"%(- float(calbalData["curbal"]))
                             grpDEbalance = grpDEbalance - float(calbalData["curbal"])
                         
                 directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
@@ -2533,7 +2531,7 @@ class api_reports(object):
                                 DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                                 DISubBal = DISubBal + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Dr":
-                                DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                DISUBDict[disubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                 DISubBal = DISubBal - float(calbalData["curbal"])
                                 
                         # This is balance of sub group
@@ -2554,7 +2552,7 @@ class api_reports(object):
                                 directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                                 grpDIbalance = grpDIbalance + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Dr":
-                                directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                directIncome[diAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                 grpDIbalance = grpDIbalance - float(calbalData["curbal"])
                         else:
                             continue
@@ -2613,7 +2611,7 @@ class api_reports(object):
                             indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                             grpIEbalance = grpIEbalance + float(calbalData["curbal"])
                         if calbalData["baltype"]== "Cr":
-                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                             grpIEbalance = grpIEbalance - float(calbalData["curbal"])
                 indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
                 result["Indirect Expense"] = indirectExpense
@@ -2642,7 +2640,7 @@ class api_reports(object):
                                 IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                                 IISubBal = IISubBal + float(calbalData["curbal"])
                             if calbalData["baltype"] == "Dr":
-                                IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IISUBDict[disubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                 IISubBal = IISubBal - float(calbalData["curbal"])
 
                         # This is balance of sub group
@@ -2662,7 +2660,7 @@ class api_reports(object):
                             indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                             grpIIbalance = grpIIbalance + float(calbalData["curbal"])
                         if calbalData["baltype"] == "Dr":
-                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                             grpIIbalance = grpIIbalance - float(calbalData["curbal"])
                                 
                 indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
@@ -2687,9 +2685,9 @@ class api_reports(object):
                 return {"gkstatus":enumdict["Success"],"gkresult":result}
 
 
-            #except:
-            #    self.con.close()
-            #    return {"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param='type=deletedvoucher', renderer='json')
     def getdeletedVoucher(self):
