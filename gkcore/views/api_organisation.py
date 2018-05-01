@@ -65,6 +65,8 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.state.c.abbreviation)]))
+            self.con.execute(select([func.count(gkdb.accounts.c.sysaccount)]))
             self.con.execute(select([func.count(gkdb.organisation.c.bankdetails)]))
             self.con.execute(select([func.count(gkdb.purchaseorder.c.purchaseordertotal)]))
             self.con.execute(select([func.count(gkdb.rejectionnote.c.rejprods)]))
@@ -99,6 +101,46 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table state add abbreviation text")
+            self.con.execute("update state set abbreviation='JK' where statecode=1")
+            self.con.execute("update state set abbreviation='HP' where statecode=2")
+            self.con.execute("update state set abbreviation='PB' where statecode=3")
+            self.con.execute("update state set abbreviation='CH' where statecode=4")
+            self.con.execute("update state set abbreviation='UK' where statecode=5")
+            self.con.execute("update state set abbreviation='HR' where statecode=6")
+            self.con.execute("update state set abbreviation='DL' where statecode=7")
+            self.con.execute("update state set abbreviation='RJ' where statecode=8")
+            self.con.execute("update state set abbreviation='UP' where statecode=9")
+            self.con.execute("update state set abbreviation='BR' where statecode=10")
+            self.con.execute("update state set abbreviation='SK' where statecode=11")
+            self.con.execute("update state set abbreviation='AR' where statecode=12")
+            self.con.execute("update state set abbreviation='NL' where statecode=13")
+            self.con.execute("update state set abbreviation='MN' where statecode=14")
+            self.con.execute("update state set abbreviation='MZ' where statecode=15")
+            self.con.execute("update state set abbreviation='TR' where statecode=16")
+            self.con.execute("update state set abbreviation='ML' where statecode=17")
+            self.con.execute("update state set abbreviation='AS' where statecode=18")
+            self.con.execute("update state set abbreviation='WB' where statecode=19")
+            self.con.execute("update state set abbreviation='JH' where statecode=20")
+            self.con.execute("update state set abbreviation='OR' where statecode=21")
+            self.con.execute("update state set abbreviation='CG' where statecode=22")
+            self.con.execute("update state set abbreviation='MP' where statecode=23")
+            self.con.execute("update state set abbreviation='GJ' where statecode=24")
+            self.con.execute("update state set abbreviation='DD' where statecode=25")
+            self.con.execute("update state set abbreviation='DH' where statecode=26")
+            self.con.execute("update state set abbreviation='MH' where statecode=27")
+            self.con.execute("update state set abbreviation='AP' where statecode=28")
+            self.con.execute("update state set abbreviation='KA' where statecode=29")
+            self.con.execute("update state set abbreviation='GA' where statecode=30")
+            self.con.execute("update state set abbreviation='LD' where statecode=31")
+            self.con.execute("update state set abbreviation='KL' where statecode=32")
+            self.con.execute("update state set abbreviation='TN' where statecode=33")
+            self.con.execute("update state set abbreviation='PY' where statecode=34")
+            self.con.execute("update state set abbreviation='AN' where statecode=35")
+            self.con.execute("update state set abbreviation='TS' where statecode=36")
+            self.con.execute("update state set abbreviation='AP' where statecode=37")
+            self.con.execute("alter table accounts add sysaccount integer default 0")
+            self.con.execute("update accounts set sysaccount=1 where accountname in ('Closing Stock', 'Opening Stock', 'Profit & Loss', 'Stock at the Beginning')")
             self.con.execute("alter table organisation add bankdetails json")
             self.con.execute("drop table purchaseorder cascade")
             self.con.execute("create table purchaseorder(orderid serial, orderno text not null, orderdate timestamp not null, creditperiod text, payterms text, modeoftransport text, issuername text, designation text, schedule jsonb, taxstate text, psflag integer not null, csid integer, togodown integer, taxflag integer default 22, tax jsonb, cess jsonb,purchaseordertotal numeric(13,2) not null, pototalwords text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 22, address text, orgcode integer not null, primary key(orderid), foreign key (csid) references customerandsupplier(custid) ON DELETE CASCADE, foreign key (togodown) references godown(goid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
@@ -343,7 +385,7 @@ class api_organisation(object):
                     result = self.con.execute(gkdb.groupsubgroups.insert(),currentliability)
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Liabilities",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcode = result.fetchone()
-                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
+                    result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Provisions","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Expense","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Creditors for Purchase","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Duties & Taxes","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]}])
 
                     # Create Direct expense group , get it's group code and create subgroups under it.
                     directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
@@ -395,20 +437,20 @@ class api_organisation(object):
                     if orgdata["orgtype"] == "Profit Making":
                         result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Capital","orgcode":orgcode["orgcode"]},{"groupname":"Miscellaneous Expenses(Asset)","orgcode":orgcode["orgcode"]}])
 
-                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Profit & Loss","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1})
 
                     else:
                         result = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Corpus","orgcode":orgcode["orgcode"]})
 
-                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+                        result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Income & Expenditure","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1})
 
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Inventory",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcode = result.fetchone()
-                    result = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                    result = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Closing Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1},{"accountname":"Stock at the Beginning","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1}])
 
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcode = result.fetchone()
-                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]})
+                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1})
 
 
 
@@ -794,5 +836,62 @@ class api_organisation(object):
                 orgbankDetails={"bankdetails":bankdetails}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkbankdata":orgbankDetails}
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    '''
+    Purpose: Get groupcode of group 'Current Liabilities' and subgroup 'Duties & Taxes'
+    We have a default subgroup 'Duties & Taxes' under group 'Current Liabilities'.
+    All accounts for GST are created under this subgroup.
+    This function returns the groupcode of that group and subgroup so that front end can trigger creation of accounts.
+    '''
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='getgstgroupcode' , renderer='json')
+    def getGSTGroupCode(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                grOup = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Current Liabilities')))
+                grOupName = grOup.fetchone()
+                row = result.fetchone()
+                if result.rowcount != 0 and row["groupcode"]!=None:
+                    return {"gkstatus":enumdict["Success"],"subgroupcode":int(row["groupcode"]), "groupcode":int(grOupName["groupcode"])}
+                else:
+                    return {"gkstatus":enumdict["Success"],"subgroupcode":"New", "groupcode":int(grOupName["groupcode"])}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    '''
+    Purpose: Get all accounts of group 'Current Liabilities' and subgroup 'Duties & Taxes' created for GST.
+    We have a default subgroup 'Duties & Taxes' under group 'Current Liabilities'.
+    All accounts for GST are created under this subgroup.
+    This function returns those accounts.
+    '''
+    @view_config(route_name='organisation' , request_method='GET'  , request_param='getgstaccounts' , renderer='json')
+    def getGSTGaccounts(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Duties & Taxes')))
+                row = result.fetchone()
+                accounts=[]
+                if result.rowcount != 0 and row["groupcode"]!=None:
+                    accountsdata=self.con.execute(select([gkdb.accounts.c.accountname]).where(and_(gkdb.accounts.c.orgcode==authDetails["orgcode"], gkdb.accounts.c.groupcode == row["groupcode"])))
+                    accountslist = accountsdata.fetchall()
+                    for account in accountslist:
+                        accounts.append(account["accountname"])
+                    return {"gkstatus":enumdict["Success"],"accounts":accounts}
+                else:
+                    return {"gkstatus":  enumdict["ConnectionFailed"]}
+                self.con.close()
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
