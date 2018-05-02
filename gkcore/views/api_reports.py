@@ -4161,7 +4161,7 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 #state = dataset["state"]
@@ -4176,8 +4176,10 @@ free replacement or sample are those which are excluded.
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
-                select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = 31); 
-                central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(orgcode,orgcode))
+                central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(authDetails["orgcode"]))
+                #central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(orgcode,orgcode))
+                c = central.fetchall()
+                print c
                 CGSTIn = taxAcc["cgstin"]
                 CGSTOut = taxAcc["cgstout"]
                 SGSTIn = taxAcc["sgstin"]
@@ -4330,10 +4332,10 @@ free replacement or sample are those which are excluded.
                     gstDict ["cesspayable"] = "%.2f"%(float(cessPayable))
 
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            #except:
+            #    return {"gkstatus":enumdict["ConnectionFailed"] }
+            #finally:
+            #    self.con.close()
 
             
                     
