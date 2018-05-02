@@ -101,6 +101,16 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            organisationsdata = self.con.execute(select([gkdb.organisation.c.orgcode]))
+            organisations = organisationdata.fetchall()
+            for orgcode in organisations:
+                try:
+                    groupdata = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"], gkdb.groupsubgroups.c.groupname == 'Current Liabilities')))
+                    groupCode = groupdata.fetchone()["groupcode"]
+                    subGroup = {"groupname":"Duties & Taxes", "subgroupof":groupCode, "orgcode":orgcode}
+                    self.con.execute(gkdb.groupsubgroups.insert(), [subGroup])
+                except:
+                    continue
             self.con.execute("alter table state add abbreviation text")
             self.con.execute("update state set abbreviation='JK' where statecode=1")
             self.con.execute("update state set abbreviation='HP' where statecode=2")
