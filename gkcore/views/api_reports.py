@@ -4164,15 +4164,20 @@ free replacement or sample are those which are excluded.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                #state = dataset["state"]
+                # Get abbreviation of state
+                #stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == state))
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                taxAcc = dataset["taxData"]
+                #taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
+                select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = 31); 
+                central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(orgcode,orgcode))
                 CGSTIn = taxAcc["cgstin"]
                 CGSTOut = taxAcc["cgstout"]
                 SGSTIn = taxAcc["sgstin"]
