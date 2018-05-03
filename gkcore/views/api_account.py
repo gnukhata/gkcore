@@ -184,9 +184,9 @@ class api_account(object):
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
                     grprow = resultset.fetchone()
                     if grprow["groupcode"]==grprow["subgroupcode"]:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":""})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"]})
                     else:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"]})
                     srno = srno+1
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":accs}
