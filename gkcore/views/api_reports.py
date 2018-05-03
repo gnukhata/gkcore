@@ -4164,14 +4164,14 @@ free replacement or sample are those which are excluded.
             #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                stateD = "Maharashtra"
+                stateD = dataset["statename"]
                 # Get abbreviation of state
                 stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == stateD))
                 stateABV = stateA.fetchone()
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                taxAcc = dataset["taxData"]
+                #taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
@@ -4181,14 +4181,14 @@ free replacement or sample are those which are excluded.
                 grpCode = grp.fetchone()
                 print grpCode
                 
-                CGSTIn = taxAcc["cgstin"]
-                CGSTOut = taxAcc["cgstout"]
-                SGSTIn = taxAcc["sgstin"]
-                SGSTOut = taxAcc["sgstout"]
-                IGSTIn = taxAcc["igstin"]
-                IGSTOut = taxAcc["igstout"]
-                CESSIn = taxAcc["cessin"]
-                CESSOut = taxAcc["cessout"]
+                cgstin = "CGSTIN_"+stateABV["abbreviation"]
+                cgstout = "CGSTOUT_"+stateABV["abbreviation"]
+                sgstin = "SGSTIN_"+stateABV["abbreviation"]
+                sgstout = "SGSTOUT_"+stateABV["abbreviation"]
+                igstin = "IGSTIN_"+stateABV["abbreviation"]
+                igstout = "igstout_"+stateABV["abbreviation"]
+                cessin = "cessin_"+stateABV["abbreviation"]
+                cessout = "cessout_"+stateABV["abbreviation"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
@@ -4210,7 +4210,10 @@ free replacement or sample are those which are excluded.
                 cessPayable = 0.00
                 cessCrdFwd = 0.00
                 gstDict = {}
-
+                
+                cIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CGSTIn = cIN.fetchall()
+                print CGSTIn
                 cgstin = {}
                 for cin in CGSTIn:
                     calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
@@ -4253,8 +4256,6 @@ free replacement or sample are those which are excluded.
                 if SGSTIn != None:
                     for sin in SGSTIn:
                         calbalData = calculateBalance(self.con,sin["accountcode"], financialStart, startDate, endDate)
-                        #accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
-                        #accName = accN.fetchone()
                         sgstin[sin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
                         totalSGSTIn = totalSGSTIn + calbalData["curbal"]
                     # Populate dictionary to be returned with cgstin and total values
