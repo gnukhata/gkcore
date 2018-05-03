@@ -34,7 +34,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
@@ -4164,22 +4164,23 @@ free replacement or sample are those which are excluded.
             #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                #state = dataset["state"]
+                stateD = "Maharashtra"
                 # Get abbreviation of state
-                #stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == state))
+                stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == stateD))
+                stateABV = stateA.fetchone()
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                #taxAcc = dataset["taxData"]
+                taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
-                central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(authDetails["orgcode"]))
-                #central = self.con.execute("select accountcode,accountname from accounts where accountname LIKE 'SGSTIN_MH%' and groupcode = (select groupcode from groupsubgroups where groupname = 'Duties & Taxes' and orgcode = %d)"%(orgcode,orgcode))
-                c = central.fetchall()
-                print c
+                grp = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == 'Duties & Taxes',groupsubgroups.c.orgcode == authDetails["orgcode"])))
+                grpCode = grp.fetchone()
+                print grpCode
+                
                 CGSTIn = taxAcc["cgstin"]
                 CGSTOut = taxAcc["cgstout"]
                 SGSTIn = taxAcc["sgstin"]
@@ -4241,19 +4242,27 @@ free replacement or sample are those which are excluded.
                 else:
                     cgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["cgstpayable"] = "%.2f"%(float(cgstPayable))
-
+                
                 # For state tax
+                sgstin = "SGSTIN_"+ stateABV["abbreviation"]
+                print sgstin
+                sIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTIn = sIN.fetchall()
+                print SGSTIn
                 sgstin = {}
-                for sin in SGSTIn:
-                    calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
-                    accName = accN.fetchone()
-                    sgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalSGSTIn = totalSGSTIn + calbalData["curbal"]
-                # Populate dictionary to be returned with cgstin and total values
-                gstDict["sgstin"] = sgstin
-                gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
+                if SGSTIn != None:
+                    for sin in SGSTIn:
+                        calbalData = calculateBalance(self.con,sin["accountcode"], financialStart, startDate, endDate)
+                        #accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
+                        #accName = accN.fetchone()
+                        sgstin[sin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalSGSTIn = totalSGSTIn + calbalData["curbal"]
+                    # Populate dictionary to be returned with cgstin and total values
+                    gstDict["sgstin"] = sgstin
+                    gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
 
+                sOUT = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountname.like('SGSTOUT%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTIn = sIN.fetchall()
                 sgstout = {}
                 for sout in SGSTOut:
                     calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
