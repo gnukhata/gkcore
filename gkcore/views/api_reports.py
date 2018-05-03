@@ -4161,7 +4161,7 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 stateD = dataset["statename"]
@@ -4171,7 +4171,6 @@ free replacement or sample are those which are excluded.
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                #taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
@@ -4179,10 +4178,9 @@ free replacement or sample are those which are excluded.
                 #get list of accountCodes for each type of taxes for their input and output taxes.
                 grp = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == 'Duties & Taxes',groupsubgroups.c.orgcode == authDetails["orgcode"])))
                 grpCode = grp.fetchone()
-                print grpCode
-                
+
+                #Create string which has taxname with state abbreviation for selecting accounts 
                 Cgstin = "CGSTIN_"+stateABV["abbreviation"]
-                print Cgstin
                 cgstout = "CGSTOUT_"+stateABV["abbreviation"]
                 sgstin = "SGSTIN_"+stateABV["abbreviation"]
                 sgstout = "SGSTOUT_"+stateABV["abbreviation"]
@@ -4214,7 +4212,6 @@ free replacement or sample are those which are excluded.
                 
                 cIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(Cgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CGSTIn = cIN.fetchall()
-                print CGSTIn
                 cgstin = {}
                 if CGSTIn != None:
                     for cin in CGSTIn:
@@ -4230,7 +4227,6 @@ free replacement or sample are those which are excluded.
                 cOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cgstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CGSTOut = cOUT.fetchall()
                 cgstout = {}
-                print CGSTOut
                 if CGSTOut != None:
                     for cout in CGSTOut:
                         calbalData = calculateBalance(self.con,cout["accountcode"], financialStart, startDate, endDate)
@@ -4250,7 +4246,6 @@ free replacement or sample are those which are excluded.
                 # For state tax
                 sIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 SGSTIn = sIN.fetchall()
-                print SGSTIn
                 sgstin = {}
                 if SGSTIn != None:
                     for sin in SGSTIn:
@@ -4314,8 +4309,6 @@ free replacement or sample are those which are excluded.
                 # For cess tax
                 csIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CESSIn = csIN.fetchall()
-                print CESSIn
-                print cessin
                 cssin = {}
                 for csin in CESSIn:
                     calbalData = calculateBalance(self.con,csin["accountcode"], financialStart, startDate, endDate)
@@ -4326,7 +4319,6 @@ free replacement or sample are those which are excluded.
 
                 csOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CESSOut = csOUT.fetchall()
-                print CESSOut
                 cssout = {}
                 for csout in CESSOut:
                     calbalData = calculateBalance(self.con,csout["accountcode"], financialStart, startDate, endDate)
@@ -4344,10 +4336,10 @@ free replacement or sample are those which are excluded.
                     gstDict ["cesspayable"] = "%.2f"%(float(cessPayable))
 
                 return {"gkstatus":enumdict["Success"], "gkresult":gstDict}
-            #except:
-            #    return {"gkstatus":enumdict["ConnectionFailed"] }
-            #finally:
-            #    self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
             
                     
