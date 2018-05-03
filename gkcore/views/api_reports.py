@@ -4134,7 +4134,7 @@ free replacement or sample are those which are excluded.
         takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
         Returns list of accounts with their closing balances.
         Description:
-        This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
+        This API will return list of all accounts for input and output side created by the user for GST calculation.
         The function takes json_body which will have 8 key: value pares.
         Each  key denoting the tax and value will be list of accounts.
         The keys of this json_body will be as follows.
