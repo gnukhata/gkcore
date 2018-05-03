@@ -4281,20 +4281,22 @@ free replacement or sample are those which are excluded.
                 iIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 IGSTIn = iIN.fetchall()
                 igstin = {}
-                for iin in IGSTIn:
-                    calbalData = calculateBalance(self.con,iin["accountcode"], financialStart, startDate, endDate)
-                    igstin[iin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTIn = totalIGSTIn + calbalData["curbal"]
+                if IGSTIn != None:
+                    for iin in IGSTIn:
+                        calbalData = calculateBalance(self.con,iin["accountcode"], financialStart, startDate, endDate)
+                        igstin[iin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTIn = totalIGSTIn + calbalData["curbal"]
                 gstDict["igstin"] = igstin
                 gstDict["totalIGSTIn"] = "%.2f"%(float(totalIGSTIn))
 
                 iOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 IGSTOut = iOUT.fetchall()
                 igstout = {}
-                for iout in IGSTOut:
-                    calbalData = calculateBalance(self.con,iout["accountcode"], financialStart, startDate, endDate)
-                    igstout[iout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTOut = totalIGSTOut + calbalData["curbal"]
+                if IGSTOut !=None:
+                    for iout in IGSTOut:
+                        calbalData = calculateBalance(self.con,iout["accountcode"], financialStart, startDate, endDate)
+                        igstout[iout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTOut = totalIGSTOut + calbalData["curbal"]
                 gstDict["igstout"] = igstout
                 gstDict["totalIGSTOut"] ="%.2f"%(float(totalIGSTOut))
 
@@ -4310,20 +4312,22 @@ free replacement or sample are those which are excluded.
                 csIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CESSIn = csIN.fetchall()
                 cssin = {}
-                for csin in CESSIn:
-                    calbalData = calculateBalance(self.con,csin["accountcode"], financialStart, startDate, endDate)
-                    cssin[csin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSIn = totalCESSIn + calbalData["curbal"]
+                if CESSIn != None:
+                    for csin in CESSIn:
+                        calbalData = calculateBalance(self.con,csin["accountcode"], financialStart, startDate, endDate)
+                        cssin[csin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSIn = totalCESSIn + calbalData["curbal"]
                 gstDict["cessin"] = cssin
                 gstDict["totalCESSIn"] = "%.2f"%(float(totalCESSIn))
 
                 csOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
                 CESSOut = csOUT.fetchall()
                 cssout = {}
-                for csout in CESSOut:
-                    calbalData = calculateBalance(self.con,csout["accountcode"], financialStart, startDate, endDate)
-                    cssout[csout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSOut = totalCESSOut + calbalData["curbal"]
+                if CESSOut != None:
+                    for csout in CESSOut:
+                        calbalData = calculateBalance(self.con,csout["accountcode"], financialStart, startDate, endDate)
+                        cssout[csout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSOut = totalCESSOut + calbalData["curbal"]
                 gstDict["cessout"] = cssout
                 gstDict["totalCESSOut"] ="%.2f"%(float(totalCESSOut))
 
