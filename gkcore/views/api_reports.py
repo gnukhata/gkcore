@@ -34,7 +34,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
@@ -4134,7 +4134,7 @@ free replacement or sample are those which are excluded.
         takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
         Returns list of accounts with their closing balances.
         Description:
-        This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
+        This API will return list of all accounts for input and output side created by the user for GST calculation.
         The function takes json_body which will have 8 key: value pares.
         Each  key denoting the tax and value will be list of accounts.
         The keys of this json_body will be as follows.
@@ -4164,23 +4164,30 @@ free replacement or sample are those which are excluded.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                stateD = dataset["statename"]
+                # Get abbreviation of state
+                stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == stateD))
+                stateABV = stateA.fetchone()
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
-                CGSTIn = taxAcc["cgstin"]
-                CGSTOut = taxAcc["cgstout"]
-                SGSTIn = taxAcc["sgstin"]
-                SGSTOut = taxAcc["sgstout"]
-                IGSTIn = taxAcc["igstin"]
-                IGSTOut = taxAcc["igstout"]
-                CESSIn = taxAcc["cessin"]
-                CESSOut = taxAcc["cessout"]
+                grp = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == 'Duties & Taxes',groupsubgroups.c.orgcode == authDetails["orgcode"])))
+                grpCode = grp.fetchone()
+
+                #Create string which has taxname with state abbreviation for selecting accounts 
+                Cgstin = "CGSTIN_"+stateABV["abbreviation"]
+                cgstout = "CGSTOUT_"+stateABV["abbreviation"]
+                sgstin = "SGSTIN_"+stateABV["abbreviation"]
+                sgstout = "SGSTOUT_"+stateABV["abbreviation"]
+                igstin = "IGSTIN_"+stateABV["abbreviation"]
+                igstout = "IGSTOUT_"+stateABV["abbreviation"]
+                cessin = "CESSIN_"+stateABV["abbreviation"]
+                cessout = "CESSOUT_"+stateABV["abbreviation"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
@@ -4202,28 +4209,29 @@ free replacement or sample are those which are excluded.
                 cessPayable = 0.00
                 cessCrdFwd = 0.00
                 gstDict = {}
-
+                
+                cIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(Cgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CGSTIn = cIN.fetchall()
                 cgstin = {}
-                for cin in CGSTIn:
-                    calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
-                    # get account name from accountcode.
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
-                    accName = accN.fetchone()
-                    #fill dictionary with account name and its balance.
-                    cgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    # calculate total cgst in amount by adding balance of each account in every iteration.
-                    totalCGSTIn = totalCGSTIn + calbalData["curbal"]
+                if CGSTIn != None:
+                    for cin in CGSTIn:
+                        calbalData = calculateBalance(self.con,cin["accountcode"], financialStart, startDate, endDate)
+                        #fill dictionary with account name and its balance.
+                        cgstin[cin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        # calculate total cgst in amount by adding balance of each account in every iteration.
+                        totalCGSTIn = totalCGSTIn + calbalData["curbal"]
                 # Populate dictionary to be returned with cgstin and total values
                 gstDict["cgstin"] = cgstin
                 gstDict["totalCGSTIn"] = "%.2f"%(float(totalCGSTIn))
 
+                cOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cgstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CGSTOut = cOUT.fetchall()
                 cgstout = {}
-                for cout in CGSTOut:
-                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
-                    accName = accN.fetchone()
-                    cgstout[accName["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
-                    totalCGSTOut = totalCGSTOut + calbalData["curbal"]
+                if CGSTOut != None:
+                    for cout in CGSTOut:
+                        calbalData = calculateBalance(self.con,cout["accountcode"], financialStart, startDate, endDate)
+                        cgstout[cout["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
+                        totalCGSTOut = totalCGSTOut + calbalData["curbal"]
                 gstDict["cgstout"] = cgstout
                 gstDict["totalCGSTOut"] ="%.2f"%(float(totalCGSTOut))
 
@@ -4234,26 +4242,28 @@ free replacement or sample are those which are excluded.
                 else:
                     cgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["cgstpayable"] = "%.2f"%(float(cgstPayable))
-
+                
                 # For state tax
+                sIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTIn = sIN.fetchall()
                 sgstin = {}
-                for sin in SGSTIn:
-                    calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
-                    accName = accN.fetchone()
-                    sgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalSGSTIn = totalSGSTIn + calbalData["curbal"]
-                # Populate dictionary to be returned with cgstin and total values
-                gstDict["sgstin"] = sgstin
-                gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
+                if SGSTIn != None:
+                    for sin in SGSTIn:
+                        calbalData = calculateBalance(self.con,sin["accountcode"], financialStart, startDate, endDate)
+                        sgstin[sin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalSGSTIn = totalSGSTIn + calbalData["curbal"]
+                    # Populate dictionary to be returned with cgstin and total values
+                    gstDict["sgstin"] = sgstin
+                    gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
 
+                sOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTOut = sOUT.fetchall()
                 sgstout = {}
-                for sout in SGSTOut:
-                    calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
-                    accName = accN.fetchone()
-                    sgstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalSGSTOut = totalSGSTOut + calbalData["curbal"]
+                if SGSTOut != None:
+                    for sout in SGSTOut:
+                        calbalData = calculateBalance(self.con,sout["accountcode"], financialStart, startDate, endDate)
+                        sgstout[sout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalSGSTOut = totalSGSTOut + calbalData["curbal"]
                 gstDict["sgstout"] = sgstout
                 gstDict["totalSGSTOut"] ="%.2f"%(float(totalSGSTOut))
 
@@ -4267,23 +4277,26 @@ free replacement or sample are those which are excluded.
                     gstDict ["sgstpayable"] = "%.2f"%(float(sgstPayable))
 
                 # For Inter state tax
+                
+                iIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                IGSTIn = iIN.fetchall()
                 igstin = {}
-                for iin in IGSTIn:
-                    calbalData = calculateBalance(self.con,iin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iin)))
-                    accName = accN.fetchone()
-                    igstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTIn = totalIGSTIn + calbalData["curbal"]
+                if IGSTIn != None:
+                    for iin in IGSTIn:
+                        calbalData = calculateBalance(self.con,iin["accountcode"], financialStart, startDate, endDate)
+                        igstin[iin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTIn = totalIGSTIn + calbalData["curbal"]
                 gstDict["igstin"] = igstin
                 gstDict["totalIGSTIn"] = "%.2f"%(float(totalIGSTIn))
-                
+
+                iOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                IGSTOut = iOUT.fetchall()
                 igstout = {}
-                for iout in IGSTOut:
-                    calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
-                    accName = accN.fetchone()
-                    igstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTOut = totalIGSTOut + calbalData["curbal"]
+                if IGSTOut !=None:
+                    for iout in IGSTOut:
+                        calbalData = calculateBalance(self.con,iout["accountcode"], financialStart, startDate, endDate)
+                        igstout[iout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTOut = totalIGSTOut + calbalData["curbal"]
                 gstDict["igstout"] = igstout
                 gstDict["totalIGSTOut"] ="%.2f"%(float(totalIGSTOut))
 
@@ -4296,23 +4309,25 @@ free replacement or sample are those which are excluded.
                     gstDict["IgstPayable"] = "%.2f"%(float(igstPayable))
 
                 # For cess tax
+                csIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CESSIn = csIN.fetchall()
                 cssin = {}
-                for csin in CESSIn:
-                    calbalData = calculateBalance(self.con,csin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csin)))
-                    accName = accN.fetchone()
-                    cssin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSIn = totalCESSIn + calbalData["curbal"]
+                if CESSIn != None:
+                    for csin in CESSIn:
+                        calbalData = calculateBalance(self.con,csin["accountcode"], financialStart, startDate, endDate)
+                        cssin[csin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSIn = totalCESSIn + calbalData["curbal"]
                 gstDict["cessin"] = cssin
                 gstDict["totalCESSIn"] = "%.2f"%(float(totalCESSIn))
 
+                csOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CESSOut = csOUT.fetchall()
                 cssout = {}
-                for csout in CESSOut:
-                    calbalData = calculateBalance(self.con,csout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
-                    accName = accN.fetchone()
-                    cssout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSOut = totalCESSOut + calbalData["curbal"]
+                if CESSOut != None:
+                    for csout in CESSOut:
+                        calbalData = calculateBalance(self.con,csout["accountcode"], financialStart, startDate, endDate)
+                        cssout[csout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSOut = totalCESSOut + calbalData["curbal"]
                 gstDict["cessout"] = cssout
                 gstDict["totalCESSOut"] ="%.2f"%(float(totalCESSOut))
 
