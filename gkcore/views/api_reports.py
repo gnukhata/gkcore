@@ -38,7 +38,7 @@ from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, org
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , alias, or_, exc, distinct
+from sqlalchemy import and_ , alias, or_, exc, distinct,desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -3705,11 +3705,19 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
+                if self.request.params.has_key('orderflag'):
+                    print int(self.request.params["orderflag"])
+                    if int(self.request.params["orderflag"])==4:
+                        print "if"
+                        result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                        result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
+                print "class"
                 logdata = []
                 for row in result:
+                    print row
                     userdata = self.con.execute(select([users.c.username, users.c.userrole]).where(users.c.userid==row["userid"]))
                     rowuser = userdata.fetchone()
                     if rowuser["userrole"] == -1:
@@ -3723,10 +3731,11 @@ class api_reports(object):
                     else:
                         userrole = "Godown In Charge"
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
-                return {"gkstatus":enumdict["Success"], "gkresult":logdata }
-            except:
+                
+                return {"gkstatus":enumdict["Success"], "gkresult":logdata}
+            #except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
+            #finally:
                 self.con.close()
 
     @view_config(request_param='type=logbyuser', renderer='json')
