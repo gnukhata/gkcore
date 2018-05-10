@@ -413,7 +413,10 @@ class api_organisation(object):
                     DEGRPCode = DEGrpCodeData["groupcode"]
                     DESubGroups = [{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}]
                     insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}])
- 
+                    purchgrp = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Purchase", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                    purchgrpcd = purchgrp.fetchone()
+                    resultp = self.con.execute(gkdb.accounts.insert(),{"accountname":"Purchase A/C","groupcode":purchgrpcd["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":16})
+                    
                     directincome= {"groupname":"Direct Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),directincome)
                     results = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Income", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
