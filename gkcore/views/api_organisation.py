@@ -474,9 +474,7 @@ class api_organisation(object):
 
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcode = result.fetchone()
-                    result = self.con.execute(gkdb.accounts.insert(),{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1})
-
-
+                    result = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Opening Stock","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"], "sysaccount":1},{"accountname":"Salary","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Miscellaneous Expense","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bank Charges","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Rent","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Travel Expense","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Electricity Expense","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Professional Fees","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"]}]
 
                     userdata["orgcode"] = orgcode["orgcode"]
                     userdata["userrole"] = -1
