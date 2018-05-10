@@ -103,7 +103,6 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
             self.con.execute("alter table accounts add defaultflag integer default 0")
-            
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             for orgcode in organisations:
                 try:
