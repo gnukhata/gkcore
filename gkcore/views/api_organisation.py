@@ -434,9 +434,15 @@ class api_organisation(object):
 
                     indirectexpense= {"groupname":"Indirect Expense","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),indirectexpense)
-
+                    resultie = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    iegrpcd = resultie.fetchone()
+                    resultDP = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount on Purchase","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
+                    
                     indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
+                    resultii = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    iigrpcd = resultii.fetchone()
+                    resultDS = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount on Sale","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
 
                     investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
