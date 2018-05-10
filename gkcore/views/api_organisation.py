@@ -391,6 +391,13 @@ class api_organisation(object):
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Current Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcode = result.fetchone()
                     result = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Bank","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Cash","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Inventory","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Loans & Advance","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]},{"groupname":"Sundry Debtors","orgcode":orgcode["orgcode"],"subgroupof":grpcode["groupcode"]} ])
+                    # Create account Cash in hand under subgroup Cash & Bank A/C under Bank.
+                    csh = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Cash",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    cshgrpcd = csh.fetchone()
+                    resultc = self.con.execute(gkdb.accounts.insert(),{"accountname":"Cash in hand","groupcode":cshgrpcd["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":3})
+                    bnk = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Bank",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    bnkgrpcd = bnk.fetchone()
+                    resultb = self.con.execute(gkdb.accounts.insert(),{"accountname":"Bank A/C","groupcode":bnkgrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":2})
 
                     currentliability= {"groupname":"Current Liabilities","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),currentliability)
