@@ -422,7 +422,10 @@ class api_organisation(object):
                     results = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Income", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
                     DIGrpCodeData = results.fetchone()
                     insData = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Sales","subgroupof":DIGrpCodeData["groupcode"],"orgcode":orgcode["orgcode"]})
-
+                    slgrp = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Sales", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                    slgrpcd = purchgrp.fetchone()
+                    resultsl = self.con.execute(gkdb.accounts.insert(),{"accountname":"Sale A/C","groupcode":purchgrpcd["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":19})
+                    
                     fixedassets= {"groupname":"Fixed Assets","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),fixedassets)
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Fixed Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
