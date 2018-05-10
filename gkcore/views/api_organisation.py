@@ -65,6 +65,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.accounts.c.defaultflag)]))
             self.con.execute(select([func.count(gkdb.state.c.abbreviation)]))
             self.con.execute(select([func.count(gkdb.accounts.c.sysaccount)]))
             self.con.execute(select([func.count(gkdb.organisation.c.bankdetails)]))
@@ -101,6 +102,8 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table accounts add defaultflag integer default 0")
+            
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             for orgcode in organisations:
                 try:
