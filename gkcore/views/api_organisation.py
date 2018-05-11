@@ -350,7 +350,7 @@ class api_organisation(object):
     @view_config(request_method='POST',renderer='json')
     def postOrg(self):
 
-       # try:
+        try:
             self.con = eng.connect()
             dataset = self.request.json_body
             orgdata = dataset["orgdetails"]
@@ -441,13 +441,13 @@ class api_organisation(object):
                 result = self.con.execute(gkdb.groupsubgroups.insert(),indirectexpense)
                 resultie = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                 iegrpcd = resultie.fetchone()
-                resultDP = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount on Purchase","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bonus","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Depreciation Expense","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
+                resultDP = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount on Sale","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bonus","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Depreciation Expense","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
 
                 indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
                 result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
                 resultii = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                 iigrpcd = resultii.fetchone()
-                resultDS = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount on Sale","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
+                resultDS = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount on Purchase","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
 
                 investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
                 result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
@@ -505,16 +505,16 @@ class api_organisation(object):
                 else:
                         self.con.close()
                         return {"gkstatus":enumdict["ConnectionFailed"]}
-                #except:
-                 #   result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==orgcode["orgcode"]))
-                  #  self.con.close()
-                  #  return {"gkstatus":enumdict["ConnectionFailed"]}
+                except:
+                    result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==orgcode["orgcode"]))
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"]}
             else:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-        #except:
-        #    self.con.close()
-        #    return {"gkstatus":enumdict["ConnectionFailed"]}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(route_name='organisation', request_method='GET',renderer='json')
     def getOrg(self):
