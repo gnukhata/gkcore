@@ -226,7 +226,10 @@ customerandsupplier = Table('customerandsupplier',metadata,
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
 So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
-the groupcode to with it belongs."""
+the groupcode to with it belongs.
+defaultflag is for setting the account as default for certain transactions.
+so defaultflag can be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
+"""
 
 accounts = Table('accounts', metadata,
     Column('accountcode',Integer, primary_key=True ),
@@ -235,6 +238,7 @@ accounts = Table('accounts', metadata,
     Column('openingbal', Numeric(13,2),default=0.00),
     Column('vouchercount', Integer ,default=0),
     Column('sysaccount', Integer ,default=0),
+    Column('defaultflag', Integer,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','accountname'),
     Index("accindex","orgcode","accountname")
