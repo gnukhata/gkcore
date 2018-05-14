@@ -3696,6 +3696,8 @@ class api_reports(object):
         description:
         This function returns entire log statement for a given organisation.
         Date range is taken from client and orgcode from authdetails.
+        The value of orderflag is 4 for descending.
+        If orderflag is 4 date is return in descending order otherwise in ascending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -3705,19 +3707,14 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 if self.request.params.has_key('orderflag'):
-                    print int(self.request.params["orderflag"])
-                    if int(self.request.params["orderflag"])==4:
-                        print "if"
-                        result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
                 else:
                         result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
-                print "class"
                 logdata = []
                 for row in result:
-                    print row
                     userdata = self.con.execute(select([users.c.username, users.c.userrole]).where(users.c.userid==row["userid"]))
                     rowuser = userdata.fetchone()
                     if rowuser["userrole"] == -1:
@@ -3733,9 +3730,9 @@ class api_reports(object):
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
                 
                 return {"gkstatus":enumdict["Success"], "gkresult":logdata}
-            #except:
+            except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
-            #finally:
+            finally:
                 self.con.close()
 
     @view_config(request_param='type=logbyuser', renderer='json')
@@ -3754,7 +3751,10 @@ All parameter are same with the addition of userid.
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])))
+                if self.request.params.has_key('orderflag'):
+                    result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
                 logdata = []
                 for row in result:
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
