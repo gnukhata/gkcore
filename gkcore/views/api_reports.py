@@ -3696,7 +3696,6 @@ class api_reports(object):
         description:
         This function returns entire log statement for a given organisation.
         Date range is taken from client and orgcode from authdetails.
-        The value of orderflag is 4 for descending.
         If orderflag is 4 date is return in descending order otherwise in ascending order.
         """
         try:

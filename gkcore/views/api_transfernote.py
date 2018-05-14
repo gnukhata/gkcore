@@ -250,6 +250,7 @@ class api_transfernote(object):
         The result will be a list of dictionaries.
         Each dictionary will have hey value pairs as illustrated below :-
         {""transfernoteno": transfernote no,"transfernoteid": transfernote id, "transfernotedate":transfernote date,"fromgodown":name and address of godown from which goods are dispatched,"togodown":name and address of godown to which goods are dispatched, "products":details of products,"status": Received/Pending}"}
+        If orderflag is 4 date is return in descending order otherwise in ascending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -259,16 +260,21 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 startDate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 if self.request.params.has_key("goid"):
                     tngodown = int(self.request.params["goid"])
-                    result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(transfernote.c.transfernotedate))
+                    if self.request.params.has_key('orderflag'):
+                        result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(desc(transfernote.c.transfernotedate)))
+                    else:
+                        result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(transfernote.c.transfernotedate))
                 else:
-                    result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(transfernote.c.transfernotedate))
-
+                    if self.request.params.has_key('orderflag'):
+                        result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(desc(transfernote.c.transfernotedate)))
+                    else:
+                        result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(transfernote.c.transfernotedate))
                 tn = []
                 srno = 1
                 for row in result:
@@ -290,10 +296,10 @@ class api_transfernote(object):
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
-            except:
+            #except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
+            #finally:
                 self.con.close()
 
     @view_config(request_param='received=true',request_method='PUT', renderer='json')
