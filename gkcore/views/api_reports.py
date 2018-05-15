@@ -3696,7 +3696,8 @@ class api_reports(object):
         description:
         This function returns entire log statement for a given organisation.
         Date range is taken from client and orgcode from authdetails.
-        If orderflag is 4 date is return in descending order otherwise in ascending order.
+        Date sorted according to orderflag.
+        If request params has orderflag then date sorted in descending order otherwise in ascending order.
         """
         try:
             token = self.request.headers["gktoken"]
