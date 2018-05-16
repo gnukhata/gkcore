@@ -266,12 +266,12 @@ class api_transfernote(object):
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 if self.request.params.has_key("goid"):
                     tngodown = int(self.request.params["goid"])
-                    if self.request.params.has_key('orderflag'):
+                    if "orderflag" in self.request.params:
                         result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(desc(transfernote.c.transfernotedate)))
                     else:
                         result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(transfernote.c.transfernotedate))
                 else:
-                    if self.request.params.has_key('orderflag'):
+                    if "orderflag" in self.request.params:
                         result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(desc(transfernote.c.transfernotedate)))
                     else:
                         result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate)).order_by(transfernote.c.transfernotedate))
