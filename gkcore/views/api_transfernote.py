@@ -260,7 +260,7 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 startDate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
@@ -296,10 +296,10 @@ class api_transfernote(object):
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":tn}
-            #except:
+            except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
+            finally:
                 self.con.close()
 
     @view_config(request_param='received=true',request_method='PUT', renderer='json')
