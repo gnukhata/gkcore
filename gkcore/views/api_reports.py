@@ -51,6 +51,7 @@ from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 from natsort import natsorted
+from sqlalchemy import func, desc
 """
 purpose:
 This class is the resource to generate reports,
@@ -2733,7 +2734,10 @@ class api_reports(object):
                 userrole = user.fetchone()
                 vouchers = []
                 if userrole[0] == -1:
-                    voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(voucherbin.c.voucherdate,voucherbin.c.vouchercode))
+                    if "orderflag" in self.request.params:
+                        voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(desc(voucherbin.c.voucherdate),voucherbin.c.vouchercode))
+                    else:
+                        voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(voucherbin.c.voucherdate,voucherbin.c.vouchercode))
                     voucherData = voucherRow.fetchall()
                     for voucher in voucherData:
                         vouchers.append({"vouchercode": voucher["vouchercode"], "vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})
