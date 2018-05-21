@@ -1192,7 +1192,7 @@ The bills grid calld gkresult will return a list as it's value.
                 self.con.close()
 
 
-    def getDefaultAcc(self,queryParams):
+    def getDefaultAcc(self,queryParams,orgcode):
         try:
             """
             Purpose: Returns default accounts.
@@ -1201,24 +1201,14 @@ The bills grid calld gkresult will return a list as it's value.
             Tax Type = GST :7(As default) or 22:VAT
             if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected. 
             """
-            token = self.request.headers['gktoken']
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                invTyp = dataset["invoicetype"]
-                pymtMd = dataset["paymentmode"]
+            self.con = eng.connect()
+            dictAccCodes = {}
+            #first check the invoice type.
+            if int(queryParams["invtype"]) == 19:
+                salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                salesRow = salesAccount.fetchone()
+                dictAccCodes["CrAccount"] = salesRow["accountcode"]
 
-                if dataset["taxtype"] == 7:
-                    print "gst"
-                    
-                if dataset["taxtype"] == 22:
-                    print "Vat type"
                 
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
