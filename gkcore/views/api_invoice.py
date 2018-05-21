@@ -1195,7 +1195,11 @@ The bills grid calld gkresult will return a list as it's value.
     def getDefaultAcc(self):
         try:
             """
-            Purpose: Returns default accounts  
+            Purpose: Returns default accounts.
+            Invoice type = 19:sales , 16:purchase 
+            Payment Mode  15 = on credit , 3 = Cash , 2 = Bank
+            Tax Type = GST :7(As default) or 22:VAT
+            if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected. 
             """
             token = self.request.headers['gktoken']
         except:
@@ -1207,6 +1211,15 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                invTyp = dataset["invoicetype"]
+                pymtMd = dataset["paymentmode"]
+
+                if dataset["taxtype"] == 7:
+                    print "gst"
+                    
+                if dataset["taxtype"] == 22:
+                    print "Vat type"
+                
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
