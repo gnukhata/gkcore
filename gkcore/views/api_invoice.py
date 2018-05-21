@@ -1230,9 +1230,7 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
-                        
-
+                    dictAccCodes["DrTaxAcc"][tax] = taxRow["accountcode"]
 
             """ Purchase"""
             if int(queryParams["invtype"]) == 16:
@@ -1255,7 +1253,7 @@ The bills grid calld gkresult will return a list as it's value.
                     for tax in (queryParams["taxes"]):
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
-                        dictAccCodes["CrTaxAcc"][tax] = cashRow["accountcode"]
+                        dictAccCodes["CrTaxAcc"][tax] = taxRow["accountcode"]
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
