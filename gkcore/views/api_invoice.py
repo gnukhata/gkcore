@@ -1201,6 +1201,7 @@ The bills grid calld gkresult will return a list as it's value.
             Tax Type = GST :7(As default) or 22:VAT
             if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected.
             csname will have customer or supplier name.
+            So the structure of queryParams = {"invtype":19 or 16 , "pmtmode":2 or 3 or 15,"taxType":7 or 22,"taxes": ["CGSTIN_AN@12%","SGSTIN_AN@12%".....]}
             """
             self.con = eng.connect()
             dictAccCodes = {}
@@ -1221,8 +1222,44 @@ The bills grid calld gkresult will return a list as it's value.
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                     custRow = custAccount.fetchone()
                     dictAccCodes["DrAccount"] = custRow["accountcode"]
-                    
-                
+                if int(queryParams["taxType"]) == 7:
+                    for tax in (queryParams["taxes"]):
+                        taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
+                        taxRow = taxAcc.fetchone()
+                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                if int(queryParams["taxType"]) == 22:
+                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
+                    taxRow = taxAcc.fetchone()
+                    dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                        
+
+
+            """ Purchase"""
+            if int(queryParams["invtype"]) == 16:
+                purchAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
+                purchRow = purchAccount.fetchone()
+                dictAccCodes["DrAccount"] = salesRow["accountcode"]
+                if int(queryParams["pmtmode"]) == 2:
+                    bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
+                    bankRow = bankAccount.fetchone()
+                    dictAccCodes["DrAccount"] = bankRow["accountcode"]
+                if int(queryParams["pmtmode"]) == 3:
+                    cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
+                    cashRow = cashAccount.fetchone()
+                    dictAccCodes["DrAccount"] = cashRow["accountcode"]
+                if int(queryParams["pmtmode"]) == 15:
+                    custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
+                    custRow = custAccount.fetchone()
+                    dictAccCodes["DrAccount"] = custRow["accountcode"]
+                if int(queryParams["taxType"]) == 7:
+                    for tax in (queryParams["taxes"]):
+                        taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
+                        taxRow = taxAcc.fetchone()
+                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                if int(queryParams["taxType"]) == 22:
+                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
+                    taxRow = taxAcc.fetchone()
+                    dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
                 
         except:
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
