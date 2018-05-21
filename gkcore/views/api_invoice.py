@@ -1199,7 +1199,8 @@ The bills grid calld gkresult will return a list as it's value.
             Invoice type = 19:sales , 16:purchase 
             Payment Mode  15 = on credit , 3 = Cash , 2 = Bank
             Tax Type = GST :7(As default) or 22:VAT
-            if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected. 
+            if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected.
+            csname will have customer or supplier name.
             """
             self.con = eng.connect()
             dictAccCodes = {}
@@ -1208,9 +1209,22 @@ The bills grid calld gkresult will return a list as it's value.
                 salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                 salesRow = salesAccount.fetchone()
                 dictAccCodes["CrAccount"] = salesRow["accountcode"]
-
+                if int(queryParams["pmtmode"]) == 2:
+                    bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
+                    bankRow = bankAccount.fetchone()
+                    dictAccCodes["DrAccount"] = bankRow["accountcode"]
+                if int(queryParams["pmtmode"]) == 3:
+                    cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
+                    cashRow = cashAccount.fetchone()
+                    dictAccCodes["DrAccount"] = cashRow["accountcode"]
+                if int(queryParams["pmtmode"]) == 15:
+                    custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
+                    custRow = custAccount.fetchone()
+                    dictAccCodes["DrAccount"] = custRow["accountcode"]
+                    
                 
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
