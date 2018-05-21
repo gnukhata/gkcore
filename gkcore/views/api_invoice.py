@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote, tax, state, users
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -47,6 +47,8 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+
+
 def gst(ProductCode,con):
     gstData = con.execute(select([product.c.gsflag,product.c.gscode]).where(product.c.productcode == ProductCode))
     gst = gstData.fetchone()
@@ -487,8 +489,6 @@ The bills grid calld gkresult will return a list as it's value.
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-
-
 
 
     @view_config(request_method='GET',request_param="inv=all", renderer ='json')
@@ -1186,6 +1186,27 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"])})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    @view_config(request_method='GET',request_param="type=gda",renderer='json')
+    def getDefaultAcc(self):
+        try:
+            """
+            Purpose: Returns default accounts  
+            """
+            token = self.request.headers['gktoken']
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
