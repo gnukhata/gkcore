@@ -1191,8 +1191,8 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param="type=gda",renderer='json')
-    def getDefaultAcc(self):
+
+    def getDefaultAcc(self,queryParams):
         try:
             """
             Purpose: Returns default accounts.
