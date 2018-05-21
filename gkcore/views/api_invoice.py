@@ -1238,28 +1238,28 @@ The bills grid calld gkresult will return a list as it's value.
             if int(queryParams["invtype"]) == 16:
                 purchAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
                 purchRow = purchAccount.fetchone()
-                dictAccCodes["DrAccount"] = salesRow["accountcode"]
+                dictAccCodes["DrAccount"] = purchRow["accountcode"]
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
-                    dictAccCodes["DrAccount"] = bankRow["accountcode"]
+                    dictAccCodes["CrAccount"] = bankRow["accountcode"]
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
-                    dictAccCodes["DrAccount"] = cashRow["accountcode"]
+                    dictAccCodes["CrAccount"] = cashRow["accountcode"]
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                     custRow = custAccount.fetchone()
-                    dictAccCodes["DrAccount"] = custRow["accountcode"]
+                    dictAccCodes["CrAccount"] = custRow["accountcode"]
                 if int(queryParams["taxType"]) == 7:
                     for tax in (queryParams["taxes"]):
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
-                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                        dictAccCodes["CrTaxAcc"][tax] = cashRow["accountcode"]
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                    dictAccCodes["CrTaxAcc"][tax] = cashRow["accountcode"]
                 
         except:
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
