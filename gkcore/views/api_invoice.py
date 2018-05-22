@@ -1201,7 +1201,9 @@ The bills grid calld gkresult will return a list as it's value.
             Tax Type = GST :7(As default) or 22:VAT
             if Tax type = 7 then the statewise account name for cgst & sgst or IGST for particular percentage , Note this could be an list of accounts depending upon no. of product or service selected.
             csname will have customer or supplier name.
-            So the structure of queryParams = {"invtype":19 or 16 , "pmtmode":2 or 3 or 15,"taxType":7 or 22,"taxes": ["CGSTIN_AN@12%","SGSTIN_AN@12%".....]}
+            maflag = multiple account flag in organisations table
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"cgst/igst":{"percentage":total value form that type},"mafalse":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value }}
+            
             """
             self.con = eng.connect()
             dictAccCodes = {}
