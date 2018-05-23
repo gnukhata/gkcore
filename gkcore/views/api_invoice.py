@@ -1214,21 +1214,23 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"cgst/igst/vat":{"percentage":total value for that type},"maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........}}
-            
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"totaltaxablevalue":value}
             """
             self.con = eng.connect()
             dictAccCodes = {}
-            #first check the invoice type.
+            crs ={}
+            drs = {}
+            #first check the invoice type sale or purchase.
             if int(queryParams["invtype"]) == 19:
                 if int(queryParams["maflag"]) == 1:
                     prodData = queryParams["products"]
                     for prod in prodData:
-                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                        proN = str(prod)+ " Sale" 
+                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                        crs[prodAccount["accountcode"]] = prodData[prod]
                 else:
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
-                    salesRow = salesAccount.fetchone()
-                    dictAccCodes["CrAccount"] = salesRow["accountcode"]
+                    crs[salesAccount["accountcode"]] = queryParams["totaltaxablevalue"]
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
