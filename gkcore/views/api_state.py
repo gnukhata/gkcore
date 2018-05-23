@@ -110,7 +110,7 @@ class api_state(object):
                 self.con = eng.connect();
                 stateabbr = str(self.request.params["stateabbr"])
                 statenamesdata = self.con.execute(select([state.c.statename]).where(state.c.abbreviation == stateabbr))
-                statename = statenamesdata.fetchone();
-                return {"gkstatus":enumdict["Success"], "statename":statename["statename"]}
+                singlestate = statenamesdata.fetchone();
+                return {"gkstatus":enumdict["Success"], "statename":singlestate["statename"]}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
