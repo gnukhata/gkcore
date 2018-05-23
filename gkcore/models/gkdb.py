@@ -62,7 +62,8 @@ Also stores other details like the pan or sales tax number.
 bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
 Every time a new organisation is created or recreated for it's new financial year, a new record is added.
 Besides the personal details, we also have some flags determining the preferences.
-ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing, maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
+ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing, 
+maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
 """
 
 """
@@ -102,8 +103,8 @@ organisation = Table( 'organisation' , metadata,
     Column('invflag',Integer,default=0),
     Column('billflag',Integer,default=1),
     Column('invsflag',Integer,default=1),
-                      Column('avflag',Integer, default=1),
-                      Column('maflag',Integer,default=0),
+    Column('avflag',Integer, default=1),
+    Column('maflag',Integer,default=0),
     Column('logo',JSON),
     Column('gstin',JSONB),
     Column('bankdetails',JSON),
