@@ -1222,6 +1222,7 @@ The bills grid calld gkresult will return a list as it's value.
             drs = {}
             #first check the invoice type sale or purchase.
             if int(queryParams["invtype"]) == 19:
+                # if multiple account is 1 , then search for all the sale accounts of products in invoices 
                 if int(queryParams["maflag"]) == 1:
                     prodData = queryParams["products"]
                     for prod in prodData:
@@ -1229,6 +1230,7 @@ The bills grid calld gkresult will return a list as it's value.
                         prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                         crs[prodAccount["accountcode"]] = prodData[prod]
                 else:
+                    # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                     crs[salesAccount["accountcode"]] = queryParams["totaltaxablevalue"]
                 if int(queryParams["pmtmode"]) == 2:
@@ -1244,10 +1246,16 @@ The bills grid calld gkresult will return a list as it's value.
                     custRow = custAccount.fetchone()
                     dictAccCodes["DrAccount"] = custRow["accountcode"]
                 if int(queryParams["taxType"]) == 7:
+                    ****************************33333333333333333###################################
+                    if 'sgst' in queryParams:
+                        for tr in tax.values():
+                            taxrate = tr/2
+                            
+                    '''
                     for tax in (queryParams["taxes"]):
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
-                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]
+                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]'''
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
