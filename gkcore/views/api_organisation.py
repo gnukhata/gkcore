@@ -619,7 +619,7 @@ class api_organisation(object):
                 else:
                     bankdetails=row["bankdetails"]
                  
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":["maflag"]}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
