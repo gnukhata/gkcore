@@ -98,7 +98,13 @@ class api_invoice(object):
                         dcinvdataset["invprods"] = stockdataset["items"]
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
+                            # check automatic voucher flag  if it is 1 get maflag
+                            avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                            if avfl["avflag"] == 1:
+                                mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                #call getDefaultAcc 
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
+                            
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
@@ -115,6 +121,11 @@ class api_invoice(object):
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invoiceid["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
+
+                            avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                            if avfl["avflag"] == 1:
+                                mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                #call getDefaultAcc
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -1203,16 +1214,21 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"cgst/igst/vat":{"percentage":total value for that type},"mafalse":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........}}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"cgst/igst/vat":{"percentage":total value for that type},"maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........}}
             
             """
             self.con = eng.connect()
             dictAccCodes = {}
             #first check the invoice type.
             if int(queryParams["invtype"]) == 19:
-                salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
-                salesRow = salesAccount.fetchone()
-                dictAccCodes["CrAccount"] = salesRow["accountcode"]
+                if int(queryParams["maflag"]) == 1:
+                    prodData = queryParams["products"]
+                    for prod in prodData:
+                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                else:
+                    salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                    salesRow = salesAccount.fetchone()
+                    dictAccCodes["CrAccount"] = salesRow["accountcode"]
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
