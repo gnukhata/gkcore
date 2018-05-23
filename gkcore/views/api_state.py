@@ -22,6 +22,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Prajkta Patkar"<prajakta@dff.org.in>
+"Nitesh Chaughule" <nitesh@disroot.org>
 
 """
 
@@ -89,5 +90,27 @@ class api_state(object):
                 abbreviationdata = self.con.execute(select([state.c.abbreviation]).where(state.c.statecode == statecode))
                 abbreviation = abbreviationdata.fetchone()
                 return{"gkstatus":enumdict["Success"], "abbreviation":abbreviation["abbreviation"]}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='GET',renderer='json',request_param='statename')
+    def getstatename(self):
+        """
+        This function returns 'state name' of 'state abbreviation' taken from front end.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect();
+                stateabbr = str(self.request.params["stateabbr"])
+                statenamesdata = self.con.execute(select([state.c.statename]).where(state.c.abbreviation == stateabbr))
+                singlestate = statenamesdata.fetchone();
+                return {"gkstatus":enumdict["Success"], "statename":singlestate["statename"]}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
