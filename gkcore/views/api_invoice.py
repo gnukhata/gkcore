@@ -1214,13 +1214,14 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal}
             """
             self.con = eng.connect()
             dictAccCodes = {}
             crs ={}
             drs = {}
-            totalTaxableVal = int(queryParams["totaltaxablevalue"])
+            totalTaxableVal = float(queryParams["totaltaxablevalue"])
+            amountPaid = float(queryParams["totalAmount"])
             #first check the invoice type sale or purchase.
             if int(queryParams["invtype"]) == 19:
                 # if multiple account is 1 , then search for all the sale accounts of products in invoices 
@@ -1237,36 +1238,39 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
-                    dictAccCodes["DrAccount"] = bankRow["accountcode"]
+                    drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
-                    dictAccCodes["DrAccount"] = cashRow["accountcode"]
+                    drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
-                    custRow = custAccount.fetchone()
-                    dictAccCodes["DrAccount"] = custRow["accountcode"]
+                    drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
+                # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
                     abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
                     if 'sgst' in queryParams:
                         for tr in tax.values():
-                            taxrate = tr/2
-                            taxPayment =  
-                            taxName = "SGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxName, accounts.c.orgcode == orgcode)))
-                            crs[taxAcc["accountcode"]] = queryParams["totaltaxablevalue"]
+                            taxrate = float(tr/2)
+                            taxPayment =  totalTaxableVal  * (taxrate/100)
+                            taxNameSGST = "SGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxNameCGST = "CGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
+                            taxAcc = taxACC.fetchall()
+                            crs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
                             
+                    if 'igst' in queryParams:
+                        for tr in tax.values():
+                            taxrate = float(tr)
+                            taxPayment =  totalTaxableVal  * (taxrate/100)
+                            taxNameIGST = "IGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
+                            crs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
                             
-                            
-                    '''
-                    for tax in (queryParams["taxes"]):
-                        taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
-                        taxRow = taxAcc.fetchone()
-                        dictAccCodes["DrTaxAcc"][tax] = cashRow["accountcode"]'''
                 if int(queryParams["taxType"]) == 22:
-                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
+                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    dictAccCodes["DrTaxAcc"][tax] = taxRow["accountcode"]
+                    crs["DrTaxAcc"][tax] = taxRow["accountcode"]
 
             """ Purchase"""
             if int(queryParams["invtype"]) == 16:
