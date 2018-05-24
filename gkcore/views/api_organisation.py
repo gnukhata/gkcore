@@ -418,7 +418,6 @@ class api_organisation(object):
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Expense", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
                     DEGrpCodeData = result.fetchone()
                     DEGRPCode = DEGrpCodeData["groupcode"]
-                    #DESubGroups = [{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}]
                     insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}])
                     purchgrp = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Purchase", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
                     purchgrpcd = purchgrp.fetchone()
