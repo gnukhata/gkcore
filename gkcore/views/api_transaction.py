@@ -201,12 +201,12 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
+                result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.narration,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
                 row = result.fetchone()
                 if row== None:
-                    voucher = {"vdate": "","vno":""}
+                    voucher = {"vdate": "","vno":"","narration":""}
                 else:
-                    voucher = {"vdate": datetime.strftime((row["voucherdate"]),"%d-%m-%Y"),"vno":row["vouchernumber"]}
+                    voucher = {"vdate": datetime.strftime((row["voucherdate"]),"%d-%m-%Y"),"vno":row["vouchernumber"],"narration":row["narration"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":voucher}
             except:
