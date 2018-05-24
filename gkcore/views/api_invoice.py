@@ -1274,30 +1274,54 @@ The bills grid calld gkresult will return a list as it's value.
 
             """ Purchase"""
             if int(queryParams["invtype"]) == 16:
-                purchAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
-                purchRow = purchAccount.fetchone()
-                dictAccCodes["DrAccount"] = purchRow["accountcode"]
+                # if multiple account is 1 , then search for all the sale accounts of products in invoices 
+                if int(queryParams["maflag"]) == 1:
+                    prodData = queryParams["products"]
+                    for prod in prodData:
+                        proN = str(prod)+ " Purchase" 
+                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                        drs[prodAccount["accountcode"]] = prodData[prod]
+                else:
+                    # if multiple acc is 0 , then select default sale account
+                    salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
+                    drs[salesAccount["accountcode"]] = totalTaxableVal
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
-                    dictAccCodes["CrAccount"] = bankRow["accountcode"]
+                    crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
-                    dictAccCodes["CrAccount"] = cashRow["accountcode"]
+                    crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
-                    custRow = custAccount.fetchone()
-                    dictAccCodes["CrAccount"] = custRow["accountcode"]
+                    crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
+                # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
-                    for tax in (queryParams["taxes"]):
-                        taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == tax, accounts.c.orgcode == orgcode)))
-                        taxRow = taxAcc.fetchone()
-                        dictAccCodes["CrTaxAcc"][tax] = taxRow["accountcode"]
+                    abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
+                    if 'sgst' in queryParams:
+                        for tr in tax.values():
+                            taxrate = float(tr/2)
+                            taxPayment =  totalTaxableVal  * (taxrate/100)
+                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
+                            taxAcc = taxACC.fetchall()
+                            drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                            
+                    if 'igst' in queryParams:
+                        for tr in tax.values():
+                            taxrate = float(tr)
+                            taxPayment =  totalTaxableVal  * (taxrate/100)
+                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
+                            drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                            
                 if int(queryParams["taxType"]) == 22:
-                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 22, accounts.c.orgcode == orgcode)))
+                    taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    dictAccCodes["CrTaxAcc"][tax] = cashRow["accountcode"]
+                    drs["DrTaxAcc"][tax] = taxRow["accountcode"]
+
                 
         except:
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
