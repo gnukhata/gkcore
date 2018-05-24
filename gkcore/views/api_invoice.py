@@ -124,6 +124,7 @@ class api_invoice(object):
 
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             if avfl["avflag"] == 1:
+                                #{"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax}
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 #call getDefaultAcc
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
@@ -1214,7 +1215,7 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax}
             """
             self.con = eng.connect()
             voucherDict = {}
@@ -1330,7 +1331,7 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    drs["DrTaxAcc"][tax] = taxRow["accountcode"]
+                    drs[taxRow["accountcode"]] = "%.2f"%float(taxPayment)
                 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":''}
                 
