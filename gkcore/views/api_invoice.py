@@ -1214,12 +1214,13 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"totaltaxablevalue":value}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value}
             """
             self.con = eng.connect()
             dictAccCodes = {}
             crs ={}
             drs = {}
+            totalTaxableVal = int(queryParams["totaltaxablevalue"])
             #first check the invoice type sale or purchase.
             if int(queryParams["invtype"]) == 19:
                 # if multiple account is 1 , then search for all the sale accounts of products in invoices 
@@ -1232,7 +1233,7 @@ The bills grid calld gkresult will return a list as it's value.
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
-                    crs[salesAccount["accountcode"]] = queryParams["totaltaxablevalue"]
+                    crs[salesAccount["accountcode"]] = totalTaxableVal
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
@@ -1246,10 +1247,16 @@ The bills grid calld gkresult will return a list as it's value.
                     custRow = custAccount.fetchone()
                     dictAccCodes["DrAccount"] = custRow["accountcode"]
                 if int(queryParams["taxType"]) == 7:
-                    ****************************33333333333333333###################################
+                    abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
                     if 'sgst' in queryParams:
                         for tr in tax.values():
                             taxrate = tr/2
+                            taxPayment =  
+                            taxName = "SGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxName, accounts.c.orgcode == orgcode)))
+                            crs[taxAcc["accountcode"]] = queryParams["totaltaxablevalue"]
+                            
+                            
                             
                     '''
                     for tax in (queryParams["taxes"]):
