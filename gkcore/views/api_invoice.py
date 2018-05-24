@@ -1214,12 +1214,13 @@ The bills grid calld gkresult will return a list as it's value.
             csname will have customer or supplier name.
             maflag = multiple account flag in organisations table
             
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate"}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno}
             """
             self.con = eng.connect()
             voucherDict = {}
             crs ={}
             drs = {}
+            Narration = ""
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
             amountPaid = float(queryParams["totalAmount"])
             #first check the invoice type sale or purchase.
@@ -1239,13 +1240,16 @@ The bills grid calld gkresult will return a list as it's value.
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
                     drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(invoicetotal) +" to "+ str(queryParams["csname"])+" by cheque \n"+" ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
                     drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(invoicetotal) +" to "+ str(queryParams["csname"])+" by cash \n"+" ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                     drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(invoicetotal) +" to "+ str(queryParams["csname"])+" on credit \n"+" ref invoice no. "+str(queryParams["invoiceno"])
                 # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
                     abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
@@ -1270,9 +1274,9 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    crs["DrTaxAcc"][tax] = taxRow["accountcode"]
-        
-                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":n,"vouchertype":"sales","invid":''}
+                    crs[taxRow["accountcode"]] = "%.2f"%float(taxPayment)
+
+                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":''}
 
             """ Purchase"""
             if int(queryParams["invtype"]) == 16:
@@ -1291,13 +1295,16 @@ The bills grid calld gkresult will return a list as it's value.
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
                     crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(invoicetotal) +" from "+ str(queryParams["csname"])+" by cheque \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
                     crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(invoicetotal) +" from "+ str(queryParams["csname"])+" by cash \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                     crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(invoicetotal) +" from "+ str(queryParams["csname"])+" on credit \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
                 # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
                     abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
@@ -1309,7 +1316,8 @@ The bills grid calld gkresult will return a list as it's value.
                             taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
                             taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
                             taxAcc = taxACC.fetchall()
-                            drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                            for t in taxAcc:
+                                drs[t["accountcode"]] = "%.2f"%float(taxPayment)
                             
                     if 'igst' in queryParams:
                         for tr in tax.values():
@@ -1324,7 +1332,7 @@ The bills grid calld gkresult will return a list as it's value.
                     taxRow = taxAcc.fetchone()
                     drs["DrTaxAcc"][tax] = taxRow["accountcode"]
                 
-                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":n,"vouchertype":"purchase","invid":''}
+                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":''}
                 
 
         except:
