@@ -82,11 +82,13 @@ class api_invoice(object):
                 dtset = self.request.json_body
                 dcinvdataset={}
                 invdataset = dtset["invoice"]
+                print invdataset
                 freeqty = invdataset["freeqty"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
+                queryParams = {}
                 result = self.con.execute(invoice.insert(),[invdataset])
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
@@ -126,6 +128,8 @@ class api_invoice(object):
                             if avfl["avflag"] == 1:
                                 #{"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax}
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                                queryParams = {"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":"","destination":invdataset["taxstate"],"totaltaxablevalue":"","maflag":mafl["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invno"],"taxpayement":""} 
                                 #call getDefaultAcc
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
