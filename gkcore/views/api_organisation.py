@@ -931,3 +931,22 @@ class api_organisation(object):
                 self.con.close()
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    # returns avfalag , to decide auto voucher creation
+    @view_config(request_method='GET',request_param='autovoucher' , renderer='json')
+    def getAVflag(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.organisation.c.avflag]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                return {"gkstatus":enumdict["Success"],"autovoucher":result["avflag"]}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    
+    
