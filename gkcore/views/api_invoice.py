@@ -82,7 +82,7 @@ class api_invoice(object):
                 dtset = self.request.json_body
                 dcinvdataset={}
                 invdataset = dtset["invoice"]
-                print invdataset
+                #print invdataset
                 freeqty = invdataset["freeqty"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
@@ -90,6 +90,7 @@ class api_invoice(object):
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 queryParams = {}
                 result = self.con.execute(invoice.insert(),[invdataset])
+                print "InvDataset Inserted"
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
                         result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -148,12 +149,14 @@ class api_invoice(object):
                                 a = getStateCode(self,queryParams,int(invdataset["orgcode"]))
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
+                            print "i am in invoice condition"
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
                                 gstResult = gst(item,self.con)
+                                print"goods ki service"
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
@@ -170,7 +173,7 @@ class api_invoice(object):
                                         maFlag = mafl.fetchone()
                                         csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                         CSname = csName.fetchone()
-                                        queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"]}
+                                        queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"]}
                                         if "taxpayment" in avData:
                                             queryParams = {"taxpayement":avData["taxpayement"]}
                                         #call getDefaultAcc
@@ -1255,6 +1258,7 @@ The bills grid calld gkresult will return a list as it's value.
             """
             self.con = eng.connect()
             print "Aya mein idhar"
+            print queryParams
             voucherDict = {}
             crs ={}
             drs = {}
@@ -1343,32 +1347,38 @@ The bills grid calld gkresult will return a list as it's value.
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
                     crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cash \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 15:
                     custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                     crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" on credit \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
-                    abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
+                    abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
+                    abb = abv.fetchone()
                     if 'gstname' in queryParams:
-                        for tr in tax.values():
-                            taxrate = float(tr/2)
-                            taxPayment =  totalTaxableVal  * (taxrate/100)
-                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
-                            taxAcc = taxACC.fetchall()
-                            for t in taxAcc:
-                                drs[t["accountcode"]] = "%.2f"%float(taxPayment)
+                        taxName = queryParams["gstname"]
+                        Taxes = queryParams["taxes"]
+                        if taxName == "CGST":
+                            for tr in Taxes.values():
+                                taxrate = float(tr/2)
+                                taxPayment =  totalTaxableVal  * (taxrate/100)
+                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
+                                taxAcc = taxACC.fetchall()
+                                for t in taxAcc:
+                                    drs[t["accountcode"]] = "%.2f"%float(taxPayment)
                             
-                    if 'igst' in queryParams:
-                        for tr in tax.values():
-                            taxrate = float(tr)
-                            taxPayment =  totalTaxableVal  * (taxrate/100)
-                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
-                            drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                        if taxName == "IGST":
+                            for tr in Taxes.values():
+                                taxrate = float(tr)
+                                taxPayment =  totalTaxableVal  * (taxrate/100)
+                                taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                print taxNameIGST
+                                taxAc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
+                                taxAcc =taxAc.fetchone()
+                                drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
                             
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
@@ -1376,6 +1386,8 @@ The bills grid calld gkresult will return a list as it's value.
                     drs[taxRow["accountcode"]] = "%.2f"%float(taxPayment)
                 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
+
+                print voucherDict
 
                 return{"vch":voucherDict}
 
