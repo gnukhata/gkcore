@@ -162,23 +162,23 @@ class api_invoice(object):
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                                    print "Invoice 333333"
-                                    # check automatic voucher flag  if it is 1 get maflag
-                                    avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                                    av = avfl.fetchone()
-                                    if av["avflag"] == 1:
-                                        print "1 avflag is 1"
-                                        avData = invdataset["av"]
-                                        mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                                        maFlag = mafl.fetchone()
-                                        csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
-                                        CSname = csName.fetchone()
-                                        queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"]}
-                                        if "taxpayment" in avData:
-                                            queryParams = {"taxpayement":avData["taxpayement"]}
-                                        #call getDefaultAcc
-                                        a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                        print a
+                                print "Invoice 333333"
+                                # check automatic voucher flag  if it is 1 get maflag
+                                avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                av = avfl.fetchone()
+                                if av["avflag"] == 1:
+                                    print "1 avflag is 1"
+                                    avData = invdataset["av"]
+                                    mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                    maFlag = mafl.fetchone()
+                                    csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                                    CSname = csName.fetchone()
+                                    queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"]}
+                                    if "taxpayment" in avData:
+                                        queryParams = {"taxpayement":avData["taxpayement"]}
+                                    #call getDefaultAcc
+                                    a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                    print a
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                     #except:
                      #   result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
@@ -1331,7 +1331,8 @@ The bills grid calld gkresult will return a list as it's value.
                     prodData = queryParams["products"]
                     for prod in prodData:
                         proN = str(prod)+ " Purchase" 
-                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                        prodAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                        prodAccount = prodAcc.fetchone()
                         drs[prodAccount["accountcode"]] = prodData[prod]
                 else:
                     # if multiple acc is 0 , then select default sale account
@@ -1349,7 +1350,8 @@ The bills grid calld gkresult will return a list as it's value.
                     crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
                     Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 15:
-                    custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
+                    custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
+                    custAccount = custAcc.fetchone() 
                     crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
                     Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 # WHEN TAX is gst , have to check whether cgst and igst  
@@ -1379,6 +1381,7 @@ The bills grid calld gkresult will return a list as it's value.
                                 taxAc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
                                 taxAcc =taxAc.fetchone()
                                 drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                    
                             
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
