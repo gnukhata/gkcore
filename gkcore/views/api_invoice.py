@@ -1275,8 +1275,6 @@ The bills grid calld gkresult will return a list as it's value.
             So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax,"prodData":productcode:taxabale value ....,"taxes":{productcode:tax}}
             """
             self.con = eng.connect()
-            print "Aya mein idhar"
-            print queryParams
             voucherDict = {}
             crs ={}
             drs = {}
@@ -1287,8 +1285,6 @@ The bills grid calld gkresult will return a list as it's value.
             taxDict = {}
             taxRate = 0.00
             cessRate =0.00
-            # collect all taxaccounts with the value that needs to be dr or cr
-            
             #first check the invoice type sale or purchase.
             if int(queryParams["invtype"]) == 15:
                 # if multiple account is 1 , then search for all the sale accounts of products in invoices 
@@ -1391,10 +1387,6 @@ The bills grid calld gkresult will return a list as it's value.
                     crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sale","invid":queryParams["invid"]}
-
-                print voucherDict
-
-                return{"vch":voucherDict}
 
                 return{"vch":voucherDict}
             """ Purchase"""
