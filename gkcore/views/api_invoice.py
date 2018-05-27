@@ -1271,57 +1271,86 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["maflag"]) == 1:
                     prodData = queryParams["products"]
                     for prod in prodData:
-                        proN = str(prod)+ " Sale" 
-                        prodAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
-                        crs[prodAccount["accountcode"]] = prodData[prod]
+                        proN = str(prod)+ " Purchase" 
+                        prodAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                        prodAccount = prodAcc.fetchone()
+                        crs[prodAccount["accountcode"]] ="%.2f"%float( prodData[prod])
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
-                    salesAcc = salesAccount.fetchone() 
-                    crs[salesAcc["accountcode"]] = totalTaxableVal
+                    saleAcc = salesAccount.fetchone()
+                    crs[saleAcc["accountcode"]] = totalTaxableVal
                 if int(queryParams["pmtmode"]) == 2:
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
                     drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Sold goods worth rupees "+ "%.2f"%float(totalAmount) +" to "+ str(queryParams["csname"])+" by cheque"+" ref invoice no. "+str(queryParams["invoiceno"])
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
                     drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Sold goods worth rupees "+ "%.2f"%float(totalAmount) +" to "+ str(queryParams["csname"])+" by cash"+" ref invoice no. "+str(queryParams["invoiceno"])
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 15:
-                    custAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
-                    cust = custAccount.fetchone()
-                    drs[cust["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Sold goods worth rupees "+ "%.2f"%float(totalAmount) +" to "+ str(queryParams["csname"])+" on credit \n"+" ref invoice no. "+str(queryParams["invoiceno"])
+                    custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
+                    custAccount = custAcc.fetchone() 
+                    drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
+                    Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 # WHEN TAX is gst , have to check whether cgst and igst  
                 if int(queryParams["taxType"]) == 7:
-                    abb = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
-                    if 'sgst' in queryParams:
-                        for tr in tax.values():
-                            taxrate = float(tr/2)
-                            taxPayment =  totalTaxableVal  * (taxrate/100)
-                            taxNameSGST = "SGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxNameCGST = "CGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxACC = self.con.execute("select accountcode from accounts where orgcode = %d accountname in (%s,%s);"%(orgcode,taxNameSGST,taxNameSGST))
-                            taxAcc = taxACC.fetchall()
-                            crs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                    abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
+                    abb = abv.fetchone()
+                    if 'gstname' in queryParams:
+                        taxName = queryParams["gstname"]
+                        Taxes = queryParams["taxes"]
+                        if taxName == "CGST":
+                            for tr in Taxes.values():
+                                taxrate = float(tr/2)
+                                taxPayment =  totalTaxableVal  * (taxrate/100)
+                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                #taxACC = self.con.execute("select accountcode from accounts where orgcode = %d and accountname in ('%s','%s');"%(orgcode,taxNameSGST,taxNameSGST))
+                                #print taxAcc
+                                taxAcS = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameSGST, accounts.c.orgcode == orgcode)))
+                                taxAccS = taxAcS.fetchone()
+                                crs[taxAccS["accountcode"]] = "%.2f"%float(taxPayment)
+
+                                taxAcC = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameCGST, accounts.c.orgcode == orgcode)))
+                                taxAccC = taxAcC.fetchone()
+                                crs[taxAccC["accountcode"]] = "%.2f"%float(taxPayment)
                             
-                    if 'igst' in queryParams:
-                        for tr in tax.values():
-                            taxrate = float(tr)
-                            taxPayment =  totalTaxableVal  * (taxrate/100)
-                            taxNameIGST = "IGSTOUT"+"_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                            taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
-                            taxAccount = taxAcc.fetchone()
-                            crs[taxAccount["accountcode"]] = "%.2f"%float(taxPayment)
+                        if taxName == "IGST":
+                            for tr in Taxes.values():
+                                taxrate = float(tr)
+                                taxPayment =  totalTaxableVal  * (taxrate/100)
+                                taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                print taxNameIGST
+                                taxAc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
+                                taxAcc =taxAc.fetchone()
+                                drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
+                                
+                    if 'cessname' in queryParams:
+                        taxName = queryParams["cessname"]
+                        CessTax = queryParams["cess"]
+                        for cs in CessTax.values():
+                            txrate = float(cs)
+                            taxPyment =  totalTaxableVal  * (txrate/100)
+                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(txrate))+"%"
+                            taxAcCess = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameCESS, accounts.c.orgcode == orgcode)))
+                            taxAccCS =taxAcCess.fetchone()
+                            crs[taxAccCS["accountcode"]] = "%.2f"%float(taxPayment)
+ 
+                    
                             
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
                     crs[taxRow["accountcode"]] = "%.2f"%float(taxPayment)
+                
+                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
 
-                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
+                print voucherDict
+
+                return{"vch":voucherDict}
 
                 return{"vch":voucherDict}
             """ Purchase"""
@@ -1343,7 +1372,7 @@ The bills grid calld gkresult will return a list as it's value.
                     bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                     bankRow = bankAccount.fetchone()
                     crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cheque \n"+ "ref invoice no. "+str(queryParams["invoiceno"])
+                    Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 if int(queryParams["pmtmode"]) == 3:
                     cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                     cashRow = cashAccount.fetchone()
