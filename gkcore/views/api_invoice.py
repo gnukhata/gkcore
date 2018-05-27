@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -82,7 +82,6 @@ class api_invoice(object):
                 dtset = self.request.json_body
                 dcinvdataset={}
                 invdataset = dtset["invoice"]
-                print invdataset
                 freeqty = invdataset["freeqty"]
                 stockdataset = dtset["stock"]
                 items = invdataset["contents"]
@@ -90,7 +89,6 @@ class api_invoice(object):
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 queryParams = {}
                 result = self.con.execute(invoice.insert(),[invdataset])
-                print "InvDataset Inserted"
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
                         result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -126,7 +124,7 @@ class api_invoice(object):
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
-                  #  try:
+            #        try:
                         if invdataset.has_key('icflag'):
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
                             invoiceid = result.fetchone()
@@ -139,8 +137,9 @@ class api_invoice(object):
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invoiceid["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                            print "2 Inserted data of cashmemo"
+                            #print "2 Inserted data of cashmemo"
                             # check automatic voucher flag  if it is 1 get maflag
+                            '''
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             av = avfl.fetchone()
                             if av["avflag"] == 1:
@@ -159,23 +158,20 @@ class api_invoice(object):
                                     queryParams["taxpayment"]=avData["taxpayment"]
                                 #call getDefaultAcc
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                print a
+                                print a'''
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
-                            print "i am in invoice condition"
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
                                 gstResult = gst(item,self.con)
-                                print"goods ki service"
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                                print "Invoice 333333"
                                 # check automatic voucher flag  if it is 1 get maflag
                                 avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 av = avfl.fetchone()
@@ -195,18 +191,20 @@ class api_invoice(object):
                                         queryParams["taxpayment"]=avData["taxpayment"]
                                     #call getDefaultAcc
                                     a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                    print a
+                                    vid = a["vouchercode"]
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                    #except:
-                     #   result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                     #   result = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                     #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["DuplicateEntry"]}
+                #    except:
+                 #       result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
+                  #      result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
+                   #     result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
+                   #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                    
+          #  except exc.IntegrityError:
+           #     return {"gkstatus":enumdict["DuplicateEntry"]}
             #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+             #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             #finally:
-            #    self.con.close()
+             #   self.con.close()
 
     '''
     This is a function to update an invoice.
@@ -1291,7 +1289,7 @@ The bills grid calld gkresult will return a list as it's value.
                 if int(queryParams["maflag"]) == 1:
                     prodData = queryParams["products"]
                     for prod in prodData:
-                        proN = str(prod)+ " Purchase" 
+                        proN = str(prod)+ " Sale" 
                         prodAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                         prodAccount = prodAcc.fetchone()
                         crs[prodAccount["accountcode"]] ="%.2f"%float( prodData[prod])
@@ -1386,9 +1384,8 @@ The bills grid calld gkresult will return a list as it's value.
                     taxRow = taxAcc.fetchone()
                     crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 
-                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sale","invid":queryParams["invid"]}
+                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
 
-                return{"vch":voucherDict}
             """ Purchase"""
             if int(queryParams["invtype"]) == 9:
                 # if multiple account is 1 , then search for all the sale accounts of products in invoices 
@@ -1495,7 +1492,48 @@ The bills grid calld gkresult will return a list as it's value.
 
                 print voucherDict
 
-                return{"vch":voucherDict}
+
+
+            drs = voucherDict["drs"]
+            crs = voucherDict["crs"]
+            voucherDict["orgcode"] = orgcode
+            # generate voucher number if it is not sent.
+            
+            if voucherDict["vouchertype"] == "sales":
+                initialType = "sl"
+            if voucherDict["vouchertype"] == "purchase":
+                initialType = "pu"
+            vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+            vchCount = vchCountResult.fetchone()
+            if vchCount["vcount"] == 0:
+                initialType = initialType + "1"
+            else:
+                vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                vchCode = vchCodeResult.fetchone()
+                initialType = initialType + str(vchCode["vcode"])
+            voucherDict["vouchernumber"] = initialType
+            result = self.con.execute(vouchers.insert(),[voucherDict])
+            for drkeys in drs.keys():
+                self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+                accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
+                accgrp = accgrpdata.fetchone()
+                if accgrp["groupname"] == "Bank":
+                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                    vouchercode =vouchercodedata.fetchone()
+                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
+            for crkeys in crs.keys():
+                self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+                accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
+                accgrp = accgrpdata.fetchone()
+                if accgrp["groupname"] == "Bank":
+                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                    vouchercode =vouchercodedata.fetchone()
+                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
+
+            vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+            vchcode =vchdata.fetchone()
+            self.con.close()
+            return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
 
         #except:
         #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
