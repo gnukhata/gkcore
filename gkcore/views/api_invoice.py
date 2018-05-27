@@ -101,22 +101,22 @@ class api_invoice(object):
                         dcinvdataset["invprods"] = stockdataset["items"]
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount ==1:
-                            print "Invoice inserted 1 "
-                            # check automatic voucher flag  if it is 1 get maflag
+                            print "Invoice inserted 1 when delchal is present  "
+                           # check automatic voucher flag  if it is 1 get maflag
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             av = avfl.fetchone()
                             if av["avflag"] == 1:
                                 print "1 avflag is 1"
                                 avData = invdataset["av"]
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                maFlag = mafl.fetchone()
                                 csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                 CSname = csName.fetchone()
-                                
-                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":av["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":mafl["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invno"],"csname":csName["custname"]}
+                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"cessname":avData["avtax"]["CESSName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"]}
                                 if "taxpayment" in avData:
                                     queryParams = {"taxpayement":avData["taxpayement"]}
                                 #call getDefaultAcc
-                                a = getStateCode(self,queryParams,int(invdataset["orgcode"]))
+                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                 print a
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]} 
                         else:
@@ -135,18 +135,23 @@ class api_invoice(object):
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invoiceid["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                            print "2 Inserted data"
+                            print "2 Inserted data of cashmemo"
+                            # check automatic voucher flag  if it is 1 get maflag
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                            if avfl["avflag"] == 1:
-                                #{"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax}
+                            av = avfl.fetchone()
+                            if av["avflag"] == 1:
+                                print "1 avflag is 1"
                                 avData = invdataset["av"]
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                maFlag = mafl.fetchone()
                                 csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
-                                
-                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":av["avtax"]["GSTName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":mafl["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invno"]}
+                                CSname = csName.fetchone()
+                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"gstname":avData["avtax"]["GSTName"],"cessname":avData["avtax"]["CESSName"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"]}
                                 if "taxpayment" in avData:
                                     queryParams = {"taxpayement":avData["taxpayement"]}
-                                a = getStateCode(self,queryParams,int(invdataset["orgcode"]))
+                                #call getDefaultAcc
+                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                print a
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
                             print "i am in invoice condition"
