@@ -1400,10 +1400,16 @@ The bills grid calld gkresult will return a list as it's value.
                         if taxName == "CGST":
                             for tr in Taxes.values():
                                 if float(tr) > 0.00:
-                                    taxrate = float(tr/2)
+                                    taxrate = (float(tr)/2)
+                                    print taxrate
                                     taxPayment =  totalTaxableVal  * (taxrate/100)
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                                    if (taxrate % 2) == 0:
+                                        taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                        taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                    else:
+                                        taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                                        taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                                        
                                     #taxACC = self.con.execute("select accountcode from accounts where orgcode = %d and accountname in ('%s','%s');"%(orgcode,taxNameSGST,taxNameSGST))
                                     #print taxAcc
                                     taxAcS = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameSGST, accounts.c.orgcode == orgcode)))
@@ -1428,10 +1434,16 @@ The bills grid calld gkresult will return a list as it's value.
                     if 'cessname' in queryParams:
                         taxName = queryParams["cessname"]
                         CessTax = queryParams["cess"]
+                        d = 0.00
                         for cs in CessTax.values():
                             if float(cs) > 0.00:
                                 txrate = float(cs)
-                                taxPyment =  totalTaxableVal  * (txrate/100)
+                                print txrate
+                                print totalTaxableVal
+                                d = txrate / 100
+                                print d 
+                                taxPyment =  totalTaxableVal  * d
+                                print taxPayment
                                 taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(txrate)+"%"
                                 print taxNameCESS
                                 taxAcCess = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameCESS, accounts.c.orgcode == orgcode)))
