@@ -1390,7 +1390,7 @@ The bills grid calld gkresult will return a list as it's value.
                     taxRow = taxAcc.fetchone()
                     crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 
-                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
+                voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sale","invid":queryParams["invid"]}
 
                 print voucherDict
 
