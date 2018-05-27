@@ -1398,6 +1398,8 @@ The bills grid calld gkresult will return a list as it's value.
                     Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                        # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
+                    abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
+                    abb = abv.fetchone()
                     taxName = queryParams["gstname"]
                     if taxName == "CGST":
                         for prod in queryParams["prodData"]:
@@ -1405,14 +1407,16 @@ The bills grid calld gkresult will return a list as it's value.
                             taxable = float(queryParams["prodData"][prod])
                             if taxRate > 0.00:
                                 tx = (float(taxRate)/2)
+                                print tx
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
+                                print taxVal
                                 if (tx % 2) == 0:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
+                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
                                 else:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
                                 if taxNameSGST not in taxDict:
                                     taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                     taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -1430,9 +1434,9 @@ The bills grid calld gkresult will return a list as it's value.
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
                                 if (tx % 2) == 0:
-                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
+                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
                                 else:
-                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(taxrate)+"%"
+                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(taxRate)+"%"
                                 if taxNameIGST not in taxDict:
                                     taxDict[taxNameIGST] = "%.2f"%float(taxVal)
                                 else:
@@ -1444,20 +1448,21 @@ The bills grid calld gkresult will return a list as it's value.
                         CStaxable = float(queryParams["prodData"][prod])
                         if cessRate > 0.00:
                             cs = float(cessRate)
+                            print cs
                             # this is the value which is going to Dr/Cr
-                            csVal = taxable * (cs/100)
-
-                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+"%.2f"%float(taxVal)+"%"
+                            csVal = CStaxable * (cs/100)
+                            print csVal
+                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+"%.2f"%float(cs)+"%"
                             if taxNameCESS not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameCESS] = "%.2f"%float(csVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
 
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
-                        drs[taxRow["accountcode"]] = "%.2f"%float(taxDict["Tax"])
+                        drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
 
                 if int(queryParams["taxType"]) == 22:
