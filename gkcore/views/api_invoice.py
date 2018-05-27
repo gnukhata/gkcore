@@ -114,7 +114,7 @@ class api_invoice(object):
                                 CSname = csName.fetchone()
                                 queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                 if int(invdataset["taxflag"]) == 7:
-                                    queryParams["gstname"]=avData["avtax"]["GSTName"],
+                                    queryParams["gstname"]=avData["avtax"]["GSTName"]
                                     queryParams["cessname"] =avData["avtax"]["CESSName"]
 
                                 if int(invdataset["taxflag"]) == 22:
@@ -152,7 +152,7 @@ class api_invoice(object):
                                 CSname = csName.fetchone()
                                 queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                 if int(invdataset["taxflag"]) == 7:
-                                    queryParams["gstname"]=avData["avtax"]["GSTName"],
+                                    queryParams["gstname"]=avData["avtax"]["GSTName"]
                                     queryParams["cessname"] =avData["avtax"]["CESSName"]
 
                                 if int(invdataset["taxflag"]) == 22:
@@ -188,7 +188,7 @@ class api_invoice(object):
                                     CSname = csName.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     if int(invdataset["taxflag"]) == 7:
-                                        queryParams["gstname"]=avData["avtax"]["GSTName"],
+                                        queryParams["gstname"]=avData["avtax"]["GSTName"]
                                         queryParams["cessname"] =avData["avtax"]["CESSName"]
                                         
                                     if int(invdataset["taxflag"]) == 22:
@@ -1381,7 +1381,7 @@ The bills grid calld gkresult will return a list as it's value.
                             else:
                                 val = float(taxDict[taxNameSGST])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-
+                    print taxDict
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
@@ -1468,16 +1468,13 @@ The bills grid calld gkresult will return a list as it's value.
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
-                                else:
-                                    taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(taxRate)+"%"
+                                taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
                                 if taxNameIGST not in taxDict:
                                     taxDict[taxNameIGST] = "%.2f"%float(taxVal)
                                 else:
-                                    val = float(taxDict[taxNameSGST])
+                                    val = float(taxDict[taxNameIGST])
                                     taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
-
+                                    
                     for prod in queryParams["prodData"]:
                         cessRate = float(queryParams["cess"][prod])
                         CStaxable = float(queryParams["prodData"][prod])
@@ -1491,9 +1488,9 @@ The bills grid calld gkresult will return a list as it's value.
                             if taxNameCESS not in taxDict:
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal)
                             else:
-                                val = float(taxDict[taxNameSGST])
+                                val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-
+                    print taxDict
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
