@@ -1356,14 +1356,11 @@ The bills grid calld gkresult will return a list as it's value.
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
-                                else:
-                                    taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxRate)+"%"
+                                taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
                                 if taxNameIGST not in taxDict:
                                     taxDict[taxNameIGST] = "%.2f"%float(taxVal)
                                 else:
-                                    val = float(taxDict[taxNameSGST])
+                                    val = float(taxDict[taxNameIGST])
                                     taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
 
                     for prod in queryParams["prodData"]:
@@ -1379,7 +1376,7 @@ The bills grid calld gkresult will return a list as it's value.
                             if taxNameCESS not in taxDict:
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal)
                             else:
-                                val = float(taxDict[taxNameSGST])
+                                val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
                     print taxDict
                     for Tax in taxDict:
