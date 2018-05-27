@@ -1319,56 +1319,79 @@ The bills grid calld gkresult will return a list as it's value.
                     custAccount = custAcc.fetchone() 
                     drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
                     Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
-                # WHEN TAX is gst , have to check whether cgst and igst  
+                # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
                     abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
                     abb = abv.fetchone()
-                    if 'gstname' in queryParams:
-                        taxName = queryParams["gstname"]
-                        Taxes = queryParams["taxes"]
-                        if taxName == "CGST":
-                            for tr in Taxes.values():
-                                taxrate = float(tr/2)
-                                taxPayment =  totalTaxableVal  * (taxrate/100)
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
-                                #taxACC = self.con.execute("select accountcode from accounts where orgcode = %d and accountname in ('%s','%s');"%(orgcode,taxNameSGST,taxNameSGST))
-                                #print taxAcc
-                                taxAcS = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameSGST, accounts.c.orgcode == orgcode)))
-                                taxAccS = taxAcS.fetchone()
-                                crs[taxAccS["accountcode"]] = "%.2f"%float(taxPayment)
+                    taxName = queryParams["gstname"]
+                    if taxName == "CGST":
+                        for prod in queryParams["prodData"]:
+                            taxRate = float(queryParams["taxes"][prod])
+                            taxable = float(queryParams["prodData"][prod])
+                            if taxRate > 0.00:
+                                tx = (float(taxRate)/2)
+                                print tx
+                                # this is the value which is going to Dr/Cr
+                                taxVal = taxable * (tx/100)
+                                print taxVal
+                                if (tx % 2) == 0:
+                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
+                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
+                                else:
+                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                if taxNameSGST not in taxDict:
+                                    taxDict[taxNameSGST] = "%.2f"%float(taxVal)
+                                    taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                else:
+                                    val = float(taxDict[taxNameSGST])
+                                    taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
+                                    taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
 
-                                taxAcC = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameCGST, accounts.c.orgcode == orgcode)))
-                                taxAccC = taxAcC.fetchone()
-                                crs[taxAccC["accountcode"]] = "%.2f"%float(taxPayment)
-                            
-                        if taxName == "IGST":
-                            for tr in Taxes.values():
-                                taxrate = float(tr)
-                                taxPayment =  totalTaxableVal  * (taxrate/100)
-                                taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxrate))+"%"
-                                print taxNameIGST
-                                taxAc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameIGST, accounts.c.orgcode == orgcode)))
-                                taxAcc =taxAc.fetchone()
-                                drs[taxAcc["accountcode"]] = "%.2f"%float(taxPayment)
-                                
-                    if 'cessname' in queryParams:
-                        taxName = queryParams["cessname"]
-                        CessTax = queryParams["cess"]
-                        for cs in CessTax.values():
-                            txrate = float(cs)
-                            taxPyment =  totalTaxableVal  * (txrate/100)
-                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(txrate))+"%"
-                            taxAcCess = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == taxNameCESS, accounts.c.orgcode == orgcode)))
-                            taxAccCS =taxAcCess.fetchone()
-                            crs[taxAccCS["accountcode"]] = "%.2f"%float(taxPayment)
- 
-                    
-                            
+                    if taxName == "IGST":
+                        for prod in queryParams["prodData"]:
+                            taxRate = float(queryParams["taxes"][prod])
+                            taxable = float(queryParams["prodData"][prod])
+                            if taxRate > 0.00:
+                                tx = float(taxRate)
+                                # this is the value which is going to Dr/Cr
+                                taxVal = taxable * (tx/100)
+                                if (tx % 2) == 0:
+                                    taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                                else:
+                                    taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxRate)+"%"
+                                if taxNameIGST not in taxDict:
+                                    taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                else:
+                                    val = float(taxDict[taxNameSGST])
+                                    taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+
+                    for prod in queryParams["prodData"]:
+                        cessRate = float(queryParams["cess"][prod])
+                        CStaxable = float(queryParams["prodData"][prod])
+                        if cessRate > 0.00:
+                            cs = float(cessRate)
+                            print cs
+                            # this is the value which is going to Dr/Cr
+                            csVal = CStaxable * (cs/100)
+                            print csVal
+                            taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+"%.2f"%float(cs)+"%"
+                            if taxNameCESS not in taxDict:
+                                taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            else:
+                                val = float(taxDict[taxNameSGST])
+                                taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+
+                    for Tax in taxDict:
+                        taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                        taxRow = taxAcc.fetchone()
+                        crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+
+
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(taxPayment)
+                    crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
 
