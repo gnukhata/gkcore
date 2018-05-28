@@ -65,6 +65,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.organisation.c.avflag)]))
             self.con.execute(select([func.count(gkdb.accounts.c.defaultflag)]))
             self.con.execute(select([func.count(gkdb.state.c.abbreviation)]))
             self.con.execute(select([func.count(gkdb.accounts.c.sysaccount)]))
@@ -102,6 +103,8 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table organisation add avflag integer default 1")
+            self.con.execute("alter table organisation add maflag integer default 0")
             self.con.execute("alter table accounts add defaultflag integer default 0")
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             for orgcode in organisations:
@@ -407,6 +410,7 @@ class api_organisation(object):
                     resultDT = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcd = resultDT.fetchone()
                     resultp = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Krishi Kalyan Cess","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Swachh Bharat Cess","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
+                    resultL = self.con.execute(gkdb.accounts.insert(),[{"accountname":"VAT_Out","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1},{"accountname":"VAT_In","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1}])
 
                     # Create Direct expense group , get it's group code and create subgroups under it.
                     directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
@@ -414,7 +418,6 @@ class api_organisation(object):
                     result = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Expense", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
                     DEGrpCodeData = result.fetchone()
                     DEGRPCode = DEGrpCodeData["groupcode"]
-                    #DESubGroups = [{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}]
                     insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":DEGRPCode,"orgcode":orgcode["orgcode"]}])
                     purchgrp = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Purchase", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
                     purchgrpcd = purchgrp.fetchone()
@@ -616,7 +619,7 @@ class api_organisation(object):
                 else:
                     bankdetails=row["bankdetails"]
                  
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":["maflag"]}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
@@ -928,3 +931,22 @@ class api_organisation(object):
                 self.con.close()
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    # returns avfalag , to decide auto voucher creation
+    @view_config(request_method='GET',request_param='autovoucher' , renderer='json')
+    def getAVflag(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.organisation.c.avflag]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                return {"gkstatus":enumdict["Success"],"autovoucher":result["avflag"]}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
+
+    
+    
