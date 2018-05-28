@@ -53,23 +53,15 @@ class api_state(object):
         This function returns a list of dictionaries having statecode as key and its corresponding statename as value.
         """
         try:
-            token = self.request.headers["gktoken"]
+            self.con = eng.connect()
+            stateData = self.con.execute(select([state]).order_by(state.c.statename))
+            getStateData = stateData.fetchall()
+            states = []
+            for st in getStateData:
+                states.append({st["statecode"]: st["statename"]})  
+            return {"gkstatus":enumdict["Success"], "gkresult": states}
         except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                stateData = self.con.execute(select([state]).order_by(state.c.statename))
-                getStateData = stateData.fetchall()
-                states = []
-                for st in getStateData:
-                    states.append({st["statecode"]: st["statename"]})  
-                return {"gkstatus":enumdict["Success"], "gkresult": states}
-            except:
-                return{"gkstatus":enumdict["ConnectionFailed"]}
+            return{"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_method='GET',renderer='json',request_param="abbreviation")
     def getAbbrevStates(self):
