@@ -90,6 +90,17 @@ class api_account(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                if 'defaultflag' in dataset:
+                    dflag = dataset["defaultflag"]
+                    grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
+                    grpname = grpnames.fetchone()
+                    for name in grpname:
+                        if name == "Bank":
+                            if dflag == "2":
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
+                        elif name == "Cash":
+                            if dflag == "3":
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
@@ -127,7 +138,7 @@ class api_account(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
                 row = result.fetchone()
-                acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"]}
+                acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"],"defaultflag":row["defaultflag"]}
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":acc}
             except:
