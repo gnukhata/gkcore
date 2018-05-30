@@ -297,6 +297,18 @@ class api_account(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                dataset["orgcode"] = authDetails["orgcode"]
+                if 'defaultflag' in dataset:
+                    dflag = dataset["defaultflag"]
+                    grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
+                    grpname = grpnames.fetchone()
+                    for name in grpname:
+                        if name == "Bank":
+                            if dflag == "2":
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
+                        elif name == "Cash":
+                            if dflag == "3":
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
