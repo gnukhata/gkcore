@@ -1375,11 +1375,9 @@ The bills grid calld gkresult will return a list as it's value.
                         CStaxable = float(queryParams["prodData"][prod])
                         if cessRate > 0.00:
                             cs = float(cessRate)
-                            print cs
                             # this is the value which is going to Dr/Cr
                             csVal = CStaxable * (cs/100)
-                            print csVal
-                            taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+"%.2f"%float(cs)+"%"
+                            taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
                             if taxNameCESS not in taxDict:
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal)
                             else:
