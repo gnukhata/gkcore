@@ -77,7 +77,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 dtset = self.request.json_body
                 dcinvdataset={}
@@ -123,7 +123,7 @@ class api_invoice(object):
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
-                    try:
+                   # try:
                         if invdataset.has_key('icflag'):
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
                             invoiceid = result.fetchone()
@@ -192,19 +192,20 @@ class api_invoice(object):
                                     a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     vid = a["vouchercode"]
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                    except:
-                        result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                        result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                #    except:
+                 #       result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
+                  #      result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
+                   #     result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
+                    #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            #except exc.IntegrityError:
+            #    return {"gkstatus":enumdict["DuplicateEntry"]}
+            #except:
+            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            #finally:
+            #    self.con.close()
 
+           
     '''
     This is a function to update an invoice.
     This function is primarily used to enable editing of invoices.
@@ -1460,20 +1461,23 @@ The bills grid calld gkresult will return a list as it's value.
                     for prod in queryParams["prodData"]:
                         cessRate = float(queryParams["cess"][prod])
                         CStaxable = float(queryParams["prodData"][prod])
+
                         if cessRate > 0.00:
                             cs = float(cessRate)
                             # this is the value which is going to Dr/Cr
                             csVal = CStaxable * (cs/100)
-                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+"%.2f"%float(cs)+"%"
+                            taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
                             if taxNameCESS not in taxDict:
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal)
                             else:
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                    print taxDict
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
-                        taxRow = taxAcc.fetchone()
-                        drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                        if taxRow.rowcount > 0:
+                            taxRow = taxAcc.fetchone()
+                            drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
 
                 if int(queryParams["taxType"]) == 22:
