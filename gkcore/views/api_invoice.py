@@ -1297,7 +1297,7 @@ The bills grid calld gkresult will return a list as it's value.
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                     saleAcc = salesAccount.fetchone()
-                    crs[saleAcc["accountcode"]] = totalTaxableVal
+                    crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
                 if "csname" in queryParams:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
@@ -1413,7 +1413,7 @@ The bills grid calld gkresult will return a list as it's value.
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
                     saleAcc = salesAccount.fetchone()
-                    drs[saleAcc["accountcode"]] = totalTaxableVal
+                    drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
                 if "csname" in queryParams:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
@@ -1500,7 +1500,7 @@ The bills grid calld gkresult will return a list as it's value.
                     print taxDict
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
-                        if taxRow.rowcount > 0:
+                        if taxAcc.rowcount > 0:
                             taxRow = taxAcc.fetchone()
                             drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
