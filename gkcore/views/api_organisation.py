@@ -410,7 +410,7 @@ class api_organisation(object):
                     resultDT = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     grpcd = resultDT.fetchone()
                     resultp = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Krishi Kalyan Cess","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Swachh Bharat Cess","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
-                    resultL = self.con.execute(gkdb.accounts.insert(),[{"accountname":"VAT_Out","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1},{"accountname":"VAT_In","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1}])
+                    resultL = self.con.execute(gkdb.accounts.insert(),[{"accountname":"VAT_OUT","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1},{"accountname":"VAT_IN","groupcode":grpcd["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1}])
 
                     # Create Direct expense group , get it's group code and create subgroups under it.
                     directexpense= {"groupname":"Direct Expense","orgcode":orgcode["orgcode"]}
