@@ -1537,7 +1537,7 @@ The bills grid calld gkresult will return a list as it's value.
                 if accgrp["groupname"] == "Bank":
                     vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                     vouchercode =vouchercodedata.fetchone()
-                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
+                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":orgcode}])
             for crkeys in crs.keys():
                 self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
                 accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
@@ -1545,7 +1545,7 @@ The bills grid calld gkresult will return a list as it's value.
                 if accgrp["groupname"] == "Bank":
                     vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                     vouchercode =vouchercodedata.fetchone()
-                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
+                    recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
             vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
             vchcode =vchdata.fetchone()
