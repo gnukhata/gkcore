@@ -164,32 +164,34 @@ class api_invoice(object):
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             stockdataset["stockdate"] = invoiceid["invoicedate"]
                             for item in items.keys():
+                                self.con = eng.connect()
                                 gstResult = gst(item,self.con)
                                 if int(gstResult["gsflag"]) == 7:
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(stock.insert(),[stockdataset])
+                                    print item
                                 # check automatic voucher flag  if it is 1 get maflag
-                                avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                                av = avfl.fetchone()
-                                if av["avflag"] == 1:
-                                    print "1 avflag is 1"
-                                    avData = invdataset["av"]
-                                    mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                                    maFlag = mafl.fetchone()
-                                    csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
-                                    CSname = csName.fetchone()
-                                    queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
-                                    if int(invdataset["taxflag"]) == 7:
-                                        queryParams["gstname"]=avData["avtax"]["GSTName"]
-                                        queryParams["cessname"] =avData["avtax"]["CESSName"]
-                                        
-                                    if int(invdataset["taxflag"]) == 22:
-                                        queryParams["taxpayment"]=avData["taxpayment"]
-                                    #call getDefaultAcc
-                                    a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                    vid = a["vouchercode"]
+                            avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                            av = avfl.fetchone()
+                            if av["avflag"] == 1:
+                                print "1 avflag is 1"
+                                avData = invdataset["av"]
+                                mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                maFlag = mafl.fetchone()
+                                csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                                CSname = csName.fetchone()
+                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                if int(invdataset["taxflag"]) == 7:
+                                    queryParams["gstname"]=avData["avtax"]["GSTName"]
+                                    queryParams["cessname"] =avData["avtax"]["CESSName"]
+
+                                if int(invdataset["taxflag"]) == 22:
+                                    queryParams["taxpayment"]=avData["taxpayment"]
+                                #call getDefaultAcc
+                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                vid = a["vouchercode"]
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                 #    except:
                  #       result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
