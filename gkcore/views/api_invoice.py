@@ -77,7 +77,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 dtset = self.request.json_body
                 dcinvdataset={}
@@ -123,7 +123,7 @@ class api_invoice(object):
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
-                   # try:
+                    try:
                         if invdataset.has_key('icflag'):
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
                             invoiceid = result.fetchone()
@@ -136,17 +136,15 @@ class api_invoice(object):
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invoiceid["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                            #print "2 Inserted data of cashmemo"
-                            # check automatic voucher flag  if it is 1 get maflag
                             
+                            # check automatic voucher flag  if it is 1 get maflag
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             av = avfl.fetchone()
                             if av["avflag"] == 1:
-                                print "1 avflag is 1"
+                                
                                 avData = invdataset["av"]
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 maFlag = mafl.fetchone()
-                                print avData
                                 queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                 if int(invdataset["taxflag"]) == 7:
                                     queryParams["gstname"]=avData["avtax"]["GSTName"]
@@ -156,7 +154,6 @@ class api_invoice(object):
                                     queryParams["taxpayment"]=avData["taxpayment"]
                                 #call getDefaultAcc
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                print a
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -171,12 +168,10 @@ class api_invoice(object):
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(stock.insert(),[stockdataset])
-                                    print item
                                 # check automatic voucher flag  if it is 1 get maflag
                             avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             av = avfl.fetchone()
                             if av["avflag"] == 1:
-                                print "1 avflag is 1"
                                 avData = invdataset["av"]
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 maFlag = mafl.fetchone()
@@ -193,18 +188,18 @@ class api_invoice(object):
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                 vid = a["vouchercode"]
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
-                #    except:
-                 #       result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                  #      result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                   #     result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
-                    #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                    except:
+                        result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
+                        result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
+                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
-            #    self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
            
     '''
@@ -1260,7 +1255,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-        #try:
+        try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1339,10 +1334,8 @@ The bills grid calld gkresult will return a list as it's value.
                             taxable = float(queryParams["prodData"][prod])
                             if taxRate > 0.00:
                                 tx = (float(taxRate)/2)
-                                print tx
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                print taxVal
                                 if (tx % 2) == 0:
                                     taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
                                     taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
@@ -1385,7 +1378,6 @@ The bills grid calld gkresult will return a list as it's value.
                             else:
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                    print taxDict
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
@@ -1497,7 +1489,7 @@ The bills grid calld gkresult will return a list as it's value.
                             else:
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                    print taxDict
+                    
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         if taxAcc.rowcount > 0:
@@ -1554,7 +1546,7 @@ The bills grid calld gkresult will return a list as it's value.
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
 
-        #except:
-        #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-        #finally:
-        #    self.con.close()
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
