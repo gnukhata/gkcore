@@ -77,6 +77,8 @@ class api_account(object):
         The data is fetched from request.json_body.
         Expects accountname,groupsubgroupcode and opening balance.
         Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+        If new accounts are added under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
+defaultflag '2' or '3' set to the '0'.  
         """
         try:
             token = self.request.headers["gktoken"]
@@ -96,10 +98,10 @@ class api_account(object):
                     grpname = grpnames.fetchone()
                     for name in grpname:
                         if name == "Bank":
-                            if dflag == "2":
+                            if dflag == 2:
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
                         elif name == "Cash":
-                            if dflag == "3":
+                            if dflag == 3:
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
@@ -284,6 +286,10 @@ class api_account(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"] }
 
+    '''
+    If account is updated under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
+defaultflag '2' or '3' set to the '0'.
+    '''
     @view_config(request_method='PUT', renderer='json')
     def editAccount(self):
         try:
