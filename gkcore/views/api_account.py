@@ -103,6 +103,12 @@ defaultflag '2' or '3' set to the '0'.
                         elif name == "Cash":
                             if dflag == 3:
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
+                        elif name == "Purchase":
+                            if dflag == 16:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
+                        elif name == "Sales":
+                            if dflag == 19:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
@@ -315,6 +321,12 @@ defaultflag '2' or '3' set to the '0'.
                         elif name == "Cash":
                             if dflag == "3":
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
+                        elif name == "Purchase":
+                            if dflag == 16:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
+                        elif name == "Sales":
+                            if dflag == 19:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
