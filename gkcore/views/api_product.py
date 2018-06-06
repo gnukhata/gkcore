@@ -42,7 +42,7 @@ from sqlalchemy import and_, exc, func
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import goprod, product
+from gkcore.models.gkdb import goprod, product,accounts
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from datetime import datetime,date
@@ -384,12 +384,14 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
                 productCode = productDetails["productcode"]
+                pn = self.con.execute(select([gkdb.product.c.productdesc]).where(gkdb.product.c.productcode==productCode))
+                prodName = pn.fetchone()
                 result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
                 if godownFlag:
                     goDetails = dataset["godetails"]
@@ -400,14 +402,20 @@ class api_product(object):
                         goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
                         self.con.execute(gkdb.goprod.insert(),[goro])
                     self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
-
+                # We need to update accountname also.
+                pnSL = str(prodName["productdesc"]) +" Sale"
+                newpnSL = str(productDetails["productdesc"])+" Sale"
+                pnPurch = str(prodName["productdesc"]) +" Purchase"
+                newpnPH = str(productDetails["productdesc"])+" Purchase"
+                self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnSL,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnSL))
+                self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnPurch,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnPH))
                 return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+           # except exc.IntegrityError:
+           #     return {"gkstatus":enumdict["DuplicateEntry"]}
+           # except:
+           #     return {"gkstatus":enumdict["ConnectionFailed"]}
+           # finally:
+           #     self.con.close()
 
     @view_config(request_method='DELETE', renderer ='json')
     def deleteProduct(self):
