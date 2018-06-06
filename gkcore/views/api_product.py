@@ -1,5 +1,3 @@
-
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -323,7 +321,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+         #   try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
@@ -335,6 +333,10 @@ class api_product(object):
                     if duplicateproductrow["productcount"]>0:
                         return {"gkstatus":enumdict["DuplicateEntry"]}
                 result = self.con.execute(gkdb.product.insert(),[productDetails])
+                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
+                sp = self.con.execute("select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"%('Sales','Purchase',productDetails["orgcode"]))
+                s = sp.fetchone()
+                print s
                 spec = productDetails["specs"]
                 for sp in spec.keys():
                     self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
@@ -354,12 +356,12 @@ class api_product(object):
 
                 return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+          #  except exc.IntegrityError:
+          #      return {"gkstatus":enumdict["DuplicateEntry"]}
+          #  except:
+          #      return {"gkstatus":enumdict["ConnectionFailed"]}
+          #  finally:
+          #      self.con.close()
 
     '''
     Here product data is updated with new data input by the user while editing product.
