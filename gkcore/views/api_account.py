@@ -25,6 +25,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Prajkta Patkar" <prajakta@dff.org.in>
+"Nitesh Chaughule" <nitesh@disroot.org>
 """
 
 from gkcore import eng, enumdict
@@ -78,7 +79,8 @@ class api_account(object):
         Expects accountname,groupsubgroupcode and opening balance.
         Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
         If new accounts are added under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
-defaultflag '2' or '3' set to the '0'.  
+defaultflag '2' or '3' set to the '0'.
+        If new accounts are added under sub-group 'Purchase' or 'Sales' with defaultflag '16' or '19' respectively then existing account with defaultflag '16' or '19' set to the '0'.  
         """
         try:
             token = self.request.headers["gktoken"]
@@ -295,6 +297,8 @@ defaultflag '2' or '3' set to the '0'.
     '''
     If account is updated under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
 defaultflag '2' or '3' set to the '0'.
+    If account is updated under sub-group 'Purchase' or 'Sales' with defaultflag '16' or '19' respectively then existing account with 
+defaultflag '16' or '19' set to the '0'.
     '''
     @view_config(request_method='PUT', renderer='json')
     def editAccount(self):
