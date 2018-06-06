@@ -320,10 +320,10 @@ defaultflag '16' or '19' set to the '0'.
                     grpname = grpnames.fetchone()
                     for name in grpname:
                         if name == "Bank":
-                            if dflag == "2":
+                            if dflag == 2:
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
                         elif name == "Cash":
-                            if dflag == "3":
+                            if dflag == 3:
                                 setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
                         elif name == "Purchase":
                             if dflag == 16:
