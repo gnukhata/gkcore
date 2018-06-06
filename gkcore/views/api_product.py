@@ -357,7 +357,7 @@ class api_product(object):
                 prodName = str(productDetails["productdesc"])
                 proSale = prodName + " Sale"
                 proPurch = prodName + " Purchase"
-                resultb = self.con.execute(gkdb.accounts.insert(),[{"accountname":proPurch,"groupcode":s[0][0],"orgcode":authDetails["orgcode"]},{"accountname":proSale,"groupcode":s[1][0],"orgcode":authDetails["orgcode"]}])
+                resultb = self.con.execute(gkdb.accounts.insert(),[{"accountname":proPurch,"groupcode":s[0][0],"orgcode":authDetails["orgcode"],"sysaccount":1},{"accountname":proSale,"groupcode":s[1][0],"orgcode":authDetails["orgcode"],"sysaccount":1}])
                 
                 return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
@@ -427,22 +427,25 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            #try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(select([gkdb.product.c.specs]).where(gkdb.product.c.productcode==dataset["productcode"]))
+                result = self.con.execute(select([gkdb.product.c.specs,gkdb.product.c.productdesc]).where(gkdb.product.c.productcode==dataset["productcode"]))
                 row = result.fetchone()
                 spec = row["specs"]
+                pn = row["productdesc"]
                 for sp in spec.keys():
                     self.con.execute("update categoryspecs set productcount = productcount -1 where spcode = %d"%(int(sp)))
+                
                 result = self.con.execute(gkdb.product.delete().where(gkdb.product.c.productcode==dataset["productcode"]))
+                resultA = self.con.execute(accounts.delete().where(and_(accounts.c.accountname.like(pn+'%'),accounts.c.orgcode == authDetails["orgcode"])))
                 return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+           # except exc.IntegrityError:
+            #    return {"gkstatus":enumdict["ActionDisallowed"]}
+            #except:
+            #    return {"gkstatus":enumdict["ConnectionFailed"] }
+            #finally:
+            #    self.con.close()
 
     @view_config(request_method='GET',request_param='tax=vatorgst',renderer='json')
     def getvatorgst(self):
