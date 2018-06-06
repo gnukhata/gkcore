@@ -333,10 +333,6 @@ class api_product(object):
                     if duplicateproductrow["productcount"]>0:
                         return {"gkstatus":enumdict["DuplicateEntry"]}
                 result = self.con.execute(gkdb.product.insert(),[productDetails])
-                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
-                sp = self.con.execute("select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"%('Sales','Purchase',productDetails["orgcode"]))
-                s = sp.fetchone()
-                print s
                 spec = productDetails["specs"]
                 for sp in spec.keys():
                     self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
@@ -354,6 +350,15 @@ class api_product(object):
                         self.con.execute(goprod.insert(),[goro])
                     self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
 
+                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
+                sp = self.con.execute("select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"%('Sales','Purchase',productDetails["orgcode"]))
+                s = sp.fetchall()
+                print s[0][0]
+                prodName = str(productDetails["productdesc"])
+                proSale = prodName + " Sale"
+                proPurch = prodName + " Purchase"
+                resultb = self.con.execute(gkdb.accounts.insert(),[{"accountname":proPurch,"groupcode":s[0][0],"orgcode":authDetails["orgcode"]},{"accountname":proSale,"groupcode":s[1][0],"orgcode":authDetails["orgcode"]}])
+                
                 return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
           #  except exc.IntegrityError:
