@@ -321,7 +321,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-         #   try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
@@ -361,12 +361,12 @@ class api_product(object):
                 
                 return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
-          #  except exc.IntegrityError:
-          #      return {"gkstatus":enumdict["DuplicateEntry"]}
-          #  except:
-          #      return {"gkstatus":enumdict["ConnectionFailed"]}
-          #  finally:
-          #      self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     '''
     Here product data is updated with new data input by the user while editing product.
