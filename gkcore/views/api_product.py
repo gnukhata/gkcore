@@ -353,8 +353,7 @@ class api_product(object):
                 # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
                 sp = self.con.execute("select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"%('Sales','Purchase',productDetails["orgcode"]))
                 s = sp.fetchall()
-                print s[0][0]
-                prodName = str(productDetails["productdesc"])
+                prodName = productDetails["productdesc"]
                 proSale = prodName + " Sale"
                 proPurch = prodName + " Purchase"
                 resultb = self.con.execute(gkdb.accounts.insert(),[{"accountname":proPurch,"groupcode":s[0][0],"orgcode":authDetails["orgcode"],"sysaccount":1},{"accountname":proSale,"groupcode":s[1][0],"orgcode":authDetails["orgcode"],"sysaccount":1}])
