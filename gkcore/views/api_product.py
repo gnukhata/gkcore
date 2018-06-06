@@ -384,7 +384,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
@@ -410,12 +410,12 @@ class api_product(object):
                 self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnSL,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnSL))
                 self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnPurch,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnPH))
                 return {"gkstatus":enumdict["Success"]}
-           # except exc.IntegrityError:
-           #     return {"gkstatus":enumdict["DuplicateEntry"]}
-           # except:
-           #     return {"gkstatus":enumdict["ConnectionFailed"]}
-           # finally:
-           #     self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method='DELETE', renderer ='json')
     def deleteProduct(self):
