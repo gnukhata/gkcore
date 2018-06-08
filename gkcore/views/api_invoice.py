@@ -124,7 +124,7 @@ class api_invoice(object):
                                     voucherData["vchno"] = a["vchNo"]
                                 else:
                                     voucherData["status"] = 1
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]} 
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData} 
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
@@ -164,7 +164,7 @@ class api_invoice(object):
                                     voucherData["vchno"] = a["vchNo"]
                                 else:
                                     voucherData["status"] = 1
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
                             invoiceid = result.fetchone()
@@ -201,7 +201,7 @@ class api_invoice(object):
                                     voucherData["vchno"] = a["vchNo"]
                                 else:
                                     voucherData["status"] = 1
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
