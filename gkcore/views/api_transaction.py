@@ -179,7 +179,7 @@ class api_transaction(object):
                 vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                 vchcode =vchdata.fetchone()
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
+                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"]),"vouchernumber":vchNo}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
