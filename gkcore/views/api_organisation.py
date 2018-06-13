@@ -65,6 +65,7 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            self.con.execute(select([func.count(gkdb.organisation.c.modeflag)]))
             self.con.execute(select([func.count(gkdb.organisation.c.avflag)]))
             self.con.execute(select([func.count(gkdb.accounts.c.defaultflag)]))
             self.con.execute(select([func.count(gkdb.state.c.abbreviation)]))
@@ -103,6 +104,7 @@ class api_organisation(object):
             self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
             self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
         except:
+            self.con.execute("alter table organisation add modeflag integer default 1")
             self.con.execute("alter table organisation add avflag integer default 1")
             self.con.execute("alter table organisation add maflag integer default 0")
             self.con.execute("alter table accounts add defaultflag integer default 0")
@@ -619,7 +621,7 @@ class api_organisation(object):
                 else:
                     bankdetails=row["bankdetails"]
                  
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":["maflag"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"],"yearstart":str(row["yearstart"]),"yearend":str(row["yearend"]),"orgcity":orgcity,"orgaddr":orgaddr, "orgpincode":orgpincode,"orgstate":orgstate, "orgcountry":orgcountry,"orgtelno":orgtelno, "orgfax":orgfax,"orgwebsite":orgwebsite, "orgemail":orgemail,"orgpan":orgpan, "orgmvat":orgmvat,"orgstax":orgstax, "orgregno":orgregno,"orgregdate":orgregdate, "orgfcrano":orgfcrano,"orgfcradate":orgfcradate, "roflag":row["roflag"],"booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":["maflag"],"modeflag":row["modeflag"]}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
