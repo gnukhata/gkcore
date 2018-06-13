@@ -152,12 +152,12 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+                
                 # generate voucher number if it is not sent.
                 if dataset.has_key("vouchernumber") == False:
                     voucherType = dataset["vouchertype"]
                     vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
                     dataset["vouchernumber"] = vchNo
-                     
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
@@ -175,11 +175,10 @@ class api_transaction(object):
                         vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                         vouchercode =vouchercodedata.fetchone()
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
-
                 vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                 vchcode =vchdata.fetchone()
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"]),"vouchernumber":vchNo}
+                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"]),"vouchernumber":dataset["vouchernumber"]}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
