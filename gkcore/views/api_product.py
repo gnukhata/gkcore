@@ -324,6 +324,7 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                print dataset
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
                 productDetails["orgcode"] = authDetails["orgcode"]

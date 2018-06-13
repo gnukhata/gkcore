@@ -39,6 +39,21 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
+
+
+def gstAccName(taxname,taxrate,state,con):
+    """
+    This function returns a dictionary which will have all data that is require to create multipleaccounts under subgroup Duties
+    & Taxes.
+
+    This function takes list of taxname & taxrate, 
+    """
+
+
+
+
+
+
 def calTax(taxflag,source,destination,productcode,con):
         """
         Purpose:
@@ -125,7 +140,7 @@ class api_tax(object):
                 dataset = self.request.json_body
                 if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
                     dataset["orgcode"] = authDetails["orgcode"]
-
+                    print dataset
                     result = self.con.execute(tax.insert(),[dataset])
                     return {"gkstatus":enumdict["Success"]}
                 else:
