@@ -33,6 +33,7 @@ Contributors:
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql.base import PGInspector
 
 
 from gkcore.models.gkdb import metadata
@@ -82,12 +83,17 @@ def columnExists(tableName, columnName):
     """
     purpose:
     Checkes weather the column mentiond is alredy present in the given table.
-    describtion:
+    description:
     Given the table and the name of the column, this functions checks if that column exists.
     It uses the inspect function to do so.
     The function traverces through the list of columns and checks if the name exists.
     Returns True if the column exists or False otherwise.
     """
-     
-    gkInspect = inspect(dbconnect())
+    gkInspect = PGInspector(dbconnect())
+    cols = gkInspect.get_columns(tableName)
+    for col in cols:
+        if col["name"] in columnName:
+            return True
+    return False
     
+        
