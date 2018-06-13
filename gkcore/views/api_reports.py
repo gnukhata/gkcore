@@ -28,6 +28,7 @@ Contributors:
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Parabjyot Singh" <parabjyot1996@gmail.com>
 "Rahul Chaurasiya" <crahul4133@gmail.com>
+"Vasudha Kadge" <kadge.vasudha@gmail.com>
 """
 
 
@@ -38,7 +39,7 @@ from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, org
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , alias, or_, exc, distinct
+from sqlalchemy import and_ , alias, or_, exc, distinct,desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -3696,6 +3697,8 @@ class api_reports(object):
         description:
         This function returns entire log statement for a given organisation.
         Date range is taken from client and orgcode from authdetails.
+        Date sorted according to orderflag.
+        If request params has orderflag then date sorted in descending order otherwise in ascending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -3707,7 +3710,10 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
                 logdata = []
                 for row in result:
                     userdata = self.con.execute(select([users.c.username, users.c.userrole]).where(users.c.userid==row["userid"]))
@@ -3723,7 +3729,8 @@ class api_reports(object):
                     else:
                         userrole = "Godown In Charge"
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
-                return {"gkstatus":enumdict["Success"], "gkresult":logdata }
+                
+                return {"gkstatus":enumdict["Success"], "gkresult":logdata}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
@@ -3745,7 +3752,10 @@ All parameter are same with the addition of userid.
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                   result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
                 logdata = []
                 for row in result:
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
