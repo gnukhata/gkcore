@@ -32,6 +32,9 @@ Contributors:
 #inspect is another functions from alchemy which helps to find details info on tables or columns.
 
 from sqlalchemy.engine import create_engine
+from sqlalchemy import inspect
+
+
 from gkcore.models.gkdb import metadata
 def dbconnect():
     """
@@ -74,3 +77,17 @@ def addFields(con,eng):
         con.execute("alter table delchal add noofpackages int")
         con.execute("alter table delchal add modeoftransport text")
     return 0
+
+def columnExists(tableName, columnName):
+    """
+    purpose:
+    Checkes weather the column mentiond is alredy present in the given table.
+    describtion:
+    Given the table and the name of the column, this functions checks if that column exists.
+    It uses the inspect function to do so.
+    The function traverces through the list of columns and checks if the name exists.
+    Returns True if the column exists or False otherwise.
+    """
+     
+    gkInspect = inspect(dbconnect())
+    
