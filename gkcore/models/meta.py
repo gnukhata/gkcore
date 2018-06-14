@@ -97,3 +97,12 @@ def columnExists(tableName, columnName):
     return False
     
         
+def tableExists(tblName):
+    """
+    purpose:
+    Finds out weather the given table exists in the database.
+    Function uses inspect object for postgresql.
+    """
+    gkInspect = PGInspector(dbconnect())
+    tblList = gkInspect.get_table_names()
+    return tblName in tblList
