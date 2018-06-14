@@ -3944,6 +3944,7 @@ free replacement or sample are those which are excluded.
         This function is used to see sales or purchase register of organisation.
         It means the total purchase and sales of different products. Also its amount,
         tax, etc.
+        orderflag is checked in request params for sorting date in descending order.
         """
         try:
             token = self.request.headers["gktoken"]
