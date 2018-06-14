@@ -60,16 +60,20 @@ class api_organisation(object):
     def gkUpgrade(self):
         """
         This function will be called only once while upgrading gnukhata.
+        The function will be mostly concerned with adding new fields to the databse or altering those which are present.
+        The columnExists() function will be used to check if a certain column exists.
+        If the function returns False then the field is created.
+        For example:
         We check if the field stockdate is present.
         If it is not present it means that this is an upgrade.
         """
         self.con = eng.connect()
         try:
-            if ! columnExists("organisation","avflag"):
+            if not columnExists("organisation","avflag"):
                 self.con.execute("alter table organisation add avflag integer default 1")
-            if ! columnExists("accounts","defaultflag"):
+            if not columnExists("accounts","defaultflag"):
                 self.con.execute("alter table accounts add defaultflag integer default 0")
-            if ! columnExists("state","abbreviation"):
+            if not columnExists("state","abbreviation"):
                 self.con.execute("alter table state add abbreviation text")
                 self.con.execute("update state set abbreviation='JK' where statecode=1")
                 self.con.execute("update state set abbreviation='HP' where statecode=2")
@@ -109,9 +113,9 @@ class api_organisation(object):
                 self.con.execute("update state set abbreviation='TS' where statecode=36")
                 self.con.execute("update state set abbreviation='AP' where statecode=37")
 
-            if ! columnExists("accounts","sysaccount"):
+            if not columnExists("accounts","sysaccount"):
                 self.con.execute("alter table accounts add sysaccount integer default 0")
-            if! columnExists("organisation","bankdetails"):
+            ifnot columnExists("organisation","bankdetails"):
                 self.con.execute("alter table organisation add bankdetails json")
 
             
