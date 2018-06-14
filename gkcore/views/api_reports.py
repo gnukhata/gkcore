@@ -51,7 +51,6 @@ from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 from natsort import natsorted
-from sqlalchemy import func, desc
 """
 purpose:
 This class is the resource to generate reports,
