@@ -48,6 +48,10 @@ def gstAccName(taxname,taxrate,state,con):
 
     This function takes list of taxname & taxrate, 
     """
+    try:
+        print "hii"
+    except:
+        return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
 
 
