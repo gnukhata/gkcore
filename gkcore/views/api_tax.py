@@ -28,7 +28,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import tax,users,product
+from gkcore.models.gkdb import tax,users,product,state,organisation
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -41,15 +41,40 @@ import gkcore
 from sqlalchemy.sql.expression import null
 
 
-def gstAccName(taxname,taxrate,state,con):
+def gstAccName(taxname,taxrate,orgcode,con):
     """
+    {u'productcode': 55, u'taxrate': 5.0, u'taxname': u'IGST', 'orgcode': 159}
+    tax initialized
+    {u'productcode': 55, u'taxrate': 2.0, u'taxname': u'CESS', 'orgcode': 159}
+    tax initialized
+    {u'productcode': 55, u'taxrate': 1.0, u'taxname': u'VAT', 'orgcode': 159, u'state': u'Maharashtra'}
+    category initialized
+
+    
     This function returns a dictionary which will have all data that is require to create multipleaccounts under subgroup Duties
     & Taxes.
+    
+    This function takes taxname, taxrate as parameters.
+    create 2 lists for gst and cess tax.
+    gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
+    cess = ["CESSIN_","CESSOUT_"]
+    Collect all states. for this first get all gstins in organisation where key is statecode, 
+    then searches for statename and create a list of it.
+    Now we have to get all distinct states from customerandsupplier table, and add these states in list if it is not present in list.
+    now loop through states list for each state we have create tax accounts.
+    First check taxname whether it is IGST i.e. GST 
+    loop through gst list and concatenate taxname and create tax 
+    
 
-    This function takes list of taxname & taxrate, 
     """
     try:
-        print "hii"
+        gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
+        cess = ["CESSIN_","CESSOUT_"]
+        gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
+        stCode = gstIN.fetchall()
+        for st in stCode.keys():
+            gstIN = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st)))
+        
     except:
         return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
