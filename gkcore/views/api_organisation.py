@@ -69,10 +69,137 @@ class api_organisation(object):
         """
         self.con = eng.connect()
         try:
+            organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
+            allorg = organisations.fetchall();
             if not columnExists("organisation","avflag"):
                 self.con.execute("alter table organisation add avflag integer default 1")
+            if not columnExists("organisation","maflag"):
+                self.con.execute("alter table organisation add maflag integer default 0")
+            if not columnExists("accounts","sysaccount"):
+                self.con.execute("alter table accounts add sysaccount integer default 0")
+                self.con.execute("update accounts set sysaccount=1 where accountname in ('Closing Stock', 'Opening Stock', 'Profit & Loss', 'Stock at the Beginning')")
             if not columnExists("accounts","defaultflag"):
                 self.con.execute("alter table accounts add defaultflag integer default 0")
+                for orgcode in allorg:
+                    try:
+                        groupdata = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"], gkdb.groupsubgroups.c.groupname == 'Current Liabilities')))
+                        groupCode = groupdata.fetchone()
+                        subGroup = {"groupname":"Duties & Taxes", "subgroupof":groupCode["groupcode"], "orgcode":orgcode["orgcode"]}
+                        self.con.execute(gkdb.groupsubgroups.insert(), subGroup)
+                        
+                        chartofacc = ['Cash in hand','Krishi Kalyan Cess','Swachh Bharat Cess','Electricity Expense','Professional Fees','Bank A/C','Sale A/C','Purchase A/C','Discount Paid','Bonus','Depreciation Expense','Discount Received','Salary','Bank Charges','Rent','Travel Expense','Accumulated Depreciation','Miscellaneous Expense','VAT_OUT','VAT_IN']
+                        for acc in chartofacc:
+                            accname = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == acc)))
+                            acname = accname.fetchone()
+                            if acname == None:
+                                if acc == 'Cash in hand':
+                                    cash = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Cash",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    cashgrp = cash.fetchone()
+                                    cashadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Cash in hand","groupcode":cashgrp["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":3})
+                                elif acc == 'Krishi Kalyan Cess':
+                                    cess = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    cesscode = cess.fetchone()
+                                    cessadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Krishi Kalyan Cess","groupcode":cesscode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'VAT_OUT':
+                                    vout = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    voutcode = vout.fetchone()
+                                    voutadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"VAT_OUT","groupcode":voutcode["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1}])
+                                elif acc == 'VAT_IN':
+                                    vin = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    vincode = vin.fetchone()
+                                    vinadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"VAT_IN","groupcode":vincode["groupcode"],"orgcode":orgcode["orgcode"],"sysaccount":1}])
+                                elif acc == 'Swachh Bharat Cess':
+                                    bcess = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Duties & Taxes",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    cesscode = bcess.fetchone()
+                                    bcessadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Swachh Bharat Cess","groupcode":cesscode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Salary':
+                                    sal = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    salcode = sal.fetchone()
+                                    saladd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Salary","groupcode":salcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Miscellaneous Expense':
+                                    miscex = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    miscexcode = miscex.fetchone();
+                                    miscexadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Miscellaneous Expense","groupcode":miscexcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc =='Bank Charges':
+                                    bnkch = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    bnkchcode = bnkch.fetchone();
+                                    bnkchadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Bank Charges","groupcode":bnkchcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Rent':
+                                    rent = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    rentcode = rent.fetchone();
+                                    rentadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Rent","groupcode":rentcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Travel Expense':
+                                    travel = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    travelcode = travel.fetchone();
+                                    traveladd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Travel Expense","groupcode":travelcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Electricity Expense':
+                                    elect = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    electcode = elect.fetchone();
+                                    electadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Electricity Expense","groupcode":electcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Professional Fees':
+                                    fees = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Direct Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    feescode = fees.fetchone();
+                                    feesadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Professional Fees","groupcode":feescode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Bank A/C':
+                                    bank = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Bank",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    bankgrp = bank.fetchone()
+                                    bankadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Bank A/C","groupcode":bankgrp["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":2})
+                                elif acc == 'Discount Paid':
+                                    disc = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    disccode = disc.fetchone()
+                                    discadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount Paid","groupcode":disccode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Bonus':
+                                    bonus = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    bonuscode = bonus.fetchone()
+                                    bonusadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Bonus","groupcode":bonuscode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Depreciation Expense':
+                                    depex = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    depexcode = depex.fetchone()
+                                    depexadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Depreciation Expense","groupcode":depexcode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                elif acc == 'Accumulated Depreciation':
+                                    accdep = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Fixed Assets",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    accdepcode = accdep.fetchone()
+                                    accdepadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Accumulated Depreciation","groupcode":accdepcode["groupcode"],"orgcode":orgcode["orgcode"]})
+                                elif acc == 'Discount Received':
+                                    discpur = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                                    discpurcd = discpur.fetchone()
+                                    discadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount Received","groupcode":discpurcd["groupcode"],"orgcode":orgcode["orgcode"]})
+                                elif acc == 'Sale A/C':
+                                    sale = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Sales", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                                    salecode = sale.fetchone()
+                                    if salecode == None:
+                                        acsale = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Income", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                                        saleCode = acsale.fetchone()
+                                        saleData = self.con.execute(gkdb.groupsubgroups.insert(),{"groupname":"Sales","subgroupof":saleCode["groupcode"],"orgcode":orgcode["orgcode"]})
+                                        saleadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Sale A/C","groupcode":salecode["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":19})
+                                    else:
+                                        saleadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Sale A/C","groupcode":salecode["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":19})
+                                elif acc == 'Purchase A/C':
+                                    purch = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Purchase", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                                    purchcd = purch.fetchone()
+                                    if purchcd == None:
+                                        acpurc = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname == "Direct Expense", gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"])))
+                                        purCode = acpurc.fetchone()
+                                        insData = self.con.execute(gkdb.groupsubgroups.insert(),[{"groupname":"Purchase","subgroupof":purCode["groupcode"],"orgcode":orgcode["orgcode"]},{"groupname":"Consumables","subgroupof":purCode["groupcode"],"orgcode":orgcode["orgcode"]}])
+                                        purchadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Purchase A/C","groupcode":purchcd["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":16})
+                                    else:
+                                        purchadd = self.con.execute(gkdb.accounts.insert(),{"accountname":"Purchase A/C","groupcode":purchcd["groupcode"],"orgcode":orgcode["orgcode"], "defaultflag":16})
+                            elif acc == 'Cash in hand':
+                                self.con.execute("update accounts set defaultflag = 3 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Bank A/C':
+                                self.con.execute("update accounts set defaultflag = 2 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Sale A/C':
+                                self.con.execute("update accounts set defaultflag = 19 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Purchase A/C':
+                                self.con.execute("update accounts set defaultflag = 16 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'VAT_IN':
+                                self.con.execute("update accounts set defaultflag = 0, sysaccount = 1 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'VAT_OUT':
+                                self.con.execute("update accounts set defaultflag = 0, sysaccount = 1 where accountcode =%d"%int(acname["accountcode"]))
+                            else:
+                                self.con.execute("update accounts set defaultflag = 0 where accountcode =%d"%int(acname["accountcode"]))
+                    except:
+                        continue
             if not columnExists("state","abbreviation"):
                 self.con.execute("alter table state add abbreviation text")
                 self.con.execute("update state set abbreviation='JK' where statecode=1")
@@ -112,245 +239,208 @@ class api_organisation(object):
                 self.con.execute("update state set abbreviation='AN' where statecode=35")
                 self.con.execute("update state set abbreviation='TS' where statecode=36")
                 self.con.execute("update state set abbreviation='AP' where statecode=37")
-
-            if not columnExists("accounts","sysaccount"):
-                self.con.execute("alter table accounts add sysaccount integer default 0")
-            ifnot columnExists("organisation","bankdetails"):
+            if not columnExists("organisation","bankdetails"):
                 self.con.execute("alter table organisation add bankdetails json")
+            if not columnExists("purchaseorder","purchaseordertotal"):
+                self.con.execute("drop table purchaseorder cascade")
+                self.con.execute("create table purchaseorder(orderid serial, orderno text not null, orderdate timestamp not null, creditperiod text, payterms text, modeoftransport text, issuername text, designation text, schedule jsonb, taxstate text, psflag integer not null, csid integer, togodown integer, taxflag integer default 22, tax jsonb, cess jsonb,purchaseordertotal numeric(13,2) not null, pototalwords text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 22, address text, orgcode integer not null, primary key(orderid), foreign key (csid) references customerandsupplier(custid) ON DELETE CASCADE, foreign key (togodown) references godown(goid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+                self.con.execute("create index purchaseorder_orgcodeindex on purchaseorder using btree(orgcode)")
+                self.con.execute("create index purchaseorder_date on purchaseorder using btree(orderdate)")
+                self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
+            if not columnExists("rejectionnote","rejprods"):
+                self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
+            if not columnExists("drcr","drcrid"):
+                self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
+            if not columnExists("invoice","invoicetotalword"):
+                self.con.execute("alter table invoice add invoicetotalword text")
+            if not columnExists("delchal","taxflag"):
+                self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
 
-            
-
-
-            self.con.execute(select([func.count(gkdb.purchaseorder.c.purchaseordertotal)]))
-            self.con.execute(select([func.count(gkdb.rejectionnote.c.rejprods)]))
-            self.con.execute(select([func.count(gkdb.drcr.c.drcrid)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.invoicetotalword)]))
-            self.con.execute(select([func.count(gkdb.delchal.c.taxflag)]))
-            self.con.execute(select([func.count(gkdb.delchal.c.inoutflag)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.inoutflag)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.address)]))
-            self.con.execute(select([func.count(gkdb.customerandsupplier.c.bankdetails)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.paymentmode)]))
-            self.con.execute(select([func.count(gkdb.delchal.c.consignee)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.orgstategstin)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.cess)]))
-            self.con.execute(select([func.count(gkdb.state.c.statecode)]))
-            countResult = self.con.execute(select([func.count(gkdb.invoice.c.reversecharge).label('revcount')]))
-            countData = countResult.fetchone()
-            if int(countData["revcount"]) > 0:
-                self.con.execute("update invoice set reversecharge = '0'" )
-            self.con.execute(select([func.count(gkdb.organisation.c.gstin)]))
-            self.con.execute(select([func.count(gkdb.invoice.c.consignee)]))
-            self.con.execute(select([func.count(gkdb.customerandsupplier.c.gstin)]))
-            self.con.execute(select([func.count(gkdb.product.c.gscode)]))
-            self.con.execute(select([func.count(gkdb.rejectionnote.c.rnid)]))
-            self.con.execute(select([func.count(gkdb.stock.c.stockdate)]))
-            self.con.execute(select([func.count(gkdb.transfernote.c.fromgodown)]))
-            self.con.execute(select([func.count(gkdb.transfernote.c.duedate)]))
-            self.con.execute(select([func.count(gkdb.dcinv.c.invprods)]))
-            self.con.execute(select([func.count(gkdb.organisation.c.logo)]))
-            self.con.execute(select([func.count(gkdb.vouchers.c.instrumentno)]))
-            self.con.execute(select([func.count(gkdb.organisation.c.invsflag)]))
-            self.con.execute(select([func.count(gkdb.organisation.c.billflag)]))
-            self.con.execute(select([func.count(gkdb.billwise.c.billid)]))
-        except:
-
-            self.con.execute("alter table organisation add maflag integer default 0")
-
-            organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
-            for orgcode in organisations:
-                try:
-                    groupdata = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"], gkdb.groupsubgroups.c.groupname == 'Current Liabilities')))
-                    groupCode = groupdata.fetchone()
-                    subGroup = {"groupname":"Duties & Taxes", "subgroupof":groupCode["groupcode"], "orgcode":orgcode["orgcode"]}
-                    self.con.execute(gkdb.groupsubgroups.insert(), subGroup)
-                except:
-                    continue
-            self.con.execute("alter table state add abbreviation text")
-            self.con.execute("update state set abbreviation='JK' where statecode=1")
-            self.con.execute("update state set abbreviation='HP' where statecode=2")
-            self.con.execute("update state set abbreviation='PB' where statecode=3")
-            self.con.execute("update state set abbreviation='CH' where statecode=4")
-            self.con.execute("update state set abbreviation='UK' where statecode=5")
-            self.con.execute("update state set abbreviation='HR' where statecode=6")
-            self.con.execute("update state set abbreviation='DL' where statecode=7")
-            self.con.execute("update state set abbreviation='RJ' where statecode=8")
-            self.con.execute("update state set abbreviation='UP' where statecode=9")
-            self.con.execute("update state set abbreviation='BR' where statecode=10")
-            self.con.execute("update state set abbreviation='SK' where statecode=11")
-            self.con.execute("update state set abbreviation='AR' where statecode=12")
-            self.con.execute("update state set abbreviation='NL' where statecode=13")
-            self.con.execute("update state set abbreviation='MN' where statecode=14")
-            self.con.execute("update state set abbreviation='MZ' where statecode=15")
-            self.con.execute("update state set abbreviation='TR' where statecode=16")
-            self.con.execute("update state set abbreviation='ML' where statecode=17")
-            self.con.execute("update state set abbreviation='AS' where statecode=18")
-            self.con.execute("update state set abbreviation='WB' where statecode=19")
-            self.con.execute("update state set abbreviation='JH' where statecode=20")
-            self.con.execute("update state set abbreviation='OR' where statecode=21")
-            self.con.execute("update state set abbreviation='CG' where statecode=22")
-            self.con.execute("update state set abbreviation='MP' where statecode=23")
-            self.con.execute("update state set abbreviation='GJ' where statecode=24")
-            self.con.execute("update state set abbreviation='DD' where statecode=25")
-            self.con.execute("update state set abbreviation='DH' where statecode=26")
-            self.con.execute("update state set abbreviation='MH' where statecode=27")
-            self.con.execute("update state set abbreviation='AP' where statecode=28")
-            self.con.execute("update state set abbreviation='KA' where statecode=29")
-            self.con.execute("update state set abbreviation='GA' where statecode=30")
-            self.con.execute("update state set abbreviation='LD' where statecode=31")
-            self.con.execute("update state set abbreviation='KL' where statecode=32")
-            self.con.execute("update state set abbreviation='TN' where statecode=33")
-            self.con.execute("update state set abbreviation='PY' where statecode=34")
-            self.con.execute("update state set abbreviation='AN' where statecode=35")
-            self.con.execute("update state set abbreviation='TS' where statecode=36")
-            self.con.execute("update state set abbreviation='AP' where statecode=37")
-            self.con.execute("alter table accounts add sysaccount integer default 0")
-            self.con.execute("update accounts set sysaccount=1 where accountname in ('Closing Stock', 'Opening Stock', 'Profit & Loss', 'Stock at the Beginning')")
-            
-            self.con.execute("drop table purchaseorder cascade")
-            self.con.execute("create table purchaseorder(orderid serial, orderno text not null, orderdate timestamp not null, creditperiod text, payterms text, modeoftransport text, issuername text, designation text, schedule jsonb, taxstate text, psflag integer not null, csid integer, togodown integer, taxflag integer default 22, tax jsonb, cess jsonb,purchaseordertotal numeric(13,2) not null, pototalwords text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 22, address text, orgcode integer not null, primary key(orderid), foreign key (csid) references customerandsupplier(custid) ON DELETE CASCADE, foreign key (togodown) references godown(goid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
-            self.con.execute("create index purchaseorder_orgcodeindex on purchaseorder using btree(orgcode)")
-            self.con.execute("create index purchaseorder_date on purchaseorder using btree(orderdate)")
-            self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
-            self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
-            self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
-            self.con.execute("alter table invoice add invoicetotalword text")
-            self.con.execute("alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text")
-            self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
-            self.con.execute("alter table delchal add inoutflag integer")
-            #This code will assign inoutflag for delivery chalan where inoutflag is blank.
-            alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
-            #here we will be fetching all the delchal data
-            delchals = alldelchal.fetchall()
-            for delchal in delchals:
-                delchalid = int(delchal["dcid"])
-                stockdata = self.con.execute(select([gkdb.stock.c.inout]).where(and_(gkdb.stock.c.dcinvtnid == delchalid, gkdb.stock.c.dcinvtnflag == 4)))
-                inout = stockdata.fetchone()
-                inoutflag = inout["inout"]
-                self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
-            self.con.execute("alter table invoice add inoutflag integer")
-            #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
-            allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
-            #Here we fetching all "custid", "icflag" and "invid".
-            dict = allinvoice.fetchall()
-            for singleinv in dict:
-                sincustid = singleinv["custid"]
-                invid=singleinv["invid"]
-                icflag = singleinv["icflag"]
-                #First we checking the icflag (i.e 3 for "cashmemo", 9 for "invoice")
-                if icflag == 3:
-                    self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
-                else:
-                    cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
-                    #Here we fetching all "csflag" on the basis of "sincustid" (i.e "custid")
-                    csflagsingle = cussupdata.fetchone()
-                    for cussup in csflagsingle:
-                        #if "csflag" is 19 (i.e "supplier") then set inoutflag=9 (i.e "in") else "csflag" is 3 (i.e "customer" and set "inoutflag=15" (i.e "out"))
-                        if cussup==19:
-                            self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid))
-                        else:
-                            self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
-            self.con.execute("alter table invoice add address text")
-            self.con.execute("alter table customerandsupplier add bankdetails jsonb")
-            self.con.execute("alter table invoice add paymentmode integer")
-            #Code for assinging paymentmode where paymentmode is blank and bank details are present.
-            bankresult = self.con.execute(select([gkdb.invoice.c.invid,gkdb.invoice.c.bankdetails]).where(gkdb.invoice.c.paymentmode == None))
-            #Fetching invid,bankdetails using fetchall() method in list.for loop is used to fetch each record in bankresult.
-            dict = bankresult.fetchall()
-            for invdata in dict:
-                #Storing account number,ifsc number,invoice id in invaccno,invifsc,invoid respectively
-                invaccno = invdata["bankdetails"]["accountno"]
-                invifsc = invdata["bankdetails"]["ifsc"] 
-                invoid = invdata["invid"]
-                #Checking for bankdetails,if accountno and ifsc are present then set paymentmode=2 else set paymentmode=3. 
-                if (invaccno == "" or invifsc == ""):
-                    self.con.execute("update invoice set paymentmode=3 where invid = %d"%int(invoid))
-                else:
-                    self.con.execute("update invoice set paymentmode=2 where invid = %d"%int(invoid))
-            self.con.execute("alter table delchal add consignee jsonb")
-            self.con.execute("alter table invoice add orgstategstin text")
-            self.con.execute("alter table invoice add cess jsonb")
-            self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
-            self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
-            self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
-            self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
-            self.con.execute("insert into state( statecode, statename)values(3, 'Punjab')")
-            self.con.execute("insert into state( statecode, statename)values(4, 'Chandigarh')")
-            self.con.execute("insert into state( statecode, statename)values(5, 'Uttranchal')")
-            self.con.execute("insert into state( statecode, statename)values(6, 'Haryana')")
-            self.con.execute("insert into state( statecode, statename)values(7, 'Delhi')")
-            self.con.execute("insert into state( statecode, statename)values(8, 'Rajasthan')")
-            self.con.execute("insert into state( statecode, statename)values(9, 'Uttar Pradesh')")
-            self.con.execute("insert into state( statecode, statename)values(10, 'Bihar')")
-            self.con.execute("insert into state( statecode, statename)values(11, 'Sikkim')")
-            self.con.execute("insert into state( statecode, statename)values(12, 'Arunachal Pradesh')")
-            self.con.execute("insert into state( statecode, statename)values(13, 'Nagaland')")
-            self.con.execute("insert into state( statecode, statename)values(14, 'Manipur')")
-            self.con.execute("insert into state( statecode, statename)values(15, 'Mizoram')")
-            self.con.execute("insert into state( statecode, statename)values(16, 'Tripura')")
-            self.con.execute("insert into state( statecode, statename)values(17, 'Meghalaya')")
-            self.con.execute("insert into state( statecode, statename)values(18, 'Assam')")
-            self.con.execute("insert into state( statecode, statename)values(19, 'West Bengal')")
-            self.con.execute("insert into state( statecode, statename)values(20, 'Jharkhand')")
-            self.con.execute("insert into state( statecode, statename)values(21, 'Odisha')")
-            self.con.execute("insert into state( statecode, statename)values(22, 'Chhattisgarh')")
-            self.con.execute("insert into state( statecode, statename)values(23, 'Madhya Pradesh')")
-            self.con.execute("insert into state( statecode, statename)values(24, 'Gujarat')")
-            self.con.execute("insert into state( statecode, statename)values(25, 'Daman and Diu')")
-            self.con.execute("insert into state( statecode, statename)values(26, 'Dadra and Nagar Haveli')")
-            self.con.execute("insert into state( statecode, statename)values(27, 'Maharashtra')")
-            self.con.execute("insert into state( statecode, statename)values(28, 'Andhra Pradesh')")
-            self.con.execute("insert into state( statecode, statename)values(29, 'Karnataka')")
-            self.con.execute("insert into state( statecode, statename)values(30, 'Goa')")
-            self.con.execute("insert into state( statecode, statename)values(31, 'Lakshdweep')")
-            self.con.execute("insert into state( statecode, statename)values(32, 'Kerala')")
-            self.con.execute("insert into state( statecode, statename)values(33, 'Tamil Nadu')")
-            self.con.execute("insert into state( statecode, statename)values(34, 'Pondicherry')")
-            self.con.execute("insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')")
-            self.con.execute("insert into state( statecode, statename)values(36, 'Telangana')")
-            self.con.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
-            self.con.execute("alter table invoice drop column cancelflag,drop column canceldate")
-            # this is to clean null and empty values during old vat based invoices
-            self.con.execute("update invoice set taxstate = null where taxstate = '' or taxstate = 'none'")
-            self.con.execute("alter table invoice add consignee jsonb, add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
-            self.con.execute("update invoice set taxflag = 22 ")
-            self.con.execute("alter table delchal drop column issuerid")
+            if not columnExists("delchal","inoutflag"):
+                self.con.execute("alter table delchal add inoutflag integer")
+                #This code will assign inoutflag for delivery chalan where inoutflag is blank.
+                alldelchal = self.con.execute(select([gkdb.delchal.c.dcid]).where(gkdb.delchal.c.inoutflag == None))
+                #here we will be fetching all the delchal data
+                delchals = alldelchal.fetchall()
+                for delchal in delchals:
+                    delchalid = int(delchal["dcid"])
+                    stockdata = self.con.execute(select([gkdb.stock.c.inout]).where(and_(gkdb.stock.c.dcinvtnid == delchalid, gkdb.stock.c.dcinvtnflag == 4)))
+                    inout = stockdata.fetchone()
+                    inoutflag = inout["inout"]
+                    self.con.execute("update delchal set inoutflag = %d where dcid=%d"%(int(inoutflag), int(delchalid)))
+            if not columnExists("invoice","inoutflag"):
+                self.con.execute("alter table invoice add inoutflag integer")
+                #This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
+                allinvoice = self.con.execute(select([gkdb.invoice.c.invid, gkdb.invoice.c.custid, gkdb.invoice.c.icflag]).where(gkdb.invoice.c.inoutflag == None))
+                #Here we fetching all "custid", "icflag" and "invid".
+                dict = allinvoice.fetchall()
+                for singleinv in dict:
+                    sincustid = singleinv["custid"]
+                    invid=singleinv["invid"]
+                    icflag = singleinv["icflag"]
+                    #First we checking the icflag (i.e 3 for "cashmemo", 9 for "invoice")
+                    if icflag == 3:
+                        self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
+                    else:
+                        cussupdata = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(gkdb.customerandsupplier.c.custid == sincustid))
+                        #Here we fetching all "csflag" on the basis of "sincustid" (i.e "custid")
+                        csflagsingle = cussupdata.fetchone()
+                        for cussup in csflagsingle:
+                            #if "csflag" is 19 (i.e "supplier") then set inoutflag=9 (i.e "in") else "csflag" is 3 (i.e "customer" and set "inoutflag=15" (i.e "out"))
+                            if cussup==19:
+                                self.con.execute("update invoice set inoutflag = 9 where invid=%d"%int(invid))
+                            else:
+                                self.con.execute("update invoice set inoutflag = 15 where invid=%d"%int(invid))
+            if not columnExists("invoice","address"):
+                self.con.execute("alter table invoice add address text")
+            if not columnExists("customerandsupplier","bankdetails"):
+                self.con.execute("alter table customerandsupplier add bankdetails jsonb")
+            if not columnExists("invoice","paymentmode"):
+                self.con.execute("alter table invoice add paymentmode integer")
+                #Code for assinging paymentmode where paymentmode is blank and bank details are present.
+                bankresult = self.con.execute(select([gkdb.invoice.c.invid,gkdb.invoice.c.bankdetails]).where(gkdb.invoice.c.paymentmode == None))
+                #Fetching invid,bankdetails using fetchall() method in list.for loop is used to fetch each record in bankresult.
+                dict = bankresult.fetchall()
+                for invdata in dict:
+                    #Storing account number,ifsc number,invoice id in invaccno,invifsc,invoid respectively
+                    invaccno = invdata["bankdetails"]["accountno"]
+                    invifsc = invdata["bankdetails"]["ifsc"] 
+                    invoid = invdata["invid"]
+                    #Checking for bankdetails,if accountno and ifsc are present then set paymentmode=2 else set paymentmode=3. 
+                    if (invaccno == "" or invifsc == ""):
+                        self.con.execute("update invoice set paymentmode=3 where invid = %d"%int(invoid))
+                    else:
+                        self.con.execute("update invoice set paymentmode=2 where invid = %d"%int(invoid))
+            if not columnExists("delchal","consignee"):
+                self.con.execute("alter table delchal add consignee jsonb")
+            if not columnExists("invoice","orgstategstin"):
+                self.con.execute("alter table invoice add orgstategstin text")
+            if not columnExists("invoice","cess"):
+                self.con.execute("alter table invoice add cess jsonb")
+            if not columnExists("state","statecode"):
+                self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
+                self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
+                self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
+                self.con.execute("insert into state( statecode, statename)values(3, 'Punjab')")
+                self.con.execute("insert into state( statecode, statename)values(4, 'Chandigarh')")
+                self.con.execute("insert into state( statecode, statename)values(5, 'Uttranchal')")
+                self.con.execute("insert into state( statecode, statename)values(6, 'Haryana')")
+                self.con.execute("insert into state( statecode, statename)values(7, 'Delhi')")
+                self.con.execute("insert into state( statecode, statename)values(8, 'Rajasthan')")
+                self.con.execute("insert into state( statecode, statename)values(9, 'Uttar Pradesh')")
+                self.con.execute("insert into state( statecode, statename)values(10, 'Bihar')")
+                self.con.execute("insert into state( statecode, statename)values(11, 'Sikkim')")
+                self.con.execute("insert into state( statecode, statename)values(12, 'Arunachal Pradesh')")
+                self.con.execute("insert into state( statecode, statename)values(13, 'Nagaland')")
+                self.con.execute("insert into state( statecode, statename)values(14, 'Manipur')")
+                self.con.execute("insert into state( statecode, statename)values(15, 'Mizoram')")
+                self.con.execute("insert into state( statecode, statename)values(16, 'Tripura')")
+                self.con.execute("insert into state( statecode, statename)values(17, 'Meghalaya')")
+                self.con.execute("insert into state( statecode, statename)values(18, 'Assam')")
+                self.con.execute("insert into state( statecode, statename)values(19, 'West Bengal')")
+                self.con.execute("insert into state( statecode, statename)values(20, 'Jharkhand')")
+                self.con.execute("insert into state( statecode, statename)values(21, 'Odisha')")
+                self.con.execute("insert into state( statecode, statename)values(22, 'Chhattisgarh')")
+                self.con.execute("insert into state( statecode, statename)values(23, 'Madhya Pradesh')")
+                self.con.execute("insert into state( statecode, statename)values(24, 'Gujarat')")
+                self.con.execute("insert into state( statecode, statename)values(25, 'Daman and Diu')")
+                self.con.execute("insert into state( statecode, statename)values(26, 'Dadra and Nagar Haveli')")
+                self.con.execute("insert into state( statecode, statename)values(27, 'Maharashtra')")
+                self.con.execute("insert into state( statecode, statename)values(28, 'Andhra Pradesh')")
+                self.con.execute("insert into state( statecode, statename)values(29, 'Karnataka')")
+                self.con.execute("insert into state( statecode, statename)values(30, 'Goa')")
+                self.con.execute("insert into state( statecode, statename)values(31, 'Lakshdweep')")
+                self.con.execute("insert into state( statecode, statename)values(32, 'Kerala')")
+                self.con.execute("insert into state( statecode, statename)values(33, 'Tamil Nadu')")
+                self.con.execute("insert into state( statecode, statename)values(34, 'Pondicherry')")
+                self.con.execute("insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')")
+                self.con.execute("insert into state( statecode, statename)values(36, 'Telangana')")
+                self.con.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
+            if columnExists("invoice","reversecharge"):
+                countResult = self.con.execute(select([func.count(gkdb.invoice.c.reversecharge).label('revcount')]))
+                countData = countResult.fetchone()
+                if int(countData["revcount"]) > 0:
+                    self.con.execute("update invoice set reversecharge = '0' where reversecharge=null" )
+            if columnExists("invoice","cancelflag"):
+                self.con.execute("alter table invoice drop column cancelflag")
+            if columnExists("invoice","canceldate"):
+                self.con.execute("alter table invoice drop column canceldate")
+            if columnExists("invoice","taxstate"):
+                self.con.execute("update invoice set taxstate = null where taxstate = '' or taxstate = 'none'")
+            if not columnExists("invoice","consignee"):
+                self.con.execute("alter table invoice add consignee jsonb, add sourcestate text ,add discount jsonb ,add taxflag integer default 22, add reversecharge text, add bankdetails jsonb,add transportationmode text,add vehicleno text,add dateofsupply timestamp")
+            if columnExists("invoice","taxflag"):
+                self.con.execute("update invoice set taxflag = 22 where taxflag=null")
+            if columnExists("delchal","issuerid"):
+                self.con.execute("alter table delchal drop column issuerid")
+            if not columnExists("organisation","gstin"):
+                self.con.execute("alter table organisation add gstin jsonb")
+            if not columnExists("customerandsupplier","gstin"):
+                self.con.execute("alter table customerandsupplier add gstin jsonb")
+            if not columnExists("product","gscode"):
+                self.con.execute("alter table product add gscode text")
+            if not columnExists("product","gsflag"):
+                self.con.execute("alter table product add gsflag integer")
+                self.con.execute("update product set gsflag = 7 where gsflag=null")
+            if not columnExists("billwise","billid"):
+                self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
+            if not columnExists("rejectionnote","rnid"):
+                self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
+            if not columnExists("organisation","invsflag"):
+                self.con.execute("alter table organisation add invsflag integer default 1")
+            if not columnExists("organisation","billflag"):
+                self.con.execute("alter table organisation add billflag integer default 1")
+            if not columnExists("vouchers","instrumentno"):    
+                self.con.execute("alter table vouchers add instrumentno text")
+            if not columnExists("vouchers","branchname"):    
+                self.con.execute("alter table vouchers add branchname text")
+            if not columnExists("vouchers","bankname"):        
+                self.con.execute("alter table vouchers add bankname text")
+            if not columnExists("vouchers","instrumentdate"):            
+                self.con.execute("alter table vouchers add instrumentdate timestamp")
+            if not columnExists("organisation","logo"):            
+                self.con.execute("alter table organisation add logo json")
+            if not columnExists("dcinv","invprods"):            
+                self.con.execute("alter table dcinv add invprods jsonb")
+            if not columnExists("transfernote","duedate"):            
+                self.con.execute("alter table transfernote add duedate timestamp")
+            if not columnExists("transfernote","grace"):            
+                self.con.execute("alter table transfernote add grace integer")
+            if not columnExists("transfernote","fromgodown"):            
+                self.con.execute("alter table transfernote add fromgodown integer")
+            if columnExists("product","specs"):            
+                self.con.execute("alter table product alter specs drop not null")
+            if columnExists("product","uomid"):
+                self.con.execute("alter table product alter uomid drop not null")
+            if columnExists("transfernote","canceldate"):            
+                self.con.execute("alter table transfernote drop column canceldate")
+            if columnExists("transfernote","cancelflag"):                
+                self.con.execute("alter table transfernote drop column cancelflag")
+            if not columnExists("invoice","freeqty"):                
+                self.con.execute("alter table invoice add freeqty jsonb")
+            if not columnExists("invoice","amountpaid"):                
+                self.con.execute("alter table invoice add amountpaid numeric default 0.00")
+            if not columnExists("stock","stockdate"):                
+                self.con.execute("alter table stock add stockdate timestamp")
+            if not columnExists("delchal","attachment"):
+                self.con.execute("alter table delchal add attachment json")
+            if not columnExists("delchal","attachmentcount"):
+                self.con.execute("alter table delchal add attachmentcount integer default 0")
+            if not columnExists("invoice","attachment"):
+                self.con.execute("alter table invoice add attachment json")
+            if not columnExists("invoice","attachmentcount"):
+                self.con.execute("alter table invoice add attachmentcount integer default 0")
+            if not columnExists("usergodown","ugid"):
+                self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
+            if not columnExists("log","logid"):
+                self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
-            self.con.execute("alter table organisation add gstin jsonb")
-            self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
-            self.con.execute("alter table customerandsupplier add gstin jsonb")
+            self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
+            self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
-            self.con.execute("alter table product add gsflag integer")
-            self.con.execute("update product set gsflag = 7")
-            self.con.execute("alter table product add gscode text")
-            self.con.execute("alter table product alter specs drop not null,alter uomid drop not null")
-            self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
-            self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
-            self.con.execute("alter table organisation add invsflag integer default 1")
-            self.con.execute("alter table organisation add billflag integer default 1")
-            self.con.execute("alter table vouchers add instrumentno text")
-            self.con.execute("alter table vouchers add branchname text")
-            self.con.execute("alter table vouchers add bankname text")
-            self.con.execute("alter table vouchers add instrumentdate timestamp")
-            self.con.execute("alter table organisation add logo json")
-            self.con.execute("alter table dcinv add invprods jsonb")
-            self.con.execute("alter table transfernote add duedate timestamp")
-            self.con.execute("alter table transfernote add grace integer")
-            self.con.execute("alter table transfernote add fromgodown integer")
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
-            self.con.execute("alter table transfernote drop column canceldate")
-            self.con.execute("alter table transfernote drop column cancelflag")
-            self.con.execute("alter table invoice add freeqty jsonb")
-            self.con.execute("alter table invoice add amountpaid numeric default 0.00")
-            self.con.execute("alter table stock add stockdate timestamp")
-            self.con.execute("alter table delchal add attachment json")
-            self.con.execute("alter table delchal add attachmentcount integer default 0")
-            self.con.execute("alter table invoice add attachment json")
-            self.con.execute("alter table invoice add attachmentcount integer default 0")
-            self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-            self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-            
+        except:            
             return 0
         finally:
             self.con.close()
