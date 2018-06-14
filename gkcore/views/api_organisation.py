@@ -47,7 +47,7 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration,addFields, columnExists 
+from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
 from gkcore.views.api_invoice import getStateCode 
 con= Connection
 
@@ -249,7 +249,7 @@ class api_organisation(object):
                 self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
             if not columnExists("rejectionnote","rejprods"):
                 self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
-            if not columnExists("drcr","drcrid"):
+            if not tableExists("drcr"):
                 self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
             if not columnExists("invoice","invoicetotalword"):
                 self.con.execute("alter table invoice add invoicetotalword text")
@@ -317,7 +317,7 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add orgstategstin text")
             if not columnExists("invoice","cess"):
                 self.con.execute("alter table invoice add cess jsonb")
-            if not columnExists("state","statecode"):
+            if not tableExists("state"):
                 self.con.execute("create table state( statecode integer,statename text,primary key (statecode))")
                 self.con.execute("insert into state( statecode, statename)values(1, 'Jammu and Kashmir')")
                 self.con.execute("insert into state( statecode, statename)values(2, 'Himachal Pradesh')")
@@ -382,9 +382,9 @@ class api_organisation(object):
             if not columnExists("product","gsflag"):
                 self.con.execute("alter table product add gsflag integer")
                 self.con.execute("update product set gsflag = 7 where gsflag=null")
-            if not columnExists("billwise","billid"):
+            if not tableExists("billwise"):
                 self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
-            if not columnExists("rejectionnote","rnid"):
+            if not tableExists("rejectionnote"):
                 self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
             if not columnExists("organisation","invsflag"):
                 self.con.execute("alter table organisation add invsflag integer default 1")
@@ -430,9 +430,9 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
-            if not columnExists("usergodown","ugid"):
+            if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-            if not columnExists("log","logid"):
+            if not tableExists("log"):
                 self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
             self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
