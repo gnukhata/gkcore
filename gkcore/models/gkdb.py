@@ -57,14 +57,7 @@ This will be generated during the database setup.
 """
 signature = Table('signature', metadata,
     Column('secretcode',UnicodeText, primary_key=True))
-""" organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
-Also stores other details like the pan or sales tax number.
-bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
-Every time a new organisation is created or recreated for it's new financial year, a new record is added.
-Besides the personal details, we also have some flags determining the preferences.
-ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing, 
-maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
-"""
+
 
 """
 This table is for storing state information.  
@@ -76,6 +69,16 @@ state = Table('state',metadata,
         Column('abbreviation',UnicodeText)
 )
 
+""" organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
+Also stores other details like the pan or sales tax number.
+bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
+Every time a new organisation is created or recreated for it's new financial year, a new record is added.
+Besides the personal details, we also have some flags determining the preferences.
+ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing,
+maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
+modeflag=0 old interface for payment and receipt voucher is used.
+modeflag=1 new user friendly interface for payment and receipt voucher is used.
+"""
 organisation = Table( 'organisation' , metadata,
     Column('orgcode',Integer, primary_key=True),
     Column('orgname',UnicodeText, nullable=False),
@@ -105,6 +108,7 @@ organisation = Table( 'organisation' , metadata,
     Column('invsflag',Integer,default=1),
     Column('avflag',Integer, default=1),
     Column('maflag',Integer,default=1),
+    Column('modeflag', Integer, default=1),
     Column('logo',JSON),
     Column('gstin',JSONB),
     Column('bankdetails',JSON),

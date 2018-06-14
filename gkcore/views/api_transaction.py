@@ -184,6 +184,82 @@ class api_transaction(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
+    @view_config(request_method='POST', request_param="mode=auto", renderer="json")
+    def addVoucherAuto(self):
+        """
+        Purpose:
+        Adds a new reciept/payment voucher to an organisation
+        This method is used if organisation has mode set to automatic
+        Method requires a request with two dictionaries `vdetails` and
+        `transactions`
+        Contents of `vdetails`:
+            * voucherdate
+            * vouchertype
+            * attachmentcount
+            * attachment
+            * narration
+        Contents of `transactions`:
+            * amount
+            * payment_mode
+            * party
+        `vdetails` can be inserted into voucher table after crs and drs have
+        been calculated
+        """
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        authDetails = authCheck(token)
+        if authDetails["auth"] is False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+
+                dataset = self.request.json_body
+                vdetails = dataset["vdetails"]
+                transactions = dataset["transactions"]
+
+                vdetails["orgcode"] = authDetails["orgcode"]
+                payment_mode = transactions["payment_mode"]
+                amount = transactions["amount"]
+                party_accCode = transactions["party"]
+
+                # `accCode` will either be the organisation's default Bank Account
+                # code or default Cash Account code depending on the mode of transaction
+                if payment_mode == "bank":
+                    accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==2).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+                else:
+                    accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==3).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+
+                if vdetails["vouchertype"] == "receipt":
+                    vdetails["drs"] = {accCode: amount}
+                    vdetails["crs"] = {party_accCode: amount}
+                else:
+                    vdetails["drs"] = {party_accCode: amount}
+                    vdetails["crs"] = {accCode: amount}
+
+                # Database expects vouchernumber to be unicode encoded
+                vdetails["vouchernumber"] = unicode(self.__genVoucherNumber(self.con,vdetails["vouchertype"],vdetails["orgcode"]))
+
+                self.con.execute(vouchers.insert(), [vdetails])
+
+                self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(accCode)))
+                self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(party_accCode)))
+
+                if transactions["payment_mode"] == "bank":
+                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                    vouchercode = vouchercodedata.fetchone()
+                    self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":accCode,"orgcode":authDetails["orgcode"]}])
+                return {"gkstatus": enumdict["Success"]}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+
     @view_config(request_param="details=last",request_method='GET',renderer='json')
     def getLastVoucherDetails(self):
         try:
