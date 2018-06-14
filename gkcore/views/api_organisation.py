@@ -71,6 +71,8 @@ class api_organisation(object):
         try:
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
+            if not columnExists("organisation","modeflag"):
+                self.con.execute("alter table organisation add modeflag integer default 1")
             if not columnExists("organisation","avflag"):
                 self.con.execute("alter table organisation add avflag integer default 1")
             if not columnExists("organisation","maflag"):
@@ -200,45 +202,6 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 0 where accountcode =%d"%int(acname["accountcode"]))
                     except:
                         continue
-            if not columnExists("state","abbreviation"):
-                self.con.execute("alter table state add abbreviation text")
-                self.con.execute("update state set abbreviation='JK' where statecode=1")
-                self.con.execute("update state set abbreviation='HP' where statecode=2")
-                self.con.execute("update state set abbreviation='PB' where statecode=3")
-                self.con.execute("update state set abbreviation='CH' where statecode=4")
-                self.con.execute("update state set abbreviation='UK' where statecode=5")
-                self.con.execute("update state set abbreviation='HR' where statecode=6")
-                self.con.execute("update state set abbreviation='DL' where statecode=7")
-                self.con.execute("update state set abbreviation='RJ' where statecode=8")
-                self.con.execute("update state set abbreviation='UP' where statecode=9")
-                self.con.execute("update state set abbreviation='BR' where statecode=10")
-                self.con.execute("update state set abbreviation='SK' where statecode=11")
-                self.con.execute("update state set abbreviation='AR' where statecode=12")
-                self.con.execute("update state set abbreviation='NL' where statecode=13")
-                self.con.execute("update state set abbreviation='MN' where statecode=14")
-                self.con.execute("update state set abbreviation='MZ' where statecode=15")
-                self.con.execute("update state set abbreviation='TR' where statecode=16")
-                self.con.execute("update state set abbreviation='ML' where statecode=17")
-                self.con.execute("update state set abbreviation='AS' where statecode=18")
-                self.con.execute("update state set abbreviation='WB' where statecode=19")
-                self.con.execute("update state set abbreviation='JH' where statecode=20")
-                self.con.execute("update state set abbreviation='OR' where statecode=21")
-                self.con.execute("update state set abbreviation='CG' where statecode=22")
-                self.con.execute("update state set abbreviation='MP' where statecode=23")
-                self.con.execute("update state set abbreviation='GJ' where statecode=24")
-                self.con.execute("update state set abbreviation='DD' where statecode=25")
-                self.con.execute("update state set abbreviation='DH' where statecode=26")
-                self.con.execute("update state set abbreviation='MH' where statecode=27")
-                self.con.execute("update state set abbreviation='AP' where statecode=28")
-                self.con.execute("update state set abbreviation='KA' where statecode=29")
-                self.con.execute("update state set abbreviation='GA' where statecode=30")
-                self.con.execute("update state set abbreviation='LD' where statecode=31")
-                self.con.execute("update state set abbreviation='KL' where statecode=32")
-                self.con.execute("update state set abbreviation='TN' where statecode=33")
-                self.con.execute("update state set abbreviation='PY' where statecode=34")
-                self.con.execute("update state set abbreviation='AN' where statecode=35")
-                self.con.execute("update state set abbreviation='TS' where statecode=36")
-                self.con.execute("update state set abbreviation='AP' where statecode=37")
             if not columnExists("organisation","bankdetails"):
                 self.con.execute("alter table organisation add bankdetails json")
             if not columnExists("purchaseorder","purchaseordertotal"):
@@ -247,10 +210,6 @@ class api_organisation(object):
                 self.con.execute("create index purchaseorder_orgcodeindex on purchaseorder using btree(orgcode)")
                 self.con.execute("create index purchaseorder_date on purchaseorder using btree(orderdate)")
                 self.con.execute("create index purchaseorder_togodown on purchaseorder using btree(togodown)")
-            if not columnExists("rejectionnote","rejprods"):
-                self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
-            if not tableExists("drcr"):
-                self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
             if not columnExists("invoice","invoicetotalword"):
                 self.con.execute("alter table invoice add invoicetotalword text")
             if not columnExists("delchal","taxflag"):
@@ -356,6 +315,45 @@ class api_organisation(object):
                 self.con.execute("insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')")
                 self.con.execute("insert into state( statecode, statename)values(36, 'Telangana')")
                 self.con.execute("insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')")
+            if not columnExists("state","abbreviation"):
+                self.con.execute("alter table state add abbreviation text")
+                self.con.execute("update state set abbreviation='JK' where statecode=1")
+                self.con.execute("update state set abbreviation='HP' where statecode=2")
+                self.con.execute("update state set abbreviation='PB' where statecode=3")
+                self.con.execute("update state set abbreviation='CH' where statecode=4")
+                self.con.execute("update state set abbreviation='UK' where statecode=5")
+                self.con.execute("update state set abbreviation='HR' where statecode=6")
+                self.con.execute("update state set abbreviation='DL' where statecode=7")
+                self.con.execute("update state set abbreviation='RJ' where statecode=8")
+                self.con.execute("update state set abbreviation='UP' where statecode=9")
+                self.con.execute("update state set abbreviation='BR' where statecode=10")
+                self.con.execute("update state set abbreviation='SK' where statecode=11")
+                self.con.execute("update state set abbreviation='AR' where statecode=12")
+                self.con.execute("update state set abbreviation='NL' where statecode=13")
+                self.con.execute("update state set abbreviation='MN' where statecode=14")
+                self.con.execute("update state set abbreviation='MZ' where statecode=15")
+                self.con.execute("update state set abbreviation='TR' where statecode=16")
+                self.con.execute("update state set abbreviation='ML' where statecode=17")
+                self.con.execute("update state set abbreviation='AS' where statecode=18")
+                self.con.execute("update state set abbreviation='WB' where statecode=19")
+                self.con.execute("update state set abbreviation='JH' where statecode=20")
+                self.con.execute("update state set abbreviation='OR' where statecode=21")
+                self.con.execute("update state set abbreviation='CG' where statecode=22")
+                self.con.execute("update state set abbreviation='MP' where statecode=23")
+                self.con.execute("update state set abbreviation='GJ' where statecode=24")
+                self.con.execute("update state set abbreviation='DD' where statecode=25")
+                self.con.execute("update state set abbreviation='DH' where statecode=26")
+                self.con.execute("update state set abbreviation='MH' where statecode=27")
+                self.con.execute("update state set abbreviation='AP' where statecode=28")
+                self.con.execute("update state set abbreviation='KA' where statecode=29")
+                self.con.execute("update state set abbreviation='GA' where statecode=30")
+                self.con.execute("update state set abbreviation='LD' where statecode=31")
+                self.con.execute("update state set abbreviation='KL' where statecode=32")
+                self.con.execute("update state set abbreviation='TN' where statecode=33")
+                self.con.execute("update state set abbreviation='PY' where statecode=34")
+                self.con.execute("update state set abbreviation='AN' where statecode=35")
+                self.con.execute("update state set abbreviation='TS' where statecode=36")
+                self.con.execute("update state set abbreviation='AP' where statecode=37")
             if columnExists("invoice","reversecharge"):
                 countResult = self.con.execute(select([func.count(gkdb.invoice.c.reversecharge).label('revcount')]))
                 countData = countResult.fetchone()
@@ -386,6 +384,10 @@ class api_organisation(object):
                 self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
             if not tableExists("rejectionnote"):
                 self.con.execute("create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))")
+            if not columnExists("rejectionnote","rejprods"):
+                self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
+            if not tableExists("drcr"):
+                self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
             if not columnExists("organisation","invsflag"):
                 self.con.execute("alter table organisation add invsflag integer default 1")
             if not columnExists("organisation","billflag"):
