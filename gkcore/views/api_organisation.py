@@ -449,6 +449,7 @@ class api_organisation(object):
     @view_config(request_method='GET', renderer ='json')
     def getOrgs(self):
         try:
+            self.gkUpgrade()
             self.con=eng.connect()
             result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
             orgs = []
