@@ -41,7 +41,7 @@ import gkcore
 from sqlalchemy.sql.expression import null
 
 
-def gstAccName(taxname,taxrate,orgcode,con):
+def gstAccName(con,taxname,taxrate,orgcode):
     """
     {u'productcode': 55, u'taxrate': 5.0, u'taxname': u'IGST', 'orgcode': 159}
     tax initialized
@@ -67,16 +67,76 @@ def gstAccName(taxname,taxrate,orgcode,con):
     
 
     """
-    try:
-        gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
-        cess = ["CESSIN_","CESSOUT_"]
-        gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
-        stCode = gstIN.fetchall()
-        for st in stCode.keys():
-            gstIN = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st)))
-        
-    except:
-        return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+    #try:
+    print "Mi alo ithe"
+    gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
+    cess = ["CESSIN_","CESSOUT_"]
+    state_Abbv = []
+    accDict = []
+    gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
+    stCode = gstIN.fetchall()
+    
+    for sts in stCode:
+        for st in sts:
+        if st != undefined :
+            stABV = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st["gstin"])))
+            state_Abb = stABV.fetchone()
+            state_Abbv.append(state_Abb["abbreviation"])
+        else:
+            continue
+    # get distinct states from customerandsupplier
+    custState = con.execute(select([customerandsupplier.c.state]).distinct().where(customerandsupplier.c.orgcode == orgcode))
+    cust_sup_state = custState.fetchall()
+    print cust_sup_state
+    for css in cust_sup_state:
+        stAB = con.execute(select([state.c.abbreviation]).where(state.c.statename == str(css)))
+        state_Abbre = stAB.fetchone()
+        if str(state_Abbre) not in state_Abbv:
+            state_Abbv.append(str(state_Abbre))
+        else:
+            continue
+    print "state list"
+    print state_Abbv
+    if len[state_Abbv] != 0:
+        grp = con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == "Duties & Taxes",groupsubgroups.c.orgcode == orgcode)))
+        grpCode = grp.fetchone()
+        for states in state_Abbv:
+            if taxname == "IGST":
+                tx = ((taxRate)/2)
+                if (tx % 2) == 0:
+                    taxNameSGSTIN = "SGSTIN_"+states+"@"+str(int(tx))+"%"
+                    taxNameSGSTOUT = "SGSTOUT_"+states+"@"+str(int(tx))+"%"
+                    taxNameCGSTIN = "CGSTIN_"+states+"@"+str(int(tx))+"%"
+                    taxNameCGSTOUT = "CGSTOUT_"+states+"@"+str(int(tx))+"%"
+                else:
+                    taxNameSGSTIN = "SGSTIN_"+states+"@"+str(tx)+"%"
+                    taxNameSGSTOUT = "SGSTOUT_"+states+"@"+str(tx)+"%"
+                    taxNameCGSTIN = "CGSTIN_"+states+"@"+str(tx)+"%"
+                    taxNameCGSTOUT = "CGSTOUT_"+states+"@"+str(tx)+"%"
+
+                taxNameIGSTIN = "IGSTIN_"+states+"@"+str(int(taxRate))+"%"
+                taxNameIGSTOUT = "IGSTIN_"+states+"@"+str(int(taxRate))+"%"
+
+            accDict = [{"accountname":taxNameSGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                   {"accountname":taxNameSGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                   {"accountname":taxNameCGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                   {"accountname":taxNameCGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                   {"accountname":taxNameIGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                   {"accountname":taxNameIGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
+            print accDict
+            result = con.execute(gkdb.groupsubgroups.insert(),accDict)
+            print result
+
+            if taxname == "CESS":
+                taxNameCESSIN = "CESSIN_"+states+"@"+str(int(taxrate))+"%"
+                taxNameCESSOUT = "CESSOUT_"+states+"@"+str(int(taxrate))+"%"
+
+                accDict = [{"accountname":taxNameCESSIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},{"accountname":taxNameCESSOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
+                result = con.execute(gkdb.groupsubgroups.insert(),accDict)
+
+    return {"gkstatus":"success"}
+  #  except:
+  #      return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
 
 
@@ -171,6 +231,10 @@ class api_tax(object):
                     dataset["orgcode"] = authDetails["orgcode"]
                     print dataset
                     result = self.con.execute(tax.insert(),[dataset])
+                    taxname = dataset["taxname"]
+                    taxrate = dataset["taxrate"]
+                    r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
+                    print r["gkstatus"]
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
