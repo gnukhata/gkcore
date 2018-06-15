@@ -35,7 +35,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state, drcr
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
@@ -2825,6 +2825,14 @@ class api_reports(object):
                             if  stockRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(stockRow["qty"])
                                 totaloutward = float(totaloutward) + float(stockRow["qty"])
+                        if stockRow["dcinvtnflag"] == 7:
+                            countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate >= yearStart, drcr.c.drcrdate < startDate, drcr.c.drcrid == stockRow["dcinvtnid"])))
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if  stockRow["inout"] == 9:
+                                    openingStock = float(openingStock) + float(stockRow["qty"])
+                                if  stockRow["inout"] == 15:
+                                    openingStock = float(openingStock) - float(stockRow["qty"])
                 stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inward":"%.2f"%float(openingStock)})
                 totalinward = totalinward + float(openingStock)
                 for finalRow in stockData:
@@ -2895,6 +2903,28 @@ class api_reports(object):
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
                                 stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
+                    if finalRow["dcinvtnflag"] == 7:
+                        countresult = self.con.execute(select([drcr.c.drcrdate,drcr.c.drcrno,drcr.c.invid, drcr.c.dctypeflag]).where(and_(drcr.c.drcrdate >= startDate, drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                        if countresult.rowcount == 1:
+                            countrow = countresult.fetchone()
+                            drcrinvdata = self.con.execute(select([invoice.c.custid]).where(invoice.c.invid == countrow["invid"]))
+                            drcrinv = drcrinvdata.fetchone()
+                            custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == drcrinv["custid"]))
+                            custrow = custdata.fetchone()
+                            if int(countrow["dctypeflag"] == 3):
+                                trntype = "Credit Note"
+                            else:
+                                trntype = "Debit Note"
+                            if  finalRow["inout"] == 9:
+                                openingStock = float(openingStock) + float(finalRow["qty"])
+                                totalinward = float(totalinward) + float(finalRow["qty"])
+
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["drcrdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"drcrid":finalRow["dcinvtnid"],"drcrno":countrow["drcrno"], "dcno":"", "dcid":"" , "rnid":"", "rnno":"", "invid":"","invno":"","inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                            if  finalRow["inout"] == 15:
+                                openingStock = float(openingStock) - float(finalRow["qty"])
+                                totaloutward = float(totaloutward) + float(finalRow["qty"])
+
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["drcrdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype, "drcrid":finalRow["dcinvtnid"],"drcrno":countrow["drcrno"],"dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
                 stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
                 self.con.close()
