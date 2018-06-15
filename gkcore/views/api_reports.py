@@ -2833,7 +2833,7 @@ class api_reports(object):
                                     openingStock = float(openingStock) + float(stockRow["qty"])
                                 if  stockRow["inout"] == 15:
                                     openingStock = float(openingStock) - float(stockRow["qty"])
-                stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inward":"%.2f"%float(openingStock)})
+                stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"", "drcrno":"", "drcrid":"","invid":"","invno":"", "rnid":"", "rnno":"", "inward":"%.2f"%float(openingStock)})
                 totalinward = totalinward + float(openingStock)
                 for finalRow in stockData:
                     if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
@@ -2850,7 +2850,7 @@ class api_reports(object):
                             if  finalRow["inout"] == 9:
                                 openingStock = float(openingStock) + float(finalRow["qty"])
                                 totalinward = float(totalinward) + float(finalRow["qty"])
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"", "rnid":"", "rnno":"", "invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"", "drcrno":"", "drcrid":"", "rnid":"", "rnno":"", "invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
@@ -2879,12 +2879,12 @@ class api_reports(object):
                                 openingStock = float(openingStock) + float(finalRow["qty"])
                                 totalinward = float(totalinward) + float(finalRow["qty"])
 
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "rnid":"", "rnno":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "drcrno":"", "drcrid":"", "rnid":"", "rnno":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
 
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"],"invid":dcinvrow["invid"],"invno":invrow["invoiceno"], "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "drcrno":"", "drcrid":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"], "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
                     if finalRow["dcinvtnflag"] == 18:
                         countresult = self.con.execute(select([rejectionnote.c.rndate,rejectionnote.c.rnno, rejectionnote.c.dcid, rejectionnote.c.invid]).where(and_(rejectionnote.c.rndate >= startDate, rejectionnote.c.rndate <= endDate, rejectionnote.c.rnid == finalRow["dcinvtnid"])))
@@ -2902,7 +2902,7 @@ class api_reports(object):
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "drcrno":"", "drcrid":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
                     if finalRow["dcinvtnflag"] == 7:
                         countresult = self.con.execute(select([drcr.c.drcrdate,drcr.c.drcrno,drcr.c.invid, drcr.c.dctypeflag]).where(and_(drcr.c.drcrdate >= startDate, drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
                         if countresult.rowcount == 1:
@@ -2926,7 +2926,7 @@ class api_reports(object):
 
                                 stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["drcrdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype, "drcrid":finalRow["dcinvtnid"],"drcrno":countrow["drcrno"],"dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
-                stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
+                stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "drcrno":"", "drcrid":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
             except:
