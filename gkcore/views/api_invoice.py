@@ -77,7 +77,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 dtset = self.request.json_body
                 dcinvdataset={}
@@ -128,7 +128,7 @@ class api_invoice(object):
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
-                   # try:
+                    try:
                         if invdataset.has_key('icflag'):
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
                             invoiceid = result.fetchone()
@@ -202,18 +202,18 @@ class api_invoice(object):
                                 else:
                                     voucherData["status"] = 1
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
-                    #except:
-                    #    result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                     #   result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                     #   result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
-                     #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                    except:
+                        result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
+                        result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
+                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
-           # except exc.IntegrityError:
-           #     return {"gkstatus":enumdict["DuplicateEntry"]}
-           # except:
-           #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-           # finally:
-           #     self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
            
     '''
@@ -1300,7 +1300,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-        #try:
+        try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1382,7 +1382,6 @@ The bills grid calld gkresult will return a list as it's value.
                                 tx = (float(taxRate)/2)
                                 inTaxrate = int(taxRate)
                                 taxHalf = (taxRateDict[inTaxrate])
-                                print taxHalf
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
                                 taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
@@ -1425,7 +1424,6 @@ The bills grid calld gkresult will return a list as it's value.
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
                     for Tax in taxDict:
-                        print Tax
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
                         
@@ -1538,7 +1536,6 @@ The bills grid calld gkresult will return a list as it's value.
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
                     
                     for Tax in taxDict:
-                        print Tax
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
                         drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
@@ -1591,7 +1588,7 @@ The bills grid calld gkresult will return a list as it's value.
             
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
-       # except:
-       #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-       # finally:
-       #     self.con.close()
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
