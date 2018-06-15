@@ -390,6 +390,11 @@ class api_organisation(object):
                 self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
             if not tableExists("drcr"):
                 self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
+            if not columnExists("drcr","drcrmode"):
+                self.con.execute("alter table drcr add drcrmode integer default 4")
+            if not columnExists("vouchers","drcrid"):
+                self.con.execute("alter table vouchers add drcrid integer")
+                self.con.execute("alter table vouchers add foreign key(drcrid) references drcr(drcrid)")
             if not columnExists("organisation","invsflag"):
                 self.con.execute("alter table organisation add invsflag integer default 1")
             if not columnExists("organisation","billflag"):
