@@ -199,7 +199,8 @@ class api_transaction(object):
             * attachment
             * narration
         Contents of `transactions`:
-            * amount
+            * bamount: If transaction includes bank transfer
+            * camount: If transaction includes cash transfer
             * payment_mode
             * party
         `vdetails` can be inserted into voucher table after crs and drs have
@@ -224,35 +225,57 @@ class api_transaction(object):
 
                 vdetails["orgcode"] = authDetails["orgcode"]
                 payment_mode = transactions["payment_mode"]
-                amount = transactions["amount"]
                 party_accCode = transactions["party"]
 
-                # `accCode` will either be the organisation's default Bank Account
-                # code or default Cash Account code depending on the mode of transaction
-                if payment_mode == "bank":
-                    accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==2).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
-                else:
-                    accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==3).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+                if payment_mode in ["both", "bank"]:
+                    bamount = transactions["bamount"]
+                if payment_mode in ["both", "cash"]:
+                    camount = transactions["camount"]
+                if payment_mode == "both":
+                    total_amount = "%.2f" % (float(bamount) + float(camount))
+
+                # b_accCode is the user's default bank account code
+                if payment_mode in ["both", "bank"]:
+                    b_accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==2).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+                # c_accCode is the user's default cash account code
+                if payment_mode in ["both", "cash"]:
+                    c_accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==3).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+
+                # We define an internal function to calculate Dr & Cr
+                # This function returns a tuple with two dictionaries
+                # Which dictionary is Dr and which is Cr will depend on type of receipt
+                def constructDrCr(mode):
+                    if mode == "both":
+                        return ({b_accCode: bamount, c_accCode: camount}, {party_accCode: total_amount})
+                    elif mode == "bank":
+                        return ({b_accCode: bamount}, {party_accCode: bamount})
+                    else:
+                        return ({c_accCode: camount}, {party_accCode: camount})
 
                 if vdetails["vouchertype"] == "receipt":
-                    vdetails["drs"] = {accCode: amount}
-                    vdetails["crs"] = {party_accCode: amount}
+                    vdetails["drs"], vdetails["crs"] = constructDrCr(payment_mode)
                 else:
-                    vdetails["drs"] = {party_accCode: amount}
-                    vdetails["crs"] = {accCode: amount}
+                    vdetails["crs"], vdetails["drs"] = constructDrCr(payment_mode)
 
                 # Database expects vouchernumber to be unicode encoded
                 vdetails["vouchernumber"] = unicode(self.__genVoucherNumber(self.con,vdetails["vouchertype"],vdetails["orgcode"]))
 
                 self.con.execute(vouchers.insert(), [vdetails])
 
-                self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(accCode)))
+                if payment_mode == "both":
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(b_accCode)))
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(c_accCode)))
+                elif payment_mode == "bank":
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(b_accCode)))
+                else:
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(c_accCode)))
+
                 self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(party_accCode)))
 
-                if transactions["payment_mode"] == "bank":
+                if transactions["payment_mode"] in ["bank", "both"]:
                     vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                     vouchercode = vouchercodedata.fetchone()
-                    self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":accCode,"orgcode":authDetails["orgcode"]}])
+                    self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":b_accCode,"orgcode":authDetails["orgcode"]}])
                 return {"gkstatus": enumdict["Success"]}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
