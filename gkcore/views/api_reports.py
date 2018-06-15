@@ -3185,6 +3185,14 @@ class api_reports(object):
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
+                        if finalRow["dcinvtnflag"] == 7:
+                            countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if  finalRow["inout"] == 9:
+                                    openingStock = float(openingStock) + float(finalRow["qty"])
+                                if  finalRow["inout"] == 15:
+                                    openingStock = float(openingStock) - float(finalRow["qty"])
 
                     stockReport.append({"srno":1,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
                     self.con.close()
@@ -3251,6 +3259,14 @@ class api_reports(object):
                                 if  finalRow["inout"] == 15:
                                     openingStock = float(openingStock) - float(finalRow["qty"])
                                     totaloutward = float(totaloutward) + float(finalRow["qty"])
+                            if finalRow["dcinvtnflag"] == 7:
+                                countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_( drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                                countrow = countresult.fetchone()
+                                if countrow["dc"] == 1:
+                                    if  finalRow["inout"] == 9:
+                                        openingStock = float(openingStock) + float(finalRow["qty"])
+                                    if  finalRow["inout"] == 15:
+                                        openingStock = float(openingStock) - float(finalRow["qty"])
 
                         stockReport.append({"srno":srno,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
                         srno = srno + 1
