@@ -28,7 +28,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import tax,users,product
+from gkcore.models.gkdb import tax,users,product,state,organisation,customerandsupplier,groupsubgroups,accounts
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -39,6 +39,123 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
+
+
+def gstAccName(con,taxname,taxrate,orgcode):
+    """
+    {u'productcode': 55, u'taxrate': 5.0, u'taxname': u'IGST', 'orgcode': 159}
+    tax initialized
+    {u'productcode': 55, u'taxrate': 2.0, u'taxname': u'CESS', 'orgcode': 159}
+    tax initialized
+    {u'productcode': 55, u'taxrate': 1.0, u'taxname': u'VAT', 'orgcode': 159, u'state': u'Maharashtra'}
+    category initialized
+
+    
+    This function returns a dictionary which will have all data that is require to create multipleaccounts under subgroup Duties
+    & Taxes.
+    
+    This function takes taxname, taxrate as parameters.
+    create 2 lists for gst and cess tax.
+    gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
+    cess = ["CESSIN_","CESSOUT_"]
+    Collect all states. for this first get all gstins in organisation where key is statecode, 
+    then searches for statename and create a list of it.
+    Now we have to get all distinct states from customerandsupplier table, and add these states in list if it is not present in list.
+    now loop through states list for each state we have create tax accounts.
+    First check taxname whether it is IGST i.e. GST 
+    loop through gst list and concatenate taxname and create tax 
+    
+
+    """
+    try:
+        state_Abbv = []
+        accDict = []
+        taxNameSGSTIN = ""
+        taxNameSGSTOUT = ""
+        taxNameCGSTIN = ""
+        taxNameCGSTOUT = ""
+        taxNameSGSTIN = ""
+        taxNameSGSTOUT = ""
+        taxNameCGSTIN = ""
+        taxNameCGSTOUT = ""
+        taxNameIGSTIN = ""
+        taxNameIGSTOUT = ""
+        taxNameCESSIN = ""
+        taxNameCESSOUT = ""
+
+        taxRate = {5:2.5,12:6,18:9,28:14}
+
+        gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
+        stCode = gstIN.fetchall()
+
+        if gstIN.rowcount > 0:
+            for st in stCode[0][0]:
+                if st != "undefined" :
+                    stABV = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st)))
+                    state_Abb = stABV.fetchone()
+                    state_Abbv.append(str(state_Abb["abbreviation"]))
+                else:
+                    continue
+        # get distinct states from customerandsupplier
+        custState = con.execute(select([customerandsupplier.c.gstin]).where(customerandsupplier.c.orgcode == orgcode))
+        cust_sup_state = custState.fetchall()
+        if custState.rowcount > 0:
+            for b in cust_sup_state:
+                c = b[0].keys()
+                for css in c:
+                    stAB = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(css)))
+                    state_Abbre = stAB.fetchone()
+                    if str(state_Abbre["abbreviation"]) not in state_Abbv:
+                        state_Abbv.append(str(state_Abbre["abbreviation"]))
+                    else:
+                        continue
+
+        if len(state_Abbv) != 0:
+            grp = con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == "Duties & Taxes",groupsubgroups.c.orgcode == orgcode)))
+            grpCode = grp.fetchone()
+            for states in state_Abbv:
+                if taxname == "IGST":
+                    if int(taxrate) in taxRate:
+                        tx  = int(taxrate)
+                        taxNameSGSTIN = "SGSTIN_"+states+"@"+str(taxRate[tx])+"%"
+                        taxNameSGSTOUT = "SGSTOUT_"+states+"@"+str(taxRate[tx])+"%"
+                        taxNameCGSTIN = "CGSTIN_"+states+"@"+str(taxRate[tx])+"%"
+                        taxNameCGSTOUT = "CGSTOUT_"+states+"@"+str(taxRate[tx])+"%"
+
+                    taxNameIGSTIN = "IGSTIN_"+states+"@"+'%d'%(taxrate)+"%"
+                    taxNameIGSTOUT = "IGSTOUT_"+states+"@"+'%d'%(taxrate)+"%"
+
+                    accDict = [{"accountname":taxNameSGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                       {"accountname":taxNameSGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                       {"accountname":taxNameCGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                       {"accountname":taxNameCGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                       {"accountname":taxNameIGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
+                       {"accountname":taxNameIGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
+                    try:
+                        for acc in accDict:
+                            result = con.execute(accounts.insert(),[acc])
+                    except:
+                        pass
+
+                if taxname == "CESS":
+                    taxNameCESSIN = "CESSIN_"+states+"@"+str(int(taxrate))+"%"
+                    taxNameCESSOUT = "CESSOUT_"+states+"@"+str(int(taxrate))+"%"
+
+                    accDict = [{"accountname":taxNameCESSIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},{"accountname":taxNameCESSOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
+                    try:
+                        result = con.execute(accounts.insert(),accDict)
+                    except:
+                        pass
+
+        return {"gkstatus":"success"}
+    except:
+        return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+
+
+
+
+
+
 def calTax(taxflag,source,destination,productcode,con):
         """
         Purpose:
@@ -125,8 +242,9 @@ class api_tax(object):
                 dataset = self.request.json_body
                 if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
                     dataset["orgcode"] = authDetails["orgcode"]
-
                     result = self.con.execute(tax.insert(),[dataset])
+                    if taxname != 'VAT':
+                        r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
@@ -135,7 +253,7 @@ class api_tax(object):
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
-                self.con.close()
+               self.con.close()
 
     @view_config(request_method='GET',request_param='pscflag',renderer='json')
     def getprodtax(self):
