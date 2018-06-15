@@ -68,9 +68,6 @@ def gstAccName(con,taxname,taxrate,orgcode):
 
     """
     #try:
-    print "Mi alo ithe"
-    gst = ["CGSTIN_","CGSTOUT_","SGSTIN_","SGSTOUT_","IGSTIN_","IGSTOUT_"]
-    cess = ["CESSIN_","CESSOUT_"]
     state_Abbv = []
     accDict = []
     taxNameSGSTIN = ""
@@ -86,57 +83,51 @@ def gstAccName(con,taxname,taxrate,orgcode):
     taxNameCESSIN = ""
     taxNameCESSOUT = ""
 
-    
     gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
     stCode = gstIN.fetchall()
-    
-    for st in stCode[0][0]:
-        if st != "undefined" :
-            stABV = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st)))
-            state_Abb = stABV.fetchone()
-            state_Abbv.append(str(state_Abb["abbreviation"]))
-            print state_Abbv 
-        else:
-            print "Now continue"
-            continue
+
+    if gstIN.rowcount > 0:
+        for st in stCode[0][0]:
+            if st != "undefined" :
+                stABV = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(st)))
+                state_Abb = stABV.fetchone()
+                state_Abbv.append(str(state_Abb["abbreviation"]))
+            else:
+                continue
     # get distinct states from customerandsupplier
     custState = con.execute(select([customerandsupplier.c.gstin]).where(customerandsupplier.c.orgcode == orgcode))
     cust_sup_state = custState.fetchall()
-    
-    for css in cust_sup_state[0][0]:
-        print css
-        stAB = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(css)))
-        state_Abbre = stAB.fetchone()
-        print state_Abbre
-        if str(state_Abbre["abbreviation"]) not in state_Abbv:
-            state_Abbv.append(str(state_Abbre["abbreviation"]))
-        else:
-            continue
-    print "state list"
-    print state_Abbv
+    if custState.rowcount > 0:
+        for b in cust_sup_state:
+            c = b[0].keys()
+            for css in c:
+                stAB = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(css)))
+                state_Abbre = stAB.fetchone()
+                if str(state_Abbre["abbreviation"]) not in state_Abbv:
+                    state_Abbv.append(str(state_Abbre["abbreviation"]))
+                else:
+                    continue
+
     if len(state_Abbv) != 0:
         grp = con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == "Duties & Taxes",groupsubgroups.c.orgcode == orgcode)))
         grpCode = grp.fetchone()
-        print grpCode["groupcode"]
         for states in state_Abbv:
+            print taxname
             if taxname == "IGST":
-                tx = ((taxrate)/2)
-                print "THis is for cgst "
-                print tx % 2
-                if (tx % 2) == 0:
-                    print "I am in this condition"
-                    taxNameSGSTIN = "SGSTIN_"+states+"@"+str(int(tx))+"%"
-                    taxNameSGSTOUT = "SGSTOUT_"+states+"@"+str(int(tx))+"%"
-                    taxNameCGSTIN = "CGSTIN_"+states+"@"+str(int(tx))+"%"
-                    taxNameCGSTOUT = "CGSTOUT_"+states+"@"+str(int(tx))+"%"
+                tx  = (taxrate/2)
+                if (tx % 2) == 1 :
+                    taxNameSGSTIN = "SGSTIN_"+states+"@"+'%d'%(tx)+"%"
+                    taxNameSGSTOUT = "SGSTOUT_"+states+"@"+'%d'%(tx)+"%"
+                    taxNameCGSTIN = "CGSTIN_"+states+"@"+'%d'%(tx)+"%"
+                    taxNameCGSTOUT = "CGSTOUT_"+states+"@"+'%d'%(tx)+"%"
                 else:
                     taxNameSGSTIN = "SGSTIN_"+states+"@"+str(tx)+"%"
                     taxNameSGSTOUT = "SGSTOUT_"+states+"@"+str(tx)+"%"
                     taxNameCGSTIN = "CGSTIN_"+states+"@"+str(tx)+"%"
                     taxNameCGSTOUT = "CGSTOUT_"+states+"@"+str(tx)+"%"
 
-                taxNameIGSTIN = "IGSTIN_"+states+"@"+str(int(taxrate))+"%"
-                taxNameIGSTOUT = "IGSTIN_"+states+"@"+str(int(taxrate))+"%"
+                taxNameIGSTIN = "IGSTIN_"+states+"@"+'%d'%(taxrate)+"%"
+                taxNameIGSTOUT = "IGSTOUT_"+states+"@"+'%d'%(taxrate)+"%"
 
                 accDict = [{"accountname":taxNameSGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
                    {"accountname":taxNameSGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
@@ -146,23 +137,24 @@ def gstAccName(con,taxname,taxrate,orgcode):
                    {"accountname":taxNameIGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
                 print accDict
                 try:
-                    result = con.execute(accounts.insert(),accDict)
-                    print result
+                    for acc in accDict:
+                        result = con.execute(accounts.insert(),[acc])
                 except:
                     pass
-                   
 
             if taxname == "CESS":
                 taxNameCESSIN = "CESSIN_"+states+"@"+str(int(taxrate))+"%"
                 taxNameCESSOUT = "CESSOUT_"+states+"@"+str(int(taxrate))+"%"
 
                 accDict = [{"accountname":taxNameCESSIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},{"accountname":taxNameCESSOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
-                result = con.execute(accounts.insert(),accDict)
-                print accDict
+                try:
+                    result = con.execute(accounts.insert(),accDict)
+                except:
+                    pass
 
     return {"gkstatus":"success"}
-  #  except:
-  #      return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+    #except:
+    #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
 
 
