@@ -71,6 +71,8 @@ class api_organisation(object):
         try:
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
+            if not columnExists("organisation","avnoflag"):
+                self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
                 self.con.execute("alter table organisation add modeflag integer default 1")
             if not columnExists("organisation","avflag"):
