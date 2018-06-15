@@ -26,12 +26,31 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Prajkta Patkar"<prajkta.patkar007@gmail.com>
 """
+
+#this module contains the functions and objects needed for database objects configuration.
+#Metadata is one such object which helps to get all database related info.
+#inspect is another functions from alchemy which helps to find details info on tables or columns.
+
 from sqlalchemy.engine import create_engine
+from sqlalchemy import inspect
+from sqlalchemy.dialects.postgresql.base import PGInspector
+
+
 from gkcore.models.gkdb import metadata
 def dbconnect():
+    """
+    purpose:
+    returns an engine object for the postgresql database.
+    In our case the database is called gkdata.
+    Description:
+    This functions can be called to get a working interface to the database.
+    It is as good as a database connection which can directly execute sql queries.
+    """
     stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
-    #engine = Engine
+    #Note that the echo parameter set to False means sql queries will not be printed to the termina.
+    #Pool size is important to balance between database holding capacity in ram and speed.
+
     engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
     return engine
 
@@ -59,7 +78,31 @@ def addFields(con,eng):
         con.execute("alter table delchal add noofpackages int")
         con.execute("alter table delchal add modeoftransport text")
     return 0
-        
 
+def columnExists(tableName, columnName):
+    """
+    purpose:
+    Checkes weather the column mentiond is alredy present in the given table.
+    description:
+    Given the table and the name of the column, this functions checks if that column exists.
+    It uses the inspect function to do so.
+    The function traverces through the list of columns and checks if the name exists.
+    Returns True if the column exists or False otherwise.
+    """
+    gkInspect = PGInspector(dbconnect())
+    cols = gkInspect.get_columns(tableName)
+    for col in cols:
+        if col["name"] in columnName:
+            return True
+    return False
     
-    
+        
+def tableExists(tblName):
+    """
+    purpose:
+    Finds out weather the given table exists in the database.
+    Function uses inspect object for postgresql.
+    """
+    gkInspect = PGInspector(dbconnect())
+    tblList = gkInspect.get_table_names()
+    return tblName in tblList
