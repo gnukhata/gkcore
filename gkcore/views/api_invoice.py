@@ -231,7 +231,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 # Data is stored in a variable dtset.
                 dtset = self.request.json_body
@@ -263,38 +263,38 @@ class api_invoice(object):
                     dcinvdataset["orgcode"]=invdataset["orgcode"]
                     dcinvdataset["invid"]=invdataset["invid"]
                     dcinvdataset["invprods"] = stockdataset["items"]
-                    #try:
-                    updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                    result = self.con.execute(dcinv.insert(),[dcinvdataset])
-                    if result.rowcount > 0:
-                       avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                       av = avfl.fetchone()
-                       if av["avflag"] == 1:
-                            avData = dtset["av"]
-                            mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
-                            maFlag = mafl.fetchone()
-                            csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
-                            CSname = csName.fetchone()
-                            queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invdataset["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
-                            if int(invdataset["taxflag"]) == 7:
-                                queryParams["gstname"]=avData["avtax"]["GSTName"]
-                                queryParams["cessname"] =avData["avtax"]["CESSName"]
+                    try:
+                        updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+                        result = self.con.execute(dcinv.insert(),[dcinvdataset])
+                        if result.rowcount > 0:
+                           avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                           av = avfl.fetchone()
+                           if av["avflag"] == 1:
+                                avData = dtset["av"]
+                                mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                maFlag = mafl.fetchone()
+                                csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                                CSname = csName.fetchone()
+                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invdataset["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                if int(invdataset["taxflag"]) == 7:
+                                    queryParams["gstname"]=avData["avtax"]["GSTName"]
+                                    queryParams["cessname"] =avData["avtax"]["CESSName"]
 
-                            if int(invdataset["taxflag"]) == 22:
-                                queryParams["taxpayment"]=avData["taxpayment"]
-                            #call getDefaultAcc
-                            a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                            if a["gkstatus"] == 0:
-                                voucherData["status"] = 0
-                                voucherData["vchno"] = a["vchNo"]
-                            else:
-                                voucherData["status"] = 1
-                    return {"gkstatus":enumdict["Success"]}
-                    #except:
-                    #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                                if int(invdataset["taxflag"]) == 22:
+                                    queryParams["taxpayment"]=avData["taxpayment"]
+                                #call getDefaultAcc
+                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                if a["gkstatus"] == 0:
+                                    voucherData["status"] = 0
+                                    voucherData["vchno"] = a["vchNo"]
+                                else:
+                                    voucherData["status"] = 1
+                        return {"gkstatus":enumdict["Success"]}
+                    except:
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
                 else:
-                   # try:
+                    try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         #Code for updating bankdetails when user switch to cash payment from bank.
                         getpaymentmode = int(invdataset["paymentmode"]) #Loading paymentmode.
@@ -335,14 +335,14 @@ class api_invoice(object):
                             else:
                                 voucherData["status"] = 1
                         return {"gkstatus":enumdict["Success"]}
-                    #except:
-                    #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
-            #    self.con.close()
+                    except:
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
     @view_config(request_method='PUT',request_param='type=bwa',renderer='json')
     def updatePayment(self):
         """
