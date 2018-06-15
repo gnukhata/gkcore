@@ -3944,6 +3944,7 @@ free replacement or sample are those which are excluded.
         This function is used to see sales or purchase register of organisation.
         It means the total purchase and sales of different products. Also its amount,
         tax, etc.
+        orderflag is checked in request params for sorting date in descending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -3963,11 +3964,18 @@ free replacement or sample are those which are excluded.
                 taxcolumns = []
                 #sales register(flag = 0)
                 if int(self.request.params["flag"]) == 0:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    if "orderflag" in self.request.params:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    else:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                        
                 
                 #purchase register(flag = 1)
                 elif int(self.request.params["flag"]) == 1:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    if "orderflag" in self.request.params:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    else:
+                       invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d'))) 
                 
             
                 srno = 1
