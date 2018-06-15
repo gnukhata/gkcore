@@ -26,7 +26,7 @@ Contributors:
 'Abhijith Balan'<abhijith@dff.org.in>
 """
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users,product,unitofmeasurement, organisation, accounts, vouchers
+from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users,product,unitofmeasurement, organisation, accounts, vouchers, stock
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -65,8 +65,25 @@ class api_drcr(object):
                 vdataset = wholedataset["vdataset"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 result=self.con.execute(drcr.insert(),[dataset])
+
                 lastdrcr = self.con.execute(select([drcr.c.drcrid]).where(and_(drcr.c.invid==dataset["invid"], drcr.c.drcrno==dataset["drcrno"],drcr.c.orgcode==dataset["orgcode"],drcr.c.dctypeflag==dataset["dctypeflag"])))
                 drcrid = lastdrcr.fetchone()
+                if int(dataset["drcrmode"]) == 18:
+                    stockdataset = {"dcinvtnid":drcrid["drcrid"], "orgcode":dataset["orgcode"], "stockdate":dataset["drcrdate"]}
+                    if int(dataset["dctypeflag"]) == 3:
+                        stockdataset["inout"] = 9
+                        if int(vdataset["inoutflag"]) == 15:
+                            stockdataset["dcinvtnflag"] = 2
+                        else:
+                            stockdataset["dcinvtnflag"] = 7
+                    else:
+                        stockdataset["inout"] = 15
+                        stockdataset["dcinvtnflag"] = 7
+                    for item in dataset["reductionval"]["quantities"]:
+                        stockdataset["productcode"] = item
+                        stockdataset["qty"] = dataset["reductionval"]["quantities"][item]
+                        self.con.execute(stock.insert(), [stockdataset])
+                
                 # check automatic voucher flag  if it is 1 get maflag
                 avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == dataset["orgcode"]))
                 av = avfl.fetchone()
@@ -78,9 +95,9 @@ class api_drcr(object):
                     queryParams.update(vdataset)
                     try:
                         drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
-                        return {"gkstatus":enumdict["Success"], "vchCode":drcrautoVch}
+                        return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":1, "vchCode":drcrautoVch}}
                     except:
-                        return {"gkstatus":enumdict["Success"], "vchCode":0}
+                        return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":0}}
                 else:
                     return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
