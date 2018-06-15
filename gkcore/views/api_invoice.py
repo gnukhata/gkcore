@@ -252,6 +252,10 @@ class api_invoice(object):
                     deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
                 except:
                     pass
+                try:
+                    deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
+                except:
+                    pass
                 # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
                 if invdataset.has_key("dcid"):
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
@@ -261,6 +265,21 @@ class api_invoice(object):
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
+                        queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                        if int(invdataset["taxflag"]) == 7:
+                            queryParams["gstname"]=avData["avtax"]["GSTName"]
+                            queryParams["cessname"] =avData["avtax"]["CESSName"]
+
+                        if int(invdataset["taxflag"]) == 22:
+                            queryParams["taxpayment"]=avData["taxpayment"]
+                            #call getDefaultAcc
+                        a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                        if a["gkstatus"] == 0:
+                            voucherData["status"] = 0
+                            voucherData["vchno"] = a["vchNo"]
+                        else:
+                            voucherData["status"] = 1
+                        
                         return {"gkstatus":enumdict["Success"]}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
