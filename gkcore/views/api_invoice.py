@@ -77,7 +77,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 dtset = self.request.json_body
                 dcinvdataset={}
@@ -128,7 +128,7 @@ class api_invoice(object):
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
-                    try:
+                   # try:
                         if invdataset.has_key('icflag'):
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
                             invoiceid = result.fetchone()
@@ -202,18 +202,18 @@ class api_invoice(object):
                                 else:
                                     voucherData["status"] = 1
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
-                    except:
-                        result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
-                        result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                    #except:
+                    #    result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
+                     #   result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
+                     #   result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
+                     #   return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+           # except exc.IntegrityError:
+           #     return {"gkstatus":enumdict["DuplicateEntry"]}
+           # except:
+           #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+           # finally:
+           #     self.con.close()
 
            
     '''
@@ -1316,6 +1316,7 @@ The bills grid calld gkresult will return a list as it's value.
             So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax,"prodData":productcode:taxabale value ....,"taxes":{productcode:tax}}
             """
             self.con = eng.connect()
+            taxRateDict = {5:2.5,12:6,18:9,28:14}
             voucherDict = {}
             crs ={}
             drs = {}
@@ -1379,14 +1380,14 @@ The bills grid calld gkresult will return a list as it's value.
                             taxable = float(queryParams["prodData"][prod])
                             if taxRate > 0.00:
                                 tx = (float(taxRate)/2)
+                                inTaxrate = int(taxRate)
+                                taxHalf = (taxRateDict[inTaxrate])
+                                print taxHalf
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                else:
-                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                
                                 if taxNameSGST not in taxDict:
                                     taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                     taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -1424,8 +1425,10 @@ The bills grid calld gkresult will return a list as it's value.
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
                     for Tax in taxDict:
+                        print Tax
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
+                        
                         crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
 
@@ -1491,12 +1494,11 @@ The bills grid calld gkresult will return a list as it's value.
                                 tx = (float(taxRate)/2)
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                else:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                inTaxrate = int(taxRate)
+                                taxHalf = (taxRateDict[inTaxrate])
+                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                
                                 if taxNameSGST not in taxDict:
                                     taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                     taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -1536,8 +1538,8 @@ The bills grid calld gkresult will return a list as it's value.
                                 taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
                     
                     for Tax in taxDict:
+                        print Tax
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
-                        
                         taxRow = taxAcc.fetchone()
                         drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
