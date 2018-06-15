@@ -235,7 +235,6 @@ class api_tax(object):
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
             try:
-
                 self.con = eng.connect()
                 user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
@@ -243,8 +242,9 @@ class api_tax(object):
                 if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
                     dataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(tax.insert(),[dataset])
-                    if taxname != 'VAT':
-                        r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
+                    # In case of gst and cess create tax accounts
+                    if dataset["taxname"] != 'VAT':
+                        r = gstAccName(self.con,dataset["taxname"],dataset["taxrate"],dataset["orgcode"])
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
