@@ -243,6 +243,7 @@ class api_invoice(object):
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
+                voucherData ={}
                 # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
                 try:
                     deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
@@ -311,6 +312,28 @@ class api_invoice(object):
                             stockdataset["productcode"] = item
                             stockdataset["qty"] = items[item].values()[0]
                             result = self.con.execute(stock.insert(),[stockdataset])
+                        avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                        av = avfl.fetchone()
+                        if av["avflag"] == 1:
+                            avData = dtset["av"]
+                            mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                            maFlag = mafl.fetchone()
+                            csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                            CSname = csName.fetchone()
+                            queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                            if int(invdataset["taxflag"]) == 7:
+                                queryParams["gstname"]=avData["avtax"]["GSTName"]
+                                queryParams["cessname"] =avData["avtax"]["CESSName"]
+
+                            if int(invdataset["taxflag"]) == 22:
+                                queryParams["taxpayment"]=avData["taxpayment"]
+                            #call getDefaultAcc
+                            a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                            if a["gkstatus"] == 0:
+                                voucherData["status"] = 0
+                                voucherData["vchno"] = a["vchNo"]
+                            else:
+                                voucherData["status"] = 1
                         return {"gkstatus":enumdict["Success"]}
                     #except:
                     #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -1300,7 +1323,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-        try:
+       # try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1588,7 +1611,7 @@ The bills grid calld gkresult will return a list as it's value.
             
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
-        except:
-            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+ #       except:
+ #           return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+ #       finally:
+ #           self.con.close()
