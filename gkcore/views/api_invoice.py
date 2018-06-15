@@ -38,7 +38,7 @@ from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -1132,7 +1132,8 @@ The bills grid calld gkresult will return a list as it's value.
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
     Input parameters are: flag- 0=all invoices, 1=sales invoices, 2=purchase invoices
-                          fromdate and todate this is time period to see all invoices.'''
+    fromdate and todate this is time period to see all invoices.
+    orderflag is checked in request params for sorting date in descending order.'''
     @view_config(request_method='GET',request_param="type=list", renderer ='json')
     def getListofInvoices(self):
         try:
@@ -1146,7 +1147,10 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 #fetch all invoices
-                result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
+                else:
+                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
