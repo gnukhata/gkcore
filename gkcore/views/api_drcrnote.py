@@ -769,7 +769,7 @@ def drcrVoucher(queryParams, orgcode):
                     taxAmount = taxAmount + float(queryParams["taxes"][prod])
                 drs[vatoutaccountcode["accountcode"]] = taxAmount
 
-            Narration = "Received goods wortu Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
@@ -851,7 +851,7 @@ def drcrVoucher(queryParams, orgcode):
                     taxAmount = taxAmount + float(queryParams["taxes"][prod])
                 drs[vatoutaccountcode["accountcode"]] = taxAmount
 
-            Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" from "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
@@ -1015,7 +1015,7 @@ def drcrVoucher(queryParams, orgcode):
                     taxAmount = taxAmount + float(queryParams["taxes"][prod])
                 crs[vatoutaccountcode["accountcode"]] = taxAmount
 
-            Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
+            Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
 
