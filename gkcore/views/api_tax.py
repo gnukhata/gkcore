@@ -234,7 +234,7 @@ class api_tax(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-          #  try:
+            try:
 
                 self.con = eng.connect()
                 user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
@@ -242,21 +242,19 @@ class api_tax(object):
                 dataset = self.request.json_body
                 if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
                     dataset["orgcode"] = authDetails["orgcode"]
-                    print dataset
                     result = self.con.execute(tax.insert(),[dataset])
-                    taxname = dataset["taxname"]
-                    taxrate = dataset["taxrate"]
-                    r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
-                    print r
+                    if taxname != 'VAT':
+                        r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
+                        print r
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
-           # except exc.IntegrityError:
-           #     return {"gkstatus":enumdict["DuplicateEntry"]}
-           # except:
-           #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-           # finally:
-           #     self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+               self.con.close()
 
     @view_config(request_method='GET',request_param='pscflag',renderer='json')
     def getprodtax(self):
