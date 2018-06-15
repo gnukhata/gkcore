@@ -245,7 +245,6 @@ class api_tax(object):
                     result = self.con.execute(tax.insert(),[dataset])
                     if taxname != 'VAT':
                         r = gstAccName(self.con,taxname,taxrate,dataset["orgcode"])
-                        print r
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":  enumdict["BadPrivilege"]}
