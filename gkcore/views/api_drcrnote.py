@@ -58,7 +58,7 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 wholedataset = self.request.json_body
                 dataset = wholedataset["dataset"]
@@ -76,15 +76,19 @@ class api_drcr(object):
                     queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
                     queryParams.update(dataset)
                     queryParams.update(vdataset)
-                    drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
+                    try:
+                        drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
+                        return {"gkstatus":enumdict["Success"], "vchCode":drcrautoVch}
+                    except:
+                        return {"gkstatus":enumdict["Success"], "vchCode":0}
                 else:
                     return {"gkstatus":enumdict["Success"]}
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["DuplicateEntry"]}
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            #finally:
-            #    self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
                 
     @view_config(request_method='GET',request_param="drcr=single", renderer ='json')
     def getDrCrDetails(self):
@@ -363,7 +367,23 @@ class api_drcr(object):
                 self.con.close()   
 
 def drcrVoucher(queryParams, orgcode):
-    print queryParams
+    '''
+    This function creates voucher for Debit and Credit Notes.
+
+    When a Debit Note or Credit Note is created corresponding voucher must also be created.
+    GNUKhata has vouchers of types Debit Note and Credit Note. The choice of accounts for 
+    creating these vouchers depends on the purpose for which a Debit  or a Credit Note is 
+    created. This could be either change in the amount to be paid or recived or a change in 
+    the quantity of products.
+
+    When there is change in price, Discount Paid/Discount Received accounts, Party's account and 
+    accounts of taxes are used to create vouchers. When there is change in quantity, corresponding
+    Sale/Purchase accounts, Party's Account, and accounts of taxes are used. The name of these 
+    accounts are found out using information from queryParams variable passed to this function. 
+    Then, corresponding account codes are found out and a dictionary is created with crs, drs, 
+    type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a 
+    Debit or Credit Note Voucher.
+    '''
     con = eng.connect()
     voucherDict = {}
     taxDict = {}
@@ -374,7 +394,6 @@ def drcrVoucher(queryParams, orgcode):
     cgstAmount = 0.00
     sgstAmount = 0.00
 
-    print queryParams["drcrmode"]
     partyaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == queryParams["custname"],accounts.c.orgcode == orgcode)))
     partyaccountcode = partyaccount.fetchone()
     if int(queryParams["drcrmode"]) == 4:
@@ -382,8 +401,6 @@ def drcrVoucher(queryParams, orgcode):
         discountpaidaccountcode = discountpaidaccount.fetchone()
         discountreceivedaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "Discount Received",accounts.c.orgcode == orgcode)))
         discountreceivedaccountcode = discountreceivedaccount.fetchone()
-        print discountpaidaccountcode
-        print discountreceivedaccountcode
         if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             drs[discountpaidaccountcode["accountcode"]] = queryParams["totaltaxable"]
@@ -391,12 +408,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -444,7 +458,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -467,12 +480,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -520,7 +530,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -543,12 +552,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -596,7 +602,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -619,12 +624,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -672,7 +674,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -707,12 +708,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -760,7 +758,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -793,12 +790,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -846,7 +840,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -879,12 +872,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -932,7 +922,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -965,12 +954,9 @@ def drcrVoucher(queryParams, orgcode):
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
-                print taxName
                 if taxName == "SGST":
-                    print queryParams["prodData"]
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
-                        print taxRate
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
@@ -1018,7 +1004,6 @@ def drcrVoucher(queryParams, orgcode):
                         else:
                             val = float(taxDict[taxNameCESS])
                             taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
-                print taxDict
                 for Tax in taxDict:
                     taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
@@ -1056,3 +1041,4 @@ def drcrVoucher(queryParams, orgcode):
         con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
     for crkeys in crs.keys():
         con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+    return vchCode["vcode"]
