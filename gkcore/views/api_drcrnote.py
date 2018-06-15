@@ -630,7 +630,7 @@ def drcrVoucher(queryParams, orgcode):
                     taxAmount = taxAmount + float(queryParams["taxes"][prod])
                 crs[vatoutaccountcode["accountcode"]] = taxAmount
 
-            Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
 
