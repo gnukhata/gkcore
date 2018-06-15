@@ -85,7 +85,6 @@ def gstAccName(con,taxname,taxrate,orgcode):
 
         taxRate = {5:2.5,12:6,18:9,28:14}
 
-
         gstIN = con.execute(select([organisation.c.gstin]).where(organisation.c.orgcode == orgcode))
         stCode = gstIN.fetchall()
 
@@ -115,7 +114,6 @@ def gstAccName(con,taxname,taxrate,orgcode):
             grp = con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == "Duties & Taxes",groupsubgroups.c.orgcode == orgcode)))
             grpCode = grp.fetchone()
             for states in state_Abbv:
-                print taxname
                 if taxname == "IGST":
                     if int(taxrate) in taxRate:
                         tx  = int(taxrate)
@@ -133,7 +131,6 @@ def gstAccName(con,taxname,taxrate,orgcode):
                        {"accountname":taxNameCGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
                        {"accountname":taxNameIGSTIN,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1},
                        {"accountname":taxNameIGSTOUT,"groupcode":grpCode["groupcode"],"orgcode":orgcode, "sysaccount":1}]
-                    print accDict
                     try:
                         for acc in accDict:
                             result = con.execute(accounts.insert(),[acc])
