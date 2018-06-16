@@ -253,10 +253,7 @@ class api_invoice(object):
                     deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
                 except:
                     pass
-                try:
-                    deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
-                except:
-                    pass
+                
                 # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
                 if invdataset.has_key("dcid"):
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
@@ -271,6 +268,10 @@ class api_invoice(object):
                            av = avfl.fetchone()
                            if av["avflag"] == 1:
                                 avData = dtset["av"]
+                                try:
+                                    deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
+                                except:
+                                    pass
                                 mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 maFlag = mafl.fetchone()
                                 csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
@@ -316,6 +317,10 @@ class api_invoice(object):
                         av = avfl.fetchone()
                         if av["avflag"] == 1:
                             avData = dtset["av"]
+                            try:
+                                deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
+                            except:
+                                pass
                             mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                             maFlag = mafl.fetchone()
                             csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
