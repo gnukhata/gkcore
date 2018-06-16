@@ -91,7 +91,7 @@ class api_transaction(object):
             initialType = "cn"
         if voucherType == "debitnote":
             initialType = "dn"
-        if voucherType == "salereturn":
+        if voucherType == "salesreturn":
             initialType = "sr"
         if voucherType == "purchasereturn":
             initialType = "pr"
@@ -152,12 +152,12 @@ class api_transaction(object):
                 if dataset.has_key("instrumentdate"):
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
+                
                 # generate voucher number if it is not sent.
                 if dataset.has_key("vouchernumber") == False:
                     voucherType = dataset["vouchertype"]
                     vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
                     dataset["vouchernumber"] = vchNo
-                     
                 result = self.con.execute(vouchers.insert(),[dataset])
                 for drkeys in drs.keys():
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
@@ -175,14 +175,112 @@ class api_transaction(object):
                         vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                         vouchercode =vouchercodedata.fetchone()
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":authDetails["orgcode"]}])
-
                 vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                 vchcode =vchdata.fetchone()
                 self.con.close()
-                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
+                return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"]),"vouchernumber":dataset["vouchernumber"]}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='POST', request_param="mode=auto", renderer="json")
+    def addVoucherAuto(self):
+        """
+        Purpose:
+        Adds a new reciept/payment voucher to an organisation
+        This method is used if organisation has mode set to automatic
+        Method requires a request with two dictionaries `vdetails` and
+        `transactions`
+        Contents of `vdetails`:
+            * voucherdate
+            * vouchertype
+            * attachmentcount
+            * attachment
+            * narration
+        Contents of `transactions`:
+            * bamount: If transaction includes bank transfer
+            * camount: If transaction includes cash transfer
+            * payment_mode
+            * party
+        `vdetails` can be inserted into voucher table after crs and drs have
+        been calculated
+        """
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        authDetails = authCheck(token)
+        if authDetails["auth"] is False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+
+                dataset = self.request.json_body
+                vdetails = dataset["vdetails"]
+                transactions = dataset["transactions"]
+
+                vdetails["orgcode"] = authDetails["orgcode"]
+                payment_mode = transactions["payment_mode"]
+                party_accCode = transactions["party"]
+
+                if payment_mode in ["both", "bank"]:
+                    bamount = transactions["bamount"]
+                if payment_mode in ["both", "cash"]:
+                    camount = transactions["camount"]
+                if payment_mode == "both":
+                    total_amount = "%.2f" % (float(bamount) + float(camount))
+
+                # b_accCode is the user's default bank account code
+                if payment_mode in ["both", "bank"]:
+                    b_accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==2).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+                # c_accCode is the user's default cash account code
+                if payment_mode in ["both", "cash"]:
+                    c_accCode = self.con.execute(select([accounts.c.accountcode]).where(accounts.c.defaultflag==3).where(accounts.c.orgcode==int(vdetails["orgcode"]))).fetchone()[0]
+
+                # We define an internal function to calculate Dr & Cr
+                # This function returns a tuple with two dictionaries
+                # Which dictionary is Dr and which is Cr will depend on type of receipt
+                def constructDrCr(mode):
+                    if mode == "both":
+                        return ({b_accCode: bamount, c_accCode: camount}, {party_accCode: total_amount})
+                    elif mode == "bank":
+                        return ({b_accCode: bamount}, {party_accCode: bamount})
+                    else:
+                        return ({c_accCode: camount}, {party_accCode: camount})
+
+                if vdetails["vouchertype"] == "receipt":
+                    vdetails["drs"], vdetails["crs"] = constructDrCr(payment_mode)
+                else:
+                    vdetails["crs"], vdetails["drs"] = constructDrCr(payment_mode)
+
+                # Database expects vouchernumber to be unicode encoded
+                vdetails["vouchernumber"] = unicode(self.__genVoucherNumber(self.con,vdetails["vouchertype"],vdetails["orgcode"]))
+
+                self.con.execute(vouchers.insert(), [vdetails])
+
+                if payment_mode == "both":
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(b_accCode)))
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(c_accCode)))
+                elif payment_mode == "bank":
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(b_accCode)))
+                else:
+                    self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(c_accCode)))
+
+                self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(party_accCode)))
+
+                if transactions["payment_mode"] in ["bank", "both"]:
+                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                    vouchercode = vouchercodedata.fetchone()
+                    self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":b_accCode,"orgcode":authDetails["orgcode"]}])
+                return {"gkstatus": enumdict["Success"]}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
 
     @view_config(request_param="details=last",request_method='GET',renderer='json')
     def getLastVoucherDetails(self):
@@ -201,12 +299,12 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
+                result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.narration,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
                 row = result.fetchone()
                 if row== None:
-                    voucher = {"vdate": "","vno":""}
+                    voucher = {"vdate": "","vno":"","narration":""}
                 else:
-                    voucher = {"vdate": datetime.strftime((row["voucherdate"]),"%d-%m-%Y"),"vno":row["vouchernumber"]}
+                    voucher = {"vdate": datetime.strftime((row["voucherdate"]),"%d-%m-%Y"),"vno":row["vouchernumber"],"narration":row["narration"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":voucher}
             except:

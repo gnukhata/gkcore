@@ -22,6 +22,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Prajkta Patkar"<prajakta@dff.org.in>
+"Nitesh Chaughule" <nitesh@disroot.org>
 
 """
 
@@ -52,6 +53,22 @@ class api_state(object):
         This function returns a list of dictionaries having statecode as key and its corresponding statename as value.
         """
         try:
+            self.con = eng.connect()
+            stateData = self.con.execute(select([state]).order_by(state.c.statename))
+            getStateData = stateData.fetchall()
+            states = []
+            for st in getStateData:
+                states.append({st["statecode"]: st["statename"]})  
+            return {"gkstatus":enumdict["Success"], "gkresult": states}
+        except:
+            return{"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='GET',renderer='json',request_param="abbreviation")
+    def getAbbrevStates(self):
+        """
+        This function returns a list of dictionaries having statecode as key and its corresponding statename as value.
+        """
+        try:
             token = self.request.headers["gktoken"]
         except:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
@@ -61,11 +78,31 @@ class api_state(object):
         else:
             try:
                 self.con = eng.connect()
-                stateData = self.con.execute(select([state]).order_by(state.c.statename))
-                getStateData = stateData.fetchall()
-                states = []
-                for st in getStateData:
-                    states.append({st["statecode"]: st["statename"]})  
-                return {"gkstatus":enumdict["Success"], "gkresult": states}
+                statecode = int(self.request.params["statecode"])
+                abbreviationdata = self.con.execute(select([state.c.abbreviation]).where(state.c.statecode == statecode))
+                abbreviation = abbreviationdata.fetchone()
+                return{"gkstatus":enumdict["Success"], "abbreviation":abbreviation["abbreviation"]}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+
+    @view_config(request_method='GET',renderer='json',request_param='statename')
+    def getstatename(self):
+        """
+        This function returns 'state name' of 'state abbreviation' taken from front end.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect();
+                stateabbr = str(self.request.params["stateabbr"])
+                statenamesdata = self.con.execute(select([state.c.statename]).where(state.c.abbreviation == stateabbr))
+                singlestate = statenamesdata.fetchone();
+                return {"gkstatus":enumdict["Success"], "statename":singlestate["statename"]}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}

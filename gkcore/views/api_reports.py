@@ -28,17 +28,18 @@ Contributors:
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 "Parabjyot Singh" <parabjyot1996@gmail.com>
 "Rahul Chaurasiya" <crahul4133@gmail.com>
+"Vasudha Kadge" <kadge.vasudha@gmail.com>
 """
 
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
-from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote
+from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state, drcr
 from sqlalchemy.sql import select, not_
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , alias, or_, exc, distinct
+from sqlalchemy import and_ , alias, or_, exc, distinct,desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -304,6 +305,7 @@ class api_reports(object):
         This method is called when the report url is called with type=ledger request_param.
         The columns  in the grid include:
         *Date,Particular,voucher Number, Dr,Cr and balance at end of transaction.
+        orderflag is checked in request params for sorting date in descending order.
         """
 
         try:
@@ -354,9 +356,15 @@ class api_reports(object):
                         bal = float(-calbalDict["balbrought"])
                     vouchergrid.append(openingrow)
                 if projectCode == "":
-                    transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
+                    if "orderflag" in self.request.params:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
+                    else:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
                 else:
-                    transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+                    if "orderflag" in self.request.params:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+                    else:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
                 transactions = transactionsRecords.fetchall()
 
@@ -495,9 +503,16 @@ class api_reports(object):
                     headerrow["projectname"]=prjname["projectname"]
                 if side=="dr":
                     if projectCode == "":
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
+                        else:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                        else:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
                         ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"]}
@@ -518,9 +533,15 @@ class api_reports(object):
 
                 if side=="cr":
                     if projectCode == "":
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
+                        else:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                        else:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
                         ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"]}
@@ -861,9 +882,10 @@ class api_reports(object):
                                 crresultRow = crresult.fetchone()
                                 rcaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(cr)))
                                 rcacc= ''.join(rcaccountname.fetchone())
-                                ttlRunDr += float(crresultRow["total"])
-                                rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
-                                rctotal += float(crresultRow["total"])
+                                if crresultRow["total"] != None:
+                                    ttlRunDr += float(crresultRow["total"])
+                                    rctransactionsgrid.append({"toby":"To","particulars":rcacc,"amount":"%.2f"%float(crresultRow["total"]),"accountcode":int(cr), "ttlRunDr": ttlRunDr})
+                                    rctotal += float(crresultRow["total"])
                         for dr in transaction["drs"]:
                             if dr not in pyaccountcodes and int(dr) != int(cbAccount["accountcode"]):
                                 pyaccountcodes.append(dr)
@@ -871,9 +893,11 @@ class api_reports(object):
                                 drresultRow = drresult.fetchone()
                                 pyaccountname = self.con.execute("select accountname from accounts where accountcode=%d"%(int(dr)))
                                 pyacc= ''.join(pyaccountname.fetchone())
-                                ttlRunCr += float(drresultRow["total"])
-                                paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
-                                pytotal += float(drresultRow["total"])
+                                if drresultRow["total"]!=None:
+                                    ttlRunCr += float(drresultRow["total"])
+                                    paymentcf.append({"toby":"By","particulars":pyacc,"amount":"%.2f"%float(drresultRow["total"]),"accountcode":int(dr), "ttlRunCr":ttlRunCr})
+                                    pytotal += float(drresultRow["total"])
+
                 receiptcf.extend(rctransactionsgrid)
                 paymentcf.extend(closinggrid)
                 if len(receiptcf)>len(paymentcf):
@@ -1236,7 +1260,9 @@ class api_reports(object):
 
                 #Calculate Profit/Loss for the year
                 profit = 0
-                if (expenseTotal > incomeTotal):
+                exp = float("%.2f"%(expenseTotal))
+                incm = float("%.2f"%(incomeTotal))
+                if (exp > incm):
                     profit = expenseTotal - incomeTotal
                     groupWiseTotal -= profit
                     sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":"", "advflag":""})
@@ -1245,7 +1271,7 @@ class api_reports(object):
                     else:
                         sbalanceSheet.append({"groupAccname":"Deficit for the Year:","amount":"%.2f"%(profit), "groupAcccode":"","subgroupof":groupcode , "accountof":"", "groupAccflag":2, "advflag":""})
 
-                if (expenseTotal < incomeTotal):
+                if (exp < incm):
                     profit = incomeTotal - expenseTotal
                     groupWiseTotal += profit
                     sbalanceSheet.append({"groupAccname":"Reserves","amount":"%.2f"%(groupWiseTotal), "groupAcccode":groupcode,"subgroupof":"" , "accountof":"", "groupAccflag":"","advflag":""})
@@ -1742,6 +1768,7 @@ class api_reports(object):
 
                 #Calculate Profit/Loss for the year
                 profit = 0.00
+                
                 if (expenseTotal > incomeTotal):
                     profit = expenseTotal - incomeTotal
                     sourcegroupWiseTotal -= profit
@@ -2421,7 +2448,6 @@ class api_reports(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
-
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
@@ -2429,7 +2455,6 @@ class api_reports(object):
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
-                #calculateTo = calculateTo
                 result = {}
                 grsD = 0.00
                 income = 0.00
@@ -2471,8 +2496,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                               DESubBal = DESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                               DESUBDict[desubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                               DESubBal = DESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         DESUBDict["balance"] = "%.2f"%(float(DESubBal))
                         # This is balance of main group 
@@ -2489,8 +2518,13 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            directExpense[deAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpDEbalance = grpDEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Cr":
+                            directExpense[deAcc["accountname"]] = "%.2f"%(- float(calbalData["curbal"]))
+                            grpDEbalance = grpDEbalance - float(calbalData["curbal"])
+                        
                 directExpense["direxpbal"] = "%.2f"%(float( grpDEbalance))
                 result["Direct Expense"] = directExpense
                 
@@ -2514,8 +2548,13 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            DISubBal = DISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                DISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                DISubBal = DISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                DISUBDict[disubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                                DISubBal = DISubBal - float(calbalData["curbal"])
+                                
                         # This is balance of sub group
                         DISUBDict["balance"] = "%.2f"%(float(DISubBal))
                         # This is balance of main group 
@@ -2530,8 +2569,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                directIncome[diAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                grpDIbalance = grpDIbalance + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                directIncome[diAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                                grpDIbalance = grpDIbalance - float(calbalData["curbal"])
                         else:
                             continue
                                 
@@ -2548,7 +2591,7 @@ class api_reports(object):
                     result["totalD"] =  "%.2f"%(float( grpDEbalance))
                     
                 ''' ################   Indirect Income & Indirect Expense  ################ '''
-                # Get all subgroups with their group code and group name under Group Direct Expense
+                # Get all subgroups with their group code and group name under Group Indirect Expense
                 IESubGroupsData = self.con.execute("select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"%(orgcode,orgcode))
                 IESubGroups = IESubGroupsData.fetchall()
                 for IESub in IESubGroups:
@@ -2563,8 +2606,12 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,iesubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            IESubBal = IESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                IESUBDict[iesubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IESubBal = IESubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                IESUBDict[iesubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                                IESubBal = IESubBal - float(calbalData["curbal"])
                         # This is balance of sub group
                         IESUBDict["balance"] = "%.2f"%(float(IESubBal))
                         # This is balance of main group 
@@ -2581,8 +2628,12 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,ieAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIEbalance = grpIEbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"]== "Cr":
+                            indirectExpense[ieAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                            grpIEbalance = grpIEbalance - float(calbalData["curbal"])
                 indirectExpense["indirexpbal"] = "%.2f"%(float( grpIEbalance))
                 result["Indirect Expense"] = indirectExpense
                 
@@ -2606,8 +2657,13 @@ class api_reports(object):
                             calbalData = calculateBalance(self.con,iisubacc["accountcode"], financialStart, financialStart, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
-                            IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                            IISubBal = IISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Cr":
+                                IISUBDict[disubacc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                                IISubBal = IISubBal + float(calbalData["curbal"])
+                            if calbalData["baltype"] == "Dr":
+                                IISUBDict[disubacc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                                IISubBal = IISubBal - float(calbalData["curbal"])
+
                         # This is balance of sub group
                         IISUBDict["balance"] = "%.2f"%(float(IISubBal))
                         # This is balance of main group 
@@ -2621,8 +2677,12 @@ class api_reports(object):
                         calbalData = calculateBalance(self.con,iiAcc["accountcode"], financialStart, financialStart, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
-                        indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                        grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Cr":
+                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                            grpIIbalance = grpIIbalance + float(calbalData["curbal"])
+                        if calbalData["baltype"] == "Dr":
+                            indirectIncome[iiAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
+                            grpIIbalance = grpIIbalance - float(calbalData["curbal"])
                                 
                 indirectIncome["indirincmbal"] = "%.2f"%(float( grpIIbalance))    
                 result["Indirect Income"] = indirectIncome
@@ -2673,7 +2733,10 @@ class api_reports(object):
                 userrole = user.fetchone()
                 vouchers = []
                 if userrole[0] == -1:
-                    voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(voucherbin.c.voucherdate,voucherbin.c.vouchercode))
+                    if "orderflag" in self.request.params:
+                        voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(desc(voucherbin.c.voucherdate),voucherbin.c.vouchercode))
+                    else:
+                        voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(voucherbin.c.voucherdate,voucherbin.c.vouchercode))
                     voucherData = voucherRow.fetchall()
                     for voucher in voucherData:
                         vouchers.append({"vouchercode": voucher["vouchercode"], "vouchernumber":voucher["vouchernumber"], "voucherdate": datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"), "narration": voucher["narration"], "drs":voucher["drs"] , "crs":voucher["crs"], "vouchertype": voucher["vouchertype"], "projectname": voucher["projectname"]})
@@ -2762,7 +2825,15 @@ class api_reports(object):
                             if  stockRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(stockRow["qty"])
                                 totaloutward = float(totaloutward) + float(stockRow["qty"])
-                stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inward":"%.2f"%float(openingStock)})
+                        if stockRow["dcinvtnflag"] == 7:
+                            countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate >= yearStart, drcr.c.drcrdate < startDate, drcr.c.drcrid == stockRow["dcinvtnid"])))
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if  stockRow["inout"] == 9:
+                                    openingStock = float(openingStock) + float(stockRow["qty"])
+                                if  stockRow["inout"] == 15:
+                                    openingStock = float(openingStock) - float(stockRow["qty"])
+                stockReport.append({"date":"","particulars":"opening stock","trntype":"","dcid":"","dcno":"", "drcrno":"", "drcrid":"","invid":"","invno":"", "rnid":"", "rnno":"", "inward":"%.2f"%float(openingStock)})
                 totalinward = totalinward + float(openingStock)
                 for finalRow in stockData:
                     if finalRow["dcinvtnflag"] == 3 or  finalRow["dcinvtnflag"] ==  9:
@@ -2779,7 +2850,7 @@ class api_reports(object):
                             if  finalRow["inout"] == 9:
                                 openingStock = float(openingStock) + float(finalRow["qty"])
                                 totalinward = float(totalinward) + float(finalRow["qty"])
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"", "rnid":"", "rnno":"", "invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["invoicedate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custnamedata,"trntype":"invoice","dcid":"","dcno":"", "drcrno":"", "drcrid":"", "rnid":"", "rnno":"", "invid":finalRow["dcinvtnid"],"invno":countrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
@@ -2808,12 +2879,12 @@ class api_reports(object):
                                 openingStock = float(openingStock) + float(finalRow["qty"])
                                 totalinward = float(totalinward) + float(finalRow["qty"])
 
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "rnid":"", "rnno":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "drcrno":"", "drcrid":"", "rnid":"", "rnno":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"],"inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
 
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"],"invid":dcinvrow["invid"],"invno":invrow["invoiceno"], "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["dcdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"dcid":finalRow["dcinvtnid"],"dcno":countrow["dcno"], "drcrno":"", "drcrid":"", "invid":dcinvrow["invid"],"invno":invrow["invoiceno"], "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
 
                     if finalRow["dcinvtnflag"] == 18:
                         countresult = self.con.execute(select([rejectionnote.c.rndate,rejectionnote.c.rnno, rejectionnote.c.dcid, rejectionnote.c.invid]).where(and_(rejectionnote.c.rndate >= startDate, rejectionnote.c.rndate <= endDate, rejectionnote.c.rnid == finalRow["dcinvtnid"])))
@@ -2831,9 +2902,31 @@ class api_reports(object):
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
-                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["rndate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":"Rejection Note","rnid":finalRow["dcinvtnid"],"rnno":countrow["rnno"],"dcno":"", "drcrno":"", "drcrid":"", "invid":"","invno":"","tnid":"","tnno":"","inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)})
+                    if finalRow["dcinvtnflag"] == 7:
+                        countresult = self.con.execute(select([drcr.c.drcrdate,drcr.c.drcrno,drcr.c.invid, drcr.c.dctypeflag]).where(and_(drcr.c.drcrdate >= startDate, drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                        if countresult.rowcount == 1:
+                            countrow = countresult.fetchone()
+                            drcrinvdata = self.con.execute(select([invoice.c.custid]).where(invoice.c.invid == countrow["invid"]))
+                            drcrinv = drcrinvdata.fetchone()
+                            custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid == drcrinv["custid"]))
+                            custrow = custdata.fetchone()
+                            if int(countrow["dctypeflag"] == 3):
+                                trntype = "Credit Note"
+                            else:
+                                trntype = "Debit Note"
+                            if  finalRow["inout"] == 9:
+                                openingStock = float(openingStock) + float(finalRow["qty"])
+                                totalinward = float(totalinward) + float(finalRow["qty"])
 
-                stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["drcrdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype,"drcrid":finalRow["dcinvtnid"],"drcrno":countrow["drcrno"], "dcno":"", "dcid":"" , "rnid":"", "rnno":"", "invid":"","invno":"","inwardqty":"%.2f"%float(finalRow["qty"]),"outwardqty":"","balance":"%.2f"%float(openingStock)  })
+                            if  finalRow["inout"] == 15:
+                                openingStock = float(openingStock) - float(finalRow["qty"])
+                                totaloutward = float(totaloutward) + float(finalRow["qty"])
+
+                                stockReport.append({"date":datetime.strftime(datetime.strptime(str(countrow["drcrdate"].date()),"%Y-%m-%d").date(),"%d-%m-%Y"),"particulars":custrow["custname"],"trntype":trntype, "drcrid":finalRow["dcinvtnid"],"drcrno":countrow["drcrno"],"dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "inwardqty":"","outwardqty":"%.2f"%float(finalRow["qty"]),"balance":"%.2f"%float(openingStock)  })
+
+                stockReport.append({"date":"","particulars":"Total","dcid":"","dcno":"","invid":"","invno":"", "rnid":"", "rnno":"", "drcrno":"", "drcrid":"", "trntype":"","totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward)})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
             except:
@@ -3092,6 +3185,16 @@ class api_reports(object):
                             if  finalRow["inout"] == 15:
                                 openingStock = float(openingStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
+                        if finalRow["dcinvtnflag"] == 7:
+                            countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if  finalRow["inout"] == 9:
+                                    openingStock = float(openingStock) + float(finalRow["qty"])
+                                    totalinward = float(totalinward) + float(finalRow["qty"])
+                                if  finalRow["inout"] == 15:
+                                    openingStock = float(openingStock) - float(finalRow["qty"])
+                                    totaloutward = float(totaloutward) + float(finalRow["qty"])
 
                     stockReport.append({"srno":1,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
                     self.con.close()
@@ -3158,6 +3261,16 @@ class api_reports(object):
                                 if  finalRow["inout"] == 15:
                                     openingStock = float(openingStock) - float(finalRow["qty"])
                                     totaloutward = float(totaloutward) + float(finalRow["qty"])
+                            if finalRow["dcinvtnflag"] == 7:
+                                countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_( drcr.c.drcrdate <= endDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                                countrow = countresult.fetchone()
+                                if countrow["dc"] == 1:
+                                    if  finalRow["inout"] == 9:
+                                        openingStock = float(openingStock) + float(finalRow["qty"])
+                                        totalinward = float(totalinward) + float(finalRow["qty"])
+                                    if  finalRow["inout"] == 15:
+                                        openingStock = float(openingStock) - float(finalRow["qty"])
+                                        totaloutward = float(totaloutward) + float(finalRow["qty"])
 
                         stockReport.append({"srno":srno,"productname":prodName,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(openingStock)})
                         srno = srno + 1
@@ -3268,6 +3381,16 @@ class api_reports(object):
                             if  finalRow["inout"] == 15:
                                 gopeningStock = float(gopeningStock) - float(finalRow["qty"])
                                 totaloutward = float(totaloutward) + float(finalRow["qty"])
+                        if finalRow["dcinvtnflag"] == 7:
+                            countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate >= yearStart, drcr.c.drcrdate < startDate, drcr.c.drcrid == finalRow["dcinvtnid"])))
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if  finalRow["inout"] == 9:
+                                    gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+                                    totaloutward = float(totalinward) + float(finalRow["qty"])
+                                if  finalRow["inout"] == 15:
+                                    gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+                                    totaloutward = float(totaloutward) + float(finalRow["qty"])
 
                     stockReport.append({"srno":1,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
                     return {"gkstatus":enumdict["Success"],"gkresult":stockReport }
@@ -3340,6 +3463,16 @@ class api_reports(object):
                                 if  finalRow["inout"] == 15:
                                     gopeningStock = float(gopeningStock) - float(finalRow["qty"])
                                     totaloutward = float(totaloutward) + float(finalRow["qty"])
+                            if stockRow["dcinvtnflag"] == 7:
+                                countresult = self.con.execute(select([func.count(drcr.c.drcrid).label('dc')]).where(and_(drcr.c.drcrdate >= yearStart, drcr.c.drcrdate < startDate, drcr.c.drcrid == stockRow["dcinvtnid"])))
+                                countrow = countresult.fetchone()
+                                if countrow["dc"] == 1:
+                                    if  stockRow["inout"] == 9:
+                                        gopeningStock = float(gopeningStock) + float(stockRow["qty"])
+                                        totalinward = float(totalinward) + float(finalRow["qty"])
+                                    if  stockRow["inout"] == 15:
+                                        gopeningStock = float(gopeningStock) - float(stockRow["qty"])
+                                        totaloutward = float(totaloutward) + float(finalRow["qty"])
 
                         stockReport.append({"srno":srno,"productname":prodDesc["productdesc"],"godown":gn,"totalinwardqty":"%.2f"%float(totalinward),"totaloutwardqty":"%.2f"%float(totaloutward),"balance":"%.2f"%float(gopeningStock)})
                         srno = srno + 1
@@ -3637,6 +3770,8 @@ class api_reports(object):
         description:
         This function returns entire log statement for a given organisation.
         Date range is taken from client and orgcode from authdetails.
+        Date sorted according to orderflag.
+        If request params has orderflag then date sorted in descending order otherwise in ascending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -3648,7 +3783,10 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                    result = self.con.execute(select([log]).where(and_(log.c.orgcode==authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
                 logdata = []
                 for row in result:
                     userdata = self.con.execute(select([users.c.username, users.c.userrole]).where(users.c.userid==row["userid"]))
@@ -3664,7 +3802,8 @@ class api_reports(object):
                     else:
                         userrole = "Godown In Charge"
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"], "userid": row["userid"], "username": rowuser["username"] + "(" + userrole + ")"})
-                return {"gkstatus":enumdict["Success"], "gkresult":logdata }
+                
+                return {"gkstatus":enumdict["Success"], "gkresult":logdata}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
@@ -3686,7 +3825,10 @@ All parameter are same with the addition of userid.
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(desc(log.c.time)))
+                else:
+                   result = self.con.execute(select([log]).where(and_(log.c.userid == self.request.params["userid"], log.c.orgcode == authDetails["orgcode"], log.c.time >= self.request.params["calculatefrom"], log.c.time <= self.request.params["calculateto"])).order_by(log.c.time))
                 logdata = []
                 for row in result:
                     logdata.append({"logid": row["logid"], "time":datetime.strftime(row["time"],'%d-%m-%Y'), "activity": row["activity"]})
@@ -3872,6 +4014,7 @@ free replacement or sample are those which are excluded.
         This function is used to see sales or purchase register of organisation.
         It means the total purchase and sales of different products. Also its amount,
         tax, etc.
+        orderflag is checked in request params for sorting date in descending order.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -3891,11 +4034,18 @@ free replacement or sample are those which are excluded.
                 taxcolumns = []
                 #sales register(flag = 0)
                 if int(self.request.params["flag"]) == 0:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    if "orderflag" in self.request.params:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    else:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                        
                 
                 #purchase register(flag = 1)
                 elif int(self.request.params["flag"]) == 1:
-                    invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    if "orderflag" in self.request.params:
+                        invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d')))
+                    else:
+                       invquery = self.con.execute("select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"%(authDetails["orgcode"], authDetails["orgcode"], datetime.strptime(str(self.request.params["calculatefrom"]),"%d-%m-%Y").strftime('%Y-%m-%d'), datetime.strptime(str(self.request.params["calculateto"]),"%d-%m-%Y").strftime('%Y-%m-%d'))) 
                 
             
                 srno = 1
@@ -4095,7 +4245,7 @@ free replacement or sample are those which are excluded.
         takes list of accounts for CGST,SGST,IGST and CESS at Input and Output side,
         Returns list of accounts with their closing balances.
         Description:
-        This API will return list of all accounts selected for input and output side selected by the user for GST calculation.
+        This API will return list of all accounts for input and output side created by the user for GST calculation.
         The function takes json_body which will have 8 key: value pares.
         Each  key denoting the tax and value will be list of accounts.
         The keys of this json_body will be as follows.
@@ -4125,23 +4275,30 @@ free replacement or sample are those which are excluded.
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                stateD = dataset["statename"]
+                # Get abbreviation of state
+                stateA = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == stateD))
+                stateABV = stateA.fetchone()
                 # Retrived individual data from dictionary
                 startDate = dataset["startdate"]
                 endDate = dataset["enddate"]
-                taxAcc = dataset["taxData"]
                 result = self.con.execute(select([organisation.c.yearstart]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 fStart = result.fetchone()
                 financialStart = fStart["yearstart"]
                 
                 #get list of accountCodes for each type of taxes for their input and output taxes.
-                CGSTIn = taxAcc["cgstin"]
-                CGSTOut = taxAcc["cgstout"]
-                SGSTIn = taxAcc["sgstin"]
-                SGSTOut = taxAcc["sgstout"]
-                IGSTIn = taxAcc["igstin"]
-                IGSTOut = taxAcc["igstout"]
-                CESSIn = taxAcc["cessin"]
-                CESSOut = taxAcc["cessout"]
+                grp = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == 'Duties & Taxes',groupsubgroups.c.orgcode == authDetails["orgcode"])))
+                grpCode = grp.fetchone()
+
+                #Create string which has taxname with state abbreviation for selecting accounts 
+                Cgstin = "CGSTIN_"+stateABV["abbreviation"]
+                cgstout = "CGSTOUT_"+stateABV["abbreviation"]
+                sgstin = "SGSTIN_"+stateABV["abbreviation"]
+                sgstout = "SGSTOUT_"+stateABV["abbreviation"]
+                igstin = "IGSTIN_"+stateABV["abbreviation"]
+                igstout = "IGSTOUT_"+stateABV["abbreviation"]
+                cessin = "CESSIN_"+stateABV["abbreviation"]
+                cessout = "CESSOUT_"+stateABV["abbreviation"]
 
                 #Declare public variables to store total
                 totalCGSTIn = 0.00
@@ -4163,28 +4320,29 @@ free replacement or sample are those which are excluded.
                 cessPayable = 0.00
                 cessCrdFwd = 0.00
                 gstDict = {}
-
+                
+                cIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(Cgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CGSTIn = cIN.fetchall()
                 cgstin = {}
-                for cin in CGSTIn:
-                    calbalData = calculateBalance(self.con,cin, financialStart, startDate, endDate)
-                    # get account name from accountcode.
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cin)))
-                    accName = accN.fetchone()
-                    #fill dictionary with account name and its balance.
-                    cgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    # calculate total cgst in amount by adding balance of each account in every iteration.
-                    totalCGSTIn = totalCGSTIn + calbalData["curbal"]
+                if CGSTIn != None:
+                    for cin in CGSTIn:
+                        calbalData = calculateBalance(self.con,cin["accountcode"], financialStart, startDate, endDate)
+                        #fill dictionary with account name and its balance.
+                        cgstin[cin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        # calculate total cgst in amount by adding balance of each account in every iteration.
+                        totalCGSTIn = totalCGSTIn + calbalData["curbal"]
                 # Populate dictionary to be returned with cgstin and total values
                 gstDict["cgstin"] = cgstin
                 gstDict["totalCGSTIn"] = "%.2f"%(float(totalCGSTIn))
 
+                cOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cgstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CGSTOut = cOUT.fetchall()
                 cgstout = {}
-                for cout in CGSTOut:
-                    calbalData = calculateBalance(self.con,cout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cout)))
-                    accName = accN.fetchone()
-                    cgstout[accName["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
-                    totalCGSTOut = totalCGSTOut + calbalData["curbal"]
+                if CGSTOut != None:
+                    for cout in CGSTOut:
+                        calbalData = calculateBalance(self.con,cout["accountcode"], financialStart, startDate, endDate)
+                        cgstout[cout["accountname"]] = "%.2f"%(float( calbalData["curbal"]))
+                        totalCGSTOut = totalCGSTOut + calbalData["curbal"]
                 gstDict["cgstout"] = cgstout
                 gstDict["totalCGSTOut"] ="%.2f"%(float(totalCGSTOut))
 
@@ -4195,26 +4353,28 @@ free replacement or sample are those which are excluded.
                 else:
                     cgstPayable = totalCGSTOut - totalCGSTIn
                     gstDict ["cgstpayable"] = "%.2f"%(float(cgstPayable))
-
+                
                 # For state tax
+                sIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTIn = sIN.fetchall()
                 sgstin = {}
-                for sin in SGSTIn:
-                    calbalData = calculateBalance(self.con,sin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sin)))
-                    accName = accN.fetchone()
-                    sgstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalSGSTIn = totalSGSTIn + calbalData["curbal"]
-                # Populate dictionary to be returned with cgstin and total values
-                gstDict["sgstin"] = sgstin
-                gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
+                if SGSTIn != None:
+                    for sin in SGSTIn:
+                        calbalData = calculateBalance(self.con,sin["accountcode"], financialStart, startDate, endDate)
+                        sgstin[sin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalSGSTIn = totalSGSTIn + calbalData["curbal"]
+                    # Populate dictionary to be returned with cgstin and total values
+                    gstDict["sgstin"] = sgstin
+                    gstDict["totalSGSTIn"] = "%.2f"%(float(totalSGSTIn))
 
+                sOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(sgstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                SGSTOut = sOUT.fetchall()
                 sgstout = {}
-                for sout in SGSTOut:
-                    calbalData = calculateBalance(self.con,sout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(sout)))
-                    accName = accN.fetchone()
-                    sgstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalSGSTOut = totalSGSTOut + calbalData["curbal"]
+                if SGSTOut != None:
+                    for sout in SGSTOut:
+                        calbalData = calculateBalance(self.con,sout["accountcode"], financialStart, startDate, endDate)
+                        sgstout[sout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalSGSTOut = totalSGSTOut + calbalData["curbal"]
                 gstDict["sgstout"] = sgstout
                 gstDict["totalSGSTOut"] ="%.2f"%(float(totalSGSTOut))
 
@@ -4228,23 +4388,26 @@ free replacement or sample are those which are excluded.
                     gstDict ["sgstpayable"] = "%.2f"%(float(sgstPayable))
 
                 # For Inter state tax
+                
+                iIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                IGSTIn = iIN.fetchall()
                 igstin = {}
-                for iin in IGSTIn:
-                    calbalData = calculateBalance(self.con,iin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iin)))
-                    accName = accN.fetchone()
-                    igstin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTIn = totalIGSTIn + calbalData["curbal"]
+                if IGSTIn != None:
+                    for iin in IGSTIn:
+                        calbalData = calculateBalance(self.con,iin["accountcode"], financialStart, startDate, endDate)
+                        igstin[iin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTIn = totalIGSTIn + calbalData["curbal"]
                 gstDict["igstin"] = igstin
                 gstDict["totalIGSTIn"] = "%.2f"%(float(totalIGSTIn))
-                
+
+                iOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(igstout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                IGSTOut = iOUT.fetchall()
                 igstout = {}
-                for iout in IGSTOut:
-                    calbalData = calculateBalance(self.con,iout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(iout)))
-                    accName = accN.fetchone()
-                    igstout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalIGSTOut = totalIGSTOut + calbalData["curbal"]
+                if IGSTOut !=None:
+                    for iout in IGSTOut:
+                        calbalData = calculateBalance(self.con,iout["accountcode"], financialStart, startDate, endDate)
+                        igstout[iout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalIGSTOut = totalIGSTOut + calbalData["curbal"]
                 gstDict["igstout"] = igstout
                 gstDict["totalIGSTOut"] ="%.2f"%(float(totalIGSTOut))
 
@@ -4257,23 +4420,25 @@ free replacement or sample are those which are excluded.
                     gstDict["IgstPayable"] = "%.2f"%(float(igstPayable))
 
                 # For cess tax
+                csIN = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessin+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CESSIn = csIN.fetchall()
                 cssin = {}
-                for csin in CESSIn:
-                    calbalData = calculateBalance(self.con,csin, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csin)))
-                    accName = accN.fetchone()
-                    cssin[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSIn = totalCESSIn + calbalData["curbal"]
+                if CESSIn != None:
+                    for csin in CESSIn:
+                        calbalData = calculateBalance(self.con,csin["accountcode"], financialStart, startDate, endDate)
+                        cssin[csin["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSIn = totalCESSIn + calbalData["curbal"]
                 gstDict["cessin"] = cssin
                 gstDict["totalCESSIn"] = "%.2f"%(float(totalCESSIn))
 
+                csOUT = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.accountname.like(cessout+'%'),accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode == grpCode["groupcode"])))
+                CESSOut = csOUT.fetchall()
                 cssout = {}
-                for csout in CESSOut:
-                    calbalData = calculateBalance(self.con,csout, financialStart, startDate, endDate)
-                    accN = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(csout)))
-                    accName = accN.fetchone()
-                    cssout[accName["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
-                    totalCESSOut = totalCESSOut + calbalData["curbal"]
+                if CESSOut != None:
+                    for csout in CESSOut:
+                        calbalData = calculateBalance(self.con,csout["accountcode"], financialStart, startDate, endDate)
+                        cssout[csout["accountname"]] = "%.2f"%(float(calbalData["curbal"]))
+                        totalCESSOut = totalCESSOut + calbalData["curbal"]
                 gstDict["cessout"] = cssout
                 gstDict["totalCESSOut"] ="%.2f"%(float(totalCESSOut))
 

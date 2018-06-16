@@ -1,5 +1,3 @@
-
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -44,7 +42,7 @@ from sqlalchemy import and_, exc, func
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import goprod, product
+from gkcore.models.gkdb import goprod, product,accounts
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from datetime import datetime,date
@@ -352,6 +350,14 @@ class api_product(object):
                         self.con.execute(goprod.insert(),[goro])
                     self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
 
+                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
+                sp = self.con.execute("select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"%('Sales','Purchase',productDetails["orgcode"]))
+                s = sp.fetchall()
+                prodName = productDetails["productdesc"]
+                proSale = prodName + " Sale"
+                proPurch = prodName + " Purchase"
+                resultb = self.con.execute(gkdb.accounts.insert(),[{"accountname":proPurch,"groupcode":s[0][0],"orgcode":authDetails["orgcode"],"sysaccount":1},{"accountname":proSale,"groupcode":s[1][0],"orgcode":authDetails["orgcode"],"sysaccount":1}])
+                
                 return {"gkstatus":enumdict["Success"],"gkresult":row["productcode"]}
 
             except exc.IntegrityError:
@@ -383,6 +389,8 @@ class api_product(object):
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
                 productCode = productDetails["productcode"]
+                pn = self.con.execute(select([gkdb.product.c.productdesc]).where(gkdb.product.c.productcode==productCode))
+                prodName = pn.fetchone()
                 result = self.con.execute(gkdb.product.update().where(gkdb.product.c.productcode==productDetails["productcode"]).values(productDetails))
                 if godownFlag:
                     goDetails = dataset["godetails"]
@@ -393,7 +401,13 @@ class api_product(object):
                         goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
                         self.con.execute(gkdb.goprod.insert(),[goro])
                     self.con.execute(product.update().where(and_(product.c.productcode == productCode,product.c.orgcode==authDetails["orgcode"])).values(openingstock = ttlOpening))
-
+                # We need to update accountname also.
+                pnSL = str(prodName["productdesc"]) +" Sale"
+                newpnSL = str(productDetails["productdesc"])+" Sale"
+                pnPurch = str(prodName["productdesc"]) +" Purchase"
+                newpnPH = str(productDetails["productdesc"])+" Purchase"
+                self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnSL,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnSL))
+                self.con.execute(accounts.update().where(and_(accounts.c.accountname == pnPurch,accounts.c.orgcode == authDetails["orgcode"])).values(accountname = newpnPH))
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
@@ -415,12 +429,18 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(select([gkdb.product.c.specs]).where(gkdb.product.c.productcode==dataset["productcode"]))
+                result = self.con.execute(select([gkdb.product.c.specs,gkdb.product.c.productdesc]).where(gkdb.product.c.productcode==dataset["productcode"]))
                 row = result.fetchone()
                 spec = row["specs"]
+                pn = row["productdesc"]
                 for sp in spec.keys():
                     self.con.execute("update categoryspecs set productcount = productcount -1 where spcode = %d"%(int(sp)))
+                
                 result = self.con.execute(gkdb.product.delete().where(gkdb.product.c.productcode==dataset["productcode"]))
+                try:
+                    resultA = self.con.execute(accounts.delete().where(and_(accounts.c.accountname.like(pn+'%'),accounts.c.orgcode == authDetails["orgcode"])))
+                except:
+                    pass
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["ActionDisallowed"]}

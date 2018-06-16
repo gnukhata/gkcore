@@ -57,12 +57,7 @@ This will be generated during the database setup.
 """
 signature = Table('signature', metadata,
     Column('secretcode',UnicodeText, primary_key=True))
-""" organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
-Also stores other details like the pan or sales tax number.
-bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
-Every time a new organisation is created or recreated for it's new financial year, a new record is added.
-ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing
-"""
+
 
 """
 This table is for storing state information.  
@@ -70,9 +65,20 @@ A state will have its corresponding code with name.
 """
 state = Table('state',metadata,
         Column('statecode',Integer),
-        Column('statename',UnicodeText) 
+        Column('statename',UnicodeText),
+        Column('abbreviation',UnicodeText)
 )
 
+""" organisation table for saving basic details including type, financial year start and end, flags for roll over and close books.
+Also stores other details like the pan or sales tax number.
+bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode
+Every time a new organisation is created or recreated for it's new financial year, a new record is added.
+Besides the personal details, we also have some flags determining the preferences.
+ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing,
+maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
+modeflag=0 old interface for payment and receipt voucher is used.
+modeflag=1 new user friendly interface for payment and receipt voucher is used.
+"""
 organisation = Table( 'organisation' , metadata,
     Column('orgcode',Integer, primary_key=True),
     Column('orgname',UnicodeText, nullable=False),
@@ -100,6 +106,10 @@ organisation = Table( 'organisation' , metadata,
     Column('invflag',Integer,default=0),
     Column('billflag',Integer,default=1),
     Column('invsflag',Integer,default=1),
+    Column('avflag',Integer, default=1),
+    Column('maflag',Integer,default=1),
+    Column('modeflag', Integer, default=1),
+    Column('avnoflag',Integer, default=0),
     Column('logo',JSON),
     Column('gstin',JSONB),
     Column('bankdetails',JSON),
@@ -225,7 +235,10 @@ customerandsupplier = Table('customerandsupplier',metadata,
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
 So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
-the groupcode to with it belongs."""
+the groupcode to with it belongs.
+defaultflag is for setting the account as default for certain transactions.
+so defaultflag can be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
+"""
 
 accounts = Table('accounts', metadata,
     Column('accountcode',Integer, primary_key=True ),
@@ -233,6 +246,8 @@ accounts = Table('accounts', metadata,
     Column('groupcode',Integer, ForeignKey('groupsubgroups.groupcode'), nullable=False),
     Column('openingbal', Numeric(13,2),default=0.00),
     Column('vouchercount', Integer ,default=0),
+    Column('sysaccount', Integer ,default=0),
+    Column('defaultflag', Integer,default=0),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     UniqueConstraint('orgcode','accountname'),
     Index("accindex","orgcode","accountname")
@@ -271,6 +286,7 @@ vouchers=Table('vouchers', metadata,
     Column('projectcode',Integer, ForeignKey('projects.projectcode')),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('invid',Integer,ForeignKey('invoice.invid')),
+    Column('drcrid',Integer,ForeignKey('invoice.drcrid')),
     Column('instrumentno',UnicodeText),
     Column('bankname',UnicodeText),
     Column('branchname',UnicodeText),
@@ -418,7 +434,7 @@ This table records movement of goods and can give details either on basis of pro
 invoice or dc (which ever is responsible for the movement ),
 or by godown using the goid.
 It has a field for product quantity.
-it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote or rejection note(flag = 18).
+it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote, rejection note(flag = 18), quantity adjustments using Debit/Credit Note(flag = 7) or rejection of goods of bad quality(flag = 2).
 This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
@@ -672,6 +688,7 @@ drcr =  Table('drcr', metadata,
     Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('drcrdate',DateTime,nullable=False),
+    Column('drcrmode', Integer, default=4),
     Column('dctypeflag', Integer, default=3),
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('reductionval',JSONB),

@@ -25,6 +25,7 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Prajkta Patkar" <prajakta@dff.org.in>
+"Nitesh Chaughule" <nitesh@disroot.org>
 """
 
 from gkcore import eng, enumdict
@@ -77,6 +78,9 @@ class api_account(object):
         The data is fetched from request.json_body.
         Expects accountname,groupsubgroupcode and opening balance.
         Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+        If new accounts are added under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
+defaultflag '2' or '3' set to the '0'.
+        If new accounts are added under sub-group 'Purchase' or 'Sales' with defaultflag '16' or '19' respectively then existing account with defaultflag '16' or '19' set to the '0'.  
         """
         try:
             token = self.request.headers["gktoken"]
@@ -90,6 +94,23 @@ class api_account(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                if 'defaultflag' in dataset:
+                    dflag = dataset["defaultflag"]
+                    grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
+                    grpname = grpnames.fetchone()
+                    for name in grpname:
+                        if name == "Bank":
+                            if dflag == 2:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
+                        elif name == "Cash":
+                            if dflag == 3:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
+                        elif name == "Purchase":
+                            if dflag == 16:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
+                        elif name == "Sales":
+                            if dflag == 19:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
@@ -127,7 +148,7 @@ class api_account(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.accountcode==self.request.matchdict["accountcode"]))
                 row = result.fetchone()
-                acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"]}
+                acc={"accountcode":row["accountcode"], "accountname":row["accountname"], "openingbal":"%.2f"%float(row["openingbal"]),"groupcode":row["groupcode"],"defaultflag":row["defaultflag"]}
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":acc}
             except:
@@ -184,9 +205,9 @@ class api_account(object):
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
                     grprow = resultset.fetchone()
                     if grprow["groupcode"]==grprow["subgroupcode"]:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":""})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"]})
                     else:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"]})
                     srno = srno+1
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":accs}
@@ -273,6 +294,12 @@ class api_account(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"] }
 
+    '''
+    If account is updated under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
+defaultflag '2' or '3' set to the '0'.
+    If account is updated under sub-group 'Purchase' or 'Sales' with defaultflag '16' or '19' respectively then existing account with 
+defaultflag '16' or '19' set to the '0'.
+    '''
     @view_config(request_method='PUT', renderer='json')
     def editAccount(self):
         try:
@@ -286,6 +313,24 @@ class api_account(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                dataset["orgcode"] = authDetails["orgcode"]
+                if 'defaultflag' in dataset:
+                    dflag = dataset["defaultflag"]
+                    grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
+                    grpname = grpnames.fetchone()
+                    for name in grpname:
+                        if name == "Bank":
+                            if dflag == 2:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
+                        elif name == "Cash":
+                            if dflag == 3:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
+                        elif name == "Purchase":
+                            if dflag == 16:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
+                        elif name == "Sales":
+                            if dflag == 19:
+                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
