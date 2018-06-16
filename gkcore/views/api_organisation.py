@@ -777,6 +777,31 @@ class api_organisation(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
+
+    @view_config(request_method='GET', request_param='type=genstats', renderer='json')
+    def getGeneralStats(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                inv = self.con.execute("select count(invid) as invcount from invoice where orgcode = %d"%int(authDetails["orgcode"])).fetchone()
+                party = self.con.execute("select count(custid) as pcount from customerandsupplier where orgcode = %d"%int(authDetails["orgcode"])).fetchone()
+                prod = self.con.execute("select count(productcode) as prodcount from product where orgcode = %d"%int(authDetails["orgcode"])).fetchone()
+                voucher = self.con.execute("select count(vouchercode) vcount from vouchers where orgcode = %d"%int(authDetails["orgcode"])).fetchone()
+                data = {"inv_count": inv["invcount"], "party_count": party["pcount"],"prod_count": prod["prodcount"], "vouchercount": voucher["vcount"]}
+
+                return {"gkstatus": enumdict["Success"], "gkresult": data}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
         """
         This function returns Organisation Details for Invoicing.
         'statecode' receiving from frontend view & depending on statecode gstin will get.
