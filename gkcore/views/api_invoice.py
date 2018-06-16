@@ -289,7 +289,7 @@ class api_invoice(object):
                                     voucherData["vchno"] = a["vchNo"]
                                 else:
                                     voucherData["status"] = 1
-                        return {"gkstatus":enumdict["Success"]}
+                        return {"gkstatus":enumdict["Success"],"vchData":voucherData}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
@@ -334,7 +334,7 @@ class api_invoice(object):
                                 voucherData["vchno"] = a["vchNo"]
                             else:
                                 voucherData["status"] = 1
-                        return {"gkstatus":enumdict["Success"]}
+                        return {"gkstatus":enumdict["Success"],"vchData":voucherData}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
