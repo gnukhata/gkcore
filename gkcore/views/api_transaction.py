@@ -91,7 +91,7 @@ class api_transaction(object):
             initialType = "cn"
         if voucherType == "debitnote":
             initialType = "dn"
-        if voucherType == "salereturn":
+        if voucherType == "salesreturn":
             initialType = "sr"
         if voucherType == "purchasereturn":
             initialType = "pr"

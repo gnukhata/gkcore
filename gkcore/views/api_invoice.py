@@ -88,6 +88,7 @@ class api_invoice(object):
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 queryParams = {}
+                voucherData = {}
                 result = self.con.execute(invoice.insert(),[invdataset])
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
@@ -118,8 +119,12 @@ class api_invoice(object):
                                     queryParams["taxpayment"]=avData["taxpayment"]
                                 #call getDefaultAcc
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]} 
+                                if a["gkstatus"] == 0:
+                                    voucherData["status"] = 0
+                                    voucherData["vchno"] = a["vchNo"]
+                                else:
+                                    voucherData["status"] = 1
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData} 
                         else:
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 else:
@@ -154,7 +159,12 @@ class api_invoice(object):
                                     queryParams["taxpayment"]=avData["taxpayment"]
                                 #call getDefaultAcc
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
+                                if a["gkstatus"] == 0:
+                                    voucherData["status"] = 0
+                                    voucherData["vchno"] = a["vchNo"]
+                                else:
+                                    voucherData["status"] = 1
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                         else:
                             result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
                             invoiceid = result.fetchone()
@@ -186,8 +196,12 @@ class api_invoice(object):
                                     queryParams["taxpayment"]=avData["taxpayment"]
                                 #call getDefaultAcc
                                 a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                vid = a["vouchercode"]
-                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"]}
+                                if a["gkstatus"] == 0:
+                                    voucherData["status"] = 0
+                                    voucherData["vchno"] = a["vchNo"]
+                                else:
+                                    voucherData["status"] = 1
+                            return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
@@ -229,6 +243,7 @@ class api_invoice(object):
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
+                voucherData ={}
                 # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
                 try:
                     deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
@@ -238,6 +253,7 @@ class api_invoice(object):
                     deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
                 except:
                     pass
+                
                 # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
                 if invdataset.has_key("dcid"):
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
@@ -247,7 +263,34 @@ class api_invoice(object):
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
-                        return {"gkstatus":enumdict["Success"]}
+                        if result.rowcount > 0:
+                           avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                           av = avfl.fetchone()
+                           if av["avflag"] == 1:
+                                avData = dtset["av"]
+                                try:
+                                    deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
+                                except:
+                                    pass
+                                mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                                maFlag = mafl.fetchone()
+                                csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                                CSname = csName.fetchone()
+                                queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invdataset["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                if int(invdataset["taxflag"]) == 7:
+                                    queryParams["gstname"]=avData["avtax"]["GSTName"]
+                                    queryParams["cessname"] =avData["avtax"]["CESSName"]
+
+                                if int(invdataset["taxflag"]) == 22:
+                                    queryParams["taxpayment"]=avData["taxpayment"]
+                                #call getDefaultAcc
+                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                if a["gkstatus"] == 0:
+                                    voucherData["status"] = 0
+                                    voucherData["vchno"] = a["vchNo"]
+                                else:
+                                    voucherData["status"] = 1
+                        return {"gkstatus":enumdict["Success"],"vchData":voucherData}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                 # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
@@ -270,7 +313,33 @@ class api_invoice(object):
                             stockdataset["productcode"] = item
                             stockdataset["qty"] = items[item].values()[0]
                             result = self.con.execute(stock.insert(),[stockdataset])
-                        return {"gkstatus":enumdict["Success"]}
+                        avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                        av = avfl.fetchone()
+                        if av["avflag"] == 1:
+                            avData = dtset["av"]
+                            try:
+                                deletevch = self.con.execute(vouchers.delete().where(vouchers.c.invid==invdataset["invid"]))
+                            except:
+                                pass
+                            mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
+                            maFlag = mafl.fetchone()
+                            csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
+                            CSname = csName.fetchone()
+                            queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                            if int(invdataset["taxflag"]) == 7:
+                                queryParams["gstname"]=avData["avtax"]["GSTName"]
+                                queryParams["cessname"] =avData["avtax"]["CESSName"]
+
+                            if int(invdataset["taxflag"]) == 22:
+                                queryParams["taxpayment"]=avData["taxpayment"]
+                            #call getDefaultAcc
+                            a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                            if a["gkstatus"] == 0:
+                                voucherData["status"] = 0
+                                voucherData["vchno"] = a["vchNo"]
+                            else:
+                                voucherData["status"] = 1
+                        return {"gkstatus":enumdict["Success"],"vchData":voucherData}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
@@ -1259,7 +1328,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-        try:
+       # try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1275,6 +1344,7 @@ The bills grid calld gkresult will return a list as it's value.
             So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax,"prodData":productcode:taxabale value ....,"taxes":{productcode:tax}}
             """
             self.con = eng.connect()
+            taxRateDict = {5:2.5,12:6,18:9,28:14}
             voucherDict = {}
             crs ={}
             drs = {}
@@ -1338,14 +1408,13 @@ The bills grid calld gkresult will return a list as it's value.
                             taxable = float(queryParams["prodData"][prod])
                             if taxRate > 0.00:
                                 tx = (float(taxRate)/2)
+                                inTaxrate = int(taxRate)
+                                taxHalf = (taxRateDict[inTaxrate])
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                else:
-                                    taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                    taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                
                                 if taxNameSGST not in taxDict:
                                     taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                     taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -1385,6 +1454,7 @@ The bills grid calld gkresult will return a list as it's value.
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
+                        
                         crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
 
@@ -1450,12 +1520,11 @@ The bills grid calld gkresult will return a list as it's value.
                                 tx = (float(taxRate)/2)
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx/100)
-                                if (tx % 2) == 0:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                else:
-                                    taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                    taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                                inTaxrate = int(taxRate)
+                                taxHalf = (taxRateDict[inTaxrate])
+                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                                
                                 if taxNameSGST not in taxDict:
                                     taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                     taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -1496,9 +1565,8 @@ The bills grid calld gkresult will return a list as it's value.
                     
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
-                        if taxAcc.rowcount > 0:
-                            taxRow = taxAcc.fetchone()
-                            drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                        taxRow = taxAcc.fetchone()
+                        drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
 
 
                 if int(queryParams["taxType"]) == 22:
@@ -1545,12 +1613,10 @@ The bills grid calld gkresult will return a list as it's value.
                     vouchercode =vouchercodedata.fetchone()
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
-            vchdata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-            vchcode =vchdata.fetchone()
+            
             self.con.close()
-            return {"gkstatus":enumdict["Success"],"vouchercode":int(vchcode["vcode"])}
-
-        except:
-            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+            return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
+ #       except:
+ #           return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+ #       finally:
+ #           self.con.close()
