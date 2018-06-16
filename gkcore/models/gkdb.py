@@ -286,6 +286,7 @@ vouchers=Table('vouchers', metadata,
     Column('projectcode',Integer, ForeignKey('projects.projectcode')),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('invid',Integer,ForeignKey('invoice.invid')),
+    Column('drcrid',Integer,ForeignKey('invoice.drcrid')),
     Column('instrumentno',UnicodeText),
     Column('bankname',UnicodeText),
     Column('branchname',UnicodeText),
@@ -433,7 +434,7 @@ This table records movement of goods and can give details either on basis of pro
 invoice or dc (which ever is responsible for the movement ),
 or by godown using the goid.
 It has a field for product quantity.
-it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote or rejection note(flag = 18).
+it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote, rejection note(flag = 18), quantity adjustments using Debit/Credit Note(flag = 7) or rejection of goods of bad quality(flag = 2).
 This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
@@ -687,6 +688,7 @@ drcr =  Table('drcr', metadata,
     Column('rnid', Integer, ForeignKey('rejectionnote.rnid')),
     Column('orgcode', Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False),
     Column('drcrdate',DateTime,nullable=False),
+    Column('drcrmode', Integer, default=4),
     Column('dctypeflag', Integer, default=3),
     Column('totreduct',Numeric(13,2),default=0.00),
     Column('reductionval',JSONB),
