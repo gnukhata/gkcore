@@ -1,3 +1,15 @@
+[15-June-2018 Release 5.10]
+* Api for automatic sales and purchase voucher entry	
+* Api for automatic credit & debit note voucher entry
+* Payment and receipt to be made by bank and cash transfer
+* Sorting functionality in major reports	
+* Automatic gst sammary report
+* gkupgrade() revamp
+* new flags in organisation
+* Default accounts for sales, purchase,bank,cash transaction
+* Calculation enhancement in Profit and Loss report and Balance sheet
+
+
 [12-April-2018 Release 5.0]
 * Roll over without close book	
 * Debit credit note API
