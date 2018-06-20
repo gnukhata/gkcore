@@ -171,6 +171,7 @@ The unit of measurement has units, conversion rates and its resulting unit.
 unitofmeasurement = Table('unitofmeasurement',metadata,
     Column('uomid',Integer,primary_key=True),
     Column('unitname',UnicodeText,nullable=False),
+    Column('description',UnicodeText),
     Column('conversionrate',Numeric(13,2),default=0.00),
     Column('subunitof',Integer),
     Column('frequency',Integer),
