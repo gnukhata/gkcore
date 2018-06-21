@@ -79,7 +79,6 @@ class api_organisation(object):
                     uqcname = uomname.fetchone()
                     if uqcname == None:
                         if uom == 'BAG':
-                            print 'NO UQC'
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BAG',0.00,'BAG')")
                         elif uom == 'BGS':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BGS',0.00,'BAGS')")
@@ -125,7 +124,7 @@ class api_organisation(object):
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CQM',0.00,'CUBIC METERS')")
                         elif uom == 'CYL':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CYL',0.00,'CYLINDER')")
-                        elif uom == 'CDM':
+                        elif uom == 'SDM':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SDM',0.00,'DECAMETER SQUARE')")
                         elif uom == 'DAY':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('DAY',0.00,'DAYS')")
@@ -217,7 +216,7 @@ class api_organisation(object):
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQC',0.00,'SQUARE CENTIMETERS')")
                         elif uom == 'SQM':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQM',0.00,'SQUARE METER')")
-                        elif uom == 'KQY':
+                        elif uom == 'SQY':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQY',0.00,'SQUARE YARDS')")
                         elif uom == 'BLO':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BLO',0.00,'STEEL BLOCKS')")
@@ -248,11 +247,175 @@ class api_organisation(object):
                         elif uom == 'YDS':
                             self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('YDS',0.00,'YARDS')")
                     else:
-                        continue
-                        '''if uqcname['unitname'] == 'BAG':
-                            print 'There is avail UQC'
-                            self.con.execute("update unitofmeasurement set description = 'BAG' where uomid=%d"%int(uqcname['uomid']))'''
-                            
+                        if uqcname['unitname'] == 'BAG':
+                            self.con.execute("update unitofmeasurement set description = 'BAG' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BGS':
+                            self.con.execute("update unitofmeasurement set description = 'BAGS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BLS':
+                            self.con.execute("update unitofmeasurement set description = 'BAILS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BTL':
+                            self.con.execute("update unitofmeasurement set description = 'BOTTLES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BOU':
+                            self.con.execute("update unitofmeasurement set description = 'BOU' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BOX':
+                            self.con.execute("update unitofmeasurement set description = 'BOXES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BKL':
+                            self.con.execute("update unitofmeasurement set description = 'BUCKLES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BLK':
+                            self.con.execute("update unitofmeasurement set description = 'BULK' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BUN':
+                            self.con.execute("update unitofmeasurement set description = 'BUNCHES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BDL':
+                            self.con.execute("update unitofmeasurement set description = 'BUNDLES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CAN':
+                            self.con.execute("update unitofmeasurement set description = 'CANS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CTN':
+                            self.con.execute("update unitofmeasurement set description = 'CARTONS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CAS':
+                            self.con.execute("update unitofmeasurement set description = 'CASES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CMS':
+                            self.con.execute("update unitofmeasurement set description = 'CENTIMETER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CHI':
+                            self.con.execute("update unitofmeasurement set description = 'CHEST' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CLS':
+                            self.con.execute("update unitofmeasurement set description = 'COILS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'COL':
+                            self.con.execute("update unitofmeasurement set description = 'COLLIES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CRI':
+                            self.con.execute("update unitofmeasurement set description = 'CRATES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CCM':
+                            self.con.execute("update unitofmeasurement set description = 'CUBIC CENTIMETER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CIN':
+                            self.con.execute("update unitofmeasurement set description = 'CUBIC INCHES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CBM':
+                            self.con.execute("update unitofmeasurement set description = 'CUBIC METER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CQM':
+                            self.con.execute("update unitofmeasurement set description = 'CUBIC METERS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CYL':
+                            self.con.execute("update unitofmeasurement set description = 'CYLINDER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SDM':
+                            self.con.execute("update unitofmeasurement set description = 'DECAMETER SQUARE' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'DAY':
+                            self.con.execute("update unitofmeasurement set description = 'DAYS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'DOZ':
+                            self.con.execute("update unitofmeasurement set description = 'DOZEN' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'DRM':
+                            self.con.execute("update unitofmeasurement set description = 'DRUMS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'FTS':
+                            self.con.execute("update unitofmeasurement set description = 'FEET' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'FLK':
+                            self.con.execute("update unitofmeasurement set description = 'FLASKS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'GMS':
+                            self.con.execute("update unitofmeasurement set description = 'GRAMS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TON':
+                            self.con.execute("update unitofmeasurement set description = 'GREAT BRITAIN TON' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'GGR':
+                            self.con.execute("update unitofmeasurement set description = 'GREAT GROSS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'GRS':
+                            self.con.execute("update unitofmeasurement set description = 'GROSS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'GYD':
+                            self.con.execute("update unitofmeasurement set description = 'GROSS YARDS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'HBK':
+                            self.con.execute("update unitofmeasurement set description = 'HABBUCK' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'HKS':
+                            self.con.execute("update unitofmeasurement set description = 'HANKS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'HRS':
+                            self.con.execute("update unitofmeasurement set description = 'HOURS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'INC':
+                            self.con.execute("update unitofmeasurement set description = 'INCHES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'JTA':
+                            self.con.execute("update unitofmeasurement set description = 'JOTTA' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'KGS':
+                            self.con.execute("update unitofmeasurement set description = 'KILOGRAMS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'KLR':
+                            self.con.execute("update unitofmeasurement set description = 'KILOLITER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'KME':
+                            self.con.execute("update unitofmeasurement set description = 'KILOMETERS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'LTR':
+                            self.con.execute("update unitofmeasurement set description = 'LITERS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'LOG':
+                            self.con.execute("update unitofmeasurement set description = 'LOGS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'LOT':
+                            self.con.execute("update unitofmeasurement set description = 'LOTS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'MTR':
+                            self.con.execute("update unitofmeasurement set description = 'METER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'MTS':
+                            self.con.execute("update unitofmeasurement set description = 'METRIC TON' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'MGS':
+                            self.con.execute("update unitofmeasurement set description = 'MILLIGRAMS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'MLT':
+                            self.con.execute("update unitofmeasurement set description = 'MILLILITER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'MMT':
+                            self.con.execute("update unitofmeasurement set description = 'MILLIMETER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'NONE':
+                            self.con.execute("update unitofmeasurement set description = 'NOT CHOSEN' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'NOS':
+                            self.con.execute("update unitofmeasurement set description = 'NUMBERS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'ODD':
+                            self.con.execute("update unitofmeasurement set description = 'ODDS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'PAC':
+                            self.con.execute("update unitofmeasurement set description = 'PACKS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'PAI':
+                            self.con.execute("update unitofmeasurement set description = 'PAILS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'PRS':
+                            self.con.execute("update unitofmeasurement set description = 'PAIRS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'PLT':
+                            self.con.execute("update unitofmeasurement set description = 'PALLETS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'PCS':
+                            self.con.execute("update unitofmeasurement set description = 'PIECES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'LBS':
+                            self.con.execute("update unitofmeasurement set description = 'POUNDS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'QTL':
+                            self.con.execute("update unitofmeasurement set description = 'QUINTAL' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'REL':
+                            self.con.execute("update unitofmeasurement set description = 'REELS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'ROL':
+                            self.con.execute("update unitofmeasurement set description = 'ROLLS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SET':
+                            self.con.execute("update unitofmeasurement set description = 'SETS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SHT':
+                            self.con.execute("update unitofmeasurement set description = 'SHEETS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SLB':
+                            self.con.execute("update unitofmeasurement set description = 'SLABS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SQF':
+                            self.con.execute("update unitofmeasurement set description = 'SQUARE FEET' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SQI':
+                            self.con.execute("update unitofmeasurement set description = 'SQUARE INCHES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SQC':
+                            self.con.execute("update unitofmeasurement set description = 'SQUARE CENTIMETERS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SQM':
+                            self.con.execute("update unitofmeasurement set description = 'SQUARE METER' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'SQY':
+                            self.con.execute("update unitofmeasurement set description = 'SQUARE YARDS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'BLO':
+                            self.con.execute("update unitofmeasurement set description = 'STEEL BLOCKS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TBL':
+                            self.con.execute("update unitofmeasurement set description = 'TABLES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TBS':
+                            self.con.execute("update unitofmeasurement set description = 'TABLETS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TGM':
+                            self.con.execute("update unitofmeasurement set description = 'TEN GROSS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'THD':
+                            self.con.execute("update unitofmeasurement set description = 'THOUSANDS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TIN':
+                            self.con.execute("update unitofmeasurement set description = 'TINS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TOL':
+                            self.con.execute("update unitofmeasurement set description = 'TOLA' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TRK':
+                            self.con.execute("update unitofmeasurement set description = 'TRUNK' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'TUB':
+                            self.con.execute("update unitofmeasurement set description = 'TUBES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'UNT':
+                            self.con.execute("update unitofmeasurement set description = 'UNITS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'UGS':
+                            self.con.execute("update unitofmeasurement set description = 'US GALLONS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'VLS':
+                            self.con.execute("update unitofmeasurement set description = 'VIALS' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'CSK':
+                            self.con.execute("update unitofmeasurement set description = 'WOODEN CASES' where uomid=%d"%int(uqcname['uomid']))
+                        elif uqcname['unitname'] == 'YDS':
+                            self.con.execute("update unitofmeasurement set description = 'YARDS' where uomid=%d"%int(uqcname['uomid']))
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
