@@ -71,6 +71,188 @@ class api_organisation(object):
         try:
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
+            if not columnExists("unitofmeasurement","description"):
+                self.con.execute("alter table unitofmeasurement add description text")
+                listofuqc = ['BAG','BGS','BLS','BTL','BOU','BOX','BKL','BLK','BUN','BDL','CAN','CTN','CAS','CMS','CHI','CLS','COL','CRI','CCM','CIN','CBM','CQM','CYL','SDM','DAY','DOZ','DRM','FTS','FLK','GMS','TON','GGR','GRS','GYD','HBK','HKS','HRS','INC','JTA','KGS','KLR','KME','LTR','LOG','LOT','MTR','MTS','MGS','MLT','MMT','NONE','NOS','ODD','PAC','PAI' ,'PRS','PLT','PCS','LBS','QTL','REL','ROL','SET','SHT','SLB','SQF','SQI','SQC','SQM','SQY','BLO','TBL','TBS','TGM','THD','TIN','TOL','TRK','TUB','UNT','UGS','VLS','CSK','YDS']
+                for uom in listofuqc:
+                    uomname = self.con.execute(select([gkdb.unitofmeasurement.c.unitname, gkdb.unitofmeasurement.c.uomid]).where(gkdb.unitofmeasurement.c.unitname == uom))
+                    uqcname = uomname.fetchone()
+                    if uqcname == None:
+                        if uom == 'BAG':
+                            print 'NO UQC'
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BAG',0.00,'BAG')")
+                        elif uom == 'BGS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BGS',0.00,'BAGS')")
+                        elif uom == 'BLS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BLS',0.00,'BAILS')")
+                        elif uom == 'BTL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BTL',0.00,'BOTTLES')")
+                        elif uom == 'BOU':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BOU',0.00,'BOU')")
+                        elif uom == 'BOX':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BOX',0.00,'BOXES')")
+                        elif uom == 'BKL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BKL',0.00,'BUCKLES')")
+                        elif uom == 'BLK':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BLK',0.00,'BULK')")
+                        elif uom == 'BUN':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BUN',0.00,'BUNCHES')")
+                        elif uom == 'BDL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BDL',0.00,'BUNDLES')")
+                        elif uom == 'CAN':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CAN',0.00,'CANS')")
+                        elif uom == 'CTN':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CTN',0.00,'CARTONS')")
+                        elif uom == 'CAS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CAS',0.00,'CASES')")
+                        elif uom == 'CMS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CMS',0.00,'CENTIMETER')")
+                        elif uom == 'CHI':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CHI',0.00,'CHEST')")
+                        elif uom == 'CLS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CLS',0.00,'COILS')")
+                        elif uom == 'COL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('COL',0.00,'COLLIES')")
+                        elif uom == 'CRI':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CRI',0.00,'CRATES')")
+                        elif uom == 'CCM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CCM',0.00,'CUBIC CENTIMETER')")
+                        elif uom == 'CIN':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CIN',0.00,'CUBIC INCHES')")
+                        elif uom == 'CBM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CBM',0.00,'CUBIC METER')")
+                        elif uom == 'CQM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CQM',0.00,'CUBIC METERS')")
+                        elif uom == 'CYL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CYL',0.00,'CYLINDER')")
+                        elif uom == 'CDM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SDM',0.00,'DECAMETER SQUARE')")
+                        elif uom == 'DAY':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('DAY',0.00,'DAYS')")
+                        elif uom == 'DOZ':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('DOZ',0.00,'DOZEN')")
+                        elif uom == 'DRM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('DRM',0.00,'DRUMS')")
+                        elif uom == 'FTS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('FTS',0.00,'FEET')")
+                        elif uom == 'FLK':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('FLK',0.00,'FLASKS')")
+                        elif uom == 'GMS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('GMS',0.00,'GRAMS')")
+                        elif uom == 'TON':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TON',0.00,'GREAT BRITAIN TON')")
+                        elif uom == 'GGR':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('GGR',0.00,'GREAT GROSS')")
+                        elif uom == 'GRS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('GRS',0.00,'GROSS')")
+                        elif uom == 'GYD':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('GYD',0.00,'GROSS YARDS')")
+                        elif uom == 'HBK':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('HBK',0.00,'HABBUCK')")
+                        elif uom == 'HKS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('HKS',0.00,'HANKS')")
+                        elif uom == 'HRS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('HRS',0.00,'HOURS')")
+                        elif uom == 'INC':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('INC',0.00,'INCHES')")
+                        elif uom == 'JTA':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('JTA',0.00,'JOTTA')")
+                        elif uom == 'JTA':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('KGS',0.00,'KILOGRAMS')")
+                        elif uom == 'KLR':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('KLR',0.00,'KILOLITER')")
+                        elif uom == 'KME':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('KME',0.00,'KILOMETERS')")
+                        elif uom == 'LTR':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('LTR',0.00,'LITERS')")
+                        elif uom == 'LOG':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('LOG',0.00,'LOGS')")
+                        elif uom == 'LOT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('LOT',0.00,'LOTS')")
+                        elif uom == 'MTR':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('MTR',0.00,'METER')")
+                        elif uom == 'MTS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('MTS',0.00,'METRIC TON')")
+                        elif uom == 'MGS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('MGS',0.00,'MILLIGRAMS')")
+                        elif uom == 'MLT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('MLT',0.00,'MILLILITER')")
+                        elif uom == 'MMT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('MMT',0.00,'MILLIMETER')")
+                        elif uom == 'NONE':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('NONE',0.00,'NOT CHOSEN')")
+                        elif uom == 'NOS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('NOS',0.00,'NUMBERS')")
+                        elif uom == 'ODD':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('ODD',0.00,'ODDS')")
+                        elif uom == 'PAC':    
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('PAC',0.00,'PACKS')")
+                        elif uom == 'PAI':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('PAI',0.00,'PAILS')")
+                        elif uom == 'PRS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('PRS',0.00,'PAIRS')")
+                        elif uom == 'PLT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('PLT',0.00,'PALLETS')")
+                        elif uom == 'PCS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('PCS',0.00,'PIECES')")
+                        elif uom == 'LBS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('LBS',0.00,'POUNDS')")
+                        elif uom == 'QTL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('QTL',0.00,'QUINTAL')")
+                        elif uom == 'REL': 
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('REL',0.00,'REELS')")
+                        elif uom == 'ROL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('ROL',0.00,'ROLLS')")
+                        elif uom == 'SET':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SET',0.00,'SETS')")
+                        elif uom == 'SHT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SHT',0.00,'SHEETS')")
+                        elif uom == 'SLB':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SLB',0.00,'SLABS')")
+                        elif uom == 'SQF':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQF',0.00,'SQUARE FEET')")
+                        elif uom == 'SQI':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQI',0.00,'SQUARE INCHES')")
+                        elif uom == 'SQC':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQC',0.00,'SQUARE CENTIMETERS')")
+                        elif uom == 'SQM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQM',0.00,'SQUARE METER')")
+                        elif uom == 'KQY':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('SQY',0.00,'SQUARE YARDS')")
+                        elif uom == 'BLO':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('BLO',0.00,'STEEL BLOCKS')")
+                        elif uom == 'TBL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TBL',0.00,'TABLES')")
+                        elif uom == 'TBS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TBS',0.00,'TABLETS')")
+                        elif uom == 'TGM':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TGM',0.00,'TEN GROSS')")
+                        elif uom == 'THD':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('THD',0.00,'THOUSANDS')")
+                        elif uom == 'TIN':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TIN',0.00,'TINS')")
+                        elif uom == 'TOL':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TOL',0.00,'TOLA')")
+                        elif uom == 'TRK':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TRK',0.00,'TRUNK')")
+                        elif uom == 'TUB':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('TUB',0.00,'TUBES')")
+                        elif uom == 'UNT':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('UNT',0.00,'UNITS')")
+                        elif uom == 'UGS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('UGS',0.00,'US GALLONS')")
+                        elif uom == 'VLS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('VLS',0.00,'VIALS')")
+                        elif uom == 'CSK':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('CSK',0.00,'WOODEN CASES')")
+                        elif uom == 'YDS':
+                            self.con.execute("insert into unitofmeasurement(unitname, conversionrate, description)values('YDS',0.00,'YARDS')")
+                    else:
+                        continue
+                        '''if uqcname['unitname'] == 'BAG':
+                            print 'There is avail UQC'
+                            self.con.execute("update unitofmeasurement set description = 'BAG' where uomid=%d"%int(uqcname['uomid']))'''
+                            
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
