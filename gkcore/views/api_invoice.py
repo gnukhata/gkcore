@@ -205,7 +205,6 @@ class api_invoice(object):
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
             except exc.IntegrityError:
@@ -1328,7 +1327,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-       # try:
+        try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1596,27 +1595,24 @@ The bills grid calld gkresult will return a list as it's value.
                 initialType = initialType + str(vchCode["vcode"])
             voucherDict["vouchernumber"] = initialType
             result = self.con.execute(vouchers.insert(),[voucherDict])
+            vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+            vouchercode =vouchercodedata.fetchone()
             for drkeys in drs.keys():
                 self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
                 accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
                 accgrp = accgrpdata.fetchone()
                 if accgrp["groupname"] == "Bank":
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode =vouchercodedata.fetchone()
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":orgcode}])
             for crkeys in crs.keys():
                 self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
                 accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
                 accgrp = accgrpdata.fetchone()
                 if accgrp["groupname"] == "Bank":
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode =vouchercodedata.fetchone()
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
-            
             self.con.close()
-            return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
- #       except:
- #           return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
- #       finally:
- #           self.con.close()
+            return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"],"vid":int(vouchercode["vcode"])}
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
