@@ -205,7 +205,6 @@ class api_invoice(object):
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
             except exc.IntegrityError:
@@ -1328,7 +1327,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-       # try:
+        try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1616,7 +1615,7 @@ The bills grid calld gkresult will return a list as it's value.
             
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
- #       except:
- #           return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
- #       finally:
- #           self.con.close()
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
