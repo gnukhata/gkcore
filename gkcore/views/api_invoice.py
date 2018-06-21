@@ -205,8 +205,6 @@ class api_invoice(object):
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
             except exc.IntegrityError:
