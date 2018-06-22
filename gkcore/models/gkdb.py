@@ -175,6 +175,7 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
     Column('conversionrate',Numeric(13,2),default=0.00),
     Column('subunitof',Integer),
     Column('frequency',Integer),
+    Column('sysunit', Integer, default=0),
     UniqueConstraint('unitname'),
     Index("unitofmeasurement_frequency","frequency"),
     Index("unitofmeasurement_unitname","unitname")
