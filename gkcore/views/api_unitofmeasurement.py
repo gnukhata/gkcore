@@ -88,7 +88,7 @@ class api_unitOfMeasurement(object):
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.unitofmeasurement]).where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"]))
                 row = result.fetchone()
-                unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":"%.2f"%float(row["conversionrate"]), "subunitof":row["subunitof"], "description":row['description']}
+                unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":"%.2f"%float(row["conversionrate"]), "subunitof":row["subunitof"], "description":row['description'], "sysunit":row['sysunit']}
                 countresult = self.con.execute(select([func.count(gkdb.product.c.uomid).label('subcount')]).where(gkdb.product.c.uomid==row["uomid"]))
                 countrow = countresult.fetchone()
                 subcount= countrow["subcount"]
