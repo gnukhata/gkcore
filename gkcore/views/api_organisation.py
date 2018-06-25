@@ -74,7 +74,9 @@ class api_organisation(object):
             if not columnExists("unitofmeasurement","description"):
                 self.con.execute("alter table unitofmeasurement add description text")
                 self.con.execute("alter table unitofmeasurement add sysunit integer default 0")
-                ''' Following list of uom first check in database if present then updated its description otherwise added in unitofmeasurement table'''
+
+                ''' Following list of uom, first check in database if present then updated its description and sysunit otherwise added new unit in unitofmeasurement table'''
+                
                 listofuqc = ['BAG','BGS','BLS','BTL','BOU','BOX','BKL','BLK','BUN','BDL','CAN','CTN','CAS','CMS','CHI','CLS','COL','CRI','CCM','CIN','CBM','CQM','CYL','SDM','DAY','DOZ','DRM','FTS','FLK','GMS','TON','GGR','GRS','GYD','HBK','HKS','HRS','INC','JTA','KGS','KLR','KME','LTR','LOG','LOT','MTR','MTS','MGS','MLT','MMT','NONE','NOS','ODD','PAC','PAI' ,'PRS','PLT','PCS','LBS','QTL','REL','ROL','SET','SHT','SLB','SQF','SQI','SQC','SQM','SQY','BLO','TBL','TBS','TGM','THD','TIN','TOL','TRK','TUB','UNT','UGS','VLS','CSK','YDS']
                 for uom in listofuqc:
                     uomname = self.con.execute(select([gkdb.unitofmeasurement.c.unitname, gkdb.unitofmeasurement.c.uomid]).where(gkdb.unitofmeasurement.c.unitname == uom))

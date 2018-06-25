@@ -167,6 +167,7 @@ categoryspecs = Table('categoryspecs',metadata,
 """
 This table is for unit of measurement for products.
 The unit of measurement has units, conversion rates and its resulting unit.
+sysunit state that unit is system generated or not. for system generated units sysunit is 1 and user created units sysunit is 0.  
 """
 unitofmeasurement = Table('unitofmeasurement',metadata,
     Column('uomid',Integer,primary_key=True),
