@@ -39,23 +39,35 @@ from gkcore.models.gkdb import (invoice,
 
 
 def taxable_value(inv, productcode, drcr=False):
-    """Returns taxable value of product given invoice and product"""
+    """
+    Returns taxable value of product given invoice/drcr note and productcode
+    If dr/cr is due to change in quantity(drcrmode=18) then taxable value is
+    present in reductionval dict with productcode as key else dr/cr must be a
+    change in ppu and new rate has to be retrieved
+    """
     rate, qty = inv["contents"][productcode].items()[0]
+
     if drcr:
-        rate = inv["reductionval"][productcode]
+        if inv["drcrmode"] == 18:
+            return float(inv["reductionval"][productcode])
+        else:
+            rate = inv["reductionval"][productcode]
+
     taxable_value = float(rate) * float(qty)
     taxable_value -= float(inv["discount"][productcode])
     return taxable_value
 
 
 def cess_amount(inv, productcode, drcr=False):
-    """Returns cess amount of product given invoice and product"""
+    """
+    Returns cess amount of product given invoice/drcr note and productcode
+    """
     if inv["cess"][productcode] is not 0:
         cess_rate = float(inv["cess"][productcode])
-        rate, qty = inv["contents"][productcode].items()[0]
-        if drcr:
-            rate = inv["reductionval"][productcode]
-        cess_amount = (float(rate) * float(qty)) * cess_rate/100
+
+        t_value = taxable_value(inv, productcode, drcr=drcr)
+        cess_amount = t_value * cess_rate / 100
+
         return float(cess_amount)
     else:
         return 0
@@ -76,38 +88,36 @@ def state_name_code(con, statename=None, statecode=None):
     return result
 
 
-def product_level(inv):
+def product_level(inv, drcr=False):
     """
-    Invoices can contain multiple products with different tax rates this
-    function adds taxable value and cess amount of all products with same rate
-    `data` is a dictionary with tax_rate as key and value is a dictionary
+    Invoices/drcr notes can contain multiple products with different tax rates
+    this function adds taxable value and cess amount of all products with same
+    rate `data` is a dictionary with tax_rate as key and value is a dictionary
     containing taxable_value and cess_amount
+
+    If drcr flag is True then products will be in reductionval dict
+    If drcr is change in quantity then reductionval dict will contain a key
+    quantities. Quantities dict contains the new quantity but that will be
+    handled by taxable_value function so we can remove it
     """
+
     data = {}
-    for product in inv["contents"]:
+    if drcr:
+        products = inv["reductionval"].keys()
+        if inv["drcrmode"] == 18:
+            products.remove("quantities")
+    else:
+        products = inv["contents"]
+
+    for product in products:
         rate = inv["tax"][product]
         if data.get(rate, None):
-            data[rate]["taxable_value"] += float(taxable_value(inv, product))
-            data[rate]["cess"] += float(cess_amount(inv, product))
+            data[rate]["taxable_value"] += taxable_value(inv, product, drcr)
+            data[rate]["cess"] += cess_amount(inv, product, drcr)
         else:
             data[rate] = {}
-            data[rate]["taxable_value"] = float(taxable_value(inv, product))
-            data[rate]["cess"] = float(cess_amount(inv, product))
-
-    return data
-
-
-def product_level_drcr(note):
-    data = {}
-    for product, value in note["reductionval"].items():
-        rate = note["tax"][product]
-        if data.get(rate, None):
-            data[rate]["taxable_value"] += float(taxable_value(note, product, drcr=True))
-            data[rate]["cess"] += float(cess_amount(note, product, drcr=True))
-        else:
-            data[rate] = {}
-            data[rate]["taxable_value"] = float(taxable_value(note, product, drcr=True))
-            data[rate]["cess"] = float(cess_amount(note, product, drcr=True))
+            data[rate]["taxable_value"] = taxable_value(inv, product, drcr)
+            data[rate]["cess"] = cess_amount(inv, product, drcr)
 
     return data
 
@@ -197,6 +207,9 @@ def b2cs_r1(invoices, con):
     of the following nature:
         a)Intra-State: Any value
         b)Inter-State: Invoice value Rs 2.5 lakhs or less
+
+    Note: Here entries are not made invoice wise instead entries with same
+    place_of_supply and taxrate are consolidated
     """
 
     def b2cs_filter(invoice):
@@ -223,10 +236,10 @@ def b2cs_r1(invoices, con):
 
         for product in inv["contents"]:
             prod_row = deepcopy(row)
-            prod_row["taxable_value"] = float(taxable_value(inv, product))
+            prod_row["taxable_value"] = taxable_value(inv, product)
             prod_row["rate"] = "%.2f" % float(inv["tax"][product])
             cess = cess_amount(inv, product)
-            prod_row["cess"] = float(cess_amount(inv, product)) if cess != "" else 0
+            prod_row["cess"] = cess_amount(inv, product) if cess != "" else 0
 
             for existing in b2cs:
                 if (existing["place_of_supply"] == prod_row["place_of_supply"]
@@ -250,7 +263,7 @@ def b2cs_r1(invoices, con):
 
 def cdnr_r1(drcr_all, con):
     """
-    Collects and formats data about Credit/ Debit Notes/Refund vouchers issued
+    Collects and formats data about Credit/Debit Notes issued
     to the registered taxpayers
     """
 
@@ -277,7 +290,7 @@ def cdnr_r1(drcr_all, con):
         row["applicable_tax_rate"] = ""
         row["pregst"] = "N"
 
-        for rate, tax_cess in product_level_drcr(note).items():
+        for rate, tax_cess in product_level(note, drcr=True).items():
             prod_row = deepcopy(row)
             prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
             prod_row["rate"] = "%.2f" % rate
@@ -295,6 +308,7 @@ def cdnur_r1(drcr_all, con):
 
     cdnur = []
 
+    # TODO: add filter value more than 2.5 lakhs
     def cdnur_filter(drcr):
         return (drcr["gstin"] == {}
                 and drcr["taxstate"] != drcr["sourcestate"])
@@ -306,10 +320,8 @@ def cdnur_r1(drcr_all, con):
         ts_code = state_name_code(con, statename=note["taxstate"])
 
         row = {}
-        if note["invoicetotal"] > 250000:
-            row["ur_type"] = "B2CL"
-        else:
-            row["ur_type"] = "B2CS"
+        # ur_type can be ExportWithPay(EXPWP) / ExportWithoutPay(EXPWOP) / B2CL
+        row["ur_type"] = "B2CL"
         row["invoice_number"] = note["invoiceno"]
         row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
         row["voucher_number"] = note["drcrno"]
@@ -324,7 +336,7 @@ def cdnur_r1(drcr_all, con):
         row["applicable_tax_rate"] = ""
         row["pregst"] = "N"
 
-        for rate, tax_cess in product_level_drcr(note).items():
+        for rate, tax_cess in product_level(note, drcr=True).items():
             prod_row = deepcopy(row)
             prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
             prod_row["rate"] = "%.2f" % rate
@@ -348,6 +360,14 @@ class GstReturn(object):
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
+        Note: In sheets b2b, b2cl, cdnr, cdnur entries are according to
+        GST tax rate
+        Example:
+            If Invoice contains 3 products with taxrates 6%, 12%, 6%
+            respectively taxable value of Product 1 and Product 3 will be
+            combined into single entry (taxable value and cess amount of these
+            products will be added)
+            Product 2 will have a separate entry
         """
         token = self.request.headers.get("gktoken", None)
 
