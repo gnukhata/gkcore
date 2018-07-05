@@ -308,10 +308,14 @@ def cdnur_r1(drcr_all, con):
 
     cdnur = []
 
-    # TODO: add filter value more than 2.5 lakhs
     def cdnur_filter(drcr):
-        return (drcr["gstin"] == {}
-                and drcr["taxstate"] != drcr["sourcestate"])
+        if invoice["gstin"] != {}:
+            return False
+        if invoice["taxstate"] == invoice["sourcestate"]:
+            return False
+        if invoice["invoicetotal"] <= 250000:
+            return False
+        return True
 
     drcrs = filter(cdnur_filter, drcr_all)
 
