@@ -309,11 +309,11 @@ def cdnur_r1(drcr_all, con):
     cdnur = []
 
     def cdnur_filter(drcr):
-        if invoice["gstin"] != {}:
+        if drcr["gstin"] != {}:
             return False
-        if invoice["taxstate"] == invoice["sourcestate"]:
+        if drcr["taxstate"] == drcr["sourcestate"]:
             return False
-        if invoice["invoicetotal"] <= 250000:
+        if drcr["invoicetotal"] <= 250000:
             return False
         return True
 
