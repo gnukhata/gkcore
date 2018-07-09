@@ -71,6 +71,19 @@ class api_organisation(object):
         try:
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
+            if not columnExists("unitofmeasurement","description"):
+                self.con.execute("alter table unitofmeasurement add description text")
+                self.con.execute("alter table unitofmeasurement add sysunit integer default 0")
+
+                ''' Following dictionary of uom, first try to insert single uqc if it fail means uqc is exists in table then updated its description and sysunit'''
+                dictofuqc = {'BAG':'BAG','BGS':'BAGS','BLS':'BAILS','BTL':'BOTTLES','BOU':'BOU','BOX':'BOXES','BKL':'BUCKLES','BLK':'BULK','BUN':'BUNCHES','BDL':'BUNDLES','CAN':'CANS','CTN':'CARTONS','CAS':'CASES','CMS':'CENTIMETER','CHI':'CHEST','CLS':'COILS','COL':'COLLIES','CRI':'CRATES','CCM':'CUBIC CENTIMETER','CIN':'CUBIC INCHES','CBM':'CUBIC METER','CQM':'CUBIC METERS','CYL':'CYLINDER','SDM':'DECAMETER SQUARE','DAY':'DAYS','DOZ':'DOZEN','DRM':'DRUMS','FTS':'FEET','FLK':'FLASKS','GMS':'GRAMS','TON':'GREAT BRITAIN TON','GGR':'GREAT GROSS','GRS':'GROSS','GYD':'GROSS YARDS','HBK':'HABBUCK','HKS':'HANKS','HRS':'HOURS','INC':'INCHES','JTA':'JOTTA','KGS':'KILOGRAMS','KLR':'KILOLITER','KME':'KILOMETERS','LTR':'LITERS','LOG':'LOGS','LOT':'LOTS','MTR':'METER','MTS':'METRIC TON','MGS':'MILLIGRAMS','MLT':'MILLILITER','MMT':'MILLIMETER','NONE':'NOT CHOSEN','NOS':'NUMBERS','ODD':'ODDS','PAC':'PACKS','PAI':'PAILS','PRS':'PAIRS','PLT':'PALLETS','PCS':'PIECES','LBS':'POUNDS','QTL':'QUINTAL','REL':'REELS','ROL':'ROLLS','SET':'SETS','SHT':'SHEETS','SLB':'SLABS','SQF':'SQUARE FEET','SQI':'SQUARE INCHES','SQC':'SQUARE CENTIMETERS','SQM':'SQUARE METER','SQY':'SQUARE YARDS','BLO':'STEEL BLOCKS','TBL':'TABLES','TBS':'TABLETS','TGM':'TEN GROSS','THD':'THOUSANDS','TIN':'TINS','TOL':'TOLA','TRK':'TRUNK','TUB':'TUBES','UNT':'UNITS','UGS':'US GALLONS','VLS':'VIALS','CSK':'WOODEN CASES','YDS':'YARDS'}
+                                
+                for unit, desc in dictofuqc.items():
+                    try:
+                        self.con.execute(gkdb.unitofmeasurement.insert(),[{"unitname":unit,"description":desc,'conversionrate':0.00,"sysunit":1}])
+                    except:
+                        self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
+                    dictofuqc.pop(unit,0)
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
