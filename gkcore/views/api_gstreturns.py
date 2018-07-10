@@ -127,35 +127,38 @@ def b2b_r1(invoices, con):
     Collects and formats data about invoices made to other registered taxpayers
     """
 
-    invs = filter(lambda inv: inv["gstin"] != {}, invoices)
+    try:
+        invs = filter(lambda inv: inv["gstin"] != {}, invoices)
 
-    b2b = []
-    for inv in invs:
-        ts_code = state_name_code(con, statename=inv["taxstate"])
+        b2b = []
+        for inv in invs:
+            ts_code = state_name_code(con, statename=inv["taxstate"])
 
-        row = defaultdict()
-        row["gstin"] = inv["gstin"][str(ts_code)]
-        row["receiver"] = inv["custname"]
-        row["invoice_number"] = inv["invoiceno"]
-        row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
-        row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
-        row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
-        row["applicable_tax_rate"] = ""
-        row["invoice_type"] = "Regular"
-        row["ecommerce_gstin"] = ""
-        if inv["reversecharge"] == "0":
-            row["reverse_charge"] = "N"
-        else:
-            row["reverse_charge"] == "Y"
+            row = defaultdict()
+            row["gstin"] = inv["gstin"][str(ts_code)]
+            row["receiver"] = inv["custname"]
+            row["invoice_number"] = inv["invoiceno"]
+            row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
+            row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
+            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["applicable_tax_rate"] = ""
+            row["invoice_type"] = "Regular"
+            row["ecommerce_gstin"] = ""
+            if inv["reversecharge"] == "0":
+                row["reverse_charge"] = "N"
+            else:
+                row["reverse_charge"] == "Y"
 
-        for rate, tax_cess in product_level(inv).items():
-            prod_row = deepcopy(row)
-            prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
-            prod_row["rate"] = "%.2f" % rate
-            prod_row["cess"] = "%.2f" % tax_cess["cess"]
-            b2b.append(prod_row)
+            for rate, tax_cess in product_level(inv).items():
+                prod_row = deepcopy(row)
+                prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
+                prod_row["rate"] = "%.2f" % rate
+                prod_row["cess"] = "%.2f" % tax_cess["cess"]
+                b2b.append(prod_row)
 
-    return b2b
+        return {"status": 0, "data": b2b}
+    except:
+        return {"status": 3}
 
 
 def b2cl_r1(invoices, con):
@@ -166,39 +169,42 @@ def b2cl_r1(invoices, con):
         b)The total invoice value is more than Rs 2,50,000
     """
 
-    def b2cl_filter(invoice):
-        if invoice["gstin"] != {}:
+    try:
+        def b2cl_filter(invoice):
+            if invoice["gstin"] != {}:
+                return False
+            if invoice["taxstate"] == invoice["sourcestate"]:
+                return False
+            if invoice["invoicetotal"] > 250000:
+                return True
             return False
-        if invoice["taxstate"] == invoice["sourcestate"]:
-            return False
-        if invoice["invoicetotal"] > 250000:
-            return True
-        return False
 
-    invs = filter(b2cl_filter, invoices)
+        invs = filter(b2cl_filter, invoices)
 
-    b2cl = []
-    for inv in invs:
+        b2cl = []
+        for inv in invs:
 
-        ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = state_name_code(con, statename=inv["taxstate"])
 
-        row = {}
-        row["invoice_number"] = inv["invoiceno"]
-        row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
-        row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
-        row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
-        row["applicable_tax_rate"] = ""
-        row["ecommerce_gstin"] = ""
-        row["sale_from_bonded_wh"] = "N"
+            row = {}
+            row["invoice_number"] = inv["invoiceno"]
+            row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
+            row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
+            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["applicable_tax_rate"] = ""
+            row["ecommerce_gstin"] = ""
+            row["sale_from_bonded_wh"] = "N"
 
-        for rate, tax_cess in product_level(inv).items():
-            prod_row = deepcopy(row)
-            prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
-            prod_row["rate"] = "%.2f" % rate
-            prod_row["cess"] = "%.2f" % tax_cess["cess"]
-            b2cl.append(prod_row)
+            for rate, tax_cess in product_level(inv).items():
+                prod_row = deepcopy(row)
+                prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
+                prod_row["rate"] = "%.2f" % rate
+                prod_row["cess"] = "%.2f" % tax_cess["cess"]
+                b2cl.append(prod_row)
 
-    return b2cl
+        return {"status": 0, "data": b2cl}
+    except:
+        return {"status": 3}
 
 
 def b2cs_r1(invoices, con):
@@ -212,53 +218,56 @@ def b2cs_r1(invoices, con):
     place_of_supply and taxrate are consolidated
     """
 
-    def b2cs_filter(invoice):
-        if invoice["gstin"] != {}:
+    try:
+        def b2cs_filter(invoice):
+            if invoice["gstin"] != {}:
+                return False
+            if invoice["taxstate"] == invoice["sourcestate"]:
+                return True
+            if invoice["invoicetotal"] <= 250000:
+                return True
             return False
-        if invoice["taxstate"] == invoice["sourcestate"]:
-            return True
-        if invoice["invoicetotal"] <= 250000:
-            return True
-        return False
 
-    invs = filter(b2cs_filter, invoices)
+        invs = filter(b2cs_filter, invoices)
 
-    b2cs = []
-    for inv in invs:
+        b2cs = []
+        for inv in invs:
 
-        ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = state_name_code(con, statename=inv["taxstate"])
 
-        row = {}
-        row["type"] = "OE"
-        row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
-        row["applicable_tax_rate"] = ""
-        row["ecommerce_gstin"] = ""
+            row = {}
+            row["type"] = "OE"
+            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["applicable_tax_rate"] = ""
+            row["ecommerce_gstin"] = ""
 
-        for product in inv["contents"]:
-            prod_row = deepcopy(row)
-            prod_row["taxable_value"] = taxable_value(inv, product)
-            prod_row["rate"] = "%.2f" % float(inv["tax"][product])
-            cess = cess_amount(inv, product)
-            prod_row["cess"] = cess_amount(inv, product) if cess != "" else 0
+            for product in inv["contents"]:
+                prod_row = deepcopy(row)
+                prod_row["taxable_value"] = taxable_value(inv, product)
+                prod_row["rate"] = "%.2f" % float(inv["tax"][product])
+                cess = cess_amount(inv, product)
+                prod_row["cess"] = cess_amount(inv, product) if cess != "" else 0
 
-            for existing in b2cs:
-                if (existing["place_of_supply"] == prod_row["place_of_supply"]
-                        and existing["rate"] == prod_row["rate"]):
+                for existing in b2cs:
+                    if (existing["place_of_supply"] == prod_row["place_of_supply"]
+                            and existing["rate"] == prod_row["rate"]):
 
-                    existing["taxable_value"] += prod_row["taxable_value"]
-                    existing["cess"] += prod_row["cess"]
-                    break
+                        existing["taxable_value"] += prod_row["taxable_value"]
+                        existing["cess"] += prod_row["cess"]
+                        break
+                else:
+                    b2cs.append(prod_row)
+
+        for row in b2cs:
+            row["taxable_value"] = "%.2f" % row["taxable_value"]
+            if row["cess"] is 0:
+                row["cess"] = ""
             else:
-                b2cs.append(prod_row)
+                row["cess"] = "%.2f" % row["cess"]
 
-    for row in b2cs:
-        row["taxable_value"] = "%.2f" % row["taxable_value"]
-        if row["cess"] is 0:
-            row["cess"] = ""
-        else:
-            row["cess"] = "%.2f" % row["cess"]
-
-    return b2cs
+        return {"status": 0, "data": b2cs}
+    except:
+        return {"status": 3}
 
 
 def cdnr_r1(drcr_all, con):
@@ -267,37 +276,40 @@ def cdnr_r1(drcr_all, con):
     to the registered taxpayers
     """
 
-    drcrs = filter(lambda inv: inv["gstin"] != {}, drcr_all)
+    try:
+        drcrs = filter(lambda inv: inv["gstin"] != {}, drcr_all)
 
-    cdnr = []
-    for note in drcrs:
+        cdnr = []
+        for note in drcrs:
 
-        ts_code = state_name_code(con, statename=note["taxstate"])
+            ts_code = state_name_code(con, statename=note["taxstate"])
 
-        row = {}
-        row["gstin"] = note["gstin"][str(ts_code)]
-        row["receiver"] = note["custname"]
-        row["invoice_number"] = note["invoiceno"]
-        row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
-        row["voucher_number"] = note["drcrno"]
-        row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
-        if note["dctypeflag"] == 4:
-            row["document_type"] = "D"
-        else:
-            row["document_type"] = "C"
-        row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
-        row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
-        row["applicable_tax_rate"] = ""
-        row["pregst"] = "N"
+            row = {}
+            row["gstin"] = note["gstin"][str(ts_code)]
+            row["receiver"] = note["custname"]
+            row["invoice_number"] = note["invoiceno"]
+            row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
+            row["voucher_number"] = note["drcrno"]
+            row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
+            if note["dctypeflag"] == 4:
+                row["document_type"] = "D"
+            else:
+                row["document_type"] = "C"
+            row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
+            row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
+            row["applicable_tax_rate"] = ""
+            row["pregst"] = "N"
 
-        for rate, tax_cess in product_level(note, drcr=True).items():
-            prod_row = deepcopy(row)
-            prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
-            prod_row["rate"] = "%.2f" % rate
-            prod_row["cess"] = "%.2f" % tax_cess["cess"]
-            cdnr.append(prod_row)
+            for rate, tax_cess in product_level(note, drcr=True).items():
+                prod_row = deepcopy(row)
+                prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
+                prod_row["rate"] = "%.2f" % rate
+                prod_row["cess"] = "%.2f" % tax_cess["cess"]
+                cdnr.append(prod_row)
 
-    return cdnr
+        return {"status": 0, "data": cdnr}
+    except:
+        return {"status": 3}
 
 
 def cdnur_r1(drcr_all, con):
@@ -306,48 +318,51 @@ def cdnur_r1(drcr_all, con):
     unregistered person for interstate supplies
     """
 
-    cdnur = []
+    try:
+        cdnur = []
 
-    def cdnur_filter(drcr):
-        if drcr["gstin"] != {}:
-            return False
-        if drcr["taxstate"] == drcr["sourcestate"]:
-            return False
-        if drcr["invoicetotal"] <= 250000:
-            return False
-        return True
+        def cdnur_filter(drcr):
+            if drcr["gstin"] != {}:
+                return False
+            if drcr["taxstate"] == drcr["sourcestate"]:
+                return False
+            if drcr["invoicetotal"] <= 250000:
+                return False
+            return True
 
-    drcrs = filter(cdnur_filter, drcr_all)
+        drcrs = filter(cdnur_filter, drcr_all)
 
-    for note in drcrs:
+        for note in drcrs:
 
-        ts_code = state_name_code(con, statename=note["taxstate"])
+            ts_code = state_name_code(con, statename=note["taxstate"])
 
-        row = {}
-        # ur_type can be ExportWithPay(EXPWP) / ExportWithoutPay(EXPWOP) / B2CL
-        row["ur_type"] = "B2CL"
-        row["invoice_number"] = note["invoiceno"]
-        row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
-        row["voucher_number"] = note["drcrno"]
-        row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
-        if note["dctypeflag"] == 4:
-            row["document_type"] = "D"
-        else:
-            row["document_type"] = "C"
-        row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
-        row["supply_type"] = "Inter State"
-        row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
-        row["applicable_tax_rate"] = ""
-        row["pregst"] = "N"
+            row = {}
+            # ur_type can be ExportWithPay(EXPWP) / ExportWithoutPay(EXPWOP) / B2CL
+            row["ur_type"] = "B2CL"
+            row["invoice_number"] = note["invoiceno"]
+            row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
+            row["voucher_number"] = note["drcrno"]
+            row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
+            if note["dctypeflag"] == 4:
+                row["document_type"] = "D"
+            else:
+                row["document_type"] = "C"
+            row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
+            row["supply_type"] = "Inter State"
+            row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
+            row["applicable_tax_rate"] = ""
+            row["pregst"] = "N"
 
-        for rate, tax_cess in product_level(note, drcr=True).items():
-            prod_row = deepcopy(row)
-            prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
-            prod_row["rate"] = "%.2f" % rate
-            prod_row["cess"] = "%.2f" % tax_cess["cess"]
-            cdnur.append(prod_row)
+            for rate, tax_cess in product_level(note, drcr=True).items():
+                prod_row = deepcopy(row)
+                prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
+                prod_row["rate"] = "%.2f" % rate
+                prod_row["cess"] = "%.2f" % tax_cess["cess"]
+                cdnur.append(prod_row)
 
-    return cdnur
+        return {"status": 0, "data": cdnur}
+    except:
+        return {"status": 3}
 
 
 @view_defaults(route_name='gstreturns')
@@ -382,56 +397,60 @@ class GstReturn(object):
         if authDetails["auth"] is False:
             return {"gkstatus":  enumdict["UnauthorisedAccess"]}
 
-        self.con = eng.connect()
-        dataset = self.request.params
+        try:
+            self.con = eng.connect()
+            dataset = self.request.params
 
-        start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
-        end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
-        orgcode = authDetails["orgcode"]
+            start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
+            end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
+            orgcode = authDetails["orgcode"]
 
-        # invoices
-        query = (select([invoice,
-                        customerandsupplier.c.gstin,
-                        customerandsupplier.c.custname])
-                 .where(
-                     and_(
-                         invoice.c.invoicedate.between(
-                             start_period.strftime("%Y-%m-%d"),
-                             end_period.strftime("%Y-%m-%d")
-                         ),
-                         invoice.c.inoutflag == 15,
-                         invoice.c.taxflag == 7,
-                         invoice.c.orgcode == orgcode,
-                         invoice.c.custid == customerandsupplier.c.custid,
+            # invoices
+            query = (select([invoice,
+                            customerandsupplier.c.gstin,
+                            customerandsupplier.c.custname])
+                     .where(
+                         and_(
+                             invoice.c.invoicedate.between(
+                                 start_period.strftime("%Y-%m-%d"),
+                                 end_period.strftime("%Y-%m-%d")
+                             ),
+                             invoice.c.inoutflag == 15,
+                             invoice.c.taxflag == 7,
+                             invoice.c.orgcode == orgcode,
+                             invoice.c.custid == customerandsupplier.c.custid,
+                         )
+                     ))
+            invoices = self.con.execute(query).fetchall()
+
+            # debit/credit notes
+            query = (select([drcr, invoice, customerandsupplier])
+                     .select_from(
+                        drcr.join(invoice).join(customerandsupplier)
                      )
-                 ))
-        invoices = self.con.execute(query).fetchall()
+                     .where(
+                         and_(
+                             invoice.c.invoicedate.between(
+                                 start_period.strftime("%Y-%m-%d"),
+                                 end_period.strftime("%Y-%m-%d")
+                             ),
+                             invoice.c.inoutflag == 15,
+                             invoice.c.taxflag == 7,
+                             drcr.c.orgcode == orgcode,
+                         )
+                     ))
 
-        # debit/credit notes
-        query = (select([drcr, invoice, customerandsupplier])
-                 .select_from(
-                    drcr.join(invoice).join(customerandsupplier)
-                 )
-                 .where(
-                     and_(
-                         invoice.c.invoicedate.between(
-                             start_period.strftime("%Y-%m-%d"),
-                             end_period.strftime("%Y-%m-%d")
-                         ),
-                         invoice.c.inoutflag == 15,
-                         invoice.c.taxflag == 7,
-                         drcr.c.orgcode == orgcode,
-                     )
-                 ))
+            drcrs_all = self.con.execute(query).fetchall()
 
-        drcrs_all = self.con.execute(query).fetchall()
+            gkdata = {}
 
-        gkdata = {}
-        gkdata["b2b"] = b2b_r1(invoices, self.con)
-        gkdata["b2cl"] = b2cl_r1(invoices, self.con)
-        gkdata["b2cs"] = b2cs_r1(invoices, self.con)
-        gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con)
-        gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con)
+            gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
+            gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
+            gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
+            gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
+            gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
 
-        self.con.close()
-        return {"gkresult": 0, "gkdata": gkdata}
+            self.con.close()
+            return {"gkresult": 0, "gkdata": gkdata}
+        except:
+            return {"gkresult": 3}
