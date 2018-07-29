@@ -35,17 +35,24 @@ from gkcore import eng, enumdict
 from gkcore.models.gkdb import (invoice,
                                 customerandsupplier,
                                 state,
+                                product,
                                 drcr)
 
 
-def taxable_value(inv, productcode, drcr=False):
+def taxable_value(inv, productcode, con, drcr=False):
     """
     Returns taxable value of product given invoice/drcr note and productcode
     If dr/cr is due to change in quantity(drcrmode=18) then taxable value is
     present in reductionval dict with productcode as key else dr/cr must be a
     change in ppu and new rate has to be retrieved
     """
+
     rate, qty = inv["contents"][productcode].items()[0]
+    query = (select([product.c.gsflag])
+             .where(product.c.productcode == productcode))
+    gsflag = con.execute(query).fetchone()[0]
+    if gsflag == 19:
+        qty = 1
 
     if drcr:
         if inv["drcrmode"] == 18:
@@ -54,18 +61,19 @@ def taxable_value(inv, productcode, drcr=False):
             rate = inv["reductionval"][productcode]
 
     taxable_value = float(rate) * float(qty)
-    taxable_value -= float(inv["discount"][productcode])
+    if not drcr:
+        taxable_value -= float(inv["discount"][productcode])
     return taxable_value
 
 
-def cess_amount(inv, productcode, drcr=False):
+def cess_amount(inv, productcode, con, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
     """
     if inv["cess"][productcode] is not 0:
         cess_rate = float(inv["cess"][productcode])
 
-        t_value = taxable_value(inv, productcode, drcr=drcr)
+        t_value = taxable_value(inv, productcode, con, drcr=drcr)
         cess_amount = t_value * cess_rate / 100
 
         return float(cess_amount)
@@ -88,7 +96,7 @@ def state_name_code(con, statename=None, statecode=None):
     return result
 
 
-def product_level(inv, drcr=False):
+def product_level(inv, con, drcr=False):
     """
     Invoices/drcr notes can contain multiple products with different tax rates
     this function adds taxable value and cess amount of all products with same
@@ -109,15 +117,15 @@ def product_level(inv, drcr=False):
     else:
         products = inv["contents"]
 
-    for product in products:
-        rate = inv["tax"][product]
+    for prod in products:
+        rate = inv["tax"][prod]
         if data.get(rate, None):
-            data[rate]["taxable_value"] += taxable_value(inv, product, drcr)
-            data[rate]["cess"] += cess_amount(inv, product, drcr)
+            data[rate]["taxable_value"] += taxable_value(inv, prod, con, drcr)
+            data[rate]["cess"] += cess_amount(inv, prod, con, drcr)
         else:
             data[rate] = {}
-            data[rate]["taxable_value"] = taxable_value(inv, product, drcr)
-            data[rate]["cess"] = cess_amount(inv, product, drcr)
+            data[rate]["taxable_value"] = taxable_value(inv, prod, con, drcr)
+            data[rate]["cess"] = cess_amount(inv, prod, con, drcr)
 
     return data
 
@@ -156,7 +164,7 @@ def b2b_r1(invoices, con):
             else:
                 row["reverse_charge"] == "Y"
 
-            for rate, tax_cess in product_level(inv).items():
+            for rate, tax_cess in product_level(inv, con).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -204,7 +212,7 @@ def b2cl_r1(invoices, con):
             row["ecommerce_gstin"] = ""
             row["sale_from_bonded_wh"] = "N"
 
-            for rate, tax_cess in product_level(inv).items():
+            for rate, tax_cess in product_level(inv, con).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -251,12 +259,12 @@ def b2cs_r1(invoices, con):
             row["applicable_tax_rate"] = ""
             row["ecommerce_gstin"] = ""
 
-            for product in inv["contents"]:
+            for prod in inv["contents"]:
                 prod_row = deepcopy(row)
-                prod_row["taxable_value"] = taxable_value(inv, product)
-                prod_row["rate"] = "%.2f" % float(inv["tax"][product])
-                cess = cess_amount(inv, product)
-                prod_row["cess"] = cess_amount(inv, product) if cess != "" else 0
+                prod_row["taxable_value"] = taxable_value(inv, prod, con)
+                prod_row["rate"] = "%.2f" % float(inv["tax"][prod])
+                cess = cess_amount(inv, prod, con)
+                prod_row["cess"] = cess_amount(inv, prod, con) if cess != "" else 0
 
                 for existing in b2cs:
                     if (existing["place_of_supply"] == prod_row["place_of_supply"]
@@ -317,7 +325,7 @@ def cdnr_r1(drcr_all, con):
             row["applicable_tax_rate"] = ""
             row["pregst"] = "N"
 
-            for rate, tax_cess in product_level(note, drcr=True).items():
+            for rate, tax_cess in product_level(note, con, drcr=True).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -371,7 +379,7 @@ def cdnur_r1(drcr_all, con):
             row["applicable_tax_rate"] = ""
             row["pregst"] = "N"
 
-            for rate, tax_cess in product_level(note, drcr=True).items():
+            for rate, tax_cess in product_level(note, con, drcr=True).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
