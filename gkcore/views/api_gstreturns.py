@@ -128,7 +128,14 @@ def b2b_r1(invoices, con):
     """
 
     try:
-        invs = filter(lambda inv: inv["gstin"] != {}, invoices)
+        def b2b_filter(inv):
+            ts_code = state_name_code(con, statename=inv["taxstate"])
+            if inv["gstin"].get(str(ts_code)):
+                return True
+            else:
+                return False
+
+        invs = filter(b2b_filter, invoices)
 
         b2b = []
         for inv in invs:
@@ -170,12 +177,14 @@ def b2cl_r1(invoices, con):
     """
 
     try:
-        def b2cl_filter(invoice):
-            if invoice["gstin"] != {}:
+        def b2cl_filter(inv):
+            ts_code = state_name_code(con, statename=inv["taxstate"])
+
+            if inv["gstin"].get(str(ts_code)):
                 return False
-            if invoice["taxstate"] == invoice["sourcestate"]:
+            if inv["taxstate"] == inv["sourcestate"]:
                 return False
-            if invoice["invoicetotal"] > 250000:
+            if inv["invoicetotal"] > 250000:
                 return True
             return False
 
@@ -219,12 +228,13 @@ def b2cs_r1(invoices, con):
     """
 
     try:
-        def b2cs_filter(invoice):
-            if invoice["gstin"] != {}:
+        def b2cs_filter(inv):
+            ts_code = state_name_code(con, statename=inv["taxstate"])
+            if inv["gstin"].get(str(ts_code)):
                 return False
-            if invoice["taxstate"] == invoice["sourcestate"]:
+            if inv["taxstate"] == inv["sourcestate"]:
                 return True
-            if invoice["invoicetotal"] <= 250000:
+            if inv["invoicetotal"] <= 250000:
                 return True
             return False
 
@@ -277,7 +287,14 @@ def cdnr_r1(drcr_all, con):
     """
 
     try:
-        drcrs = filter(lambda inv: inv["gstin"] != {}, drcr_all)
+        def cdnr_filter(inv):
+            ts_code = state_name_code(con, statename=inv["taxstate"])
+            if inv["gstin"].get(str(ts_code)):
+                return True
+            else:
+                return False
+
+        drcrs = filter(cdnr_filter, drcr_all)
 
         cdnr = []
         for note in drcrs:
@@ -322,7 +339,8 @@ def cdnur_r1(drcr_all, con):
         cdnur = []
 
         def cdnur_filter(drcr):
-            if drcr["gstin"] != {}:
+            ts_code = state_name_code(con, statename=drcr["taxstate"])
+            if drcr["gstin"].get(str(ts_code)):
                 return False
             if drcr["taxstate"] == drcr["sourcestate"]:
                 return False
