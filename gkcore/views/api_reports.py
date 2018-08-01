@@ -4024,7 +4024,7 @@ free replacement or sample are those which are excluded.
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 '''This is a list of dictionaries. Each dictionary contains details of an invoice, like-invoiceno, invdate,
                 customer or supllier name, TIN, then total amount of invoice in rs then different tax rates and their respective amounts
@@ -4054,7 +4054,7 @@ free replacement or sample are those which are excluded.
                 #for each invoice
                 result = invquery.fetchall()
                 for row in result:
-                   # try:
+                    try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
                         print row["invoiceno"]
@@ -4142,8 +4142,8 @@ free replacement or sample are those which are excluded.
                                 if taxname !="% SGST":
                                     taxnames = "%.2f"%taxrate + taxname
                                     if taxdata.has_key(str(taxnames)):
-                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxnames]) + taxamount)
+                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxnames]) + taxamount*float(taxrate)/100.00)
                                     else:
                                         taxdata.update({taxnames:"%.2f"%taxamount})
                                         taxamountdata.update({taxnames:"%.2f"%(taxamount*float(taxrate)/100.00)})
@@ -4225,16 +4225,16 @@ free replacement or sample are those which are excluded.
                         invoicedata["taxamount"] = taxamountdata
                         spdata.append(invoicedata)
                         srno += 1
-                    #except:
-                    #    pass
+                    except:
+                        pass
  
                 taxcolumns.sort()
                 return {"gkstatus":enumdict["Success"], "gkresult":spdata, "totalrow":totalrow, "taxcolumns":taxcolumns}
 
-           # except:
-           #     return {"gkstatus":enumdict["ConnectionFailed"] }
-           # finally:
-            #    self.con.close()     
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()     
 
                 
 
