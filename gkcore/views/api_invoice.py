@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -208,7 +208,7 @@ class api_invoice(object):
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
             except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
+               return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
@@ -1610,6 +1610,11 @@ The bills grid calld gkresult will return a list as it's value.
                 if accgrp["groupname"] == "Bank":
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
+            
+            #once transaction is made we have to make entry of payment in invoice table and billwise table as well.
+            upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
+            inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
+            print inAdjAmt
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"],"vid":int(vouchercode["vcode"])}
         except:
