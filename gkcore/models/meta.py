@@ -34,7 +34,7 @@ Contributors:
 from sqlalchemy.engine import create_engine
 from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql.base import PGInspector
-
+import sys
 
 from gkcore.models.gkdb import metadata
 def dbconnect():
@@ -43,10 +43,13 @@ def dbconnect():
     returns an engine object for the postgresql database.
     In our case the database is called gkdata.
     Description:
-    This functions can be called to get a working interface to the database.
+    This function can be called to get a working interface to the database.
     It is as good as a database connection which can directly execute sql queries.
     """
-    stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
+    if sys.platform.startswith("win"):
+        stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
+    else:
+        stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
     #Note that the echo parameter set to False means sql queries will not be printed to the termina.
     #Pool size is important to balance between database holding capacity in ram and speed.
