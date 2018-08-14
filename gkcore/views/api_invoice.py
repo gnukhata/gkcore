@@ -1610,11 +1610,13 @@ The bills grid calld gkresult will return a list as it's value.
                 if accgrp["groupname"] == "Bank":
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
+            #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
+             
+            if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
+                print int(queryParams["pmtmode"])
+                upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
+                inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
             
-            #once transaction is made we have to make entry of payment in invoice table and billwise table as well.
-            upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
-            inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
-            print inAdjAmt
             self.con.close()
             return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"],"vid":int(vouchercode["vcode"])}
         except:
