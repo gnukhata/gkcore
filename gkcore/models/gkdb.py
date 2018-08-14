@@ -22,8 +22,6 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
-"Ishan Masdekar " <imasdekar@dff.org.in>
-"Navin Karkera" <navin@dff.org.in>
 """
 from sqlalchemy.dialects.postgresql.json import JSONB
 
