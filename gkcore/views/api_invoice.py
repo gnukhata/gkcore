@@ -1613,7 +1613,6 @@ The bills grid calld gkresult will return a list as it's value.
             #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
              
             if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
-                print int(queryParams["pmtmode"])
                 upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
                 inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
             
