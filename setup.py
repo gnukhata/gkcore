@@ -42,7 +42,7 @@ requires = [
     'sqlalchemy',
     'monthdelta',
     'pyjwt',
-    'pycrypto',
+    'pycryptodome',
     'supervisor',
     'natsort'
 ]

@@ -4057,6 +4057,7 @@ free replacement or sample are those which are excluded.
                     try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
+                        print row["invoiceno"]
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 
                         taxname = ""
@@ -4141,9 +4142,8 @@ free replacement or sample are those which are excluded.
                                 if taxname !="% SGST":
                                     taxnames = "%.2f"%taxrate + taxname
                                     if taxdata.has_key(str(taxnames)):
-                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxrate]) + taxamount)
-                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
-
+                                        taxdata[taxnames]="%.2f"%(float(taxdata[taxnames]) + taxamount)
+                                        taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxnames]) + taxamount*float(taxrate)/100.00)
                                     else:
                                         taxdata.update({taxnames:"%.2f"%taxamount})
                                         taxamountdata.update({taxnames:"%.2f"%(taxamount*float(taxrate)/100.00)})
@@ -4164,7 +4164,7 @@ free replacement or sample are those which are excluded.
                                     cgstTax = "%.2f"%taxrate + "% CGST"
                                     if taxdata.has_key(sgstTax):
                                         taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
-                                        taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[sgstTax]) + taxamount*float(taxrate)/100.00)
                                         
                                     else:
                                         taxdata.update({sgstTax:"%.2f"%taxamount})
@@ -4181,7 +4181,7 @@ free replacement or sample are those which are excluded.
                                         
                                     if taxdata.has_key(cgstTax):
                                         taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
-                                        taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[taxrate]) + taxamount*float(taxrate)/100.00)
+                                        taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[cgstTax]) + taxamount*float(taxrate)/100.00)
                                         
                                     else:
                                         taxdata.update({cgstTax:"%.2f"%taxamount})
@@ -4207,8 +4207,8 @@ free replacement or sample are those which are excluded.
                                 Cessname = str(cessrate) + "% CESS"
                                 if cessrate != "0.00":
                                     if taxdata.has_key(str(Cessname)):
-                                        taxdata[Cessname]="%.2f"%(float(taxdata[cessrate]) + taxamount)
-                                        taxamountdata[Cessname]="%.2f"%(float(taxamountdata[cessrate]) + taxamount*float(cessrate)/100.00)
+                                        taxdata[Cessname]="%.2f"%(float(taxdata[Cessname]) + taxamount)
+                                        taxamountdata[Cessname]="%.2f"%(float(taxamountdata[Cessname]) + taxamount*float(cessrate)/100.00)
                                     else:
                                         taxdata.update({Cessname:"%.2f"%taxamount})
                                         taxamountdata.update({Cessname:"%.2f"%(taxamount*float(cessrate)/100.00)})

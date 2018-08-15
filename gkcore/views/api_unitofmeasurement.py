@@ -88,7 +88,7 @@ class api_unitOfMeasurement(object):
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.unitofmeasurement]).where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"]))
                 row = result.fetchone()
-                unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":"%.2f"%float(row["conversionrate"]), "subunitof":row["subunitof"]}
+                unitofmeasurement = {"uomid":row["uomid"], "unitname":row["unitname"], "conversionrate":"%.2f"%float(row["conversionrate"]), "subunitof":row["subunitof"], "description":row['description'], "sysunit":row['sysunit']}
                 countresult = self.con.execute(select([func.count(gkdb.product.c.uomid).label('subcount')]).where(gkdb.product.c.uomid==row["uomid"]))
                 countrow = countresult.fetchone()
                 subcount= countrow["subcount"]
@@ -134,10 +134,10 @@ class api_unitOfMeasurement(object):
             try:
                 self.con = eng.connect()
                 #there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname,gkdb.unitofmeasurement.c.uomid]).order_by(desc(gkdb.unitofmeasurement.c.frequency)))
+                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname,gkdb.unitofmeasurement.c.uomid, gkdb.unitofmeasurement.c.description]).order_by(gkdb.unitofmeasurement.c.unitname))
                 unitofmeasurements = []
                 for row in result:
-                    unitofmeasurements.append({"uomid":row["uomid"], "unitname":row["unitname"]})
+                    unitofmeasurements.append({"uomid":row["uomid"], "unitname":row["unitname"],"description":row['description']})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":unitofmeasurements }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }

@@ -22,7 +22,7 @@
 # Contributor:
 # "Ishan Masdekar " <imasdekar@dff.org.in>
 
-sudo useradd gkadmin
+sudo useradd -s /bin/bash -m gkadmin
 echo 'Created user gkadmin'
 
 sudo -u postgres psql -c "create role gkadmin with login"

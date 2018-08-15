@@ -271,11 +271,11 @@ class api_transaction(object):
 
                 self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(party_accCode)))
 
+                vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                vouchercode = vouchercodedata.fetchone()
                 if transactions["payment_mode"] in ["bank", "both"]:
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode = vouchercodedata.fetchone()
                     self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":b_accCode,"orgcode":authDetails["orgcode"]}])
-                return {"gkstatus": enumdict["Success"]}
+                return {"gkstatus": enumdict["Success"], "vouchercode":int(vouchercode["vcode"])}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
@@ -713,7 +713,14 @@ class api_transaction(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
+                if dataset.has_key("lockflag"):
+                    if dataset["lockflag"]=="True":
+                        dataset["lockflag"]=True
+                    else:
+                        dataset["lockflag"]=False
+                    result = self.con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
+                else:
+                    result = self.con.execute(vouchers.update().where(vouchers.c.lockflag=="f").where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
                 if dataset.has_key("drs"):
                     drs = dataset["drs"]
                     crs = dataset["crs"]
@@ -759,7 +766,7 @@ class api_transaction(object):
                 vcode = dataset["vouchercode"]
                 voucherdata = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
                 voucherRow = voucherdata.fetchone()
-                self.con.execute("delete from vouchers  where vouchercode = %d"%(int(vcode)))
+                self.con.execute("delete from vouchers  where vouchercode = %d and lockflag= 'f'"%(int(vcode)))
                 DrData = voucherRow["drs"]
                 CrData = voucherRow["crs"]
                 for drKey in DrData.keys():

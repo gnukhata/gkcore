@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -205,11 +205,10 @@ class api_invoice(object):
                     except:
                         result1 = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invoiceid["invid"],stock.c.dcinvtnflag==9)))
                         result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
-                        result3 = self.con.execute(vouchers.delete().where(vouchers.c.vouchercode==vid))
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
             except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
+               return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
@@ -1328,7 +1327,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
     def getDefaultAcc(self,queryParams,orgcode):
-       # try:
+        try:
             """
             Purpose: Returns default accounts.
             Invoice type can be determined from inoutflag. (inoutflag = 9 = Purchase invoice, inoutflag = 15 = Purchase invoice,)
@@ -1596,27 +1595,30 @@ The bills grid calld gkresult will return a list as it's value.
                 initialType = initialType + str(vchCode["vcode"])
             voucherDict["vouchernumber"] = initialType
             result = self.con.execute(vouchers.insert(),[voucherDict])
+            vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+            vouchercode =vouchercodedata.fetchone()
             for drkeys in drs.keys():
                 self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
                 accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
                 accgrp = accgrpdata.fetchone()
                 if accgrp["groupname"] == "Bank":
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode =vouchercodedata.fetchone()
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":orgcode}])
             for crkeys in crs.keys():
                 self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
                 accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
                 accgrp = accgrpdata.fetchone()
                 if accgrp["groupname"] == "Bank":
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode =vouchercodedata.fetchone()
                     recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
 
+            #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
+             
+            if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
+                upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
+                inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
             
             self.con.close()
-            return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"]}
- #       except:
- #           return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
- #       finally:
- #           self.con.close()
+            return {"gkstatus":enumdict["Success"],"vchNo":voucherDict["vouchernumber"],"vid":int(vouchercode["vcode"])}
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
