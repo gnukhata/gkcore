@@ -271,11 +271,11 @@ class api_transaction(object):
 
                 self.con.execute("update accounts set vouchercount = vouchercount+1 where accountcode = %d"%(int(party_accCode)))
 
+                vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
+                vouchercode = vouchercodedata.fetchone()
                 if transactions["payment_mode"] in ["bank", "both"]:
-                    vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                    vouchercode = vouchercodedata.fetchone()
                     self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":b_accCode,"orgcode":authDetails["orgcode"]}])
-                return {"gkstatus": enumdict["Success"]}
+                return {"gkstatus": enumdict["Success"], "vouchercode":int(vouchercode["vcode"])}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
