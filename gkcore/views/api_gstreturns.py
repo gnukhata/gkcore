@@ -70,16 +70,15 @@ def cess_amount(inv, productcode, con, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
     """
-    if inv["cess"][productcode] is not 0:
+    if inv["cess"].get(productcode) is 0 or inv["cess"] == {}:
+        return 0
+    else:
         cess_rate = float(inv["cess"][productcode])
 
         t_value = taxable_value(inv, productcode, con, drcr=drcr)
         cess_amount = t_value * cess_rate / 100
 
         return float(cess_amount)
-    else:
-        return 0
-
 
 def state_name_code(con, statename=None, statecode=None):
     """
@@ -118,7 +117,7 @@ def product_level(inv, con, drcr=False):
         products = inv["contents"]
 
     for prod in products:
-        rate = inv["tax"][prod]
+        rate = float(inv["tax"][prod])
         if data.get(rate, None):
             data[rate]["taxable_value"] += taxable_value(inv, prod, con, drcr)
             data[rate]["cess"] += cess_amount(inv, prod, con, drcr)
@@ -279,7 +278,7 @@ def b2cs_r1(invoices, con):
         for row in b2cs:
             row["taxable_value"] = "%.2f" % row["taxable_value"]
             if row["cess"] is 0:
-                row["cess"] = ""
+                row["cess"] = "0.00"
             else:
                 row["cess"] = "%.2f" % row["cess"]
 
@@ -323,8 +322,10 @@ def cdnr_r1(drcr_all, con):
             row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
             row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
             row["applicable_tax_rate"] = ""
-            row["pregst"] = "N"
-
+            if note["taxflag"] == 7:
+                row["pregst"] = "N"
+            else:
+                row["pregst"] = "Y"
             for rate, tax_cess in product_level(note, con, drcr=True).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
@@ -377,8 +378,10 @@ def cdnur_r1(drcr_all, con):
             row["supply_type"] = "Inter State"
             row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
             row["applicable_tax_rate"] = ""
-            row["pregst"] = "N"
-
+            if note["taxflag"] == 7:
+                row["pregst"] = "N"
+            else:
+                row["pregst"] = "Y"
             for rate, tax_cess in product_level(note, con, drcr=True).items():
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
@@ -456,12 +459,11 @@ class GstReturn(object):
                      )
                      .where(
                          and_(
-                             invoice.c.invoicedate.between(
+                             drcr.c.drcrdate.between(
                                  start_period.strftime("%Y-%m-%d"),
                                  end_period.strftime("%Y-%m-%d")
                              ),
                              invoice.c.inoutflag == 15,
-                             invoice.c.taxflag == 7,
                              drcr.c.orgcode == orgcode,
                          )
                      ))
