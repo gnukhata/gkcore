@@ -402,6 +402,7 @@ def drcrVoucher(queryParams, orgcode):
     Debit or Credit Note Voucher.
     '''
     con = eng.connect()
+    taxRateDict = {5:2.5,12:6,18:9,28:14}
     voucherDict = {}
     taxDict = {}
     crs = {}
@@ -431,14 +432,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -502,15 +500,12 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
+                            taxHalf = (taxRateDict[int(taxRate)])
                             tx = (float(taxRate)/2)
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -575,14 +570,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -647,14 +639,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -731,14 +720,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -813,14 +799,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -895,14 +878,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
@@ -977,14 +957,11 @@ def drcrVoucher(queryParams, orgcode):
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
                             tx = (float(taxRate)/2)
+                            taxHalf = (taxRateDict[int(taxRate)])
                             # this is the value which is going to Dr/Cr
                             taxVal = taxable * (tx/100)
-                            if (tx % 2) == 0:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(int(tx))+"%"
-                            else:
-                                taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
-                                taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(tx)+"%"
+                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
                             if taxNameSGST not in taxDict:
                                 taxDict[taxNameSGST] = "%.2f"%float(taxVal)
                                 taxDict[taxNameCGST] = "%.2f"%float(taxVal)
