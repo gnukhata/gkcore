@@ -383,6 +383,41 @@ class api_drcr(object):
             finally:
                 self.con.close()   
 
+    @view_config(request_method='GET',request_param="inv=all", renderer ='json')
+    def getAllinvoices(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                DrCrInvs = []
+                invsInDrCr = self.con.execute(select([drcr.c.invid]).where(drcr.c.orgcode==authDetails["orgcode"]))
+                for DrCrInv in invsInDrCr:
+                    DrCrInvs.append(DrCrInv["invid"])
+                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+                invoices = []
+                for row in invData:
+                    if row["invid"] not in DrCrInvs:
+                        customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                        custname = customer.fetchone()
+                        if self.request.params.has_key('type'):
+                            if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
+                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                            elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
+                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                        else:
+                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
 def drcrVoucher(queryParams, orgcode):
     '''
     This function creates voucher for Debit and Credit Notes.
