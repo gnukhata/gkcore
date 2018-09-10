@@ -395,8 +395,9 @@ class api_drcr(object):
         else:
             try:
                 self.con = eng.connect()
+                drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
-                invsInDrCr = self.con.execute(select([drcr.c.invid]).where(drcr.c.orgcode==authDetails["orgcode"]))
+                invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
                 for DrCrInv in invsInDrCr:
                     DrCrInvs.append(DrCrInv["invid"])
                 invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
