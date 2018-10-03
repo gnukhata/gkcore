@@ -85,7 +85,7 @@ class api_product(object):
                                 productCodes.append(record3["productcode"])
                     results = []
                     for record4 in productCodes:
-                        result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.gsflag]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
+                        result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.gsflag, gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
                         products = result.fetchone()
                         results.append(products)
                 else:
@@ -95,9 +95,9 @@ class api_product(object):
                     except:
                         invdc = 9
                     if invdc == 4:
-                        results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                        results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
                     if invdc == 9:
-                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc,gkdb.product.c.gsflag, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc,gkdb.product.c.gsflag, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 
                 products = []
                 srno=1
@@ -151,7 +151,7 @@ class api_product(object):
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
 
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"],"prodsp":row["prodsp"],"prodmrp":row["prodmrp"]}
                 if int(row["gsflag"]) == 7:
                     result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitrow= result1.fetchone()
