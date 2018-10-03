@@ -195,8 +195,6 @@ product = Table('product',metadata,
     Column('specs', JSONB),
     Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
     Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE")),
-    Column('sp',Numeric(13,2),default=0.00),
-    Column('mrp',Numeric(13,2),default=0.00),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('categorycode','productdesc'),
     UniqueConstraint('productdesc','orgcode'),
@@ -234,6 +232,13 @@ customerandsupplier = Table('customerandsupplier',metadata,
     UniqueConstraint('orgcode','custname','gstin'),
     Index("customer_supplier_orgcodeindex","orgcode")
     )
+cslastprise = Table('cslastprise',metadata,
+    Column(cslpid,Integer,primary_key=True),
+    Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
+    Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+                    Column('lastprice',Numeric(15,2)),
+)
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
