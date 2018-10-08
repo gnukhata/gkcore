@@ -234,8 +234,13 @@ customerandsupplier = Table('customerandsupplier',metadata,
     UniqueConstraint('orgcode','custname','gstin'),
     Index("customer_supplier_orgcodeindex","orgcode")
     )
+"""
+This Table stores last selling price of a product for a specific customer.
+   
+
+"""
 cslastprise = Table('cslastprise',metadata,
-    Column(cslpid,Integer,primary_key=True),
+    Column('cslpid',Integer,primary_key=True),
     Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
     Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
