@@ -14,12 +14,14 @@ from gkcore.views.api_login import authCheck
 
 
 @view_defaults(route_name='lastprice')
-class lastprice(object):
-    def __init__(self):
+class api_lastprice(object):
+    def __init__(self,request):
         self.request = Request
         self.request = request
         self.con = Connection
     @view_config(request_method='POST',renderer='json')
     def setLastPrice(self):
-        
-        
+        try:
+            token = self.request.headers["gktoken"]
+
+
