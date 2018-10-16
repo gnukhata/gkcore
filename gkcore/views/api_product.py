@@ -151,7 +151,15 @@ class api_product(object):
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
 
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"],"prodsp":"%.2f"%float(row["prodsp"]),"prodmrp":"%.2f"%float(row["prodmrp"])}
+                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                if row["prodsp"]!=None:
+                    productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
+                else:
+                    productDetails["prodsp"] = "%.2f"%0.00
+                if row["prodmrp"]!=None:
+                    productDetails["prodmrp"] = "%.2f"%float(row["prodmrp"])
+                else:
+                    productDetails["prodmrp"] = "%.2f"%0.00
                 if int(row["gsflag"]) == 7:
                     result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitrow= result1.fetchone()
