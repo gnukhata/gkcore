@@ -12,7 +12,6 @@ import gkcore
 from gkcore.views.api_login import authCheck
 
 
-
 @view_defaults(route_name='lastprice')
 class api_lastprice(object):
     def __init__(self,request):
@@ -23,5 +22,17 @@ class api_lastprice(object):
     def setLastPrice(self):
         try:
             token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                # dataset has customerid,productcode and selling price. 
+                dataset = self.request.json_body
+                
 
 
