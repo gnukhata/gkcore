@@ -602,7 +602,7 @@ class api_product(object):
 
 
     @view_config(request_param='type=lastprice', request_method='GET',renderer='json')
-    def getProduct(self):
+    def lastPrice(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -614,6 +614,10 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 orgcode=authDetails["orgcode"]
+                productCode = self.request.params["productcode"]
+                inoutFlag = self.request.params["inoutflag"]
+                lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d")%int(orgcode)
+                print lastInvoice
             except:
                     return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
