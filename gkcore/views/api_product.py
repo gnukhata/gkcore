@@ -600,3 +600,21 @@ class api_product(object):
              finally:
                 self.con.close()
 
+
+    @view_config(request_param='type=lastprice', request_method='GET',renderer='json')
+    def getProduct(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orgcode=authDetails["orgcode"]
+            except:
+                    return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
