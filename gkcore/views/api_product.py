@@ -601,6 +601,13 @@ class api_product(object):
                 self.con.close()
 
 
+    '''
+    This funtion returns the last price for which a product was sold/purchased to/from a party.
+    To find out the price the function needs productcode of the product, custid of the party and inoutflag(to determine whether selling/purchase price is needed)
+    A select query first fetches the invid of the last sale/purchase invoice created for the party involving the product.
+    Another query retrives the contents of the invoice whose invid is same as the result of the above query.
+    Price is found out from the contents using productcode as key and sent as response.
+    '''
     @view_config(request_param='type=lastprice', request_method='GET',renderer='json')
     def lastPrice(self):
         try:
@@ -616,8 +623,13 @@ class api_product(object):
                 orgcode=authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 inoutFlag = self.request.params["inoutflag"]
-                lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d")%int(orgcode)
-                print lastInvoice
+                custId = self.request.params["custid"]
+                lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d and contents ? '%s' and inoutflag = %d and custid = %d"%(int(orgcode), str(productCode), int(inoutFlag), int(custId)))
+                lastInvoiceId = lastInvoice.fetchone()["invid"]
+                lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==lastInvoiceId,gkdb.product.c.orgcode==orgcode)))
+                lastPriceDict = lastPriceData.fetchone()["contents"]
+                lastPriceValue = lastPriceDict[productCode][lastPriceDict[productCode].keys()[0]]
+                return {"gkstatus":enumdict["Success"], "gkresult":lastPriceValue}
             except:
                     return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
