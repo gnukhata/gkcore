@@ -628,7 +628,7 @@ class api_product(object):
                 lastInvoiceId = lastInvoice.fetchone()["invid"]
                 lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==lastInvoiceId,gkdb.product.c.orgcode==orgcode)))
                 lastPriceDict = lastPriceData.fetchone()["contents"]
-                lastPriceValue = lastPriceDict[productCode][lastPriceDict[productCode].keys()[0]]
+                lastPriceValue = lastPriceDict[productCode].keys()[0]
                 return {"gkstatus":enumdict["Success"], "gkresult":lastPriceValue}
             except:
                     return {"gkstatus":enumdict["ConnectionFailed"]}
