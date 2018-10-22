@@ -395,6 +395,10 @@ class api_organisation(object):
             if not columnExists("product","gsflag"):
                 self.con.execute("alter table product add gsflag integer")
                 self.con.execute("update product set gsflag = 7 where gsflag=null")
+            if not columnExists("product","prodsp"):
+                self.con.execute("alter table product add prodsp numeric(13,2)")
+            if not columnExists("product","prodmrp"):
+                self.con.execute("alter table product add prodmrp numeric(13,2)")
             if not tableExists("billwise"):
                 self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
             if not tableExists("rejectionnote"):
