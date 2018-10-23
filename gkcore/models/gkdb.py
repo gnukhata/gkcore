@@ -236,16 +236,20 @@ customerandsupplier = Table('customerandsupplier',metadata,
     )
 """
 This Table stores last selling price of a product for a specific customer.
-   
-
+Fields productcode, custid and orgcode are foreign keys refering to corresponding fields in
+product, customerandsupplier and organisation tables.
+Inoutflag indicates whether it is a selling price(15) or purchase price(9).
+Unique Constraint is used to prevent repeated entry for last price of same inoutflag of a product for the same customer
+or supplier of the same organisation.
 """
-cslastprise = Table('cslastprice',metadata,
+cslastprice = Table('cslastprice',metadata,
     Column('cslpid',Integer,primary_key=True),
     Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
     Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     Column('inoutflag',Integer),
-                    Column('lastprice',Numeric(15,2)),
+    Column('lastprice',Numeric(13,2),default=0.00),
+    UniqueConstraint('orgcode','custid','productcode', 'inoutflag'),
 )
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
