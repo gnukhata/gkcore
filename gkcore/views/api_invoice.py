@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise,cslastprice
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -90,12 +90,14 @@ class api_invoice(object):
                 queryParams = {}
                 voucherData = {}
                 result = self.con.execute(invoice.insert(),[invdataset])
-                if "pricedetails" in dtset:
-                    pricedetails = dtset["pricedetails"]
-                    try:
-                        lastprice = self.con.execute(cslastprice.insert(),[pricedetails])
-                    except:
-                        updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==pricedetails["custid"], cslastprice.c.productcode==pricedetails["productcode"], cslastprice.c.inoutflag==pricedetails["inoutflag"], cslastprice.c.orgcode==pricedetails["orgcode"])).values(pricedetails))                
+                if "pricedetails" in invdataset:
+                    pricedetails = invdataset["pricedetails"]
+                    for price in pricedetails:
+                        price["orgcode"] = authDetails["orgcode"]
+                        try:
+                            lastprice = self.con.execute(cslastprice.insert(),[price])
+                        except:
+                            updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))     
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
                         result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
@@ -267,9 +269,11 @@ class api_invoice(object):
                     dcinvdataset["invprods"] = stockdataset["items"]
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                        if "pricedetails" in dtset:
-                            pricedetails = dtset["pricedetails"]
-                            updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==pricedetails["custid"], cslastprice.c.productcode==pricedetails["productcode"], cslastprice.c.inoutflag==pricedetails["inoutflag"], cslastprice.c.orgcode==pricedetails["orgcode"])).values(pricedetails))
+                        if "pricedetails" in invdataset:
+                            pricedetails = invdataset["pricedetails"]
+                            for price in pricedetails:
+                                price["orgcode"] = authDetails["orgcode"]
+                                updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount > 0:
                            avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
@@ -305,9 +309,11 @@ class api_invoice(object):
                 else:
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                        if "pricedetails" in dtset:
-                            pricedetails = dtset["pricedetails"]
-                            updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==pricedetails["custid"], cslastprice.c.productcode==pricedetails["productcode"], cslastprice.c.inoutflag==pricedetails["inoutflag"], cslastprice.c.orgcode==pricedetails["orgcode"])).values(pricedetails))
+                        if "pricedetails" in invdataset:
+                            pricedetails = invdataset["pricedetails"]
+                            for price in pricedetails:
+                                price["orgcode"] = authDetails["orgcode"]
+                                updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
                         #Code for updating bankdetails when user switch to cash payment from bank.
                         getpaymentmode = int(invdataset["paymentmode"]) #Loading paymentmode.
                         idinv = int(invdataset["invid"])   #Loading invoiceid.

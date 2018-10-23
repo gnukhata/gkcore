@@ -75,26 +75,29 @@ class api_organisation(object):
                 self.con.execute("create table cslastprice(cslpid serial, lastprice numeric(13,2), inoutflag integer, custid integer NOT NULL,productcode integer NOT NULL,orgcode integer NOT NULL, primary key (cslpid), constraint cslastprice_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint cslastprice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid),constraint cslastprice_productcode_fkey FOREIGN KEY (productcode) REFERENCES product(productcode), unique(orgcode, custid, productcode, inoutflag))")
                 inoutflags = [9, 15]
                 for orgid in allorg:
-                    customers = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(gkdb.customerandsupplier.c.orgcode == int(orgid["orgcode"])))
-                    customerdata = customers.fetchall()
-                    products = self.con.execute(select([gkdb.product.c.productcode]).where(gkdb.product.c.orgcode == int(orgid["orgcode"])))
-                    productdata = products.fetchall()
-                    for customer in customerdata:
-                        for product in productdata:
-                            for inoutflag in inoutflags:
-                                try:
-                                    lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d and contents ? '%s' and inoutflag = %d and custid = %d"%(int(orgid["orgcode"]), str(product["productcode"]), int(inoutflag),  int(customer["custid"])))
-                                    lastInvoiceId = lastInvoice.fetchone()["invid"]
-                                    if lastInvoiceId!=None:
-                                        lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==int(lastInvoiceId),gkdb.product.c.orgcode==int(orgid["orgcode"]))))
-                                        lastPriceDict = lastPriceData.fetchone()["contents"]
-                                        productCode = product["productcode"]
-                                        if str(productCode).decode("utf-8") in lastPriceDict:
-                                            lastPriceValue = lastPriceDict[str(productCode).decode("utf-8")].keys()[0]
-                                            priceDetails = {"custid":int(customer["custid"]), "productcode":int(product["productcode"]), "orgcode":int(orgid["orgcode"]), "inoutflag":int(inoutflag), "lastprice":float(lastPriceValue)}
-                                            lastPriceEntry = self.con.execute(gkdb.cslastprice.insert(),[priceDetails])
-                                except:
-                                    pass
+                    numberOfInvoices = self.con.execute(select([func.count(gkdb.invoice.c.invid).label('invoices')]))
+                    invoices = numberOfInvoices.fetchone()
+                    if int(invoices["invoices"]) > 0:
+                        customers = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(gkdb.customerandsupplier.c.orgcode == int(orgid["orgcode"])))
+                        customerdata = customers.fetchall()
+                        products = self.con.execute(select([gkdb.product.c.productcode]).where(gkdb.product.c.orgcode == int(orgid["orgcode"])))
+                        productdata = products.fetchall()
+                        for customer in customerdata:
+                            for product in productdata:
+                                for inoutflag in inoutflags:
+                                    try:
+                                        lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d and contents ? '%s' and inoutflag = %d and custid = %d"%(int(orgid["orgcode"]), str(product["productcode"]), int(inoutflag),  int(customer["custid"])))
+                                        lastInvoiceId = lastInvoice.fetchone()["invid"]
+                                        if lastInvoiceId!=None:
+                                            lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==int(lastInvoiceId),gkdb.product.c.orgcode==int(orgid["orgcode"]))))
+                                            lastPriceDict = lastPriceData.fetchone()["contents"]
+                                            productCode = product["productcode"]
+                                            if str(productCode).decode("utf-8") in lastPriceDict:
+                                                lastPriceValue = lastPriceDict[str(productCode).decode("utf-8")].keys()[0]
+                                                priceDetails = {"custid":int(customer["custid"]), "productcode":int(product["productcode"]), "orgcode":int(orgid["orgcode"]), "inoutflag":int(inoutflag), "lastprice":float(lastPriceValue)}
+                                                lastPriceEntry = self.con.execute(gkdb.cslastprice.insert(),[priceDetails])
+                                    except:
+                                        pass
             if not columnExists("unitofmeasurement","description"):
                 self.con.execute("alter table unitofmeasurement add description text")
                 self.con.execute("alter table unitofmeasurement add sysunit integer default 0")
