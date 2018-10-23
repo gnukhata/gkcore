@@ -91,7 +91,10 @@ class api_invoice(object):
                 voucherData = {}
                 pricedetails = dtset["pricedetails"]
                 result = self.con.execute(invoice.insert(),[invdataset])
-                lastprice = self.con.execute(cslastprice.insert(),[pricedetails])
+                try:
+                    lastprice = self.con.execute(cslastprice.insert(),[pricedetails])
+                except:
+                    updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==pricedetails["custid"], cslastprice.c.productcode==pricedetails["productcode"], cslastprice.c.inoutflag==pricedetails["inoutflag"], cslastprice.c.orgcode==pricedetails["orgcode"])).values(pricedetails))
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
                         result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
