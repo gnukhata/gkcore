@@ -620,16 +620,9 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
-                orgcode=authDetails["orgcode"]
-                productCode = self.request.params["productcode"]
-                inoutFlag = self.request.params["inoutflag"]
-                custId = self.request.params["custid"]
-                lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d and contents ? '%s' and inoutflag = %d and custid = %d"%(int(orgcode), str(productCode), int(inoutFlag), int(custId)))
-                lastInvoiceId = lastInvoice.fetchone()["invid"]
-                lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==lastInvoiceId,gkdb.product.c.orgcode==orgcode)))
-                lastPriceDict = lastPriceData.fetchone()["contents"]
-                lastPriceValue = lastPriceDict[productCode].keys()[0]
-                return {"gkstatus":enumdict["Success"], "gkresult":lastPriceValue}
+                lastPriceData = self.con.execute(select([gkdb.cslastprice.c.lastprice]).where(and_(gkdb.cslastprice.c.custid==int(self.request.params["custid"]), gkdb.cslastprice.c.productcode==int(self.request.params["productcode"]), gkdb.cslastprice.c.inoutflag==int(self.request.params["inoutflag"]), gkdb.cslastprice.c.orgcode==int(authDetails["orgcode"]))))
+                lastPriceValue = lastPriceData.fetchone()["lastprice"]
+                return {"gkstatus":enumdict["Success"], "gkresult":"%.2f"%float(lastPriceValue)}
             except:
                     return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
