@@ -72,7 +72,7 @@ class api_organisation(object):
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
             if not tableExists("cslastprice"):
-                self.con.execute("create table cslastprice(cslpid serial, lastprice numeric(13,2) NOT NULL, custid integer NOT NULL,productcode integer NOT NULL,orgcode integer NOT NULL, primary key (cslpid), constraint cslastprice_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint cslastprice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid),constraint cslastprice_productcode_fkey FOREIGN KEY (productcode) REFERENCES product(productcode))")
+                self.con.execute("create table cslastprice(cslpid serial, lastprice numeric(13,2), inoutflag integer, custid integer NOT NULL,productcode integer NOT NULL,orgcode integer NOT NULL, primary key (cslpid), constraint cslastprice_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint cslastprice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid),constraint cslastprice_productcode_fkey FOREIGN KEY (productcode) REFERENCES product(productcode))")
             if not columnExists("unitofmeasurement","description"):
                 self.con.execute("alter table unitofmeasurement add description text")
                 self.con.execute("alter table unitofmeasurement add sysunit integer default 0")

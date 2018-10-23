@@ -244,6 +244,7 @@ cslastprise = Table('cslastprice',metadata,
     Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
     Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Column('inoutflag',Integer),
                     Column('lastprice',Numeric(15,2)),
 )
 """ table to store accounts.
