@@ -239,7 +239,7 @@ This Table stores last selling price of a product for a specific customer.
    
 
 """
-cslastprise = Table('cslastprise',metadata,
+cslastprise = Table('cslastprice',metadata,
     Column('cslpid',Integer,primary_key=True),
     Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
     Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
