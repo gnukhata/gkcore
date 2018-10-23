@@ -95,7 +95,6 @@ def main(global_config, **settings):
     config.add_route("state","/state")
     config.add_route("drcrnote","/drcrnote")
     config.add_route("gstreturns", "/gstreturns")
-    config.add_route("lastprice","/lastprice")
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
