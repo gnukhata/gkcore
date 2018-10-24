@@ -89,9 +89,12 @@ class api_invoice(object):
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 queryParams = {}
                 voucherData = {}
-                result = self.con.execute(invoice.insert(),[invdataset])
+                pricedetails = []
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
+                    invdataset.pop("pricedetails", pricedetails)
+                result = self.con.execute(invoice.insert(),[invdataset])
+                if len(pricedetails) > 0:
                     for price in pricedetails:
                         price["orgcode"] = authDetails["orgcode"]
                         try:
@@ -251,6 +254,10 @@ class api_invoice(object):
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 voucherData ={}
+                pricedetails = []
+                if "pricedetails" in invdataset:
+                    pricedetails = invdataset["pricedetails"]
+                    invdataset.pop("pricedetails", pricedetails)
                 # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
                 try:
                     deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
@@ -269,8 +276,7 @@ class api_invoice(object):
                     dcinvdataset["invprods"] = stockdataset["items"]
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                        if "pricedetails" in invdataset:
-                            pricedetails = invdataset["pricedetails"]
+                        if len(pricedetails) > 0:
                             for price in pricedetails:
                                 price["orgcode"] = authDetails["orgcode"]
                                 updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
@@ -309,8 +315,7 @@ class api_invoice(object):
                 else:
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
-                        if "pricedetails" in invdataset:
-                            pricedetails = invdataset["pricedetails"]
+                        if len(pricedetails) > 0:
                             for price in pricedetails:
                                 price["orgcode"] = authDetails["orgcode"]
                                 updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
