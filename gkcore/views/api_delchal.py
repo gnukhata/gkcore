@@ -183,7 +183,7 @@ create method for delchal resource.
                 If user is not a godown keeper this list will be empty.
                 If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
                 '''
-                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+                usergodowmns = getusergodowns(authDetails["userid"],7)["gkresult"]
                 if usergodowmns:
                     godowns = []
                     for godown in usergodowmns:
