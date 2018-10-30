@@ -44,23 +44,38 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 
-def getusergodowns(userid):
+"""
+The branches and godowns are in same table godown. It uses gbflag to identify wheather its godown or branch.
+Below function is use to fetch all godown and branch data. It uses userID and gbflag(godown / branch) as input.
+gbflag values are:
+for godown = 7
+for branch = 2.
+"""
+def getusergodowns(userid,gbflag):
     try:
+       
         con = Connection
         con = eng.connect()
         uid=userid
-        godowns=con.execute(select([godown]).where(godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid))))
+        godowns=con.execute(select([godown]).where (and_(godown.c.gbflag == gbflag, godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid)))))
         usergo = []
         srno=1
         for row in godowns:
-            godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
-            godownstockcount = godownstock.fetchone()
-            godownstatus = godownstockcount["godownstockstatus"]
-            if godownstatus > 0:
-                status = "Active"
+            
+            if(gbflag == "7"):
+                godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+            
+                godownstockcount = godownstock.fetchone()
+                godownstatus = godownstockcount["godownstockstatus"]
+     
+                if godownstatus > 0:
+                    status = "Active"
+                else:
+                    status = "Inactive"
+            
+                usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
             else:
-                status = "Inactive"
-            usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+                usergo.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
             srno = srno+1
         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
     except:
@@ -75,9 +90,12 @@ class api_godown(object):
         self.request = Request
         self.request = request
         self.con = Connection
-
+    """
+    The below function is use to add godown and branches. gbflag will decides it is godown or branch.
+    """
     @view_config(request_method='POST',renderer='json')
     def addGodown(self):
+        
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -98,9 +116,12 @@ class api_godown(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-
+    """
+    below function is use to update existing godown and branch.
+    """
     @view_config(request_method='PUT', renderer='json')
     def editGodown(self):
+       
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -118,11 +139,14 @@ class api_godown(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-
+    """
+    below function is use to get all godowns or branches. It uses gbflag to identify branch or godown.
+    """
     @view_config(request_method='GET', renderer ='json')
     def getAllGodowns(self):
+        
         try:
-            token = self.request.headers["gktoken"]
+            token = self.request.headers["gktoken"]   
         except:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
@@ -135,23 +159,28 @@ class api_godown(object):
                 gorole = userrole["gkresult"]
                 if (gorole["userrole"]==3):
                     try:
-                        result = getusergodowns(authDetails["userid"])
+                        result = getusergodowns(authDetails["userid"],self.request.params["gbflag"])
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
                     except:
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }       
                 if (gorole["userrole"]!=3):
-                    result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goname))
+                    result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag==self.request.params["gbflag"])).order_by(godown.c.goname))
                     godowns = []
                     srno=1
                     for row in result:
-                        godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
-                        godownstockcount = godownstock.fetchone()
-                        godownstatus = godownstockcount["godownstockstatus"]
-                        if godownstatus > 0:
-                            status = "Active"
+                        if(int(self.request.params["gbflag"]) == 7): 
+                            godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+                            godownstockcount = godownstock.fetchone()
+                            godownstatus = godownstockcount["godownstockstatus"]
+                            if godownstatus > 0:
+                                status = "Active"
+                            else:
+                                status = "Inactive"
+                               
+                            godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]})
+                            
                         else:
-                            status = "Inactive"
-                        godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+                            godowns.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]})
                         srno = srno+1
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
             except:
@@ -161,6 +190,7 @@ class api_godown(object):
 
     @view_config(request_method='GET', request_param='type=togodown', renderer ='json')
     def togodowns(self):
+        
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -171,10 +201,10 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
+                result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag == self.request.params["gbflag"])))
                 godowns = []
                 for row in result:
-                    godowns.append({"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"]})
+                    godowns.append({"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"],"gbflag":row["gbflag"]})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -185,6 +215,7 @@ class api_godown(object):
 
     @view_config(request_param='qty=single', request_method='GET',renderer='json')
     def getGodown(self):
+        
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -197,7 +228,7 @@ class api_godown(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([godown]).where(godown.c.goid == self.request.params["goid"]))
                 row = result.fetchone()
-                godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]}
+                godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":godownDetails}
             except:
@@ -205,10 +236,11 @@ class api_godown(object):
             finally:
                 self.con.close()
 
-    '''This function returns all godowns associated with godown in charge.
+    '''This function returns all godowns and branch associated with godown in charge.
        It takes user id as a input'''
     @view_config(request_method='GET', request_param='type=byuser', renderer ='json')
     def getGodownsByUser(self):
+        
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -219,7 +251,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = getusergodowns(self.request.params["userid"])
+                result = getusergodowns(self.request.params["userid"],self.request.params["gbflag"])
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -234,6 +266,7 @@ class api_godown(object):
 
     @view_config(request_method='GET', request_param='type=goproduct',renderer='json')
     def getNumberOfProductInGodown(self):
+       
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -259,6 +292,7 @@ class api_godown(object):
 	"""
     @view_config(request_method='GET', request_param='value=1',renderer='json')
     def getGodownProd(self):
+       
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -287,6 +321,7 @@ class api_godown(object):
 
     @view_config(request_method='DELETE', renderer ='json')
     def deleteGodown(self):
+       
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -309,6 +344,7 @@ class api_godown(object):
 
     @view_config(request_method='GET', request_param='type=lastfivegodown', renderer ='json')
     def lastfivegodata(self):
+       
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -319,7 +355,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goid.desc()).limit(5))
+                result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag == self.request.params["gbflag"])).order_by(godown.c.goid.desc()).limit(5))
                 godowns = []
                 srno=1
                 for row in result:
