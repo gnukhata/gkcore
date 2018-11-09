@@ -568,8 +568,9 @@ godown = Table('godown',metadata,
     Column('gocontact',UnicodeText),
     Column('contactname',UnicodeText),
     Column('designation',UnicodeText),
+    Column('gbflag',Integer,default=7,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','goname'),
+    UniqueConstraint('orgcode','goname','gbflag'),
     Index("godown_orgcodeindex","orgcode")
     )
 

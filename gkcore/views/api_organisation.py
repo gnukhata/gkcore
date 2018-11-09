@@ -452,6 +452,10 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
+            if not columnExists("godown","gbflag"):
+                self.con.execute("alter table godown add gbflag integer not null default 7")
+                self.con.execute("ALTER TABLE godown DROP CONSTRAINT godown_orgcode_goname_key")
+                self.con.execute("ALTER TABLE godown ADD UNIQUE(orgcode,goname,gbflag)")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
