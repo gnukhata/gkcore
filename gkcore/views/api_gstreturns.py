@@ -22,6 +22,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 
 Contributors:
 "AKhil KP" <akhilkpdasan@protonmail.com>
+'Prajkta Patkar' <prajakta@dff.org.in>
 """
 
 from datetime import datetime
@@ -453,7 +454,7 @@ class GstReturn(object):
             invoices = self.con.execute(query).fetchall()
 
             # debit/credit notes
-            query = (select([drcr, invoice, customerandsupplier])
+            query1 = (select([drcr, invoice, customerandsupplier])
                      .select_from(
                         drcr.join(invoice).join(customerandsupplier)
                      )
@@ -468,10 +469,10 @@ class GstReturn(object):
                          )
                      ))
 
-            drcrs_all = self.con.execute(query).fetchall()
+            drcrs_all = self.con.execute(query1).fetchall()
 
             gkdata = {}
-
+            print  b2b_r1(invoices, self.con).get("data")
             gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
             gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
             gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
