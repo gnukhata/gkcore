@@ -27,6 +27,7 @@ Contributors:
 
 from datetime import datetime
 from copy import deepcopy
+from sqlalchemy.engine.base import Connection
 from collections import defaultdict
 from sqlalchemy.sql import select, and_
 from pyramid.request import Request
@@ -393,14 +394,14 @@ def cdnur_r1(drcr_all, con):
         return {"status": 0, "data": cdnur}
     except:
         return {"status": 3}
-
+"""
 def hsn_r1(orgcode,con):
-    """
+    
     Retrieve all products data including product code,product description , hsn code, UOM.
     Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
     Store this data in following formats:
     [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
-    """
+   
     #try:
     Fianl = []
     prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode]).where(product.c.orgcode==orgcode))
@@ -412,19 +413,21 @@ def hsn_r1(orgcode,con):
     #except:
     #    return {"status": 3}
 
-
+"""
 
 @view_defaults(route_name='gstreturns')
 class GstReturn(object):
-
+    print "gstreturns"
     def __init__(self, request):
         self.request = Request
         self.request = request
+        self.con = Connection
 
     @view_config(request_method='GET',
                  request_param="type=r1",
                  renderer='json')
     def r1(self):
+        print "i am inside r1"
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
@@ -448,72 +451,79 @@ class GstReturn(object):
             return {"gkstatus":  enumdict["UnauthorisedAccess"]}
 
        # try:
-            self.con = eng.connect()
-            dataset = self.request.params
+        self.con = eng.connect()
+        dataset = self.request.params
+        print "retrived dataset"
+        start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
+        end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
+        orgcode = authDetails["orgcode"]
 
-            start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
-            end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
-            orgcode = authDetails["orgcode"]
-
-            # invoices
-            query = (select([invoice,
-                            customerandsupplier.c.gstin,
-                            customerandsupplier.c.custname])
-                     .where(
-                         and_(
-                             invoice.c.invoicedate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             invoice.c.taxflag == 7,
-                             invoice.c.orgcode == orgcode,
-                             invoice.c.custid == customerandsupplier.c.custid,
-                         )
-                     ))
-            invoices = self.con.execute(query).fetchall()
-
-            # debit/credit notes
-            query1 = (select([drcr, invoice, customerandsupplier])
-                     .select_from(
-                        drcr.join(invoice).join(customerandsupplier)
+        # invoices
+        query = (select([invoice,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custname])
+                 .where(
+                     and_(
+                         invoice.c.invoicedate.between(
+                             start_period.strftime("%Y-%m-%d"),
+                             end_period.strftime("%Y-%m-%d")
+                         ),
+                         invoice.c.inoutflag == 15,
+                         invoice.c.taxflag == 7,
+                         invoice.c.orgcode == orgcode,
+                         invoice.c.custid == customerandsupplier.c.custid,
                      )
-                     .where(
-                         and_(
-                             drcr.c.drcrdate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             drcr.c.orgcode == orgcode,
-                         )
-                     ))
+                 ))
+        invoices = self.con.execute(query).fetchall()
 
-            drcrs_all = self.con.execute(query1).fetchall()
+        # debit/credit notes
+        query1 = (select([drcr, invoice, customerandsupplier])
+                 .select_from(
+                    drcr.join(invoice).join(customerandsupplier)
+                 )
+                 .where(
+                     and_(
+                         drcr.c.drcrdate.between(
+                             start_period.strftime("%Y-%m-%d"),
+                             end_period.strftime("%Y-%m-%d")
+                         ),
+                         invoice.c.inoutflag == 15,
+                         drcr.c.orgcode == orgcode,
+                     )
+                 ))
 
-            gkdata = {}
-            
-            gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
-            gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
-            gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
-            gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
-            gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
-            
-            """
-    Retrieve all products data including product code,product description , hsn code, UOM.
-    Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
-    Store this data in following formats:
-    [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
-    """
-    #try:
-            print "I am here"
-            Fianl = []
-            prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode]).where(product.c.orgcode==orgcode))
-            prodData_result = prodData.fetchall()
+        drcrs_all = self.con.execute(query1).fetchall()
 
-            print prodData_result
+        gkdata = {}
+        print "started to call out functions"
+        gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
+        gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
+        gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
+        gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
+        gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
 
-            self.con.close()
-            return {"gkresult": 0, "gkdata": gkdata}
+        """
+Retrieve all products data including product code,product description , hsn code, UOM.
+Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
+Store this data in following formats:
+[{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
+"""
+#try:
+        print "I am here"
+        Fianl = []
+        prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode,product.c.uomid]).where(product.c.orgcode==orgcode))
+        prodData_result = prodData.fetchall()
+
+        for products in prodData_result:
+            #select * from invoice where contents ? '1' and orgcode = 1;
+            #select contents ->> '1' as contents , sourcestate, taxstate from invoice where orgcode = 1;
+            print products["productcode"]
+            invData = self.con.execute("select contents ->> '%s' as contents ,sourcestate,taxstate,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7))
+            invoice_Data = invData.fetchall()
+            print invoice_Data
+
+
+        self.con.close()
+        return {"gkresult": 0, "gkdata": gkdata}
        # except:
        #      return {"gkresult": 3}
