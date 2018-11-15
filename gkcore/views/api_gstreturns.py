@@ -394,6 +394,25 @@ def cdnur_r1(drcr_all, con):
     except:
         return {"status": 3}
 
+def hsn_r1(orgcode,con):
+    """
+    Retrieve all products data including product code,product description , hsn code, UOM.
+    Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
+    Store this data in following formats:
+    [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
+    """
+    #try:
+    Fianl = []
+    prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode]).where(product.c.orgcode==orgcode))
+    prodData_result = prodData.fetchall()
+
+    print prodData_result
+        
+
+    #except:
+    #    return {"status": 3}
+
+
 
 @view_defaults(route_name='gstreturns')
 class GstReturn(object):
@@ -418,6 +437,7 @@ class GstReturn(object):
             products will be added)
             Product 2 will have a separate entry
         """
+        
         token = self.request.headers.get("gktoken", None)
 
         if token is None:
@@ -427,7 +447,7 @@ class GstReturn(object):
         if authDetails["auth"] is False:
             return {"gkstatus":  enumdict["UnauthorisedAccess"]}
 
-        try:
+       # try:
             self.con = eng.connect()
             dataset = self.request.params
 
@@ -472,14 +492,28 @@ class GstReturn(object):
             drcrs_all = self.con.execute(query1).fetchall()
 
             gkdata = {}
-            print  b2b_r1(invoices, self.con).get("data")
+            
             gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
             gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
             gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
             gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
             gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
+            
+            """
+    Retrieve all products data including product code,product description , hsn code, UOM.
+    Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
+    Store this data in following formats:
+    [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
+    """
+    #try:
+            print "I am here"
+            Fianl = []
+            prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode]).where(product.c.orgcode==orgcode))
+            prodData_result = prodData.fetchall()
+
+            print prodData_result
 
             self.con.close()
             return {"gkresult": 0, "gkdata": gkdata}
-        except:
-            return {"gkresult": 3}
+       # except:
+       #      return {"gkresult": 3}
