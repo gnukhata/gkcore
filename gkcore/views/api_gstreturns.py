@@ -504,7 +504,8 @@ class GstReturn(object):
 
         """
 Retrieve all products data including product code,product description , hsn code, UOM.
-Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype] for that particular product code.
+Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
+
 Store this data in following formats:
 [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
 """
@@ -521,7 +522,22 @@ Store this data in following formats:
             invData = self.con.execute("select contents ->> '%s' as contents ,sourcestate,taxstate,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7))
             invoice_Data = invData.fetchall()
             print invoice_Data
-
+            no_HSN = 0
+            ttl_Value = 0.00
+            ttl_TaxableValue = 0.00
+            ttl_CGSTval =0.00
+            ttl_IGSTval = 0.00
+            ttl_CESSval = 0.00
+            
+            if len(invoice_Data) > 0:
+                
+                taxable_Value = 0.00
+                if products[""]
+                if invoice_Data["sourceState"] == invoice_Data["taxstate"]:
+                    
+                
+                
+                
 
         self.con.close()
         return {"gkresult": 0, "gkdata": gkdata}
