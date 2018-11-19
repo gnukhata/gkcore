@@ -103,7 +103,7 @@ class api_invoice(object):
                             updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))     
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
-                        result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
+                        result = self.con.execute("select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"%(int(invdataset["custid"]), str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                         invoiceid = result.fetchone()
                         dcinvdataset["dcid"]=invdataset["dcid"]
                         dcinvdataset["invid"]=invoiceid["invid"]
@@ -141,7 +141,7 @@ class api_invoice(object):
                 else:
                     try:
                         if invdataset.has_key('icflag'):
-                            result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
+                            result = self.con.execute("select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"%(str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             for item in items.keys():
@@ -150,7 +150,7 @@ class api_invoice(object):
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "3"
-                                    stockdataset["stockdate"] = invoiceid["invoicedate"]
+                                    stockdataset["stockdate"] = invdataset["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
                             
                             # check automatic voucher flag  if it is 1 get maflag
@@ -177,10 +177,10 @@ class api_invoice(object):
                                     voucherData["status"] = 1
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                         else:
-                            result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
+                            result = self.con.execute("select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"%(int(invdataset["custid"]), str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
-                            stockdataset["stockdate"] = invoiceid["invoicedate"]
+                            stockdataset["stockdate"] = invdataset["invoicedate"]
                             for item in items.keys():
                                 self.con = eng.connect()
                                 gstResult = gst(item,self.con)
@@ -329,7 +329,7 @@ class api_invoice(object):
                         result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
-                        stockdataset["stockdate"] = invoiceid["invoicedate"]
+                        stockdataset["stockdate"] = invdataset["invoicedate"]
                         stockdataset["dcinvtnflag"] = "9"
                         for item in items.keys():
                             stockdataset["productcode"] = item
