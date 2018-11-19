@@ -85,7 +85,7 @@ class api_product(object):
                                 productCodes.append(record3["productcode"])
                     results = []
                     for record4 in productCodes:
-                        result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.gsflag]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
+                        result = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.gsflag, gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"], gkdb.product.c.productcode==record4)).order_by(gkdb.product.c.productdesc))
                         products = result.fetchone()
                         results.append(products)
                 else:
@@ -95,9 +95,9 @@ class api_product(object):
                     except:
                         invdc = 9
                     if invdc == 4:
-                        results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
+                        results = self.con.execute(select([gkdb.product.c.productcode,gkdb.product.c.gsflag ,gkdb.product.c.productdesc, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(and_(gkdb.product.c.orgcode==authDetails["orgcode"],gkdb.product.c.gsflag==7)).order_by(gkdb.product.c.productdesc))
                     if invdc == 9:
-                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc,gkdb.product.c.gsflag, gkdb.product.c.categorycode, gkdb.product.c.uomid]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
+                        results = self.con.execute(select([gkdb.product.c.productcode, gkdb.product.c.productdesc,gkdb.product.c.gsflag, gkdb.product.c.categorycode, gkdb.product.c.uomid,gkdb.product.c.prodsp,gkdb.product.c.prodmrp]).where(gkdb.product.c.orgcode==authDetails["orgcode"]).order_by(gkdb.product.c.productdesc))
 
                 products = []
                 srno=1
@@ -152,6 +152,14 @@ class api_product(object):
                 row = result.fetchone()
 
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                if row["prodsp"]!=None:
+                    productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
+                else:
+                    productDetails["prodsp"] = "%.2f"%0.00
+                if row["prodmrp"]!=None:
+                    productDetails["prodmrp"] = "%.2f"%float(row["prodmrp"])
+                else:
+                    productDetails["prodmrp"] = "%.2f"%0.00
                 if int(row["gsflag"]) == 7:
                     result1 = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitrow= result1.fetchone()
@@ -592,3 +600,30 @@ class api_product(object):
              finally:
                 self.con.close()
 
+
+    '''
+    This funtion returns the last price for which a product was sold/purchased to/from a party.
+    To find out the price the function needs productcode of the product, custid of the party and inoutflag(to determine whether selling/purchase price is needed)
+    A select query first fetches the invid of the last sale/purchase invoice created for the party involving the product.
+    Another query retrives the contents of the invoice whose invid is same as the result of the above query.
+    Price is found out from the contents using productcode as key and sent as response.
+    '''
+    @view_config(request_param='type=lastprice', request_method='GET',renderer='json')
+    def lastPrice(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                lastPriceData = self.con.execute(select([gkdb.cslastprice.c.lastprice]).where(and_(gkdb.cslastprice.c.custid==int(self.request.params["custid"]), gkdb.cslastprice.c.productcode==int(self.request.params["productcode"]), gkdb.cslastprice.c.inoutflag==int(self.request.params["inoutflag"]), gkdb.cslastprice.c.orgcode==int(authDetails["orgcode"]))))
+                lastPriceValue = lastPriceData.fetchone()["lastprice"]
+                return {"gkstatus":enumdict["Success"], "gkresult":"%.2f"%float(lastPriceValue)}
+            except:
+                    return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
