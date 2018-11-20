@@ -454,6 +454,7 @@ class GstReturn(object):
        # try:
         self.con = eng.connect()
         dataset = self.request.params
+        print dataset["start"]
         start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
         end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
         orgcode = authDetails["orgcode"]
@@ -516,7 +517,7 @@ Store this data in following formats:
         
         for products in prodData_result:
             prodHSN = {"hsn":products["gscode"],"prodctname":products["productdesc"]}
-            invData = self.con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,dataset["start"],dataset["end"]))
+            invData = self.con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(dataset["start"]),str(dataset["end"])))
             invoice_Data = invData.fetchall()
 
             print invoice_Data
