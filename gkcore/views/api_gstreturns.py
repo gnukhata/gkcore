@@ -26,6 +26,7 @@ Contributors:
 """
 
 from datetime import datetime
+from ast import literal_eval
 from copy import deepcopy
 from sqlalchemy.engine.base import Connection
 from collections import defaultdict
@@ -39,7 +40,7 @@ from gkcore.models.gkdb import (invoice,
                                 state,
                                 product,
                                 drcr)
-
+from ast import literal_eval
 
 def taxable_value(inv, productcode, con, drcr=False):
     """
@@ -427,7 +428,7 @@ class GstReturn(object):
                  request_param="type=r1",
                  renderer='json')
     def r1(self):
-        print "i am inside r1"
+        
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
@@ -453,7 +454,6 @@ class GstReturn(object):
        # try:
         self.con = eng.connect()
         dataset = self.request.params
-        print "retrived dataset"
         start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
         end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
         orgcode = authDetails["orgcode"]
@@ -495,7 +495,6 @@ class GstReturn(object):
         drcrs_all = self.con.execute(query1).fetchall()
 
         gkdata = {}
-        print "started to call out functions"
         gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
         gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
         gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
@@ -510,36 +509,35 @@ Store this data in following formats:
 [{"noofrec":"","totalIGSTamt":"","totalSGSTamt":"","totalCGSTamt":"","totalCESSamt":""},{"hsn":"","productdesc":"","totalqty","totalValue":"","IGSTamt":"","SGSTamt":"","CGSTamt":"","CESSamt":""},........]
 """
 #try:
-        print "I am here"
         Fianl = []
-        prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gscode,product.c.uomid]).where(product.c.orgcode==orgcode))
+        prodData = self.con.execute(select([product.c.productcode,product.c.productdesc,product.c.gsflag,product.c.uomid]).where(product.c.orgcode==orgcode))
         prodData_result = prodData.fetchall()
 
         for products in prodData_result:
-            #select * from invoice where contents ? '1' and orgcode = 1;
-            #select contents ->> '1' as contents , sourcestate, taxstate from invoice where orgcode = 1;
-            print products["productcode"]
-            invData = self.con.execute("select contents ->> '%s' as contents ,sourcestate,taxstate,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7))
+            invData = self.con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7))
             invoice_Data = invData.fetchall()
-            print invoice_Data
             no_HSN = 0
             ttl_Value = 0.00
             ttl_TaxableValue = 0.00
             ttl_CGSTval =0.00
             ttl_IGSTval = 0.00
             ttl_CESSval = 0.00
-            
-            if len(invoice_Data) > 0:
-                
-                taxable_Value = 0.00
-                if products[""]
-                if invoice_Data["sourceState"] == invoice_Data["taxstate"]:
-                    
-                
-                
-                
-
-        self.con.close()
-        return {"gkresult": 0, "gkdata": gkdata}
-       # except:
-       #      return {"gkresult": 3}
+            if invoice_Data != None and len(invoice_Data) > 0 :
+                for inv in invoice_Data:
+                    taxable_Value = 0.00
+                    cn = literal_eval(inv["content"])
+                    ds = literal_eval(inv["disc"])
+                    print ds
+                    # check condition for product and service
+                    if products["gsflag"] == 7:
+                        ppu = cn.keys()[0]
+                        qty = cn[ppu]
+                        
+                    else:
+                        taxable_Value = float(cn.keys()[0])
+                    ttl_TaxableValue += taxable_Value     
+                    #if invoice_Data["sourceState"] == invoice_Data["taxstate"]:
+                   
+        #self.con.close()
+        #return {"gkresult": 0, "gkdata": gkdata}
+       # except:return {"gkresult": 3}
