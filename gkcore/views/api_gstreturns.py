@@ -418,7 +418,6 @@ def hsn_r1(orgcode,con):
 
 @view_defaults(route_name='gstreturns')
 class GstReturn(object):
-    print "gstreturns"
     def __init__(self, request):
         self.request = Request
         self.request = request
@@ -443,7 +442,7 @@ class GstReturn(object):
         """
         
         token = self.request.headers.get("gktoken", None)
-
+        print "GST ret"
         if token is None:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
@@ -511,17 +510,22 @@ Store this data in following formats:
 """
 #try:
         Final = []
+        grand = {}
+        grand_ttl_TaxableValue = 0.00
+        grand_ttl_Value = 0.00
+        grand_ttl_CGSTValue = 0.00
+        grand_ttl_IGSTValue = 0.00
+        grand_ttl_CESSValue = 0.00
+
         prodData = self.con.execute(select([product.c.productcode,product.c.gscode,product.c.productdesc,product.c.gsflag,product.c.uomid]).where(product.c.orgcode==orgcode))
         prodData_result = prodData.fetchall()
-        grand_ttl_TaxableValue = 0.00
-        
         for products in prodData_result:
             prodHSN = {"hsn":products["gscode"],"prodctname":products["productdesc"]}
             invData = self.con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(dataset["start"]),str(dataset["end"])))
             invoice_Data = invData.fetchall()
 
             print products["productdesc"]
-            print len(invoice_Data)
+            print type(invoice_Data)
             
             no_HSN = 0
             ttl_Value = 0.00
@@ -531,7 +535,7 @@ Store this data in following formats:
             ttl_CESSval = 0.00
             ttl_qty = 0.00
             
-            if invoice_Data != None and len(invoice_Data) > 0 :
+            if invoice_Data != None and len(invoice_Data) > 0:
                 for inv in invoice_Data:
                     taxable_Value = 0.00
                     cn = literal_eval(inv["content"])
@@ -561,13 +565,33 @@ Store this data in following formats:
                     ttl_CESSval += cess_amount
 
                     ttl_Value = float(taxable_Value) + float(2*(ttl_CGSTval)) + float(ttl_CESSval)
+
+                    grand_ttl_TaxableValue +=ttl_TaxableValue
+                    grand_ttl_Value += ttl_Value
+                    grand_ttl_CGSTValue += ttl_CGSTval
+                    grand_ttl_IGSTValue += ttl_IGSTval
+                    grand_ttl_CESSValue += ttl_CESSval
             prodHSN["qty"] = "%.2f"%float(ttl_qty)
             prodHSN["totalvalue"] = "%.2f"%float(ttl_Value)
             prodHSN["taxableamt"] = "%.2f"%float(ttl_TaxableValue)
             prodHSN["SGSTamt"] = "%.2f"%float(ttl_CGSTval)
             prodHSN["IGSTamt"] =  "%.2f"%float(ttl_IGSTval)
             prodHSN["CESSamt"] = "%.2f"%float(ttl_CESSval)
+
+
+
             Final.append(prodHSN)
+
+        grand["grand_Value"] = "%.2f"%float(grand_ttl_Value)
+        grand["grand_ttl_TaxableValue"] = "%.2f"%float(grand_ttl_TaxableValue)
+        grand["grand_CGSTValue"] = "%.2f"%float(grand_ttl_CGSTValue)
+        grand["grand_IGSTValue"] = "%.2f"%float(grand_ttl_IGSTValue)
+        grand["grand_CESSValue"] = "%.2f"%float(grand_ttl_CESSValue)
+
+        
+        Final.append(grand)
+
+            
 
         print Final
     
