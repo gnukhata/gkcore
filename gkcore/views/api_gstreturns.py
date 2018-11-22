@@ -520,8 +520,9 @@ Store this data in following formats:
             invData = self.con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(dataset["start"]),str(dataset["end"])))
             invoice_Data = invData.fetchall()
 
-            print invoice_Data
             print products["productdesc"]
+            print len(invoice_Data)
+            
             no_HSN = 0
             ttl_Value = 0.00
             ttl_TaxableValue = 0.00
@@ -529,8 +530,7 @@ Store this data in following formats:
             ttl_IGSTval = 0.00
             ttl_CESSval = 0.00
             ttl_qty = 0.00
-            print ttl_Value
-            print ttl_qty
+            
             if invoice_Data != None and len(invoice_Data) > 0 :
                 for inv in invoice_Data:
                     taxable_Value = 0.00
