@@ -39,7 +39,8 @@ from gkcore.models.gkdb import (invoice,
                                 customerandsupplier,
                                 state,
                                 product,
-                                drcr)
+                                drcr,
+                                unitofmeasurement)
 from ast import literal_eval
 
 def taxable_value(inv, productcode, con, drcr=False):
@@ -432,7 +433,7 @@ Store this data in following formats:
         ttl_IGSTval = 0.00
         ttl_CESSval = 0.00
         ttl_qty = 0.00
-
+       
         if invoice_Data != None and len(invoice_Data) > 0:
             for inv in invoice_Data:  
                 taxable_Value = 0.00
@@ -446,8 +447,12 @@ Store this data in following formats:
                     qty = float(cn["%.2f"%float(ppu)])
                     ttl_qty += qty
                     taxable_Value = (ppu * qty) - ds
+                    um = con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(products["uomid"])))
+                    unitrow = um.fetchone()
+                    prodHSN["uqc"] = unitrow["unitname"]
                 else:
                     taxable_Value = ppu - ds
+                    prodHSN["uqc"] = ""
                 ttl_TaxableValue += taxable_Value
 
                 # calculate state level and center level GST
@@ -526,60 +531,60 @@ class GstReturn(object):
         if authDetails["auth"] is False:
             return {"gkstatus":  enumdict["UnauthorisedAccess"]}
 
-        try:
-            self.con = eng.connect()
-            dataset = self.request.params
-            start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
-            end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
-            orgcode = authDetails["orgcode"]
+      #  try:
+        self.con = eng.connect()
+        dataset = self.request.params
+        start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
+        end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
+        orgcode = authDetails["orgcode"]
 
-            # invoices
-            query = (select([invoice,
-                            customerandsupplier.c.gstin,
-                            customerandsupplier.c.custname])
-                     .where(
-                         and_(
-                             invoice.c.invoicedate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             invoice.c.taxflag == 7,
-                             invoice.c.orgcode == orgcode,
-                             invoice.c.custid == customerandsupplier.c.custid,
-                         )
-                     ))
-            invoices = self.con.execute(query).fetchall()
-
-            # debit/credit notes
-            query1 = (select([drcr, invoice, customerandsupplier])
-                     .select_from(
-                        drcr.join(invoice).join(customerandsupplier)
+        # invoices
+        query = (select([invoice,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custname])
+                 .where(
+                     and_(
+                         invoice.c.invoicedate.between(
+                             start_period.strftime("%Y-%m-%d"),
+                             end_period.strftime("%Y-%m-%d")
+                         ),
+                         invoice.c.inoutflag == 15,
+                         invoice.c.taxflag == 7,
+                         invoice.c.orgcode == orgcode,
+                         invoice.c.custid == customerandsupplier.c.custid,
                      )
-                     .where(
-                         and_(
-                             drcr.c.drcrdate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             drcr.c.orgcode == orgcode,
-                         )
-                     ))
+                 ))
+        invoices = self.con.execute(query).fetchall()
 
-            drcrs_all = self.con.execute(query1).fetchall()
+        # debit/credit notes
+        query1 = (select([drcr, invoice, customerandsupplier])
+                 .select_from(
+                    drcr.join(invoice).join(customerandsupplier)
+                 )
+                 .where(
+                     and_(
+                         drcr.c.drcrdate.between(
+                             start_period.strftime("%Y-%m-%d"),
+                             end_period.strftime("%Y-%m-%d")
+                         ),
+                         invoice.c.inoutflag == 15,
+                         drcr.c.orgcode == orgcode,
+                     )
+                 ))
 
-            gkdata = {}
-            gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
-            gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
-            gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
-            gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
-            gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
-            gkdata["hsn"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
+        drcrs_all = self.con.execute(query1).fetchall()
+
+        gkdata = {}
+        gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
+        gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
+        gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
+        gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
+        gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
+        gkdata["hsn"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
+
+        self.con.close()
+        return {"gkresult": 0, "gkdata": gkdata}
+
             
-            self.con.close()
-            return {"gkresult": 0, "gkdata": gkdata}
-
-            
-        except:
-            return {"status": 3}
+     #   except:
+     #       return {"status": 3}
