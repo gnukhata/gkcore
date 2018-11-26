@@ -580,7 +580,7 @@ class GstReturn(object):
         gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
         gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
         gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
-        gkdata["hsn"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
+        gkdata["hsn1"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
 
         self.con.close()
         return {"gkresult": 0, "gkdata": gkdata}
