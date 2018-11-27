@@ -748,7 +748,7 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
-    @view_config(request_method='DELETE', renderer ='json')
+@view_config(request_method='DELETE', renderer ='json')
     def deleteinvoice(self):
         try:
             token = self.request.headers["gktoken"]
@@ -760,17 +760,27 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
-                dataset["canceldate"]=datetime.now().date()
-                result = self.con.execute(invoice.update().where(invoice.c.invid==dataset["invid"]).values(dataset))
-                if dataset["icflag"]==9:
-                    stockcancel = {"dcinvtnflag":90}
+                invdataset = self.request.json_body
+                sett = self.con.execute(select([invoice.c.paymentmode]).where(invoice.c.invid == invdataset["invid"]))
+                sett = sett.fetchone()
+                if (sett["paymentmode"]) == 15:
+                    sett2 = self.con.execute(select([vouchers.c.vouchertype]).where(vouchers.c.invid == invdataset["invid"]))
+                    sett2= sett2.fetchone()
+                    if sett2 == None or sett2["vouchertype"] == 'sales' or sett2["vouchertype"] == 'purchase' :
+                        
+                        deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
+                        try:
+                            deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
+                        except:
+                            pass
+                        try:
+                            deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
+                        except:
+                            pass
+                        deleteinvoice = self.con.execute(invoice.delete().where(invoice.c.invid == invdataset["invid"]))
+                        return {"gkstatus":enumdict["Success"]}
                 else:
-                    stockcancel = {"dcinvtnflag":30}
-                result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==dataset["icflag"])).values(stockcancel))
-                return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
+                    return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
