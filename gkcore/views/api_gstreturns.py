@@ -412,6 +412,7 @@ Store this data in following formats:
         end = end
         Final = []
         grand = {}
+        grand_hsn = 0
         grand_ttl_TaxableValue = 0.00
         grand_ttl_Value = 0.00
         grand_ttl_CGSTValue = 0.00
@@ -489,7 +490,6 @@ Store this data in following formats:
         grand["grand_IGSTValue"] = "%.2f"%float(grand_ttl_IGSTValue)
         grand["grand_CESSValue"] = "%.2f"%float(grand_ttl_CESSValue)
         Final.append(grand)
-
         return {"status": 0, "data": Final}
     except:
         return {"status": 3}
