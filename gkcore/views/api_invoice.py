@@ -456,7 +456,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 vch_count = v_count.fetchone()
                 
                 cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
-                cdh_count = cdh_count.fetchone()
+                cdh_count = cd_count.fetchone()
 
                 if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0):
                     inv["deletable"] = 1
