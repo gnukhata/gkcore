@@ -411,13 +411,6 @@ Store this data in following formats:
         start = start
         end = end
         Final = []
-        grand = {}
-        grand_hsn = 0
-        grand_ttl_TaxableValue = 0.00
-        grand_ttl_Value = 0.00
-        grand_ttl_CGSTValue = 0.00
-        grand_ttl_IGSTValue = 0.00
-        grand_ttl_CESSValue = 0.00
 
         prodData = con.execute(select([product.c.productcode,product.c.gscode,product.c.productdesc,product.c.gsflag,product.c.uomid]).where(product.c.orgcode==orgcode))
         prodData_result = prodData.fetchall()
@@ -426,7 +419,6 @@ Store this data in following formats:
             invData = con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(start),str(end)))
             invoice_Data = invData.fetchall()
 
-            no_HSN = 0
             ttl_Value = 0.00
             ttl_TaxableValue = 0.00
             ttl_CGSTval =0.00
@@ -468,28 +460,15 @@ Store this data in following formats:
                     ttl_CESSval += cess_amount
 
                     ttl_Value = float(taxable_Value) + float(2*(ttl_CGSTval)) + float(ttl_CESSval)
-                    no_HSN += 1
 
-                    grand_ttl_TaxableValue +=ttl_TaxableValue
-                    grand_ttl_Value += ttl_Value
-                    grand_ttl_CGSTValue += ttl_CGSTval
-                    grand_ttl_IGSTValue += ttl_IGSTval
-                    grand_ttl_CESSValue += ttl_CESSval
-                    grand_HSN = no_HSN
                 prodHSN["qty"] = "%.2f"%float(ttl_qty)
-                prodHSN["totalvalue"] = "%.2f"%float(ttl_Value)
+                prodHSN["totalvalue"] =  "%.2f"%float(float(ttl_TaxableValue) + (2*ttl_CGSTval) + float(ttl_IGSTval) + float(ttl_CESSval))
                 prodHSN["taxableamt"] = "%.2f"%float(ttl_TaxableValue)
                 prodHSN["SGSTamt"] = "%.2f"%float(ttl_CGSTval)
                 prodHSN["IGSTamt"] =  "%.2f"%float(ttl_IGSTval)
                 prodHSN["CESSamt"] = "%.2f"%float(ttl_CESSval)
                 Final.append(prodHSN)
-        grand["hsnNo"] = grand_HSN
-        grand["grand_Value"] = "%.2f"%float(grand_ttl_Value)
-        grand["grand_ttl_TaxableValue"] = "%.2f"%float(grand_ttl_TaxableValue)
-        grand["grand_CGSTValue"] = "%.2f"%float(grand_ttl_CGSTValue)
-        grand["grand_IGSTValue"] = "%.2f"%float(grand_ttl_IGSTValue)
-        grand["grand_CESSValue"] = "%.2f"%float(grand_ttl_CESSValue)
-        Final.append(grand)
+       
         return {"status": 0, "data": Final}
     except:
         return {"status": 3}
