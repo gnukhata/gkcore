@@ -2469,6 +2469,8 @@ class api_reports(object):
                 grpIIbalance = 0.00
                 indirectExpense ={}
                 grpIEbalance = 0.00
+                closingStockBal = 0.00
+
                 if (orgtype == "Profit Making"):
                     profit = "Profit"
                     loss = "Loss"
@@ -2576,8 +2578,12 @@ class api_reports(object):
                                 directIncome[diAcc["accountname"]] = "%.2f"%(-float(calbalData["curbal"]))
                                 grpDIbalance = grpDIbalance - float(calbalData["curbal"])
                         else:
-                            continue
-                                
+                            csAccountcode = self.con.execute("select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"%(orgcode))
+                            csAccountcodeRow = csAccountcode.fetchone()
+                            calbalData = calculateBalance(self.con,csAccountcodeRow["accountcode"], financialStart, financialStart, calculateTo)
+                            result["Closing Stock"] = "%.2f"%(float(calbalData["curbal"]))
+                            closingStockBal = float(calbalData["curbal"])
+  
                 directIncome["dirincmbal"] = "%.2f"%(float( grpDIbalance))    
                 result["Direct Income"] = directIncome
                         
@@ -2587,7 +2593,7 @@ class api_reports(object):
                     result["totalD"] = "%.2f"%(float( grpDIbalance))
                 else:
                     grsD = grpDEbalance - grpDIbalance
-                    result["grosslossbf"] = "%.2f"%(float( grsD))
+                    result["grosslosscf"] = "%.2f"%(float( grsD))
                     result["totalD"] =  "%.2f"%(float( grpDEbalance))
                     
                 ''' ################   Indirect Income & Indirect Expense  ################ '''
@@ -2690,7 +2696,7 @@ class api_reports(object):
                 # Calculate difference between Indirect Income & Indirect Expense. 
                 grsI = grpIIbalance - grpIEbalance
 
-                income = grpDIbalance + grpIIbalance
+                income = grpDIbalance + grpIIbalance + closingStockBal 
                 expense = grpDEbalance + grpIEbalance
                 #Calculate Profit and Loss
                 if income > expense:
