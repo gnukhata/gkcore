@@ -452,12 +452,13 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"]}
                 
                 # below field deletable is for check whether invoice having voucher or not
+                #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
                 v_count = self.con.execute("select count(vouchercode) as vcount from billwise where invid = '%d' "%(int(self.request.params["invid"])) )
                 vch_count = v_count.fetchone()
-                
+                #vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not 
                 cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
                 cdh_count = cd_count.fetchone()
-
+                #if any bilwise or dr cr note is available then should send 1
                 if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0):
                     inv["deletable"] = 1
                 else:
@@ -773,7 +774,7 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 invdataset = self.request.json_body
-
+                # delete vouchers, stock, dcinv, invoice with invid if available ither pass it.
                 try:
                     deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
                 except:
