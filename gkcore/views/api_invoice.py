@@ -454,7 +454,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 # below field deletable is for check whether invoice having voucher or not
                 v_count = self.con.execute("select count(vouchercode) as vcount from billwise where invid = '%d' "%(int(self.request.params["invid"])) )
                 vch_count = v_count.fetchone()
-                if(vch_count["vcount"] > 0):
+                
+                cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
+                cdh_count = cdh_count.fetchone()
+
+                if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0):
                     inv["deletable"] = 1
                 else:
                     inv["deletable"] = 0
@@ -769,13 +773,7 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 invdataset = self.request.json_body
-                # sett = self.con.execute(select([invoice.c.paymentmode]).where(invoice.c.invid == invdataset["invid"]))
-                # sett = sett.fetchone()
-                # sett2 = self.con.execute(select([vouchers.c.vouchertype]).where(vouchers.c.invid == invdataset["invid"]))
-                # sett2= sett2.fetchone()
-                # if ((sett["paymentmode"]) == 15) or (((sett["paymentmode"]) == 3 or (sett["paymentmode"]) == 2) and sett2 == None):
 
-                    # if sett2 == None or sett2["vouchertype"] == 'sales' or sett2["vouchertype"] == 'purchase' :
                 try:
                     deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
                 except:
@@ -788,10 +786,8 @@ The bills grid calld gkresult will return a list as it's value.
                     deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
                 except:
                     pass
-                    deleteinvoice = self.con.execute(invoice.delete().where(invoice.c.invid == invdataset["invid"]))
-                    return {"gkstatus":enumdict["Success"]}
-                # else:
-                #     return {"gkstatus":enumdict["ActionDisallowed"]}
+                deleteinvoice = self.con.execute(invoice.delete().where(invoice.c.invid == invdataset["invid"]))
+                return {"gkstatus":enumdict["Success"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
