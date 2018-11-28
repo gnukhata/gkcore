@@ -22,10 +22,13 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
 
 Contributors:
 "AKhil KP" <akhilkpdasan@protonmail.com>
+'Prajkta Patkar' <prajakta@dff.org.in>
 """
 
 from datetime import datetime
+from ast import literal_eval
 from copy import deepcopy
+from sqlalchemy.engine.base import Connection
 from collections import defaultdict
 from sqlalchemy.sql import select, and_
 from pyramid.request import Request
@@ -36,8 +39,9 @@ from gkcore.models.gkdb import (invoice,
                                 customerandsupplier,
                                 state,
                                 product,
-                                drcr)
-
+                                drcr,
+                                unitofmeasurement)
+from ast import literal_eval
 
 def taxable_value(inv, productcode, con, drcr=False):
     """
@@ -393,18 +397,96 @@ def cdnur_r1(drcr_all, con):
     except:
         return {"status": 3}
 
+def hsn_r1(orgcode,start,end,con):
+    
+    """
+Retrieve all products data including product code,product description , hsn code, UOM.
+Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
+
+Store this data in following formats:
+{'SGSTamt': '40.50', 'uqc': u'PCS', 'qty': '11.00', 'prodctname': u'Madhura Sugar', 'IGSTamt': '9.90', 'hsnsac': u'45678', 'taxableamt': '505.00', 'totalvalue': '541.10', 'CESSamt': '10.10'},................, {'grand_Value': '6089.20', 'grand_CESSValue': '68.20', 'grand_CGSTValue': '158.00', 'hsnNo': 2, 'grand_ttl_TaxableValue': '6260.00', 'grand_IGSTValue': '69.80'}]
+"""
+    try:
+        orgcode = orgcode
+        start = start
+        end = end
+        Final = []
+
+        prodData = con.execute(select([product.c.productcode,product.c.gscode,product.c.productdesc,product.c.gsflag,product.c.uomid]).where(product.c.orgcode==orgcode))
+        prodData_result = prodData.fetchall()
+        for products in prodData_result:
+            prodHSN = {"hsnsac":products["gscode"],"prodctname":products["productdesc"]}
+            invData = con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(start),str(end)))
+            invoice_Data = invData.fetchall()
+
+            ttl_Value = 0.00
+            ttl_TaxableValue = 0.00
+            ttl_CGSTval =0.00
+            ttl_IGSTval = 0.00
+            ttl_CESSval = 0.00
+            ttl_qty = 0.00
+
+            if invoice_Data != None and len(invoice_Data) > 0:
+                for inv in invoice_Data:  
+                    taxable_Value = 0.00
+                    cn = literal_eval(inv["content"])
+                    ds = float(literal_eval(inv["disc"]))
+                    ppu = float(cn.keys()[0])
+                    tx = float(literal_eval(inv["tax"]))
+                    cs = float(literal_eval(inv["cess"]))
+                    # check condition for product and service
+                    if products["gsflag"] == 7:
+                        qty = float(cn["%.2f"%float(ppu)])
+                        ttl_qty += qty
+                        taxable_Value = (ppu * qty) - ds
+                        um = con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(products["uomid"])))
+                        unitrow = um.fetchone()
+                        prodHSN["uqc"] = unitrow["unitname"]
+                    else:
+                        taxable_Value = ppu - ds
+                        prodHSN["uqc"] = ""
+                    ttl_TaxableValue += taxable_Value
+
+                    # calculate state level and center level GST
+                    if inv["sourcestate"] == inv["taxstate"]:
+                        cgst = tx/2.00
+                        cgst_amt = (taxable_Value * (cgst/100.00))
+                        ttl_CGSTval += cgst_amt
+                    else:
+                        igst_amt = (taxable_Value *(tx/100.00)) 
+                        ttl_IGSTval += igst_amt
+
+                    cess_amount = (taxable_Value *(cs/100.00))
+                    ttl_CESSval += cess_amount
+
+                    ttl_Value = float(taxable_Value) + float(2*(ttl_CGSTval)) + float(ttl_CESSval)
+
+                prodHSN["qty"] = "%.2f"%float(ttl_qty)
+                prodHSN["totalvalue"] =  "%.2f"%float(float(ttl_TaxableValue) + (2*ttl_CGSTval) + float(ttl_IGSTval) + float(ttl_CESSval))
+                prodHSN["taxableamt"] = "%.2f"%float(ttl_TaxableValue)
+                prodHSN["SGSTamt"] = "%.2f"%float(ttl_CGSTval)
+                prodHSN["IGSTamt"] =  "%.2f"%float(ttl_IGSTval)
+                prodHSN["CESSamt"] = "%.2f"%float(ttl_CESSval)
+                Final.append(prodHSN)
+       
+        return {"status": 0, "data": Final}
+    except:
+        return {"status": 3}
+
+     
 
 @view_defaults(route_name='gstreturns')
 class GstReturn(object):
-
     def __init__(self, request):
         self.request = Request
         self.request = request
+        self.con = Connection
 
     @view_config(request_method='GET',
                  request_param="type=r1",
                  renderer='json')
     def r1(self):
+        
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
@@ -417,8 +499,9 @@ class GstReturn(object):
             products will be added)
             Product 2 will have a separate entry
         """
+        
         token = self.request.headers.get("gktoken", None)
-
+        print "GST return"
         if token is None:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
@@ -429,7 +512,6 @@ class GstReturn(object):
         try:
             self.con = eng.connect()
             dataset = self.request.params
-
             start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
             end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
             orgcode = authDetails["orgcode"]
@@ -453,7 +535,7 @@ class GstReturn(object):
             invoices = self.con.execute(query).fetchall()
 
             # debit/credit notes
-            query = (select([drcr, invoice, customerandsupplier])
+            query1 = (select([drcr, invoice, customerandsupplier])
                      .select_from(
                         drcr.join(invoice).join(customerandsupplier)
                      )
@@ -468,17 +550,19 @@ class GstReturn(object):
                          )
                      ))
 
-            drcrs_all = self.con.execute(query).fetchall()
+            drcrs_all = self.con.execute(query1).fetchall()
 
             gkdata = {}
-
             gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
             gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
             gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
             gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
             gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
+            gkdata["hsn1"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
 
             self.con.close()
             return {"gkresult": 0, "gkdata": gkdata}
+
+
         except:
-            return {"gkresult": 3}
+            return {"status": 3}

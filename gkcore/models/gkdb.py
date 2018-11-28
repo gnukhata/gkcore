@@ -183,7 +183,7 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
-gscode is to store gstin or accounting service code, gsflag is 7 for gstin and 19 for service code. 
+gscode is to store HSN code or accounting service code, gsflag is 7 for goods and 19 for service . 
 1 organisation cannot have same products.
 """
 product = Table('product',metadata,
