@@ -450,6 +450,14 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"]}
+                
+                # below field deletable is for check whether invoice having voucher or not
+                v_count = self.con.execute("select count(vouchernumber) as vcount from vouchers where invid = '%d' "%(int(self.request.params["invid"])) )
+                vch_count = v_count.fetchone()
+                if(vch_count > 0):
+                    inv["deletable"] = 1
+                else:
+                    inv["deletable"] = 0
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -748,7 +756,7 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
-@view_config(request_method='DELETE', renderer ='json')
+    @view_config(request_method='DELETE', renderer ='json')
     def deleteinvoice(self):
         try:
             token = self.request.headers["gktoken"]
@@ -763,12 +771,15 @@ The bills grid calld gkresult will return a list as it's value.
                 invdataset = self.request.json_body
                 sett = self.con.execute(select([invoice.c.paymentmode]).where(invoice.c.invid == invdataset["invid"]))
                 sett = sett.fetchone()
-                if (sett["paymentmode"]) == 15:
-                    sett2 = self.con.execute(select([vouchers.c.vouchertype]).where(vouchers.c.invid == invdataset["invid"]))
-                    sett2= sett2.fetchone()
+                sett2 = self.con.execute(select([vouchers.c.vouchertype]).where(vouchers.c.invid == invdataset["invid"]))
+                sett2= sett2.fetchone()
+                if ((sett["paymentmode"]) == 15) or (((sett["paymentmode"]) == 3 or (sett["paymentmode"]) == 2) and sett2 == None):
+
                     if sett2 == None or sett2["vouchertype"] == 'sales' or sett2["vouchertype"] == 'purchase' :
-                        
-                        deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
+                        try:
+                            deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
+                        except:
+                            pass
                         try:
                             deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
                         except:
