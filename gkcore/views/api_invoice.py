@@ -1667,3 +1667,44 @@ The bills grid calld gkresult will return a list as it's value.
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
         finally:
             self.con.close()
+
+
+    @view_config(request_method='GET',request_param="type=rectifyinvlist", renderer ='json')
+    def getListofInvoices_rectify(self):
+        """
+        The code is to get list of invoices which can be rectified.
+        Only those invoice which have not used in either of the documents like rejection note,credit/debit note.
+        also transactions have not made.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                org = authDetails["orgcode"]
+                # An empty list into which invoices shall be appended.
+                list_Invoices = []
+                # Fetching id, number, date of all invoices.
+                # check whether invtype does exist and further check its type
+            
+                invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
+                invoicesData = invoices.fetchall()
+                                        
+                # Appending dictionaries into empty list.
+                # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
+                for inv in invoicesData:
+                    custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
+                    customerdata = custData.fetchone()
+                    list_Invoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
+                return{"gkstatus":enumdict["Success"],"invoices":list_Invoices}
+                self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
