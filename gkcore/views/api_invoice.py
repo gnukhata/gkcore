@@ -458,8 +458,12 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 #vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not 
                 cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
                 cdh_count = cd_count.fetchone()
-                #if any bilwise or dr cr note is available then should send 1
-                if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0):
+                #r_count is checking wheather their is any entry of perticuler invid is available in rejection note
+                r_count = self.con.execute("select count(rnno) as vrncount from rejectionnote where invid = '%d' "%(int(self.request.params["invid"])) )
+                rc_count = r_count.fetchone()
+                #if any bilwise or dr cr or rejection note is available then should send 1
+                # 1 is : not delete and 0 is: delete permission.
+                if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0) or (rc_count["vrncount"] > 0):
                     inv["deletable"] = 1
                 else:
                     inv["deletable"] = 0
