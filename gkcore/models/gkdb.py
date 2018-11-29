@@ -183,7 +183,7 @@ unitofmeasurement = Table('unitofmeasurement',metadata,
 This table is for product, based on a certain category.
 The products are stored on the basis of the selected category and must have data exactly matching the attributes or properties as one may call it.
 The table is having a json field which has the keys matching the attributes from the spects table for a certain category.
-gscode is to store gstin or accounting service code, gsflag is 7 for gstin and 19 for service code. 
+gscode is to store HSN code or accounting service code, gsflag is 7 for goods and 19 for service . 
 1 organisation cannot have same products.
 """
 product = Table('product',metadata,
@@ -195,6 +195,8 @@ product = Table('product',metadata,
     Column('specs', JSONB),
     Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
     Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE")),
+                Column('prodsp',Numeric(13,2)),
+                Column('prodmrp',Numeric(13,2)),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('categorycode','productdesc'),
     UniqueConstraint('productdesc','orgcode'),
@@ -232,6 +234,23 @@ customerandsupplier = Table('customerandsupplier',metadata,
     UniqueConstraint('orgcode','custname','gstin'),
     Index("customer_supplier_orgcodeindex","orgcode")
     )
+"""
+This Table stores last selling price of a product for a specific customer.
+Fields productcode, custid and orgcode are foreign keys refering to corresponding fields in
+product, customerandsupplier and organisation tables.
+Inoutflag indicates whether it is a selling price(15) or purchase price(9).
+Unique Constraint is used to prevent repeated entry for last price of same inoutflag of a product for the same customer
+or supplier of the same organisation.
+"""
+cslastprice = Table('cslastprice',metadata,
+    Column('cslpid',Integer,primary_key=True),
+    Column ('custid',Integer,ForeignKey('customerandsupplier.custid',ondelete='CASCADE'),nullable=False),
+    Column('productcode',Integer,ForeignKey('product.productcode', ondelete='CASCADE'),nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Column('inoutflag',Integer),
+    Column('lastprice',Numeric(13,2),default=0.00),
+    UniqueConstraint('orgcode','custid','productcode', 'inoutflag'),
+)
 """ table to store accounts.
 Every account belongs to either a group or subgroup.
 For one organisation in a single financial year, an account name can never be duplicated.
@@ -568,8 +587,9 @@ godown = Table('godown',metadata,
     Column('gocontact',UnicodeText),
     Column('contactname',UnicodeText),
     Column('designation',UnicodeText),
+    Column('gbflag',Integer,default=7,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','goname'),
+    UniqueConstraint('orgcode','goname','gbflag'),
     Index("godown_orgcodeindex","orgcode")
     )
 

@@ -71,6 +71,33 @@ class api_organisation(object):
         try:
             organisations = self.con.execute(select([gkdb.organisation.c.orgcode]))
             allorg = organisations.fetchall();
+            if not tableExists("cslastprice"):
+                self.con.execute("create table cslastprice(cslpid serial, lastprice numeric(13,2), inoutflag integer, custid integer NOT NULL,productcode integer NOT NULL,orgcode integer NOT NULL, primary key (cslpid), constraint cslastprice_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint cslastprice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid),constraint cslastprice_productcode_fkey FOREIGN KEY (productcode) REFERENCES product(productcode), unique(orgcode, custid, productcode, inoutflag))")
+                inoutflags = [9, 15]
+                for orgid in allorg:
+                    numberOfInvoices = self.con.execute(select([func.count(gkdb.invoice.c.invid).label('invoices')]))
+                    invoices = numberOfInvoices.fetchone()
+                    if int(invoices["invoices"]) > 0:
+                        customers = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(gkdb.customerandsupplier.c.orgcode == int(orgid["orgcode"])))
+                        customerdata = customers.fetchall()
+                        products = self.con.execute(select([gkdb.product.c.productcode]).where(gkdb.product.c.orgcode == int(orgid["orgcode"])))
+                        productdata = products.fetchall()
+                        for customer in customerdata:
+                            for product in productdata:
+                                for inoutflag in inoutflags:
+                                    try:
+                                        lastInvoice = self.con.execute("select max(invid) as invid from invoice where orgcode = %d and contents ? '%s' and inoutflag = %d and custid = %d"%(int(orgid["orgcode"]), str(product["productcode"]), int(inoutflag),  int(customer["custid"])))
+                                        lastInvoiceId = lastInvoice.fetchone()["invid"]
+                                        if lastInvoiceId!=None:
+                                            lastPriceData = self.con.execute(select([gkdb.invoice.c.contents]).where(and_(gkdb.invoice.c.invid==int(lastInvoiceId),gkdb.product.c.orgcode==int(orgid["orgcode"]))))
+                                            lastPriceDict = lastPriceData.fetchone()["contents"]
+                                            productCode = product["productcode"]
+                                            if str(productCode).decode("utf-8") in lastPriceDict:
+                                                lastPriceValue = lastPriceDict[str(productCode).decode("utf-8")].keys()[0]
+                                                priceDetails = {"custid":int(customer["custid"]), "productcode":int(product["productcode"]), "orgcode":int(orgid["orgcode"]), "inoutflag":int(inoutflag), "lastprice":float(lastPriceValue)}
+                                                lastPriceEntry = self.con.execute(gkdb.cslastprice.insert(),[priceDetails])
+                                    except:
+                                        pass
             if not columnExists("unitofmeasurement","description"):
                 self.con.execute("alter table unitofmeasurement add description text")
                 self.con.execute("alter table unitofmeasurement add sysunit integer default 0")
@@ -395,6 +422,10 @@ class api_organisation(object):
             if not columnExists("product","gsflag"):
                 self.con.execute("alter table product add gsflag integer")
                 self.con.execute("update product set gsflag = 7 where gsflag=null")
+            if not columnExists("product","prodsp"):
+                self.con.execute("alter table product add prodsp numeric(13,2)")
+            if not columnExists("product","prodmrp"):
+                self.con.execute("alter table product add prodmrp numeric(13,2)")
             if not tableExists("billwise"):
                 self.con.execute("create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))")
             if not tableExists("rejectionnote"):
@@ -452,6 +483,10 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
+            if not columnExists("godown","gbflag"):
+                self.con.execute("alter table godown add gbflag integer not null default 7")
+                self.con.execute("ALTER TABLE godown DROP CONSTRAINT godown_orgcode_goname_key")
+                self.con.execute("ALTER TABLE godown ADD UNIQUE(orgcode,goname,gbflag)")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):

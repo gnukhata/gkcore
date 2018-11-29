@@ -33,7 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise,cslastprice
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -89,10 +89,21 @@ class api_invoice(object):
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 queryParams = {}
                 voucherData = {}
+                pricedetails = []
+                if "pricedetails" in invdataset:
+                    pricedetails = invdataset["pricedetails"]
+                    invdataset.pop("pricedetails", pricedetails)
                 result = self.con.execute(invoice.insert(),[invdataset])
+                if len(pricedetails) > 0:
+                    for price in pricedetails:
+                        price["orgcode"] = authDetails["orgcode"]
+                        try:
+                            lastprice = self.con.execute(cslastprice.insert(),[price])
+                        except:
+                            updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))     
                 if invdataset.has_key("dcid"):
                     if result.rowcount == 1:
-                        result = self.con.execute(select([invoice.c.invid]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
+                        result = self.con.execute("select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"%(int(invdataset["custid"]), str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                         invoiceid = result.fetchone()
                         dcinvdataset["dcid"]=invdataset["dcid"]
                         dcinvdataset["invid"]=invoiceid["invid"]
@@ -130,7 +141,7 @@ class api_invoice(object):
                 else:
                     try:
                         if invdataset.has_key('icflag'):
-                            result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==invdataset["icflag"])))
+                            result = self.con.execute("select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"%(str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
                             for item in items.keys():
@@ -139,7 +150,7 @@ class api_invoice(object):
                                     stockdataset["productcode"] = item
                                     stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "3"
-                                    stockdataset["stockdate"] = invoiceid["invoicedate"]
+                                    stockdataset["stockdate"] = invdataset["invoicedate"]
                                     result = self.con.execute(stock.insert(),[stockdataset])
                             
                             # check automatic voucher flag  if it is 1 get maflag
@@ -166,10 +177,10 @@ class api_invoice(object):
                                     voucherData["status"] = 1
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
                         else:
-                            result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"],invoice.c.orgcode==invdataset["orgcode"],invoice.c.icflag==9)))
+                            result = self.con.execute("select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"%(int(invdataset["custid"]), str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                             invoiceid = result.fetchone()
                             stockdataset["dcinvtnid"] = invoiceid["invid"]
-                            stockdataset["stockdate"] = invoiceid["invoicedate"]
+                            stockdataset["stockdate"] = invdataset["invoicedate"]
                             for item in items.keys():
                                 self.con = eng.connect()
                                 gstResult = gst(item,self.con)
@@ -243,6 +254,10 @@ class api_invoice(object):
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
                 voucherData ={}
+                pricedetails = []
+                if "pricedetails" in invdataset:
+                    pricedetails = invdataset["pricedetails"]
+                    invdataset.pop("pricedetails", pricedetails)
                 # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
                 try:
                     deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
@@ -261,6 +276,10 @@ class api_invoice(object):
                     dcinvdataset["invprods"] = stockdataset["items"]
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+                        if len(pricedetails) > 0:
+                            for price in pricedetails:
+                                price["orgcode"] = authDetails["orgcode"]
+                                updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
                         result = self.con.execute(dcinv.insert(),[dcinvdataset])
                         if result.rowcount > 0:
                            avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
@@ -296,6 +315,10 @@ class api_invoice(object):
                 else:
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
+                        if len(pricedetails) > 0:
+                            for price in pricedetails:
+                                price["orgcode"] = authDetails["orgcode"]
+                                updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
                         #Code for updating bankdetails when user switch to cash payment from bank.
                         getpaymentmode = int(invdataset["paymentmode"]) #Loading paymentmode.
                         idinv = int(invdataset["invid"])   #Loading invoiceid.
@@ -306,7 +329,7 @@ class api_invoice(object):
                         result = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.custid==invdataset["custid"], invoice.c.invoiceno==invdataset["invoiceno"])))
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
-                        stockdataset["stockdate"] = invoiceid["invoicedate"]
+                        stockdataset["stockdate"] = invdataset["invoicedate"]
                         stockdataset["dcinvtnflag"] = "9"
                         for item in items.keys():
                             stockdataset["productcode"] = item
@@ -427,6 +450,23 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"]}
+                
+                # below field deletable is for check whether invoice having voucher or not
+                #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
+                v_count = self.con.execute("select count(vouchercode) as vcount from billwise where invid = '%d' "%(int(self.request.params["invid"])) )
+                vch_count = v_count.fetchone()
+                #vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not 
+                cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
+                cdh_count = cd_count.fetchone()
+                #r_count is checking wheather their is any entry of perticuler invid is available in rejection note
+                r_count = self.con.execute("select count(rnno) as vrncount from rejectionnote where invid = '%d' "%(int(self.request.params["invid"])) )
+                rc_count = r_count.fetchone()
+                #if any bilwise or dr cr or rejection note is available then should send 1
+                # 1 is : not delete and 0 is: delete permission.
+                if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0) or (rc_count["vrncount"] > 0):
+                    inv["deletable"] = 1
+                else:
+                    inv["deletable"] = 0
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -737,17 +777,22 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
-                dataset["canceldate"]=datetime.now().date()
-                result = self.con.execute(invoice.update().where(invoice.c.invid==dataset["invid"]).values(dataset))
-                if dataset["icflag"]==9:
-                    stockcancel = {"dcinvtnflag":90}
-                else:
-                    stockcancel = {"dcinvtnflag":30}
-                result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==dataset["icflag"])).values(stockcancel))
+                invdataset = self.request.json_body
+                # delete vouchers, stock, dcinv, invoice with invid if available ither pass it.
+                try:
+                    deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
+                except:
+                    pass
+                try:
+                    deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
+                except:
+                    pass
+                try:
+                    deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
+                except:
+                    pass
+                deleteinvoice = self.con.execute(invoice.delete().where(invoice.c.invid == invdataset["invid"]))
                 return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
@@ -1622,3 +1667,44 @@ The bills grid calld gkresult will return a list as it's value.
             return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
         finally:
             self.con.close()
+
+
+    @view_config(request_method='GET',request_param="type=rectifyinvlist", renderer ='json')
+    def getListofInvoices_rectify(self):
+        """
+        The code is to get list of invoices which can be rectified.
+        Only those invoice which have not used in either of the documents like rejection note,credit/debit note.
+        also transactions have not made.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                org = authDetails["orgcode"]
+                # An empty list into which invoices shall be appended.
+                list_Invoices = []
+                # Fetching id, number, date of all invoices.
+                # check whether invtype does exist and further check its type
+            
+                invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
+                invoicesData = invoices.fetchall()
+                                        
+                # Appending dictionaries into empty list.
+                # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
+                for inv in invoicesData:
+                    custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
+                    customerdata = custData.fetchone()
+                    list_Invoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
+                return{"gkstatus":enumdict["Success"],"invoices":list_Invoices}
+                self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
