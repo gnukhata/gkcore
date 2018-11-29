@@ -450,6 +450,23 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
                 inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"]}
+                
+                # below field deletable is for check whether invoice having voucher or not
+                #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
+                v_count = self.con.execute("select count(vouchercode) as vcount from billwise where invid = '%d' "%(int(self.request.params["invid"])) )
+                vch_count = v_count.fetchone()
+                #vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not 
+                cd_count = self.con.execute("select count(drcrno) as vcdcount from drcr where invid = '%d' "%(int(self.request.params["invid"])) )
+                cdh_count = cd_count.fetchone()
+                #r_count is checking wheather their is any entry of perticuler invid is available in rejection note
+                r_count = self.con.execute("select count(rnno) as vrncount from rejectionnote where invid = '%d' "%(int(self.request.params["invid"])) )
+                rc_count = r_count.fetchone()
+                #if any bilwise or dr cr or rejection note is available then should send 1
+                # 1 is : not delete and 0 is: delete permission.
+                if(vch_count["vcount"] > 0) or (cdh_count["vcdcount"] > 0) or (rc_count["vrncount"] > 0):
+                    inv["deletable"] = 1
+                else:
+                    inv["deletable"] = 0
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
@@ -760,17 +777,22 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
-                dataset["canceldate"]=datetime.now().date()
-                result = self.con.execute(invoice.update().where(invoice.c.invid==dataset["invid"]).values(dataset))
-                if dataset["icflag"]==9:
-                    stockcancel = {"dcinvtnflag":90}
-                else:
-                    stockcancel = {"dcinvtnflag":30}
-                result = self.con.execute(stock.update().where(and_(stock.c.dcinvtnid==dataset["invid"],stock.c.dcinvtnflag==dataset["icflag"])).values(stockcancel))
+                invdataset = self.request.json_body
+                # delete vouchers, stock, dcinv, invoice with invid if available ither pass it.
+                try:
+                    deletevoucher = self.con.execute(vouchers.delete().where(vouchers.c.invid == invdataset["invid"]))
+                except:
+                    pass
+                try:
+                    deletestock = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==invdataset["invid"],stock.c.dcinvtnflag==9)))
+                except:
+                    pass
+                try:
+                    deletedcinv = self.con.execute(dcinv.delete().where(dcinv.c.invid==invdataset["invid"]))
+                except:
+                    pass
+                deleteinvoice = self.con.execute(invoice.delete().where(invoice.c.invid == invdataset["invid"]))
                 return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
