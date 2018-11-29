@@ -4,7 +4,8 @@
 * New fields for Sale Price and MRP in Product Table.  
 * Corrected query that returns invid after Invoice/Cash Memo is saved.  
 * Function to delete invoices that have nothing linked to them and no billwise entry made.  
-
+* Function to get list of invoice that can be rectified.
+	
 [15-August-2018 Release 5.25]
 * New Unit of measurement.
 * Bug fixes and enhancements for bill wise accounting.
