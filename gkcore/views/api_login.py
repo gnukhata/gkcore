@@ -89,7 +89,7 @@ def gkLogin(request):
 					sig = {"secretcode":privatekey}
 					gkcore.secret = privatekey
 					result = con.execute(gkdb.signature.insert(),[sig])
-			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
 			return {"gkstatus":enumdict["Success"],"token":token }
 		else:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -129,6 +129,7 @@ def authCheck(token):
 		tokendict["auth"] = True
 		tokendict["orgcode"]=int(tokendict["orgcode"])
 		tokendict["userid"]=int(tokendict["userid"])
+		tokendict["goid"]=int(tokendict["goid"])
 		return tokendict
 	except:
 		tokendict = {"auth":False}
