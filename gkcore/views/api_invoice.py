@@ -89,10 +89,10 @@ class api_invoice(object):
                     items = invdataset["contents"]
                     invdataset["orgcode"] = authDetails["orgcode"]
                     stockdataset["orgcode"] = authDetails["orgcode"]
+                    invdataset["goid"] = authDetails["goid"]
                     queryParams = {}
                     voucherData = {}
                     pricedetails = []
-                    print(invdataset)
                     if "pricedetails" in invdataset:
                         pricedetails = invdataset["pricedetails"]
                         invdataset.pop("pricedetails", pricedetails)
