@@ -68,7 +68,6 @@ class api_product(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
-                print "I am here"
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -138,7 +137,6 @@ class api_product(object):
                             openingStock = openingStock - stockoutsum["sumofouts"]
                     products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"],"deletable":prodDelete})
                     srno = srno+1
-                print products
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
             except:
                 self.con.close()
