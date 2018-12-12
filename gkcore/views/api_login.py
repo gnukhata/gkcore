@@ -89,7 +89,12 @@ def gkLogin(request):
 					sig = {"secretcode":privatekey}
 					gkcore.secret = privatekey
 					result = con.execute(gkdb.signature.insert(),[sig])
-			token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
+			# goid is use for branch. Its acts as branchid.
+			# when loged in branchvise.
+			if "goid" in dataset:
+				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
+			else:
+				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 			return {"gkstatus":enumdict["Success"],"token":token }
 		else:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
@@ -129,7 +134,9 @@ def authCheck(token):
 		tokendict["auth"] = True
 		tokendict["orgcode"]=int(tokendict["orgcode"])
 		tokendict["userid"]=int(tokendict["userid"])
-		tokendict["goid"]=int(tokendict["goid"])
+		#updated for branch feature. goid is for branchid.
+		if "goid" in tokendict:
+			tokendict["goid"]=int(tokendict["goid"])
 		return tokendict
 	except:
 		tokendict = {"auth":False}

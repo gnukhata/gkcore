@@ -78,26 +78,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                if (authDetails["goid"] != 0):
-                    self.con = eng.connect()
-                    dtset = self.request.json_body
-                    dcinvdataset={}
-                    invdataset = dtset["invoice"]
-                    freeqty = invdataset["freeqty"]
-                    stockdataset = dtset["stock"]
-                    items = invdataset["contents"]
-                    invdataset["orgcode"] = authDetails["orgcode"]
-                    stockdataset["orgcode"] = authDetails["orgcode"]
-                    invdataset["goid"] = authDetails["goid"]
-                    queryParams = {}
-                    voucherData = {}
-                    pricedetails = []
-                    if "pricedetails" in invdataset:
-                        pricedetails = invdataset["pricedetails"]
-                        invdataset.pop("pricedetails", pricedetails)
-                    result = self.con.execute(invoice.insert(),[invdataset])
-                if (authDetails["goid"] == 0): 
+            try: 
                     self.con = eng.connect()
                     dtset = self.request.json_body
                     dcinvdataset={}
@@ -654,9 +635,13 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
+            # below goid is used as branchid to select invoice branchvise.
             try:
                 self.con = eng.connect()
-                unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
+                if "goid" in authDetails:
+                    unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.goid == authDetails["goid"],invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
+                else:
+                    unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
 
                 unpaidBills = unpaidBillsRecords.fetchall()
                 bills = []
@@ -693,35 +678,26 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                if (authDetails["goid"] != 0):
+                # below goid represent branchid if it is branchvise and branch is selected,
+                # then it will show only that branch related invoices
+                if "goid" in authDetails:
                     result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.goid==authDetails["goid"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
-                    invoices = []
-                    for row in result:
-                        customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                        custname = customer.fetchone()
-                        if self.request.params.has_key('type'):
-                            if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                            elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                        else:
-                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-
-                if (authDetails["goid"] == 0):
+                else:
                     result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
-                    invoices = []
-                    for row in result:
-                        customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
-                        custname = customer.fetchone()
-                        if self.request.params.has_key('type'):
-                            if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                            elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                        else:
+ 
+                invoices = []
+                for row in result:
+                    customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                    custname = customer.fetchone()
+                    if self.request.params.has_key('type'):
+                        if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
                             invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+                        elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
+                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                    else:
+                        invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
@@ -740,7 +716,11 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+                #goid is adjusted for branchid when branchvise is selected
+                if "goid" in authDetails:
+                    invsData = self.con.execute("select invid from invoice where icflag = 9 and goid = %d and orgcode = %d except select invid from vouchers where orgcode = %d "%(authDetails["goid"],authDetails["orgcode"],authDetails["orgcode"]))
+                else:
+                    invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
                 for inv in invsData:
                     filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
@@ -765,9 +745,13 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
+            # goid is used as branchid to select invoice branchvise
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
+                if "goid" in authDetails:
+                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.goid==authDetails["goid"],invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
+                else:
+                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in result:
                     invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y')})
@@ -1015,9 +999,13 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
+            # goid is used as branchid to select invoice branchvise
             try:
                 self.con = eng.connect()
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                if "goid" in authDetails:
+                    invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.goid == authDetails["goid"],invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                else:
+                    invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for invrow in allinv:
@@ -1295,10 +1283,17 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 #fetch all invoices
-                if "orderflag" in self.request.params:
-                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
+                # goid is branchid if loged in as branchvise.
+                if "goid" in authDetails:
+                    if "orderflag" in self.request.params:
+                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.goid==authDetails["goid"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
+                    else:
+                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 else:
-                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                    if "orderflag" in self.request.params:
+                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
+                    else:
+                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
@@ -1726,8 +1721,11 @@ The bills grid calld gkresult will return a list as it's value.
                 list_Invoices = []
                 # Fetching id, number, date of all invoices.
                 # check whether invtype does exist and further check its type
-            
-                invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
+                # goid is for branchid if loged in as branchvise
+                if "goid" in authDetails:
+                    invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and goid = %d and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(authDetails["goid"]),int(self.request.params["invtype"])))
+                else:
+                    invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
                 invoicesData = invoices.fetchall()
                                         
                 # Appending dictionaries into empty list.
