@@ -68,6 +68,7 @@ class api_product(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
+                print "I am here"
                 self.con=eng.connect()
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
@@ -102,6 +103,15 @@ class api_product(object):
                 products = []
                 srno=1
                 for row in results:
+                    
+                    product_count=self.con.execute("select count(productcode) as pccount from stock where productcode = '%d'" %(int(row["productcode"])))
+                    pc_count=product_count.fetchone()
+
+                    if pc_count["pccount"] > 0:
+                        prodDelete=1
+                    else:
+                        prodDelete=0
+
                     unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitofmeasurement = unitsofmeasurement.fetchone()
                     if unitofmeasurement != None:
@@ -126,8 +136,9 @@ class api_product(object):
                         stockoutsum = productstockout.fetchone()
                         if stockoutsum["sumofouts"]!=None:
                             openingStock = openingStock - stockoutsum["sumofouts"]
-                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"]})
+                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"],"deletable":prodDelete})
                     srno = srno+1
+                print products
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
             except:
                 self.con.close()
@@ -152,6 +163,7 @@ class api_product(object):
                 row = result.fetchone()
 
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+
                 if row["prodsp"]!=None:
                     productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
                 else:
@@ -192,7 +204,6 @@ class api_product(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
-                self.con.close()
     @view_config(request_method='GET',request_param='type=pt',renderer='json')
     def getTaxForProduct(self):
         """
