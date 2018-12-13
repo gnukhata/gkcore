@@ -90,7 +90,11 @@ class api_drcr(object):
                 if av["avflag"] == 1:
                     mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == dataset["orgcode"]))
                     maFlag = mafl.fetchone()
-                    queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
+                    # adding goid which is branchid below to add that id into voucher if branchvise.
+                    if "goid" in dataset:
+                        queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"],"goid":dataset["goid"]}
+                    else:
+                        queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
                     queryParams.update(dataset)
                     queryParams.update(vdataset)
                     try:
@@ -289,8 +293,13 @@ class api_drcr(object):
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
+                # below goid is used as branchid when it selected as brancvise.
+                # it will give only that branch related.
                 self.con = eng.connect()
-                result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
+                if "goid" in authDetails:
+                    result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(and_(drcr.c.orgcode==authDetails["orgcode"],drcr.c.goid==authDetails["goid"])).order_by(drcr.c.drcrdate))
+                else:
+                    result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
                 drcrdata = []
                 for row in result:
                     #invoice,cust
@@ -397,10 +406,15 @@ class api_drcr(object):
                 self.con = eng.connect()
                 drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
-                invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
+                # goid is used as branchid
+                if "goid" in authDetails:
+                    invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag,drcr.c.goid==authDetails["goid"])))
+                    invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.goid==authDetails["goid"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+                else:
+                    invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
+                    invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 for DrCrInv in invsInDrCr:
                     DrCrInvs.append(DrCrInv["invid"])
-                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in invData:
                     if row["invid"] not in DrCrInvs:
@@ -1066,6 +1080,11 @@ def drcrVoucher(queryParams, orgcode):
         vchCode = vchCodeResult.fetchone()
         initialType = initialType + str(vchCode["vcode"])
     voucherDict["vouchernumber"] = initialType
+    # goid is acts as branchid which will add into goid field of voucher table.
+    # so the voucher will be related to that branch.
+    if "goid" in queryParams:
+        voucherDict["goid"] = queryParams["goid"]
+
     result = con.execute(vouchers.insert(),[voucherDict])
     for drkeys in drs.keys():
         con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
