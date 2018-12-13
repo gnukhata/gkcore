@@ -114,8 +114,12 @@ class api_rejectionnote(object):
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
+                # goid is use as branchid to select rej.note branchvise.
                 self.con = eng.connect()
-                result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.orgcode==authDetails["orgcode"]).order_by(rejectionnote.c.rnno))
+                if "goid" in authDetails:
+                    result = self.con.execute(select([rejectionnote]).where(and_(rejectionnote.c.orgcode==authDetails["orgcode"],rejectionnote.c.goid==authDetails["goid"])).order_by(rejectionnote.c.rnno))
+                else:
+                    result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.orgcode==authDetails["orgcode"]).order_by(rejectionnote.c.rnno))
                 rnotes = []
                 for row in result:
                     rnotes.append({"rnid":row["rnid"],"rnno":row["rnno"], "inout":row["inout"], "dcid":row["dcid"], "invid":row["invid"], "rndate":datetime.strftime(row["rndate"],'%d-%m-%Y')})
