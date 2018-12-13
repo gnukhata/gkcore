@@ -102,15 +102,6 @@ class api_product(object):
                 products = []
                 srno=1
                 for row in results:
-                    
-                    product_count=self.con.execute("select count(productcode) as pccount from stock where productcode = '%d'" %(int(row["productcode"])))
-                    pc_count=product_count.fetchone()
-
-                    if pc_count["pccount"] > 0:
-                        prodDelete=1
-                    else:
-                        prodDelete=0
-
                     unitsofmeasurement = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==row["uomid"]))
                     unitofmeasurement = unitsofmeasurement.fetchone()
                     if unitofmeasurement != None:
@@ -135,7 +126,7 @@ class api_product(object):
                         stockoutsum = productstockout.fetchone()
                         if stockoutsum["sumofouts"]!=None:
                             openingStock = openingStock - stockoutsum["sumofouts"]
-                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"],"deletable":prodDelete})
+                    products.append({"srno":srno, "unitname":unitname, "categoryname":categoryname, "productcode": row["productcode"], "productdesc":row["productdesc"] , "categorycode": row["categorycode"], "productquantity": "%.2f"%float(openingStock),"gsflag":row["gsflag"]})
                     srno = srno+1
                 return {"gkstatus":enumdict["Success"], "gkresult":products}
             except:
@@ -161,6 +152,19 @@ class api_product(object):
                 row = result.fetchone()
 
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+
+                 # the field deletable is for check whether product/service are in use or not
+                #prod_count is check that product/service are use in witch table and pc_count give count of product/service are in use
+                #if count is grater than 0 it send 1 else it send 0 as value of deletable key
+                
+                prod_count=self.con.execute("select(select count(invoice.contents) from invoice where invoice.contents?'%s' and orgcode='%d')+(select count(delchal.contents) from delchal where delchal.contents?'%s' and orgcode='%d')+(select count(purchaseorder.schedule)from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d')+(select count(productcode) from stock where productcode='%s' and orgcode='%d') as pccount" %((str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                pc_count=prod_count.fetchone()
+          
+                if pc_count["pccount"] > 0:
+                    productDetails["deletable"] = 1
+                    
+                else:
+                    productDetails["deletable"] = 0
 
                 if row["prodsp"]!=None:
                     productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
@@ -202,6 +206,7 @@ class api_product(object):
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
             finally:
+                self.con.close()
     @view_config(request_method='GET',request_param='type=pt',renderer='json')
     def getTaxForProduct(self):
         """
