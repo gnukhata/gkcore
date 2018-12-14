@@ -126,6 +126,33 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	# This fuction return group code of groupsubgroups for organisation
+	@view_config(route_name='groupsubgroups', request_param='orgbank', request_method='GET',renderer='json')
+	def getGroupSubgroupfororg(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				groupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Current Assets',gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
+				groupCode = groupData.fetchone()
+
+				subgroupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Bank',gkdb.groupsubgroups.c.subgroupof==groupCode['groupcode'],gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
+				subgroupcode = subgroupData.fetchone()
+
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subgroupcode['groupcode']}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+					self.con.close()
+
+
 	@view_config(request_method='PUT', renderer='json')
 	def editSubgroup(self):
 		try:
