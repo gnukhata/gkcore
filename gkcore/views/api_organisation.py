@@ -49,6 +49,7 @@ from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
 from gkcore.views.api_invoice import getStateCode 
+from gkcore.models.gkdb import godown, usergodown, stock, goprod
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -540,6 +541,22 @@ class api_organisation(object):
                 orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
+#  get all branchid of perticuler orgnization to loh=gin in to that branch
+    @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
+    def getBranch(self):
+        try:
+            print("alo")
+            self.con = eng.connect()
+            branch = []
+            godowns = self.con.execute(select([godown.c.goid,godown.c.goname]).where(and_(godown.c.orgcode==self.request.params["orgcode"], godown.c.gbflag==self.request.params["gbflag"])).order_by(godown.c.goname))
+
+            for row in godowns:
+                branch.append({"bid":int(row["goid"]), "bname":str(row["goname"])})
+            self.con.close()
+            return{"gkstatus":enumdict["Success"],"gkdata":branch}
         except:
             self.con.close()
             return {"gkstatus":enumdict["ConnectionFailed"]}

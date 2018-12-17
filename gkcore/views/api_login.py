@@ -40,6 +40,7 @@ from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
 from gkcore.models.meta import inventoryMigration,addFields
+from gkcore.models.gkdb import usergodown
 import jwt
 import gkcore
 con= Connection
@@ -47,15 +48,15 @@ con= Connection
 @view_config(route_name='login',request_method='POST',renderer='json')
 def gkLogin(request):
 	
-	"""
-	purpose: take org code, username and password and authenticate the user.
-	Return true if username and password matches or false otherwise.
-	description:
-	The function takes the orgcode and matches the username and password.
-	if it is correct then the user is authorised and a jwt object is created.
-	The object will have the userid and orgcode and this will be sent back as a response.
-	Else the function will not issue any token.
-	"""
+	# """
+	# purpose: take org code, username and password and authenticate the user.
+	# Return true if username and password matches or false otherwise.
+	# description:
+	# The function takes the orgcode and matches the username and password.
+	# if it is correct then the user is authorised and a jwt object is created.
+	# The object will have the userid and orgcode and this will be sent back as a response.
+	# Else the function will not issue any token.
+	# """
 	try:
 		con= eng.connect()
 		try:
@@ -70,7 +71,7 @@ def gkLogin(request):
 			
 		
 		dataset = request.json_body
-		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+		result = con.execute(select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
 			record = result.fetchone()
 			result = con.execute(select([gkdb.signature]))
@@ -91,11 +92,23 @@ def gkLogin(request):
 					result = con.execute(gkdb.signature.insert(),[sig])
 			# goid is use for branch. Its acts as branchid.
 			# when loged in branchvise.
-			if "goid" in dataset:
-				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
+			# if userrole is -1 then it is super user and can have full access. 
+			if record["userrole"] == -1:
+				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+				return {"gkstatus":enumdict["Success"],"token":token }
+			elif "goid" in dataset:
+				godown = con.execute(select([usergodown.c.goid]).where(usergodown.c.userid == record["userid"]))
+				# fetch goid asign to userid enter. if that goid matches with enter goid then gives access to that branch.
+				# either generate error.
+				for row in godown:
+					if (row["goid"] == int(dataset["goid"])):
+						token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
+						return {"gkstatus":enumdict["Success"],"token":token }
+				# if goid is not asign to user then it will show an error.
+				return {"gkstatus":enumdict["BadPrivilege"]}
 			else:
 				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-			return {"gkstatus":enumdict["Success"],"token":token }
+				return {"gkstatus":enumdict["Success"],"token":token }
 		else:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 	except:
