@@ -548,7 +548,6 @@ class api_organisation(object):
     @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
     def getBranch(self):
         try:
-            print("alo")
             self.con = eng.connect()
             branch = []
             godowns = self.con.execute(select([godown.c.goid,godown.c.goname]).where(and_(godown.c.orgcode==self.request.params["orgcode"], godown.c.gbflag==self.request.params["gbflag"])).order_by(godown.c.goname))

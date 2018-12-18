@@ -33,14 +33,14 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_ , func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
 from gkcore.models.meta import inventoryMigration,addFields
-from gkcore.models.gkdb import usergodown
+from gkcore.models.gkdb import godown, usergodown
 import jwt
 import gkcore
 con= Connection
@@ -57,7 +57,7 @@ def gkLogin(request):
 	# The object will have the userid and orgcode and this will be sent back as a response.
 	# Else the function will not issue any token.
 	# """
-	try:
+	# try:
 		con= eng.connect()
 		try:
 			con.execute(select([gkdb.organisation.c.invflag]))
@@ -68,8 +68,6 @@ def gkLogin(request):
 			con.execute(select([gkdb.transfernote.c.recieveddate]))
 		except:
 			addFields(con,eng)
-			
-		
 		dataset = request.json_body
 		result = con.execute(select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
@@ -97,24 +95,28 @@ def gkLogin(request):
 				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 				return {"gkstatus":enumdict["Success"],"token":token }
 			elif "goid" in dataset:
-				godown = con.execute(select([usergodown.c.goid]).where(usergodown.c.userid == record["userid"]))
+				godow = con.execute(select([usergodown.c.goid]).where(usergodown.c.userid == record["userid"]))
 				# fetch goid asign to userid enter. if that goid matches with enter goid then gives access to that branch.
 				# either generate error.
-				for row in godown:
+				for row in godow:
 					if (row["goid"] == int(dataset["goid"])):
 						token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"],"goid":dataset["goid"]},gkcore.secret,algorithm='HS256')
 						return {"gkstatus":enumdict["Success"],"token":token }
 				# if goid is not asign to user then it will show an error.
 				return {"gkstatus":enumdict["BadPrivilege"]}
 			else:
+				godown = con.execute("select count(godown.goid) as bcount from godown inner join usergodown on godown.goid = usergodown.goid where usergodown.userid = '%d' and godown.gbflag=2"%int(record["userid"]))
+				count = godown.fetchone()
+				if (count["bcount"] > 0):
+					return {"gkstatus":enumdict["BadPrivilege"]}
 				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
 				return {"gkstatus":enumdict["Success"],"token":token }
 		else:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-	except:
-		return {"gkstatus":enumdict["ConnectionFailed"]}
-	finally:
-			con.close()
+	# except:
+	# 	return {"gkstatus":enumdict["ConnectionFailed"]}
+	# finally:
+	# 		con.close()
 
 @view_config(route_name='login',request_method='GET',renderer='json')
 def getuserorgdetails(request):
