@@ -93,7 +93,8 @@ class api_user(object):
                 dataset = self.request.json_body
                 if userRole[0]==-1 or (userRole[0]==0 and dataset["userrole"]==1):
                     dataset["orgcode"] = authDetails["orgcode"]
-                    if dataset["userrole"]== 3:
+                    # golist is present when godown / branch are assign
+                    if "golist" in dataset:
                         golist = tuple(dataset.pop("golist"))
                         result = self.con.execute(gkdb.users.insert(),[dataset])
                         userdata  = self.con.execute(select([gkdb.users.c.userid]).where(and_( gkdb.users.c.username == dataset["username"],gkdb.users.c.orgcode == dataset["orgcode"])))
@@ -101,7 +102,7 @@ class api_user(object):
                         lastid = userRow["userid"]
                         for goid in golist:
                             godata = {"userid":lastid,"goid":goid,"orgcode":dataset["orgcode"]}
-                            result = self.con.execute(gkdb.usergodown.insert(),[godata])
+                        result = self.con.execute(gkdb.usergodown.insert(),[godata])
                     else:
                         result = self.con.execute(gkdb.users.insert(),[dataset])
                     return {"gkstatus":enumdict["Success"]}
@@ -148,16 +149,16 @@ class api_user(object):
                     # if user is godown in-charge we need to retrive associated godown/s
                     if User["userrole"] == 3:
                         User["userroleName"] = "Godown In Charge"
-                        usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.usergodown.c.userid == self.request.params["userid"]))
-                        goids = usgo.fetchall()
-                        userGodowns = {}
-                        for g in goids:
-                            godownid = g["goid"]
-                            # now we have associated godown ids, by which we can get godown name
-                            godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
-                            gNameRow = godownData.fetchone()
-                            userGodowns[godownid] = gNameRow["goname"]
-                        User["godowns"] = userGodowns
+                    usgo = self.con.execute(select([gkdb.usergodown.c.goid]).where(gkdb.usergodown.c.userid == self.request.params["userid"]))
+                    goids = usgo.fetchall()
+                    userGodowns = {}
+                    for g in goids:
+                        godownid = g["goid"]
+                        # now we have associated godown ids, by which we can get godown name
+                        godownData = self.con.execute(select([gkdb.godown.c.goname]).where(gkdb.godown.c.goid == godownid))
+                        gNameRow = godownData.fetchone()
+                        userGodowns[godownid] = gNameRow["goname"]
+                    User["godowns"] = userGodowns
 
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":User}
                 else:
@@ -302,11 +303,13 @@ class api_user(object):
                     dataset["orgcode"] = authDetails["orgcode"]
                     # "originalrole" gives userrole of old user  
                     originalrole = getUserRole(dataset["userid"])
-                    if int(originalrole["gkresult"]["userrole"]==3):
+                    # if golist is present then it has access related to godown / branch
+                    if "golist" in dataset:
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
                     #dataset["userrole"] gives userrole of new user
                     if dataset.has_key("userrole"):
-                        if int(dataset["userrole"])== 3:
+                        # if golist is present then it has access related to godown / branch
+                        if "golist" in dataset:
                             golists = tuple(dataset.pop("golist"))
                             result = self.con.execute(gkdb.users.update().where(gkdb.users.c.userid==dataset["userid"]).values(dataset))
                             currentid = dataset["userid"]
