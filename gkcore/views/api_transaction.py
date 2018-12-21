@@ -299,7 +299,11 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.narration,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
+                 # goid is branchid. get voucher as per branch logged in
+                if "goid" in authDetails:
+                    result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.narration,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"],vouchers.c.goid==authDetails["goid"] )))) )
+                else:
+                    result = self.con.execute(select([vouchers.c.vouchernumber,vouchers.c.narration,vouchers.c.voucherdate]).where(vouchers.c.vouchercode==(select([func.max(vouchers.c.vouchercode)]).where(and_(vouchers.c.delflag==False, vouchers.c.vouchertype==self.request.params["type"],vouchers.c.orgcode==authDetails["orgcode"] )))) )
                 row = result.fetchone()
                 if row== None:
                     voucher = {"vdate": "","vno":"","narration":""}
@@ -310,9 +314,6 @@ class api_transaction(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-
-
-
 
     @view_config(request_method='GET',renderer='json')
     def getVoucher(self):
@@ -378,7 +379,11 @@ class api_transaction(object):
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 voucherType = self.request.params["vouchertype"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                 # goid is branchid. get voucher as per branch logged in
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchertype)==func.lower(voucherType),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for voucher in vouchersData:
@@ -417,8 +422,6 @@ class api_transaction(object):
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
 
-
-
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":voucherRecords,"userrole":urole["userrole"]}
@@ -442,7 +445,11 @@ class api_transaction(object):
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 voucherNo = self.request.params["voucherno"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                 # goid is branchid. get voucher as per branch logged in
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.vouchernumber)==func.lower(voucherNo),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for voucher in vouchersData:
@@ -452,6 +459,7 @@ class api_transaction(object):
                     finalCR = {}
                     tdr=0.00
                     tcr=0.00
+                    
                     accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
                     account = accname.fetchone()
 
@@ -502,7 +510,11 @@ class api_transaction(object):
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 voucherAmount = self.request.params["total"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                 # goid is branchid. get voucher as per branch logged in
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.drs]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for vr in vouchersData:
@@ -571,7 +583,11 @@ class api_transaction(object):
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                 # goid is branchid. get voucher as per branch logged in
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for voucher in vouchersData:
@@ -632,7 +648,11 @@ class api_transaction(object):
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 voucherNarration = self.request.params["nartext"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                # goid is branchid. get voucher as per branch logged in 
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'],func.lower(vouchers.c.narration).like("%"+func.lower(voucherNarration)+"%"),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for voucher in vouchersData:
@@ -815,7 +835,11 @@ class api_transaction(object):
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
-                vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.vouchertype,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                # goid is branchid. get vouchera as per branch.
+                if "goid" in authDetails:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.vouchertype,vouchers.c.orgcode]).where(and_(vouchers.c.goid == authDetails['goid'],vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
+                else:
+                    vouchersData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.vouchertype,vouchers.c.orgcode]).where(and_(vouchers.c.orgcode == authDetails['orgcode'], between(vouchers.c.voucherdate,fromDate,toDate),vouchers.c.delflag==False)).order_by(vouchers.c.voucherdate,vouchers.c.vouchercode))
                 voucherRecords = []
 
                 for voucher in vouchersData:

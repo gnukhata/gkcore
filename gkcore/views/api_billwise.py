@@ -130,10 +130,17 @@ It will be used for creating entries in the billwise table and updating it as ne
                 csName = csn.fetchone()
                 accData = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == csName["custname"],accounts.c.orgcode== authDetails["orgcode"])))
                 acccode = accData.fetchone()
-                if csFlag == 3:
-                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
-                if csFlag == 19:
-                    csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                # goid id branchid and use to fetch vouchers as per branch logged in
+                if "goid" in authDetails:
+                    if csFlag == 3:
+                        csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and goid = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"],authDetails["goid"]))
+                    if csFlag == 19:
+                        csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and goid = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"],authDetails["goid"]))
+                else:
+                    if csFlag == 3:
+                        csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, crs->>'%d' as amt from vouchers where crs ? '%d' and orgcode = %d and vouchertype = 'receipt'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
+                    if csFlag == 19:
+                        csReceiptData = self.con.execute("select vouchercode, vouchernumber, voucherdate, drs->>'%d' as amt from vouchers where drs ? '%d' and orgcode = %d and vouchertype = 'payment'"%(acccode["accountcode"],acccode["accountcode"],authDetails["orgcode"]))
                 csReceipts = csReceiptData.fetchall()
                 unAdjReceipts = []
                 unAdjInvoices = []
