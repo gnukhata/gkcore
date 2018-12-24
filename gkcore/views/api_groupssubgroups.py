@@ -112,7 +112,6 @@ class api_user(object):
 		else:
 			try:
 				self.con = eng.connect()
-#				print "grpcode: ",self.request.matchdict["groupcode"]
 
 				g = gkdb.groupsubgroups.alias("g")
 				sg = gkdb.groupsubgroups.alias("sg")
@@ -120,7 +119,6 @@ class api_user(object):
 				resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
 				row = resultset.fetchone()
 				grpsub={"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupcode":row["subgroupcode"],"subgroupname":row["subgroupname"]}
-#				print grpsub
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsub}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
