@@ -523,7 +523,7 @@ class api_organisation(object):
             orgs = []
             for row in result:
                 orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
-                orgs.sort()
+            orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
         except:
@@ -544,14 +544,13 @@ class api_organisation(object):
         except:
             self.con.close()
             return {"gkstatus":enumdict["ConnectionFailed"]}
-#  get all branchid of perticuler orgnization to loh=gin in to that branch
+#  get all branchid of perticuler username to login in to that branch
     @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
     def getBranch(self):
         try:
             self.con = eng.connect()
             branch = []
-            godowns = self.con.execute(select([godown.c.goid,godown.c.goname]).where(and_(godown.c.orgcode==self.request.params["orgcode"], godown.c.gbflag==self.request.params["gbflag"])).order_by(godown.c.goname))
-
+            godowns = self.con.execute("select goid,goname from godown where orgcode=%d and gbflag=%d and goid in (select goid from usergodown where userid in (select userid from users where username='%s'))"%(int(self.request.params["orgcode"]),int(self.request.params["gbflag"]),str(self.request.params["username"])))
             for row in godowns:
                 branch.append({"bid":int(row["goid"]), "bname":str(row["goname"])})
             self.con.close()
@@ -1026,8 +1025,9 @@ class api_organisation(object):
             else:
                 return {"gkstatus":enumdict["Success"]}
         except:
-            self.con.close()
             return {"gkstatus":  enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
 
 
     @view_config(request_param='orgcode', request_method='GET',renderer='json')
