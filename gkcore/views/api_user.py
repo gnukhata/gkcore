@@ -260,6 +260,7 @@ class api_user(object):
     @view_config(request_method='POST', request_param="userloginstatus", renderer='json')
     def userLoginstatus(self):
         try:
+            print("ggg")
             self.con = eng.connect()
             token = self.request.headers["gktoken"]
         except:
