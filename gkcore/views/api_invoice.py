@@ -95,8 +95,6 @@ class api_invoice(object):
                         pricedetails = invdataset["pricedetails"]
                         invdataset.pop("pricedetails", pricedetails)
                     result = self.con.execute(invoice.insert(),[invdataset])
-                    if "goid" in invdataset:
-                        queryParams['goid'] = invdataset['goid']
                     if len(pricedetails) > 0:
                         for price in pricedetails:
                             price["orgcode"] = authDetails["orgcode"]
@@ -118,7 +116,6 @@ class api_invoice(object):
                                 avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                 av = avfl.fetchone()
                                 if av["avflag"] == 1:
-                                    
                                     avData = invdataset["av"]
                                     mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                     maFlag = mafl.fetchone()
@@ -132,6 +129,8 @@ class api_invoice(object):
                                     if int(invdataset["taxflag"]) == 22:
                                         queryParams["taxpayment"]=avData["taxpayment"]
                                     #call getDefaultAcc
+                                    if "goid" in invdataset:
+                                        queryParams['goid'] = invdataset['goid']
                                     a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -171,6 +170,8 @@ class api_invoice(object):
 
                                     if int(invdataset["taxflag"]) == 22:
                                         queryParams["taxpayment"]=avData["taxpayment"]
+                                    if "goid" in invdataset:
+                                        queryParams['goid'] = invdataset['goid']
                                     #call getDefaultAcc
                                     a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if a["gkstatus"] == 0:
@@ -209,6 +210,8 @@ class api_invoice(object):
                                     if int(invdataset["taxflag"]) == 22:
                                         queryParams["taxpayment"]=avData["taxpayment"]
                                     #call getDefaultAcc
+                                    if "goid" in invdataset:
+                                        queryParams['goid'] = invdataset['goid']
                                     a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -1650,7 +1653,6 @@ The bills grid calld gkresult will return a list as it's value.
                     drs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
-
 
             drs = voucherDict["drs"]
             crs = voucherDict["crs"]
