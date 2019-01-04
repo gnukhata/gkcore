@@ -95,6 +95,8 @@ class api_invoice(object):
                         pricedetails = invdataset["pricedetails"]
                         invdataset.pop("pricedetails", pricedetails)
                     result = self.con.execute(invoice.insert(),[invdataset])
+                    if "goid" in invdataset:
+                        queryParams['goid'] = invdataset['goid']
                     if len(pricedetails) > 0:
                         for price in pricedetails:
                             price["orgcode"] = authDetails["orgcode"]
@@ -1653,6 +1655,10 @@ The bills grid calld gkresult will return a list as it's value.
             drs = voucherDict["drs"]
             crs = voucherDict["crs"]
             voucherDict["orgcode"] = orgcode
+            # if logged in as branch wise then goid which is branch id add in to voucher
+            if "goid" in queryParams:
+                voucherDict["goid"] = queryParams['goid']
+
             # generate voucher number if it is not sent.
             
             if voucherDict["vouchertype"] == "sales":
