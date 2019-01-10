@@ -49,6 +49,7 @@ from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
 from gkcore.views.api_invoice import getStateCode 
+from gkcore.models.gkdb import godown, usergodown, stock, goprod
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -111,6 +112,16 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+            # In below 5 queries we are adding goid in that tables which will acts as branch id their and that id is refer from godown table
+            # In that godown table goid is also acts for branch id, That depends on gbflag in godown table.
+            # if gbflag is 2 then it is branch and only that is going to use in bellow tables
+            if not columnExists("invoice","goid"):
+                self.con.execute("alter table invoice add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+                self.con.execute("alter table vouchers add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+                self.con.execute("alter table rejectionnote add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+                self.con.execute("alter table drcr add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+                self.con.execute("alter table purchaseorder add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+            
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
@@ -512,7 +523,7 @@ class api_organisation(object):
             orgs = []
             for row in result:
                 orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
-                orgs.sort()
+            orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
         except:
@@ -530,6 +541,20 @@ class api_organisation(object):
                 orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
+#  get all branchid of perticuler username to login in to that branch
+    @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
+    def getBranch(self):
+        try:
+            self.con = eng.connect()
+            branch = []
+            godowns = self.con.execute("select goid,goname from godown where orgcode=%d and gbflag=%d and goid in (select goid from usergodown where userid in (select userid from users where username='%s'))"%(int(self.request.params["orgcode"]),int(self.request.params["gbflag"]),str(self.request.params["username"])))
+            for row in godowns:
+                branch.append({"bid":int(row["goid"]), "bname":str(row["goname"])})
+            self.con.close()
+            return{"gkstatus":enumdict["Success"],"gkdata":branch}
         except:
             self.con.close()
             return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -1000,8 +1025,9 @@ class api_organisation(object):
             else:
                 return {"gkstatus":enumdict["Success"]}
         except:
-            self.con.close()
             return {"gkstatus":  enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
 
 
     @view_config(request_param='orgcode', request_method='GET',renderer='json')
