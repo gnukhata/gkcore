@@ -59,6 +59,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_route("organisation","/organisation")
     config.add_route("invoice","/invoice")
+    config.add_route("budget","/budget")
     config.add_route("organisations","/organisations")
     config.add_route("categoryspecs","/categoryspecs")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
