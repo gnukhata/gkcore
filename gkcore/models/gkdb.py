@@ -597,6 +597,21 @@ godown = Table('godown',metadata,
     )
 
 """
+table for budgeting
+"""
+budget = Table('budget',metadata,
+    Column('budid',Integer,primary_key=True),
+    Column('budnumber',UnicodeText, nullable = False),
+    Column('startdate',DateTime, nullable = False),
+    Column('enddate',DateTime, nullable = False ),
+    Column('amount', Numeric(13,2),nullable=False),
+    Column('accountcode',Integer, ForeignKey('accounts.accountcode', ondelete="CASCADE"), nullable = False ),
+    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Column('psflag',Integer, nullable=False)
+    )
+
+"""
 Table for storing product godownwise.
 When products are stored in the different godowns its openingstick will be entered accordingly.
 """
