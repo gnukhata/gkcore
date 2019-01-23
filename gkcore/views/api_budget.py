@@ -63,3 +63,27 @@ class api_invoice(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+    @view_config(request_method='GET', request_param='bud=all',renderer='json')
+    def getlistofbudgets(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
+        else:
+            try:
+                self.con = eng.connect()
+                type = self.request.params["type"]
+                result = self.con.execute(select([budget.c.budid,budget.c.budname,]).where(and_(budget.c.orgcode==authDetails["orgcode"] , budget.c.budtype == type)))
+                list = result.fetchall()
+                budlist=[]
+                for l in list:
+                    budlist.append({"budid":l["budid"], "budname":l["budname"]})
+                
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()

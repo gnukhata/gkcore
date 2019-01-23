@@ -601,14 +601,15 @@ table for budgeting
 """
 budget = Table('budget',metadata,
     Column('budid',Integer,primary_key=True),
-    Column('budnumber',UnicodeText, nullable = False),
+    Column('budname',UnicodeText, nullable = False),
     Column('startdate',DateTime, nullable = False),
     Column('enddate',DateTime, nullable = False ),
-    Column('amount', Numeric(13,2),nullable=False),
-    Column('accountcode',Integer, ForeignKey('accounts.accountcode', ondelete="CASCADE"), nullable = False ),
-    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE"), nullable=False),
+    Column('contents',JSONB,nullable=False),
+    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
+    Column('gaflag',Integer, nullable=False),
+    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE")),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    Column('psflag',Integer, nullable=False)
+    Column('budtype',Integer,nullable=False)
     )
 
 """
