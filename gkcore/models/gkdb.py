@@ -605,11 +605,11 @@ budget = Table('budget',metadata,
     Column('startdate',DateTime, nullable = False),
     Column('enddate',DateTime, nullable = False ),
     Column('contents',JSONB,nullable=False),
-    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
-    Column('gaflag',Integer, nullable=False),
     Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE")),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    Column('budtype',Integer,nullable=False)
+    Column('budtype',Integer,nullable=False),
+    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
+    Column('gaflag',Integer, nullable=False)
     )
 
 """
