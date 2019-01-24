@@ -75,12 +75,14 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
-                type = self.request.params["type"]
-                result = self.con.execute(select([budget.c.budid,budget.c.budname,]).where(and_(budget.c.orgcode==authDetails["orgcode"] , budget.c.budtype == type)))
+                if "goid" in authDetails:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"], budget.c.goid == request.params["goid"])))
+                else:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(budget.c.orgcode==authDetails["orgcode"]))
                 list = result.fetchall()
                 budlist=[]
                 for l in list:
-                    budlist.append({"budid":l["budid"], "budname":l["budname"]})
+                    budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"totalamount":sum(l["contents"].itervalues())})
                 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
             except:
