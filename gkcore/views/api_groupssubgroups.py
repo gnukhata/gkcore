@@ -24,6 +24,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Rupali Badgujar" <rupalibadgujar1234@gmail.com>
 """
 
 
@@ -138,10 +139,7 @@ class api_user(object):
 		else:
 			try:
 				self.con = eng.connect()
-				groupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Current Assets',gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
-				groupCode = groupData.fetchone()
-
-				subgroupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Bank',gkdb.groupsubgroups.c.subgroupof==groupCode['groupcode'],gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
+				subgroupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Bank',gkdb.groupsubgroups.c.subgroupof==(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Current Assets',gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"])))),gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
 				subgroupcode = subgroupData.fetchone()
 
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subgroupcode['groupcode']}
