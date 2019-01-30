@@ -63,6 +63,7 @@ class api_invoice(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
     @view_config(request_method='GET', request_param='bud=all',renderer='json')
     def getlistofbudgets(self):
         try:
@@ -76,7 +77,7 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 if "goid" in authDetails:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"], budget.c.goid == request.params["goid"])))
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"], budget.c.goid == authDetails["goid"])))
                 else:
                     result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(budget.c.orgcode==authDetails["orgcode"]))
                 list = result.fetchall()
@@ -85,6 +86,54 @@ class api_invoice(object):
                     budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"totalamount":sum(l["contents"].itervalues())})
                 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+    @view_config(request_method='GET', request_param='bud=details',renderer='json')
+    def getbudgetdetails(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
+        else:
+            # try:
+                print("dd")
+                self.con = eng.connect()
+                if "goid" in authDetails:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
+                else:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                list = result.fetchall()
+                budlist=[]
+                for l in list:
+                    budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
+                
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            # finally:
+                self.con.close()
+
+    @view_config(request_method='PUT', renderer='json')
+    def editbudgets(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                result = self.con.execute(budget.update().where(budget.c.budid==dataset["budid"]).values(dataset))
+                return {"gkstatus":enumdict["Success"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
