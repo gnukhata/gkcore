@@ -33,6 +33,8 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
+from gkcore.models.gkdb import accounts
+from gkcore.models import gkdb
 
 @view_defaults(route_name='budget')
 class api_invoice(object):
@@ -101,8 +103,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
         else:
-            # try:
-                print("dd")
+            try:
                 self.con = eng.connect()
                 if "goid" in authDetails:
                     result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
@@ -114,9 +115,9 @@ class api_invoice(object):
                     budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
                 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
-            # except:
-            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            # finally:
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
                 self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
@@ -136,5 +137,30 @@ class api_invoice(object):
                 return {"gkstatus":enumdict["Success"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+    @view_config(request_method='DELETE', renderer='json')
+    def deletebudget(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                dataset = self.request.json_body
+                self.con = eng.connect()
+                user = self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid==authDetails["userid"]))
+                userid=user.fetchone()
+                if(userid[0] == -1):
+                    result = self.con.execute(budget.delete().where(budget.c.budid==dataset["budid"]))
+                    return {"gkstatus":enumdict["Success"]}
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
