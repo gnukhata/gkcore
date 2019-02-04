@@ -33,8 +33,133 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.models.gkdb import accounts
+from gkcore.models.gkdb import accounts, groupsubgroups
 from gkcore.models import gkdb
+
+
+def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
+    """
+    purpose:
+    This is a private method which will return
+    *groupname for the provided account
+    *opening balance for the range
+    *opening balance type
+    *closing balance for the selected range
+    *closing balance type
+    *Total Dr for the range
+    * total Cr for the range.
+    Input parameters are:
+    *Orgcode
+    *accountname
+    *financialfrom
+    *calculatefrom
+    *calculateto
+
+    first we will get the groupname for the provided account.
+    note that the given account may be associated with a subgroup for which we must get the group.
+    Then we get the opening balance and if it is not 0 then decide if it is a Dr or Cr balance based on the group.
+    Then the Total Dr and Cr is calculated.
+    If the calculate from is ahead of financial start, then the entire process is repeated.
+    This function is called by all reports in this resource.
+    we will be initializing all function level variables here.
+    """
+    groupName = ""
+    openingBalance = 0.00
+    balanceBrought = 0.00
+    currentBalance = 0.00
+    ttlCrBalance = 0.00
+    ttlDrBalance = 0.00
+    openingBalanceType = ""
+    ttlDrUptoFrom = 0.00
+    ttlCrUptoFrom = 0.00
+    balType = ""
+    groupData = con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
+    groupRecord = groupData.fetchone()
+    groupName = groupRecord["groupname"]
+    #now similarly we will get the opening balance for this account.
+
+    obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
+    ob = obData.fetchone()
+    openingBalance = float(ob["openingbal"])
+    financialStart = str(financialStart)
+    calculateFrom= str(calculateFrom)
+    financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
+    calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
+    calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
+    if financialYearStartDate == calculateFromDate:
+        if openingBalance == 0:
+            balanceBrought = 0
+
+        if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+            balanceBrought = abs(openingBalance)
+            openingBalanceType = "Cr"
+            balType = "Cr"
+
+        if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+            balanceBrought = openingBalance
+            openingBalanceType = "Dr"
+            balType = "Dr"
+
+        if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+            balanceBrought = abs(openingBalance)
+            openingBalanceType = "Dr"
+            balType = "Dr"
+
+        if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+            balanceBrought = openingBalance
+            openingBalanceType = "Cr"
+            balType = "Cr"
+    else:
+        tdrfrm = con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and (vouchertype = 'payment' or vouchertype = 'receipt')"%(int(accountCode),financialStart,calculateFrom,))
+        tcrfrm = con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and (vouchertype = 'payment' or vouchertype = 'receipt')"%(int(accountCode),financialStart,calculateFrom))
+        tdrRow = tdrfrm.fetchone()
+        tcrRow= tcrfrm.fetchone()
+        ttlCrUptoFrom = tcrRow['total']
+        ttlDrUptoFrom = tdrRow['total']
+        if ttlCrUptoFrom == None:
+            ttlCrUptoFrom = 0.00
+        if ttlDrUptoFrom == None:
+            ttlDrUptoFrom = 0.00
+
+        if openingBalance == 0:
+            balanceBrought = 0.00
+        if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+            ttlCrUptoFrom = ttlCrUptoFrom +abs(openingBalance)
+        if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
+            ttlDrUptoFrom = ttlDrUptoFrom +openingBalance
+        if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+            ttlDrUptoFrom = ttlDrUptoFrom+ abs(openingBalance)
+        if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
+            ttlCrUptoFrom = ttlCrUptoFrom + openingBalance
+        if ttlDrUptoFrom >  ttlCrUptoFrom:
+            balanceBrought = ttlDrUptoFrom - ttlCrUptoFrom
+            balType = "Dr"
+            openingBalanceType = "Dr"
+        if ttlCrUptoFrom >  ttlDrUptoFrom:
+            balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
+            balType = "Cr"
+            openingBalanceType = "Cr"
+    tdrfrm = con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'and (vouchertype = 'payment' or vouchertype = 'receipt')"%(int(accountCode),calculateFrom, calculateTo))
+    tdrRow = tdrfrm.fetchone()
+    tcrfrm = con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and (vouchertype = 'payment' or vouchertype = 'receipt')"%(int(accountCode),calculateFrom, calculateTo))
+    tcrRow= tcrfrm.fetchone()
+    ttlDrBalance = tdrRow['total']
+    ttlCrBalance = tcrRow['total']
+    if ttlCrBalance == None:
+        ttlCrBalance = 0.00
+    if ttlDrBalance == None:
+        ttlDrBalance = 0.00
+    if balType =="Dr":
+        ttlDrBalance = ttlDrBalance + float(balanceBrought)
+    if balType =="Cr":
+        ttlCrBalance = ttlCrBalance + float(balanceBrought)
+    if ttlDrBalance > ttlCrBalance :
+        currentBalance = ttlDrBalance - ttlCrBalance
+        balType = "Dr"
+    if ttlCrBalance > ttlDrBalance :
+        currentBalance = ttlCrBalance - ttlDrBalance
+        balType = "Cr"
+    return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 
 @view_defaults(route_name='budget')
 class api_invoice(object):
@@ -164,3 +289,87 @@ class api_invoice(object):
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    @view_config(request_method='GET',request_param='type=cashReport', renderer='json')
+    def cashBdgReport(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            # try:
+                self.con = eng.connect()
+                if "goid" in authDetails:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
+                else:
+                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                list = result.fetchall()
+                budlist = []
+                for l in list:
+                    budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
+
+                
+                groupReport = []
+                if(budlist[0]["btype"] == 3):
+                    if(budlist[0]["gaflag"] == 1):
+                        accReport = []
+                        startdate = datetime.strptime(budlist[0]["startdate"],"%d-%m-%Y").strftime("%Y-%m-%d")
+                        enddate = datetime.strptime(budlist[0]["enddate"],"%d-%m-%Y").strftime("%Y-%m-%d")
+                        financialStart = self.request.params["financialstart"]
+
+                        calbaldata=[]
+                        for account in budlist[0]["contents"].keys():
+                            calbalData = calculateBalance(self.con,account, financialStart, startdate, enddate)
+
+                            if (calbalData["baltype"] == 'Cr'):
+                                variance = budlist[0]["contents"][account] - calbalData["curbal"]
+                            if (calbalData['baltype'] == 'Dr'):
+                                variance = budlist[0]["contents"][account] + calbalData["curbal"]
+                            acc_name = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == account, accounts.c.orgcode == authDetails["orgcode"])))
+                            acc_name = acc_name.fetchone()
+                            accReport.append({"accountname":str(acc_name[0]),"accountcode":account,"budget":budlist[0]["contents"][account], "variance":variance, "totalcr":calbalData["totalcrbal"], "totaldr":calbalData["totaldrbal"]})
+                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":accReport}
+                    if(budlist[0]["gaflag"] == 19):
+                        for subgroup in budlist[0]["contents"].keys():
+                            accReport = []
+                            groupname = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.groupcode == subgroup, groupsubgroups.c.orgcode == authDetails["orgcode"])))
+                            groupname = groupname.fetchone()
+                            startdate = datetime.strptime(budlist[0]["startdate"],"%d-%m-%Y").strftime("%Y-%m-%d")
+                            enddate = datetime.strptime(budlist[0]["enddate"],"%d-%m-%Y").strftime("%Y-%m-%d")
+                            financialStart = self.request.params["financialstart"]
+                            total = 0
+                            acc = self.con.execute(select([accounts.c.accountcode,accounts.c.accountname]).where(and_(accounts.c.groupcode == subgroup, accounts.c.orgcode == authDetails["orgcode"])))
+                            acc = acc.fetchall()
+                            for account in acc:
+                                calbalData = calculateBalance(self.con,account["accountcode"], financialStart, startdate, enddate)
+                                if (calbalData["baltype"] == 'Cr'):
+                                    total = total - calbalData["curbal"]
+                                    print("cr >>>" , total)
+                                if (calbalData['baltype'] == 'Dr'):
+                                    total = total + calbalData["curbal"]
+                                    print("dr>>>>", total)
+                                accReport.append({"accountname":account["accountname"],"accountcode":account["accountcode"], "totalcr":calbalData["totalcrbal"], "totaldr":calbalData["totaldrbal"]})
+                            print("final>>>",total)
+                            if(total < 0):
+                                variance = budlist[0]["contents"][subgroup] - abs(total)
+                                if(variance > 0 or variance == 0):
+                                    vartype = 'Dr'
+                                if(variance < 0):
+                                    vartype = 'Cr'
+                            if(total > 0 or total == 0):
+                                variance = budlist[0]["contents"][subgroup] + abs(total)
+                                if(variance > 0 or variance == 0):
+                                    vartype = 'Dr'
+                                if(variance < 0):
+                                    vartype = 'Cr'
+                            print(variance)
+                            groupReport.append({"groupname":groupname[0],"budget":budlist[0]["contents"][subgroup],"variance":variance,"vartype":vartype,"accountdata":accReport})
+                            
+                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":groupReport}
+            # except:
+            #     return {"gkstatus":enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
