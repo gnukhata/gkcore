@@ -311,7 +311,6 @@ class api_invoice(object):
                 for l in list:
                     budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
 
-                
                 groupReport = []
                 if(budlist[0]["btype"] == 3):
                     if(budlist[0]["gaflag"] == 1):
@@ -321,18 +320,43 @@ class api_invoice(object):
                         financialStart = self.request.params["financialstart"]
 
                         calbaldata=[]
+                        budgetCr = 0
+                        budgetDr = 0
+                        totalBudget = 0
+                        totalVariance =0
                         for account in budlist[0]["contents"].keys():
                             calbalData = calculateBalance(self.con,account, financialStart, startdate, enddate)
 
                             if (calbalData["baltype"] == 'Cr'):
                                 variance = budlist[0]["contents"][account] - calbalData["curbal"]
+                                if(variance > 0 or variance == 0):
+                                    vartype = ''
+                                if(variance < 0):
+                                    vartype = 'Cr'
                             if (calbalData['baltype'] == 'Dr'):
                                 variance = budlist[0]["contents"][account] + calbalData["curbal"]
+                                if(variance > budlist[0]["contents"][account]):
+                                    variance = abs(calbalData["curbal"])
+                                    vartype = 'Dr'
+                                elif(variance > 0 or variance == 0):
+                                    vartype = ''
+                                elif(variance < 0):
+                                    vartype = 'Cr'
                             acc_name = self.con.execute(select([accounts.c.accountname]).where(and_(accounts.c.accountcode == account, accounts.c.orgcode == authDetails["orgcode"])))
                             acc_name = acc_name.fetchone()
-                            accReport.append({"accountname":str(acc_name[0]),"accountcode":account,"budget":budlist[0]["contents"][account], "variance":variance, "totalcr":calbalData["totalcrbal"], "totaldr":calbalData["totaldrbal"]})
-                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":accReport}
+                            accReport.append({"vartype":vartype,"accountname":str(acc_name[0]),"accountcode":account,"budget":budlist[0]["contents"][account], "variance":variance, "totalcr":calbalData["totalcrbal"], "totaldr":calbalData["totaldrbal"]})
+                            
+                        for budgett in accReport:
+                            totalBudget = totalBudget + budgett["budget"]
+                            totalVariance = totalVariance + budgett["variance"]
+                            budgetCr = budgetCr + budgett["totalcr"]
+                            budgetDr = budgetDr + budgett["totaldr"]
+                        total = [{"totalBudget":totalBudget,"totalVariance":totalVariance,"budgetCr":budgetCr,"budgetDr":budgetDr}]
+                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":accReport, "total":total}
+
                     if(budlist[0]["gaflag"] == 19):
+                        budgetCr = 0
+                        budgetDr = 0
                         for subgroup in budlist[0]["contents"].keys():
                             accReport = []
                             groupname = self.con.execute(select([groupsubgroups.c.groupname]).where(and_(groupsubgroups.c.groupcode == subgroup, groupsubgroups.c.orgcode == authDetails["orgcode"])))
@@ -347,28 +371,37 @@ class api_invoice(object):
                                 calbalData = calculateBalance(self.con,account["accountcode"], financialStart, startdate, enddate)
                                 if (calbalData["baltype"] == 'Cr'):
                                     total = total - calbalData["curbal"]
-                                    print("cr >>>" , total)
                                 if (calbalData['baltype'] == 'Dr'):
                                     total = total + calbalData["curbal"]
-                                    print("dr>>>>", total)
                                 accReport.append({"accountname":account["accountname"],"accountcode":account["accountcode"], "totalcr":calbalData["totalcrbal"], "totaldr":calbalData["totaldrbal"]})
-                            print("final>>>",total)
+
+                            for crdr in accReport:
+                                budgetCr = budgetCr + crdr["totalcr"]
+                                budgetDr = budgetDr + crdr["totaldr"]
                             if(total < 0):
                                 variance = budlist[0]["contents"][subgroup] - abs(total)
                                 if(variance > 0 or variance == 0):
-                                    vartype = 'Dr'
+                                    vartype = ''
                                 if(variance < 0):
                                     vartype = 'Cr'
                             if(total > 0 or total == 0):
                                 variance = budlist[0]["contents"][subgroup] + abs(total)
-                                if(variance > 0 or variance == 0):
+                                if(variance > budlist[0]["contents"][subgroup]):
+                                    variance = abs(total)
                                     vartype = 'Dr'
-                                if(variance < 0):
+                                elif(variance > 0 or variance == 0):
+                                    vartype = ''
+                                elif(variance < 0):
                                     vartype = 'Cr'
-                            print(variance)
-                            groupReport.append({"groupname":groupname[0],"budget":budlist[0]["contents"][subgroup],"variance":variance,"vartype":vartype,"accountdata":accReport})
-                            
-                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":groupReport}
+
+                            groupReport.append({"gaflag":19,"groupname":groupname[0],"budget":budlist[0]["contents"][subgroup],"variance":variance,"vartype":vartype,"accountdata":accReport})
+                        totalBudget = 0
+                        totalVariance =0
+                        for budgett in groupReport:
+                            totalBudget = totalBudget + budgett["budget"]
+                            totalVariance = totalVariance + budgett["variance"]
+                        total = [{"totalBudget":totalBudget,"totalVariance":totalVariance,"budgetCr":budgetCr,"budgetDr":budgetDr}]
+                        return{"gkstatus": gkcore.enumdict["Success"], "gkresult":groupReport, "total":total}
             # except:
             #     return {"gkstatus":enumdict["ConnectionFailed"] }
             # finally:
