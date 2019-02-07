@@ -17,6 +17,12 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   License along with GNUKhata (COPYING); if not, write to the
   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
+
+  Contributors:
+  "Rohan Khairnar" <rohankhairnar5@gmail.com>
+  
+  This API is written for budgeting module. With this API budget add,edit,delete,list of budget and budget report calculation can be done.
+  This api is related to "BUDGET TABLE".   
   """
 
 from gkcore import eng, enumdict
@@ -58,7 +64,7 @@ def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
     first we will get the groupname for the provided account.
     note that the given account may be associated with a subgroup for which we must get the group.
     Then we get the opening balance and if it is not 0 then decide if it is a Dr or Cr balance based on the group.
-    Then the Total Dr and Cr is calculated.
+    Then the Total Dr and Cr only for payment and receipt vouchers is calculated.
     If the calculate from is ahead of financial start, then the entire process is repeated.
     This function is called by all reports in this resource.
     we will be initializing all function level variables here.
@@ -397,9 +403,28 @@ class api_invoice(object):
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-
+    
     @view_config(request_method='GET',request_param='type=budgetReport', renderer='json')
     def budgetReport(self):
+        """
+        Purpose:
+        To calculate complete budget for given time period.
+        Input from webapp: financialstartdate,budgetperiod,budgetid
+        CASH Budget: ("btype" = 3)
+        fetch all field data from budget table with budget Id. 
+        only in cash budget the contents(JSON field) field containes "flowin" and "flowout" data.
+        flowin : incoming cash budget and flowout : outgoing cash budget.
+        for cash budget only that accounts which are under cash and bank subgroups are take in to consideration.
+        after fetching all accounts for loop is done to calculate balance with calculatebalance function written above.
+        calculatebalance fun. will gives (per account totalCr and Dr, balance remaining with its type(Cr/Dr),
+        account opening balance with type )
+        Calculations for cash budget:
+        budget balance = (total opening balance + cash inflow) - cash ouflow
+        variance(cash inflow) = inflow - total Dr
+        variance(cash outflow) = outflow - total Cr
+        variance(balance) = budget balance - total balance
+
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -411,14 +436,11 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
-                if "goid" in authDetails:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
-                else:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                result = self.con.execute(select([budget.c.goid,budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
                 list = result.fetchall()
                 budlist = []
                 for l in list:
-                    budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
+                    budlist.append({"goid":l["goid"],"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
                 
                 startdate = datetime.strptime(budlist[0]["startdate"],"%d-%m-%Y").strftime("%Y-%m-%d")
                 enddate = datetime.strptime(budlist[0]["enddate"],"%d-%m-%Y").strftime("%Y-%m-%d")
@@ -432,11 +454,13 @@ class api_invoice(object):
                     totalopeningbal = 0
                     totalCr = 0
                     totalDr = 0
+                    accBal = 0
                     totalCurbal = 0
                     accData =[]
                     for bal in cbAccounts:
-                        if "goid" in authDetails:
-                            calbaldata = calculateBalance2(self.con,bal["accountcode"], financialStart, startdate, enddate, authDetails["goid"])
+                        # goid is branch id . if branchid in budget then should calculate balance only for that branch.
+                        if (budlist[0]["goid"] != None):
+                            calbaldata = calculateBalance2(self.con,bal["accountcode"], financialStart, startdate, enddate, budlist[0]["goid"])
                         else:
                             calbaldata = calculateBalance(self.con,bal["accountcode"], financialStart, startdate, enddate)
                         if (calbaldata["openbaltype"] == 'Dr'):
@@ -454,8 +478,8 @@ class api_invoice(object):
                         accData.append({"accountname":bal["accountname"],"accCr":calbaldata["totalcrbal"],"accDr":calbaldata["totaldrbal"],"accBal":accBal})
                     budgetBal = float(totalopeningbal) + float(budgetIn) - float(budgetOut)
                     # Variance calculation
-                    varCr = float(budgetIn) - float(totalCr)
-                    varDr = float(budgetOut) - float(totalDr)
+                    varCr = float(budgetOut) - float(totalCr)
+                    varDr = float(budgetIn) - float(totalDr)
                     varBal = float(budgetBal) - float(totalCurbal)
                     total = [{"totalopeningbal":totalopeningbal,"budgetIn":float(budgetIn),"budgetOut":float(budgetOut),"budgetBal":budgetBal,"varCr":varCr,"varDr":varDr,"varBal":varBal,"accData":accData}]
                     return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
