@@ -82,12 +82,10 @@ class api_invoice(object):
                     self.con = eng.connect()
                     dtset = self.request.json_body
                     dcinvdataset={}
-                    print(dtset)
                     invdataset = dtset["invoice"]
                     freeqty = invdataset["freeqty"]
                     stockdataset = dtset["stock"]
                     items = invdataset["contents"]
-                    print(invdataset)
                     invdataset["orgcode"] = authDetails["orgcode"]
                     stockdataset["orgcode"] = authDetails["orgcode"]
                     queryParams = {}

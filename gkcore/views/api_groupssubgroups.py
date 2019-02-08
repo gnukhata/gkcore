@@ -238,7 +238,6 @@ class api_user(object):
 
 	@view_config(request_method='GET', request_param="groupflatlist",renderer ='json')
 	def getGroupFlatList(self):
-		#print "getflatlist"
 		try:
 			token = self.request.headers["gktoken"]
 		except:
