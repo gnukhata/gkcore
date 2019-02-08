@@ -30,7 +30,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, budget
+from gkcore.models.gkdb import invoice, budget, accounts, groupsubgroups
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -43,7 +43,6 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.models.gkdb import accounts, groupsubgroups
 from gkcore.models import gkdb
 
 
