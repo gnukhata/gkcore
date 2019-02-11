@@ -130,6 +130,34 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
+    @view_config(request_method='GET', request_param='type=addtab',renderer='json')
+    def getbalatbeginning(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
+        else:
+            try:
+                self.con = eng.connect()
+                cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                cbAccounts = cbAccountsData.fetchall()
+                balatbegin=0
+                for bal in cbAccounts:
+                    calbaldata = calculateBalance(self.con,bal["accountcode"],self.request.params["financialstart"], self.request.params["financialstart"], self.request.params["uptodate"])
+                    if (calbaldata["baltype"] == 'Cr'):
+                        balatbegin = balatbegin - calbaldata["curbal"]
+                    if (calbaldata["baltype"] == 'Dr'):
+                        balatbegin = balatbegin + calbaldata["curbal"]
+
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":balatbegin }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
     @view_config(request_method='PUT', renderer='json')
     def editbudgets(self):
         try:
