@@ -146,7 +146,7 @@ class api_invoice(object):
                 cbAccounts = cbAccountsData.fetchall()
                 balatbegin=0
                 for bal in cbAccounts:
-                    calbaldata = calculateBalance(self.con,bal["accountcode"],self.request.params["financialstart"], self.request.params["financialstart"], self.request.params["uptodate"])
+                    calbaldata = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], self.request.params["uptodate"])
                     if (calbaldata["baltype"] == 'Cr'):
                         balatbegin = balatbegin - calbaldata["curbal"]
                     if (calbaldata["baltype"] == 'Dr'):
