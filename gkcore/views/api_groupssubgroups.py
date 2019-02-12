@@ -94,7 +94,6 @@ class api_user(object):
 				grpsubs = []
 				for row in resultset:
 					grpsubs.append({"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupcode":row["subgroupcode"],"subgroupname":row["subgroupname"]})
-				print grpsubs
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
