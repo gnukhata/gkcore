@@ -288,13 +288,13 @@ class api_budget(object):
                     if (calbaldata["baltype"] == 'Dr'):
                         totalCurbal = totalCurbal + calbaldata["curbal"]
                         accBal = calbaldata["curbal"]
-                    accData.append({"accountname":bal["accountname"],"accCr":calbaldata["totalcrbal"],"accDr":calbaldata["totaldrbal"],"accBal":accBal})
+                    accData.append({"accountname":bal["accountname"],"accCr":"%.2f"%float(calbaldata["totalcrbal"]),"accDr":"%.2f"%float(calbaldata["totaldrbal"]),"accBal":"%.2f"%float(accBal)})
                 budgetBal = float(totalopeningbal) + float(budgetIn) - float(budgetOut)
                 # Variance calculation
                 varCr = float(budgetOut) - float(totalCr)
                 varDr = float(budgetIn) - float(totalDr)
                 varBal = float(budgetBal) - float(totalCurbal)
-                total = {"budgetclosingbal":float(totalCurbal),"totalopeningbal":totalopeningbal,"budgetIn":float(budgetIn),"budgetOut":float(budgetOut),"budgetBal":budgetBal,"varCr":varCr,"varDr":varDr,"varBal":varBal,"accData":accData}
+                total = {"budgetclosingbal":"%.2f"%float(totalCurbal),"totalopeningbal":"%.2f"%float(totalopeningbal),"budgetIn":"%.2f"%float(budgetIn),"budgetOut":"%.2f"%float(budgetOut),"budgetBal":"%.2f"%float(budgetBal),"varCr":"%.2f"%float(varCr),"varDr":"%.2f"%float(varDr),"varBal":"%.2f"%float(varBal),"accData":accData}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
