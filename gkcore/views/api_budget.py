@@ -47,7 +47,7 @@ from gkcore.models import gkdb
 from gkcore.views.api_reports import calculateBalance, calculateBalance2
 
 @view_defaults(route_name='budget')
-class api_invoice(object):
+class api_budget(object):
     def __init__(self,request):
         self.request = Request
         self.request = request
@@ -271,7 +271,6 @@ class api_invoice(object):
                 calbaldata=[]
                 totalCr = 0
                 totalDr = 0
-                accBal = 0
                 totalCurbal = 0
                 accData =[]
                 for bal in cbAccounts:
@@ -282,6 +281,7 @@ class api_invoice(object):
                         calbaldata = calculateBalance(self.con,bal["accountcode"], financialStart, startdate, enddate)
                     totalCr = totalCr + calbaldata["totalcrbal"]
                     totalDr = totalDr + calbaldata["totaldrbal"]
+                    accBal = 0
                     if (calbaldata["baltype"] == 'Cr'):
                         totalCurbal = totalCurbal - calbaldata["curbal"]
                         accBal = -calbaldata["curbal"]
