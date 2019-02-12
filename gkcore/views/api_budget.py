@@ -38,7 +38,7 @@ from sqlalchemy import and_, exc, desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
-from datetime import datetime,date
+from datetime import datetime,date,timedelta
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
@@ -144,9 +144,13 @@ class api_invoice(object):
                 self.con = eng.connect()
                 cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
                 cbAccounts = cbAccountsData.fetchall()
+                d = self.request.params["uptodate"]
+                calculateToDate = datetime.strptime(d,"%Y-%m-%d")
+                prevday = (calculateToDate - timedelta(days=1))
+                prevday = str(prevday)[0:10]
                 balatbegin=0
                 for bal in cbAccounts:
-                    calbaldata = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], self.request.params["uptodate"])
+                    calbaldata = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], prevday)
                     if (calbaldata["baltype"] == 'Cr'):
                         balatbegin = balatbegin - calbaldata["curbal"]
                     if (calbaldata["baltype"] == 'Dr'):
@@ -241,8 +245,30 @@ class api_invoice(object):
                 budgetOut = list["contents"]["outflow"]
                 cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
                 cbAccounts = cbAccountsData.fetchall()
-                calbaldata=[]
+                # to calculate opening balance. If budget start date and financial start date are same then the opening balance for 
+                # budget will becomes accounts opening balance. Else opening balance for budget will get by calculating all crs and drs up to previous date of 
+                # budget start date, means add of total accounts remaining balance.
                 totalopeningbal = 0
+                if(startdate != financialStart):
+                    d = startdate
+                    calculateToDate = datetime.strptime(d,"%Y-%m-%d")
+                    prevday = (calculateToDate - timedelta(days=1))
+                    prevday = str(prevday)[0:10]
+                    for bal in cbAccounts:
+                        calculate = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], prevday)
+                        if (calculate["baltype"] == 'Cr'):
+                            totalopeningbal = totalopeningbal - calculate["curbal"]
+                        if (calculate["baltype"] == 'Dr'):
+                            totalopeningbal = totalopeningbal + calculate["curbal"]
+                else:
+                    prevday = startdate
+                    for bal in cbAccounts:
+                        calculate = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], prevday)
+                        if (calculate["openbaltype"] == 'Cr'):
+                            totalopeningbal = totalopeningbal - calculate["balbrought"]
+                        if (calculate["openbaltype"] == 'Dr'):
+                            totalopeningbal = totalopeningbal + calculate["balbrought"]
+                calbaldata=[]
                 totalCr = 0
                 totalDr = 0
                 accBal = 0
@@ -254,10 +280,6 @@ class api_invoice(object):
                         calbaldata = calculateBalance2(self.con,bal["accountcode"], financialStart, startdate, enddate, list["goid"])
                     else:
                         calbaldata = calculateBalance(self.con,bal["accountcode"], financialStart, startdate, enddate)
-                    if (calbaldata["openbaltype"] == 'Dr'):
-                        totalopeningbal = totalopeningbal + calbaldata["balbrought"]
-                    if (calbaldata["openbaltype"] == 'Cr'):
-                        totalopeningbal = totalopeningbal - calbaldata["balbrought"]
                     totalCr = totalCr + calbaldata["totalcrbal"]
                     totalDr = totalDr + calbaldata["totaldrbal"]
                     if (calbaldata["baltype"] == 'Cr'):
