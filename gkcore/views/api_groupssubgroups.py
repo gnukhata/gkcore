@@ -213,28 +213,6 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-				
-	@view_config(request_method='GET', request_param="allsubgroup",renderer ='json')
-	def getallsubgroup(self):
-		try:
-			token = self.request.headers["gktoken"]
-		except:
-			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-		authDetails = authCheck(token)
-		if authDetails["auth"]==False:
-			return {"gkstatus":enumdict["UnauthorisedAccess"]}
-		else:
-			try:
-				self.con = eng.connect()
-				result = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.subgroupof > 0 ,groupsubgroups.c.orgcode == authDetails["orgcode"])))
-				subs = []
-				for row in result:
-					subs.append({"groupname":row["groupname"], "groupcode":row["groupcode"]})
-				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subs}
-			except:
-				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-			finally:
-				self.con.close()
 
 	@view_config(request_method='GET', request_param="groupflatlist",renderer ='json')
 	def getGroupFlatList(self):
