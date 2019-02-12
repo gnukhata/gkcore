@@ -294,7 +294,7 @@ class api_invoice(object):
                 varCr = float(budgetOut) - float(totalCr)
                 varDr = float(budgetIn) - float(totalDr)
                 varBal = float(budgetBal) - float(totalCurbal)
-                total = {"totalopeningbal":totalopeningbal,"budgetIn":float(budgetIn),"budgetOut":float(budgetOut),"budgetBal":budgetBal,"varCr":varCr,"varDr":varDr,"varBal":varBal,"accData":accData}
+                total = {"budgetclosingbal":float(totalCurbal),"totalopeningbal":totalopeningbal,"budgetIn":float(budgetIn),"budgetOut":float(budgetOut),"budgetBal":budgetBal,"varCr":varCr,"varDr":varDr,"varBal":varBal,"accData":accData}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
