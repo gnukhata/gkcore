@@ -30,7 +30,7 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, budget, accounts, groupsubgroups
+from gkcore.models.gkdb import invoice, budget, accounts, groupsubgroups, users
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -64,11 +64,16 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                Bdata = self.request.json_body
-                budgetdataset = Bdata
-                budgetdataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(budget.insert(),[budgetdataset])
-                return {"gkstatus":enumdict["Success"]}
+                role = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
+                userrole = role.fetchone()
+                if(userrole[0] == -1 or userrole[0] == 0):
+                    Bdata = self.request.json_body
+                    budgetdataset = Bdata
+                    budgetdataset["orgcode"] = authDetails["orgcode"]
+                    result = self.con.execute(budget.insert(),[budgetdataset])
+                    return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"] }
             except exc.IntegrityError:
                return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
@@ -174,9 +179,14 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(budget.update().where(budget.c.budid==dataset["budid"]).values(dataset))
-                return {"gkstatus":enumdict["Success"]}
+                role = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
+                userrole = role.fetchone()
+                if(userrole[0] == -1 or userrole[0] == 0):
+                    dataset = self.request.json_body
+                    result = self.con.execute(budget.update().where(budget.c.budid==dataset["budid"]).values(dataset))
+                    return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"] }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
@@ -195,11 +205,13 @@ class api_budget(object):
             try:
                 dataset = self.request.json_body
                 self.con = eng.connect()
-                user = self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid==authDetails["userid"]))
-                userid=user.fetchone()
-                if(userid[0] == -1):
+                role = self.con.execute(select([users.c.userrole]).where(users.c.userid==authDetails["userid"]))
+                userrole=role.fetchone()
+                if(userrole[0] == -1 or userrole[0] == 0):
                     result = self.con.execute(budget.delete().where(budget.c.budid==dataset["budid"]))
                     return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ActionDisallowed"] }
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["ActionDisallowed"]}
             except:
