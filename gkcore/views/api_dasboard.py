@@ -39,7 +39,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
 
                 inoutflag = int(self.request.params["inoutflag"])              
@@ -57,7 +57,6 @@ It will be used for creating entries in the billwise table and updating it as ne
                 if typeflag == 4:
                     fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"],invoice.c.invoicedate >= startdate, invoice.c.invoicedate <= enddate, invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
                 fiveInvoiceslist = fiveinvoices.fetchall()
-                print(fiveInvoiceslist)
 
                 for inv in fiveInvoiceslist:
                     csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
@@ -66,10 +65,10 @@ It will be used for creating entries in the billwise table and updating it as ne
 
                 return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata, "type":types[typeflag]}
                 self.con.close()
-            # except:
-            #     return{"gkstatus":enumdict["ConnectionFailed"]}
-            #     self.con.close()
-            # finally:
-            #     self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
 
         
