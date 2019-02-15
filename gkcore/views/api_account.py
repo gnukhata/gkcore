@@ -202,11 +202,8 @@ defaultflag '2' or '3' set to the '0'.
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
-
-                    if accrow["defaultflag"] in default_acc:   #check default flag with default_acc dectionary 
-                        defaultflag=default_acc[accrow["defaultflag"]]
-                        
-
+                    # if accrow["defaultflag"] in default_acc:   #check default flag with default_acc dectionary 
+                    defaultflag=default_acc[accrow["defaultflag"]]
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
                     grprow = resultset.fetchone()
                     if grprow["groupcode"]==grprow["subgroupcode"]:
