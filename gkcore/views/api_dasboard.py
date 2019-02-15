@@ -65,4 +65,28 @@ class api_dashboard(object):
             finally:
                 self.con.close()
 
-        
+    @view_config(request_method='GET',renderer='json', request_param="type=invoicecountbymonth")
+    def getinvoicecountbymonth(self):
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            # try:
+                self.con = eng.connect()
+                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(and_(organisation.c.orgcode == authDetails["orgcode"])))
+                startenddateprint=startenddate.fetchone()
+                startdate = datetime.strftime(startenddateprint["yearstart"])
+                print(startdate)
+            #     return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata, "type":types[typeflag]}
+            #     self.con.close()
+            # except:
+            #     return{"gkstatus":enumdict["ConnectionFailed"]}
+            #     self.con.close()
+            # finally:
+            #     self.con.close()
+
