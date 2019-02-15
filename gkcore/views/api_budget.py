@@ -286,27 +286,38 @@ class api_budget(object):
                 totalCurbal = 0
                 accData =[]
                 for bal in cbAccounts:
+                    accountcode = str(bal["accountcode"])
                     # goid is branch id . if branchid in budget then should calculate balance only for that branch.
                     if (list["goid"] != None):
-                        calbaldata = calculateBalance2(self.con,bal["accountcode"], financialStart, startdate, enddate, list["goid"])
+                        calbaldata = calculateBalance2(self.con,accountcode, financialStart, startdate, enddate, list["goid"])
+                        transactionsRecords = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,accountcode,accountcode, list["goid"]))
                     else:
-                        calbaldata = calculateBalance(self.con,bal["accountcode"], financialStart, startdate, enddate)
-                    totalCr = totalCr + calbaldata["totalcrbal"]
-                    totalDr = totalDr + calbaldata["totaldrbal"]
-                    accBal = 0
+                        calbaldata = calculateBalance(self.con,accountcode, financialStart, startdate, enddate)
+                        transactionsRecords = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,accountcode,accountcode))
+                    transactions = transactionsRecords.fetchall()
+                    
+                    accCr = 0
+                    accDr = 0
+                    for transaction in transactions:
+                        if transaction["drs"].has_key(str(accountcode)):
+                            accDr = float(transaction["drs"][accountcode])
+                            totalDr += float(transaction["drs"][accountcode])
+                        if transaction["crs"].has_key(accountcode):
+                            accCr = float(transaction["crs"][accountcode])
+                            totalCr += float(transaction["crs"][accountcode])
                     if (calbaldata["baltype"] == 'Cr'):
                         totalCurbal = totalCurbal - calbaldata["curbal"]
                         accBal = -calbaldata["curbal"]
                     if (calbaldata["baltype"] == 'Dr'):
                         totalCurbal = totalCurbal + calbaldata["curbal"]
                         accBal = calbaldata["curbal"]
-                    accData.append({"accountname":bal["accountname"],"accCr":"%.2f"%float(calbaldata["totalcrbal"]),"accDr":"%.2f"%float(calbaldata["totaldrbal"]),"accBal":"%.2f"%float(accBal)})
+                    accData.append({"accountname":bal["accountname"],"accCr":"%.2f"%float(accCr),"accDr":"%.2f"%float(accDr),"accBal":"%.2f"%float(accBal)})
                 budgetBal = float(totalopeningbal) + float(budgetIn) - float(budgetOut)
                 # Variance calculation
                 varCr = float(budgetOut) - float(totalCr)
                 varDr = float(budgetIn) - float(totalDr)
                 varBal = float(budgetBal) - float(totalCurbal)
-                total = {"budgetclosingbal":"%.2f"%float(totalCurbal),"totalopeningbal":"%.2f"%float(totalopeningbal),"budgetIn":"%.2f"%float(budgetIn),"budgetOut":"%.2f"%float(budgetOut),"budgetBal":"%.2f"%float(budgetBal),"varCr":"%.2f"%float(varCr),"varDr":"%.2f"%float(varDr),"varBal":"%.2f"%float(varBal),"accData":accData}
+                total = {"totalCr":"%.2f"%float(totalCr),"totalDr":"%.2f"%float(totalDr),"budgetclosingbal":"%.2f"%float(totalCurbal),"totalopeningbal":"%.2f"%float(totalopeningbal),"budgetIn":"%.2f"%float(budgetIn),"budgetOut":"%.2f"%float(budgetOut),"budgetBal":"%.2f"%float(budgetBal),"varCr":"%.2f"%float(varCr),"varDr":"%.2f"%float(varDr),"varBal":"%.2f"%float(varBal),"accData":accData}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
