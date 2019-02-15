@@ -285,6 +285,7 @@ class api_budget(object):
                 totalDr = 0
                 totalCurbal = 0
                 accData =[]
+                
                 for bal in cbAccounts:
                     accountcode = str(bal["accountcode"])
                     # goid is branch id . if branchid in budget then should calculate balance only for that branch.
@@ -295,15 +296,14 @@ class api_budget(object):
                         calbaldata = calculateBalance(self.con,accountcode, financialStart, startdate, enddate)
                         transactionsRecords = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,accountcode,accountcode))
                     transactions = transactionsRecords.fetchall()
-                    
                     accCr = 0
                     accDr = 0
                     for transaction in transactions:
                         if transaction["drs"].has_key(str(accountcode)):
-                            accDr = float(transaction["drs"][accountcode])
+                            accDr += float(transaction["drs"][accountcode])
                             totalDr += float(transaction["drs"][accountcode])
                         if transaction["crs"].has_key(accountcode):
-                            accCr = float(transaction["crs"][accountcode])
+                            accCr += float(transaction["crs"][accountcode])
                             totalCr += float(transaction["crs"][accountcode])
                     if (calbaldata["baltype"] == 'Cr'):
                         totalCurbal = totalCurbal - calbaldata["curbal"]
