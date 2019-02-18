@@ -14,6 +14,8 @@ from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,
 from datetime import datetime, date
 from operator import itemgetter
 from natsort import natsorted
+import calendar
+import math
 @view_defaults(route_name='dashboard')
 class api_dashboard(object):
     print("inside function")
@@ -76,17 +78,24 @@ class api_dashboard(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
-                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(and_(organisation.c.orgcode == authDetails["orgcode"])))
-                startenddateprint=startenddate.fetchone()
-                startdate = datetime.strftime(startenddateprint["yearstart"])
-                print(startdate)
-            #     return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata, "type":types[typeflag]}
-            #     self.con.close()
-            # except:
-            #     return{"gkstatus":enumdict["ConnectionFailed"]}
-            #     self.con.close()
-            # finally:
-            #     self.con.close()
+                # inoutflag = int(self.request.params["inoutflag"])   
+                monthlyrecord=[]
 
+                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(and_(organisation.c.orgcode == authDetails["orgcode"])))
+                startenddateprint=startenddate.fetchone()                
+                
+                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag=9 group by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d')))
+                monthlysortdataset=monthlysortdata.fetchall()
+
+                for month in monthlysortdataset:
+                    monthname=calendar.month_name[int(month['month'])]
+                    monthlyrecord.append({"invoice_count":month["invoice_count"],"month_name":monthname})
+                return{"gkstatus":enumdict["Success"],"monthlysortdataset":monthlyrecord}
+                self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
