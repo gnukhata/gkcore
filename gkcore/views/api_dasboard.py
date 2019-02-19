@@ -80,18 +80,24 @@ class api_dashboard(object):
         else:
             try:
                 self.con = eng.connect()
-                # inoutflag = int(self.request.params["inoutflag"])   
+                inoutflag = int(self.request.params["inoutflag"])   
                 monthlyrecord=[]
+                dict1 ={}
 
+                #this is to fetch startdate and enddate
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(and_(organisation.c.orgcode == authDetails["orgcode"])))
                 startenddateprint=startenddate.fetchone()                
                 
-                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag=9 group by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d')))
+                #this is to fetch invoice count month wise
+                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d group by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag))
                 monthlysortdataset=monthlysortdata.fetchall()
-
+                print(monthlysortdataset)
                 for month in monthlysortdataset:
-                    monthname=calendar.month_name[int(month['month'])]
-                    monthlyrecord.append({"invoice_count":month["invoice_count"],"month_name":monthname})
+                    dict1.update({calendar.month_name[int(month['month'])]:month["invoice_count"]})
+                    # monthlyrecord.append({"invoice_count":month["invoice_count"],"month_name":calendar.month_name[int(month['month'])]})
+                    monthlyrecord.append(dict1)
+                    dict1={}
+                # print(dict1)
                 return{"gkstatus":enumdict["Success"],"monthlysortdataset":monthlyrecord}
                 self.con.close()
             except:
