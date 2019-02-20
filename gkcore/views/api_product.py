@@ -154,13 +154,16 @@ class api_product(object):
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
 
                  # the field deletable is for check whether product/service are in use or not
-                #prod_count is check that product/service are use in witch table and pc_count give count of product/service are in use
+                #first it check that product/service are use in witch stock table and purchaseorder table and then give count of product/service are in use
                 #if count is grater than 0 it send 1 else it send 0 as value of deletable key
-                
-                prod_count=self.con.execute("select(select count(invoice.contents) from invoice where invoice.contents?'%s' and orgcode='%d')+(select count(delchal.contents) from delchal where delchal.contents?'%s' and orgcode='%d')+(select count(purchaseorder.schedule)from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d')+(select count(productcode) from stock where productcode='%s' and orgcode='%d') as pccount" %((str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"])),(str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
-                pc_count=prod_count.fetchone()
-          
-                if pc_count["pccount"] > 0:
+
+                prod_countinstock = self.con.execute("select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                pc_countinstock = prod_countinstock.fetchone()
+
+                prod_countinpuchaseorder = self.con.execute("select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                pc_countinpuchaseorder = prod_countinpuchaseorder.fetchone()
+
+                if (pc_countinstock["pccount"] > 0 and pc_countinpuchaseorder["pccount"] > 0):
                     productDetails["deletable"] = 1
                     
                 else:
@@ -202,6 +205,7 @@ class api_product(object):
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
                 else:
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
+
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
