@@ -24,6 +24,7 @@ Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
+"Rupali Badgujar" <rupalibadgujar1234@gmail.com>
 """
 
 
@@ -112,7 +113,6 @@ class api_user(object):
 		else:
 			try:
 				self.con = eng.connect()
-#				print "grpcode: ",self.request.matchdict["groupcode"]
 
 				g = gkdb.groupsubgroups.alias("g")
 				sg = gkdb.groupsubgroups.alias("sg")
@@ -120,12 +120,35 @@ class api_user(object):
 				resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==self.request.matchdict["groupcode"],g.c.subgroupof==null(),sg.c.groupcode==self.request.matchdict["groupcode"],sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==self.request.matchdict["groupcode"]))))
 				row = resultset.fetchone()
 				grpsub={"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupcode":row["subgroupcode"],"subgroupname":row["subgroupname"]}
-#				print grpsub
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsub}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+
+	# This fuction return group code of groupsubgroups for organisation
+	@view_config(route_name='groupsubgroups', request_param='orgbank', request_method='GET',renderer='json')
+	def getGroupSubgroupfororg(self):
+		try:
+			token = self.request.headers["gktoken"]
+		except:
+			return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+		authDetails = authCheck(token)
+		if authDetails["auth"]==False:
+			return {"gkstatus":enumdict["UnauthorisedAccess"]}
+		else:
+			try:
+				self.con = eng.connect()
+				subgroupData = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Bank',gkdb.groupsubgroups.c.subgroupof==(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=='Current Assets',gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"])))),gkdb.groupsubgroups.c.orgcode==(authDetails["orgcode"]))))
+				subgroupcode = subgroupData.fetchone()
+
+				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":subgroupcode['groupcode']}
+			except:
+				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+			finally:
+					self.con.close()
+
+
 	@view_config(request_method='PUT', renderer='json')
 	def editSubgroup(self):
 		try:
