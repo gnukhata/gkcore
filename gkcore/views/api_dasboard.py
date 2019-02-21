@@ -89,15 +89,15 @@ class api_dashboard(object):
                 startenddateprint=startenddate.fetchone()                
                 
                 #this is to fetch invoice count month wise
-                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d group by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag))
+                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag))
                 monthlysortdataset=monthlysortdata.fetchall()
 
+                month=[]
+                invcount=[]
                 for count in monthlysortdataset:
-                    height=(280/max(d['invoice_count'] for d in monthlysortdataset))*count['invoice_count']
-                    dict1.update({calendar.month_name[int(count['month'])]:height})
-                    monthlyrecord.append(dict1)
-                    dict1={}
-                return{"gkstatus":enumdict["Success"],"monthlysortdataset":monthlyrecord}
+                    month.append(calendar.month_name[int(count['month'])])
+                    invcount.append(count["invoice_count"])
+                return{"gkstatus":enumdict["Success"],"month":month,"invcount":invcount}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
