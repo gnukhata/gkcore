@@ -82,8 +82,8 @@ class api_budget(object):
                 self.con.close()
 
     @view_config(request_method='GET', request_param='bud=all',renderer='json')
-    """ To get all budgets list"""
     def getlistofbudgets(self):
+        """ To get all budgets list """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -110,8 +110,8 @@ class api_budget(object):
                 self.con.close()
 
     @view_config(request_method='GET', request_param='bud=details',renderer='json')
-    """ To get single budget details as per budget id 'budid' """
     def getbudgetdetails(self):
+        """ To get single budget details as per budget id 'budid' """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -127,9 +127,7 @@ class api_budget(object):
                 else:
                     result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
                 list = result.fetchone()
-                budlist=[]
-                for l in list:
-                    budlist.append({"budid":l["budid"], "budname":l["budname"],"startdate":datetime.strftime(l["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(l["enddate"],'%d-%m-%Y'),"btype":l["budtype"],"contents":l["contents"],"gaflag":l["gaflag"]})
+                budlist={"budid":list["budid"], "budname":list["budname"],"startdate":datetime.strftime(list["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(list["enddate"],'%d-%m-%Y'),"btype":list["budtype"],"contents":list["contents"],"gaflag":list["gaflag"]}
                 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
             except:
@@ -138,11 +136,11 @@ class api_budget(object):
                 self.con.close()
 
     @view_config(request_method='GET', request_param='type=addtab',renderer='json')
-    """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the date of previous date of budget startdate with their accountcode.
+    def getbalatbeginning(self):
+        """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the date of previous date of budget startdate with their accountcode.
         It will take financial start and budget start date as input.
         for budget type 3 which is cash. It will fetch all accounts which comes under the bank and cash subgroup.
         """
-    def getbalatbeginning(self):
         try:
             token = self.request.headers["gktoken"]
         except:
