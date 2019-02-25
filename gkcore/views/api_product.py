@@ -153,8 +153,8 @@ class api_product(object):
 
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
 
-                 # the field deletable is for check whether product/service are in use or not
-                #first it check that product/service are use in witch stock table and purchaseorder table and then give count of product/service are in use
+                # the field deletable is for check whether product/service are in use or not
+                #first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
                 #if count is grater than 0 it send 1 else it send 0 as value of deletable key
 
                 prod_countinstock = self.con.execute("select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
