@@ -159,15 +159,17 @@ class api_product(object):
 
                 prod_countinstock = self.con.execute("select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
                 pc_countinstock = prod_countinstock.fetchone()
-
-                prod_countinpuchaseorder = self.con.execute("select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
-                pc_countinpuchaseorder = prod_countinpuchaseorder.fetchone()
-
-                if (pc_countinstock["pccount"] > 0 and pc_countinpuchaseorder["pccount"] > 0):
+                
+                if pc_countinstock["pccount"] > 0:
                     productDetails["deletable"] = 1
-                    
-                else:
-                    productDetails["deletable"] = 0
+
+                else: 
+                    prod_countinpuchaseorder = self.con.execute("select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                    pc_countinpuchaseorder = prod_countinpuchaseorder.fetchone()
+                    if pc_countinpuchaseorder["pccount"] > 0:
+                        productDetails["deletable"] = 1  
+                    else:
+                        productDetails["deletable"] = 0
 
                 if row["prodsp"]!=None:
                     productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
