@@ -48,7 +48,6 @@ import calendar
 import math
 @view_defaults(route_name='dashboard')
 class api_dashboard(object):
-    print("inside function")
  
     def __init__(self, request):
         self.request = Request
@@ -73,7 +72,6 @@ class api_dashboard(object):
                 inoutflag = int(self.request.params["inoutflag"])              
                 typeflag = int(self.request.params["typeflag"])
 
-                types = {1:"Amount Wise", 4:"Due Wise"}
                 fiveInvoiceslistdata=[]
                
                 # Invoices in descending order of amount.
@@ -90,7 +88,7 @@ class api_dashboard(object):
                     csDetails = csd.fetchone()
                     fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
 
-                return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata, "type":types[typeflag]}
+                return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -117,7 +115,7 @@ class api_dashboard(object):
                 dict1 ={}
 
                 #this is to fetch startdate and enddate
-                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(and_(organisation.c.orgcode == authDetails["orgcode"])))
+                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 startenddateprint=startenddate.fetchone()                
                 
                 #this is to fetch invoice count month wise
@@ -152,7 +150,7 @@ class api_dashboard(object):
                 inoutflag = int(self.request.params["inoutflag"])   
                 self.con = eng.connect()
                 # this is to fetch top five custid and customer and supplier count.
-                topfivecust=self.con.execute("select custid as custid, count(custid) as custcount from invoice where inoutflag=%d and orgcode= %d group by custid order by count(custid) desc limit(5)"%(inoutflag,authDetails["orgcode"]))
+                topfivecust=self.con.execute("select custid as custid, count(custid) as custcount, sum(invoicetotal) as balance from invoice where inoutflag=%d and orgcode= %d group by custid order by sum(invoicetotal) desc limit(5)"%(inoutflag,authDetails["orgcode"]))
                 topfivecustlist=topfivecust.fetchall()
 
                 topfivecustdetails=[]
@@ -160,7 +158,7 @@ class api_dashboard(object):
                     # for fetch customer or supplier name using cust id in invoice.
                     csd = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
                     csDetails = csd.fetchone()
-                    topfivecustdetails.append({"custname":csDetails["custname"],"invoicecount":inv["custcount"]})
+                    topfivecustdetails.append({"custname":csDetails["custname"],"balance":[float(inv["balance"])]})
                 return{"gkstatus":enumdict["Success"],"topfivecustlist":topfivecustdetails}
                 self.con.close()
             except:
