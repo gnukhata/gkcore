@@ -137,7 +137,7 @@ class api_budget(object):
 
     @view_config(request_method='GET', request_param='type=addtab',renderer='json')
     def getbalatbeginning(self):
-        """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the date of previous date of budget startdate with their accountcode.
+        """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the previous date of budget startdate with their accountcode.
         It will take financial start and budget start date as input.
         for budget type 3 which is cash. It will fetch all accounts which comes under the bank and cash subgroup.
         """
