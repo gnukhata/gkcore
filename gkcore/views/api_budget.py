@@ -67,8 +67,7 @@ class api_budget(object):
                 role = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
                 userrole = role.fetchone()
                 if(userrole[0] == -1 or userrole[0] == 0):
-                    Bdata = self.request.json_body
-                    budgetdataset = Bdata
+                    budgetdataset = self.request.json_body
                     budgetdataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(budget.insert(),[budgetdataset])
                     return {"gkstatus":enumdict["Success"]}
