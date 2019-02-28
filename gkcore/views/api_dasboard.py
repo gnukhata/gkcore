@@ -111,8 +111,7 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
                 inoutflag = int(self.request.params["inoutflag"])   
-                monthlyrecord=[]
-                dict1 ={}
+
 
                 #this is to fetch startdate and enddate
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
@@ -121,13 +120,12 @@ class api_dashboard(object):
                 #this is to fetch invoice count month wise
                 monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
                 monthlysortdataset=monthlysortdata.fetchall()
-
-                month=[]
-                invcount=[]
+                
+                #this is use to send 0 if month have 0 invoice count
+                invcount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 for count in monthlysortdataset:
-                    month.append(calendar.month_name[int(count['month'])])
-                    invcount.append(count["invoice_count"])
-                return{"gkstatus":enumdict["Success"],"month":month,"invcount":invcount}
+                    invcount[int(count["month"])-1]=count["invoice_count"]
+                return{"gkstatus":enumdict["Success"],"invcount":invcount}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -149,17 +147,54 @@ class api_dashboard(object):
             try:
                 inoutflag = int(self.request.params["inoutflag"])   
                 self.con = eng.connect()
-                # this is to fetch top five custid and customer and supplier count.
-                topfivecust=self.con.execute("select custid as custid, count(custid) as custcount, sum(invoicetotal) as balance from invoice where inoutflag=%d and orgcode= %d group by custid order by sum(invoicetotal) desc limit(5)"%(inoutflag,authDetails["orgcode"]))
-                topfivecustlist=topfivecust.fetchall()
+                # this is to fetch top five customer which is sort by total amount.
+                if inoutflag == 15:
+                    topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                    topfivecustlist=topfivecust.fetchall()
+                
+                # this is to fetch top five suppplier which is sort by total invoice.
+                else:
+                    topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                    topfivecustlist=topfivecust.fetchall()
 
                 topfivecustdetails=[]
                 for inv in topfivecustlist:
                     # for fetch customer or supplier name using cust id in invoice.
                     csd = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
                     csDetails = csd.fetchone()
-                    topfivecustdetails.append({"custname":csDetails["custname"],"balance":[float(inv["balance"])]})
+                    topfivecustdetails.append({"custname":csDetails["custname"],"data":float(inv["data"])})
                 return{"gkstatus":enumdict["Success"],"topfivecustlist":topfivecustdetails}
+                self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
+   
+    @view_config(request_method='GET',renderer='json', request_param="type=topfiveproduct")
+    def topfiveprod(self):
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                inoutflag = int(self.request.params["inoutflag"])   
+                self.con = eng.connect()
+                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=%d group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"],inoutflag))
+                topfiveprodlist=topfiveprod.fetchall()
+
+                prodcodedesclist=[]
+                for prodcode in topfiveprodlist:
+                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
+                    proddesclist=proddesc.fetchone()
+                    prodcodedesclist.append({"prodcode":prodcode["productcode"],"proddesc":proddesclist["proddesc"]})
+                    print prodcodedesclist
+                return{"gkstatus":enumdict["Success"],"topfiveprod":prodcodedesclist}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
