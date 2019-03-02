@@ -150,21 +150,41 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
-                cbAccounts = cbAccountsData.fetchall()
                 d = self.request.params["uptodate"]
                 calculateToDate = datetime.strptime(d,"%Y-%m-%d")
                 prevday = (calculateToDate - timedelta(days=1))
                 prevday = str(prevday)[0:10]
+                result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                cashAccounts = result.fetchall()
                 balatbegin=0
-                for bal in cbAccounts:
+                cashaccountdata=[]
+                for bal in cashAccounts:
                     calbaldata = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], prevday)
+                    curbal = 0
                     if (calbaldata["baltype"] == 'Cr'):
                         balatbegin = balatbegin - calbaldata["curbal"]
+                        curbal = -calbaldata["curbal"]
                     if (calbaldata["baltype"] == 'Dr'):
                         balatbegin = balatbegin + calbaldata["curbal"]
-
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":balatbegin }
+                        curbal = calbaldata["curbal"]
+                    cashaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(curbal),"grpname":calbaldata["grpname"]})
+                
+                result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                bankAccounts = result.fetchall()
+                bankaccountdata=[]
+                for bal in bankAccounts:
+                    calbaldata = calculateBalance(self.con,bal["accountcode"],str(self.request.params["financialstart"]), self.request.params["financialstart"], prevday)
+                    curbal = 0
+                    if (calbaldata["baltype"] == 'Cr'):
+                        balatbegin = balatbegin - calbaldata["curbal"]
+                        curbal = -calbaldata["curbal"]
+                    if (calbaldata["baltype"] == 'Dr'):
+                        balatbegin = balatbegin + calbaldata["curbal"]
+                        curbal = calbaldata["curbal"]
+                    bankaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(curbal),"grpname":calbaldata["grpname"]})
+                
+                balances = {"balatbegin":balatbegin,"cashaccountdata":cashaccountdata,"bankaccountdata":bankaccountdata}
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":balances }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
