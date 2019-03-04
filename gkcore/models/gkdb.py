@@ -597,6 +597,27 @@ godown = Table('godown',metadata,
     )
 
 """
+table for budget module. All types of budget will store in this table.
+content field will have budget with its account/group/subgroup(key) and budget(value).
+budtype is for budget type: cash(3)/expense(5)/sales(19).
+gaflag is for budget is group wise(7)/subgroup wise(19)/account wise(1)
+budget period: startdate to enddate.
+project code field: cost center or project wise budget.
+"""
+budget = Table('budget',metadata,
+    Column('budid',Integer,primary_key=True),
+    Column('budname',UnicodeText, nullable = False),
+    Column('startdate',DateTime, nullable = False),
+    Column('enddate',DateTime, nullable = False ),
+    Column('contents',JSONB,nullable=False),
+    Column('goid',Integer, ForeignKey('godown.goid', ondelete="CASCADE")),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Column('budtype',Integer,nullable=False),
+    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
+    Column('gaflag',Integer, nullable=False)
+    )
+
+"""
 Table for storing product godownwise.
 When products are stored in the different godowns its openingstick will be entered accordingly.
 """

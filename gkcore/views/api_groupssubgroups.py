@@ -94,7 +94,6 @@ class api_user(object):
 				grpsubs = []
 				for row in resultset:
 					grpsubs.append({"groupcode":row["groupcode"],"groupname":row["groupname"],"subgroupcode":row["subgroupcode"],"subgroupname":row["subgroupname"]})
-				print grpsubs
 				return {"gkstatus": gkcore.enumdict["Success"], "gkresult":grpsubs}
 			except:
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -213,10 +212,9 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
-				
+
 	@view_config(request_method='GET', request_param="groupflatlist",renderer ='json')
 	def getGroupFlatList(self):
-		#print "getflatlist"
 		try:
 			token = self.request.headers["gktoken"]
 		except:

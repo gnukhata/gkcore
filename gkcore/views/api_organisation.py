@@ -508,6 +508,8 @@ class api_organisation(object):
             self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
             self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
+            if not tableExists("budget"):
+                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
         except:            
             return 0
         finally:
