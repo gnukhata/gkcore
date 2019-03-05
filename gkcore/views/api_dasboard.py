@@ -183,21 +183,55 @@ class api_dashboard(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
-                inoutflag = int(self.request.params["inoutflag"])   
                 self.con = eng.connect()
-                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=%d group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"],inoutflag))
+                topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
                 topfiveprodlist=topfiveprod.fetchall()
-
-                prodcodedesclist=[]
-                for prodcode in topfiveprodlist:
-                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
+                prodinfolist=[]
+                for prodinfo in topfiveprodlist:
+                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodinfo["productcode"])))
                     proddesclist=proddesc.fetchone()
-                    prodcodedesclist.append({"prodcode":prodcode["productcode"],"proddesc":proddesclist["proddesc"]})
-                    print prodcodedesclist
-                return{"gkstatus":enumdict["Success"],"topfiveprod":prodcodedesclist}
+                    prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
+                return{"gkstatus":enumdict["Success"],"topfiveprod":prodinfolist}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
                 self.con.close()
             finally:
                 self.con.close()
+    
+    @view_config(request_method='GET',renderer='json', request_param="type=delchalcountbymonth")
+    def delchalcountbymonth(self):
+
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                inoutflag = int(self.request.params["inoutflag"])   
+
+
+                #this is to fetch startdate and enddate
+                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
+                startenddateprint=startenddate.fetchone()                
+                
+                #this is to fetch delchal count month wise
+                monthlysortdata=self.con.execute("select extract(month from dcdate) as month, count(dcid) as delchal_count from delchal where dcdate BETWEEN '%s' AND '%s' and inoutflag=%d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                monthlysortdataset=monthlysortdata.fetchall()
+                
+                #this is use to send 0 if month have 0 delchal count
+                delchalcount=[0,0,0,0,0,0,0,0,0,0,0,0]
+                for count in monthlysortdataset:
+                    delchalcount[int(count["month"])-1]=count["delchal_count"]
+                return{"gkstatus":enumdict["Success"],"delchalcount":delchalcount}
+                self.con.close()
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
+                self.con.close()
+            finally:
+                self.con.close()
+
