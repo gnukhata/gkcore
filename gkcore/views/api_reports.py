@@ -3461,8 +3461,28 @@ class api_reports(object):
                 return {"gkstatus":enumdict["Success"],"gkresult":stockresult["gkresult"]}        
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+
+    # this fuction returns top five stock on hand report sort by balance for daashboard for goddown incharge
+    @view_config(request_param="stockonhandforgodownincharge",renderer="json")
+    def stockonhandforgodownincharge(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                orgcode = authDetails["orgcode"]
+                productCode = self.request.params["productcode"]
+                endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
+                stockresult=stockonhandfun(self.con, orgcode, productCode,endDate)
+                stockresultnew=sorted(stockresult["gkresult"],key =lambda x: float(x['balance']))[0:5]
+                return {"gkstatus":enumdict["Success"],"gkresult":stockresultnew}        
+            except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-    
+        
     # this fuction returns most sold product and stock on hand count for daashboard
     @view_config(request_param="stockonhandfordashboard",renderer="json")
     def stockonhandfordashboard(self):
