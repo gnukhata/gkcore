@@ -420,6 +420,7 @@ class api_budget(object):
                     transactions = transactionsRecords.fetchall()
                     accCr = 0
                     accDr = 0
+                    accBal = 0
                     for transaction in transactions:
                         if transaction["drs"].has_key(str(accountcode)):
                             accDr += float(transaction["drs"][accountcode])
