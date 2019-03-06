@@ -140,6 +140,9 @@ class api_budget(object):
         """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the previous date of budget startdate with their accountcode.
         It will take financial start and budget start date as input.
         for budget type 3 which is cash. It will fetch all accounts which comes under the bank and cash subgroup.
+        If the financial start date is same as budget start date then it will consider opening balances of accounts as clossing balance.
+        For expense budget type will be 5 :
+        In expense it will consider only that accounts which comes under the Direct and Indirect Expense group.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -444,6 +447,18 @@ class api_budget(object):
                 self.con.close()
     @view_config(request_method='GET',request_param='type=expenseReport', renderer='json')
     def expenseReport(self):
+        """Purpose:
+                To calculate report for expense budget. It takes budgetid(budid) and fanancialstart as input.
+            In this only that accounts will consider which comes under the Direct and Indirect expense group.
+            Here contents field of budget table will have json type data. In which key will be accountcode and their value will be budget amount.
+            Firstly will fetch budget details from budget table as per budget id.
+            Here we need previuos date of start date of budget to get the previously expense of each accounts.
+            For getting accounts balance we will considr only Dr from vouchers because expense is nominal accounts so it means debit all losses and expense.
+            By fetching balance for each accounts we will takes vouchers for budget periods. So that we will get actual expense balance of each account for that period.
+            To calculate variance reduce actual balance from budget amount. 
+            Budgeted balance is previous balance plus budget amount.
+            Actual balance is actual balance of budget period and previos balance.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
