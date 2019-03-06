@@ -3456,13 +3456,16 @@ class api_reports(object):
             try:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
+                print productCode
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
                 stockresult=stockonhandfun(self.con, orgcode, productCode,endDate)
+                print stockresult
                 return {"gkstatus":enumdict["Success"],"gkresult":stockresult["gkresult"]}        
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
                 return {"gkstatus":enumdict["ConnectionFailed"]}
     
+    # this fuction returns most sold product and stock on hand count for daashboard
     @view_config(request_param="stockonhandfordashboard",renderer="json")
     def stockonhandfordashboard(self):
         try:
@@ -3475,9 +3478,13 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
-                topfiveprodlist=topfiveprod.fetchall()
-                
+                # this is use to fetch top five product/service  which is order by  invoice count.                                
+                if "goid" in authDetails:        #for branch wise                        
+                    topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.goid=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"],authDetails["goid"]))
+                    topfiveprodlist=topfiveprod.fetchall()
+                else:
+                    topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
+                    topfiveprodlist=topfiveprod.fetchall()
                 prodcodedesclist=[]
                 for prodcode in topfiveprodlist:
                     proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
