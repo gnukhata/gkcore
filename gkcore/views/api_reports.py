@@ -3456,10 +3456,8 @@ class api_reports(object):
             try:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
-                print productCode
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
                 stockresult=stockonhandfun(self.con, orgcode, productCode,endDate)
-                print stockresult
                 return {"gkstatus":enumdict["Success"],"gkresult":stockresult["gkresult"]}        
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
