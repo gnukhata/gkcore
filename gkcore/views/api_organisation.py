@@ -725,7 +725,7 @@ class api_organisation(object):
 
                             token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
                             self.con.close()
-                            return {"gkstatus":enumdict["Success"],"token":token }
+                            return {"gkstatus":enumdict["Success"],"token":token, "orgcode":userdata["orgcode"]}
                         else:
                             self.con.close()
                             return {"gkstatus":enumdict["ConnectionFailed"]}
