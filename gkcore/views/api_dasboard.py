@@ -52,7 +52,7 @@ class api_dashboard(object):
         self.request = request
         self.con = Connection
 
-    #this function is use to show five invoice list at dashboard
+    #this function is use to show top five unpaid invoice list at dashboard
     @view_config(request_method='GET',renderer='json', request_param="type=fiveinvoicelist")
     def getinvoiceatdashboard(self):
         try:
@@ -186,7 +186,7 @@ class api_dashboard(object):
             finally:
                 self.con.close()
    
-    # this function use to show top five most bought product  at dashbord in most bought  product/supplier div  
+    # this function use to show top five most bought product and service at dashbord in most bought  product/service div  
     @view_config(request_method='GET',renderer='json', request_param="type=topfiveproduct")
     def topfiveprod(self):
         try:
@@ -256,7 +256,7 @@ class api_dashboard(object):
             finally:
                 self.con.close()
 
-    # this function use to show invoice count by month at dashbord in bar chart  
+    # this function use to show transfer note count by month at dashbord in bar chart  
     @view_config(request_method='GET',renderer='json', request_param="type=transfernotecountbymonth")
     def transfernotecountbymonth(self):
         try:
