@@ -599,25 +599,25 @@ class api_budget(object):
             finally:
                 self.con.close()
     
-    @view_config(request_method='GET',request_param='type=salesReport', renderer='json')
-    def salesReport(self):
-        """ 
-        """
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                financialStart = self.request.params["financialstart"]
-                result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
-                budgetdata = result.fetchone()
-                startdate = str(budgetdata["startdate"])[0:10]
-                enddate = str(budgetdata["enddate"])[0:10]
-                accounts = budgetdata["contents"]
-                accountdata=[]
+    # @view_config(request_method='GET',request_param='type=salesReport', renderer='json')
+    # def salesReport(self):
+    #     """ 
+    #     """
+    #     try:
+    #         token = self.request.headers["gktoken"]
+    #     except:
+    #         return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+    #     authDetails = authCheck(token)
+    #     if authDetails["auth"] == False:
+    #         return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+    #     else:
+    #         try:
+    #             self.con = eng.connect()
+    #             financialStart = self.request.params["financialstart"]
+    #             result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+    #             budgetdata = result.fetchone()
+    #             startdate = str(budgetdata["startdate"])[0:10]
+    #             enddate = str(budgetdata["enddate"])[0:10]
+    #             accounts = budgetdata["contents"]
+    #             accountdata=[]
                 
