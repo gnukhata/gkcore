@@ -152,6 +152,25 @@ class api_product(object):
                 row = result.fetchone()
 
                 productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+
+                # the field deletable is for check whether product/service are in use or not
+                #first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
+                #if count is grater than 0 it send 1 else it send 0 as value of deletable key
+
+                prod_countinstock = self.con.execute("select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                pc_countinstock = prod_countinstock.fetchone()
+                
+                if pc_countinstock["pccount"] > 0:
+                    productDetails["deletable"] = 1
+
+                else: 
+                    prod_countinpuchaseorder = self.con.execute("select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"]))))
+                    pc_countinpuchaseorder = prod_countinpuchaseorder.fetchone()
+                    if pc_countinpuchaseorder["pccount"] > 0:
+                        productDetails["deletable"] = 1  
+                    else:
+                        productDetails["deletable"] = 0
+
                 if row["prodsp"]!=None:
                     productDetails["prodsp"] = "%.2f"%float(row["prodsp"])
                 else:
@@ -188,6 +207,7 @@ class api_product(object):
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails,"numberofgodowns":"%d"%int(numberofgodowns)}
                 else:
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
+
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
