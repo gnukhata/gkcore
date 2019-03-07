@@ -26,8 +26,6 @@ Contributors:
 'Prajkta Patkar' <prajkta@riseup.net>
 "Abhijith Balan" <abhijithb21@openmailbox.org>
 """
-
-
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models import gkdb
@@ -57,7 +55,6 @@ class api_dashboard(object):
     #this function is use to show five invoice list at dashboard
     @view_config(request_method='GET',renderer='json', request_param="type=fiveinvoicelist")
     def getinvoiceatdashboard(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -227,7 +224,6 @@ class api_dashboard(object):
     # this function use to show delchal count by month at dashbord in bar chart      
     @view_config(request_method='GET',renderer='json', request_param="type=delchalcountbymonth")
     def delchalcountbymonth(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
