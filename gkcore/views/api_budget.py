@@ -142,7 +142,8 @@ class api_budget(object):
         for budget type 3 which is cash. It will fetch all accounts which comes under the bank and cash subgroup.
         If the financial start date is same as budget start date then it will consider opening balances of accounts as clossing balance.
         For expense budget type will be 5 :
-        In expense it will consider only that accounts which comes under the Direct and Indirect Expense group.
+        In expense it will consider only that accounts which comes under the Direct and Indirect Expense group. to get previous balances of expense accounts, consider sum of all
+        drs. Here expense are nominal accounts so Drs amount will be expense amount. So the sum of Drs of account will becomes the expense of that account.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -517,6 +518,8 @@ class api_budget(object):
                         totalpreviousbal += float(accountbal)
                         accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"budgetedbal":"%.2f"%float(budgetedBal),"accvariance":"%.2f"%float(accVariance),"actualbal":"%.2f"%float(actualBal)})
                     total={"totalpreviousbal":"%.2f"%float(totalpreviousbal),"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"totalbudgetedbal":"%.2f"%float(totalbudgetedbal),"totalactualbal":"%.2f"%float(totalactualbal),"accountdata":accountdata}
+                """ Here the start date of budget is smae as financial start date then the previous expense will be zero.
+                """
                 if(startdate == financialStart):
                     for key in accounts:
                         budgetamount = "%.2f"%float(accounts[key])
