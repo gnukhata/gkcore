@@ -153,7 +153,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 uptodate = self.request.params["uptodate"]
                 financialStart = self.request.params["financialstart"]
@@ -281,9 +281,8 @@ class api_budget(object):
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                 if btype == '19':
                     directExpense = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))                    
-                    expense = directExpense.fetchall();
-                    directIncome = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname ='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
-                    income = directIncome.fetchall();
+                    accounts = directExpense.fetchall();
+                    
                     expense=[]
                     totalBalAtBegin=0
                     if(uptodate != financialStart):
@@ -305,6 +304,8 @@ class api_budget(object):
                         for account in accounts:
                             expense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
 
+                    directIncome = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname ='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                    accounts = directIncome.fetchall();
                     income=[]
                     totalBalAtBegin=0
                     if(uptodate != financialStart):
@@ -327,10 +328,10 @@ class api_budget(object):
                             income.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
                     total = {"totalbal":"%.2f"%float(totalBalAtBegin),"expense":expense,"income":income}
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
     def editbudgets(self):
