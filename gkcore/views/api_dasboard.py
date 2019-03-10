@@ -120,18 +120,20 @@ class api_dashboard(object):
                 startenddateprint=startenddate.fetchone()                
                 
                 if "goid" in authDetails:  #for branch wise        
-                    #this is to fetch invoice count month wise
-                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d and goid=%d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"],authDetails["goid"]))
+                    #this is to fetch invoice totalamount month wise
+                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d and goid=%d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"],authDetails["goid"]))
+                    # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d and goid=%d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"],authDetails["goid"]))
                     monthlysortdataset=monthlysortdata.fetchall()
                 else:
-                   #this is to fetch invoice count month wise
-                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as invoice_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                   #this is to fetch invoice totalamount month wise
+                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                    # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
                     monthlysortdataset=monthlysortdata.fetchall()  
                 #this is use to send 0 if month have 0 invoice count
-                invcount=[0,0,0,0,0,0,0,0,0,0,0,0]
+                invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 for count in monthlysortdataset:
-                    invcount[int(count["month"])-1]=count["invoice_count"]
-                return{"gkstatus":enumdict["Success"],"invcount":invcount}
+                    invamount[int(count["month"])-1]=float(count["totalamount"])
+                return{"gkstatus":enumdict["Success"],"invcount":invamount}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -241,14 +243,14 @@ class api_dashboard(object):
                 startenddateprint=startenddate.fetchone()                
 
                 #this is to fetch delchal count month wise
-                monthlysortdata=self.con.execute("select extract(month from dcdate) as month, count(dcid) as delchal_count from delchal where dcdate BETWEEN '%s' AND '%s' and inoutflag=%d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                monthlysortdata=self.con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
                 monthlysortdataset=monthlysortdata.fetchall()
                 
                 #this is use to send 0 if month have 0 delchal count
-                delchalcount=[0,0,0,0,0,0,0,0,0,0,0,0]
+                totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 for count in monthlysortdataset:
-                    delchalcount[int(count["month"])-1]=count["delchal_count"]
-                return{"gkstatus":enumdict["Success"],"delchalcount":delchalcount}
+                    totalamount[int(count["month"])-1]=float(count["total_qty"])
+                return{"gkstatus":enumdict["Success"],"delchalcount":totalamount}
                 self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -273,6 +275,7 @@ class api_dashboard(object):
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 startenddateprint=startenddate.fetchone()                
                 #this is to fetch invoice count month wise
+                # monthlysortdata=self.con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"]))
                 monthlysortdata=self.con.execute("select extract(month from transfernotedate) as month, count(transfernoteid) as count from transfernote where transfernotedate BETWEEN '%s' AND '%s' and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"]))
                 monthlysortdataset=monthlysortdata.fetchall()  
                 #this is use to send 0 if month have 0 invoice count
