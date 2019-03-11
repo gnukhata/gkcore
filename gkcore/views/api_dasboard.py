@@ -51,7 +51,7 @@ class api_dashboard(object):
         self.request = Request
         self.request = request
         self.con = Connection
-
+        print "dashboard initialize"
     #this function is use to show top five unpaid invoice list at dashboard
     @view_config(request_method='GET',renderer='json', request_param="type=fiveinvoicelist")
     def getinvoiceatdashboard(self):
@@ -258,35 +258,67 @@ class api_dashboard(object):
             finally:
                 self.con.close()
 
-    # this function use to show transfer note count by month at dashbord in bar chart  
-    @view_config(request_method='GET',renderer='json', request_param="type=transfernotecountbymonth")
-    def transfernotecountbymonth(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                #this is to fetch startdate and enddate
-                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
-                startenddateprint=startenddate.fetchone()                
-                #this is to fetch invoice count month wise
-                # monthlysortdata=self.con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"]))
-                monthlysortdata=self.con.execute("select extract(month from transfernotedate) as month, count(transfernoteid) as count from transfernote where transfernotedate BETWEEN '%s' AND '%s' and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"]))
-                monthlysortdataset=monthlysortdata.fetchall()  
-                #this is use to send 0 if month have 0 invoice count
-                notecount=[0,0,0,0,0,0,0,0,0,0,0,0]
-                for count in monthlysortdataset:
-                    notecount[int(count["month"])-1]=count["count"]
-                return{"gkstatus":enumdict["Success"],"notecount":notecount}
-                self.con.close()
-            except:
-                return{"gkstatus":enumdict["ConnectionFailed"]}
-                self.con.close()
-            finally:
-                self.con.close()
+    # #this function use to show transfer note count by month at dashbord in bar chart  
+    # @view_config(request_method='GET',renderer='json', request_param="type=transfernotecountbymonth")
+    # def transferNoteCountbyMonth(self):
+    #     try:
+    #         token = self.request.headers["gktoken"]
+    #         print "dgfddddddd"
+    #     except:
+    #         return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+    #     authDetails = authCheck(token)
+    #     if authDetails["auth"]==False:
+    #         return {"gkstatus":enumdict["UnauthorisedAccess"]}
+    #     else:
+    #             print "i am in function"
+    #         # try:
+    #             self.con = eng.connect()
+    #             print request.params
+    #             print self.request.params["goid"]
+    #             #this is to fetch startdate and enddate
+    #             startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
+    #             startenddateprint=startenddate.fetchone()                
+    #             #this is to fetch invoice count month wise
+    #             monthlysortdata=self.con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%d and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"],request.params["goid"]))
+    #             # monthlysortdata=self.con.execute("select extract(month from transfernotedate) as month, count(transfernoteid) as count from transfernote where transfernotedate BETWEEN '%s' AND '%s' and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"]))
+    #             monthlysortdataset=monthlysortdata.fetchall()  
+    #             print    
+    #             #this is use to send 0 if month have 0 invoice count
+    #             notecount=[0,0,0,0,0,0,0,0,0,0,0,0]
+    #             for count in monthlysortdataset:
+    #                 notecount[int(count["month"])-1]=count["count"]
+    #             return{"gkstatus":enumdict["Success"],"notecount":notecount}
+    #             self.con.close()
+    #         # except:
+    #         #     return{"gkstatus":enumdict["ConnectionFailed"]}
+    #         #     self.con.close()
+    #         # finally:
+    #         #     self.con.close()
 
+    # # this function use to show transfer note count by month at dashbord in bar chart  
+    # @view_config(request_method='GET',renderer='json', request_param="type=godowndesc")
+    # def godowndesc(self):
+    #     try:
+    #         token = self.request.headers["gktoken"]
+    #     except:
+    #         return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+    #     authDetails = authCheck(token)
+    #     if authDetails["auth"]==False:
+    #         return {"gkstatus":enumdict["UnauthorisedAccess"]}
+    #     else:
+    #         try:
+    #             self.con = eng.connect()
+    #             godownid=self.con.execute("select goid from usergodown where orgcode=%d and userid=%d"%(authDetails["orgcode"],authDetails["userid"]))
+    #             godownidresult=godownid.fetchall()
+    #             goname=[]
+    #             for goid in godownidresult:
+    #                 godownname=self.con.execute("select goname as goname from godown where goid =%d and orgcode=%d"%(goid["goid"],authDetails["orgcode"]))
+    #                 godownnameresult=godownname.fetchone()
+    #                 goname.append({"goid":goid["goid"],"goname":godownnameresult[0]})
+    #             return{"gkstatus":enumdict["Success"],"goname":goname}
+    #             self.con.close()
+    #         except:
+    #             return{"gkstatus":enumdict["ConnectionFailed"]}
+    #             self.con.close()
+    #         finally:
+    #             self.con.close()
