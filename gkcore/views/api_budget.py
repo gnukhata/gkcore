@@ -143,7 +143,9 @@ class api_budget(object):
         If the financial start date is same as budget start date then it will consider opening balances of accounts as clossing balance.
         For expense budget type will be 5 :
         In expense it will consider only that accounts which comes under the Direct and Indirect Expense group.
-        
+        In Sales budget will require Direct Expense and Direct Income groups accounts.
+        In this for expense will consider all drs from voucher to get balances.
+        for sales will consider all crs from voucher to get balances.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -602,7 +604,19 @@ class api_budget(object):
     
     @view_config(request_method='GET',request_param='type=salesReport', renderer='json')
     def salesReport(self):
-        """ 
+        """ Purpose:
+            To calculate report for sales budget. It will take budgetid and financial start date as input.
+            Here Sales budget will deal with two groups. Direct Expense and Direct Income. So it will consider only that accounts which
+            comes under this group or its subgroups. 
+            The contents field of budget table will have json data and that having 'income' , 'expense' and 'accounts' keys.
+            'accounts' key will have list of all accounts which are going to use in this budget.
+            For expense we will consider all drs from voucher for expense group accounts which will give total of expense for budgeted period.
+            For income (sales) we will consider all crs from voucher for income group accounts which will give total of income for budgeted period.
+            Here we calculate profit as:
+            budget income(sales) - budget expense = budget profit
+            actual income(sales) - actual expense = actual profit
+            And Variance of all :
+            budget - actual = variance.
         """
         try:
             token = self.request.headers["gktoken"]
