@@ -135,6 +135,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData} 
@@ -177,6 +178,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
@@ -216,6 +218,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
