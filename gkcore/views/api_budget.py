@@ -490,7 +490,7 @@ class api_budget(object):
                 budgetBal = float(totalopeningbal) + float(budgetIn) - float(budgetOut)
                 # Variance calculation
                 varCr = float(budgetOut) - float(totalCr)
-                varDr = float(budgetIn) - float(totalDr)
+                varDr = float(totalDr) - float(budgetIn)
                 varBal = float(budgetBal) - float(totalCurbal)
                 total = {"totalCr":"%.2f"%float(totalCr),"totalDr":"%.2f"%float(totalDr),"budgetclosingbal":"%.2f"%float(totalCurbal),"totalopeningbal":"%.2f"%float(totalopeningbal),"budgetIn":"%.2f"%float(budgetIn),"budgetOut":"%.2f"%float(budgetOut),"budgetBal":"%.2f"%float(budgetBal),"varCr":"%.2f"%float(varCr),"varDr":"%.2f"%float(varDr),"varBal":"%.2f"%float(varBal),"accData":accData}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
@@ -685,9 +685,9 @@ class api_budget(object):
                 
                 BudgetedProfit = float(budgetIncome) - float(budgetExpense)
                 ActualProfit = float(actualTotalIncome) - float(actualTotalExpense)
-                varProfit = float(BudgetedProfit) - float(ActualProfit)
+                varProfit =  float(ActualProfit) - float(BudgetedProfit)
                 varExpense = float(budgetExpense) - float(actualTotalExpense)
-                varIncome = float(budgetIncome) - float(actualTotalIncome)
+                varIncome =  float(actualTotalIncome) - float(budgetIncome)
                 closingBal = float(totalOpeningBal) + float(actualTotalIncome)
                 total = {"closingbal":"%.2f"%float(closingBal),"varexpense":"%.2f"%float(varExpense),"varincome":"%.2f"%float(varIncome),"openingbal":"%.2f"%float(totalOpeningBal),"budgetincome":"%.2f"%float(budgetIncome),"budgetexpense":"%.2f"%float(budgetExpense),"budgetprofit":"%.2f"%float(BudgetedProfit),"actualincome":"%.2f"%float(actualTotalIncome),"actualexpense":"%.2f"%float(actualTotalExpense),"actualprofit":"%.2f"%float(ActualProfit),"varprofit":"%.2f"%float(varProfit),"expensedata":expensedata,"incomedata":incomedata}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
