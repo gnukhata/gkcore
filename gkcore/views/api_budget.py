@@ -491,7 +491,7 @@ class api_budget(object):
                 # Variance calculation
                 varCr = float(budgetOut) - float(totalCr)
                 varDr = float(totalDr) - float(budgetIn)
-                varBal = float(budgetBal) - float(totalCurbal)
+                varBal = float(totalCurbal) - float(budgetBal)
                 total = {"totalCr":"%.2f"%float(totalCr),"totalDr":"%.2f"%float(totalDr),"budgetclosingbal":"%.2f"%float(totalCurbal),"totalopeningbal":"%.2f"%float(totalopeningbal),"budgetIn":"%.2f"%float(budgetIn),"budgetOut":"%.2f"%float(budgetOut),"budgetBal":"%.2f"%float(budgetBal),"varCr":"%.2f"%float(varCr),"varDr":"%.2f"%float(varDr),"varBal":"%.2f"%float(varBal),"accData":accData}
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
