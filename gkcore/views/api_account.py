@@ -198,16 +198,19 @@ defaultflag '2' or '3' set to the '0'.
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
                 accs = []
                 srno=1
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
-
+                    
+                    defaultflag=default_acc[accrow["defaultflag"]]
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
                     grprow = resultset.fetchone()
                     if grprow["groupcode"]==grprow["subgroupcode"]:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
+
                     else:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
                     srno = srno+1
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":accs}
