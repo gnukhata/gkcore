@@ -98,8 +98,7 @@ class api_transaction(object):
 
         vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
         vchCount = vchCountResult.fetchone()
-        Count = vchCount["vcount"] + 1
-        initialType = initialType + str(Count)
+        initialType = initialType + str(vchCount["vcount"] + 1)
         
         return initialType
 
