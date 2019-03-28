@@ -1680,8 +1680,7 @@ The bills grid calld gkresult will return a list as it's value.
                 initialType = "pu"
             vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
             vchCount = vchCountResult.fetchone()
-            Count = vchCount["vcount"] + 1
-            initialType = initialType + str(Count)
+            initialType = initialType + str(vchCount["vcount"] + 1)
 
             voucherDict["vouchernumber"] = initialType
             result = self.con.execute(vouchers.insert(),[voucherDict])
