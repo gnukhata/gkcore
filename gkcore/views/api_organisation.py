@@ -249,6 +249,8 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 19 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'Purchase A/C':
                                 self.con.execute("update accounts set defaultflag = 16 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Round Off':
+                                self.con.execute("update accounts set defaultflag = 18 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_IN':
                                 self.con.execute("update accounts set defaultflag = 0, sysaccount = 1 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_OUT':
@@ -257,6 +259,13 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 0 where accountcode =%d"%int(acname["accountcode"]))
                     except:
                         continue
+            for orgcode in allorg:
+                result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off')))
+                account = result.fetchone()
+                if account == None:
+                    grpcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                    grpcode = grpcode.fetchone()
+                    roadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":18}])
             if not columnExists("organisation","bankdetails"):
                 self.con.execute("alter table organisation add bankdetails json")
             if not columnExists("purchaseorder","purchaseordertotal"):
@@ -677,7 +686,8 @@ class api_organisation(object):
                     resultie = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     iegrpcd = resultie.fetchone()
                     resultDP = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount Paid","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bonus","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Depreciation Expense","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
-
+                    resultRO = self.con.execute(gkdb.accounts.insert(),{"accountname":"Round Off","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":18})
+                    
                     indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
                     resultii = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
