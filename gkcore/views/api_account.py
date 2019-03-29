@@ -96,6 +96,8 @@ defaultflag '2' or '3' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 18:
+                        setROdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=18 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
@@ -319,6 +321,8 @@ defaultflag '16' or '19' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 18:
+                        setROdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=18 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
