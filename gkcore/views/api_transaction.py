@@ -96,7 +96,7 @@ class api_transaction(object):
         if voucherType == "purchasereturn":
             initialType = "pr"
 
-        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d and vouchertype = '%s'"%(int(orgcode),str(voucherType)))
         vchCount = vchCountResult.fetchone()
         initialType = initialType + str(vchCount["vcount"] + 1)
         
