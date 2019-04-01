@@ -339,6 +339,8 @@ Structure of a tax field is {productcode:taxrate}
 save orgstategstin of sourcestate for organisation.
 paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'.
 inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
+Roundoff field is to check wheather total of invoice is round off or not. 
+Default  value is 0 then total is not round off.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -353,6 +355,7 @@ invoice = Table('invoice',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
+    Column('roundoff',Integer,default=0),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
