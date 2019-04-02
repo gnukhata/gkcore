@@ -100,6 +100,7 @@ class api_transaction(object):
         vchCount = vchCountResult.fetchone()
         initialType = initialType + str(vchCount["vcount"] + 1)
         
+        
         return initialType
 
             
