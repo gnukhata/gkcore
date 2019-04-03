@@ -165,6 +165,7 @@ class api_budget(object):
                     accounts = directExp.fetchall()
                     DirectExpense=[]
                     totalBalAtBegin=0
+                    grossProfit=0
                     if(uptodate != financialStart):
                         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
@@ -180,10 +181,27 @@ class api_budget(object):
                                 accountbal += float(transaction["drs"][str(account["accountcode"])])
                             totalBalAtBegin = totalBalAtBegin + accountbal
                             DirectExpense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
+                        
+                        directIncome = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                        directIncome = directIncome.fetchall()
+                        totalIncome=0
+                        for account in directIncome:
+                            if "goid" in authDetails:
+                                data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
+                            else:
+                                data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
+                            data = data.fetchall()
+                            accountbal=0
+                            for transaction in data:
+                                accountbal += float(transaction["crs"][str(account["accountcode"])])
+                            totalIncome = totalIncome + accountbal
+                        
+                        grossProfit = totalIncome - totalBalAtBegin
+
                     else:
                         for account in accounts:
                             DirectExpense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
-                    
+                            
                     indirectExp = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                     accounts = indirectExp.fetchall()
                     IndirectExpense=[]
@@ -206,7 +224,8 @@ class api_budget(object):
                         for account in accounts:
                             IndirectExpense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
                         
-                    total = {"totalbal":"%.2f"%float(totalBalAtBegin),"DirectExpense":DirectExpense,"IndirectExpense":IndirectExpense}
+                    total = {"totalbal":"%.2f"%float(totalBalAtBegin),"DirectExpense":DirectExpense,"IndirectExpense":IndirectExpense,"grossprofit":"%.2f"%float(grossProfit)}
+                    
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
                 if btype == '3':
                     result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
@@ -608,15 +627,15 @@ class api_budget(object):
             To calculate report for sales budget. It will take budgetid and financial start date as input.
             Here Sales budget will deal with two groups. Direct Expense and Direct Income. So it will consider only that accounts which
             comes under this group or its subgroups. 
-            The contents field of budget table will have json data and that having 'income' , 'expense' and 'accounts' keys.
-            'accounts' key will have list of all accounts which are going to use in this budget.
+            The contents field of budget table will have json data and that having 'accounts' as keys and budget amount as value.
             For expense we will consider all drs from voucher for expense group accounts which will give total of expense for budgeted period.
             For income (sales) we will consider all crs from voucher for income group accounts which will give total of income for budgeted period.
             Here we calculate profit as:
             budget income(sales) - budget expense = budget profit
             actual income(sales) - actual expense = actual profit
             And Variance of all :
-            budget - actual = variance.
+            sales variance = actual sales - budgeted sales
+            purchase variance = budgeted purchase - actual purchase
         """
         try:
             token = self.request.headers["gktoken"]
@@ -633,15 +652,16 @@ class api_budget(object):
                 budgetdata = result.fetchone()
                 startdate = str(budgetdata["startdate"])[0:10]
                 enddate = str(budgetdata["enddate"])[0:10]
-                budgetIncome = float(budgetdata["contents"]["income"])
-                budgetExpense = float(budgetdata["contents"]["expense"])
-                accountsList = budgetdata["contents"]["accounts"]
-
-                expensedata=[]
-                incomedata=[]
+                accountsList = budgetdata["contents"].keys()
+                
                 totalOpeningBal=0
                 actualTotalExpense=0
                 actualTotalIncome=0
+                expensedata = []
+                incomedata = []
+                budgetIncome = 0
+                budgetExpense = 0
+
                 for bal in accountsList:
                     accountName = self.con.execute("select accountname from accounts where accountcode = %d"%(int(bal)))
                     accountName = accountName.fetchone()
@@ -657,7 +677,10 @@ class api_budget(object):
                         for transaction in actualAccData:
                             actualAmount += float(transaction["drs"][bal])
                         actualTotalExpense = float(actualTotalExpense) + float(actualAmount)
-                        expensedata.append({"accountname":accountName[0],"actual":"%.2f"%float(actualAmount)})
+                        budgetExpense = float(budgetExpense) + budgetdata["contents"][bal]
+                        accountVar = budgetdata["contents"][bal] - float(actualAmount)
+                        expensedata.append({"budget":"%.2f"%float(budgetdata["contents"][bal]),"accountname":accountName[0],"actual":"%.2f"%float(actualAmount),"var":"%.2f"%float(accountVar)})
+                    
                     if (groupName[0] == 'Direct Income'):
                         calculateToDate = datetime.strptime(startdate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
@@ -674,6 +697,8 @@ class api_budget(object):
                         for transaction in actualAccData:
                             actualAmount += float(transaction["crs"][bal])
                         actualTotalIncome = float(actualTotalIncome) + float(actualAmount)
+                        budgetIncome = float(budgetIncome) + budgetdata["contents"][bal]
+                        accountVar = float(actualAmount) - budgetdata["contents"][bal]
 
                         accOpeningBal=0
                         for transaction in openingAccBal:
@@ -681,7 +706,7 @@ class api_budget(object):
                         totalOpeningBal = float(totalOpeningBal) + float(accOpeningBal)
                         
                         accBalance = actualAmount + accOpeningBal
-                        incomedata.append({"accountname":accountName[0],"actual":"%.2f"%float(actualAmount),"accbalance":"%.2f"%float(accOpeningBal)})
+                        incomedata.append({"budget":"%.2f"%float(budgetdata["contents"][bal]),"var":"%.2f"%float(accountVar),"accountname":accountName[0],"actual":"%.2f"%float(actualAmount),"accbalance":"%.2f"%float(accOpeningBal)})
                 
                 BudgetedProfit = float(budgetIncome) - float(budgetExpense)
                 ActualProfit = float(actualTotalIncome) - float(actualTotalExpense)
@@ -690,6 +715,7 @@ class api_budget(object):
                 varIncome =  float(actualTotalIncome) - float(budgetIncome)
                 closingBal = float(totalOpeningBal) + float(actualTotalIncome)
                 total = {"closingbal":"%.2f"%float(closingBal),"varexpense":"%.2f"%float(varExpense),"varincome":"%.2f"%float(varIncome),"openingbal":"%.2f"%float(totalOpeningBal),"budgetincome":"%.2f"%float(budgetIncome),"budgetexpense":"%.2f"%float(budgetExpense),"budgetprofit":"%.2f"%float(BudgetedProfit),"actualincome":"%.2f"%float(actualTotalIncome),"actualexpense":"%.2f"%float(actualTotalExpense),"actualprofit":"%.2f"%float(ActualProfit),"varprofit":"%.2f"%float(varProfit),"expensedata":expensedata,"incomedata":incomedata}
+                
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
