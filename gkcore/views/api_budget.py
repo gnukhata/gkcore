@@ -263,13 +263,17 @@ class api_budget(object):
                                 subgroupname = self.con.execute("select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"%int(bal["accountcode"]))
                                 subgroup = subgroupname.fetchone()
                                 if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
-                                    print accountbal
-                                    openingBal = float(openingBal) + float(accountbal)
+                                    if (calbaldata["baltype"] == 'Cr'):
+                                        openingBal =openingBal - calbaldata["curbal"]
+                                        accountbal = -calbaldata["curbal"]
+                                    if (calbaldata["baltype"] == 'Dr'):
+                                        accountbal = calbaldata["curbal"]
+                                        openingBal =openingBal + calbaldata["curbal"]
                                     cashbankAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
                                 else:
                                     inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
-                        print openingBal
-                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata,"openingbal":openingBal}
+                        
+                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata,"openingbal":"%.2f"%float(openingBal)}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                     else:
                         prevday = uptodate
@@ -293,7 +297,7 @@ class api_budget(object):
                                 else:
                                     inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(0),"accountcode":bal["accountcode"]})
 
-                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata}
+                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata,"openingbal":"%.2f"%float(0)}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                 if btype == '19':
                     directExpense = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))                    
