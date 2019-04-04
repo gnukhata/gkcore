@@ -155,7 +155,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 uptodate = self.request.params["uptodate"]
                 financialStart = self.request.params["financialstart"]
@@ -228,77 +228,72 @@ class api_budget(object):
                     
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
                 if btype == '3':
-                    result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
-                    cashaccounts = result.fetchall()
-                    result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
-                    bankaccounts = result.fetchall()
+                    result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d"%(authDetails["orgcode"]))
+                    accounts = result.fetchall()
                     accountdata=[]
                     totalBalAtBegin=0
                     if(uptodate != financialStart):
                         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
                         prevday = str(prevday)[0:10]
-                        cashaccountdata=[]
-                        for bal in cashaccounts:
+                        inAccountdata=[]
+                        outAccountdata=[]
+                        cashbankAccountdata=[]
+                        openingBal=0
+                        for bal in accounts:
                             if "goid" in authDetails:
                                 calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
                             else:
                                 calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
                             accountbal = 0
-                            if (calbaldata["baltype"] == 'Cr'):
-                                totalBalAtBegin = totalBalAtBegin - calbaldata["curbal"]
-                                accountbal = -calbaldata["curbal"]
-                            if (calbaldata["baltype"] == 'Dr'):
-                                totalBalAtBegin = totalBalAtBegin + calbaldata["curbal"]
-                                accountbal = calbaldata["curbal"]
-                            cashaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal)})
-                        bankaccountdata=[]
-                        for bal in bankaccounts:
-                            if "goid" in authDetails:
-                                calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
-                            else:
-                                calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
-                            accountbal = 0
-                            if (calbaldata["baltype"] == 'Cr'):
-                                totalBalAtBegin = totalBalAtBegin - calbaldata["curbal"]
-                                accountbal = -calbaldata["curbal"]
-                            if (calbaldata["baltype"] == 'Dr'):
-                                totalBalAtBegin = totalBalAtBegin + calbaldata["curbal"]
-                                accountbal = calbaldata["curbal"]
-                            bankaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal)})
-                        data={"balatbegin":"%.2f"%float(totalBalAtBegin),"cashaccountdata":cashaccountdata,"bankaccountdata":bankaccountdata}
+                            
+                            if(calbaldata["grpname"] == 'Direct Expense' or calbaldata["grpname"] == 'Indirect Expense' or calbaldata["grpname"] == 'Current Liabilities' ):
+                                if (calbaldata["baltype"] == 'Cr'):
+                                    accountbal = -calbaldata["curbal"]
+                                if (calbaldata["baltype"] == 'Dr'):
+                                    accountbal = calbaldata["curbal"]
+                                
+                                outAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
+                            if(calbaldata["grpname"] == 'Direct Income' or calbaldata["grpname"] == 'Indirect Income' or calbaldata["grpname"] == 'Current Assets' ):
+                                if (calbaldata["baltype"] == 'Cr'):
+                                    accountbal = calbaldata["curbal"]
+                                if (calbaldata["baltype"] == 'Dr'):
+                                    accountbal = -calbaldata["curbal"]
+                                
+                                subgroupname = self.con.execute("select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"%int(bal["accountcode"]))
+                                subgroup = subgroupname.fetchone()
+                                if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
+                                    print accountbal
+                                    openingBal = float(openingBal) + float(accountbal)
+                                    cashbankAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
+                                else:
+                                    inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
+                        print openingBal
+                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata,"openingbal":openingBal}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                     else:
                         prevday = uptodate
-                        cashaccountdata=[]
-                        for bal in cashaccounts:
+                        inAccountdata=[]
+                        outAccountdata=[]
+                        cashbankAccountdata=[]
+                        for bal in accounts:
                             if "goid" in authDetails:
                                 calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
                             else:
                                 calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
-                            accountbal = 0
-                            if (calbaldata["openbaltype"] == 'Cr'):
-                                totalBalAtBegin = totalBalAtBegin - calbaldata["balbrought"]
-                                accountbal = -calbaldata["balbrought"]
-                            if (calbaldata["openbaltype"] == 'Dr'):
-                                totalBalAtBegin = totalBalAtBegin + calbaldata["balbrought"]
-                                accountbal = calbaldata["balbrought"]
-                            cashaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal)})
-                        bankaccountdata=[]
-                        for bal in bankaccounts:
-                            if "goid" in authDetails:
-                                calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
-                            else:
-                                calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
-                            accountbal = 0
-                            if (calbaldata["openbaltype"] == 'Cr'):
-                                totalBalAtBegin = totalBalAtBegin - calbaldata["balbrought"]
-                                accountbal = -calbaldata["balbrought"]
-                            if (calbaldata["openbaltype"] == 'Dr'):
-                                totalBalAtBegin = totalBalAtBegin + calbaldata["balbrought"]
-                                accountbal = calbaldata["balbrought"]
-                            bankaccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal)})
-                        data={"balatbegin":"%.2f"%float(totalBalAtBegin),"cashaccountdata":cashaccountdata,"bankaccountdata":bankaccountdata}
+
+                            if(calbaldata["grpname"] == 'Direct Expense' or calbaldata["grpname"] == 'Indirect Expense' or calbaldata["grpname"] == 'Current Liabilities' ):
+                                outAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(0),"accountcode":bal["accountcode"]})
+                            
+                            if(calbaldata["grpname"] == 'Direct Income' or calbaldata["grpname"] == 'Indirect Income' or calbaldata["grpname"] == 'Current Assets' ):
+                                subgroupname = self.con.execute("select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"%int(bal["accountcode"]))
+                                subgroup = subgroupname.fetchone()
+                                if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
+                                    cashbankAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(0),"accountcode":bal["accountcode"]})
+                                else:
+                                    inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(0),"accountcode":bal["accountcode"]})
+
+                        data={"inflow":inAccountdata,"outflow":outAccountdata,"cashbank":cashbankAccountdata}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                 if btype == '19':
                     directExpense = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))                    
@@ -349,10 +344,10 @@ class api_budget(object):
                             income.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
                     total = {"totalbal":"%.2f"%float(totalBalAtBegin),"expense":expense,"income":income}
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
     def editbudgets(self):
@@ -553,7 +548,6 @@ class api_budget(object):
                 totalvariance = 0
                 totalbudgetedbal = 0
                 totalactualbal = 0
-                totalpreviousbal = 0 
                 if(startdate != financialStart):
                     calculateToDate = datetime.strptime(startdate,"%Y-%m-%d")
                     prevday = (calculateToDate - timedelta(days=1))
@@ -563,34 +557,36 @@ class api_budget(object):
                         accountname = self.con.execute("select accountname from accounts where accountcode = %d"%(int(key)))
                         accountname = accountname.fetchone()
                         if (budgetdata["goid"] != None):
-                            previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key, budgetdata["goid"]))
+                            # previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key, budgetdata["goid"]))
                             actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key, budgetdata["goid"]))
                         else:
-                            previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key))
+                            # previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key))
                             actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key))
                         actualAccData = actualAccData.fetchall()
                         actualAmount = 0
                         for transaction in actualAccData:
                             actualAmount += float(transaction["drs"][key])
-                        previousAccData = previousAccData.fetchall()
-                        accountbal = 0
-                        for transaction in previousAccData:
-                            accountbal += float(transaction["drs"][key])
-                        budgetedBal = float(accountbal) + float(budgetamount)
+                        # previousAccData = previousAccData.fetchall()
+                        # accountbal = 0
+                        # for transaction in previousAccData:
+                        #     accountbal += float(transaction["drs"][key])
+                        # budgetedBal = float(accountbal) + float(budgetamount)
                         accVariance = float(budgetamount) - float(actualAmount)
-                        actualBal = float(accountbal) + float(actualAmount)
+                        # actualBal = float(accountbal) + float(actualAmount)
 
                         totalbudget += float(budgetamount)
                         totalactual += float(actualAmount)
                         totalvariance += float(accVariance)
-                        totalbudgetedbal += float(budgetedBal)
-                        totalactualbal += float(actualBal)
-                        totalpreviousbal += float(accountbal)
-                        accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"budgetedbal":"%.2f"%float(budgetedBal),"accvariance":"%.2f"%float(accVariance),"actualbal":"%.2f"%float(actualBal)})
-                    total={"totalpreviousbal":"%.2f"%float(totalpreviousbal),"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"totalbudgetedbal":"%.2f"%float(totalbudgetedbal),"totalactualbal":"%.2f"%float(totalactualbal),"accountdata":accountdata}
+                        # totalbudgetedbal += float(budgetedBal)
+                        # totalactualbal += float(actualBal)
+                        # totalpreviousbal += float(accountbal)
+                        accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
+                    
+                    total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
                 """ Here the start date of budget is smae as financial start date then the previous expense will be zero.
                 """
                 if(startdate == financialStart):
+                    prevday = startdate   # require in gross profit
                     for key in accounts:
                         budgetamount = "%.2f"%float(accounts[key])
                         accountname = self.con.execute("select accountname from accounts where accountcode = %d"%(int(key)))
@@ -604,17 +600,75 @@ class api_budget(object):
                         actualAmount = 0
                         for transaction in actualAccData:
                             actualAmount += float(transaction["drs"][key])
-                        budgetedBal = float(accountbal) + float(budgetamount)
+                        # budgetedBal = float(accountbal) + float(budgetamount)
                         accVariance = float(budgetamount) - float(actualAmount)
-                        actualBal = float(accountbal) + float(actualAmount)
-                        accountdata.append({"actualamount":actualAmount,"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"budgetedbal":"%.2f"%float(budgetedBal),"accvariance":"%.2f"%float(accVariance),"actualbal":"%.2f"%float(actualBal)})
+                        # actualBal = float(accountbal) + float(actualAmount)
+                        accountdata.append({"actualamount":actualAmount,"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
                         
                         totalbudget += float(budgetamount)
                         totalactual += float(actualAmount)
                         totalvariance += float(accVariance)
-                        totalbudgetedbal += float(budgetedBal)
-                        totalactualbal += float(actualBal)
-                    total={"totalpreviousbal":"%.2f"%float(totalpreviousbal),"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"totalbudgetedbal":"%.2f"%float(totalbudgetedbal),"totalactualbal":"%.2f"%float(totalactualbal),"accountdata":accountdata}
+                        # totalbudgetedbal += float(budgetedBal)
+                        # totalactualbal += float(actualBal)
+                    total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
+                
+                # gross profit is before the budget start date and actual gross profit is up to the end date of budget.
+                directExp = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                expAccounts = directExp.fetchall()
+                expBalance = 0
+                actualExpBal=0
+                directIncome = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                incomeAccounts = directIncome.fetchall()
+                incomeBalance = 0
+                actualIncomeBal=0
+                for account in expAccounts:
+                    if "goid" in authDetails:
+                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
+                        actualdata = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"], authDetails["goid"]))
+                    else:
+                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
+                        actualdata = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"]))
+                    data = data.fetchall()
+                    actualdata = actualdata.fetchall()
+                    accountbal=0
+                    for transaction in data:
+                        accountbal += float(transaction["drs"][str(account["accountcode"])])
+                    expBalance = float(expBalance) + float(accountbal)
+                    actualAccountbal=0
+                    for transaction in actualdata:
+                        actualAccountbal += float(transaction["drs"][str(account["accountcode"])])
+                    actualExpBal = float(actualExpBal) + float(actualAccountbal)
+                
+                for account in incomeAccounts:
+                    if "goid" in authDetails:
+                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
+                        actualdata = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"], authDetails["goid"]))
+                    else:
+                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
+                        actualdata = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"]))
+                    data = data.fetchall()
+                    actualdata = actualdata.fetchall()
+                    accountbal=0
+                    for transaction in data:
+                        accountbal += float(transaction["crs"][str(account["accountcode"])])
+                    incomeBalance = float(incomeBalance) + float(accountbal)
+                    
+                    actualAccountbal=0
+                    for transaction in actualdata:
+                        actualAccountbal += float(transaction["crs"][str(account["accountcode"])])
+                    actualIncomeBal = float(actualIncomeBal) + float(actualAccountbal)
+                grossProfit = float(incomeBalance) - float(expBalance)
+                actualGrossProfit = float(actualIncomeBal) - float(actualExpBal)
+
+                budgetedNetProfit = float(grossProfit) - float(total["totalbudget"])
+                actualNetProfit = float(actualGrossProfit) - float(total["totalactual"])
+                varNetProfit = float(actualNetProfit) - float(budgetedNetProfit)
+
+                total["grossprofit"] = "%.2f"%float(grossProfit)
+                total["budgetnet"] = "%.2f"%float(budgetedNetProfit)
+                total["actualnet"] = "%.2f"%float(actualNetProfit)
+                total["varnet"] = "%.2f"%float(varNetProfit)
+                
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"] }
