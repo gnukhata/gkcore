@@ -135,6 +135,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData} 
@@ -177,6 +178,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
@@ -216,6 +218,7 @@ class api_invoice(object):
                                     if a["gkstatus"] == 0:
                                         voucherData["status"] = 0
                                         voucherData["vchno"] = a["vchNo"]
+                                        voucherData["vchid"] = a["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
@@ -312,6 +315,7 @@ class api_invoice(object):
                                 if a["gkstatus"] == 0:
                                     voucherData["status"] = 0
                                     voucherData["vchno"] = a["vchNo"]
+                                    voucherData["vchid"] = a["vid"]
                                 else:
                                     voucherData["status"] = 1
                         return {"gkstatus":enumdict["Success"],"vchData":voucherData}
@@ -365,6 +369,7 @@ class api_invoice(object):
                             if a["gkstatus"] == 0:
                                 voucherData["status"] = 0
                                 voucherData["vchno"] = a["vchNo"]
+                                voucherData["vchid"] = a["vid"]
                             else:
                                 voucherData["status"] = 1
                         return {"gkstatus":enumdict["Success"],"vchData":voucherData}
@@ -609,7 +614,13 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
-
+                # voucher count for invoice transaction details
+                if "goid" in authDetails:
+                    voucherCount = self.con.execute("select count(vouchercode) from vouchers where goid = %d and orgcode = %d and invid = %d"%(int(authDetails['goid']),int(authDetails['orgcode']),int(self.request.params["invid"])))
+                else:
+                    voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
+                vCount = voucherCount.fetchone()
+                inv["vouchercount"] = vCount[0]
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
