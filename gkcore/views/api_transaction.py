@@ -96,14 +96,11 @@ class api_transaction(object):
         if voucherType == "purchasereturn":
             initialType = "pr"
 
-        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d and vouchertype = '%s'"%(int(orgcode),str(voucherType)))
         vchCount = vchCountResult.fetchone()
-        if vchCount["vcount"] == 0:
-            initialType = initialType + "1"
-        else:
-            vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
-            vchCode = vchCodeResult.fetchone()
-            initialType = initialType + str(vchCode["vcode"])
+        initialType = initialType + str(vchCount["vcount"] + 1)
+        
+        
         return initialType
 
             

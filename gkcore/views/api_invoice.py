@@ -1678,14 +1678,11 @@ The bills grid calld gkresult will return a list as it's value.
                 initialType = "sl"
             if voucherDict["vouchertype"] == "purchase":
                 initialType = "pu"
-            vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+            vchCountResult = self.con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d and vouchertype = '%s'"%(int(orgcode),str(voucherDict["vouchertype"])))
             vchCount = vchCountResult.fetchone()
-            if vchCount["vcount"] == 0:
-                initialType = initialType + "1"
-            else:
-                vchCodeResult = self.con.execute("select max(vouchercode) as vcode from vouchers")
-                vchCode = vchCodeResult.fetchone()
-                initialType = initialType + str(vchCode["vcode"])
+            initialType = initialType + str(vchCount["vcount"] + 1)
+
+
             voucherDict["vouchernumber"] = initialType
             result = self.con.execute(vouchers.insert(),[voucherDict])
             vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
