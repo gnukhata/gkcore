@@ -428,7 +428,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
                 result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
@@ -438,16 +438,26 @@ class api_budget(object):
                 content = list["contents"]
                 accountslist = content.keys()
                 
+                totalBudgetInflow = 0
+                totalBudgetOutflow = 0
+                for acc in content:
+                    groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(acc),int(acc)))
+                    groupRecord = groupData.fetchone()
+                    if(groupRecord[0] == 'Direct Expense' or groupRecord[0] == 'Indirect Expense' or groupRecord[0] == 'Current Liabilities' ):
+                        totalBudgetOutflow = totalBudgetOutflow + content[str(acc)]
+                    if(groupRecord[0] == 'Direct Income' or groupRecord[0] == 'Indirect Income' or groupRecord[0] == 'Current Assets' ):
+                        totalBudgetInflow = totalBudgetInflow + content[str(acc)]
+
                 # to calculate opening balance. If budget start date and financial start date are same then the opening balance for 
                 # budget will becomes accounts opening balance. Else opening balance for budget will get by calculating all crs and drs up to previous date of 
                 # budget start date, means add of total accounts remaining balance.
                 cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
                 cbAccounts = cbAccountsData.fetchall()
-                
+                cbAccountscode=[]
                 totalopeningbal = 0
                 actualClosingBal = 0
                 
-                opening=[]
+                openingacc=[]
                 closing=[]
                 if(startdate != financialStart):
                     d = startdate
@@ -457,6 +467,7 @@ class api_budget(object):
                 else:
                     prevday = startdate
                 for bal in cbAccounts:
+                    cbAccountscode.append(bal["accountcode"])
                     if (list["goid"] != None):
                         calculate = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, prevday,list["goid"])
                         closingdata = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, enddate,list["goid"])
@@ -464,29 +475,28 @@ class api_budget(object):
                         calculate = calculateBalance(self.con,bal["accountcode"],financialStart, financialStart, prevday)
                         closingdata = calculateBalance(self.con,bal["accountcode"], financialStart, financialStart, enddate)
                     openaccountbal = 0
-                    if (calculate["openbaltype"] == 'Cr'):
-                        totalopeningbal = totalopeningbal - calculate["balbrought"]
-                        openaccountbal = - calculate["balbrought"]
-                    if (calculate["openbaltype"] == 'Dr'):
-                        totalopeningbal = totalopeningbal + calculate["balbrought"]
-                        openaccountbal = calculate["balbrought"]
-                    opening.append({"accountname":bal["accountname"],"balance":openaccountbal})
-                    closingaccountbal = 0
-                    if (closingdata["openbaltype"] == 'Cr'):
-                        actualClosingBal = actualClosingBal - closingdata["balbrought"]
-                        closingaccountbal = - closingdata["balbrought"]
-                    if (closingdata["openbaltype"] == 'Dr'):
-                        actualClosingBal = actualClosingBal + closingdata["balbrought"]
-                        closingaccountbal = closingdata["balbrought"]
-                    
-                    if str(bal["accountcode"]) in content.keys():
-                        closing.append({"accountname":bal["accountname"],"balance":closingaccountbal,"budget":content[str(bal["accountcode"])]})
-                        
-                        del accountslist[accountslist.index(str(bal["accountcode"]))]
+                    if(startdate != financialStart):
+                        if (calculate["baltype"] == 'Cr'):
+                            totalopeningbal = totalopeningbal - calculate["curbal"]
+                            openaccountbal = - calculate["curbal"]
+                        if (calculate["baltype"] == 'Dr'):
+                            totalopeningbal = totalopeningbal + calculate["curbal"]
+                            openaccountbal = calculate["curbal"]
                     else:
-                        closing.append({"accountname":bal["accountname"],"balance":closingaccountbal,"budget":0})
-                    inflowAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
-                    outflowAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
+                        totalopeningbal = totalopeningbal + bal["openingbal"]
+                        openaccountbal = bal["openingbal"]
+                    openingacc.append({"accountname":bal["accountname"],"balance":"%.2f"%float(openaccountbal)})
+                    closingaccountbal = 0
+                    if (closingdata["baltype"] == 'Cr'):
+                        actualClosingBal = actualClosingBal - closingdata["curbal"]
+                        closingaccountbal = - closingdata["curbal"]
+                    if (closingdata["baltype"] == 'Dr'):
+                        actualClosingBal = actualClosingBal + closingdata["curbal"]
+                        closingaccountbal = closingdata["curbal"]
+                    accbudget = float(openaccountbal) + float(totalBudgetInflow) - float(totalBudgetOutflow)
+                    closing.append({"accountname":bal["accountname"],"balance":"%.2f"%float(closingaccountbal),"budget":"%.2f"%float(accbudget)})
+                    inflowAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
+                    outflowAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
 
                     inAcc = inflowAccData.fetchall()
                     outAcc = outflowAccData.fetchall()
@@ -497,13 +507,11 @@ class api_budget(object):
                     for acc in outAcc:
                         if acc[0].keys()[0] not in accountslist:
                             accountslist.append(acc[0].keys()[0])
-                    
+                
                 inflowAccounts=[]
                 outflowAccounts=[]
                 totalActualOutflow = 0
                 totalActualInflow = 0
-                totalBudgetOutflow = 0
-                totalBudgetInflow = 0
                 for acc in accountslist:
                     result = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode == int(acc)))
                     accountname = result.fetchone()
@@ -511,44 +519,48 @@ class api_budget(object):
                     groupRecord = groupData.fetchone()
                     
                     if(groupRecord[0] == 'Direct Expense' or groupRecord[0] == 'Indirect Expense' or groupRecord[0] == 'Current Liabilities' ):
-                        outflowacc = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and (vouchertype= 'payment' or vouchertype='receipt' )order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
+                        outflowacc = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
                         outflowacc = outflowacc.fetchall()
                         accountbal = 0
                         for a in outflowacc:
-                            accountbal += float(a["drs"][str(int(acc))])
+                            if int(a["crs"].keys()[0]) in cbAccountscode:
+                                accountbal += float(a["drs"][str(int(acc))])
+                            else:
+                                accountbal += 0
                         totalActualOutflow = totalActualOutflow + accountbal
                         
                         if acc in content:
                             var = float(content[str(acc)]) - float(accountbal)
                             varInPercent = (var* 100) / (content[str(acc)] )
-                            totalBudgetOutflow = totalBudgetOutflow + content[str(acc)]
-                            outflowAccounts.append({"accountname":accountname[0],"actual":accountbal,"budget":content[str(acc)],"var":var,"varinpercent":varInPercent})
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
                             var = float(0) - float(accountbal)
                             varInPercent = 0
-                            outflowAccounts.append({"accountname":accountname[0],"actual":accountbal,"budget":0,"var":var,"varinpercent":varInPercent})
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
 
                     if(groupRecord[0] == 'Direct Income' or groupRecord[0] == 'Indirect Income' or groupRecord[0] == 'Current Assets' ):
-                        inflowacc = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and (vouchertype= 'payment' or vouchertype='receipt' )order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
+                        inflowacc = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
                         inflowacc = inflowacc.fetchall()
                         accountbal = 0
                         for a in inflowacc:
-                            accountbal += float(a["crs"][str(int(acc))])
+                            if int(a["drs"].keys()[0]) in cbAccountscode:
+                                accountbal += float(a["crs"][str(int(acc))])
+                            else:
+                                accountbal += 0
                         totalActualInflow = totalActualInflow + accountbal
                         
                         if acc in content:
                             var = float(accountbal) - float(content[str(acc)])
-                            varInPercent = var / (content[str(acc)] * 100)
-                            totalBudgetInflow = totalBudgetInflow + content[str(acc)]
-                            inflowAccounts.append({"accountname":accountname[0],"actual":accountbal,"budget":content[str(acc)],"var":var,"varinpercent":varInPercent})
+                            varInPercent = (var * 100) / content[str(acc)] 
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
                             var = float(accountbal) - float(0)
                             varInPercent = 0
-                            inflowAccounts.append({"accountname":accountname[0],"actual":accountbal,"budget":0,"var":var,"varinpercent":varInPercent})
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                 
-                total={"inflow":inflowAccounts,"outflow":outflowAccounts}
+                total={"inflow":inflowAccounts,"outflow":outflowAccounts,"openingacc":openingacc,"closing":closing}
                 total["opening"]= "%.2f"%float(totalopeningbal)
-                total["actualclosing"] = "%.2f"%float()
+                total["actualclosing"] = "%.2f"%float(actualClosingBal)
                 total["budgetclosing"] = "%.2f"%float(float(totalBudgetInflow) + float(totalopeningbal) - float(totalBudgetOutflow))
                 total["budgetin"] = "%.2f"%float(totalBudgetInflow)
                 total["budgetout"] = "%.2f"%float(totalBudgetOutflow)
@@ -556,14 +568,13 @@ class api_budget(object):
                 total["actualout"] = "%.2f"%float(totalActualOutflow)
                 total["varin"] = "%.2f"%float(float(totalActualInflow) - float(totalBudgetInflow))
                 total["varout"] = "%.2f"%float(float(totalBudgetOutflow) - float(totalActualOutflow))
-                print total["varout"]
                 total["varpercentin"] = "%.2f"%float(float(total["varin"]) * 100 / totalBudgetInflow)
                 total["varpercentout"] = "%.2f"%float(float(total["varout"]) * 100 / totalBudgetOutflow)
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
-            # except:
-            #     return {"gkstatus":enumdict["ConnectionFailed"] }
-            # finally:
-            #     self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
     @view_config(request_method='GET',request_param='type=expenseReport', renderer='json')
     def expenseReport(self):
         """Purpose:
@@ -635,7 +646,7 @@ class api_budget(object):
                         accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
                     
                     total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
-                """ Here the start date of budget is smae as financial start date then the previous expense will be zero.
+                """ Here the start date of budget is same as financial start date then the previous expense will be zero.
                 """
                 if(startdate == financialStart):
                     prevday = startdate   # require in gross profit
@@ -655,7 +666,7 @@ class api_budget(object):
                         # budgetedBal = float(accountbal) + float(budgetamount)
                         accVariance = float(budgetamount) - float(actualAmount)
                         # actualBal = float(accountbal) + float(actualAmount)
-                        accountdata.append({"actualamount":actualAmount,"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
+                        accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
                         
                         totalbudget += float(budgetamount)
                         totalactual += float(actualAmount)
