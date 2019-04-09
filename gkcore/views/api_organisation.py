@@ -112,11 +112,12 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+                    
+            if not columnExists("invoice","roundoff"):
+                self.con.execute("alter table invoice add column roundoff integer default 0")
             # In below 5 queries we are adding goid in that tables which will acts as branch id their and that id is refer from godown table
             # In that godown table goid is also acts for branch id, That depends on gbflag in godown table.
             # if gbflag is 2 then it is branch and only that is going to use in bellow tables
-            if not columnExists("invoice","roundoff"):
-                self.con.execute("alter table invoice add column roundoff integer default 0")
             if not columnExists("invoice","goid"):
                 self.con.execute("alter table invoice add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
                 self.con.execute("alter table vouchers add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
