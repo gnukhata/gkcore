@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -139,13 +139,16 @@ class api_budget(object):
     def getbalatbeginning(self):
         """ For clossing balances of all acounts.It  will fetch all acounts balance from financial startdate to the previous date of budget startdate with their accountcode.
         It will take financial start and budget start date as input.
-        for budget type 3 which is cash. It will fetch all accounts which comes under the bank and cash subgroup.
-        If the financial start date is same as budget start date then it will consider opening balances of accounts as clossing balance.
-        For expense budget type will be 5 :
-        In expense it will consider only that accounts which comes under the Direct and Indirect Expense group.
-        In Sales budget will require Direct Expense and Direct Income groups accounts.
-        In this for expense will consider all drs from voucher to get balances.
-        for sales will consider all crs from voucher to get balances.
+        Budget type = 3: (Cash Budget)
+        It will fetch all accounts except accounts under Bank and Cash subgroups.
+        Accounts under Direct,Indirect Expense and Current Liabilities are consider in Outflow
+        Accounts under Direct,Indirect Income and Current Assets are consider in Inflow.
+        Budget type = 5:(Expense Budget)
+        It will fetch all accounts under Direct and Indirect Expense group and their subgroups.
+        Budget type = 19: (Sales Budget)
+        It will fetch all accounts under Direct Expense and Income group and their subgroup.
+        Income accounts will consider in Sales or Income and Expense accounts will consider in Purchases or Expense.
+
         """
         try:
             token = self.request.headers["gktoken"]
@@ -164,8 +167,8 @@ class api_budget(object):
                     directExp = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                     accounts = directExp.fetchall()
                     DirectExpense=[]
-                    totalBalAtBegin=0
-                    grossProfit=0
+                    totalBalAtBegin=0.00
+                    grossProfit=0.00
                     if(uptodate != financialStart):
                         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
@@ -179,24 +182,24 @@ class api_budget(object):
                             accountbal=0
                             for transaction in data:
                                 accountbal += float(transaction["drs"][str(account["accountcode"])])
-                            totalBalAtBegin = totalBalAtBegin + accountbal
+                            totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
                             DirectExpense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
                         
                         directIncome = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                         directIncome = directIncome.fetchall()
-                        totalIncome=0
+                        totalIncome=0.00
                         for account in directIncome:
                             if "goid" in authDetails:
                                 data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
                             else:
                                 data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
                             data = data.fetchall()
-                            accountbal=0
+                            accountbal=0.00
                             for transaction in data:
                                 accountbal += float(transaction["crs"][str(account["accountcode"])])
-                            totalIncome = totalIncome + accountbal
+                            totalIncome = float(totalIncome) + float(accountbal)
                         
-                        grossProfit = totalIncome - totalBalAtBegin
+                        grossProfit = float(totalIncome) - float(totalBalAtBegin)
 
                     else:
                         for account in accounts:
@@ -215,10 +218,10 @@ class api_budget(object):
                             else:
                                 data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
                             data = data.fetchall()
-                            accountbal=0
+                            accountbal=0.00
                             for transaction in data:
                                 accountbal += float(transaction["drs"][str(account["accountcode"])])
-                            totalBalAtBegin = totalBalAtBegin + accountbal
+                            totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
                             IndirectExpense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
                     else:
                         for account in accounts:
@@ -244,28 +247,28 @@ class api_budget(object):
                                 calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
                             else:
                                 calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
-                            accountbal = 0
+                            accountbal = 0.00
                             
                             if(calbaldata["grpname"] == 'Direct Expense' or calbaldata["grpname"] == 'Indirect Expense' or calbaldata["grpname"] == 'Current Liabilities' ):
                                 if (calbaldata["baltype"] == 'Cr'):
-                                    accountbal = -calbaldata["curbal"]
+                                    accountbal = -float(calbaldata["curbal"])
                                 if (calbaldata["baltype"] == 'Dr'):
-                                    accountbal = calbaldata["curbal"]
+                                    accountbal = float(calbaldata["curbal"])
                                 
                                 outAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
                             if(calbaldata["grpname"] == 'Direct Income' or calbaldata["grpname"] == 'Indirect Income' or calbaldata["grpname"] == 'Current Assets' ):
                                 if (calbaldata["baltype"] == 'Cr'):
-                                    accountbal = calbaldata["curbal"]
+                                    accountbal = float(calbaldata["curbal"])
                                 if (calbaldata["baltype"] == 'Dr'):
-                                    accountbal = -calbaldata["curbal"]
+                                    accountbal = -float(calbaldata["curbal"])
                                 
                                 subgroupname = self.con.execute("select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"%int(bal["accountcode"]))
                                 subgroup = subgroupname.fetchone()
                                 if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
                                     if (calbaldata["baltype"] == 'Cr'):
-                                        openingBal =openingBal - calbaldata["curbal"]
+                                        openingBal = float(openingBal) - float(calbaldata["curbal"])
                                     if (calbaldata["baltype"] == 'Dr'):
-                                        openingBal =openingBal + calbaldata["curbal"]
+                                        openingBal = float(openingBal) + float(calbaldata["curbal"])
                                 else:
                                     inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(accountbal),"accountcode":bal["accountcode"]})
                         
@@ -275,7 +278,7 @@ class api_budget(object):
                         prevday = uptodate
                         inAccountdata=[]
                         outAccountdata=[]
-                        openingBal=0
+                        openingBal=0.00
                         for bal in accounts:
                             if "goid" in authDetails:
                                 calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
@@ -289,7 +292,7 @@ class api_budget(object):
                                 subgroupname = self.con.execute("select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"%int(bal["accountcode"]))
                                 subgroup = subgroupname.fetchone()
                                 if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
-                                    openingBal= openingBal + float(bal["openingbal"])
+                                    openingBal= float(openingBal) + float(bal["openingbal"])
                                 else:
                                     inAccountdata.append({"accountname":bal["accountname"],"accountbal":"%.2f"%float(0),"accountcode":bal["accountcode"]})
 
@@ -300,7 +303,7 @@ class api_budget(object):
                     accounts = directExpense.fetchall();
                     
                     expense=[]
-                    totalBalAtBegin=0
+                    totalBalAtBegin=0.00
                     if(uptodate != financialStart):
                         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
@@ -311,10 +314,10 @@ class api_budget(object):
                             else:
                                 data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
                             data = data.fetchall()
-                            accountbal=0
+                            accountbal=0.00
                             for transaction in data:
                                 accountbal += float(transaction["drs"][str(account["accountcode"])])
-                            totalBalAtBegin = totalBalAtBegin + accountbal
+                            totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
                             expense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
                     else:
                         for account in accounts:
@@ -323,7 +326,7 @@ class api_budget(object):
                     directIncome = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname ='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                     accounts = directIncome.fetchall();
                     income=[]
-                    totalBalAtBegin=0
+                    totalBalAtBegin=0.00
                     if(uptodate != financialStart):
                         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
@@ -334,10 +337,10 @@ class api_budget(object):
                             else:
                                 data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
                             data = data.fetchall()
-                            accountbal=0
+                            accountbal=0.00
                             for transaction in data:
                                 accountbal += float(transaction["crs"][str(account["accountcode"])])
-                            totalBalAtBegin = totalBalAtBegin + accountbal
+                            totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
                             income.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
                     else:
                         for account in accounts:
@@ -407,18 +410,26 @@ class api_budget(object):
         Purpose:
         To calculate complete budget for given time period.
         Input from webapp: financialstartdate,budgetperiod,budgetid
-        fetch all field data from budget table with budget Id. 
-        only in cash budget the contents(JSON field) field containes "flowin" and "flowout" data.
-        flowin : incoming cash budget and flowout : outgoing cash budget.
-        for cash budget only that accounts which are under cash and bank subgroups are take in to consideration.
-        after fetching all accounts for loop is done to calculate balance with calculatebalance function written above.
-        calculatebalance fun. will gives (per account totalCr and Dr, balance remaining with its type(Cr/Dr),
-        account opening balance with type )
-        Calculations for cash budget:
-        budget balance = (total opening balance + cash inflow) - cash ouflow
-        variance(cash inflow) = inflow - total Dr
-        variance(cash outflow) = outflow - total Cr
-        variance(balance) = budget balance - total balance
+        contents field is Json field which have all accountcodes which used in budget as key and their budget amount as value.
+        
+        OutFlow accounts : which are from Direct,Indirect Expense and Current Liabilities groups.
+        InFlow accounts : which are from Direct,Indirect Income and Current Assets groups.
+
+        Here we need to consider all accounts under the Bank and Cash subgroups to get transaction details from vouchers.
+        For each accounts of cash and bank we are getting opening and closing balance for budget using calculateBalance function.
+        Opening balance = from financial start date to previous date of budget start date.
+        Closing balance = from financial start date to end date of budget.
+        Again actual opening balance and budgeted opening balance will be same.But the actual closing and bugdeted closing balances will e different.
+        Budgeted closing bal. = Actual opening + total inflow - total outflow
+
+        For Inflow and Outflow if any accounts which has transaction with cash and bank accounts but not used in budget, we also consider that accounts with budget 0.
+
+        For transaction consider payment,receipt vouchers and only that sales and purchase vouchers which having transaction with Cash and Bank accounts.
+        
+        variance part will only for inflow and outflow accounts.
+        variance inflow = actual - budgeted , variance outflow = budgeted - actuals
+        variance in percent = (variance * 100)/ budgeted
+
         """
         try:
             token = self.request.headers["gktoken"]
@@ -437,25 +448,24 @@ class api_budget(object):
                 enddate = str(list["enddate"])[0:10]
                 content = list["contents"]
                 accountslist = content.keys()
-                
-                totalBudgetInflow = 0
-                totalBudgetOutflow = 0
+
+                # To calaculate total Outflow and Inflow 
+                totalBudgetInflow = 0.00
+                totalBudgetOutflow = 0.00
                 for acc in content:
                     groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(acc),int(acc)))
                     groupRecord = groupData.fetchone()
                     if(groupRecord[0] == 'Direct Expense' or groupRecord[0] == 'Indirect Expense' or groupRecord[0] == 'Current Liabilities' ):
-                        totalBudgetOutflow = totalBudgetOutflow + content[str(acc)]
+                        totalBudgetOutflow = float(totalBudgetOutflow) + float(content[str(acc)])
                     if(groupRecord[0] == 'Direct Income' or groupRecord[0] == 'Indirect Income' or groupRecord[0] == 'Current Assets' ):
-                        totalBudgetInflow = totalBudgetInflow + content[str(acc)]
+                        totalBudgetInflow = float(totalBudgetInflow) + float(content[str(acc)])
 
-                # to calculate opening balance. If budget start date and financial start date are same then the opening balance for 
-                # budget will becomes accounts opening balance. Else opening balance for budget will get by calculating all crs and drs up to previous date of 
-                # budget start date, means add of total accounts remaining balance.
+                # getting all accounts under cash and bank subgroups.
                 cbAccountsData = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
                 cbAccounts = cbAccountsData.fetchall()
                 cbAccountscode=[]
-                totalopeningbal = 0
-                actualClosingBal = 0
+                totalopeningbal = 0.00
+                actualClosingBal = 0.00
                 
                 openingacc=[]
                 closing=[]
@@ -466,41 +476,54 @@ class api_budget(object):
                     prevday = str(prevday)[0:10]
                 else:
                     prevday = startdate
+                # for all cash and bank accounts.
                 for bal in cbAccounts:
                     cbAccountscode.append(bal["accountcode"])
+                    # If budget is done with branchwise. goid is branchid.
                     if (list["goid"] != None):
                         calculate = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, prevday,list["goid"])
                         closingdata = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, enddate,list["goid"])
                     else:
                         calculate = calculateBalance(self.con,bal["accountcode"],financialStart, financialStart, prevday)
                         closingdata = calculateBalance(self.con,bal["accountcode"], financialStart, financialStart, enddate)
-                    openaccountbal = 0
+                    openaccountbal = 0.00
+                    # To calculate opening balance.
                     if(startdate != financialStart):
                         if (calculate["baltype"] == 'Cr'):
-                            totalopeningbal = totalopeningbal - calculate["curbal"]
-                            openaccountbal = - calculate["curbal"]
+                            totalopeningbal = float(totalopeningbal) - float(calculate["curbal"])
+                            openaccountbal = - float(calculate["curbal"])
                         if (calculate["baltype"] == 'Dr'):
-                            totalopeningbal = totalopeningbal + calculate["curbal"]
-                            openaccountbal = calculate["curbal"]
+                            totalopeningbal = float(totalopeningbal) + float(calculate["curbal"])
+                            openaccountbal = float(calculate["curbal"])
                     else:
-                        totalopeningbal = totalopeningbal + bal["openingbal"]
-                        openaccountbal = bal["openingbal"]
+                        # Opening balances of accounts                                                                      
+                        totalopeningbal = float(totalopeningbal) + float(bal["openingbal"])
+                        openaccountbal = float(bal["openingbal"])                           
                     openingacc.append({"accountname":bal["accountname"],"balance":"%.2f"%float(openaccountbal)})
-                    closingaccountbal = 0
+
+                    # Actual Closing and Budgeted Closing Balance calculation for Cash and Bank accounts.
+                    closingaccountbal = 0.00
                     if (closingdata["baltype"] == 'Cr'):
-                        actualClosingBal = actualClosingBal - closingdata["curbal"]
-                        closingaccountbal = - closingdata["curbal"]
+                        actualClosingBal = float(actualClosingBal) - float(closingdata["curbal"])
+                        closingaccountbal = - float(closingdata["curbal"])
                     if (closingdata["baltype"] == 'Dr'):
-                        actualClosingBal = actualClosingBal + closingdata["curbal"]
-                        closingaccountbal = closingdata["curbal"]
-                    accbudget = float(openaccountbal) + float(totalBudgetInflow) - float(totalBudgetOutflow)
+                        actualClosingBal = float(actualClosingBal) + float(closingdata["curbal"])
+                        closingaccountbal = float(closingdata["curbal"])
+                    #closing budgeted balance for each account
+                    accbudget = float(openaccountbal) + float(totalBudgetInflow) - float(totalBudgetOutflow) 
                     closing.append({"accountname":bal["accountname"],"balance":"%.2f"%float(closingaccountbal),"budget":"%.2f"%float(accbudget)})
+                    
+                    # To get all accounts which having transaction with Bank and Cash accounts.
+                    # If Cash or Bank account is present in drs then get accountcode present in crs and crs accounts are consider in inflow
+                    # If Cash or Bank account is present in crs then get accountcode present in drs and drs accounts are consider in outflow
                     inflowAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
                     outflowAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
 
                     inAcc = inflowAccData.fetchall()
                     outAcc = outflowAccData.fetchall()
-
+                    # here we making new list (accountslist) of all accountcodes for inflow and outflow.
+                    # That accounts which are used in budget and that also which having transaction cash and bank accounts but not used in budget.
+                    # accountlist already having accounts used in budget.
                     for acc in inAcc:
                         if acc[0].keys()[0] not in accountslist:
                             accountslist.append(acc[0].keys()[0])
@@ -510,44 +533,52 @@ class api_budget(object):
                 
                 inflowAccounts=[]
                 outflowAccounts=[]
-                totalActualOutflow = 0
-                totalActualInflow = 0
+                totalActualOutflow = 0.00
+                totalActualInflow = 0.00
+                # all inflow and outflow accountcodes are in accountslist
                 for acc in accountslist:
+                    # To get account name and their groupname.
                     result = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode == int(acc)))
                     accountname = result.fetchone()
                     groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(acc),int(acc)))
                     groupRecord = groupData.fetchone()
                     
                     if(groupRecord[0] == 'Direct Expense' or groupRecord[0] == 'Indirect Expense' or groupRecord[0] == 'Current Liabilities' ):
+                        # if accounts is under this group then that will consider for outflow.
+                        # fetching drs as expense are always consider as debit.Fetching crs to check weather transaction with bank or cash accounts.
                         outflowacc = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
                         outflowacc = outflowacc.fetchall()
-                        accountbal = 0
+                        accountbal = 0.00
                         for a in outflowacc:
+                            # cbAccountscode is having all cash and bank accounts. If crs have accounts from cash and bank only then this vouchers amount will consider.
                             if int(a["crs"].keys()[0]) in cbAccountscode:
                                 accountbal += float(a["drs"][str(int(acc))])
                             else:
-                                accountbal += 0
-                        totalActualOutflow = totalActualOutflow + accountbal
-                        
+                                accountbal += 0.00
+                        totalActualOutflow = float(totalActualOutflow) + float(accountbal)
+                        # if this account used in budget then add budgeted value, calculate variance and variance in percentage.
+                        # else budgetd value will be 0 and variance in percentage will consider 0. 
                         if acc in content:
                             var = float(content[str(acc)]) - float(accountbal)
                             varInPercent = (var* 100) / (content[str(acc)] )
                             outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
                             var = float(0) - float(accountbal)
-                            varInPercent = 0
+                            varInPercent = 0.00
                             outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
-
+                    
+                    # Almost similar for work for inflow accounts as done for outflow in above.
+                    # Only difference is insted of drs,crs consider crs,drs 
                     if(groupRecord[0] == 'Direct Income' or groupRecord[0] == 'Indirect Income' or groupRecord[0] == 'Current Assets' ):
                         inflowacc = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
                         inflowacc = inflowacc.fetchall()
-                        accountbal = 0
+                        accountbal = 0.00
                         for a in inflowacc:
                             if int(a["drs"].keys()[0]) in cbAccountscode:
                                 accountbal += float(a["crs"][str(int(acc))])
                             else:
-                                accountbal += 0
-                        totalActualInflow = totalActualInflow + accountbal
+                                accountbal += 0.00
+                        totalActualInflow = float(totalActualInflow) + float(accountbal)
                         
                         if acc in content:
                             var = float(accountbal) - float(content[str(acc)])
@@ -555,7 +586,7 @@ class api_budget(object):
                             inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
                             var = float(accountbal) - float(0)
-                            varInPercent = 0
+                            varInPercent = 0.00
                             inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                 
                 total={"inflow":inflowAccounts,"outflow":outflowAccounts,"openingacc":openingacc,"closing":closing}
@@ -575,6 +606,7 @@ class api_budget(object):
                 return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
     @view_config(request_method='GET',request_param='type=expenseReport', renderer='json')
     def expenseReport(self):
         """Purpose:
@@ -585,9 +617,16 @@ class api_budget(object):
             Here we need previuos date of start date of budget to get the previously expense of each accounts.
             For getting accounts balance we will considr only Dr from vouchers because expense is nominal accounts so it means debit all losses and expense.
             By fetching balance for each accounts we will takes vouchers for budget periods. So that we will get actual expense balance of each account for that period.
-            To calculate variance reduce actual balance from budget amount. 
-            Budgeted balance is previous balance plus budget amount.
-            Actual balance is actual balance of budget period and previos balance.
+            To calculate variance of accounts: Budgeted - Actual 
+            Here we need to consider gross profit to calculate net profit.
+            gross profit = total Direct Income - total Direct Expense
+            budget gross profit is from financial start to budget start date
+            Actual gross profit is from financial start date to budget end date.
+
+            budgeted net profit = budget gross profit - total budget
+            Actual net profit = actual gross profit - total actual
+            variance of net profit = actual - budgeted.
+
         """
         try:
             token = self.request.headers["gktoken"]
@@ -606,123 +645,96 @@ class api_budget(object):
                 enddate = str(budgetdata["enddate"])[0:10]
                 accounts = budgetdata["contents"]
                 accountdata=[]
-                totalbudget = 0
-                totalactual = 0
-                totalvariance = 0
-                totalbudgetedbal = 0
-                totalactualbal = 0
+                totalbudget =0.00
+                totalactual =0.00
+                totalvariance =0.00
+                totalbudgetedbal =0.00
+                totalactualbal =0.00
+                # To calculate actual of each accounts used in budget and total actual expense.
+                for key in accounts:
+                    budgetamount = "%.2f"%float(accounts[key])
+                    accountname = self.con.execute("select accountname from accounts where accountcode = %d"%(int(key)))
+                    accountname = accountname.fetchone()
+                    if (budgetdata["goid"] != None):
+                        actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key, budgetdata["goid"]))
+                    else:
+                        actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key))
+                    actualAccData = actualAccData.fetchall()
+                    actualAmount =0.00
+                    
+                    for transaction in actualAccData:
+                        actualAmount += float(transaction["drs"][key])
+
+                    accVariance = float(budgetamount) - float(actualAmount)
+                    totalbudget += float(budgetamount)
+                    totalactual += float(actualAmount)
+                    totalvariance += float(accVariance)
+
+                    accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
+                
+                total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
+                
                 if(startdate != financialStart):
                     calculateToDate = datetime.strptime(startdate,"%Y-%m-%d")
-                    prevday = (calculateToDate - timedelta(days=1))
-                    prevday = str(prevday)[0:10]
-                    for key in accounts:
-                        budgetamount = "%.2f"%float(accounts[key])
-                        accountname = self.con.execute("select accountname from accounts where accountcode = %d"%(int(key)))
-                        accountname = accountname.fetchone()
-                        if (budgetdata["goid"] != None):
-                            # previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key, budgetdata["goid"]))
-                            actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key, budgetdata["goid"]))
-                        else:
-                            # previousAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,key))
-                            actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key))
-                        actualAccData = actualAccData.fetchall()
-                        actualAmount = 0
-                        for transaction in actualAccData:
-                            actualAmount += float(transaction["drs"][key])
-                        # previousAccData = previousAccData.fetchall()
-                        # accountbal = 0
-                        # for transaction in previousAccData:
-                        #     accountbal += float(transaction["drs"][key])
-                        # budgetedBal = float(accountbal) + float(budgetamount)
-                        accVariance = float(budgetamount) - float(actualAmount)
-                        # actualBal = float(accountbal) + float(actualAmount)
+                    startdate = (calculateToDate - timedelta(days=1))
+                    startdate = str(startdate)[0:10]
 
-                        totalbudget += float(budgetamount)
-                        totalactual += float(actualAmount)
-                        totalvariance += float(accVariance)
-                        # totalbudgetedbal += float(budgetedBal)
-                        # totalactualbal += float(actualBal)
-                        # totalpreviousbal += float(accountbal)
-                        accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
-                    
-                    total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
-                """ Here the start date of budget is same as financial start date then the previous expense will be zero.
-                """
-                if(startdate == financialStart):
-                    prevday = startdate   # require in gross profit
-                    for key in accounts:
-                        budgetamount = "%.2f"%float(accounts[key])
-                        accountname = self.con.execute("select accountname from accounts where accountcode = %d"%(int(key)))
-                        accountname = accountname.fetchone()
-                        if (budgetdata["goid"] != None):
-                            actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key, budgetdata["goid"]))
-                        else:
-                            actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,key))
-                        actualAccData = actualAccData.fetchall()
-                        accountbal = 0
-                        actualAmount = 0
-                        for transaction in actualAccData:
-                            actualAmount += float(transaction["drs"][key])
-                        # budgetedBal = float(accountbal) + float(budgetamount)
-                        accVariance = float(budgetamount) - float(actualAmount)
-                        # actualBal = float(accountbal) + float(actualAmount)
-                        accountdata.append({"actualamount":"%.2f"%float(actualAmount),"accountname":accountname[0],"accountcode":key,"previousbal":"%.2f"%float(accountbal),"budgetamount":"%.2f"%float(budgetamount),"accvariance":"%.2f"%float(accVariance)})
-                        
-                        totalbudget += float(budgetamount)
-                        totalactual += float(actualAmount)
-                        totalvariance += float(accVariance)
-                        # totalbudgetedbal += float(budgetedBal)
-                        # totalactualbal += float(actualBal)
-                    total={"totalbudget":"%.2f"%float(totalbudget),"totalactual":"%.2f"%float(totalactual),"totalvariance":"%.2f"%float(totalvariance),"accountdata":accountdata}
-                
-                # gross profit is before the budget start date and actual gross profit is up to the end date of budget.
+                # budget gross profit is before the budget start date and actual gross profit is up to the end date of budget.
+                # Net profit calculation using gross profit.
                 directExp = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 expAccounts = directExp.fetchall()
-                expBalance = 0
-                actualExpBal=0
+                expBalance = 0.00
+                actualExpBal=0.00
                 directIncome = self.con.execute("select accountcode from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 incomeAccounts = directIncome.fetchall()
-                incomeBalance = 0
-                actualIncomeBal=0
+                incomeBalance = 0.00
+                actualIncomeBal=0.00
+                # Expense accounts calculation for gross profit
                 for account in expAccounts:
+                    # Expenses data for previous or budget gross profit and actualdata is for actual gross profit.
                     if "goid" in authDetails:
-                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
+                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), startdate,account["accountcode"], authDetails["goid"]))
                         actualdata = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"], authDetails["goid"]))
                     else:
-                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
+                        data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), startdate,account["accountcode"]))
                         actualdata = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"]))
                     data = data.fetchall()
                     actualdata = actualdata.fetchall()
-                    accountbal=0
+
+                    accountbal=0.00
                     for transaction in data:
                         accountbal += float(transaction["drs"][str(account["accountcode"])])
                     expBalance = float(expBalance) + float(accountbal)
-                    actualAccountbal=0
+                    actualAccountbal=0.00
                     for transaction in actualdata:
                         actualAccountbal += float(transaction["drs"][str(account["accountcode"])])
                     actualExpBal = float(actualExpBal) + float(actualAccountbal)
                 
+                # Incomes accounts calculation for gross profit
                 for account in incomeAccounts:
+                    # Incomes data for previous or budget gross profit and actualdata is for actual gross profit.
                     if "goid" in authDetails:
-                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
+                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), startdate,account["accountcode"], authDetails["goid"]))
                         actualdata = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"], authDetails["goid"]))
                     else:
-                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
+                        data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), startdate,account["accountcode"]))
                         actualdata = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), enddate,account["accountcode"]))
                     data = data.fetchall()
                     actualdata = actualdata.fetchall()
-                    accountbal=0
+
+                    accountbal=0.00
                     for transaction in data:
                         accountbal += float(transaction["crs"][str(account["accountcode"])])
                     incomeBalance = float(incomeBalance) + float(accountbal)
                     
-                    actualAccountbal=0
+                    actualAccountbal=0.00
                     for transaction in actualdata:
                         actualAccountbal += float(transaction["crs"][str(account["accountcode"])])
                     actualIncomeBal = float(actualIncomeBal) + float(actualAccountbal)
+
                 grossProfit = float(incomeBalance) - float(expBalance)
                 actualGrossProfit = float(actualIncomeBal) - float(actualExpBal)
-
+                # Net profit calculation
                 budgetedNetProfit = float(grossProfit) - float(total["totalbudget"])
                 actualNetProfit = float(actualGrossProfit) - float(total["totalactual"])
                 varNetProfit = float(actualNetProfit) - float(budgetedNetProfit)
@@ -753,6 +765,7 @@ class api_budget(object):
             And Variance of all :
             sales variance = actual sales - budgeted sales
             purchase variance = budgeted purchase - actual purchase
+            profit = actual - budgeted
         """
         try:
             token = self.request.headers["gktoken"]
@@ -771,65 +784,72 @@ class api_budget(object):
                 enddate = str(budgetdata["enddate"])[0:10]
                 accountsList = budgetdata["contents"].keys()
                 
-                totalOpeningBal=0
-                actualTotalExpense=0
-                actualTotalIncome=0
+                totalOpeningBal=0.00
+                actualTotalExpense=0.00
+                actualTotalIncome=0.00
                 expensedata = []
                 incomedata = []
-                budgetIncome = 0
-                budgetExpense = 0
-
+                budgetIncome = 0.00
+                budgetExpense = 0.00
+                # all accounts in budget
                 for bal in accountsList:
                     accountName = self.con.execute("select accountname from accounts where accountcode = %d"%(int(bal)))
                     accountName = accountName.fetchone()
                     groupName = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(bal),int(bal)))
                     groupName = groupName.fetchone()
+                    # Purchase or expenses accounts 
                     if (groupName[0] == 'Direct Expense'):
                         if (budgetdata["goid"] != None):
                             actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal, budgetdata["goid"]))
                         else:
                             actualAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal))
                         actualAccData = actualAccData.fetchall()
-                        actualAmount = 0
+                        actualAmount = 0.00
                         for transaction in actualAccData:
                             actualAmount += float(transaction["drs"][bal])
+
                         actualTotalExpense = float(actualTotalExpense) + float(actualAmount)
-                        budgetExpense = float(budgetExpense) + budgetdata["contents"][bal]
+                        budgetExpense = float(budgetExpense) + float(budgetdata["contents"][bal])
                         accountVar = budgetdata["contents"][bal] - float(actualAmount)
+
                         expensedata.append({"budget":"%.2f"%float(budgetdata["contents"][bal]),"accountname":accountName[0],"actual":"%.2f"%float(actualAmount),"var":"%.2f"%float(accountVar)})
-                    
+                    # sales or income accounts
                     if (groupName[0] == 'Direct Income'):
                         calculateToDate = datetime.strptime(startdate,"%Y-%m-%d")
                         prevday = (calculateToDate - timedelta(days=1))
                         prevday = str(prevday)[0:10]
                         if (budgetdata["goid"] != None):
                             openingAccBal = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,bal, budgetdata["goid"]))
-                            actualAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal, budgetdata["goid"]))
+                            actualAccBal = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal, budgetdata["goid"]))
                         else:
                             openingAccBal = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,bal))
-                            actualAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal))
-                        actualAccData = actualAccData.fetchall()
+                            actualAccBal = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal))
+                        actualAccBal = actualAccBal.fetchall()
                         openingAccBal = openingAccBal.fetchall()
-                        actualAmount = 0
-                        for transaction in actualAccData:
-                            actualAmount += float(transaction["crs"][bal])
-                        actualTotalIncome = float(actualTotalIncome) + float(actualAmount)
-                        budgetIncome = float(budgetIncome) + budgetdata["contents"][bal]
-                        accountVar = float(actualAmount) - budgetdata["contents"][bal]
 
-                        accOpeningBal=0
+                        actualAmount = 0.00
+                        for transaction in actualAccBal:
+                            actualAmount += float(transaction["crs"][bal])
+
+                        actualTotalIncome = float(actualTotalIncome) + float(actualAmount)
+                        budgetIncome = float(budgetIncome) + float(budgetdata["contents"][bal])
+                        accountVar = float(actualAmount) - float(budgetdata["contents"][bal])
+
+                        accOpeningBal=0.00
                         for transaction in openingAccBal:
                             accOpeningBal += float(transaction["crs"][bal])
                         totalOpeningBal = float(totalOpeningBal) + float(accOpeningBal)
                         
-                        accBalance = actualAmount + accOpeningBal
+                        accBalance = float(actualAmount) + float(accOpeningBal)
                         incomedata.append({"budget":"%.2f"%float(budgetdata["contents"][bal]),"var":"%.2f"%float(accountVar),"accountname":accountName[0],"actual":"%.2f"%float(actualAmount),"accbalance":"%.2f"%float(accOpeningBal)})
                 
                 BudgetedProfit = float(budgetIncome) - float(budgetExpense)
                 ActualProfit = float(actualTotalIncome) - float(actualTotalExpense)
+                # variance calculation
                 varProfit =  float(ActualProfit) - float(BudgetedProfit)
                 varExpense = float(budgetExpense) - float(actualTotalExpense)
                 varIncome =  float(actualTotalIncome) - float(budgetIncome)
+                # Total sales amount
                 closingBal = float(totalOpeningBal) + float(actualTotalIncome)
                 total = {"closingbal":"%.2f"%float(closingBal),"varexpense":"%.2f"%float(varExpense),"varincome":"%.2f"%float(varIncome),"openingbal":"%.2f"%float(totalOpeningBal),"budgetincome":"%.2f"%float(budgetIncome),"budgetexpense":"%.2f"%float(budgetExpense),"budgetprofit":"%.2f"%float(BudgetedProfit),"actualincome":"%.2f"%float(actualTotalIncome),"actualexpense":"%.2f"%float(actualTotalExpense),"actualprofit":"%.2f"%float(ActualProfit),"varprofit":"%.2f"%float(varProfit),"expensedata":expensedata,"incomedata":incomedata}
                 
