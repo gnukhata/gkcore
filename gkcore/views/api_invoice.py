@@ -529,7 +529,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
-                roundoffvalue = 0
+                roundoffvalue = 0.00
                 if invrow["roundoff"] == 1:
                     roundoffvalue = round(invrow["invoicetotal"])
 
