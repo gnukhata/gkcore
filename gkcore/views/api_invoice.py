@@ -79,7 +79,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try: 
+            # try: 
                     self.con = eng.connect()
                     dtset = self.request.json_body
                     dcinvdataset={}
@@ -122,7 +122,13 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                     CSname = csName.fetchone()
-                                    queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                    queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":round(invdataset["invoicetotal"]),"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                    # when invoice total rounded off
+                                    if invdataset["roundoff"] == 1:
+                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                        if float(roundOffAmount) != float(0):
+                                            queryParams["roundoff"] = float(roundOffAmount)
+
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
                                         queryParams["cessname"] =avData["avtax"]["CESSName"]
@@ -166,6 +172,12 @@ class api_invoice(object):
                                     mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                                     maFlag = mafl.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                    # when invoice total rounded off
+                                    if invdataset["roundoff"] == 1:
+                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                        if float(roundOffAmount) != float(0):
+                                            queryParams["roundoff"] = float(roundOffAmount)
+                                    
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
                                         queryParams["cessname"] =avData["avtax"]["CESSName"]
@@ -206,6 +218,12 @@ class api_invoice(object):
                                     csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                     CSname = csName.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
+                                    # when invoice total rounded off
+                                    if invdataset["roundoff"] == 1:
+                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                        if float(roundOffAmount) != float(0):
+                                            queryParams["roundoff"] = float(roundOffAmount)
+                                    
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
                                         queryParams["cessname"] =avData["avtax"]["CESSName"]
@@ -228,12 +246,12 @@ class api_invoice(object):
                             result2 = self.con.execute(invoice.delete().where(invoice.c.invid==invoiceid["invid"]))
                             return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
                     
-            except exc.IntegrityError:
-               return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except exc.IntegrityError:
+            #    return {"gkstatus":enumdict["DuplicateEntry"]}
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
            
     '''
@@ -1865,7 +1883,7 @@ The bills grid calld gkresult will return a list as it's value.
             drs = {}
             Narration = ""
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
-            amountPaid = float(queryParams["totalAmount"])
+            amountPaid = float(round(queryParams["totalAmount"]))
             taxDict = {}
             taxRate = 0.00
             cessRate =0.00
@@ -1977,7 +1995,15 @@ The bills grid calld gkresult will return a list as it's value.
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
                     crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
-                
+                # round off accounts dr/cr
+                if "roundoff" in queryParams:
+                    roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+                    if float(queryParams["roundoff"]) > float(0):
+                        drs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                    else:
+                        crs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
 
             """ Purchase"""
@@ -2088,7 +2114,14 @@ The bills grid calld gkresult will return a list as it's value.
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
                     drs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
-                
+                # round off accounts dr/cr
+                if "roundoff" in queryParams:
+                    roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+                    if float(queryParams["roundoff"]) > float(0):
+                        crs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                    else:
+                        drs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
 
             drs = voucherDict["drs"]
