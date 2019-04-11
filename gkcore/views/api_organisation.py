@@ -121,7 +121,7 @@ class api_organisation(object):
                 self.con.execute("alter table rejectionnote add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
                 self.con.execute("alter table drcr add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
                 self.con.execute("alter table purchaseorder add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                #In Below query we are removing company preference option Accounting with Invoicing. This query write in above condtion because we want to run the query only once in 6.0 version.
+                #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once in 6.0 version. i.e. migrating to version 6.0
                 self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
             
             if not columnExists("organisation","avnoflag"):
