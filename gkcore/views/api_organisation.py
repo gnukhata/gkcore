@@ -121,6 +121,7 @@ class api_organisation(object):
                 self.con.execute("alter table rejectionnote add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
                 self.con.execute("alter table drcr add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
                 self.con.execute("alter table purchaseorder add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
+                self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
             
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
@@ -510,7 +511,6 @@ class api_organisation(object):
             self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             if not tableExists("budget"):
                 self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
-            self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")    
         except:            
             return 0
         finally:
