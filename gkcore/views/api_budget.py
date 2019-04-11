@@ -158,7 +158,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]} 
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 uptodate = self.request.params["uptodate"]
                 financialStart = self.request.params["financialstart"]
@@ -231,66 +231,24 @@ class api_budget(object):
 
                 # budget type 16: pnl budget
                 if btype == '16':
-                    
-                    
-
-
-
-
-                    
-                # if btype == '19':
-                #     directExpense = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))                    
-                #     accounts = directExpense.fetchall();
-                    
-                #     expense=[]
-                #     totalBalAtBegin=0.00
-                #     if(uptodate != financialStart):
-                #         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
-                #         prevday = (calculateToDate - timedelta(days=1))
-                #         prevday = str(prevday)[0:10]
-                #         for account in accounts:
-                #             if "goid" in authDetails:
-                #                 data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
-                #             else:
-                #                 data = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
-                #             data = data.fetchall()
-                #             accountbal=0.00
-                #             for transaction in data:
-                #                 accountbal += float(transaction["drs"][str(account["accountcode"])])
-                #             totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
-                #             expense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
-                #     else:
-                #         for account in accounts:
-                #             expense.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
-
-                #     directIncome = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode=%d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname ='Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
-                #     accounts = directIncome.fetchall();
-                #     income=[]
-                #     totalBalAtBegin=0.00
-                #     if(uptodate != financialStart):
-                #         calculateToDate = datetime.strptime(uptodate,"%Y-%m-%d")
-                #         prevday = (calculateToDate - timedelta(days=1))
-                #         prevday = str(prevday)[0:10]
-                #         for account in accounts:
-                #             if "goid" in authDetails:
-                #                 data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"], authDetails["goid"]))
-                #             else:
-                #                 data = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(str(financialStart), prevday,account["accountcode"]))
-                #             data = data.fetchall()
-                #             accountbal=0.00
-                #             for transaction in data:
-                #                 accountbal += float(transaction["crs"][str(account["accountcode"])])
-                #             totalBalAtBegin = float(totalBalAtBegin) + float(accountbal)
-                #             income.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(accountbal)})
-                #     else:
-                #         for account in accounts:
-                #             income.append({"accountname":account["accountname"],"accountcode":account["accountcode"],"accountbal":"%.2f"%float(0)})
-                #     total = {"totalbal":"%.2f"%float(totalBalAtBegin),"expense":expense,"income":income}
-                #     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
-            # except:
-            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            # finally:
-            #     self.con.close()
+                    expense = {}
+                    income = {}
+                    # accounts for expense
+                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense' or groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Expense' or groupname = 'Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                    expenseAccounts = result.fetchall()
+                    for account in expenseAccounts:
+                        expense[account["accountcode"]] = account["accountname"]
+                    # accounts for income
+                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income' or groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Income' or groupname = 'Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                    incomeAccounts = result.fetchall()
+                    for account in incomeAccounts:
+                        income[account["accountcode"]] = account["accountname"]
+                    total=[expense,income]
+                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
     def editbudgets(self):
