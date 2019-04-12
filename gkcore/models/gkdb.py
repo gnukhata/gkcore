@@ -386,6 +386,48 @@ billwise = Table('billwise',metadata,
     Column('adjamount',Numeric(12,2),nullable=False),
     Column('orgcode',Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False)
 )
+"""
+This is the table which acts as a bin for canceled invoices.
+While these invoices canceled, they are for investigation purpose if need be.
+"""
+invoicebin = Table('invoicebin',metadata,
+    Column('invid',Integer,primary_key=True),
+    Column('invoiceno',UnicodeText,nullable=False),
+    Column('invoicedate',DateTime,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
+    Column('amountpaid',Numeric(13,2),default=0.00),
+    Column('invoicetotal', Numeric(13,2),nullable=False),
+    Column('icflag',Integer,default=9),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
+    Column('goid', Integer,ForeignKey('godown.goid')),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
+    Column('consignee',JSONB),
+    Column('freeqty',JSONB),
+    Column('reversecharge',UnicodeText),
+    Column('bankdetails',JSONB),
+    Column('transportationmode',UnicodeText),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
+    Column('address',UnicodeText),
+    Column('inoutflag',Integer),
+    Column('invoicetotalword', UnicodeText),
+    UniqueConstraint('orgcode','invoiceno','custid','icflag'),
+    Index("invoice_orgcodeindex","orgcode"),
+    Index("invoice_invoicenoindex","invoiceno")
+    )
 
 """
 Table for challan.
