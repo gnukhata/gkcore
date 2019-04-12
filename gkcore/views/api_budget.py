@@ -228,7 +228,6 @@ class api_budget(object):
                         data={"inflow":inAccountdata,"outflow":outAccountdata,"openingbal":"%.2f"%float(openingBal)}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                     
-
                 # budget type 16: pnl budget
                 if btype == '16':
                     expense = {}
@@ -409,9 +408,13 @@ class api_budget(object):
                         closingaccountbal = float(closingdata["curbal"])
                     #closing budgeted balance for each account
                     accbudget = float(openaccountbal) + float(totalBudgetInflow) - float(totalBudgetOutflow) 
-                    var= float(closingaccountbal) - float(accbudget)
-                    varinpercent = (float(var) * 100)/ float(accbudget)
-                    closing.append({"accountname":bal["accountname"],"balance":"%.2f"%float(closingaccountbal),"budget":"%.2f"%float(accbudget),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varinpercent)})
+                    try:
+                        var= "%.2f"%float(float(closingaccountbal) - float(accbudget))
+                        varinpercent = "%.2f"%float((float(var) * 100)/ float(accbudget))
+                    except:
+                        var='-'
+                        varinpercent = '-'
+                    closing.append({"accountname":bal["accountname"],"balance":"%.2f"%float(closingaccountbal),"budget":"%.2f"%float(accbudget),"var":var,"varinpercent":varinpercent})
                     
                     # To get all accounts which having transaction with Bank and Cash accounts.
                     # If Cash or Bank account is present in drs then get accountcode present in crs and crs accounts are consider in inflow
@@ -460,12 +463,12 @@ class api_budget(object):
                         # else budgetd value will be 0 and variance in percentage will consider 0. 
                         if acc in content:
                             var = float(content[str(acc)]) - float(accountbal)
-                            varInPercent = (var* 100) / (content[str(acc)] )
+                            varInPercent = (var* 100) / (content[str(acc)])
                             outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
-                            var = float(0) - float(accountbal)
-                            varInPercent = 0.00
-                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            var = '-'
+                            varInPercent = '-'
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
                     
                     # Almost similar for work for inflow accounts as done for outflow in above.
                     # Only difference is insted of drs,crs consider crs,drs 
@@ -485,9 +488,9 @@ class api_budget(object):
                             varInPercent = (var * 100) / content[str(acc)] 
                             inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
-                            var = float(accountbal) - float(0)
-                            varInPercent = 0.00
-                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            var = '-'
+                            varInPercent = '-'
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
                 
                 total={"inflow":inflowAccounts,"outflow":outflowAccounts,"openingacc":openingacc,"closing":closing}
                 total["opening"]= "%.2f"%float(totalopeningbal)
