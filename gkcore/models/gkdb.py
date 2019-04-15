@@ -425,8 +425,8 @@ invoicebin = Table('invoicebin',metadata,
     Column('inoutflag',Integer),
     Column('invoicetotalword', UnicodeText),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
-    Index("invoice_orgcodeindex","orgcode"),
-    Index("invoice_invoicenoindex","invoiceno")
+    Index("invoicebin_orgcodeindex","orgcode"),
+    Index("invoicebin_invoicenoindex","invoiceno")
     )
 
 """

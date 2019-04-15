@@ -381,6 +381,25 @@ class api_invoice(object):
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    # @view_config(request_method='DELETE',request_param='type=cancel',renderer='json')
+    # def cancelInvoice(self):
+    #     try:
+    #         token = self.request.headers["gktoken"]
+    #     except:
+    #         return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    #     authDetails = authCheck(token)
+    #     if authDetails["auth"] == False:
+    #         return {"gkstatus":enumdict["UnauthorisedAccess"]}
+    #     else:
+    #         try:
+    #             print("ddfsdfd")
+    #             return{"ddf":"try"}
+    #         except:
+    #             return{"dfdsggds":"ex"}
+        
+
+
     @view_config(request_method='PUT',request_param='type=bwa',renderer='json')
     def updatePayment(self):
         """
