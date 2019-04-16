@@ -112,9 +112,18 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
-                    
+            # Round off is use to detect that total amount of invoice is rounded off or not.
+            # If the field is not exist then it will create field.
+            # Round Off account will genrate which is use while creating voucher for that invoice.  
             if not columnExists("invoice","roundoff"):
                 self.con.execute("alter table invoice add column roundoff integer default 0")
+                for orgcode in allorg:
+                    result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off')))
+                    account = result.fetchone()
+                    if account == None:
+                        grpcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                        grpcode = grpcode.fetchone()
+                        roadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":18}])
             # In below 5 queries we are adding goid in that tables which will acts as branch id their and that id is refer from godown table
             # In that godown table goid is also acts for branch id, That depends on gbflag in godown table.
             # if gbflag is 2 then it is branch and only that is going to use in bellow tables
@@ -262,13 +271,6 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 0 where accountcode =%d"%int(acname["accountcode"]))
                     except:
                         continue
-            for orgcode in allorg:
-                result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off')))
-                account = result.fetchone()
-                if account == None:
-                    grpcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
-                    grpcode = grpcode.fetchone()
-                    roadd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off","groupcode":grpcode["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":18}])
             if not columnExists("organisation","bankdetails"):
                 self.con.execute("alter table organisation add bankdetails json")
             if not columnExists("purchaseorder","purchaseordertotal"):
