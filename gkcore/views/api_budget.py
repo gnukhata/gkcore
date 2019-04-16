@@ -143,12 +143,8 @@ class api_budget(object):
         It will fetch all accounts except accounts under Bank and Cash subgroups.
         Accounts under Direct,Indirect Expense and Current Liabilities are consider in Outflow
         Accounts under Direct,Indirect Income and Current Assets are consider in Inflow.
-        Budget type = 5:(Expense Budget)
-        It will fetch all accounts under Direct and Indirect Expense group and their subgroups.
-        Budget type = 19: (Sales Budget)
-        It will fetch all accounts under Direct Expense and Income group and their subgroup.
-        Income accounts will consider in Sales or Income and Expense accounts will consider in Purchases or Expense.
-
+        Budget type = 16:(pnl Budget)
+        It will fetch all accounts under Direct and Indirect Expense and Income groups and their subgroups.
         """
         try:
             token = self.request.headers["gktoken"]
