@@ -305,8 +305,8 @@ class api_budget(object):
         Input from webapp: financialstartdate,budgetperiod,budgetid
         contents field is Json field which have all accountcodes which used in budget as key and their budget amount as value.
         
-        OutFlow accounts : which are from Direct,Indirect Expense and Current Liabilities groups.
-        InFlow accounts : which are from Direct,Indirect Income and Current Assets groups.
+        OutFlow accounts : which are from Direct & Indirect Expense and Current Liabilities groups.
+        InFlow accounts : which are from Direct & Indirect Income and Current Assets groups.
 
         Here we need to consider all accounts under the Bank and Cash subgroups to get transaction details from vouchers.
         For each accounts of cash and bank we are getting opening and closing balance for budget using calculateBalance function.
@@ -317,7 +317,7 @@ class api_budget(object):
 
         For Inflow and Outflow if any accounts which has transaction with cash and bank accounts but not used in budget, we also consider that accounts with budget 0.
 
-        For transaction consider payment,receipt vouchers and only that sales and purchase vouchers which having transaction with Cash and Bank accounts.
+        For transaction consider payment & receipt vouchers and only that sales and purchase vouchers which having transaction with Cash and Bank accounts.
         
         variance part will only for inflow and outflow accounts.
         variance inflow = actual - budgeted , variance outflow = budgeted - actuals
@@ -415,20 +415,22 @@ class api_budget(object):
                     # To get all accounts which having transaction with Bank and Cash accounts.
                     # If Cash or Bank account is present in drs then get accountcode present in crs and crs accounts are consider in inflow
                     # If Cash or Bank account is present in crs then get accountcode present in drs and drs accounts are consider in outflow
-                    inflowAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
-                    outflowAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
+                    inflowAccData = self.con.execute("select crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%d')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
+                    outflowAccData = self.con.execute("select drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%d')  order by voucherdate DESC,vouchercode ;"%(startdate, enddate,bal["accountcode"]))
 
                     inAcc = inflowAccData.fetchall()
                     outAcc = outflowAccData.fetchall()
                     # here we making new list (accountslist) of all accountcodes for inflow and outflow.
                     # That accounts which are used in budget and that also which having transaction cash and bank accounts but not used in budget.
                     # accountlist already having accounts used in budget.
-                    for acc in inAcc:
-                        if acc[0].keys()[0] not in accountslist:
-                            accountslist.append(acc[0].keys()[0])
-                    for acc in outAcc:
-                        if acc[0].keys()[0] not in accountslist:
-                            accountslist.append(acc[0].keys()[0])
+                    if len(inAcc) > 0 :
+                        for acc in inAcc[0][0].keys():
+                            if acc not in accountslist:
+                                accountslist.append(acc)
+                    if len(outAcc) > 0 :
+                        for acc in outAcc[0][0].keys():
+                            if acc not in accountslist:
+                                accountslist.append(acc)
                 
                 inflowAccounts=[]
                 outflowAccounts=[]
@@ -439,54 +441,46 @@ class api_budget(object):
                     # To get account name and their groupname.
                     result = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode == int(acc)))
                     accountname = result.fetchone()
-                    groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(acc),int(acc)))
-                    groupRecord = groupData.fetchone()
-                    
-                    if(groupRecord[0] == 'Direct Expense' or groupRecord[0] == 'Indirect Expense' or groupRecord[0] == 'Current Liabilities' ):
-                        # if accounts is under this group then that will consider for outflow.
-                        # fetching drs as expense are always consider as debit.Fetching crs to check weather transaction with bank or cash accounts.
-                        outflowacc = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
-                        outflowacc = outflowacc.fetchall()
-                        accountbal = 0.00
-                        for a in outflowacc:
-                            # cbAccountscode is having all cash and bank accounts. If crs have accounts from cash and bank only then this vouchers amount will consider.
-                            if int(a["crs"].keys()[0]) in cbAccountscode:
-                                accountbal += float(a["drs"][str(int(acc))])
+                    # Get all vouchers of related accountcode
+                    vouchers = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%d' or crs ? '%d') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc),int(acc)))
+                    vchOfAcc = vouchers.fetchall()
+                    if len(vchOfAcc) > 0:
+                        # For Inflow field 
+                        # As account is in crs then that account is income for budget
+                        if acc in vchOfAcc[0]["crs"].keys():
+                            accountbal = 0.00
+                            # If bank or cash account is in drs
+                            if int(vchOfAcc[0]["drs"].keys()[0]) in cbAccountscode:
+                                
+                                accountbal += float(vchOfAcc[0]["crs"][str(int(acc))])
                             else:
                                 accountbal += 0.00
-                        totalActualOutflow = float(totalActualOutflow) + float(accountbal)
-                        # if this account used in budget then add budgeted value, calculate variance and variance in percentage.
-                        # else budgetd value will be 0 and variance in percentage will consider 0. 
-                        if acc in content:
-                            var = float(content[str(acc)]) - float(accountbal)
-                            varInPercent = (var* 100) / (content[str(acc)])
-                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            totalActualInflow = float(totalActualInflow) + float(accountbal)
+                            # if account is in budget.Means that account has budgeted amount
+                            if acc in content:
+                                var = float(accountbal) - float(content[str(acc)])
+                                varInPercent = (var * 100) / content[str(acc)] 
+                                inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            else:
+                                var = '-'
+                                varInPercent = '-'
+                                inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
+                        # For Outflow field
                         else:
-                            var = '-'
-                            varInPercent = '-'
-                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
-                    
-                    # Almost similar for work for inflow accounts as done for outflow in above.
-                    # Only difference is insted of drs,crs consider crs,drs 
-                    if(groupRecord[0] == 'Direct Income' or groupRecord[0] == 'Indirect Income' or groupRecord[0] == 'Current Assets' ):
-                        inflowacc = self.con.execute("select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc)))
-                        inflowacc = inflowacc.fetchall()
-                        accountbal = 0.00
-                        for a in inflowacc:
-                            if int(a["drs"].keys()[0]) in cbAccountscode:
-                                accountbal += float(a["crs"][str(int(acc))])
+                            accountbal = 0.00
+                            if int(vchOfAcc[0]["crs"].keys()[0]) in cbAccountscode:
+                                accountbal += float(vchOfAcc[0]["drs"][str(int(acc))])
                             else:
                                 accountbal += 0.00
-                        totalActualInflow = float(totalActualInflow) + float(accountbal)
-                        
-                        if acc in content:
-                            var = float(accountbal) - float(content[str(acc)])
-                            varInPercent = (var * 100) / content[str(acc)] 
-                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
-                        else:
-                            var = '-'
-                            varInPercent = '-'
-                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
+                            totalActualOutflow = float(totalActualOutflow) + float(accountbal)
+                            if acc in content:
+                                var = float(content[str(acc)]) - float(accountbal)
+                                varInPercent = (var * 100) / content[str(acc)] 
+                                outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            else:
+                                var = '-'
+                                varInPercent = '-'
+                                outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
                 
                 total={"inflow":inflowAccounts,"outflow":outflowAccounts,"openingacc":openingacc,"closing":closing}
                 total["opening"]= "%.2f"%float(totalopeningbal)
@@ -512,7 +506,7 @@ class api_budget(object):
             This function is used to calculate Profit & Loss budget report. 
             This will take financial start date and budget id as input.
             Using budget id it will fetch all data regarding that budget id.
-            This budget considers all accounts under Direct and Indirect Expense and Income to calculate Net profit.
+            This budget considers all accounts under Direct Expense & Indirect Expense and  Direct Income & Indirect Income to calculate Net profit.
             Calculations:
             for expense variance : budget - actuals
             for income variance : actuals - budget 
@@ -556,7 +550,10 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DEAccounts = result.fetchall()
                 for acc in DEAccounts:
-                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    if (budgetdata["goid"] != None):
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
+                    else:
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -579,7 +576,10 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DEAccounts = result.fetchall()
                 for acc in DEAccounts:
-                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    if (budgetdata["goid"] != None):
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
+                    else:
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -608,7 +608,10 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DIAccounts = result.fetchall()
                 for acc in DIAccounts:
-                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    if (budgetdata["goid"] != None):
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
+                    else:
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -631,7 +634,10 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DIAccounts = result.fetchall()
                 for acc in DIAccounts:
-                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    if (budgetdata["goid"] != None):
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
+                    else:
+                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
