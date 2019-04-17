@@ -126,8 +126,8 @@ class api_budget(object):
                     result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
                 else:
                     result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
-                list = result.fetchone()
-                budlist={"budid":list["budid"], "budname":list["budname"],"startdate":datetime.strftime(list["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(list["enddate"],'%d-%m-%Y'),"btype":list["budtype"],"contents":list["contents"],"gaflag":list["gaflag"]}
+                budgetdata = result.fetchone()
+                budlist={"budid":budgetdata["budid"], "budname":budgetdata["budname"],"startdate":datetime.strftime(budgetdata["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(budgetdata["enddate"],'%d-%m-%Y'),"btype":budgetdata["budtype"],"contents":budgetdata["contents"],"gaflag":budgetdata["gaflag"]}
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":budlist }
             except:
@@ -161,7 +161,7 @@ class api_budget(object):
                 btype = self.request.params["btype"]
                 # budget type 3: cash budget
                 if btype == '3':
-                    result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d"%(authDetails["orgcode"]))
+                    result = self.con.execute("select accountcode, openingbal, accountname from accounts where orgcode = %d order by accountname"%(authDetails["orgcode"]))
                     accounts = result.fetchall()
 
                     if(uptodate != financialStart):
@@ -173,7 +173,7 @@ class api_budget(object):
                         openingBal=0.00
 
                         for bal in accounts:
-                            groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(bal["accountcode"]),int(bal["accountcode"])))
+                            groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d))"%(int(bal["accountcode"]),int(bal["accountcode"])))
                             groupRecord = groupData.fetchone()
 
                             # Outflow accounts
@@ -226,19 +226,20 @@ class api_budget(object):
                     
                 # budget type 16: pnl budget
                 if btype == '16':
-                    expense = {}
-                    income = {}
+                    expense = []
+                    income = []
                     # accounts for expense
-                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense' or groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Expense' or groupname = 'Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense' or groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Expense' or groupname = 'Direct Expense')))))order by accountname;"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                     expenseAccounts = result.fetchall()
                     for account in expenseAccounts:
-                        expense[account["accountcode"]] = account["accountname"]
+                        expense.append({"code":account["accountcode"],"name":account["accountname"]})
+                        
                     # accounts for income
-                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income' or groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Income' or groupname = 'Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
+                    result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income' or groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname='Indirect Income' or groupname = 'Direct Income')))))order by accountname;"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                     incomeAccounts = result.fetchall()
                     for account in incomeAccounts:
-                        income[account["accountcode"]] = account["accountname"]
-                    total=[expense,income]
+                        income.append({"code":account["accountcode"],"name":account["accountname"]})
+                    total={"expense":expense,"income":income}
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":total }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -336,10 +337,10 @@ class api_budget(object):
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
                 result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
-                list = result.fetchone()
-                startdate = str(list["startdate"])[0:10]
-                enddate = str(list["enddate"])[0:10]
-                content = list["contents"]
+                budgetdata = result.fetchone()
+                startdate = str(budgetdata["startdate"])[0:10]
+                enddate = str(budgetdata["enddate"])[0:10]
+                content = budgetdata["contents"]
                 accountslist = content.keys()
 
                 # To calaculate total Outflow and Inflow 
@@ -373,9 +374,9 @@ class api_budget(object):
                 for bal in cbAccounts:
                     cbAccountscode.append(bal["accountcode"])
                     # If budget is done with branchwise. goid is branchid.
-                    if (list["goid"] != None):
-                        calculate = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, prevday,list["goid"])
-                        closingdata = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, enddate,list["goid"])
+                    if (budgetdata["goid"] != None):
+                        calculate = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, prevday,budgetdata["goid"])
+                        closingdata = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, enddate,budgetdata["goid"])
                     else:
                         calculate = calculateBalance(self.con,bal["accountcode"],financialStart, financialStart, prevday)
                         closingdata = calculateBalance(self.con,bal["accountcode"], financialStart, financialStart, enddate)
@@ -426,20 +427,21 @@ class api_budget(object):
                     # accountlist already having accounts used in budget.
                     if len(inAcc) > 0 :
                         for vch in inAcc:
-                            for inn in vch[0].keys():
-                                if inn not in accountslist:
-                                    accountslist.append(inn)
+                            for inAccode in vch[0].keys():
+                                if inAccode not in accountslist:
+                                    accountslist.append(inAccode)
                     if len(outAcc) > 0 :
                         for vch in outAcc:
-                            for out in vch[0].keys():
-                                if out not in accountslist:
-                                    accountslist.append(out)
+                            for outAccCode in vch[0].keys():
+                                if outAccCode not in accountslist:
+                                    accountslist.append(outAccCode)
                 
                 inflowAccounts=[]
                 outflowAccounts=[]
                 totalActualOutflow = 0.00
                 totalActualInflow = 0.00
                 # all inflow and outflow accountcodes are in accountslist
+                
                 for acc in accountslist:
                     # To get account name and their groupname.
                     result = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode == int(acc)))
@@ -478,7 +480,7 @@ class api_budget(object):
                                     accountbal += float(vch["drs"][str(int(acc))])
                                 else:
                                     accountbal += 0.00
-                                
+                    
                     if accType == "Inflow":
                         totalActualInflow = float(totalActualInflow) + float(accountbal)
                         if acc in content:
@@ -682,13 +684,14 @@ class api_budget(object):
                        balance = "%.2f"%float(float(calbalData["curbal"]))
                        indirectIncome = indirectIncome + float(calbalData["curbal"])
                     if str(acc["accountcode"]) in accountsList:
-                        budgetIndirectIncome = float(budgetDirectIncome) + float(budgetdata["contents"][str(acc["accountcode"])])
+                        budgetIndirectIncome = float(budgetIndirectIncome) + float(budgetdata["contents"][str(acc["accountcode"])])
                         var = float(balance) - float(budgetdata["contents"][str(acc["accountcode"])])
                         varinpercent = (100 * var) / float(budgetdata["contents"][str(acc["accountcode"])])
                         incomedata.append({"name":acc["accountname"],"budget":"%.2f"%float(budgetdata["contents"][str(acc["accountcode"])]),"actual":"%.2f"%float(balance),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varinpercent)})
                     else:
                         incomedata.append({"name":acc["accountname"],"budget":"%.2f"%float(0),"actual":"%.2f"%float(balance),"var":'-',"varinpercent":'-'})
                 # Total Income calculations
+                
                 total["income"] = "%.2f"%float(directIncome + indirectIncome)
                 total["budgetincome"] = "%.2f"%float(budgetIndirectIncome + budgetDirectIncome)
                 total["varincome"] =  "%.2f"%float(float(total["income"]) - float(total["budgetincome"]))
@@ -699,8 +702,12 @@ class api_budget(object):
                 total["profit"] = "%.2f"%float(profit)
                 budgetprofit = float(total["budgetincome"]) - float(total["budgetexpense"])
                 total["budgetprofit"] = "%.2f"%float(budgetprofit)
-                total["varprofit"]  = "%.2f"%float(float(total["profit"]) - float(total["budgetprofit"]))
-                total["varinpercentprofit"] = "%.2f"%float((100 * float(total["varprofit"])) / float(total["budgetprofit"]))
+                if float(total["budgetprofit"]) != 0:
+                    total["varprofit"]  = "%.2f"%float(float(total["profit"]) - float(total["budgetprofit"]))
+                    total["varinpercentprofit"] = "%.2f"%float((100 * float(total["varprofit"])) / float(total["budgetprofit"]))
+                else:
+                    total["varprofit"] = '-'
+                    total["varinpercentprofit"] = '-'
                 
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
             except:
