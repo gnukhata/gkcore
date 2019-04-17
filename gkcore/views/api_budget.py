@@ -332,7 +332,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
                 result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
@@ -420,17 +420,20 @@ class api_budget(object):
 
                     inAcc = inflowAccData.fetchall()
                     outAcc = outflowAccData.fetchall()
+                    
                     # here we making new list (accountslist) of all accountcodes for inflow and outflow.
                     # That accounts which are used in budget and that also which having transaction cash and bank accounts but not used in budget.
                     # accountlist already having accounts used in budget.
                     if len(inAcc) > 0 :
-                        for acc in inAcc[0][0].keys():
-                            if acc not in accountslist:
-                                accountslist.append(acc)
+                        for vch in inAcc:
+                            for inn in vch[0].keys():
+                                if inn not in accountslist:
+                                    accountslist.append(inn)
                     if len(outAcc) > 0 :
-                        for acc in outAcc[0][0].keys():
-                            if acc not in accountslist:
-                                accountslist.append(acc)
+                        for vch in outAcc:
+                            for out in vch[0].keys():
+                                if out not in accountslist:
+                                    accountslist.append(out)
                 
                 inflowAccounts=[]
                 outflowAccounts=[]
@@ -486,7 +489,7 @@ class api_budget(object):
                             var = '-'
                             varInPercent = '-'
                             inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
-                    if accType == "Ouflow":
+                    if accType == "Outflow":
                         if acc in content:
                             var = float(content[str(acc)]) - float(accountbal)
                             varInPercent = (var * 100) / content[str(acc)] 
@@ -524,10 +527,10 @@ class api_budget(object):
                 total["varpercentin"] = "%.2f"%float(float(total["varin"]) * 100 / totalBudgetInflow)
                 total["varpercentout"] = "%.2f"%float(float(total["varout"]) * 100 / totalBudgetOutflow)
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
-            # except:
-            #     return {"gkstatus":enumdict["ConnectionFailed"] }
-            # finally:
-            #     self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     @view_config(request_method='GET',request_param='type=pnlReport', renderer='json')
     def pnlReport(self):
