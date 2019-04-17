@@ -467,7 +467,7 @@ class api_budget(object):
                                     accountbal += float(vch["crs"][str(int(acc))])
                                 else:
                                     accountbal += 0.00
-                                totalActualInflow = float(totalActualInflow) + float(accountbal)
+                                
                             else:
                                 accType = "Outflow"
                                 accIncbAccounts = 0
@@ -478,9 +478,9 @@ class api_budget(object):
                                     accountbal += float(vch["drs"][str(int(acc))])
                                 else:
                                     accountbal += 0.00
-                                totalActualOutflow = float(totalActualOutflow) + float(accountbal)
-
+                                
                     if accType == "Inflow":
+                        totalActualInflow = float(totalActualInflow) + float(accountbal)
                         if acc in content:
                             var = float(accountbal) - float(content[str(acc)])
                             varInPercent = (var * 100) / content[str(acc)] 
@@ -490,6 +490,7 @@ class api_budget(object):
                             varInPercent = '-'
                             inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
                     if accType == "Outflow":
+                        totalActualOutflow = float(totalActualOutflow) + float(accountbal)
                         if acc in content:
                             var = float(content[str(acc)]) - float(accountbal)
                             varInPercent = (var * 100) / content[str(acc)] 
