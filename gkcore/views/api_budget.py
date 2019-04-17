@@ -332,7 +332,7 @@ class api_budget(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
                 result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
@@ -444,44 +444,73 @@ class api_budget(object):
                     # Get all vouchers of related accountcode
                     vouchers = self.con.execute("select drs,crs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%d' or crs ? '%d') order by voucherdate DESC,vouchercode ;"%(startdate, enddate,int(acc),int(acc)))
                     vchOfAcc = vouchers.fetchall()
+                    # vouchers crs/drs field will decide account should consider in Inflow or Outflow
+                    accType = ""
+                    accountbal = 0.00
                     if len(vchOfAcc) > 0:
-                        # For Inflow field 
-                        # As account is in crs then that account is income for budget
-                        if acc in vchOfAcc[0]["crs"].keys():
-                            accountbal = 0.00
-                            # If bank or cash account is in drs
-                            if int(vchOfAcc[0]["drs"].keys()[0]) in cbAccountscode:
-                                
-                                accountbal += float(vchOfAcc[0]["crs"][str(int(acc))])
+                        # loop all vouchers of account
+                        for vch in vchOfAcc:
+                            # For Inflow field 
+                            # As account is in crs then that account is income for budget
+                            if acc in vch["crs"].keys():
+                                accType = "Inflow"
+                                # check wheather bank or cash account is in drs
+                                accIncbAccounts = 0
+                                for drs in vch["drs"].keys():
+                                    if int(drs) in cbAccountscode:
+                                        accIncbAccounts = 1
+                                # If bank or cash account is in drs
+                                if accIncbAccounts == 1:
+                                    accountbal += float(vch["crs"][str(int(acc))])
+                                else:
+                                    accountbal += 0.00
+                                totalActualInflow = float(totalActualInflow) + float(accountbal)
                             else:
-                                accountbal += 0.00
-                            totalActualInflow = float(totalActualInflow) + float(accountbal)
-                            # if account is in budget.Means that account has budgeted amount
-                            if acc in content:
-                                var = float(accountbal) - float(content[str(acc)])
-                                varInPercent = (var * 100) / content[str(acc)] 
-                                inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
-                            else:
-                                var = '-'
-                                varInPercent = '-'
-                                inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
-                        # For Outflow field
+                                accType = "Outflow"
+                                accIncbAccounts = 0
+                                for crs in vch["crs"].keys():
+                                    if int(crs) in cbAccountscode:
+                                        accIncbAccounts = 1
+                                if accIncbAccounts == 1:
+                                    accountbal += float(vch["drs"][str(int(acc))])
+                                else:
+                                    accountbal += 0.00
+                                totalActualOutflow = float(totalActualOutflow) + float(accountbal)
+
+                    if accType == "Inflow":
+                        if acc in content:
+                            var = float(accountbal) - float(content[str(acc)])
+                            varInPercent = (var * 100) / content[str(acc)] 
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
                         else:
-                            accountbal = 0.00
-                            if int(vchOfAcc[0]["crs"].keys()[0]) in cbAccountscode:
-                                accountbal += float(vchOfAcc[0]["drs"][str(int(acc))])
-                            else:
-                                accountbal += 0.00
-                            totalActualOutflow = float(totalActualOutflow) + float(accountbal)
-                            if acc in content:
-                                var = float(content[str(acc)]) - float(accountbal)
-                                varInPercent = (var * 100) / content[str(acc)] 
-                                outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
-                            else:
-                                var = '-'
-                                varInPercent = '-'
-                                outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
-                
+                            var = '-'
+                            varInPercent = '-'
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
+                    if accType == "Ouflow":
+                        if acc in content:
+                            var = float(content[str(acc)]) - float(accountbal)
+                            varInPercent = (var * 100) / content[str(acc)] 
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                        else:
+                            var = '-'
+                            varInPercent = '-'
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(0),"var":var,"varinpercent":varInPercent})
+                    # If no transaction done, then this account should have budget amount.
+                    if accType == "":
+                        # Fetch groupname of account to check wheather it comes under Inflow or Outflow
+                        groupData = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(acc),int(acc)))
+                        groupRecord = groupData.fetchone()
+                        groupName = groupRecord["groupname"]
+                        
+                        if(groupName == 'Direct Expense' or groupName == 'Indirect Expense' or groupName == 'Current Liabilities' ):
+                            var = float(content[str(acc)]) - float(accountbal)
+                            varInPercent = (var * 100) / content[str(acc)] 
+                            outflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                        else:
+                            var = float(content[str(acc)]) - float(accountbal)
+                            varInPercent = (var * 100) / content[str(acc)] 
+                            inflowAccounts.append({"accountname":accountname[0],"actual":"%.2f"%float(accountbal),"budget":"%.2f"%float(content[str(acc)]),"var":"%.2f"%float(var),"varinpercent":"%.2f"%float(varInPercent)})
+                            
                 total={"inflow":inflowAccounts,"outflow":outflowAccounts,"openingacc":openingacc,"closing":closing}
                 total["opening"]= "%.2f"%float(totalopeningbal)
                 total["actualclosing"] = "%.2f"%float(actualClosingBal)
@@ -495,10 +524,10 @@ class api_budget(object):
                 total["varpercentin"] = "%.2f"%float(float(total["varin"]) * 100 / totalBudgetInflow)
                 total["varpercentout"] = "%.2f"%float(float(total["varout"]) * 100 / totalBudgetOutflow)
                 return{"gkstatus": gkcore.enumdict["Success"], "gkresult":total}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
     @view_config(request_method='GET',request_param='type=pnlReport', renderer='json')
     def pnlReport(self):
