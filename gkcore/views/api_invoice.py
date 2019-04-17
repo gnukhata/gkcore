@@ -1880,10 +1880,8 @@ The bills grid calld gkresult will return a list as it's value.
             crs ={}
             drs = {}
             Narration = ""
-            print "asdasddasdad"
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
-            print queryParams["totalAmount"]
-            amountPaid = float(queryParams["totalAmount"])
+            amountPaid = round(float(queryParams["totalAmount"]))
             taxDict = {}
             taxRate = 0.00
             cessRate =0.00
@@ -1907,28 +1905,28 @@ The bills grid calld gkresult will return a list as it's value.
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
                         drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
                         drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 15:
                         custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                         custAccount = custAcc.fetchone() 
                         drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" to "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 else:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
                         drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
                         drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                         
                 # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
@@ -2000,9 +1998,9 @@ The bills grid calld gkresult will return a list as it's value.
                     roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
                     roundRow = roundAcc.fetchone()
                     if float(queryParams["roundoff"]) > float(0):
-                        drs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                        drs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                     else:
-                        crs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                        crs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
 
@@ -2026,29 +2024,28 @@ The bills grid calld gkresult will return a list as it's value.
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
                         crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        print cashRow["accountcode"]
                         crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 15:
                         custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                         custAccount = custAcc.fetchone() 
                         crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 else:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
                         crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
                         crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(queryParams["totalAmount"]) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                        # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
                     abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
@@ -2120,11 +2117,11 @@ The bills grid calld gkresult will return a list as it's value.
                     roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
                     roundRow = roundAcc.fetchone()
                     if float(queryParams["roundoff"]) > float(0):
-                        crs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                        crs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                     else:
-                        drs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoff"])
+                        drs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
-
+            
             drs = voucherDict["drs"]
             crs = voucherDict["crs"]
             voucherDict["orgcode"] = orgcode

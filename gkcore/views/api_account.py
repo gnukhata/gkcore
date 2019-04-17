@@ -400,7 +400,7 @@ defaultflag '16' or '19' set to the '0'.
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
                 accs = []
                 srno=1
-                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction"} #it is use for default flag
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",18:"Round Off"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
