@@ -1881,7 +1881,10 @@ The bills grid calld gkresult will return a list as it's value.
             drs = {}
             Narration = ""
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
-            amountPaid = round(float(queryParams["totalAmount"]))
+            if "roundoff" in queryParams:
+                amountPaid = round(float(queryParams["totalAmount"]))
+            else:
+                amountPaid = float(queryParams["totalAmount"])
             taxDict = {}
             taxRate = 0.00
             cessRate =0.00
