@@ -1998,11 +1998,13 @@ The bills grid calld gkresult will return a list as it's value.
                     crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 # round off accounts dr/cr
                 if "roundoff" in queryParams:
-                    roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
-                    roundRow = roundAcc.fetchone()
                     if float(queryParams["roundoff"]) > float(0):
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                        roundRow = roundAcc.fetchone()
                         drs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                     else:
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                        roundRow = roundAcc.fetchone()
                         crs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
@@ -2117,11 +2119,14 @@ The bills grid calld gkresult will return a list as it's value.
                     drs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
                 # round off accounts dr/cr
                 if "roundoff" in queryParams:
-                    roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 18,accounts.c.orgcode == orgcode)))
-                    roundRow = roundAcc.fetchone()
+                    
                     if float(queryParams["roundoff"]) > float(0):
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                        roundRow = roundAcc.fetchone()
                         crs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                     else:
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                        roundRow = roundAcc.fetchone()
                         drs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoff"]))
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
             
