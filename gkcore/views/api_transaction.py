@@ -48,6 +48,40 @@ import base64
 from PIL import Image
 
 
+def deleteVoucherFun(vcode,orgcode):
+    try:
+        con = eng.connect()
+        voucherdata = con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
+        voucherRow = voucherdata.fetchone()
+        con.execute("delete from vouchers  where vouchercode = %d and lockflag= 'f'"%(int(vcode)))
+        DrData = voucherRow["drs"]
+        CrData = voucherRow["crs"]
+        for drKey in DrData.keys():
+            con.execute("update accounts set vouchercount = (vouchercount -1) where accountcode = %d"%(int(drKey)))
+        for crKey in CrData.keys():
+            con.execute("update accounts set vouchercount = (vouchercount -1) where accountcode = %d"%(int(crKey)))
+        finalCrs = {}
+        finalDrs = {}
+        projectNameData = con.execute(select([projects.c.projectname]).where(projects.c.projectcode==voucherRow["projectcode"]))
+        prjNameRow = projectNameData.fetchone()
+        if prjNameRow == None:
+            projectName  = ""
+        else:
+            projectName = prjNameRow["projectname"]
+        for d in DrData.keys():
+            accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
+            account = accname.fetchone()
+            finalDrs[account["accountname"]] = DrData[d]
+        for c in CrData.keys():
+            accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
+            account = accname.fetchone()
+            finalCrs[account["accountname"]] = CrData[c]
+        voucherBinData = {"vouchercode":voucherRow["vouchercode"],"voucherdate":voucherRow["voucherdate"],"vouchernumber":voucherRow["vouchernumber"],"narration":voucherRow["narration"],"drs":finalDrs,"crs":finalCrs,"vouchertype":voucherRow["vouchertype"],"projectname":projectName,"orgcode":orgcode}
+        bin = con.execute(voucherbin.insert(),[voucherBinData])
+        con.close()
+        return {"gkstatus":enumdict["Success"]}
+    except:
+        return {"gkstatus":enumdict["ConnectionFailed"]}
 
 
 @view_defaults(route_name='transaction')
@@ -805,6 +839,7 @@ class api_transaction(object):
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+    
     @view_config(request_method='DELETE',renderer='json')
     def deleteVoucher(self):
         """
@@ -824,41 +859,68 @@ class api_transaction(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
-                self.con = eng.connect()
                 dataset  = self.request.json_body
-                vcode = dataset["vouchercode"]
-                voucherdata = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
-                voucherRow = voucherdata.fetchone()
-                self.con.execute("delete from vouchers  where vouchercode = %d and lockflag= 'f'"%(int(vcode)))
-                DrData = voucherRow["drs"]
-                CrData = voucherRow["crs"]
-                for drKey in DrData.keys():
-                    self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
-                for crKey in CrData.keys():
-                    self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
-                finalCrs = {}
-                finalDrs = {}
-                projectNameData = self.con.execute(select([projects.c.projectname]).where(projects.c.projectcode==voucherRow["projectcode"]))
-                prjNameRow = projectNameData.fetchone()
-                if prjNameRow == None:
-                    projectName  = ""
-                else:
-                    projectName = prjNameRow["projectname"]
-                for d in DrData.keys():
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
-                    account = accname.fetchone()
-                    finalDrs[account["accountname"]] = DrData[d]
-
-                for c in CrData.keys():
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
-                    account = accname.fetchone()
-                    finalCrs[account["accountname"]] = CrData[c]
-                voucherBinData = {"vouchercode":voucherRow["vouchercode"],"voucherdate":voucherRow["voucherdate"],"vouchernumber":voucherRow["vouchernumber"],"narration":voucherRow["narration"],"drs":finalDrs,"crs":finalCrs,"vouchertype":voucherRow["vouchertype"],"projectname":projectName,"orgcode":authDetails["orgcode"]}
-                bin = self.con.execute(voucherbin.insert(),[voucherBinData])
-                self.con.close()
-                return {"gkstatus":enumdict["Success"]}
+                vcode = int(dataset["vouchercode"])
+                orgcode=authDetails["orgcode"]
+                deletestatus=deleteVoucherFun(vcode,orgcode)
+                return deletestatus
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+
+    # @view_config(request_method='DELETE',renderer='json')
+    # def deleteVoucher(self):
+    #     """
+    #     Purpose:
+    #     Deletes a voucher given it's voucher code.
+    #     Returns success if deletion is successful.
+    #     Purpose:
+    #     This function deletes a given voucher with it's vouchercode as input.
+    #     After deleting the voucher, the vouchercount for the involved accounts on Dr and Cr side is decremented by 1.
+    #     """
+    #     try:
+    #         token = self.request.headers["gktoken"]
+    #     except:
+    #         return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    #     authDetails = authCheck(token)
+    #     if authDetails["auth"] == False:
+    #         return {"gkstatus":enumdict["UnauthorisedAccess"]}
+    #     else:
+    #         try:
+    #             self.con = eng.connect()
+    #             dataset  = self.request.json_body
+    #             vcode = dataset["vouchercode"]
+    #             voucherdata = self.con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
+    #             voucherRow = voucherdata.fetchone()
+    #             self.con.execute("delete from vouchers  where vouchercode = %d and lockflag= 'f'"%(int(vcode)))
+    #             DrData = voucherRow["drs"]
+    #             CrData = voucherRow["crs"]
+    #             for drKey in DrData.keys():
+    #                 self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(drKey)))
+    #             for crKey in CrData.keys():
+    #                 self.con.execute("update accounts set vouchercount = vouchercount -1 where accountcode = %d"%(int(crKey)))
+    #             finalCrs = {}
+    #             finalDrs = {}
+    #             projectNameData = self.con.execute(select([projects.c.projectname]).where(projects.c.projectcode==voucherRow["projectcode"]))
+    #             prjNameRow = projectNameData.fetchone()
+    #             if prjNameRow == None:
+    #                 projectName  = ""
+    #             else:
+    #                 projectName = prjNameRow["projectname"]
+    #             for d in DrData.keys():
+    #                 accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
+    #                 account = accname.fetchone()
+    #                 finalDrs[account["accountname"]] = DrData[d]
+
+    #             for c in CrData.keys():
+    #                 accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
+    #                 account = accname.fetchone()
+    #                 finalCrs[account["accountname"]] = CrData[c]
+    #             voucherBinData = {"vouchercode":voucherRow["vouchercode"],"voucherdate":voucherRow["voucherdate"],"vouchernumber":voucherRow["vouchernumber"],"narration":voucherRow["narration"],"drs":finalDrs,"crs":finalCrs,"vouchertype":voucherRow["vouchertype"],"projectname":projectName,"orgcode":authDetails["orgcode"]}
+    #             bin = self.con.execute(voucherbin.insert(),[voucherBinData])
+    #             self.con.close()
+    #             return {"gkstatus":enumdict["Success"]}
+    #         except:
+    #             return {"gkstatus":enumdict["ConnectionFailed"]}
             
 
     # Get all data of all vouchers for certain period.
