@@ -397,7 +397,7 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 invid=self.request.json_body["invid"]
-                #to fetch data of cancel invoice.
+                #to fetch data of all data of cancel invoice.
                 invoicedata=self.con.execute(select([invoice]).where(invoice.c.invid == invid))
                 invoicedata = invoicedata.fetchone()
 
@@ -423,7 +423,11 @@ class api_invoice(object):
                 if voucherCode is not None:
                     #function call to delete vouchers 
                     for vcode in voucherCode:
-                        deletestatus=deleteVoucherFun(vcode["vcode"],authDetails["orgcode"])
+                        try:
+                            deletestatus=deleteVoucherFun(vcode["vcode"],authDetails["orgcode"])
+                        except:
+                            self.con.close()
+                            return {"gkstatus":enumdict["ConnectionFailed"] }
                 else:
                     pass
                 #To delete invoice enrty from invoice table
