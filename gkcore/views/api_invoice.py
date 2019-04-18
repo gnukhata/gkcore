@@ -397,30 +397,33 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 invid=self.request.json_body["invid"]
-                #to fetch data of all data of cancel invoice.
+                #to fetch data of cancel invoice.
                 invoicedata=self.con.execute(select([invoice]).where(invoice.c.invid == invid))
                 invoicedata = invoicedata.fetchone()
 
                 #Add all data of cancel invoice into invoicebin"
-                invoiceBinData={"invid":invoicedata['invid'],"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"goid":invoicedata["goid"]}
+                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"goid":invoicedata["goid"]}
                 bin = self.con.execute(invoicebin.insert(),[invoiceBinData])
                 
                 # below query is for delete billwise entry for cancel invoice.
                 try:
                     self.con.execute("delete from billwise  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 except:
-                    pass
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"] }
                 # below query is for delete stock entry for cancel invoice.
                 try:
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=9"%(int(invid),authDetails["orgcode"]))
                 except:
-                    pass
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"] }
                 # below query to get voucher code for cancel invoice for delete corsponding vouchers.
                 voucher_code=self.con.execute("select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
-                voucherCode=voucher_code.fetchone()
+                voucherCode=voucher_code.fetchall()
                 if voucherCode is not None:
                     #function call to delete vouchers 
-                    deletestatus=deleteVoucherFun(voucherCode['vcode'],authDetails["orgcode"])
+                    for vcode in voucherCode:
+                        deletestatus=deleteVoucherFun(vcode["vcode"],authDetails["orgcode"])
                 else:
                     pass
                 #To delete invoice enrty from invoice table
@@ -433,7 +436,8 @@ class api_invoice(object):
                     self.con.execute("delete from invoicebin  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                     return {"gkstatus":enumdict["ConnectionFailed"]}
                 except:
-                    pass
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
 
