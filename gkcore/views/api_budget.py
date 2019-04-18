@@ -535,7 +535,7 @@ class api_budget(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param='type=profit&lossReport', renderer='json')
+    @view_config(request_method='GET',request_param='type=profitlossReport', renderer='json')
     def profitlossReport(self):
         """ Purpose:
             This function is used to calculate Profit & Loss budget report. 
