@@ -143,7 +143,7 @@ class api_budget(object):
         It will fetch all accounts except accounts under Bank and Cash subgroups.
         Accounts under Direct,Indirect Expense and Current Liabilities are consider in Outflow
         Accounts under Direct,Indirect Income and Current Assets are consider in Inflow.
-        Budget type = 16:(pnl Budget)
+        Budget type = 16:(profit and loss Budget)
         It will fetch all accounts under Direct and Indirect Expense and Income groups and their subgroups.
         """
         try:
@@ -224,7 +224,7 @@ class api_budget(object):
                         data={"inflow":inAccountdata,"outflow":outAccountdata,"openingbal":"%.2f"%float(openingBal)}
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":data }
                     
-                # budget type 16: pnl budget
+                # budget type 16: profit and loss budget
                 if btype == '16':
                     expense = []
                     income = []
@@ -535,8 +535,8 @@ class api_budget(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param='type=pnlReport', renderer='json')
-    def pnlReport(self):
+    @view_config(request_method='GET',request_param='type=profit&lossReport', renderer='json')
+    def profitlossReport(self):
         """ Purpose:
             This function is used to calculate Profit & Loss budget report. 
             This will take financial start date and budget id as input.
