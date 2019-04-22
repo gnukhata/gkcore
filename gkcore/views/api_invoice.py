@@ -2035,6 +2035,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                     if float(queryParams["roundoffamt"]) < 0.00:
                         # user has spent rounded of amount
+                        print("I paid more money")
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
                         rddrs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
