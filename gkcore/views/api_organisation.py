@@ -115,8 +115,8 @@ class api_organisation(object):
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
             # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.  
-            if not columnExists("invoice","roundoff"):
-                self.con.execute("alter table invoice add column roundoff integer default 0")
+            if not columnExists("invoice","roundoffflag"):
+                self.con.execute("alter table invoice add column roundoffflag integer default 0")
                 for orgcode in allorg:
                     result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off Paid')))
                     account = result.fetchone()

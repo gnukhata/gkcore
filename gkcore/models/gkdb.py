@@ -257,7 +257,7 @@ For one organisation in a single financial year, an account name can never be du
 So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
 the groupcode to with it belongs.
 defaultflag is for setting the account as default for certain transactions.
-so defaultflag can be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
+so defaultflag will be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
 """
 
 accounts = Table('accounts', metadata,
@@ -355,7 +355,7 @@ invoice = Table('invoice',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
-    Column('roundoff',Integer,default=0),
+    Column('roundoffflag',Integer,default=0),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
