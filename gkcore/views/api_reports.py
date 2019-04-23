@@ -191,114 +191,6 @@ def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
         balType = "Cr"
     return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 
-def calculateBalance2(con,accountCode,financialStart,calculateFrom,calculateTo,goid):
-
-    # This function is same as above but only difference is that it having extra parameter authDetails which is 
-    # require for branching feature.
-    # as user logged in branchwise the the goid which is branchid is send through authDetails. By checking that authDetails it 
-    # decides that it logged in as branchwise or not. If logged in as branchwise then select data related to that goid. 
-    groupName = ""
-    openingBalance = 0.00
-    balanceBrought = 0.00
-    currentBalance = 0.00
-    ttlCrBalance = 0.00
-    ttlDrBalance = 0.00
-    openingBalanceType = ""
-    ttlDrUptoFrom = 0.00
-    ttlCrUptoFrom = 0.00
-    balType = ""
-    groupData = con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountCode),int(accountCode)))
-    groupRecord = groupData.fetchone()
-    groupName = groupRecord["groupname"]
-    #now similarly we will get the opening balance for this account.
-
-    obData = con.execute(select([accounts.c.openingbal]).where(accounts.c.accountcode == accountCode) )
-    ob = obData.fetchone()
-    openingBalance = float(ob["openingbal"])
-    financialStart = str(financialStart)
-    calculateFrom= str(calculateFrom)
-    financialYearStartDate = datetime.strptime(financialStart,"%Y-%m-%d")
-    calculateFromDate = datetime.strptime(calculateFrom,"%Y-%m-%d")
-    calculateToDate = datetime.strptime(calculateTo,"%Y-%m-%d")
-    if financialYearStartDate == calculateFromDate:
-        if openingBalance == 0:
-            balanceBrought = 0
-
-        if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
-            balanceBrought = abs(openingBalance)
-            openingBalanceType = "Cr"
-            balType = "Cr"
-
-        if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
-            balanceBrought = openingBalance
-            openingBalanceType = "Dr"
-            balType = "Dr"
-
-        if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
-            balanceBrought = abs(openingBalance)
-            openingBalanceType = "Dr"
-            balType = "Dr"
-
-        if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
-            balanceBrought = openingBalance
-            openingBalanceType = "Cr"
-            balType = "Cr"
-    else:
-        # goid is branchid. authdetails will have branchid when logged in branchwise.
-        # if branchwise logged in then should select result related to that goid.
-        tdrfrm = con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and goid = '%d'"%(int(accountCode),financialStart,calculateFrom,goid))
-        tcrfrm = con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s' and goid = '%d'"%(int(accountCode),financialStart,calculateFrom,goid))
-        tdrRow = tdrfrm.fetchone()
-        tcrRow= tcrfrm.fetchone()
-        ttlCrUptoFrom = tcrRow['total']
-        ttlDrUptoFrom = tdrRow['total']
-        if ttlCrUptoFrom == None:
-            ttlCrUptoFrom = 0.00
-        if ttlDrUptoFrom == None:
-            ttlDrUptoFrom = 0.00
-
-        if openingBalance == 0:
-            balanceBrought = 0.00
-        if openingBalance < 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
-            ttlCrUptoFrom = ttlCrUptoFrom +abs(openingBalance)
-        if openingBalance > 0 and (groupName == 'Current Assets' or groupName == 'Fixed Assets'or groupName == 'Investments' or groupName == 'Loans(Asset)' or groupName == 'Miscellaneous Expenses(Asset)'):
-            ttlDrUptoFrom = ttlDrUptoFrom +openingBalance
-        if openingBalance < 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
-            ttlDrUptoFrom = ttlDrUptoFrom+ abs(openingBalance)
-        if openingBalance > 0 and (groupName == 'Corpus' or groupName == 'Capital'or groupName == 'Current Liabilities' or groupName == 'Loans(Liability)' or groupName == 'Reserves'):
-            ttlCrUptoFrom = ttlCrUptoFrom + openingBalance
-        if ttlDrUptoFrom >  ttlCrUptoFrom:
-            balanceBrought = ttlDrUptoFrom - ttlCrUptoFrom
-            balType = "Dr"
-            openingBalanceType = "Dr"
-        if ttlCrUptoFrom >  ttlDrUptoFrom:
-            balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
-            balType = "Cr"
-            openingBalanceType = "Cr"
-    # goid is branchid. authdetails will have branchid when logged in branchwise.
-    # if branchwise logged in then should select result related to that goid.
-    tdrfrm = con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and goid = '%d'"%(int(accountCode),calculateFrom, calculateTo,goid))
-    tdrRow = tdrfrm.fetchone()
-    tcrfrm = con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and goid = '%d'"%(int(accountCode),calculateFrom, calculateTo,goid))
-    tcrRow= tcrfrm.fetchone()
-    ttlDrBalance = tdrRow['total']
-    ttlCrBalance = tcrRow['total']
-    if ttlCrBalance == None:
-        ttlCrBalance = 0.00
-    if ttlDrBalance == None:
-        ttlDrBalance = 0.00
-    if balType =="Dr":
-        ttlDrBalance = ttlDrBalance + float(balanceBrought)
-    if balType =="Cr":
-        ttlCrBalance = ttlCrBalance + float(balanceBrought)
-    if ttlDrBalance > ttlCrBalance :
-        currentBalance = ttlDrBalance - ttlCrBalance
-        balType = "Dr"
-    if ttlCrBalance > ttlDrBalance :
-        currentBalance = ttlCrBalance - ttlDrBalance
-        balType = "Cr"
-    return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
-
 def stockonhandfun(con, orgcode, productCode,endDate):
     try:
         con = eng.connect()
@@ -661,35 +553,16 @@ class api_reports(object):
                 endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
                 monthlyBal = []
                 while endMonthDate <= financialEnd:
-                    # goid is branchid. authdetails will have branchid when logged in branchwise.
-                    # if branchwise logged in then should select result related to that goid.
-                    if "goid" in authDetails:
-                        goid = authDetails["goid"]
-                        count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and goid='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, goid, accountCode, accountCode))
-                        count = count.fetchone()
-                        countDr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and goid='%d' and (drs ? '%s') "%(endMonthDate, startMonthDate, orgcode, goid, accountCode))
-                        countDr = countDr.fetchone()
-                        countCr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and goid='%d' and (crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, goid, accountCode))
-                        countCr = countCr.fetchone()
-                        countLock = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and goid='%d' and lockflag='t' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, goid, accountCode, accountCode))
-                        countLock = countLock.fetchone()
-                    else:
-                        count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
-                        count = count.fetchone()
-                        countDr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode))
-                        countDr = countDr.fetchone()
-                        countCr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode))
-                        countCr = countCr.fetchone()
-                        countLock = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and lockflag='t' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
-                        countLock = countLock.fetchone()
+                    count = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
+                    count = count.fetchone()
+                    countDr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode))
+                    countDr = countDr.fetchone()
+                    countCr = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode))
+                    countCr = countCr.fetchone()
+                    countLock = self.con.execute("select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and lockflag='t' and (drs ? '%s' or crs ? '%s') "%(endMonthDate, startMonthDate, orgcode, accountCode, accountCode))
+                    countLock = countLock.fetchone()
                     adverseflag = 0
-                    # goid is branchid. authdetails will have branchid when logged in branchwise.
-                    # if branchwise logged in then should select result related to that goid.
-                    if "goid" in authDetails:
-                        goid = authDetails["goid"]
-                        monthClBal =  calculateBalance2(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate),goid)
-                    else:
-                        monthClBal =  calculateBalance(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate))
+                    monthClBal =  calculateBalance(self.con,accountCode, str(financialStart), str(financialStart), str(endMonthDate))
                     if (monthClBal["baltype"] == "Dr"):
                         if ((monthClBal["grpname"] == 'Corpus' or monthClBal["grpname"] == 'Capital' or monthClBal["grpname"] == 'Current Liabilities' or monthClBal["grpname"] == 'Loans(Liability)' or monthClBal["grpname"] == 'Reserves' or monthClBal["grpname"] == 'Indirect Income' or monthClBal["grpname"] == 'Direct Income') and monthClBal["curbal"]!=0) :
                             adverseflag = 1
@@ -761,13 +634,7 @@ class api_reports(object):
                 calculateTo = self.request.params["calculateto"]
                 projectCode =self.request.params["projectcode"]
                 financialStart = self.request.params["financialstart"]
-                # goid is branchid. authdetails will have branchid when logged in branchwise.
-                # if branchwise logged in then should select result related to that goid.
-                if "goid" in authDetails:
-                    goid = authDetails["goid"]
-                    calbalDict = calculateBalance2(self.con,accountCode,financialStart,calculateFrom,calculateTo,goid)
-                else:
-                    calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
+                calbalDict = calculateBalance(self.con,accountCode,financialStart,calculateFrom,calculateTo)
                 vouchergrid = []
                 bal = 0.00
                 adverseflag = 0
@@ -796,30 +663,16 @@ class api_reports(object):
                         openingrow["Cr"] = "%.2f"%float(calbalDict["balbrought"])
                         bal = float(-calbalDict["balbrought"])
                     vouchergrid.append(openingrow)
-                # goid is branchid. authdetails will have branchid when logged in branchwise.
-                # if branchwise logged in then should select result related to that goid.
-                if "goid" in authDetails:
-                    if projectCode == "":
-                        if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') and goid = '%d' order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode,authDetails["goid"]))
-                        else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') and goid = '%d' order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode,authDetails["goid"]))
+                if projectCode == "":
+                    if "orderflag" in self.request.params:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
                     else:
-                        if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') and goid = '%d' order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode,authDetails["goid"]))
-                        else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') and goid = '%d' order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode,authDetails["goid"]))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
                 else:
-                    if projectCode == "":
-                        if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
-                        else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
+                    if "orderflag" in self.request.params:
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
                     else:
-                        if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
-                        else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
                 transactions = transactionsRecords.fetchall()
 
@@ -957,30 +810,16 @@ class api_reports(object):
                     prjname = prjnamerow.fetchone()
                     headerrow["projectname"]=prjname["projectname"]
                 if side=="dr":
-                    # goid is branchid. authdetails will have branchid when logged in branchwise.
-                    # if branchwise logged in then should select result related to that goid.
-                    if "goid" in authDetails:
-                        if projectCode == "":
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid='%d' order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode,authDetails["goid"]))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') and goid='%d' order by voucherdate;"%(calculateFrom, calculateTo, accountCode,authDetails["goid"]))
+                    if projectCode == "":
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
                         else:
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') and goid='%d' order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode,authDetails["goid"]))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') and goid='%d' order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,authDetails["goid"]))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
-                        if projectCode == "":
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                         else:
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                             
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
@@ -1001,30 +840,16 @@ class api_reports(object):
                     return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
 
                 if side=="cr":
-                    # goid is branchid. authdetails will have branchid when logged in branchwise.
-                    # if branchwise logged in then should select result related to that goid.
-                    if "goid" in authDetails:
-                        if projectCode == "":
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid='%d' order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode,authDetails["goid"]))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') and goid='%d' order by voucherdate;"%(calculateFrom, calculateTo, accountCode,authDetails["goid"]))
+                    if projectCode == "":
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
                         else:
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') and goid='%d' order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode,authDetails["goid"]))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') and goid='%d' order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode,authDetails["goid"]))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
-                        if projectCode == "":
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                        if "orderflag" in self.request.params:
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                         else:
-                            if "orderflag" in self.request.params:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
-                            else:
-                                transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
                         ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"]}
@@ -3631,13 +3456,9 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                # this is use to fetch top five product/service  which is order by  invoice count.                                
-                if "goid" in authDetails:        #for branch wise                        
-                    topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.goid=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"],authDetails["goid"]))
-                    topfiveprodlist=topfiveprod.fetchall()
-                else:
-                    topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
-                    topfiveprodlist=topfiveprod.fetchall()
+                # this is use to fetch top five product/service  which is order by  invoice count.  
+                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
+                topfiveprodlist=topfiveprod.fetchall()
                 prodcodedesclist=[]
                 for prodcode in topfiveprodlist:
                     proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))

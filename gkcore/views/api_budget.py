@@ -44,7 +44,7 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.models import gkdb
-from gkcore.views.api_reports import calculateBalance, calculateBalance2
+from gkcore.views.api_reports import calculateBalance
 
 @view_defaults(route_name='budget')
 class api_budget(object):
@@ -94,10 +94,7 @@ class api_budget(object):
             try:
                 self.con = eng.connect()
                 btype = self.request.params["btype"]
-                if "goid" in authDetails:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.budtype==btype,budget.c.orgcode==authDetails["orgcode"], budget.c.goid == authDetails["goid"])))
-                else:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.budtype==btype,budget.c.orgcode==authDetails["orgcode"])))
+                result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.budtype==btype,budget.c.orgcode==authDetails["orgcode"])))
                 list = result.fetchall()
                 budlist=[]
                 for l in list:
@@ -122,10 +119,7 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                if "goid" in authDetails:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"], budget.c.goid == authDetails["goid"])))
-                else:
-                    result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                result = self.con.execute(select([budget.c.budid,budget.c.budname,budget.c.budtype,budget.c.contents,budget.c.startdate,budget.c.enddate,budget.c.gaflag]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
                 budgetdata = result.fetchone()
                 budlist={"budid":budgetdata["budid"], "budname":budgetdata["budname"],"startdate":datetime.strftime(budgetdata["startdate"],'%d-%m-%Y'),"enddate":datetime.strftime(budgetdata["enddate"],'%d-%m-%Y'),"btype":budgetdata["budtype"],"contents":budgetdata["contents"],"gaflag":budgetdata["gaflag"]}
 
@@ -187,10 +181,7 @@ class api_budget(object):
                                 subgroup = subgroupname.fetchone()
                                 # bank and cash accounts balance as opening balance of budget
                                 if(subgroup[0] == 'Bank' or subgroup[0] == 'Cash'):
-                                    if "goid" in authDetails:
-                                        calbaldata = calculateBalance2(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday, authDetails["goid"])
-                                    else:
-                                        calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
+                                    calbaldata = calculateBalance(self.con,bal["accountcode"],str(financialStart), str(financialStart), prevday)
                                     
                                     if (calbaldata["baltype"] == 'Cr'):
                                         openingBal = float(openingBal) - float(calbaldata["curbal"])
@@ -336,7 +327,7 @@ class api_budget(object):
             try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
-                result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                result = self.con.execute(select([budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
                 budgetdata = result.fetchone()
                 startdate = str(budgetdata["startdate"])[0:10]
                 enddate = str(budgetdata["enddate"])[0:10]
@@ -373,13 +364,8 @@ class api_budget(object):
                 # for all cash and bank accounts.
                 for bal in cbAccounts:
                     cbAccountscode.append(bal["accountcode"])
-                    # If budget is done with branchwise. goid is branchid.
-                    if (budgetdata["goid"] != None):
-                        calculate = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, prevday,budgetdata["goid"])
-                        closingdata = calculateBalance2(self.con,bal["accountcode"],financialStart, financialStart, enddate,budgetdata["goid"])
-                    else:
-                        calculate = calculateBalance(self.con,bal["accountcode"],financialStart, financialStart, prevday)
-                        closingdata = calculateBalance(self.con,bal["accountcode"], financialStart, financialStart, enddate)
+                    calculate = calculateBalance(self.con,bal["accountcode"],financialStart, financialStart, prevday)
+                    closingdata = calculateBalance(self.con,bal["accountcode"], financialStart, financialStart, enddate)
                     openaccountbal = 0.00
                     # To calculate opening balance.
                     if(startdate != financialStart):
@@ -563,7 +549,7 @@ class api_budget(object):
             try:
                 self.con = eng.connect()
                 financialStart = self.request.params["financialstart"]
-                result = self.con.execute(select([budget.c.goid,budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
+                result = self.con.execute(select([budget.c.contents,budget.c.startdate,budget.c.enddate]).where(and_(budget.c.orgcode==authDetails["orgcode"],budget.c.budid== self.request.params["budid"])))
                 budgetdata = result.fetchone()
                 startdate = str(budgetdata["startdate"])[0:10]
                 enddate = str(budgetdata["enddate"])[0:10]
@@ -585,10 +571,7 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DEAccounts = result.fetchall()
                 for acc in DEAccounts:
-                    if (budgetdata["goid"] != None):
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
-                    else:
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -611,10 +594,7 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Expense')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DEAccounts = result.fetchall()
                 for acc in DEAccounts:
-                    if (budgetdata["goid"] != None):
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
-                    else:
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -643,10 +623,7 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Direct Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DIAccounts = result.fetchall()
                 for acc in DIAccounts:
-                    if (budgetdata["goid"] != None):
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
-                    else:
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:
@@ -669,10 +646,7 @@ class api_budget(object):
                 result = self.con.execute("select accountcode,accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income' or subgroupof in (select groupcode from groupsubgroups where orgcode= %d and (groupname = 'Indirect Income')))))"%(authDetails["orgcode"],authDetails["orgcode"],authDetails["orgcode"]))
                 DIAccounts = result.fetchall()
                 for acc in DIAccounts:
-                    if (budgetdata["goid"] != None):
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate,budgetdata["goid"])
-                    else:
-                        calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
+                    calbalData = calculateBalance(self.con,acc["accountcode"], financialStart, startdate, enddate)
                     balance = 0.00
                     if calbalData["curbal"] == 0.00:
                         if str(acc["accountcode"]) not in accountsList:

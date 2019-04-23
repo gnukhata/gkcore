@@ -504,7 +504,6 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
-            
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
@@ -562,20 +561,6 @@ class api_organisation(object):
         except:
             self.con.close()
             return {"gkstatus":enumdict["ConnectionFailed"]}
-# #  get all branchid of perticuler username to login in to that branch
-#     @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
-#     def getBranch(self):
-#         try:
-#             self.con = eng.connect()
-#             branch = []
-#             godowns = self.con.execute("select goid,goname from godown where orgcode=%d and gbflag=%d and goid in (select goid from usergodown where userid in (select userid from users where username='%s'))"%(int(self.request.params["orgcode"]),int(self.request.params["gbflag"]),str(self.request.params["username"])))
-#             for row in godowns:
-#                 branch.append({"bid":int(row["goid"]), "bname":str(row["goname"])})
-#             self.con.close()
-#             return{"gkstatus":enumdict["Success"],"gkdata":branch}
-#         except:
-#             self.con.close()
-#             return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(route_name='orgyears', request_method='GET', renderer ='json')
     def getYears(self):

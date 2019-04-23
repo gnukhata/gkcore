@@ -44,45 +44,6 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 
-# """
-# The branches and godowns are in same table godown. It uses gbflag to identify wheather its godown or branch.
-# Below function is use to fetch all godown and branch data. It uses userID and gbflag(godown / branch) as input.
-# gbflag values are:
-# for godown = 7
-# for branch = 2.
-# """
-# def getusergodowns(userid,gbflag):
-#     try:
-       
-#         con = Connection
-#         con = eng.connect()
-#         uid=userid
-#         godowns=con.execute(select([godown]).where (and_(godown.c.gbflag == gbflag, godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid)))))
-#         usergo = []
-#         srno=1
-#         for row in godowns:
-            
-#             if(gbflag == "7"):
-#                 godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
-            
-#                 godownstockcount = godownstock.fetchone()
-#                 godownstatus = godownstockcount["godownstockstatus"]
-     
-#                 if godownstatus > 0:
-#                     status = "Active"
-#                 else:
-#                     status = "Inactive"
-            
-#                 usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
-#             else:
-#                 usergo.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
-#             srno = srno+1
-#         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
-#     except:
-#         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-#     finally:
-#         con.close();
-
 def getusergodowns(userid):
     try:
         con = Connection
