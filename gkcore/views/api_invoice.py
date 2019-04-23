@@ -409,9 +409,9 @@ class api_invoice(object):
                 try:
                     self.con.execute("delete from billwise  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 except:
-                    self.con.close()
-                    return {"gkstatus":enumdict["ConnectionFailed"] }
-                # below query is for delete stock entry for cancel invoice.
+                    print "fdsfdsfsdf"
+                    pass
+                    # below query is for delete stock entry for cancel invoice.
                 try:
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=9"%(int(invid),authDetails["orgcode"]))
                 except:
