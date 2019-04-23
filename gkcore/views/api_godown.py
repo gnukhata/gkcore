@@ -44,38 +44,66 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 
-"""
-The branches and godowns are in same table godown. It uses gbflag to identify wheather its godown or branch.
-Below function is use to fetch all godown and branch data. It uses userID and gbflag(godown / branch) as input.
-gbflag values are:
-for godown = 7
-for branch = 2.
-"""
-def getusergodowns(userid,gbflag):
-    try:
+# """
+# The branches and godowns are in same table godown. It uses gbflag to identify wheather its godown or branch.
+# Below function is use to fetch all godown and branch data. It uses userID and gbflag(godown / branch) as input.
+# gbflag values are:
+# for godown = 7
+# for branch = 2.
+# """
+# def getusergodowns(userid,gbflag):
+#     try:
        
+#         con = Connection
+#         con = eng.connect()
+#         uid=userid
+#         godowns=con.execute(select([godown]).where (and_(godown.c.gbflag == gbflag, godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid)))))
+#         usergo = []
+#         srno=1
+#         for row in godowns:
+            
+#             if(gbflag == "7"):
+#                 godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+            
+#                 godownstockcount = godownstock.fetchone()
+#                 godownstatus = godownstockcount["godownstockstatus"]
+     
+#                 if godownstatus > 0:
+#                     status = "Active"
+#                 else:
+#                     status = "Inactive"
+            
+#                 usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+#             else:
+#                 usergo.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+#             srno = srno+1
+#         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
+#     except:
+#         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+#     finally:
+#         con.close();
+
+def getusergodowns(userid):
+    try:
         con = Connection
         con = eng.connect()
         uid=userid
-        godowns=con.execute(select([godown]).where (and_(godown.c.gbflag == gbflag, godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid)))))
+        godowns=con.execute(select([godown]).where (and_(godown.c.goid.in_(select([usergodown.c.goid]).where(usergodown.c.userid == uid)))))
         usergo = []
         srno=1
         for row in godowns:
-            
-            if(gbflag == "7"):
-                godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
-            
-                godownstockcount = godownstock.fetchone()
-                godownstatus = godownstockcount["godownstockstatus"]
-     
-                if godownstatus > 0:
-                    status = "Active"
-                else:
-                    status = "Inactive"
-            
-                usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+            godownstock = con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+        
+            godownstockcount = godownstock.fetchone()
+            godownstatus = godownstockcount["godownstockstatus"]
+    
+            if godownstatus > 0:
+                status = "Active"
             else:
-                usergo.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+                status = "Inactive"
+        
+            usergo.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+            
             srno = srno+1
         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":usergo }
     except:
@@ -91,7 +119,7 @@ class api_godown(object):
         self.request = request
         self.con = Connection
     """
-    The below function is use to add godown and branches. gbflag will decides it is godown or branch.
+    The below function is use to add godown.
     """
     @view_config(request_method='POST',renderer='json')
     def addGodown(self):
@@ -117,7 +145,7 @@ class api_godown(object):
             finally:
                 self.con.close()
     """
-    below function is use to update existing godown and branch.
+    below function is use to update existing godown .
     """
     @view_config(request_method='PUT', renderer='json')
     def editGodown(self):
@@ -140,7 +168,7 @@ class api_godown(object):
             finally:
                 self.con.close()
     """
-    below function is use to get all godowns or branches. It uses gbflag to identify branch or godown.
+    below function is use to get all godowns.
     """
     @view_config(request_method='GET', renderer ='json')
     def getAllGodowns(self):
@@ -159,28 +187,25 @@ class api_godown(object):
                 gorole = userrole["gkresult"]
                 if (gorole["userrole"]==3):
                     try:
-                        result = getusergodowns(authDetails["userid"],self.request.params["gbflag"])
+                        result = getusergodowns(authDetails["userid"])
                         return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
                     except:
                         return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }       
                 if (gorole["userrole"]!=3):
-                    result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag==self.request.params["gbflag"])).order_by(godown.c.goname))
+                    result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goname))
                     godowns = []
                     srno=1
                     for row in result:
-                        if(int(self.request.params["gbflag"]) == 7): 
-                            godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
-                            godownstockcount = godownstock.fetchone()
-                            godownstatus = godownstockcount["godownstockstatus"]
-                            if godownstatus > 0:
-                                status = "Active"
-                            else:
-                                status = "Inactive"
-                               
-                            godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]})
-                            
+                        godownstock = self.con.execute(select([func.count(stock.c.goid).label("godownstockstatus") ]).where(stock.c.goid==row["goid"]))
+                        godownstockcount = godownstock.fetchone()
+                        godownstatus = godownstockcount["godownstockstatus"]
+                        if godownstatus > 0:
+                            status = "Active"
                         else:
-                            godowns.append({"srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]})
+                            status = "Inactive"
+                           
+                        godowns.append({"godownstatus":status, "srno":srno, "goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]})
+                        
                         srno = srno+1
                     return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
             except:
@@ -201,10 +226,10 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag == self.request.params["gbflag"])))
+                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]))
                 godowns = []
                 for row in result:
-                    godowns.append({"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"],"gbflag":row["gbflag"]})
+                    godowns.append({"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"]})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":godowns }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -228,7 +253,7 @@ class api_godown(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([godown]).where(godown.c.goid == self.request.params["goid"]))
                 row = result.fetchone()
-                godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"],"gbflag":row["gbflag"]}
+                godownDetails={"goid": row["goid"], "goname": row["goname"], "goaddr": row["goaddr"], "gocontact": row["gocontact"],"state":row["state"],"contactname":row["contactname"],"designation":row["designation"]}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":godownDetails}
             except:
@@ -251,7 +276,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = getusergodowns(self.request.params["userid"],self.request.params["gbflag"])
+                result = getusergodowns(self.request.params["userid"])
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":result["gkresult"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -355,7 +380,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([godown]).where(and_(godown.c.orgcode==authDetails["orgcode"], godown.c.gbflag == self.request.params["gbflag"])).order_by(godown.c.goid.desc()).limit(5))
+                result = self.con.execute(select([godown]).where(godown.c.orgcode==authDetails["orgcode"]).order_by(godown.c.goid.desc()).limit(5))
                 godowns = []
                 srno=1
                 for row in result:
