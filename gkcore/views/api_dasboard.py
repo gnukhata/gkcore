@@ -68,22 +68,13 @@ class api_dashboard(object):
                 typeflag = int(self.request.params["typeflag"])
                 fiveInvoiceslistdata=[]
 
-                if "goid" in authDetails:        #for branch wise        
-                    # Invoices in descending order of amount.
-                    if typeflag == 1: 
-                        fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag,invoice.c.goid==authDetails["goid"])).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
-                    # Invoices in ascending order of date.                
-                    if typeflag == 4:
-                        fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag,invoice.c.goid==authDetails["goid"])).order_by(invoice.c.invoicedate).limit(5))
-                    fiveInvoiceslist = fiveinvoices.fetchall()
-                else:
-                    # Invoices in descending order of amount.
-                    if typeflag == 1:
-                        fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
-                    # Invoices in ascending order of date.                
-                    if typeflag == 4:
-                        fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
-                    fiveInvoiceslist = fiveinvoices.fetchall()
+                # Invoices in descending order of amount.
+                if typeflag == 1:
+                    fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
+                # Invoices in ascending order of date.                
+                if typeflag == 4:
+                    fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
+                fiveInvoiceslist = fiveinvoices.fetchall()
 
                 for inv in fiveInvoiceslist:
                     # for fetch customer or supplier name using cust id in invoice.
@@ -118,16 +109,10 @@ class api_dashboard(object):
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 startenddateprint=startenddate.fetchone()                
                 
-                if "goid" in authDetails:  #for branch wise        
-                    #this is to fetch invoice totalamount month wise
-                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and orgcode= %d and goid=%d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"],authDetails["goid"]))
-                    # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d and goid=%d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"],authDetails["goid"]))
-                    monthlysortdataset=monthlysortdata.fetchall()
-                else:
-                   #this is to fetch invoice totalamount month wise
-                    monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
-                    # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
-                    monthlysortdataset=monthlysortdata.fetchall()  
+                #this is to fetch invoice totalamount month wise
+                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                monthlysortdataset=monthlysortdata.fetchall()  
                 #this is use to send 0 if month have 0 invoice count
                 invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 for count in monthlysortdataset:
@@ -155,23 +140,13 @@ class api_dashboard(object):
                 inoutflag = int(self.request.params["inoutflag"])   
                 self.con = eng.connect()
                 # this is to fetch top five customer which is sort by total amount.
-                if "goid" in authDetails:#for branch wise                        
-                    if inoutflag == 15:
-                        topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d  and icflag=9 and goid=%d group by custid order by data desc limit(5)"%(authDetails["orgcode"],authDetails["goid"]))
-                        topfivecustlist=topfivecust.fetchall()
-                    
+                if inoutflag == 15:
+                    topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                    topfivecustlist=topfivecust.fetchall()
                     # this is to fetch top five suppplier which is sort by total invoice.
-                    else:
-                        topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9 and goid=%d group by custid order by data desc limit(5)"%(authDetails["orgcode"],authDetails["goid"]))
-                        topfivecustlist=topfivecust.fetchall()
                 else:
-                    if inoutflag == 15:
-                        topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
-                        topfivecustlist=topfivecust.fetchall()
-                        # this is to fetch top five suppplier which is sort by total invoice.
-                    else:
-                        topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
-                        topfivecustlist=topfivecust.fetchall()
+                    topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                    topfivecustlist=topfivecust.fetchall()
 
                 topfivecustdetails=[]
                 for inv in topfivecustlist:
@@ -201,13 +176,9 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
 
-                # this is to fetch top five product/service  which is sort by  invoice count.                
-                if "goid" in authDetails:        #for branch wise                        
-                    topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and goid=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"],authDetails["goid"]))
-                    topfiveprodlist=topfiveprod.fetchall()
-                else:
-                    topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
-                    topfiveprodlist=topfiveprod.fetchall()
+                # this is to fetch top five product/service  which is sort by  invoice count. 
+                topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
+                topfiveprodlist=topfiveprod.fetchall()
                 
                 prodinfolist=[]
                 for prodinfo in topfiveprodlist:
