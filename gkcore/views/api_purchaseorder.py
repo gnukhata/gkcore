@@ -98,17 +98,10 @@ class api_purchaseorder(object):
         else:
             try:
                 self.con = eng.connect()
-                # goid is use for branchid to select poso as per branch
-                if "goid" in authDetails:
-                    if "psflag" in self.request.params:
-                        result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(and_(purchaseorder.c.goid==authDetails["goid"],purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
-                    else:
-                        result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(and_(purchaseorder.c.goid==authDetails["goid"],purchaseorder.c.orgcode==authDetails["orgcode"])).order_by(purchaseorder.c.orderdate))
+                if "psflag" in self.request.params:
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(and_(purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
                 else:
-                    if "psflag" in self.request.params:
-                        result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(and_(purchaseorder.c.orgcode==authDetails["orgcode"], purchaseorder.c.psflag == "%d"%int(self.request.params["psflag"]))).order_by(purchaseorder.c.orderdate))
-                    else:
-                        result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
+                    result = self.con.execute(select([purchaseorder.c.orderid, purchaseorder.c.orderdate, purchaseorder.c.orderno, purchaseorder.c.csid,purchaseorder.c.attachmentcount]).where(purchaseorder.c.orgcode==authDetails["orgcode"]).order_by(purchaseorder.c.orderdate))
                 allposo = []
                 for row in result:
                     custdata = self.con.execute(select([customerandsupplier.c.custname]).where(customerandsupplier.c.custid==row["csid"]))

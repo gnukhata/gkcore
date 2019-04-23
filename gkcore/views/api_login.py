@@ -104,13 +104,13 @@ def gkLogin(request):
 						return {"gkstatus":enumdict["Success"],"token":token }
 				# if goid is not asign to user then it will show an error.
 				return {"gkstatus":enumdict["BadPrivilege"]}
-			else:
-				godown = con.execute("select count(godown.goid) as bcount from godown inner join usergodown on godown.goid = usergodown.goid where usergodown.userid = '%d' and godown.gbflag=2"%int(record["userid"]))
-				count = godown.fetchone()
-				if (count["bcount"] > 0):
-					return {"gkstatus":enumdict["BadPrivilege"]}
-				token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
-				return {"gkstatus":enumdict["Success"],"token":token }
+			# else:
+			# 	godown = con.execute("select count(godown.goid) as bcount from godown inner join usergodown on godown.goid = usergodown.goid where usergodown.userid = '%d' and godown.gbflag=2"%int(record["userid"]))
+			# 	count = godown.fetchone()
+			# 	if (count["bcount"] > 0):
+			# 		return {"gkstatus":enumdict["BadPrivilege"]}
+			# 	token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+			# 	return {"gkstatus":enumdict["Success"],"token":token }
 		else:
 			return {"gkstatus":enumdict["UnauthorisedAccess"]}
 	# except:
@@ -150,8 +150,8 @@ def authCheck(token):
 		tokendict["orgcode"]=int(tokendict["orgcode"])
 		tokendict["userid"]=int(tokendict["userid"])
 		#updated for branch feature. goid is for branchid.
-		if "goid" in tokendict:
-			tokendict["goid"]=int(tokendict["goid"])
+		# if "goid" in tokendict:
+		# 	tokendict["goid"]=int(tokendict["goid"])
 		return tokendict
 	except:
 		tokendict = {"auth":False}
