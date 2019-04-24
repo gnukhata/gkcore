@@ -78,7 +78,7 @@ class api_rejectionnote(object):
                     rnidrow = rniddata.fetchone()
                     stockdata["dcinvtnid"] = rnidrow["rnid"]
                     stockdata["dcinvtnflag"] = 18
-                    stockdata["stockdata"] = rnidrow["rndate"]
+                    stockdata["stockdate"] = rnidrow["rndate"]
                     try:
                         for key in items.keys():
                             stockdata["productcode"] = key
