@@ -403,7 +403,7 @@ class api_invoice(object):
                 invoicedata = invoicedata.fetchone()
 
                 #Add all data of cancel invoice into invoicebin"
-                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"goid":invoicedata["goid"]}
+                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"]}
                 bin = self.con.execute(invoicebin.insert(),[invoiceBinData])
                 
                 # below query is for delete billwise entry for cancel invoice.
@@ -966,12 +966,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                # below goid represent branchid if it is branchvise and branch is selected,
-                # then it will show only that branch related invoices
-                if "goid" in authDetails:
-                    result = self.con.execute(select([invoicebin.c.invoiceno,invoicebin.c.invid,invoicebin.c.invoicedate,invoicebin.c.custid,invoicebin.c.invoicetotal,invoicebin.c.attachmentcount]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"],invoicebin.c.goid==authDetails["goid"],invoicebin.c.icflag==9)).order_by(invoicebin.c.invoicedate))
-                else:
-                    result = self.con.execute(select([invoicebin.c.invoiceno,invoicebin.c.invid,invoicebin.c.invoicedate,invoicebin.c.custid,invoicebin.c.invoicetotal,invoicebin.c.attachmentcount]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"],invoicebin.c.icflag==9)).order_by(invoicebin.c.invoicedate))
+                result = self.con.execute(select([invoicebin.c.invoiceno,invoicebin.c.invid,invoicebin.c.invoicedate,invoicebin.c.custid,invoicebin.c.invoicetotal,invoicebin.c.attachmentcount]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"],invoicebin.c.icflag==9)).order_by(invoicebin.c.invoicedate))
                 invoices = []
                 for row in result:
                     customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
@@ -1703,7 +1698,7 @@ The bills grid calld gkresult will return a list as it's value.
     fromdate and todate this is time period to see all invoices.
     orderflag is checked in request params for sorting date in descending order.'''
     @view_config(request_method='GET',request_param="type=listdeleted", renderer ='json')
-    def getListofDeletedInvoices(self):
+    def getListofcancelledInvoices(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -1715,17 +1710,11 @@ The bills grid calld gkresult will return a list as it's value.
             try:
                 self.con = eng.connect()
                 #fetch all invoices
-                # goid is branchid if loged in as branchvise.
-                if "goid" in authDetails:
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"],invoicebin.c.goid==authDetails["goid"], invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoicebin.c.invoicedate)))
-                    else:
-                        result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"], invoicebin.c.goid==authDetails["goid"],invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(invoicebin.c.invoicedate))
+
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"], invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoicebin.c.invoicedate)))
                 else:
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"], invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoicebin.c.invoicedate)))
-                    else:
-                        result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"], invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(invoicebin.c.invoicedate))
+                    result = self.con.execute(select([invoicebin]).where(and_(invoicebin.c.orgcode==authDetails["orgcode"], invoicebin.c.icflag == 9, invoicebin.c.invoicedate <= self.request.params["todate"], invoicebin.c.invoicedate >= self.request.params["fromdate"])).order_by(invoicebin.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
