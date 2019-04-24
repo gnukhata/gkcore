@@ -74,7 +74,7 @@ class api_rejectionnote(object):
                 items = rejectionnotedata["rejprods"]
                 result = self.con.execute(rejectionnote.insert(),[rejectionnotedata])
                 if result.rowcount==1:
-                    rniddata = self.con.execute(select([rejectionnote.c.rnid,rejectionnote.c.rndate]).where(and_(rejectionnote.c.orgcode==authDetails["orgcode"],rejectionnote.c.rnno==rejectionnotedata["rnno"])))
+                    rniddata = self.con.execute(select([rejectionnote.c.rnid,rejectionnote.c.rndate]).where(and_(rejectionnote.c.orgcode==authDetails["orgcode"],rejectionnote.c.rnno==rejectionnotedata["rnno"], rejectionnote.c.inout==rejectionnotedata["inout"])))
                     rnidrow = rniddata.fetchone()
                     stockdata["dcinvtnid"] = rnidrow["rnid"]
                     stockdata["dcinvtnflag"] = 18
