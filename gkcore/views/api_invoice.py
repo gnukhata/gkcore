@@ -2017,38 +2017,38 @@ The bills grid calld gkresult will return a list as it's value.
                 # check whether amount paid is rounded off
                 if "roundoffamt" in queryParams:
                     print("i am rounded off")
+                    print(float(queryParams["roundoffamt"]))
                     if float(queryParams["roundoffamt"]) > 0.00:
-                        # user has received rounded of amount
-                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                        # user has spent rounded of amount
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rdcrs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                        rddrs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
-                            rddrs[cba] = "%.2f"%float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount earned","vouchertype":"receipt","invid":queryParams["invid"]}
+                            rdcrs[cba] = "%.2f"%float(queryParams["roundoffamt"])
+                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount spent","vouchertype":"payment","invid":queryParams["invid"]}
                             vouchers_List.append(rd_VoucherDict)
 
                         # for credit invoice transaction is not made hence create journal voucher
                         if int(queryParams["pmtmode"]) == 15:
-                            rddrs[csa] = "%.2f"%float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount earned","vouchertype":"journal","invid":queryParams["invid"]}
+                            rdcrs[csa] = "%.2f"%float(queryParams["roundoffamt"])
+                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount spent","vouchertype":"journal","invid":queryParams["invid"]}
                             vouchers_List.append(rd_VoucherDict)
 
                     if float(queryParams["roundoffamt"]) < 0.00:
-                        # user has spent rounded of amount
-                        print("I paid more money")
-                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                        # user has earned rounded of amount
+                        roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rddrs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                        rdcrs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                             
-                            rdcrs[cba] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                            rddrs[cba] = "%.2f"%float(abs(queryParams["roundoffamt"]))
 
-                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount spent","vouchertype":"payment","invid":queryParams["invid"]}
+                            rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount earned","vouchertype":"receipt","invid":queryParams["invid"]}
                             vouchers_List.append(rd_VoucherDict)
 
 
                         if int(queryParams["pmtmode"]) == 15:
-                            rdcrs[csa] = "%.2f"%float(queryParams["roundoffamt"])
+                            rddrs[csa] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                             rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount spent","vouchertype":"journal","invid":queryParams["invid"]}
                             vouchers_List.append(rd_VoucherDict)
 
