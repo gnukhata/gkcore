@@ -141,11 +141,11 @@ class api_invoice(object):
                                     #call getDefaultAcc
                                     if "goid" in invdataset:
                                         queryParams['goid'] = invdataset['goid']
-                                    a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                    if a["gkstatus"] == 0:
+                                    av_Result = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                    if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
-                                        voucherData["vchno"] = a["vchNo"]
-                                        voucherData["vchid"] = a["vid"]
+                                        voucherData["vchno"] = av_Result["vchNo"]
+                                        voucherData["vchid"] = av_Result["vid"]
                                     else:
                                         voucherData["status"] = 1
                                 return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData} 
@@ -190,11 +190,11 @@ class api_invoice(object):
                                 if "goid" in invdataset:
                                     queryParams['goid'] = invdataset['goid']
                                 #call getDefaultAcc
-                                a = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
-                                if a["gkstatus"] == 0:
+                                av_Result = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
+                                if av_Result["gkstatus"] == 0:
                                     voucherData["status"] = 0
-                                    voucherData["vchno"] = a["vchNo"]
-                                    voucherData["vchid"] = a["vid"]
+                                    voucherData["vchno"] = av_Result["vchNo"]
+                                    voucherData["vchid"] = av_Result["vid"]
                                 else:
                                     voucherData["status"] = 1
                             return {"gkstatus":enumdict["Success"],"gkresult":invoiceid["invid"],"vchData":voucherData}
@@ -1888,9 +1888,9 @@ The bills grid calld gkresult will return a list as it's value.
             rdcrs = {}
             rddrs = {}
             Narration = ""
-            print (queryParams)
+            v_No = []
+            v_ID = []
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
-            
             amountPaid = float(queryParams["totalAmount"])
             taxDict = {}
             taxRate = 0.00
@@ -2246,17 +2246,15 @@ The bills grid calld gkresult will return a list as it's value.
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":crkeys,"orgcode":orgcode}])
-
-                #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
-
+                v_No.append(vch["vouchernumber"])
+                v_ID.append(int(vouchercode["vcode"]))
+            #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
                 if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                     upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
                     inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
-
-
             
             self.con.close()
-            return {"gkstatus":enumdict["Success"],"vchNo":vch["vouchernumber"],"vid":int(vouchercode["vcode"])}
+            return {"gkstatus":enumdict["Success"],"vchNo":v_No,"vid":v_ID}
         # except:
         #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
         # finally:
