@@ -2016,8 +2016,6 @@ The bills grid calld gkresult will return a list as it's value.
 
                 # check whether amount paid is rounded off
                 if "roundoffamt" in queryParams:
-                    print("i am rounded off")
-                    print(float(queryParams["roundoffamt"]))
                     if float(queryParams["roundoffamt"]) > 0.00:
                         # user has spent rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
@@ -2055,7 +2053,7 @@ The bills grid calld gkresult will return a list as it's value.
 
             """ ######### Purchase  ##########"""
             if int(queryParams["invtype"]) == 9:
-                print("i am in purchase")
+                
                 # if multiple account is 1 , then search for all the sale accounts of products in invoices 
                 if int(queryParams["maflag"]) == 1:
                     prodData = queryParams["products"]
@@ -2173,7 +2171,7 @@ The bills grid calld gkresult will return a list as it's value.
                 
                 # check whether amount paid is rounded off
                 if "roundoffamt" in queryParams:
-                    print(float(queryParams["roundoffamt"]))
+                    
                     if float(queryParams["roundoffamt"]) > 0.00:
                         # user has received rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
@@ -2207,8 +2205,6 @@ The bills grid calld gkresult will return a list as it's value.
 
 
             for vch in vouchers_List:
-                print("chalo vch insert karo")
-                print (vch)
                 drs = vch["drs"]
                 crs = vch["crs"]
                 vch["orgcode"] = orgcode
