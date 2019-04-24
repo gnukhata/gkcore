@@ -394,23 +394,24 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 invid=self.request.json_body["invid"]
                 #to fetch data of all data of cancel invoice.
                 invoicedata=self.con.execute(select([invoice]).where(invoice.c.invid == invid))
                 invoicedata = invoicedata.fetchone()
 
+                print invid
                 #Add all data of cancel invoice into invoicebin"
                 invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"goid":invoicedata["goid"]}
                 bin = self.con.execute(invoicebin.insert(),[invoiceBinData])
                 
                 # below query is for delete billwise entry for cancel invoice.
-                try:
-                    self.con.execute("delete from billwise  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
-                except:
-                    print "fdsfdsfsdf"
-                    pass
+                # try:
+                self.con.execute("delete from billwise  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
+                # except:
+                #     print "fdsfdsfsdf"
+                #     pass
                     # below query is for delete stock entry for cancel invoice.
                 try:
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=9"%(int(invid),authDetails["orgcode"]))
@@ -433,17 +434,17 @@ class api_invoice(object):
                 #To delete invoice enrty from invoice table
                 self.con.execute("delete from invoice  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 return {"gkstatus":enumdict["Success"]}
-            except:
-                try:
-                    invid=self.request.json_body["invid"]
-                    # if invoice entry is not deleted then delete that invoice from bin table
-                    self.con.execute("delete from invoicebin  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
-                    return {"gkstatus":enumdict["ConnectionFailed"]}
-                except:
-                    self.con.close()
-                    return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except:
+            #     try:
+            #         invid=self.request.json_body["invid"]
+            #         # if invoice entry is not deleted then delete that invoice from bin table
+            #         self.con.execute("delete from invoicebin  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
+            #         return {"gkstatus":enumdict["ConnectionFailed"]}
+            #     except:
+            #         self.con.close()
+            #         return {"gkstatus":enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
 
     @view_config(request_method='PUT',request_param='type=bwa',renderer='json')
