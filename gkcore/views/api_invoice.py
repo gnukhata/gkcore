@@ -2205,7 +2205,7 @@ The bills grid calld gkresult will return a list as it's value.
 
 
                         if int(queryParams["pmtmode"]) == 15:
-                            rdcrs[csa] = "%.2f"%float(queryParams["roundoffamt"])
+                            rdcrs[csa] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                             rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount earned","vouchertype":"journal","invid":queryParams["invid"]}
                             vouchers_List.append(rd_VoucherDict)
 
