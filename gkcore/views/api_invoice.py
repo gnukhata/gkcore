@@ -411,11 +411,11 @@ class api_invoice(object):
                     self.con.execute("delete from billwise  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 except:
                     pass
+                #in case of service based invoice following code will not work
                 try:
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=9"%(int(invid),authDetails["orgcode"]))
                 except:
-                    self.con.close()
-                    return {"gkstatus":enumdict["ConnectionFailed"] }
+                    pass
                 # below query to get voucher code for cancel invoice for delete corsponding vouchers.
                 voucher_code=self.con.execute("select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 voucherCode=voucher_code.fetchall()
