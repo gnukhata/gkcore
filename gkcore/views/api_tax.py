@@ -239,7 +239,7 @@ class api_tax(object):
                 user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-                if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
+                if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0 or userRole["userrole"]==3:
                     dataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(tax.insert(),[dataset])
                     # In case of gst and cess create tax accounts
@@ -378,7 +378,6 @@ class api_tax(object):
                 user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-
                 if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
 
                     result = self.con.execute(tax.update().where(tax.c.taxid == dataset["taxid"]).values(dataset))
@@ -406,7 +405,7 @@ class api_tax(object):
                 user=self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-                if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0:
+                if userRole["userrole"]==-1 or userRole["userrole"]==1 or userRole["userrole"]==0 or userRole["userrole"]==3:
                     result = self.con.execute(tax.delete().where(tax.c.taxid==dataset["taxid"]))
                     return {"gkstatus":enumdict["Success"]}
                 else:
