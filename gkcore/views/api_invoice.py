@@ -419,11 +419,16 @@ class api_invoice(object):
                 # below query to get voucher code for cancel invoice for delete corsponding vouchers.
                 voucher_code=self.con.execute("select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 voucherCode=voucher_code.fetchall()
+               
                 if voucherCode is not None:
                     #function call to delete vouchers 
                     for vcode in voucherCode:
                         try:
                             deletestatus=deleteVoucherFun(vcode["vcode"],authDetails["orgcode"])
+                            if deletestatus["gkstatus"] == 3:
+                                self.con.close()
+                                return {"gkstatus":enumdict["ConnectionFailed"] }
+                                
                         except:
                             self.con.close()
                             return {"gkstatus":enumdict["ConnectionFailed"] }
