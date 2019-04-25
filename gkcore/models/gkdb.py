@@ -257,7 +257,7 @@ For one organisation in a single financial year, an account name can never be du
 So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
 the groupcode to with it belongs.
 defaultflag is for setting the account as default for certain transactions.
-so defaultflag can be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
+so defaultflag will be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
 """
 
 accounts = Table('accounts', metadata,
@@ -339,6 +339,8 @@ Structure of a tax field is {productcode:taxrate}
 save orgstategstin of sourcestate for organisation.
 paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'.
 inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
+Roundoff field is to check wheather invoice total is rounded off or not. 
+0 = no round off 1 = invoice total amount rounded off.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -353,6 +355,7 @@ invoice = Table('invoice',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
+    Column('roundoffflag',Integer,default=0),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),

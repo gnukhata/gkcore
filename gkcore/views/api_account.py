@@ -96,6 +96,10 @@ defaultflag '2' or '3' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 180:
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
+                    if dflag == 181:
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
@@ -198,7 +202,7 @@ defaultflag '2' or '3' set to the '0'.
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
                 accs = []
                 srno=1
-                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction"} #it is use for default flag
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",180:"Round Off Paid",181:"Round Off Received"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
@@ -319,6 +323,10 @@ defaultflag '16' or '19' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 180:
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
+                    if dflag == 181:
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
@@ -396,7 +404,7 @@ defaultflag '16' or '19' set to the '0'.
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
                 accs = []
                 srno=1
-                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction"} #it is use for default flag
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",180:"Round Off Paid",181:"Round Off Received"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")

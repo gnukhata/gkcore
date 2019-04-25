@@ -112,6 +112,21 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+            # Round off is use to detect that total amount of invoice is rounded off or not.
+            # If the field is not exist then it will create field.
+            # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.  
+            if not columnExists("invoice","roundoffflag"):
+                self.con.execute("alter table invoice add column roundoffflag integer default 0")
+                for orgcode in allorg:
+                    result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off Paid')))
+                    account = result.fetchone()
+                    if account == None:
+                        grpCodePaid = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                        grpCodeP = grpCodePaid.fetchone()
+                        ropAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Paid","groupcode":grpCodeP["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":180}])
+                        grpCodeReceived = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                        grpCodeR = grpCodeReceived.fetchone()
+                        rorAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Received","groupcode":grpCodeR["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181}])
             # In below 5 queries we are adding goid in that tables which will acts as branch id their and that id is refer from godown table
             # In that godown table goid is also acts for branch id, That depends on gbflag in godown table.
             # if gbflag is 2 then it is branch and only that is going to use in bellow tables
@@ -249,6 +264,10 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 19 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'Purchase A/C':
                                 self.con.execute("update accounts set defaultflag = 16 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Round Off Paid':
+                                self.con.execute("update accounts set defaultflag = 180 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Round Off Received':
+                                self.con.execute("update accounts set defaultflag = 181 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_IN':
                                 self.con.execute("update accounts set defaultflag = 0, sysaccount = 1 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_OUT':
@@ -677,12 +696,14 @@ class api_organisation(object):
                     resultie = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     iegrpcd = resultie.fetchone()
                     resultDP = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount Paid","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bonus","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Depreciation Expense","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
-
+                    resultROP = self.con.execute(gkdb.accounts.insert(),{"accountname":"Round Off Paid","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":180})
+                    
                     indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
                     resultii = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     iigrpcd = resultii.fetchone()
                     resultDS = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount Received","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
+                    resultROR = self.con.execute(gkdb.accounts.insert(),{"accountname":"Round Off Received","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181})
 
                     investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
