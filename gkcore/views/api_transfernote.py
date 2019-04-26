@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018,2019 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -131,7 +131,7 @@ class api_transfernote(object):
                 A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
                 If user is not a godown keeper this list will be empty.
                 '''
-                usergodowmns = getusergodowns(authDetails["userid"],7)["gkresult"]
+                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
                 '''
                 If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
                 Otherwise all transfernotes that have not been received are returned.

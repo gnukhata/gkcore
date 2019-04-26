@@ -127,17 +127,6 @@ class api_organisation(object):
                         grpCodeReceived = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                         grpCodeR = grpCodeReceived.fetchone()
                         rorAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Received","groupcode":grpCodeR["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181}])
-            # In below 5 queries we are adding goid in that tables which will acts as branch id their and that id is refer from godown table
-            # In that godown table goid is also acts for branch id, That depends on gbflag in godown table.
-            # if gbflag is 2 then it is branch and only that is going to use in bellow tables
-            if not columnExists("invoice","goid"):
-                self.con.execute("alter table invoice add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                self.con.execute("alter table vouchers add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                self.con.execute("alter table rejectionnote add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                self.con.execute("alter table drcr add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                self.con.execute("alter table purchaseorder add column goid integer, add constraint fk_goid foreign key(goid) references godown(goid)")
-                #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
-                self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
 
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
@@ -515,10 +504,6 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
-            if not columnExists("godown","gbflag"):
-                self.con.execute("alter table godown add gbflag integer not null default 7")
-                self.con.execute("ALTER TABLE godown DROP CONSTRAINT godown_orgcode_goname_key")
-                self.con.execute("ALTER TABLE godown ADD UNIQUE(orgcode,goname,gbflag)")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
@@ -531,6 +516,9 @@ class api_organisation(object):
                 self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             if not tableExists("budget"):
                 self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+                #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
+                self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
+
                 #In Below queries we are creating new table invoivebin which is act as bin for canceled invoices. 
             if not tableExists("invoicebin"):
                 self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid))")
@@ -570,20 +558,6 @@ class api_organisation(object):
                 orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
-        except:
-            self.con.close()
-            return {"gkstatus":enumdict["ConnectionFailed"]}
-#  get all branchid of perticuler username to login in to that branch
-    @view_config(request_method='GET',request_param='type=orgbranch', renderer ='json')
-    def getBranch(self):
-        try:
-            self.con = eng.connect()
-            branch = []
-            godowns = self.con.execute("select goid,goname from godown where orgcode=%d and gbflag=%d and goid in (select goid from usergodown where userid in (select userid from users where username='%s'))"%(int(self.request.params["orgcode"]),int(self.request.params["gbflag"]),str(self.request.params["username"])))
-            for row in godowns:
-                branch.append({"bid":int(row["goid"]), "bname":str(row["goname"])})
-            self.con.close()
-            return{"gkstatus":enumdict["Success"],"gkdata":branch}
         except:
             self.con.close()
             return {"gkstatus":enumdict["ConnectionFailed"]}

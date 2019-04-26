@@ -29,6 +29,7 @@ Contributors:
 "Prajkta Patkar" <prajakta@dff.org.in>
 "Reshma Bhatwadekar" <bhatawadekar1reshma@gmail.com>
 "Aditya Shukla" <adityashukla9158.as@gmail.com>
+"Rohan Khairnar" <rohankhairnar5@gmail.com>
 """
 
 
@@ -139,8 +140,6 @@ class api_invoice(object):
                                         queryParams["taxpayment"]=avData["taxpayment"]
                                         
                                     #call getDefaultAcc
-                                    if "goid" in invdataset:
-                                        queryParams['goid'] = invdataset['goid']
                                     av_Result = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -177,18 +176,16 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total rounded off
-                                    if invdataset["roundoffflag"] == 1:
-                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
-                                        if float(roundOffAmount) != 0.00:
-                                            queryParams["roundoffamt"] = float(roundOffAmount)
+                                    # if invdataset["roundoffflag"] == 1:
+                                    #     roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                    #     if float(roundOffAmount) != 0.00:
+                                    #         queryParams["roundoffamt"] = float(roundOffAmount)
 
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
                                         queryParams["cessname"] =avData["avtax"]["CESSName"]
                                     if int(invdataset["taxflag"]) == 22:
                                         queryParams["taxpayment"]=avData["taxpayment"]
-                                    if "goid" in invdataset:
-                                        queryParams['goid'] = invdataset['goid']
                                     #call getDefaultAcc
                                     av_Result = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if av_Result["gkstatus"] == 0:
@@ -233,8 +230,6 @@ class api_invoice(object):
                                     if int(invdataset["taxflag"]) == 22:
                                         queryParams["taxpayment"]=avData["taxpayment"]
                                     #call getDefaultAcc
-                                    if "goid" in invdataset:
-                                        queryParams['goid'] = invdataset['goid']
                                     av_Result = self.getDefaultAcc(queryParams,int(invdataset["orgcode"]))
                                     if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -718,11 +713,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
-                # voucher count for invoice transaction details
-                if "goid" in authDetails:
-                    voucherCount = self.con.execute("select count(vouchercode) from vouchers where goid = %d and orgcode = %d and invid = %d"%(int(authDetails['goid']),int(authDetails['orgcode']),int(self.request.params["invid"])))
-                else:
-                    voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
+                voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
                 vCount = voucherCount.fetchone()
                 inv["vouchercount"] = vCount[0]
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
@@ -927,13 +918,9 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            # below goid is used as branchid to select invoice branchvise.
             try:
                 self.con = eng.connect()
-                if "goid" in authDetails:
-                    unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.goid == authDetails["goid"],invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
-                else:
-                    unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
+                unpaidBillsRecords = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == self.request.params["custid"],invoice.c.invoicetotal > invoice.c.amountpaid)))
 
                 unpaidBills = unpaidBillsRecords.fetchall()
                 bills = []
@@ -970,12 +957,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                # below goid represent branchid if it is branchvise and branch is selected,
-                # then it will show only that branch related invoices
-                if "goid" in authDetails:
-                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.goid==authDetails["goid"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
-                else:
-                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in result:
                     customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
@@ -1037,11 +1019,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                #goid is adjusted for branchid when branchvise is selected
-                if "goid" in authDetails:
-                    invsData = self.con.execute("select invid from invoice where icflag = 9 and goid = %d and orgcode = %d except select invid from vouchers where orgcode = %d "%(authDetails["goid"],authDetails["orgcode"],authDetails["orgcode"]))
-                else:
-                    invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
+                invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
                 for inv in invsData:
                     filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
@@ -1066,13 +1044,9 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            # goid is used as branchid to select invoice branchvise
             try:
                 self.con = eng.connect()
-                if "goid" in authDetails:
-                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.goid==authDetails["goid"],invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
-                else:
-                    result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
+                result = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==3,invoice.c.inoutflag==self.request.params["inoutflag"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in result:
                     invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y')})
@@ -1320,13 +1294,9 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # goid is used as branchid to select invoice branchvise
             try:
                 self.con = eng.connect()
-                if "goid" in authDetails:
-                    invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.goid == authDetails["goid"],invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
-                else:
-                    invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for invrow in allinv:
@@ -1603,18 +1573,10 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                #fetch all invoices
-                # goid is branchid if loged in as branchvise.
-                if "goid" in authDetails:
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.goid==authDetails["goid"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
-                    else:
-                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.goid==authDetails["goid"],invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                if "orderflag" in self.request.params:
+                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
                 else:
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
-                    else:
-                        result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
+                    result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(invoice.c.invoicedate))
                 invoices = []
                 srno = 1
                 #for each invoice
@@ -2290,11 +2252,7 @@ The bills grid calld gkresult will return a list as it's value.
                 list_Invoices = []
                 # Fetching id, number, date of all invoices.
                 # check whether invtype does exist and further check its type
-                # goid is for branchid if loged in as branchvise
-                if "goid" in authDetails:
-                    invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and goid = %d and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(authDetails["goid"]),int(self.request.params["invtype"])))
-                else:
-                    invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
+                invoices = self.con.execute("select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"%(org,org,org,org,int(self.request.params["invtype"])))
                 invoicesData = invoices.fetchall()
                                         
                 # Appending dictionaries into empty list.

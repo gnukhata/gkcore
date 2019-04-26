@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018,2019 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ class api_product(object):
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
                 if (gorole["userrole"]==3):
-                    uId = getusergodowns(authDetails["userid"],7)
+                    uId = getusergodowns(authDetails["userid"])
                     gid=[]
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])
@@ -194,7 +194,7 @@ class api_product(object):
                         godowns = godownswithstock.fetchone()
                         numberofgodowns = godowns["numberofgodowns"]
                     else:
-                        usergodowmns = getusergodowns(authDetails["userid"],7)
+                        usergodowmns = getusergodowns(authDetails["userid"])
                         numberofgodowns = 0
                         for usergodown in usergodowmns["gkresult"]:
                             godownswithstock = self.con.execute(select([gkdb.goprod.c.goid]).where(and_(gkdb.goprod.c.productcode==self.request.params["productcode"], gkdb.goprod.c.goid==usergodown["goid"])))
@@ -296,7 +296,7 @@ class api_product(object):
                         goDownDetails = {"goid":row["goid"], "goopeningstock":"%.2f"%float(row["goopeningstock"]), "productcode":row["productcode"]}
                         godowns.append(goDownDetails)
                 else:
-                    usergodowns = getusergodowns(authDetails["userid"],7)
+                    usergodowns = getusergodowns(authDetails["userid"])
                     godowns = []
                     for usergodown in usergodowns["gkresult"]:
                         thisgodown = self.con.execute(select([goprod]).where(and_(goprod.c.productcode == productcode, goprod.c.goid == usergodown["goid"])))
@@ -540,7 +540,7 @@ class api_product(object):
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
                 if gorole["userrole"]==3:
-                    uId = getusergodowns(authDetails["userid"],7)
+                    uId = getusergodowns(authDetails["userid"])
                     gid=[]
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])
