@@ -49,6 +49,7 @@ from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
 from gkcore.views.api_invoice import getStateCode 
+from gkcore.models.gkdb import godown, usergodown, stock, goprod
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -111,6 +112,22 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+            # Round off is use to detect that total amount of invoice is rounded off or not.
+            # If the field is not exist then it will create field.
+            # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.  
+            if not columnExists("invoice","roundoffflag"):
+                self.con.execute("alter table invoice add column roundoffflag integer default 0")
+                for orgcode in allorg:
+                    result = self.con.execute(select([gkdb.accounts.c.accountcode]).where(and_(gkdb.accounts.c.orgcode==orgcode["orgcode"], gkdb.accounts.c.accountname == 'Round Off Paid')))
+                    account = result.fetchone()
+                    if account == None:
+                        grpCodePaid = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                        grpCodeP = grpCodePaid.fetchone()
+                        ropAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Paid","groupcode":grpCodeP["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":180}])
+                        grpCodeReceived = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
+                        grpCodeR = grpCodeReceived.fetchone()
+                        rorAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Received","groupcode":grpCodeR["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181}])
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
@@ -236,6 +253,10 @@ class api_organisation(object):
                                 self.con.execute("update accounts set defaultflag = 19 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'Purchase A/C':
                                 self.con.execute("update accounts set defaultflag = 16 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Round Off Paid':
+                                self.con.execute("update accounts set defaultflag = 180 where accountcode =%d"%int(acname["accountcode"]))
+                            elif acc == 'Round Off Received':
+                                self.con.execute("update accounts set defaultflag = 181 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_IN':
                                 self.con.execute("update accounts set defaultflag = 0, sysaccount = 1 where accountcode =%d"%int(acname["accountcode"]))
                             elif acc == 'VAT_OUT':
@@ -483,20 +504,27 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
-            if not columnExists("godown","gbflag"):
-                self.con.execute("alter table godown add gbflag integer not null default 7")
-                self.con.execute("ALTER TABLE godown DROP CONSTRAINT godown_orgcode_goname_key")
-                self.con.execute("ALTER TABLE godown ADD UNIQUE(orgcode,goname,gbflag)")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
                 self.con.execute("create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
-            self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
-            self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
-            self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
-            self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
-            self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
-            self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
+                self.con.execute("ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+                self.con.execute("ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)")
+                self.con.execute("alter table goprod add UNIQUE(goid,productcode,orgcode)")
+                self.con.execute("alter table product add UNIQUE(productdesc,orgcode)")
+                self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
+                self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
+            if not tableExists("budget"):
+                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+                #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
+                self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
+
+                #In Below queries we are creating new table invoivebin which is act as bin for canceled invoices. 
+            if not tableExists("invoicebin"):
+                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid))")
+                self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
+                self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
+     
         except:            
             return 0
         finally:
@@ -512,7 +540,7 @@ class api_organisation(object):
             orgs = []
             for row in result:
                 orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
-                orgs.sort()
+            orgs.sort()
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
         except:
@@ -642,12 +670,14 @@ class api_organisation(object):
                     resultie = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Expense",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     iegrpcd = resultie.fetchone()
                     resultDP = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Discount Paid","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Bonus","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]},{"accountname":"Depreciation Expense","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"]}])
-
+                    resultROP = self.con.execute(gkdb.accounts.insert(),{"accountname":"Round Off Paid","groupcode":iegrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":180})
+                    
                     indirectincome= {"groupname":"Indirect Income","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),indirectincome)
                     resultii = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.groupname=="Indirect Income",gkdb.groupsubgroups.c.orgcode==orgcode["orgcode"])))
                     iigrpcd = resultii.fetchone()
                     resultDS = self.con.execute(gkdb.accounts.insert(),{"accountname":"Discount Received","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"]})
+                    resultROR = self.con.execute(gkdb.accounts.insert(),{"accountname":"Round Off Received","groupcode":iigrpcd["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181})
 
                     investment= {"groupname":"Investments","orgcode":orgcode["orgcode"]}
                     result = self.con.execute(gkdb.groupsubgroups.insert(),investment)
@@ -698,7 +728,7 @@ class api_organisation(object):
 
                             token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
                             self.con.close()
-                            return {"gkstatus":enumdict["Success"],"token":token }
+                            return {"gkstatus":enumdict["Success"],"token":token, "orgcode":userdata["orgcode"]}
                         else:
                             self.con.close()
                             return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -1000,8 +1030,9 @@ class api_organisation(object):
             else:
                 return {"gkstatus":enumdict["Success"]}
         except:
-            self.con.close()
             return {"gkstatus":  enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
 
 
     @view_config(request_param='orgcode', request_method='GET',renderer='json')

@@ -147,7 +147,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                         if float(rcpt["amt"]) == float(invsData["amtAdjusted"]):
                             continue
                     unAdjReceipts.append({"vouchercode":rcpt["vouchercode"],"vouchernumber":rcpt["vouchernumber"],"voucherdate":datetime.strftime(rcpt["voucherdate"],'%d-%m-%Y'),"amtadj":"%.2f"%(float(float(rcpt["amt"]) - float (amtadj)))})
-                    
+                
                 csInvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid]).where(and_(invoice.c.custid == csid,invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.orgcode == authDetails["orgcode"])))
                 csInvoicesData = csInvoices.fetchall()
                 for inv in csInvoicesData:
@@ -184,6 +184,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 unAdjInvoices = []
                 # Fetching id, number, date, total amount and amount paid of all unpaid invoices.
                 # It is unadjusted if invoice total is greater that amount paid.
+                
                 invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
                 invoicesData = invoices.fetchall()
                 # Appending dictionaries into empty list.
@@ -223,6 +224,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                 unAdjInvoices = []
                 # Fetching id, number, date, total amount and amount paid of all unpaid invoices.
                 # It is pending if invoice total is greater that amount paid.
+                
                 invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.amountpaid == 0, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
                 invoicesData = invoices.fetchall()
                 # Appending dictionaries into empty list.

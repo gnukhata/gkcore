@@ -96,6 +96,10 @@ defaultflag '2' or '3' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 180:
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
+                    if dflag == 181:
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
@@ -198,16 +202,19 @@ defaultflag '2' or '3' set to the '0'.
                 result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
                 accs = []
                 srno=1
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",180:"Round Off Paid",181:"Round Off Received"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
-
+                    
+                    defaultflag=default_acc[accrow["defaultflag"]]
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
                     grprow = resultset.fetchone()
                     if grprow["groupcode"]==grprow["subgroupcode"]:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
+
                     else:
-                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"]})
+                        accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
                     srno = srno+1
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult":accs}
@@ -316,6 +323,10 @@ defaultflag '16' or '19' set to the '0'.
                 dataset["orgcode"] = authDetails["orgcode"]
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
+                    if dflag == 180:
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
+                    if dflag == 181:
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
                     for name in grpname:
@@ -369,6 +380,47 @@ defaultflag '16' or '19' set to the '0'.
                 else:
                     self.con.close()
                     return {"gkstatus":  enumdict["BadPrivilege"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+
+    '''
+    This function returns a list of accounts whose details can be edited.
+    Accounts with group Direct Income or Direct Expense and are marked as sysstem account cannot be edited.
+    All accounts other than that mentioned above are included in this list.
+    '''
+    @view_config(request_method='GET', renderer ='json', request_param="editaccount")
+    def getAllEditableAccounts(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(select([gkdb.accounts]).where(gkdb.accounts.c.orgcode==authDetails["orgcode"]).order_by(gkdb.accounts.c.accountname))
+                accs = []
+                srno=1
+                default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",180:"Round Off Paid",181:"Round Off Received"} #it is use for default flag
+                for accrow in result:
+                    g = gkdb.groupsubgroups.alias("g")
+                    sg = gkdb.groupsubgroups.alias("sg")
+                    
+                    defaultflag=default_acc[accrow["defaultflag"]]
+                    resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
+                    grprow = resultset.fetchone()
+                    if not (grprow["groupname"] in ["Direct Expense", "Direct Income"] and accrow["sysaccount"] == 1):
+                        if grprow["groupcode"]==grprow["subgroupcode"]:
+                            accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":"","subgroupname":"","sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
+
+                        else:
+                            accs.append({"srno":srno,"accountcode":accrow["accountcode"], "accountname":accrow["accountname"], "openingbal":"%.2f"%float(accrow["openingbal"]),"groupcode":grprow["groupcode"],"groupname":grprow["groupname"],"subgroupcode":grprow["subgroupcode"],"subgroupname":grprow["subgroupname"],"sysaccount":accrow["sysaccount"],"defaultflag":defaultflag})
+                    srno = srno+1
+                self.con.close()
+                return {"gkstatus": enumdict["Success"], "gkresult":accs}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"] }

@@ -119,6 +119,9 @@ class api_customer(object):
                 if 'bankdetails' not in dataset:
                     #if bankdetails are null, set bankdetails as null in database.
                     self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custcode))
+                if 'gstin' not in dataset:
+                    #if gstin are null, set gstin as null in database.
+                    self.con.execute("update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"%int(custcode))
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}

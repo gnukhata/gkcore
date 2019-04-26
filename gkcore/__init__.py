@@ -59,6 +59,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_route("organisation","/organisation")
     config.add_route("invoice","/invoice")
+    config.add_route("budget","/budget")
     config.add_route("organisations","/organisations")
     config.add_route("categoryspecs","/categoryspecs")
     config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
@@ -95,6 +96,7 @@ def main(global_config, **settings):
     config.add_route("state","/state")
     config.add_route("drcrnote","/drcrnote")
     config.add_route("gstreturns", "/gstreturns")
+    config.add_route("dashboard", "/dashboard")	
     config.scan("gkcore.views")
 
     return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")

@@ -398,9 +398,15 @@ class api_drcr(object):
                 drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
                 invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
+                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+                lastdrcrno = self.con.execute("select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"%(int(authDetails["orgcode"]),int(drcrflag)))
+                lastdrcrno = lastdrcrno.fetchone()
+                if lastdrcrno == None:
+                    lastdrcrno = ""
+                else:
+                    lastdrcrno = lastdrcrno[0]
                 for DrCrInv in invsInDrCr:
                     DrCrInvs.append(DrCrInv["invid"])
-                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 invoices = []
                 for row in invData:
                     if row["invid"] not in DrCrInvs:
@@ -413,7 +419,7 @@ class api_drcr(object):
                                 invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
                         else:
                             invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices,"lastdrcrno":lastdrcrno }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
             finally:
@@ -1066,6 +1072,7 @@ def drcrVoucher(queryParams, orgcode):
         vchCode = vchCodeResult.fetchone()
         initialType = initialType + str(vchCode["vcode"])
     voucherDict["vouchernumber"] = initialType
+
     result = con.execute(vouchers.insert(),[voucherDict])
     for drkeys in drs.keys():
         con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))

@@ -257,7 +257,7 @@ For one organisation in a single financial year, an account name can never be du
 So it has  2 foreign keys, first the orgcode of the organisation to which it belongs, secondly
 the groupcode to with it belongs.
 defaultflag is for setting the account as default for certain transactions.
-so defaultflag can be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
+so defaultflag will be '2' is for default bank transaction , '3' default for Cash, '16' is for Purchase and '19' is for sale.
 """
 
 accounts = Table('accounts', metadata,
@@ -338,6 +338,8 @@ Structure of a tax field is {productcode:taxrate}
 save orgstategstin of sourcestate for organisation.
 paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is set as 2 for 'bank' and 3 for 'cash'.
 inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
+Roundoff field is to check wheather invoice total is rounded off or not. 
+0 = no round off 1 = invoice total amount rounded off.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -352,6 +354,7 @@ invoice = Table('invoice',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
+    Column('roundoffflag',Integer,default=0),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
@@ -384,6 +387,46 @@ billwise = Table('billwise',metadata,
     Column('adjamount',Numeric(12,2),nullable=False),
     Column('orgcode',Integer,ForeignKey('organisation.orgcode',ondelete="CASCADE"),nullable=False)
 )
+"""
+This is the table which acts as a bin for canceled invoices.
+While these invoices canceled, they are for investigation purpose if need be.
+"""
+invoicebin = Table('invoicebin',metadata,
+    Column('invid',Integer,primary_key=True),
+    Column('invoiceno',UnicodeText,nullable=False),
+    Column('invoicedate',DateTime,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
+    Column('amountpaid',Numeric(13,2),default=0.00),
+    Column('invoicetotal', Numeric(13,2),nullable=False),
+    Column('icflag',Integer,default=9),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('attachment',JSON),
+    Column('attachmentcount',Integer,default=0),
+    Column('orderid', Integer,ForeignKey('purchaseorder.orderid')),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode'), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
+    Column('consignee',JSONB),
+    Column('freeqty',JSONB),
+    Column('reversecharge',UnicodeText),
+    Column('bankdetails',JSONB),
+    Column('transportationmode',UnicodeText),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('discount',JSONB),
+    Column('paymentmode',Integer,default=2),
+    Column('address',UnicodeText),
+    Column('inoutflag',Integer),
+    Column('invoicetotalword', UnicodeText),
+    Index("invoicebin_orgcodeindex","orgcode"),
+    Index("invoicebin_invoicenoindex","invoiceno")
+    )
 
 """
 Table for challan.
@@ -548,6 +591,7 @@ purchaseorder = Table( 'purchaseorder' , metadata,
     Column('schedule',JSONB),
     Column('taxstate',UnicodeText),
     Column('psflag',Integer,nullable=False),
+    Column('goid', Integer,ForeignKey('godown.goid')),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
     Column('csid',Integer,ForeignKey('customerandsupplier.custid',ondelete="CASCADE"), nullable=False),
     Column('togodown',Integer,ForeignKey('godown.goid', ondelete = "CASCADE")),
@@ -587,10 +631,29 @@ godown = Table('godown',metadata,
     Column('gocontact',UnicodeText),
     Column('contactname',UnicodeText),
     Column('designation',UnicodeText),
-    Column('gbflag',Integer,default=7,nullable=False),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
-    UniqueConstraint('orgcode','goname','gbflag'),
+    UniqueConstraint('orgcode','goname'),
     Index("godown_orgcodeindex","orgcode")
+    )
+
+"""
+table for budget module. All types of budget will store in this table.
+content field will have budget with its account/group/subgroup(key) and budget(value).
+budtype is for budget type: cash(3)/expense(5)/sales(19).
+gaflag is for budget is group wise(7)/subgroup wise(19)/account wise(1)
+budget period: startdate to enddate.
+project code field: cost center or project wise budget.
+"""
+budget = Table('budget',metadata,
+    Column('budid',Integer,primary_key=True),
+    Column('budname',UnicodeText, nullable = False),
+    Column('startdate',DateTime, nullable = False),
+    Column('enddate',DateTime, nullable = False ),
+    Column('contents',JSONB,nullable=False),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
+    Column('budtype',Integer,nullable=False),
+    Column('projectcode',Integer, ForeignKey('projects.projectcode')),
+    Column('gaflag',Integer, nullable=False)
     )
 
 """

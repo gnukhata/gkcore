@@ -183,7 +183,7 @@ create method for delchal resource.
                 If user is not a godown keeper this list will be empty.
                 If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
                 '''
-                usergodowmns = getusergodowns(authDetails["userid"],7)["gkresult"]
+                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
                 if usergodowmns:
                     godowns = []
                     for godown in usergodowmns:
@@ -207,14 +207,15 @@ create method for delchal resource.
             finally:
                 self.con.close()
                     
-    """
+    
+    @view_config(request_method='GET',request_param="delchal=single", renderer ='json')
+    def getdelchal(self):
+        """
     This function returns the single delivery challan data to frontend depends on 'dcid;.
     if for given dcid 'contents' field not available then 'stockdata' will return, else 'delchalContents' will return.
     we also return the 'delchalflag' for 'Old' and 'new' deliverychallan. for 'Old deliverychallan' delchalflag is '15',
     and for 'New deliverychallan' delchalflag is '14' set.
     """
-    @view_config(request_method='GET',request_param="delchal=single", renderer ='json')
-    def getdelchal(self):
         try:
             token = self.request.headers["gktoken"]
         except:

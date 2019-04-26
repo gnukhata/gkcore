@@ -33,7 +33,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_ , func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults,  view_config
@@ -67,10 +67,8 @@ def gkLogin(request):
 			con.execute(select([gkdb.transfernote.c.recieveddate]))
 		except:
 			addFields(con,eng)
-			
-		
 		dataset = request.json_body
-		result = con.execute(select([gkdb.users.c.userid]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+		result = con.execute(select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
 		if result.rowcount == 1:
 			record = result.fetchone()
 			result = con.execute(select([gkdb.signature]))

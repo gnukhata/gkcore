@@ -1,4 +1,16 @@
-[29-11-2018 Release 5.50]
+[26 April 2019 Release 6.0]
+* Added API for dashboard and made related modifications in other APIs.
+* Added API for Budget.
+* Modified DELETE API of Invoice to implement Cancellation of Invoice.
+* Automatic voucher number enhanced.
+* Modifications in API of Invoice for Rounding Off invoice total value.
+* Accounting with Invoice option depricated.
+* Organisation POST API returns orgcode.
+* Modification in tax API to allow Godown In Charge to add tax to product.
+* Performance Enhancements.
+
+	
+[29-November-2018 Release 5.50]
 * API for GSTR1 b2b, b2cl, b2cs, cdnr, cdnur, hsn1.  
 * Modifications in Profit and Loss Report.  
 * New fields for Sale Price and MRP in Product Table.  
