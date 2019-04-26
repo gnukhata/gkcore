@@ -72,7 +72,7 @@ class api_product(object):
                 userrole = getUserRole(authDetails["userid"])
                 gorole = userrole["gkresult"]
                 if (gorole["userrole"]==3):
-                    uId = getusergodowns(authDetails["userid"],7)
+                    uId = getusergodowns(authDetails["userid"])
                     gid=[]
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])

@@ -131,7 +131,7 @@ class api_transfernote(object):
                 A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
                 If user is not a godown keeper this list will be empty.
                 '''
-                usergodowmns = getusergodowns(authDetails["userid"],7)["gkresult"]
+                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
                 '''
                 If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
                 Otherwise all transfernotes that have not been received are returned.
