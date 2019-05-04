@@ -1663,13 +1663,12 @@ The bills grid calld gkresult will return a list as it's value.
                         except:
                             custtin = None
                     
-                    billentryflag = 0
-                    billwiseentry=self.con.execute("select count(invid) as invcount from billwise where invid=%d and orgcode=%d"%(row["invid"],authDetails["orgcode"]))  
+                    billentryflag = 1
+                    billwiseentry=self.con.execute("select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "%(row["invid"],authDetails["orgcode"]))  
                     billwise_entry= billwiseentry.fetchone() 
-                    print billwise_entry
-                    if  billwise_entry["invcount"] > 0:
-                        billentryflag = 1
-                   
+                    if  billwise_entry > 0:
+                        billentryflag = 0
+                    print billentryflag
 
                     #below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
                     cancelinv = 1
