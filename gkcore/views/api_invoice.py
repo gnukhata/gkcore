@@ -1662,13 +1662,13 @@ The bills grid calld gkresult will return a list as it's value.
                             custtin  = customerdetails["custtan"]
                         except:
                             custtin = None
-                    
+
+                    #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billenteryflag to 0 else to 1 to create voucher for the same.
                     billentryflag = 1
                     billwiseentry=self.con.execute("select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "%(row["invid"],authDetails["orgcode"]))  
                     billwise_entry= billwiseentry.fetchone() 
                     if  billwise_entry > 0:
                         billentryflag = 0
-                    print billentryflag
 
                     #below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
                     cancelinv = 1
