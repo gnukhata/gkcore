@@ -114,6 +114,12 @@ class api_organisation(object):
                     dictofuqc.pop(unit,0)
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
+            if not columnExists("purchaseorder","roundoffflag"):
+                self.con.execute("alter table purchaseorder add column roundoffflag integer default 0")
+                self.con.execute("alter table delchal add column roundoffflag integer default 0")
+
+            # Round off is use to detect that total amount of invoice is rounded off or not.
+            # If the field is not exist then it will create field.
             # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.  
             if not columnExists("invoice","roundoffflag"):
                 self.con.execute("alter table invoice add column roundoffflag integer default 0")
