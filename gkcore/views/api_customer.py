@@ -62,7 +62,6 @@ class api_customer(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                print dataset
                 result = self.con.execute(gkdb.customerandsupplier.insert(),[dataset])
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
