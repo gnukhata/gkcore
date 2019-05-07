@@ -148,6 +148,8 @@ class api_purchaseorder(object):
                     "vehicleno" :podata["vehicleno"],
                     "paymentmode" :podata["paymentmode"],
                     "orgcode" :podata["orgcode"],
+                    "roundoffflag" :podata["roundoffflag"],
+                    "roundedoffvalue" : "%.2f"%float(round(podata["purchaseordertotal"]))
                     }
                 if podata["address"]!=None:
                     purchaseorderdetails["address"] = podata["address"]
