@@ -342,7 +342,7 @@ paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is s
 inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
 Roundoff field is to check wheather invoice total is rounded off or not. 
 0 = no round off 1 = invoice total amount rounded off.
-discountflag is used to check weather discount is in percent or in amount
+discflag is used to check weather discount is in percent or in amount
 1 = discount in amount, 16 = discount in percent.
 """
 invoice = Table('invoice',metadata,
@@ -361,7 +361,7 @@ invoice = Table('invoice',metadata,
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
     Column('roundoffflag',Integer,default=0),
-    Column('discountflag',Integer,default=1),
+    Column('discflag',Integer,default=1),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
@@ -398,6 +398,8 @@ billwise = Table('billwise',metadata,
 """
 This is the table which acts as a bin for canceled invoices.
 While these invoices canceled, they are for investigation purpose if need be.
+discflag is used to check weather discount is in percent or in amount
+1 = discount in amount, 16 = discount in percent.
 """
 invoicebin = Table('invoicebin',metadata,
     Column('invid',Integer,primary_key=True),
@@ -412,6 +414,7 @@ invoicebin = Table('invoicebin',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
+    Column('discflag',Integer,default=1),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
@@ -454,7 +457,7 @@ The key of this field is the 'productcode' while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty).
 Roundoff field is to check wheather delivery chalan total is rounded off or not. 
 0 = no round off 1 = total amount rounded off.
-discountflag is used to check weather discount is in percent or in amount
+discflag is used to check weather discount is in percent or in amount
 1 = discount in amount, 16 = discount in percent.
 """
 delchal = Table('delchal',metadata,
@@ -488,7 +491,7 @@ delchal = Table('delchal',metadata,
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
     Column('inoutflag',Integer,nullable=False),
     Column('roundoffflag',Integer,default=0),
-    Column('discountflag',Integer,default=1),
+    Column('discflag',Integer,default=1),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
