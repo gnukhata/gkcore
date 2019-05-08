@@ -703,7 +703,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 for pc in contentsData.keys():
                     #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                     if discounts != None:
-                        discount = discounts[pc]
+                        # discflag is for discount type. Percent=16/Amount=1
+                        # here we convert percent discount in to amount.
+                        if invrow["discflag"] == 16:
+                            qty = float(contentsData[str(pc)].keys()[0])
+                            price = float(contentsData[str(pc)].values()[0])
+                            totalWithoutDiscount = qty * price
+                            discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
+                        else:
+                            discount = discounts[pc]
                     else:
                         discount = 0.00
 
@@ -885,7 +893,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 for pc in contentsData.keys():
                     #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                     if discounts != None:
-                        discount = discounts[pc]
+                        # discflag is for discount type. Percent=16/Amount=1
+                        # here we convert percent discount in to amount.
+                        if invrow["discflag"] == 16:
+                            qty = float(contentsData[str(pc)].keys()[0])
+                            price = float(contentsData[str(pc)].values()[0])
+                            totalWithoutDiscount = qty * price
+                            discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
+                        else:
+                            discount = discounts[pc]
                     else:
                         discount = 0.00
 
@@ -1529,7 +1545,15 @@ The bills grid calld gkresult will return a list as it's value.
                     uom = unitnamrrow["unitname"]
                     freeqtys = invData["freeqty"]
                     if discounts != None:
-                        discount = discounts[eachitem]
+                        # discflag is for discount type. Percent=16/Amount=1
+                        # here we convert percent discount in to amount.
+                        if invData["discflag"] == 16:
+                            qty = float(invData[str(eachitem)].keys()[0])
+                            price = float(invData[str(eachitem)].values()[0])
+                            totalWithoutDiscount = qty * price
+                            discount = totalWithoutDiscount * float(float(discounts[eachitem]) / 100)
+                        else:
+                            discount = discounts[eachitem]
                     else:
                         discount = 0.00
                     if freeqtys != None:
@@ -1731,7 +1755,15 @@ The bills grid calld gkresult will return a list as it's value.
                             for productprice in row["contents"][productservice].iterkeys():
                                 ppu = productprice
                                 if row["discount"].has_key(productservice):
-                                    discount = float(row["discount"][productservice])
+                                    # discflag is for discount type. Percent=16/Amount=1
+                                    # here we convert percent discount in to amount.
+                                    if row["discflag"] == 16:
+                                        qty = float(row["contents"][str(productservice)].keys()[0])
+                                        price = float(row["contents"][str(productservice)].values()[0])
+                                        totalWithoutDiscount = qty * price
+                                        discount = totalWithoutDiscount * float(float(row["discount"][productservice]) / 100)
+                                    else:
+                                        discount = float(row["discount"][productservice])
                                 qty = float(row["contents"][productservice][productprice])
                                 #Calculating taxable amount(variable taxablevalue)
                                 if int(gsflag) == 7:
@@ -1861,7 +1893,15 @@ The bills grid calld gkresult will return a list as it's value.
                             for productprice in row["contents"][productservice].iterkeys():
                                 ppu = productprice
                                 if row["discount"].has_key(productservice):
-                                    discount = float(row["discount"][productservice])
+                                    # discflag is for discount type. Percent=16/Amount=1
+                                    # here we convert percent discount in to amount.
+                                    if row["discflag"] == 16:
+                                        qty = float(row["contents"][str(productservice)].keys()[0])
+                                        price = float(row["contents"][str(productservice)].values()[0])
+                                        totalWithoutDiscount = qty * price
+                                        discount = totalWithoutDiscount * float(float(row["discount"][productservice]) / 100)
+                                    else:
+                                        discount = float(row["discount"][productservice])
                                 qty = float(row["contents"][productservice][productprice])
                                 #Calculating taxable amount(variable taxablevalue)
                                 if int(gsflag) == 7:
