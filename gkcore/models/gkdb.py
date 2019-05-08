@@ -786,6 +786,7 @@ drcr =  Table('drcr', metadata,
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('userid',Integer,ForeignKey('users.userid')),
+    Column('roundoffflag',Integer,default=0),
     UniqueConstraint('orgcode','drcrno','dctypeflag'),
     UniqueConstraint('orgcode','invid','dctypeflag'),
     UniqueConstraint('orgcode','rnid','dctypeflag')
