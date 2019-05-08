@@ -113,6 +113,13 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+
+            # discount flag is use to check wheather discount is in percent or in amount.
+            # 1 = discount in amount, 16 = discount in percent.
+            if not columnExists("invoice","discountflag"):
+                self.con.execute("alter table invoice add column discountflag integer default 1")
+                self.con.execute("alter table delchal add column discountflag integer default 1")
+
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
             if not columnExists("purchaseorder","roundoffflag"):
