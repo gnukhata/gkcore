@@ -136,6 +136,9 @@ class api_drcr(object):
                 custSupDetails={}
                 drcrdata={}
                 drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"], "drcrmode":drcrrow["drcrmode"]}
+                # this will show that total amount is rounded of or not
+                drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
+                drcrdata["roundedoffvalue"] = "%.2f"%float(round(drcrrow["totreduct"]))
                 #reference is a dictionary which contains reference number as key and reference date as value.
                 #if reference field is not None then send refernce dictionary.
                 if drcrrow["reference"] == None:

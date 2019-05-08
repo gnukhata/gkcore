@@ -117,6 +117,7 @@ class api_organisation(object):
             if not columnExists("purchaseorder","roundoffflag"):
                 self.con.execute("alter table purchaseorder add column roundoffflag integer default 0")
                 self.con.execute("alter table delchal add column roundoffflag integer default 0")
+                self.con.execute("alter table drcr add column roundoffflag integer default 0")
 
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
