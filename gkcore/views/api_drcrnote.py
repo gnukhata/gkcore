@@ -72,7 +72,8 @@ class api_drcr(object):
                     if int(dataset["dctypeflag"]) == 3:
                         stockdataset["inout"] = 9
                         if int(vdataset["inoutflag"]) == 15:
-                            stockdataset["dcinvtnflag"] = dataset["dcinvtnflag"] #value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                             #value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                            stockdataset["dcinvtnflag"] = dataset["dcinvtnflag"]
                         else:
                             stockdataset["dcinvtnflag"] = 7
                     else:
