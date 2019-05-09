@@ -707,6 +707,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxAmt = totalTaxAmt + taxAmount
 
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                
+                #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
+                billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
+                billwise_entry= billwiseentry.fetchone() 
+                if (billwise_entry["invoicetotal"]>billwise_entry["amountpaid"]):
+                   inv["billentrysingleflag"] = 0
+                else:
+                   inv["billentrysingleflag"] = 1
+
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
@@ -1663,7 +1672,7 @@ The bills grid calld gkresult will return a list as it's value.
                         except:
                             custtin = None
 
-                    #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billenteryflag to 0 else to 1 to create voucher for the same.
+                    #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentryflag to 0 else to 1 to create voucher for the same.
                     billentryflag = 1
                     billwiseentry=self.con.execute("select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "%(row["invid"],authDetails["orgcode"]))  
                     billwise_entry= billwiseentry.fetchone() 
