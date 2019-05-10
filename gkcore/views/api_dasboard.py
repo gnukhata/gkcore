@@ -43,6 +43,111 @@ from operator import itemgetter
 from natsort import natsorted
 import calendar
 import math
+
+def getinvoiceatdashboard(inoutflag,typeflag,orgcode):
+    con = eng.connect()
+    fiveInvoiceslistdata=[]
+
+    # Invoices in descending order of amount.
+    if typeflag == 1:
+        fiveinvoices = con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == orgcode, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
+    # Invoices in ascending order of date.                
+    if typeflag == 4:
+        fiveinvoices = con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == orgcode, invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
+    fiveInvoiceslist = fiveinvoices.fetchall()
+
+    for inv in fiveInvoiceslist:
+        # for fetch customer or supplier name using cust id in invoice.
+        csd = con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
+        csDetails = csd.fetchone()
+        fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
+    return fiveInvoiceslistdata 
+
+def getinvoicecountbymonth(inoutflag,orgcode):
+    con = eng.connect()
+    #this is to fetch startdate and enddate
+    startenddate=con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+    startenddateprint=startenddate.fetchone()                
+                
+    #this is to fetch invoice totalamount month wise
+    monthlysortdata=con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,orgcode))
+                
+    monthlysortdataset=monthlysortdata.fetchall()  
+    #this is use to send 0 if month have 0 invoice count
+    invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
+    for count in monthlysortdataset:
+        invamount[int(count["month"])-1]=float(count["totalamount"])
+    return invamount
+                
+def topfivecustsup(inoutflag,orgcode):
+    con = eng.connect()
+    # this is to fetch top five customer which is sort by total amount.
+    if inoutflag == 15:
+        topfivecust= con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"%(orgcode))
+        topfivecustlist=topfivecust.fetchall()
+    # this is to fetch top five suppplier which is sort by total invoice.
+    else:
+        topfivecust= con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"%(orgcode))
+        topfivecustlist=topfivecust.fetchall()
+
+    topfivecustdetails=[]
+    for inv in topfivecustlist:
+        # for fetch customer or supplier name using cust id in invoice.
+        csd = con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
+        csDetails = csd.fetchone()
+        topfivecustdetails.append({"custname":csDetails["custname"],"data":float(inv["data"])})
+    return topfivecustdetails
+
+def topfiveprodsev(orgcode):
+    con = eng.connect()
+    # this is to fetch top five product/service  which is sort by  invoice count. 
+    topfiveprod= con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(orgcode))
+    topfiveprodlist=topfiveprod.fetchall()
+                
+    prodinfolist=[]
+    for prodinfo in topfiveprodlist:
+        proddesc=  con.execute("select productdesc as proddesc from product where productcode=%d and orgcode=%d"%(int(prodinfo["productcode"]),orgcode))
+        proddesclist=proddesc.fetchone()
+        prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
+    return prodinfolist       
+    
+def  delchalcountbymonth(inoutflag,orgcode):
+    con = eng.connect()
+    #this is to fetch startdate and enddate
+    startenddate=con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+    startenddateprint=startenddate.fetchone()                
+
+    #this is to fetch delchal count month wise
+    monthlysortdata=con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,orgcode))
+    monthlysortdataset=monthlysortdata.fetchall()
+                
+    #this is use to send 0 if month have 0 delchal count
+    totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
+    for count in monthlysortdataset:
+        totalamount[int(count["month"])-1]=float(count["total_qty"])
+    return totalamount    
+
+def transfernote(goid,orgcode):
+    con = eng.connect()
+    #this is to fetch startdate and enddate
+    startenddate= con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == orgcode))
+    startenddateprint=startenddate.fetchone()                
+    #this is to fetch in transfer note count month wise
+    monthlysortindata= con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),orgcode,goid))
+    monthlysortindataset=monthlysortindata.fetchall() 
+
+    #this is to fetch out transfer note count month wise
+    monthlysortoutdata= con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and inout=9 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),orgcode,goid))
+    monthlysortoutdataset=monthlysortoutdata.fetchall()  
+    #this is use to send 0 if month have 0 invoice count
+    innotecount=[0,0,0,0,0,0,0,0,0,0,0,0]
+    outnotecount=[0,0,0,0,0,0,0,0,0,0,0,0]
+    for count in monthlysortindataset:
+        innotecount[int(count["month"])-1]=count["count"]
+    for count in monthlysortoutdataset:
+        outnotecount[int(count["month"])-1]=count["count"]
+    return innotecount, outnotecount     
+
 @view_defaults(route_name='dashboard')
 class api_dashboard(object):
  
@@ -66,21 +171,24 @@ class api_dashboard(object):
                 self.con = eng.connect()
                 inoutflag = int(self.request.params["inoutflag"])              
                 typeflag = int(self.request.params["typeflag"])
-                fiveInvoiceslistdata=[]
+                orgcode = authDetails["orgcode"]
 
-                # Invoices in descending order of amount.
-                if typeflag == 1:
-                    fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
-                # Invoices in ascending order of date.                
-                if typeflag == 4:
-                    fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
-                fiveInvoiceslist = fiveinvoices.fetchall()
+                fiveInvoiceslistdata=getinvoiceatdashboard(inoutflag,typeflag,orgcode)
+                # fiveInvoiceslistdata=[]
 
-                for inv in fiveInvoiceslist:
-                    # for fetch customer or supplier name using cust id in invoice.
-                    csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
-                    csDetails = csd.fetchone()
-                    fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
+                # # Invoices in descending order of amount.
+                # if typeflag == 1:
+                #     fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
+                # # Invoices in ascending order of date.                
+                # if typeflag == 4:
+                #     fiveinvoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == authDetails["orgcode"], invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
+                # fiveInvoiceslist = fiveinvoices.fetchall()
+
+                # for inv in fiveInvoiceslist:
+                #     # for fetch customer or supplier name using cust id in invoice.
+                #     csd = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
+                #     csDetails = csd.fetchone()
+                #     fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
 
                 return{"gkstatus":enumdict["Success"],"invoices":fiveInvoiceslistdata}
                 self.con.close()
@@ -104,19 +212,22 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
                 inoutflag = int(self.request.params["inoutflag"])   
+                orgcode = authDetails["orgcode"]
+                invamount = getinvoicecountbymonth(inoutflag,orgcode)
 
-                #this is to fetch startdate and enddate
-                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
-                startenddateprint=startenddate.fetchone()                
+                # #this is to fetch startdate and enddate
+                # startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
+                # startenddateprint=startenddate.fetchone()                
                 
-                #this is to fetch invoice totalamount month wise
-                monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
-                # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
-                monthlysortdataset=monthlysortdata.fetchall()  
-                #this is use to send 0 if month have 0 invoice count
-                invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
-                for count in monthlysortdataset:
-                    invamount[int(count["month"])-1]=float(count["totalamount"])
+                # #this is to fetch invoice totalamount month wise
+                # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                # # monthlysortdata=self.con.execute("select extract(month from invoicedate) as month, count(invid) as inv_count from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and orgcode= %d group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                # monthlysortdataset=monthlysortdata.fetchall()  
+                # #this is use to send 0 if month have 0 invoice count
+                # invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
+                # for count in monthlysortdataset:
+                #     invamount[int(count["month"])-1]=float(count["totalamount"])
+               
                 return{"gkstatus":enumdict["Success"],"invcount":invamount}
                 self.con.close()
             except:
@@ -137,23 +248,27 @@ class api_dashboard(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             try:
-                inoutflag = int(self.request.params["inoutflag"])   
                 self.con = eng.connect()
-                # this is to fetch top five customer which is sort by total amount.
-                if inoutflag == 15:
-                    topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
-                    topfivecustlist=topfivecust.fetchall()
-                    # this is to fetch top five suppplier which is sort by total invoice.
-                else:
-                    topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
-                    topfivecustlist=topfivecust.fetchall()
+                inoutflag = int(self.request.params["inoutflag"])  
+                orgcode = authDetails["orgcode"] 
+                topfivecustdetails=topfivecustsup(inoutflag,orgcode)
 
-                topfivecustdetails=[]
-                for inv in topfivecustlist:
-                    # for fetch customer or supplier name using cust id in invoice.
-                    csd = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
-                    csDetails = csd.fetchone()
-                    topfivecustdetails.append({"custname":csDetails["custname"],"data":float(inv["data"])})
+                # # this is to fetch top five customer which is sort by total amount.
+                # if inoutflag == 15:
+                #     topfivecust=self.con.execute("select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                #     topfivecustlist=topfivecust.fetchall()
+                #     # this is to fetch top five suppplier which is sort by total invoice.
+                # else:
+                #     topfivecust=self.con.execute("select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"%(authDetails["orgcode"]))
+                #     topfivecustlist=topfivecust.fetchall()
+
+                # topfivecustdetails=[]
+                # for inv in topfivecustlist:
+                #     # for fetch customer or supplier name using cust id in invoice.
+                #     csd = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==authDetails["orgcode"])))
+                #     csDetails = csd.fetchone()
+                #     topfivecustdetails.append({"custname":csDetails["custname"],"data":float(inv["data"])})
+                
                 return{"gkstatus":enumdict["Success"],"topfivecustlist":topfivecustdetails}
                 self.con.close()
             except:
@@ -175,16 +290,18 @@ class api_dashboard(object):
         else:
             try:
                 self.con = eng.connect()
+                orgcode = authDetails["orgcode"]
+                prodinfolist=topfiveprodsev(orgcode)
 
-                # this is to fetch top five product/service  which is sort by  invoice count. 
-                topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
-                topfiveprodlist=topfiveprod.fetchall()
+                # # this is to fetch top five product/service  which is sort by  invoice count. 
+                # topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
+                # topfiveprodlist=topfiveprod.fetchall()
                 
-                prodinfolist=[]
-                for prodinfo in topfiveprodlist:
-                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodinfo["productcode"])))
-                    proddesclist=proddesc.fetchone()
-                    prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
+                # prodinfolist=[]
+                # for prodinfo in topfiveprodlist:
+                #     proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodinfo["productcode"])))
+                #     proddesclist=proddesc.fetchone()
+                #     prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
                 return{"gkstatus":enumdict["Success"],"topfiveprod":prodinfolist}
                 self.con.close()
             except:
@@ -207,19 +324,22 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
                 inoutflag = int(self.request.params["inoutflag"])   
+                orgcode = authDetails["orgcode"]
 
-                #this is to fetch startdate and enddate
-                startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
-                startenddateprint=startenddate.fetchone()                
+                totalamount=delchalcountbymonth(inoutflag,orgcode)
 
-                #this is to fetch delchal count month wise
-                monthlysortdata=self.con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
-                monthlysortdataset=monthlysortdata.fetchall()
+                # #this is to fetch startdate and enddate
+                # startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
+                # startenddateprint=startenddate.fetchone()                
+
+                # #this is to fetch delchal count month wise
+                # monthlysortdata=self.con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,authDetails["orgcode"]))
+                # monthlysortdataset=monthlysortdata.fetchall()
                 
-                #this is use to send 0 if month have 0 delchal count
-                totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
-                for count in monthlysortdataset:
-                    totalamount[int(count["month"])-1]=float(count["total_qty"])
+                # #this is use to send 0 if month have 0 delchal count
+                # totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
+                # for count in monthlysortdataset:
+                #     totalamount[int(count["month"])-1]=float(count["total_qty"])
                 return{"gkstatus":enumdict["Success"],"delchalcount":totalamount}
                 self.con.close()
             except:
@@ -243,6 +363,8 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
                 goid = self.request.params["goid"]
+                orgcode = authDetails["orgcode"]
+
                 #this is to fetch startdate and enddate
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 startenddateprint=startenddate.fetchone()                
