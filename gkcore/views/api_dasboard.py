@@ -43,6 +43,43 @@ from operator import itemgetter
 from natsort import natsorted
 import calendar
 import math
+from gkcore.views.api_user import getUserRole
+from gkcore.views.api_godown import getusergodowns
+
+
+def amountwiseinvoice(inoutflag,orgcode):
+    try:
+        con = eng.connect()
+        fiveInvoiceslistdata=[]
+        # Invoices in descending order of amount.
+        fiveinvoices = con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == orgcode, invoice.c.inoutflag == inoutflag)).order_by(desc(invoice.c.invoicetotal - invoice.c.amountpaid)).limit(5))
+        fiveInvoiceslist = fiveinvoices.fetchall()
+        for inv in fiveInvoiceslist:
+            # for fetch customer or supplier name using cust id in invoice.
+            csd = con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
+            csDetails = csd.fetchone()
+            fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
+        return {"gkstatus":enumdict["Success"],"fiveInvoiceslistdata":fiveInvoiceslistdata}
+    except:
+        return{"gkstatus":enumdict["ConnectionFailed"]}
+
+def datewiseinvoice(inoutflag,orgcode):
+    try:
+        con = eng.connect()
+        fiveInvoiceslistdata=[]
+    # Invoices in ascending order of date.                
+        fiveinvoices = con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9,invoice.c.orgcode == orgcode, invoice.c.inoutflag == inoutflag)).order_by(invoice.c.invoicedate).limit(5))
+        fiveInvoiceslist = fiveinvoices.fetchall()
+
+        for inv in fiveInvoiceslist:
+            # for fetch customer or supplier name using cust id in invoice.
+            csd = con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
+            csDetails = csd.fetchone()
+            fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
+        return {"gkstatus":enumdict["Success"],"fiveInvoiceslistdata":fiveInvoiceslistdata}
+    except:
+        return{"gkstatus":enumdict["ConnectionFailed"]}
+
 
 def getinvoiceatdashboard(inoutflag,typeflag,orgcode):
     try:
@@ -61,7 +98,7 @@ def getinvoiceatdashboard(inoutflag,typeflag,orgcode):
             csd = con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
             csDetails = csd.fetchone()
             fiveInvoiceslistdata.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":csDetails["custname"],"csflag":csDetails["csflag"]})
-        return {"fiveInvoiceslistdata":fiveInvoiceslistdata}
+        return {"gkstatus":enumdict["Success"],"fiveInvoiceslistdata":fiveInvoiceslistdata}
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -81,7 +118,7 @@ def getinvoicecountbymonth(inoutflag,orgcode):
         invamount=[0,0,0,0,0,0,0,0,0,0,0,0]
         for count in monthlysortdataset:
             invamount[int(count["month"])-1]=float(count["totalamount"])
-        return {"invamount":invamount}
+        return {"gkstatus":enumdict["Success"],"invamount":invamount}
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
                     
@@ -103,7 +140,7 @@ def topfivecustsup(inoutflag,orgcode):
             csd = con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.custid == inv["custid"],customerandsupplier.c.orgcode==orgcode)))
             csDetails = csd.fetchone()
             topfivecustdetails.append({"custname":csDetails["custname"],"data":float(inv["data"])})
-        return {"topfivecustdetails":topfivecustdetails}
+        return {"gkstatus":enumdict["Success"],"topfivecustdetails":topfivecustdetails}
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -119,7 +156,7 @@ def topfiveprodsev(orgcode):
             proddesc=  con.execute("select productdesc as proddesc from product where productcode=%d and orgcode=%d"%(int(prodinfo["productcode"]),orgcode))
             proddesclist=proddesc.fetchone()
             prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
-        return {"prodinfolist":prodinfolist}       
+        return {"gkstatus":enumdict["Success"],"prodinfolist":prodinfolist}       
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
     
@@ -138,7 +175,7 @@ def  delchalcountbymonth(inoutflag,orgcode):
         totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
         for count in monthlysortdataset:
             totalamount[int(count["month"])-1]=float(count["total_qty"])
-        return {"totalamount":totalamount}    
+        return {"gkstatus":enumdict["Success"],"totalamount":totalamount}    
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -163,7 +200,7 @@ def transfernote(goid,orgcode):
             innotecount[int(count["month"])-1]=count["count"]
         for count in monthlysortoutdataset:
             outnotecount[int(count["month"])-1]=count["count"]
-        return{"innotecount":innotecount, "outnotecount":outnotecount}    
+        return{"gkstatus":enumdict["Success"],"innotecount":innotecount, "outnotecount":outnotecount}    
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -177,7 +214,7 @@ def godowndesc(userid,orgcode):
             godownname=con.execute("select goname as goname from godown where goid =%d and orgcode=%d"%(goid["goid"],orgcode))
             godownnameresult=godownname.fetchone()
             goname.append({"goid":goid["goid"],"goname":godownnameresult[0]})
-        return{"goname":goname}
+        return{"gkstatus":enumdict["Success"],"goname":goname}
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
                 
@@ -202,19 +239,39 @@ class api_dashboard(object):
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
             # try:
+                userinfo = getUserRole(authDetails["userid"])
+                userrole= userinfo["gkresult"]["userrole"]
                 orgcode =authDetails["orgcode"]
-                if self.request.params["userrole"] == -1:
+                if userrole == -1 or userrole == 0:
+                    amountwiise_purchaseinv=amountwiseinvoice(9,orgcode)
+                    datewise_purchaseinv=datewiseinvoice(9,orgcode)
+                    amountwiise_saleinv=amountwiseinvoice(15,orgcode)
+                    datewise_saleinv=datewiseinvoice(15,orgcode)
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
-                    cust_data=topfivecustsup(15,orgcode)
                     sup_data=topfivecustsup(9,orgcode)
-                    mostsold_prodsev=topfiveprodsev(orgcode)
-                    return{"gkstatus":enumdict["Success"],"puchaseinvcount":purchase_inv,"saleinvcount":sale_inv,"topfivecustlist":cust_data,"topfivesuplist":sup_data,"mostsoldprodsev":mostsold_prodsev}
-                elif self.request.params["userrole"] == 3:
-                    goid=self.request.params["goid"]
-                    dataset =transfernote(goid,orgcode)
-                    return{"gkstatus":enumdict["Success"],"innotecount":dataset["innotecount"],"outnotecount":dataset["outnotecount"]}
-                    print transfernote
+                    cust_data=topfivecustsup(15,orgcode)
+                    mostbought_prodsev=topfiveprodsev(orgcode)
+                    return{"gkstatus":enumdict["Success"],"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}
+                elif userrole == 1:
+                    amountwiise_purchaseinv=amountwiseinvoice(9,orgcode)
+                    datewise_purchaseinv=datewiseinvoice(9,orgcode)
+                    amountwiise_saleinv=amountwiseinvoice(15,orgcode)
+                    datewise_saleinv=datewiseinvoice(15,orgcode)
+                    purchase_inv=getinvoicecountbymonth(9,orgcode)
+                    sale_inv=getinvoicecountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(9,orgcode)
+                    delchal_in=delchalcountbymonth(15,orgcode)
+                    sup_data=topfivecustsup(9,orgcode)
+                    cust_data=topfivecustsup(15,orgcode)
+                    mostbought_prodsev=topfiveprodsev(orgcode)
+                    return{"gkstatus":enumdict["Success"],"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin": ["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}   
+                elif userrole == 2:
+                    purchase_inv=getinvoicecountbymonth(9,orgcode)
+                    sale_inv=getinvoicecountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(9,orgcode)
+                    delchal_in=delchalcountbymonth(15,orgcode)
+                    return{"gkstatus":enumdict["Success"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchal_in":delchal_in["totalamount"]}
             # except:
             #     return{"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -234,8 +291,6 @@ class api_dashboard(object):
                 inoutflag = int(self.request.params["inoutflag"])              
                 typeflag = int(self.request.params["typeflag"])
                 orgcode = authDetails["orgcode"]
-
-                # fiveInvoiceslistdata=getinvoiceatdashboard(inoutflag,typeflag,orgcode)
                 fiveInvoiceslistdata=[]
 
                 # Invoices in descending order of amount.
@@ -426,7 +481,6 @@ class api_dashboard(object):
         else:
             # try:
                 goid = self.request.params["goid"]
-                print goid
                 orgcode = authDetails["orgcode"]
 
                 dataset=transfernote(goid,orgcode)
@@ -471,19 +525,19 @@ class api_dashboard(object):
             try:
                 userid=authDetails["userid"]
                 orgcode=authDetails["orgcode"]
-                goname=godowndesc(userid,orgcode)
-                # self.con = eng.connect()
-                # godownid=self.con.execute("select goid from usergodown where orgcode=%d and userid=%d"%(authDetails["orgcode"],authDetails["userid"]))
-                # godownidresult=godownid.fetchall()
-                # goname=[]
-                # for goid in godownidresult:
-                #     godownname=self.con.execute("select goname as goname from godown where goid =%d and orgcode=%d"%(goid["goid"],authDetails["orgcode"]))
-                #     godownnameresult=godownname.fetchone()
-                #     goname.append({"goid":goid["goid"],"goname":godownnameresult[0]})
-                return{"gkstatus":enumdict["Success"],"goname":goname["goname"]}
-                # self.con.close()
+                # goname=godowndesc(userid,orgcode)
+                self.con = eng.connect()
+                godownid=self.con.execute("select goid from usergodown where orgcode=%d and userid=%d"%(authDetails["orgcode"],authDetails["userid"]))
+                godownidresult=godownid.fetchall()
+                goname=[]
+                for goid in godownidresult:
+                    godownname=self.con.execute("select goname as goname from godown where goid =%d and orgcode=%d"%(goid["goid"],authDetails["orgcode"]))
+                    godownnameresult=godownname.fetchone()
+                    goname.append({"goid":goid["goid"],"goname":godownnameresult[0]})
+                return{"gkstatus":enumdict["Success"],"goname":goname}
+                self.con.close()
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
-                # self.con.close()
-            # finally:
-                # self.con.close()
+                self.con.close()
+            finally:
+                self.con.close()
