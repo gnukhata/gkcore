@@ -170,11 +170,12 @@ def  delchalcountbymonth(inoutflag,orgcode):
         #this is to fetch delchal count month wise
         monthlysortdata=con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,orgcode))
         monthlysortdataset=monthlysortdata.fetchall()
-                    
+                            
         #this is use to send 0 if month have 0 delchal count
         totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
         for count in monthlysortdataset:
             totalamount[int(count["month"])-1]=float(count["total_qty"])
+        print totalamount
         return {"gkstatus":enumdict["Success"],"totalamount":totalamount}    
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -238,7 +239,7 @@ class api_dashboard(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 userinfo = getUserRole(authDetails["userid"])
                 userrole= userinfo["gkresult"]["userrole"]
                 orgcode =authDetails["orgcode"]
@@ -252,8 +253,8 @@ class api_dashboard(object):
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
-                    return{"gkstatus":enumdict["Success"],"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}
-                elif userrole == 1:
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}}
+                if userrole == 1:
                     amountwiise_purchaseinv=amountwiseinvoice(9,orgcode)
                     datewise_purchaseinv=datewiseinvoice(9,orgcode)
                     amountwiise_saleinv=amountwiseinvoice(15,orgcode)
@@ -265,15 +266,19 @@ class api_dashboard(object):
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
-                    return{"gkstatus":enumdict["Success"],"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin": ["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}   
-                elif userrole == 2:
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}}  
+                if userrole == 2:
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
                     delchal_out=delchalcountbymonth(9,orgcode)
                     delchal_in=delchalcountbymonth(15,orgcode)
-                    return{"gkstatus":enumdict["Success"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchal_in":delchal_in["totalamount"]}
-            # except:
-            #     return{"gkstatus":enumdict["ConnectionFailed"]}
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
+                if userrole == 3:
+                    delchal_out=delchalcountbymonth(9,orgcode)
+                    delchal_in=delchalcountbymonth(15,orgcode)
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
 
     #this function is use to show top five unpaid invoice list at dashboard
     @view_config(request_method='GET',renderer='json', request_param="type=fiveinvoicelist")
