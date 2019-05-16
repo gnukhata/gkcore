@@ -417,14 +417,12 @@ class api_dashboard(object):
                 # # this is to fetch top five product/service  which is sort by  invoice count. 
                 # topfiveprod=self.con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
                 # topfiveprodlist=topfiveprod.fetchall()
-                # print topfiveprodlist
                 
                 # prodinfolist=[]
                 # for prodinfo in topfiveprodlist:
                 #     proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodinfo["productcode"])))
                 #     proddesclist=proddesc.fetchone()
                 #     prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
-                # print prodinfolist
                 return{"gkstatus":enumdict["Success"],"topfiveprod":prodinfolist["prodinfolist"]}
                 # self.con.close()
             except:
