@@ -44,7 +44,7 @@ from natsort import natsorted
 import calendar
 import math
 from gkcore.views.api_user import getUserRole
-
+from gkcore.views.api_reports import stockonhandfun
 #This function is use to show amount wise top five unpaid invoice list at dashboard
 def amountwiseinvoice(inoutflag,orgcode):
     try:
@@ -184,6 +184,39 @@ def  delchalcountbymonth(inoutflag,orgcode):
     finally:
         con.close()
 
+def stockonhanddashboard(orgcode):
+    try:
+        con = eng.connect()
+        yearenddate=con.execute("select yearend as calculateto from organisation where orgcode=%d"%(orgcode))
+        yearenddateresult=yearenddate.fetchone()
+        calculateto= datetime.strftime(yearenddateresult["calculateto"],'%Y-%m-%d')
+        # this is use to fetch top five product/service  which is order by  invoice count.  
+        topfiveprod=con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(orgcode))
+        topfiveprodlist=topfiveprod.fetchall()
+        prodcodedesclist=[]
+        for prodcode in topfiveprodlist:
+            proddesc=con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
+            proddesclist=proddesc.fetchone()
+            prodcodedesclist.append({"prodcode":prodcode["productcode"],"proddesc":proddesclist["proddesc"]})
+
+        prodname=[]
+        stockresultlist=[]    
+        for i in prodcodedesclist:
+            prodname.append({"prodname":i["proddesc"]})
+            orgcode = orgcode
+            productCode = i["prodcode"]
+            endDate =datetime.strptime(str(calculateto),"%Y-%m-%d")
+            stockresult=stockonhandfun(orgcode, productCode,endDate)
+            stockresultlist.append(stockresult)
+                    
+        con.close()
+        return {"gkstatus":enumdict["Success"],"stockresultlist":stockresultlist,"productname":prodname}           
+    except:
+        con.close()  
+        return{"gkstatus":enumdict["ConnectionFailed"]}
+    finally:
+        con.close()
+
 @view_defaults(route_name='dashboard')
 class api_dashboard(object):
  
@@ -218,7 +251,8 @@ class api_dashboard(object):
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
-                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}}
+                    stockonhanddata = stockonhanddashboard(orgcode)
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata}}
                 if userrole == 1:
                     amountwiise_purchaseinv=amountwiseinvoice(9,orgcode)
                     datewise_purchaseinv=datewiseinvoice(9,orgcode)
@@ -231,7 +265,8 @@ class api_dashboard(object):
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
-                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"]}}  
+                    stockonhanddata = stockonhanddashboard(orgcode)
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata}}  
                 if userrole == 2:
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
@@ -316,3 +351,46 @@ class api_dashboard(object):
                 self.con.close()
             finally:
                 self.con.close()
+    
+    # this fuction returns most sold product and stock on hand count for daashboard
+    @view_config(request_method='GET',renderer='json', request_param="type=stockonhandfordashboard")
+    def stockonhandfordashboard(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            # try:
+                self.con = eng.connect()
+
+                yearenddate=self.con.execute("select yearend as calculateto from organisation where orgcode=%d"%(authDetails["orgcode"]))
+                yearenddateresult=yearenddate.fetchone()
+                calculateto= datetime.strftime(yearenddateresult["calculateto"],'%Y-%m-%d')
+     
+
+                # this is use to fetch top five product/service  which is order by  invoice count.  
+                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
+                topfiveprodlist=topfiveprod.fetchall()
+                prodcodedesclist=[]
+                for prodcode in topfiveprodlist:
+                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
+                    proddesclist=proddesc.fetchone()
+                    prodcodedesclist.append({"prodcode":prodcode["productcode"],"proddesc":proddesclist["proddesc"]})
+
+                prodname=[]
+                stockresultlist=[]    
+                for i in prodcodedesclist:
+                    prodname.append({"prodname":i["proddesc"]})
+                    orgcode = authDetails["orgcode"]
+                    productCode = i["prodcode"]
+                    endDate =datetime.strptime(str(calculateto),"%Y-%m-%d")
+                    stockresult=stockonhandfun(orgcode, productCode,endDate)
+                    stockresultlist.append(stockresult)
+                self.con.close()
+                return {"gkstatus":enumdict["Success"],"gkresult":stockresultlist,"productname":prodname}           
+            # except:
+            #     self.con.close()
+            #     return {"gkstatus":enumdict["ConnectionFailed"]}
