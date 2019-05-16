@@ -175,7 +175,6 @@ def  delchalcountbymonth(inoutflag,orgcode):
         totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
         for count in monthlysortdataset:
             totalamount[int(count["month"])-1]=float(count["total_qty"])
-        print totalamount
         return {"gkstatus":enumdict["Success"],"totalamount":totalamount}    
     except:
         return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -273,10 +272,10 @@ class api_dashboard(object):
                     delchal_out=delchalcountbymonth(9,orgcode)
                     delchal_in=delchalcountbymonth(15,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
-                if userrole == 3:
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
-                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
+                # if userrole == 3:
+                #     delchal_out=delchalcountbymonth(9,orgcode)
+                #     delchal_in=delchalcountbymonth(15,orgcode)
+                #     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
 
