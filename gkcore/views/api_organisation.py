@@ -121,8 +121,8 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add column discflag integer default 1")
                 self.con.execute("alter table delchal add column discflag integer default 1")
                 # in product fllowing two collumns are added for discount in percent and in amount field.
-                self.con.execute("alter table product add column discountpercent numeric(13,2) default 0.00")
-                self.con.execute("alter table product add column discountamount numeric(13,2) default 0.00")
+                self.con.execute("alter table product add column percentdiscount numeric(5,2) default 0.00")
+                self.con.execute("alter table product add column amountdiscount numeric(13,2) default 0.00")
 
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
