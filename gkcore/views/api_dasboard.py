@@ -39,12 +39,15 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts,organisation
 from datetime import datetime, date
+from monthdelta import monthdelta
 from operator import itemgetter
 from natsort import natsorted
 import calendar
 import math
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import stockonhandfun
+from gkcore.views.api_reports import calculateBalance
+
 #This function is use to show amount wise top five unpaid invoice list at dashboard
 def amountwiseinvoice(inoutflag,orgcode):
     try:
@@ -65,6 +68,7 @@ def amountwiseinvoice(inoutflag,orgcode):
         return{"gkstatus":enumdict["ConnectionFailed"]}
     finally:
         con.close()
+
 
 #This function is use to show date wise top five unpaid invoice list at dashboard
 def datewiseinvoice(inoutflag,orgcode):
@@ -218,6 +222,63 @@ def stockonhanddashboard(orgcode):
     finally:
         con.close()
 
+# this fuction returns month wise bank and cash sub group balance of current assets group on daashboard
+def cashbankbalance(orgcode):
+    try:
+        con = eng.connect()
+        accountcodebank=con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Bank' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
+        accountCodeBank=accountcodebank.fetchall()
+        accountcodecash=con.execute("select accountcode as accountcode from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Cash' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
+        accountCodeCash=accountcodecash.fetchall()
+
+        financialstart=con.execute("select yearstart as financialstart, yearend as financialend from organisation where orgcode=%d"% orgcode)
+        financialStartresult=financialstart.fetchone()
+        financialStart= datetime.strftime(financialStartresult["financialstart"],'%Y-%m-%d')
+        financialEnd= financialStartresult["financialend"]
+        monthCounter = 1
+        monthname=[]
+        bankbalancedata=[] 
+        cashbalancedata=[]
+        balancedata={}
+
+        startMonthDate=financialStartresult["financialstart"]
+        endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
+        while endMonthDate <= financialEnd:
+            month=calendar.month_abbr[startMonthDate.month]
+            monthname.append(month)
+            bankbalance = 0.00
+            cashbalance = 0.00
+            for bal in accountCodeBank:                
+                calbaldata = calculateBalance(con,bal["accountcode"],str(financialStart), str(startMonthDate), str(endMonthDate))
+                if (calbaldata["baltype"] == 'Cr'):
+                    bankbalance = float(bankbalance) - float(calbaldata["curbal"])
+                if (calbaldata["baltype"] == 'Dr'):
+                    bankbalance = float(bankbalance) + float(calbaldata["curbal"])
+            bankbalancedata.append(bankbalance)
+
+            for bal in accountCodeCash:
+                calbaldata = calculateBalance(con,bal["accountcode"],str(financialStart), str(financialStart), str(endMonthDate))
+                if (calbaldata["baltype"] == 'Cr'):
+                    cashbalance = float(cashbalance) - float(calbaldata["curbal"])
+                if (calbaldata["baltype"] == 'Dr'):
+                    cashbalance = float(cashbalance) + float(calbaldata["curbal"])
+            cashbalancedata.append(cashbalance)
+
+            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + monthdelta(monthCounter)
+            endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
+
+            monthCounter  +=1
+        balancedata["monthname"] = monthname
+        balancedata["bankbalancedata"] = bankbalancedata
+        balancedata["cashbalancedata"] = cashbalancedata
+        con.close()
+        return {"gkstatus":enumdict["Success"],"balancedata":balancedata}           
+    except:
+        con.close()  
+        return{"gkstatus":enumdict["ConnectionFailed"]}
+    finally:
+        con.close()    
+
 @view_defaults(route_name='dashboard')
 class api_dashboard(object):
  
@@ -253,7 +314,8 @@ class api_dashboard(object):
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
                     stockonhanddata = stockonhanddashboard(orgcode)
-                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata}}
+                    balancedata=cashbankbalance(orgcode)
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"topfivecustlist":cust_data["topfivecustdetails"],"topfivesuplist":sup_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata,"balancedata":balancedata["balancedata"]}}
                 if userrole == 1:
                     amountwiise_purchaseinv=amountwiseinvoice(9,orgcode)
                     datewise_purchaseinv=datewiseinvoice(9,orgcode)
@@ -267,7 +329,8 @@ class api_dashboard(object):
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
                     stockonhanddata = stockonhanddashboard(orgcode)
-                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata}}  
+                    balancedata=cashbankbalance(orgcode)
+                    return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"amtwisepurinv":amountwiise_purchaseinv["fiveInvoiceslistdata"],"datewisepurinv":datewise_purchaseinv["fiveInvoiceslistdata"],"amtwisesaleinv":amountwiise_saleinv["fiveInvoiceslistdata"],"datewisesaleinv":datewise_saleinv["fiveInvoiceslistdata"],"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"],"topfivesuplist":sup_data["topfivecustdetails"],"topfivecustlist":cust_data["topfivecustdetails"],"mostboughtprodsev":mostbought_prodsev["prodinfolist"],"stockonhanddata":stockonhanddata,"balancedata":balancedata["balancedata"]}}  
                 if userrole == 2:
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
@@ -350,6 +413,60 @@ class api_dashboard(object):
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
                 self.con.close()
+            finally:
+                self.con.close()
+    
+    @view_config(request_method='GET',renderer='json', request_param="type=cashbankaccountdata")
+    def cashbankaccountdata(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orgcode = authDetails["orgcode"]
+                accountcodebank=self.con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Bank' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
+                accountCodeBank=accountcodebank.fetchall()
+                accountcodecash=self.con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Cash' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
+                accountCodeCash=accountcodecash.fetchall()
+
+                financialstart=self.con.execute("select yearstart as financialstart, yearend as financialend from organisation where orgcode=%d"% orgcode)
+                financialStartresult=financialstart.fetchone()
+                financialStart= datetime.strftime(financialStartresult["financialstart"],'%Y-%m-%d')
+                financialEnd= datetime.strftime(financialStartresult["financialend"],'%Y-%m-%d')
+                bankbalance = 0.00
+                cashbalance = 0.00
+                bankaccdata=[]
+                cashaccdata=[]
+                for bankbal in accountCodeBank:
+                    bankbalancedata={}
+                    calbaldata = calculateBalance(self.con,bankbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
+                    if (calbaldata["baltype"] == 'Cr'):
+                        bankbalance = float(bankbalance) - float(calbaldata["curbal"])
+                    if (calbaldata["baltype"] == 'Dr'):
+                        bankbalance = float(bankbalance) + float(calbaldata["curbal"])
+                    bankbalancedata["bankbalance"]=bankbalance
+                    bankbalancedata["bankaccname"]=bankbal["accountname"]
+                    bankaccdata.append(bankbalancedata)
+                for cashbal in accountCodeCash:
+                    cashbalancedata={}
+                    calbaldata = calculateBalance(self.con,cashbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
+                    if (calbaldata["baltype"] == 'Cr'):
+                        cashbalance = float(cashbalance) - float(calbaldata["curbal"])
+                    if (calbaldata["baltype"] == 'Dr'):
+                        cashbalance = float(cashbalance) + float(calbaldata["curbal"])
+                    cashbalancedata["cashbalance"]=cashbalance
+                    cashbalancedata["cashaccname"]=cashbal["accountname"]
+                    cashaccdata.append(cashbalancedata)
+                self.con.close()            
+                return{"gkstatus":enumdict["Success"],"bankaccdata":bankaccdata,"cashaccdata":cashaccdata}               
+            except:
+                self.con.close()
+                return{"gkstatus":enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
     
