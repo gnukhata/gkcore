@@ -255,7 +255,6 @@ def cashbankbalance(orgcode):
                 if (calbaldata["baltype"] == 'Dr'):
                     bankbalance = float(bankbalance) + float(calbaldata["curbal"])
             bankbalancedata.append(bankbalance)
-
             for bal in accountCodeCash:
                 calbaldata = calculateBalance(con,bal["accountcode"],str(financialStart), str(financialStart), str(endMonthDate))
                 if (calbaldata["baltype"] == 'Cr'):
@@ -445,22 +444,16 @@ class api_dashboard(object):
                 for bankbal in accountCodeBank:
                     bankbalancedata={}
                     calbaldata = calculateBalance(self.con,bankbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
-                    if (calbaldata["baltype"] == 'Cr'):
-                        bankbalance = float(bankbalance) - float(calbaldata["curbal"])
-                    if (calbaldata["baltype"] == 'Dr'):
-                        bankbalance = float(bankbalance) + float(calbaldata["curbal"])
-                    bankbalancedata["bankbalance"]=bankbalance
+                    bankbalancedata["bankbalance"]=calbaldata["curbal"]
                     bankbalancedata["bankaccname"]=bankbal["accountname"]
+                    bankbalancedata["baltype"]=calbaldata["baltype"]
                     bankaccdata.append(bankbalancedata)
                 for cashbal in accountCodeCash:
                     cashbalancedata={}
                     calbaldata = calculateBalance(self.con,cashbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
-                    if (calbaldata["baltype"] == 'Cr'):
-                        cashbalance = float(cashbalance) - float(calbaldata["curbal"])
-                    if (calbaldata["baltype"] == 'Dr'):
-                        cashbalance = float(cashbalance) + float(calbaldata["curbal"])
-                    cashbalancedata["cashbalance"]=cashbalance
+                    cashbalancedata["cashbalance"]=calbaldata["curbal"]
                     cashbalancedata["cashaccname"]=cashbal["accountname"]
+                    cashbalancedata["baltype"]=calbaldata["baltype"]
                     cashaccdata.append(cashbalancedata)
                 self.con.close()            
                 return{"gkstatus":enumdict["Success"],"bankaccdata":bankaccdata,"cashaccdata":cashaccdata}               
