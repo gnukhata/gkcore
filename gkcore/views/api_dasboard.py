@@ -222,15 +222,17 @@ def stockonhanddashboard(orgcode):
     finally:
         con.close()
 
-# this fuction returns month wise bank and cash sub group balance of current assets group on daashboard
+# this fuction returns month wise bank and cash sub account  balance on daashboard
 def cashbankbalance(orgcode):
     try:
         con = eng.connect()
-        accountcodebank=con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Bank' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
+        #below query is fetch account code for bank account 
+        accountcodebank=con.execute("select accountcode as accountcode from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Bank' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
         accountCodeBank=accountcodebank.fetchall()
+        #below query is fetch account code for cash account 
         accountcodecash=con.execute("select accountcode as accountcode from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Cash' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
         accountCodeCash=accountcodecash.fetchall()
-
+        #below query is fetch finantial yearstart and yearend date
         financialstart=con.execute("select yearstart as financialstart, yearend as financialend from organisation where orgcode=%d"% orgcode)
         financialStartresult=financialstart.fetchone()
         financialStart= datetime.strftime(financialStartresult["financialstart"],'%Y-%m-%d')
@@ -242,12 +244,14 @@ def cashbankbalance(orgcode):
         balancedata={}
 
         startMonthDate=financialStartresult["financialstart"]
+        # endMonthDate gives last date of month 
         endMonthDate = date(startMonthDate.year, startMonthDate.month, (calendar.monthrange(startMonthDate.year, startMonthDate.month)[1]))
         while endMonthDate <= financialEnd:
             month=calendar.month_abbr[startMonthDate.month]
             monthname.append(month)
             bankbalance = 0.00
             cashbalance = 0.00
+            #below code give calculate balance for bank account 
             for bal in accountCodeBank:                
                 calbaldata = calculateBalance(con,bal["accountcode"],str(financialStart), str(startMonthDate), str(endMonthDate))
                 if (calbaldata["baltype"] == 'Cr'):
@@ -255,6 +259,7 @@ def cashbankbalance(orgcode):
                 if (calbaldata["baltype"] == 'Dr'):
                     bankbalance = float(bankbalance) + float(calbaldata["curbal"])
             bankbalancedata.append(bankbalance)
+            #below code give calculate balance for cash account 
             for bal in accountCodeCash:
                 calbaldata = calculateBalance(con,bal["accountcode"],str(financialStart), str(financialStart), str(endMonthDate))
                 if (calbaldata["baltype"] == 'Cr'):
@@ -398,7 +403,6 @@ class api_dashboard(object):
             try:
                 userid=authDetails["userid"]
                 orgcode=authDetails["orgcode"]
-                # goname=godowndesc(userid,orgcode)
                 self.con = eng.connect()
                 godownid=self.con.execute("select goid from usergodown where orgcode=%d and userid=%d"%(authDetails["orgcode"],authDetails["userid"]))
                 godownidresult=godownid.fetchall()
@@ -415,6 +419,7 @@ class api_dashboard(object):
             finally:
                 self.con.close()
     
+    # this fuction returns bank and cash sub account balance
     @view_config(request_method='GET',renderer='json', request_param="type=cashbankaccountdata")
     def cashbankaccountdata(self):
         try:
@@ -428,11 +433,14 @@ class api_dashboard(object):
             try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
+                #below query is fetch account code and name for bank account 
                 accountcodebank=self.con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Bank' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
                 accountCodeBank=accountcodebank.fetchall()
+                #below query is fetch account code and name for cash account 
                 accountcodecash=self.con.execute("select accountcode as accountcode, accountname as accountname from accounts where groupcode = (select groupcode from groupsubgroups where groupname = 'Cash' and orgcode=%d) and orgcode =%d"%(orgcode,orgcode))
                 accountCodeCash=accountcodecash.fetchall()
 
+                #below query is fetch finantial yearstart and yearend date
                 financialstart=self.con.execute("select yearstart as financialstart, yearend as financialend from organisation where orgcode=%d"% orgcode)
                 financialStartresult=financialstart.fetchone()
                 financialStart= datetime.strftime(financialStartresult["financialstart"],'%Y-%m-%d')
@@ -441,6 +449,7 @@ class api_dashboard(object):
                 cashbalance = 0.00
                 bankaccdata=[]
                 cashaccdata=[]
+                #below code give calculate balance for bank account 
                 for bankbal in accountCodeBank:
                     bankbalancedata={}
                     calbaldata = calculateBalance(self.con,bankbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
@@ -448,6 +457,7 @@ class api_dashboard(object):
                     bankbalancedata["bankaccname"]=bankbal["accountname"]
                     bankbalancedata["baltype"]=calbaldata["baltype"]
                     bankaccdata.append(bankbalancedata)
+                #below code give calculate balance for cash account                 
                 for cashbal in accountCodeCash:
                     cashbalancedata={}
                     calbaldata = calculateBalance(self.con,cashbal["accountcode"],str(financialStart), str(financialStart), str(financialEnd))
