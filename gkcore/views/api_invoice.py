@@ -1849,6 +1849,59 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
+    def createAccount(self,type,accName,orgcode):
+        try:
+            """
+            Purpose: Create account.
+            While creating automatic voucher if required account not found then it will create that account.
+            """
+            self.con = eng.connect()
+            groupName = ""
+            default = 0
+            # product sale account
+            if(type == 19):
+                groupName = "Sales"
+                # sales default account
+                if (accName == "Sales A/C"):
+                    default = 19
+            # product purchase account
+            elif(type == 16):
+                groupName = "Purchase"
+                # purchase default account
+                if (accName == "Purchase A/C"):
+                    default = 16
+            # default cash account
+            elif(type == 3):
+                groupName = "Cash"
+                default = 3
+            # default bank account
+            elif(type == 2):
+                groupName = "Bank"
+                default = 2
+            # Tax account
+            elif(type == 20):
+                groupName = "Duties & Taxes"
+            # customer or supplier account when payment mode is on credit
+            elif(type == 15):
+                ustOrSupl = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(and_(gkdb.customerandsupplier.c.custname == str(accName) , gkdb.customerandsupplier.c.orgcode == orgcode)))
+                flagCS = custOrSupl.fetchone()
+                # customer
+                if(int(flagCS["csflag"]) == 3):
+                    groupName = "Sundry Debtors"
+                # suplier
+                if(int(flagCS["csflag"]) == 19):
+                    groupName = "Sundry Creditors for Purchase"
+
+            group = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == str(groupName), groupsubgroups.c.orgcode == int(orgcode))))
+            grpCode = group.fetchone()
+            resultp = self.con.execute(accounts.insert(),{"accountname":accName,"groupcode":grpCode["groupcode"],"orgcode":orgcode,"defaultflag":default})
+            # fetch accountcode
+            accCode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accName,accounts.c.defaultflag == default, accounts.c.orgcode == orgcode)))
+            accountCode = accCode.fetchone()
+
+            return {"gkstatus":enumdict["Success"],"accountcode":int(accountCode["accountcode"])}
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
     def getDefaultAcc(self,queryParams,orgcode):
         try:
@@ -1904,14 +1957,22 @@ The bills grid calld gkresult will return a list as it's value.
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
+                        # ///////////////////////////////////////////////////////////////////////////// working
                         drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
                         cba = bankRow["accountcode"]
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = cashRow["accountcode"]
+                        
+                        try:
+                            accCode = cashRow["accountcode"]
+                        except:
+                            a = self.createAccount(3,"Cash in hand",orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 15:
                         custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
