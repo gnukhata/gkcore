@@ -185,14 +185,14 @@ It will be used for creating entries in the billwise table and updating it as ne
                 # Fetching id, number, date, total amount and amount paid of all unpaid invoices.
                 # It is unadjusted if invoice total is greater that amount paid.
                 
-                invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
+                invoices = self.con.execute(select([invoice.c.invid,invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.inoutflag,invoice.c.invoicetotal,invoice.c.amountpaid, invoice.c.custid]).where(and_(invoice.c.invoicetotal > invoice.c.amountpaid, invoice.c.icflag == 9, invoice.c.orgcode == authDetails["orgcode"])))
                 invoicesData = invoices.fetchall()
                 # Appending dictionaries into empty list.
                 # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
                 for inv in invoicesData:
                     custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
                     customerdata = custData.fetchone()
-                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
+                    unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "inoutflag": inv["inoutflag"]})
                 return{"gkstatus":enumdict["Success"],"invoices":unAdjInvoices}
                 self.con.close()
             except:
