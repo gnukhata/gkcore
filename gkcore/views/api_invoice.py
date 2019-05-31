@@ -1022,11 +1022,11 @@ The bills grid calld gkresult will return a list as it's value.
                 invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
                 for inv in invsData:
-                    filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
+                    filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.inoutflag,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
                     invdataset = filteredInvoices.fetchone()
                     csdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdataset["custid"]))
                     custname = csdata.fetchone()
-                    invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
+                    invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"inoutflag":invdataset["inoutflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
@@ -1249,15 +1249,14 @@ The bills grid calld gkresult will return a list as it's value.
                     pass
 
                 for eachdcid in alldcids:
-                    singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
+                    singledcResult = self.con.execute(select([delchal.c.dcid,delchal.c.inoutflag, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
                     singledcResult = singledcResult.fetchone()
                     dcResult.append(singledcResult)
-
                 temp_dict = {}
                 srno = 1
                 if dataset["type"] == "invoice":
                     for row in dcResult:
-                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"],"inoutflag":row["inoutflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
                         if temp_dict["dcflag"] == 19:
                             #We don't have to consider sample.
                             temp_dict["dcflag"] = "Sample"
@@ -1681,11 +1680,11 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=1, sales invoices
-                    elif self.request.params["flag"] == "1" and customerdetails["csflag"] == 3:
+                    elif self.request.params["flag"] == "1" and row["inoutflag"] == 15:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=2, purchase invoices.
-                    elif self.request.params["flag"] == "2" and customerdetails["csflag"] == 19:
+                    elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
@@ -1821,11 +1820,11 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=1, sales invoices
-                    elif self.request.params["flag"] == "1" and customerdetails["csflag"] == 3:
+                    elif self.request.params["flag"] == "1" and row["inoutflag"] == 15:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=2, purchase invoices.
-                    elif self.request.params["flag"] == "2" and customerdetails["csflag"] == 19:
+                    elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
