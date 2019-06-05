@@ -2758,9 +2758,9 @@ class api_reports(object):
             try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
-                financialstart = self.con.execute("select yearstart, orgtype from organisation where orgcode = %d"%int(orgcode))
+                financialstart = self.con.execute("select orgtype from organisation where orgcode = %d"%int(orgcode))
                 financialstartRow = financialstart.fetchone()
-                financialStart = financialstartRow["yearstart"]
+                calculateFrom = self.request.params["calculatefrom"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 result = {}
@@ -2803,7 +2803,7 @@ class api_reports(object):
                         DESubBal = 0.00
                     
                         for desubacc in DESubAccs:
-                            calbalData = calculateBalance(self.con,desubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,desubacc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Dr":
@@ -2825,7 +2825,7 @@ class api_reports(object):
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
                     for deAcc in deAccData:
-                        calbalData = calculateBalance(self.con,deAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        calbalData = calculateBalance(self.con,deAcc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
                         if calbalData["baltype"] == "Dr":
@@ -2855,7 +2855,7 @@ class api_reports(object):
                         DISubBal = 0.00
                     
                         for disubacc in DISubAccs:
-                            calbalData = calculateBalance(self.con,disubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,disubacc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -2876,7 +2876,7 @@ class api_reports(object):
                     diAccData = getDIAccData.fetchall()
                     for diAcc in diAccData:
                         if diAcc["accountname"] != pnlAccountname:
-                            calbalData = calculateBalance(self.con,diAcc["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,diAcc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -2888,7 +2888,7 @@ class api_reports(object):
                         else:
                             csAccountcode = self.con.execute("select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"%(orgcode))
                             csAccountcodeRow = csAccountcode.fetchone()
-                            calbalData = calculateBalance(self.con,csAccountcodeRow["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,csAccountcodeRow["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             result["Closing Stock"] = "%.2f"%(float(calbalData["curbal"]))
                             closingStockBal = float(calbalData["curbal"])
   
@@ -2917,7 +2917,7 @@ class api_reports(object):
                         IESUBDict = {}
                         IESubBal = 0.00
                         for iesubacc in IESubAccs:
-                            calbalData = calculateBalance(self.con,iesubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,iesubacc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Dr":
@@ -2939,7 +2939,7 @@ class api_reports(object):
                 if getIEAccData.rowcount > 0:
                     ieAccData = getIEAccData.fetchall()
                     for ieAcc in ieAccData:
-                        calbalData = calculateBalance(self.con,ieAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        calbalData = calculateBalance(self.con,ieAcc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
                         if calbalData["baltype"] == "Dr":
@@ -2968,7 +2968,7 @@ class api_reports(object):
                         IISubBal = 0.00
                     
                         for iisubacc in IISubAccs:
-                            calbalData = calculateBalance(self.con,iisubacc["accountcode"], financialStart, financialStart, calculateTo)
+                            calbalData = calculateBalance(self.con,iisubacc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -2988,7 +2988,7 @@ class api_reports(object):
                 if getDIAccData.rowcount > 0:
                     iiAccData = getIIAccData.fetchall()
                     for iiAcc in iiAccData:
-                        calbalData = calculateBalance(self.con,iiAcc["accountcode"], financialStart, financialStart, calculateTo)
+                        calbalData = calculateBalance(self.con,iiAcc["accountcode"], calculateFrom, calculateFrom, calculateTo)
                         if calbalData["curbal"] == 0.00:
                             continue
                         if calbalData["baltype"] == "Cr":
