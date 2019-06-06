@@ -252,7 +252,8 @@ create method for delchal resource.
                                     "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
-                                    "inout":stockinout
+                                    "inout":stockinout,
+                                    "roundoffflag": delchaldata["roundoffflag"]
                                 }}
 
                 if delchaldata["consignee"]!=None:
@@ -260,6 +261,7 @@ create method for delchal resource.
 
                 if delchaldata["delchaltotal"] != None:
                     singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
+                    singledelchal["delchaldata"]["roundedoffvalue"] = float(round(delchaldata["delchaltotal"]))
                 
                 if delchaldata["cancelflag"] ==1:
                     singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')

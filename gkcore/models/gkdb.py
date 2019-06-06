@@ -441,6 +441,8 @@ taxflag states which tax is applied to products/services. Default value is set a
 Also we have json field called 'contents' which is nested dictionary.
 The key of this field is the 'productcode' while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty).
+Roundoff field is to check wheather delivery chalan total is rounded off or not. 
+0 = no round off 1 = total amount rounded off.
 """
 delchal = Table('delchal',metadata,
     Column('dcid',Integer,primary_key=True),
@@ -472,6 +474,7 @@ delchal = Table('delchal',metadata,
     Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
     Column('inoutflag',Integer,nullable=False),
+    Column('roundoffflag',Integer,default=0),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
@@ -578,6 +581,8 @@ psflag will be either 16 or 20 for purchase order and sales order respectively.
 Here schedule json field will be having all the product details in format,
 product code is key and value will be dictionary having product name, quantity, price per unit, number of packages, reorder limit, tax rate,
 and  dictionary for saving staggered delivery details whose key will be date and value will be quantity.
+Roundoff field is to check wheather purchase/sales order total is rounded off or not. 
+0 = no round off 1 = total amount rounded off.
 """
 purchaseorder = Table( 'purchaseorder' , metadata,
     Column('orderid',Integer, primary_key=True),
@@ -613,6 +618,7 @@ purchaseorder = Table( 'purchaseorder' , metadata,
     Column('discount',JSONB),
     Column('paymentmode',Integer,default=2),
     Column('address',Text),
+    Column('roundoffflag',Integer,default=0),
     Index("purchaseorder_orgcodeindex","orgcode"),
     Index("purchaseorder_date","orderdate"),
     Index("purchaseorder_togodown",'togodown')               
@@ -780,6 +786,7 @@ drcr =  Table('drcr', metadata,
     Column('attachment',JSON),
     Column('attachmentcount',Integer,default=0),
     Column('userid',Integer,ForeignKey('users.userid')),
+    Column('roundoffflag',Integer,default=0),
     UniqueConstraint('orgcode','drcrno','dctypeflag'),
     UniqueConstraint('orgcode','invid','dctypeflag'),
     UniqueConstraint('orgcode','rnid','dctypeflag')
