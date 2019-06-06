@@ -135,6 +135,10 @@ class api_organisation(object):
                         grpCodeR = grpCodeReceived.fetchone()
                         rorAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Received","groupcode":grpCodeR["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181}])
 
+            #In Below query we are adding field pincode to customersupplier table
+            if not columnExists("customerandsupplier","pincode"):
+                self.con.execute("alter table customerandsupplier add pincode text")
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
