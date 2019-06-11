@@ -610,10 +610,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
-                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag,customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
+
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
