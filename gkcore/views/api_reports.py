@@ -191,7 +191,7 @@ def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
         balType = "Cr"
     return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 
-def stockonhandfun(con, orgcode, productCode,endDate):
+def stockonhandfun(orgcode, productCode,endDate):
     try:
         con = eng.connect()
         stockReport = []
@@ -3438,48 +3438,11 @@ class api_reports(object):
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%Y-%m-%d")
-                stockresult=stockonhandfun(self.con, orgcode, productCode,endDate)
+                stockresult=stockonhandfun(orgcode, productCode,endDate)
                 return {"gkstatus":enumdict["Success"],"gkresult":stockresult["gkresult"]}        
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
-    # this fuction returns most sold product and stock on hand count for daashboard
-    @view_config(request_param="stockonhandfordashboard",renderer="json")
-    def stockonhandfordashboard(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                # this is use to fetch top five product/service  which is order by  invoice count.  
-                topfiveprod=self.con.execute("select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"%(authDetails["orgcode"]))
-                topfiveprodlist=topfiveprod.fetchall()
-                prodcodedesclist=[]
-                for prodcode in topfiveprodlist:
-                    proddesc=self.con.execute("select productdesc as proddesc from product where productcode=%d"%(int(prodcode["productcode"])))
-                    proddesclist=proddesc.fetchone()
-                    prodcodedesclist.append({"prodcode":prodcode["productcode"],"proddesc":proddesclist["proddesc"]})
-
-                prodname=[]
-                stockresultlist=[]    
-                for i in prodcodedesclist:
-                    prodname.append({"prodname":i["proddesc"]})
-                    orgcode = authDetails["orgcode"]
-                    productCode = i["prodcode"]
-                    endDate =datetime.strptime(str(self.request.params["calculateto"]),"%Y-%m-%d")
-                    stockresult=stockonhandfun(self.con, orgcode, productCode,endDate)
-                    stockresultlist.append(stockresult)
-                
-                self.con.close()
-                return {"gkstatus":enumdict["Success"],"gkresult":stockresultlist,"productname":prodname}           
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_param="godownwisestockforgodownincharge",renderer="json")
     def godownwisestockforgodownincharge(self):
