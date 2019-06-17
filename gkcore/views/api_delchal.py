@@ -258,7 +258,6 @@ create method for delchal resource.
 
                 if delchaldata["consignee"]!=None:
                     singledelchal["delchaldata"]["consignee"]=delchaldata["consignee"]
-
                 if delchaldata["delchaltotal"] != None:
                     singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
                     singledelchal["delchaldata"]["roundedoffvalue"] = float(round(delchaldata["delchaltotal"]))
@@ -291,10 +290,10 @@ create method for delchal resource.
                 else:
                         singledelchal["dateofsupply"] = ""
 
-                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==delchaldata["custid"]))
+                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.pincode,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==delchaldata["custid"]))
                 custData = custandsup.fetchone()
                 custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                singledelchal["custSupDetails"] = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                singledelchal["custSupDetails"] = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
                 singledelchal["custSupDetails"]["custid"] = delchaldata["custid"]
                 if custData["custtan"] != None:
                     singledelchal["custSupDetails"]["custtin"] = custData["custtan"]
