@@ -74,7 +74,6 @@ class api_purchaseorder(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                print dataset
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(purchaseorder.insert(),[dataset])
                 return {"gkstatus":enumdict["Success"]}
