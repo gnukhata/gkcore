@@ -163,9 +163,9 @@ class api_drcr(object):
                         taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
                         invdata["taxstatecode"]=taxStateCode
                 #taken data of customerandsupplier on the basis of custid
-                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag,customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
                 custrow=custresult.fetchone()
-                custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtin":custrow["custtan"]}
+                custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtin":custrow["custtan"],"pincode":custrow["pincode"]}
                 #tin and gstin checked.
                 if custSupDetails["custtin"] != None:
                     custSupDetails["custtin"] = custSupDetails["custtin"]
@@ -405,7 +405,7 @@ class api_drcr(object):
                 drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
                 invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
-                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
+                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.inoutflag,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
                 lastdrcrno = self.con.execute("select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"%(int(authDetails["orgcode"]),int(drcrflag)))
                 lastdrcrno = lastdrcrno.fetchone()
                 if lastdrcrno == None:
@@ -420,9 +420,9 @@ class api_drcr(object):
                         customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
                         custname = customer.fetchone()
                         if self.request.params.has_key('type'):
-                            if str(self.request.params["type"]) == 'sale' and int(custname['csflag']) == 3:
+                            if str(self.request.params["type"]) == 'sale' and row["inoutflag"]== 15:
                                 invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                            elif str(self.request.params["type"]) == 'purchase' and int(custname['csflag']) == 19:
+                            elif str(self.request.params["type"]) == 'purchase' and row["inoutflag"]== 9:
                                 invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
                         else:
                             invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
