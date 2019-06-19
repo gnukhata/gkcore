@@ -707,6 +707,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxAmt = totalTaxAmt + taxAmount
 
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                
+                #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
+                billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
+                billwise_entry= billwiseentry.fetchone() 
+                if (billwise_entry["invoicetotal"]>billwise_entry["amountpaid"]):
+                   inv["billentrysingleflag"] = 0
+                else:
+                   inv["billentrysingleflag"] = 1
+
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
@@ -1662,7 +1671,14 @@ The bills grid calld gkresult will return a list as it's value.
                             custtin  = customerdetails["custtan"]
                         except:
                             custtin = None
-                    
+
+                    #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentryflag to 0 else to 1 to create voucher for the same.
+                    billentryflag = 1
+                    billwiseentry=self.con.execute("select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "%(row["invid"],authDetails["orgcode"]))  
+                    billwise_entry= billwiseentry.fetchone() 
+                    if  billwise_entry > 0:
+                        billentryflag = 0
+
                     #below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
                     cancelinv = 1
                     exist_delchal=self.con.execute("select count(invid) as invcount from dcinv where invid=%d and orgcode=%d"%(row["invid"],authDetails["orgcode"]))  
@@ -1677,15 +1693,15 @@ The bills grid calld gkresult will return a list as it's value.
 
                     #flag=0, all invoices.
                     if self.request.params["flag"] == "0":
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                     #flag=1, sales invoices
                     elif self.request.params["flag"] == "1" and row["inoutflag"] == 15:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                     #flag=2, purchase invoices.
                     elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
