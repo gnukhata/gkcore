@@ -50,6 +50,7 @@ from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from datetime import datetime, timedelta
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -1028,12 +1029,21 @@ class api_organisation(object):
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 if userRole[0]==-1:
+                    orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart from organisation where orgcode=%d"%authDetails["orgcode"])
+                    getorgdata = orgdata.fetchone()
+                    lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
+                    checkorg=self.con.execute("select count(orgname) as count from organisation where orgname='%s'"%str(getorgdata["orgname"]))
+                    checkorgname=checkorg.fetchone()
+
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
                         result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
                         orgcount = result.fetchone()
                         if orgcount["ocount"]==0:
                             result = self.con.execute(gkdb.signature.delete())
+                    
+                    if checkorgname["count"]>1:
+                        resetroflag=self.con.execute("update organisation set roflag = 0 where orgname='%s' and yearend='%s'"%(str(getorgdata["orgname"]),lastdate))
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
