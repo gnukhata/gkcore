@@ -176,10 +176,10 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total rounded off
-                                    # if invdataset["roundoffflag"] == 1:
-                                    #     roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
-                                    #     if float(roundOffAmount) != 0.00:
-                                    #         queryParams["roundoffamt"] = float(roundOffAmount)
+                                    if int(invdataset["roundoffflag"]) == 1:
+                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                        if float(roundOffAmount) != 0.00:
+                                            queryParams["roundoffamt"] = float(roundOffAmount)
 
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
