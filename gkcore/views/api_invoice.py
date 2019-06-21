@@ -1861,6 +1861,7 @@ The bills grid calld gkresult will return a list as it's value.
             self.con = eng.connect()
             groupName = ""
             default = 0
+            sys = 0
             # product sale account
             if(type == 19):
                 groupName = "Sales"
@@ -1884,6 +1885,7 @@ The bills grid calld gkresult will return a list as it's value.
             # Tax account
             elif(type == 20):
                 groupName = "Duties & Taxes"
+                sys = 1
             # customer or supplier account when payment mode is on credit
             elif(type == 15):
                 ustOrSupl = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(and_(gkdb.customerandsupplier.c.custname == str(accName) , gkdb.customerandsupplier.c.orgcode == orgcode)))
@@ -1907,7 +1909,7 @@ The bills grid calld gkresult will return a list as it's value.
 
             group = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == str(groupName), groupsubgroups.c.orgcode == int(orgcode))))
             grpCode = group.fetchone()
-            resultp = self.con.execute(accounts.insert(),{"accountname":accName,"groupcode":grpCode["groupcode"],"orgcode":orgcode,"defaultflag":default})
+            resultp = self.con.execute(accounts.insert(),{"accountname":accName,"groupcode":grpCode["groupcode"],"orgcode":orgcode,"defaultflag":default,"sysaccount":sys})
             # fetch accountcode
             accCode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accName,accounts.c.defaultflag == default, accounts.c.orgcode == orgcode)))
             accountCode = accCode.fetchone()
