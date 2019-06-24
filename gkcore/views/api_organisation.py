@@ -165,6 +165,8 @@ class api_organisation(object):
 
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
+            if not columnExists("organisation","ainvnoflag"):
+                self.con.execute("alter table organisation add ainvnoflag integer default 0")    
             if not columnExists("organisation","modeflag"):
                 self.con.execute("alter table organisation add modeflag integer default 1")
             if not columnExists("organisation","avflag"):
@@ -893,7 +895,7 @@ class api_organisation(object):
                 else:
                     bankdetails=row["bankdetails"]
                  
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":row["maflag"],"avnoflag":row["avnoflag"],"modeflag":row["modeflag"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":row["maflag"],"avnoflag":row["avnoflag"],"ainvnoflag":row["ainvnoflag"],"modeflag":row["modeflag"]}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
