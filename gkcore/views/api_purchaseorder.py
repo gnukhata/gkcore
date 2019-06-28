@@ -270,6 +270,7 @@ class api_purchaseorder(object):
                 purchaseorderdetails["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 purchaseorderdetails['taxname'] = taxname
                 purchaseorderdetails["schedule"] = details
+                purchaseorderdetails["ps_narration"] = podata["ps_narration"]
                 return {"gkstatus":enumdict["Success"],"gkresult":purchaseorderdetails}
                 self.con.close()
             except:
