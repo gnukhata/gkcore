@@ -1267,7 +1267,7 @@ The bills grid calld gkresult will return a list as it's value.
                     pass
 
                 for eachdcid in alldcids:
-                    singledcResult = self.con.execute(select([delchal.c.dcid,delchal.c.inoutflag, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
+                    singledcResult = self.con.execute(select([delchal.c.dcid,delchal.c.inoutflag, delchal.c.dcno, delchal.c.dcdate, delchal.c.dateofsupply, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
                     singledcResult = singledcResult.fetchone()
                     dcResult.append(singledcResult)
                 temp_dict = {}
@@ -1275,6 +1275,10 @@ The bills grid calld gkresult will return a list as it's value.
                 if dataset["type"] == "invoice":
                     for row in dcResult:
                         temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"],"inoutflag":row["inoutflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+                        if row["dateofsupply"]!= None:
+                            temp_dict["dateofsupply"]=datetime.strftime(row["dateofsupply"],"%d-%m-%Y")
+                        else:
+                            temp_dict["dateofsupply"]=row["dateofsupply"]
                         if temp_dict["dcflag"] == 19:
                             #We don't have to consider sample.
                             temp_dict["dcflag"] = "Sample"
@@ -1291,6 +1295,7 @@ The bills grid calld gkresult will return a list as it's value.
                         temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
                         dc_unbilled.append(temp_dict)
                         srno += 1
+                print(dc_unbilled)
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
             except exc.IntegrityError:
