@@ -1337,6 +1337,10 @@ class api_reports(object):
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
+                try:
+                    calculatefrom = self.request.params["calculatefrom"]
+                except: 
+                    calculatefrom=financialStart        
                 balancetype = int(self.request.params["baltype"])
                 sbalanceSheet=[]
                 abalanceSheet=[]
@@ -1363,7 +1367,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Cr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1381,7 +1385,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Cr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1412,7 +1416,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Cr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1430,7 +1434,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Cr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1462,7 +1466,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Cr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1480,7 +1484,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Cr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1514,7 +1518,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Cr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1532,7 +1536,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Cr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1550,7 +1554,7 @@ class api_reports(object):
                 accountcodeData = self.con.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"%(orgcode, orgcode, orgcode))
                 accountCodes = accountcodeData.fetchall()
                 for accountRow in accountCodes:
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Cr"):
                         incomeTotal += accountDetails["curbal"]
                     if (accountDetails["baltype"]=="Dr"):
@@ -1560,7 +1564,7 @@ class api_reports(object):
                 accountcodeData = self.con.execute("select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"%(orgcode, orgcode, orgcode))
                 accountCodes = accountcodeData.fetchall()
                 for accountRow in accountCodes:
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Dr"):
                         expenseTotal += accountDetails["curbal"]
                     if (accountDetails["baltype"]=="Cr"):
@@ -1611,7 +1615,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Dr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1630,7 +1634,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails = calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails = calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Dr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1663,7 +1667,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Dr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1681,7 +1685,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Dr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1713,7 +1717,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag  = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Dr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1731,7 +1735,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Dr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1763,7 +1767,7 @@ class api_reports(object):
                 for accountRow in accountCodes:
                     accountTotal = 0.00
                     adverseflag = 0
-                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                    accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                     if (accountDetails["baltype"]=="Dr"):
                         groupWiseTotal += accountDetails["curbal"]
                         accountTotal += accountDetails["curbal"]
@@ -1781,7 +1785,7 @@ class api_reports(object):
                     for account in subgroupAccData:
                         accountTotal = 0.00
                         adverseflag  = 0
-                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Dr"):
                             subgroupTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1814,7 +1818,7 @@ class api_reports(object):
                     for accountRow in accountCodes:
                         accountTotal = 0.00
                         adverseflag = 0
-                        accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, financialStart, calculateTo)
+                        accountDetails = calculateBalance(self.con,accountRow["accountcode"], financialStart, calculatefrom, calculateTo)
                         if (accountDetails["baltype"]=="Dr"):
                             groupWiseTotal += accountDetails["curbal"]
                             accountTotal += accountDetails["curbal"]
@@ -1832,7 +1836,7 @@ class api_reports(object):
                         for account in subgroupAccData:
                             accountTotal = 0.00
                             adverseflag = 0
-                            accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, financialStart, calculateTo)
+                            accountDetails =  calculateBalance(self.con,account["accountcode"], financialStart, calculatefrom, calculateTo)
                             if (accountDetails["baltype"]=="Dr"):
                                 subgroupTotal += accountDetails["curbal"]
                                 accountTotal += accountDetails["curbal"]
