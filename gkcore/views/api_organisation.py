@@ -1032,8 +1032,8 @@ class api_organisation(object):
                     orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"%authDetails["orgcode"])
                     getorgdata = orgdata.fetchone()
                     lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
-                    checkorg=self.con.execute("select count(orgname) as count from organisation where orgname='%s' and orgtype='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"])))
-                    checkorgname=checkorg.fetchone()
+                    checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    checkorgcode=checkorg.fetchone()
 
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
@@ -1042,8 +1042,9 @@ class api_organisation(object):
                         if orgcount["ocount"]==0:
                             result = self.con.execute(gkdb.signature.delete())
                     
-                    if checkorgname["count"]>1:
-                        resetroflag=self.con.execute("update organisation set roflag = 0 where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    if "orgcode" in checkorgcode:
+                        resetroflag=self.con.execute("update organisation set roflag = 0 where orgcode='%d'"%(checkorgcode
+                        ["orgcode"]))
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
