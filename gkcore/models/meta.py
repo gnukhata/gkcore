@@ -109,3 +109,19 @@ def tableExists(tblName):
     gkInspect = PGInspector(dbconnect())
     tblList = gkInspect.get_table_names()
     return tblName in tblList
+
+def getOnDelete(tblName, keyName):
+    """
+    purpose:
+    Returns the value of ondelete option for a foreign key in a table.
+    Accepts names of table and the foreign key as params.
+    It fetches all foreign keys and then loops through them.
+    On finding the matching foreign key, its value for ondelete option is returned.
+    """
+    onDelete = False
+    gkInspect = PGInspector(dbconnect())
+    fkeys = gkInspect.get_foreign_keys(tblName)
+    for fkey in fkeys:
+        if fkey["name"] == keyName:
+            onDelete = fkey["options"]["ondelete"]
+    return onDelete
