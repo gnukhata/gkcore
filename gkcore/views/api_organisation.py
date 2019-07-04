@@ -1024,7 +1024,7 @@ class api_organisation(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
@@ -1034,7 +1034,7 @@ class api_organisation(object):
                     lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
                     checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
                     checkorgcode=checkorg.fetchone()
-
+                    print checkorgcode
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
                         result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
@@ -1049,9 +1049,9 @@ class api_organisation(object):
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     {"gkstatus":  enumdict["BadPrivilege"]}
-            except:
-                self.con.close()
-                return {"gkstatus":  enumdict["ConnectionFailed"]}
+            # except:
+            #     self.con.close()
+            #     return {"gkstatus":  enumdict["ConnectionFailed"]}
 
     @view_config(request_method='GET',request_param="type=exists",renderer='json')
     def Orgexists(self):
