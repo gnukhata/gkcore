@@ -552,7 +552,9 @@ class api_organisation(object):
                 self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid))")
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
-     
+            else:
+                orgvvdf = getOnDelete(invoicebin, orgcode)
+                print orgvvdf
         except:            
             return 0
         finally:
