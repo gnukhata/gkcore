@@ -47,7 +47,7 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
+from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists, getOnDelete
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
 from datetime import datetime, timedelta
@@ -553,8 +553,11 @@ class api_organisation(object):
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
             else:
-                orgvvdf = getOnDelete(invoicebin, orgcode)
-                print orgvvdf
+                print "before check"
+                fkeyavlb = getOnDelete("invoicebin", "invoicebin_custid_fkey")
+                print "after check"
+                if fkeyavlb == CASCADE
+                    print fkeyavlb
         except:            
             return 0
         finally:
