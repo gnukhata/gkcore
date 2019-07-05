@@ -553,11 +553,14 @@ class api_organisation(object):
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
             else:
-                print "before check"
-                fkeyavlb = getOnDelete("invoicebin", "invoicebin_custid_fkey")
-                print "after check"
-                if fkeyavlb == CASCADE
-                    print fkeyavlb
+                fkeyavlb = getOnDelete("invoicebin", "invoicebin_orgcode_fkey")
+                if fkeyavlb == None:
+                    self.con.execute("alter table invoicebin drop constraint invoicebin_orgcode_fkey")
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == False:
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == "CASCADE":
+                    pass
         except:            
             return 0
         finally:
@@ -1029,7 +1032,7 @@ class api_organisation(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
@@ -1037,7 +1040,7 @@ class api_organisation(object):
                     orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"%authDetails["orgcode"])
                     getorgdata = orgdata.fetchone()
                     lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
-                    checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    checkorg=self.con.execute("select orgcode as orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
                     checkorgcode=checkorg.fetchone()
                     print checkorgcode
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
@@ -1050,13 +1053,15 @@ class api_organisation(object):
                     if "orgcode" in checkorgcode:
                         resetroflag=self.con.execute("update organisation set roflag = 0 where orgcode='%d'"%(checkorgcode
                         ["orgcode"]))
+                    else:
+                        pass
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     {"gkstatus":  enumdict["BadPrivilege"]}
-            # except:
-            #     self.con.close()
-            #     return {"gkstatus":  enumdict["ConnectionFailed"]}
+            except:
+                self.con.close()
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
 
     @view_config(request_method='GET',request_param="type=exists",renderer='json')
     def Orgexists(self):
