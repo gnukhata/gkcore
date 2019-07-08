@@ -1295,7 +1295,6 @@ The bills grid calld gkresult will return a list as it's value.
                         temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
                         dc_unbilled.append(temp_dict)
                         srno += 1
-                print(dc_unbilled)
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
             except exc.IntegrityError:
