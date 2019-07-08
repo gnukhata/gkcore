@@ -1040,22 +1040,19 @@ class api_organisation(object):
                     orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"%authDetails["orgcode"])
                     getorgdata = orgdata.fetchone()
                     lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
-                    checkorg=self.con.execute("select orgcode as orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
                     checkorgcode=checkorg.fetchone()
-                    print checkorgcode
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
                         result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
                         orgcount = result.fetchone()
                         if orgcount["ocount"]==0:
                             result = self.con.execute(gkdb.signature.delete())
-                    
-                    if "orgcode" in checkorgcode:
+                    if checkorgcode != None:
                         resetroflag=self.con.execute("update organisation set roflag = 0 where orgcode='%d'"%(checkorgcode
                         ["orgcode"]))
-                    else:
-                        pass
-                    self.con.close()
+                    
+                    self.con.close()    
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     {"gkstatus":  enumdict["BadPrivilege"]}
