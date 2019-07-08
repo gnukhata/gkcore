@@ -1336,11 +1336,8 @@ class api_reports(object):
                 financialstartRow = financialstart.fetchone()
                 financialStart = financialstartRow["yearstart"]
                 orgtype = financialstartRow["orgtype"]
-                calculateTo = self.request.params["calculateto"]
-                try:
-                    calculatefrom = self.request.params["calculatefrom"]
-                except: 
-                    calculatefrom=financialStart        
+                calculateTo = self.request.params["calculateto"]                
+                calculatefrom = self.request.params["calculatefrom"]                    
                 balancetype = int(self.request.params["baltype"])
                 sbalanceSheet=[]
                 abalanceSheet=[]
