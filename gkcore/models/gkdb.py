@@ -346,6 +346,7 @@ Roundoff field is to check wheather invoice total is rounded off or not.
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
     Column('invoiceno',UnicodeText,nullable=False),
+    Column('ewaybillno', UnicodeText),
     Column('invoicedate',DateTime,nullable=False),
     Column('taxflag',Integer,default=22),
     Column('contents',JSONB),
