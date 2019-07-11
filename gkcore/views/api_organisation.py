@@ -545,6 +545,8 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add ewaybillno text")
             if not columnExists("drcr","drcr_narration"):        
                 self.con.execute("alter table drcr add drcr_narration text")
+            if not columnExists("invoice","invoice_narration"):        
+                self.con.execute("alter table invoice add invoice_narration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
