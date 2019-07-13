@@ -347,6 +347,9 @@ class api_user(object):
                 self.con = eng.connect()
                 #there is only one possibility for a catch which is failed connection to db.
                 result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
+                orgtype=self.con.execute(select([gkdb.organisation.c.invflag]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                invf=orgtype.fetchone()
+
                 users = []
                 for row in result:
                     # Specify user role
@@ -358,9 +361,11 @@ class api_user(object):
                         userroleName = "Operator"
                     elif(row["userrole"] == 2):
                         userroleName = "Internal Auditor"
-                    elif(row["userrole"] == 3):
-                        userroleName = "Godown In Charge"
+                    if(invf["invflag"] == 0):
+                        if(row["userrole"] == 3):
+                            userroleName = "Godown In Charge"
                     users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"],"userrolename": userroleName})
+                print users
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
