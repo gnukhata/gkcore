@@ -347,8 +347,8 @@ class api_user(object):
                 self.con = eng.connect()
                 #there is only one possibility for a catch which is failed connection to db.
                 result = self.con.execute(select([gkdb.users.c.username,gkdb.users.c.userid,gkdb.users.c.userrole]).where(gkdb.users.c.orgcode==authDetails["orgcode"]).order_by(gkdb.users.c.username))
-                orgtype=self.con.execute(select([gkdb.organisation.c.invflag]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
-                invf=orgtype.fetchone()
+                checkFlag=self.con.execute(select([gkdb.organisation.c.invflag]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                invf=checkFlag.fetchone()
 
                 users = []
                 for row in result:
