@@ -326,8 +326,8 @@ class api_dashboard(object):
                     datewise_saleinv=datewiseinvoice(15,orgcode)
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
@@ -337,12 +337,12 @@ class api_dashboard(object):
                 if userrole == 2:
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
                 if userrole == 3:
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
