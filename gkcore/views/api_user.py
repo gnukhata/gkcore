@@ -352,20 +352,20 @@ class api_user(object):
 
                 users = []
                 for row in result:
-                    # Specify user role
-                    if(row["userrole"] == -1):
-                        userroleName = "Admin"
-                    elif(row["userrole"] == 0):
-                        userroleName = "Manager"
-                    elif(row["userrole"] == 1):
-                        userroleName = "Operator"
-                    elif(row["userrole"] == 2):
-                        userroleName = "Internal Auditor"
-                    if(invf["invflag"] == 0):
-                        if(row["userrole"] == 3):
+                    if not (invf["invflag"] == 0 and row["userrole"] == 3):
+                        # Specify user role
+                        if(row["userrole"] == -1):
+                            userroleName = "Admin"
+                        elif(row["userrole"] == 0):
+                            userroleName = "Manager"
+                        elif(row["userrole"] == 1):
+                            userroleName = "Operator"
+                        elif(row["userrole"] == 2):
+                            userroleName = "Internal Auditor"
+                        elif(row["userrole"] == 3):
                             userroleName = "Godown In Charge"
-                    users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"],"userrolename": userroleName})
-                print users
+                        users.append({"userid":row["userid"], "username":row["username"], "userrole":row["userrole"],"userrolename": userroleName})
+
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":users }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
