@@ -173,9 +173,8 @@ def  delchalcountbymonth(inoutflag,orgcode):
         startenddateprint=startenddate.fetchone()                
 
         #this is to fetch delchal count month wise
-        monthlysortdata=con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=9 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,orgcode))
+        monthlysortdata=con.execute("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=4 group by month order by month" %(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),inoutflag,orgcode))
         monthlysortdataset=monthlysortdata.fetchall()
-                            
         #this is use to send 0 if month have 0 delchal count
         totalamount=[0,0,0,0,0,0,0,0,0,0,0,0]
         for count in monthlysortdataset:
@@ -327,8 +326,8 @@ class api_dashboard(object):
                     datewise_saleinv=datewiseinvoice(15,orgcode)
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     sup_data=topfivecustsup(9,orgcode)
                     cust_data=topfivecustsup(15,orgcode)
                     mostbought_prodsev=topfiveprodsev(orgcode)
@@ -338,12 +337,12 @@ class api_dashboard(object):
                 if userrole == 2:
                     purchase_inv=getinvoicecountbymonth(9,orgcode)
                     sale_inv=getinvoicecountbymonth(15,orgcode)
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"puchaseinvcount":purchase_inv["invamount"],"saleinvcount":sale_inv["invamount"],"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
                 if userrole == 3:
-                    delchal_out=delchalcountbymonth(9,orgcode)
-                    delchal_in=delchalcountbymonth(15,orgcode)
+                    delchal_out=delchalcountbymonth(15,orgcode)
+                    delchal_in=delchalcountbymonth(9,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
             except:
                 return{"gkstatus":enumdict["ConnectionFailed"]}
@@ -368,19 +367,19 @@ class api_dashboard(object):
                 startenddate=self.con.execute(select([organisation.c.yearstart,organisation.c.yearend]).where(organisation.c.orgcode == authDetails["orgcode"]))
                 startenddateprint=startenddate.fetchone()                
                 #this is to fetch in transfer note count month wise
-                monthlysortindata=self.con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"],goid))
+                monthlysortindata=self.con.execute("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=9 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"],goid))
                 monthlysortindataset=monthlysortindata.fetchall() 
 
                 #this is to fetch out transfer note count month wise
-                monthlysortoutdata=self.con.execute("select extract(month from stockdate) as month, count(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and inout=9 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"],goid))
+                monthlysortoutdata=self.con.execute("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=15 group by month order by month"%(datetime.strftime(startenddateprint["yearstart"],'%Y-%m-%d'),datetime.strftime(startenddateprint["yearend"],'%Y-%m-%d'),authDetails["orgcode"],goid))
                 monthlysortoutdataset=monthlysortoutdata.fetchall()  
                 #this is use to send 0 if month have 0 invoice count
                 innotecount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 outnotecount=[0,0,0,0,0,0,0,0,0,0,0,0]
                 for count in monthlysortindataset:
-                    innotecount[int(count["month"])-1]=count["count"]
+                    innotecount[int(count["month"])-1]= "%.2f"%count["count"]
                 for count in monthlysortoutdataset:
-                    outnotecount[int(count["month"])-1]=count["count"]
+                    outnotecount[int(count["month"])-1]="%.2f"%count["count"]
                 return{"gkstatus":enumdict["Success"],"innotecount":innotecount,"outnotecount":outnotecount}
                 self.con.close()
             except:
