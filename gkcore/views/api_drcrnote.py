@@ -453,6 +453,8 @@ def drcrVoucher(queryParams, orgcode):
     con = eng.connect()
     taxRateDict = {5:2.5,12:6,18:9,28:14}
     voucherDict = {}
+    vouchersList = []
+    vchCodes = []
     taxDict = {}
     crs = {}
     drs = {}
@@ -536,6 +538,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
 
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
@@ -674,6 +677,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
 
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
@@ -743,6 +747,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
 
     elif int(queryParams["drcrmode"]) == 18:
         if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
@@ -824,6 +829,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -903,6 +909,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" from "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -982,6 +989,7 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Sold goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -1061,28 +1069,31 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
 
-    voucherDict["orgcode"] = orgcode
+    for vch in vouchersList:
+        vch["orgcode"] = orgcode
 
-    # generate voucher number if it is not sent.
+        # generate voucher number if it is not sent.
 
-    if voucherDict["vouchertype"] == "creditnote":
-        initialType = "cr"
-    if voucherDict["vouchertype"] == "debitnote":
-        initialType = "dr"
-    vchCountResult = con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
-    vchCount = vchCountResult.fetchone()
-    if vchCount["vcount"] == 0:
-        initialType = initialType + "1"
-    else:
-        vchCodeResult = con.execute("select max(vouchercode) as vcode from vouchers")
-        vchCode = vchCodeResult.fetchone()
-        initialType = initialType + str(vchCode["vcode"])
-    voucherDict["vouchernumber"] = initialType
+        if vch["vouchertype"] == "creditnote":
+            initialType = "cr"
+        if vch["vouchertype"] == "debitnote":
+            initialType = "dr"
+        vchCountResult = con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCount = vchCountResult.fetchone()
+        if vchCount["vcount"] == 0:
+            initialType = initialType + "1"
+        else:
+            vchCodeResult = con.execute("select max(vouchercode) as vcode from vouchers")
+            vchCode = vchCodeResult.fetchone()
+            initialType = initialType + str(vchCode["vcode"])
+        vch["vouchernumber"] = initialType
 
-    result = con.execute(vouchers.insert(),[voucherDict])
-    for drkeys in drs.keys():
-        con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
-    for crkeys in crs.keys():
-        con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
-    return vchCode["vcode"]
+        result = con.execute(vouchers.insert(),[vch])
+        for drkeys in vch["drs"].keys():
+            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+        for crkeys in vch["crs"].keys():
+            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+        vchCodes.append(vchCode["vcode"])
+    return vchCodes
