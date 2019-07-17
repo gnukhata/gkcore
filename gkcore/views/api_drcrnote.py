@@ -93,6 +93,10 @@ class api_drcr(object):
                     queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
                     queryParams.update(dataset)
                     queryParams.update(vdataset)
+                    if dataset["roundoffflag"] == 1:
+                        roundOffAmount = float(dataset["totreduct"]) - round(float(dataset["totreduct"]))
+                        if float(roundOffAmount) != 0.00:
+                            queryParams["roundoffamt"] = float(roundOffAmount)
                     try:
                         drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
                         return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":1, "vchCode":drcrautoVch}}
