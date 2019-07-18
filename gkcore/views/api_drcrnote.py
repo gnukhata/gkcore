@@ -555,9 +555,9 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Paid",orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
@@ -571,10 +571,10 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Received",orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
@@ -659,9 +659,9 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Paid",orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
@@ -675,10 +675,10 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Received",orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[discountpaidaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
@@ -919,9 +919,9 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Paid",orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[vchSaleProdAcc] = "%.2f"%float(queryParams["roundoffamt"])
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[vchSaleProdAcc] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
@@ -935,10 +935,10 @@ def drcrVoucher(queryParams, orgcode):
                         a = createAccount(18,"Round Off Received",orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[vchSaleProdAcc] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[vchSaleProdAcc] = "%.2f"%float(queryParams["roundoffamt"])
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
             
