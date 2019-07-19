@@ -1364,7 +1364,7 @@ def drcrVoucher(queryParams, orgcode):
 
                     rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                     rdcrs[vchProdAcc] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f paid"%float(abs(queryParams["roundoffamt"])),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"receipt","drcrid":queryParams["drcrid"]}
                     vouchersList.append(rd_VoucherDict)
 
     for vch in vouchersList:
