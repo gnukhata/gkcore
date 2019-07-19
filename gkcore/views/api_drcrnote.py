@@ -1395,5 +1395,5 @@ def drcrVoucher(queryParams, orgcode):
             con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
         for crkeys in vch["crs"].keys():
             con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
-        vchCodes.append(vchCode["vcode"])
+        vchCodes.append(initialType)
     return vchCodes
