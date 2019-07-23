@@ -278,7 +278,7 @@ class api_rejectionnote(object):
                                 custSupDetails["custgstin"] = custdata["gstin"][str(sourceStateCode)]
                             except:
                                 custSupDetails["custgstin"] = None
-                        rejectionnotedata["rejinvdata"]["custSupDetails"] = custSupDetails
+                    rejectionnotedata["rejinvdata"]["custSupDetails"] = custSupDetails
                     #Details of dcinv table
                     if dcinvdata != None:
                         dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==dcinvdata[0]))
