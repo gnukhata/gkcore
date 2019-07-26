@@ -53,6 +53,13 @@ def deleteVoucherFun(vcode,orgcode):
         con = eng.connect()
         voucherdata = con.execute(select([vouchers]).where(vouchers.c.vouchercode == int(vcode)))
         voucherRow = voucherdata.fetchone()
+        id = con.execute("select invid from billwise  where vouchercode = %d "%(int(vcode)))
+        invid = id.fetchall()
+        for row in invid:                    
+            amt = con.execute("select adjamount from billwise  where vouchercode = %d and invid = %d "%(int(vcode),row["invid"]))
+            adjamount = amt.fetchone()
+            con.execute("update invoice set amountpaid = amountpaid - %d where invid =%d and orgcode = %d"%(adjamount["adjamount"],row["invid"],(int(orgcode))))            
+        con.execute("delete from billwise where vouchercode=%d"%(int(vcode)))
         con.execute("delete from vouchers  where vouchercode = %d and lockflag= 'f'"%(int(vcode)))
         DrData = voucherRow["drs"]
         CrData = voucherRow["crs"]
