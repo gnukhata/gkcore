@@ -144,7 +144,7 @@ class api_organisation(object):
             #In Below query we are adding field pincode to customersupplier table
             if not columnExists("customerandsupplier","pincode"):
                 self.con.execute("alter table customerandsupplier add pincode text")
-            #In Below query we are remove gbflag field from godown table
+            #Below query is to remove gbflag if it exists.
             if columnExists("godown","gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
 
