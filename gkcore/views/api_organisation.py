@@ -144,15 +144,12 @@ class api_organisation(object):
             #In Below query we are adding field pincode to customersupplier table
             if not columnExists("customerandsupplier","pincode"):
                 self.con.execute("alter table customerandsupplier add pincode text")
-<<<<<<< HEAD
             #Below query is to remove gbflag if it exists.
             if columnExists("godown","gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
-=======
             #In Below query we are remove goid field from table purchaseorder
             if columnExists("purchaseorder","goid"):
                 self.con.execute("alter table purchaseorder drop column goid")
->>>>>>> removed goid from purchaseorder
 
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
