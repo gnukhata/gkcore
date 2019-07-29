@@ -1408,7 +1408,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -1419,6 +1419,9 @@ The bills grid calld gkresult will return a list as it's value.
                 userDetails = userdetails.fetchone()
                 temp = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
+                print invData["sourcestate"], "source"
+                print invData["taxstate"], "destina"
+
                 invprodresult.append(invData["contents"])
                 qtyc =invData["contents"]
                 discounts = invData["discount"]
@@ -1429,11 +1432,14 @@ The bills grid calld gkresult will return a list as it's value.
                 else:
                     invDetails["issuername"] = userDetails["username"]
                     invDetails["designation"] = userDetails["userrole"]
+                    
                 if invData["sourcestate"] != None or invData["taxstate"] !=None:
-                    invDetails["sourcestate"] = invData["sourcestate"]
-                    invDetails["taxstate"]=invData["taxstate"]
-                    taxStateCode=getStateCode(invData["taxstate"],self.con)["statecode"]
-                    invDetails["taxstatecode"]=taxStateCode
+                    if invData["inoutflag"] == 15:
+                        invDetails["sourcestate"] =invData["sourcestate"]
+                        invDetails["taxstate"]=invData["taxstate"]
+                    else:
+                        invDetails["sourcestate"] = invData["taxstate"]
+                        invDetails["taxstate"]=invData["sourcestate"]
                 if invData["address"]!="":
                     invDetails["address"]=invData["address"]
 
@@ -1527,9 +1533,11 @@ The bills grid calld gkresult will return a list as it's value.
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
                 temp = temp.fetchone()
+                # print temp ,"temp"
                 dcdetails = {}
                 custdata = self.con.execute(select([customerandsupplier]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
+                print custname,"custdata"
                 custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
                 dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"],"custsupstatecodedata":custsupstatecodedata,"taxflag":invData["taxflag"]}
                 if int(invData["taxflag"]) == 22:
@@ -1537,44 +1545,56 @@ The bills grid calld gkresult will return a list as it's value.
                         dcdetails["custtin"] = custname["custtan"]
                         dcdetails["custstate"] = custname["state"]
                 else:
-                    if invData["sourcestate"] != None:
-                        sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
-                        dcdetails["custstate"] = invData["sourcestate"]
-                    if invData["taxstate"] != None:
-                        taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
-                        dcdetails["custstate"] = invData["taxstate"]
-                    if custname["gstin"] != None:
-                        if int(custname["csflag"]) == 3 :
-                            try:
-                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
-
-                            except:
-                                dcdetails["custgstin"] = None
-                                dcdetails["custstate"] = None
+                    if invData["sourcestate"] != None or invData["taxstate"] !=None:
+                        if invData["inoutflag"] == 15:
+                            sourceStateCode = getStateCode(invData["taxstate"],self.con)["statecode"]
+                            dcdetails["custstate"]=invData["taxstate"]
                         else:
+                            taxStateCode =  getStateCode(invData["sourcestate"],self.con)["statecode"]
+                            dcdetails["custstate"] = invData["sourcestate"]
+                    if custname["gstin"] != None:
+                        if int(invData["inoutflag"]) == 15 :
                             try:
                                 dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
 
                             except:
                                 dcdetails["custgstin"] = None
                                 dcdetails["custstate"] = None
+                        else:
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None   
+                                dcdetails["custstate"] = None
                 if temp:
+                    # print temp[0]
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
-                    stockdata = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
-                    stockdata = stockdata.fetchone()
-                    dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
-                    godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata[0]))
-                    goname = godata.fetchone()
-                    dcdetails["goid"] = stockdata[0]
-                    dcdetails["goname"] = goname["goname"]
-                    dcdetails["gostate"] = goname["state"]
-                    dcdetails["goaddr"] = goname["goaddr"]
+                    # print "---------------------------------------------------"
+                    # print delchaldata ,"delchaldta"
+                    stockdataval = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
+                    stockdata = stockdataval.fetchone()
+                    # print "---------------------------------------------------"
+                    # print stockdata ,"stockdata"
+                    dcdetails["dcid"]=temp[0]
+                    dcdetails["dcflag"]=delchaldata["dcflag"]
+
+                    # dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
+                    if stockdata["goid"] != None:
+                        godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata["goid"]))
+                        goname = godata.fetchone()
+                        dcdetails["goid"] = stockdata["goid"]
+                        dcdetails["goname"] = goname["goname"]
+                        dcdetails["gostate"] = goname["state"]
+                        dcdetails["goaddr"] = goname["goaddr"]
+                    print dcdetails
+                    
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":enumdict["ConnectionFailed"]}
+            # finally:
+            #     self.con.close()
                 
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.
