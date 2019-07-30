@@ -1568,19 +1568,13 @@ The bills grid calld gkresult will return a list as it's value.
                                 dcdetails["custgstin"] = None   
                                 dcdetails["custstate"] = None
                 if temp:
-                    # print temp[0]
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
-                    # print "---------------------------------------------------"
-                    # print delchaldata ,"delchaldta"
                     stockdataval = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
                     stockdata = stockdataval.fetchone()
-                    # print "---------------------------------------------------"
-                    # print stockdata ,"stockdata"
                     dcdetails["dcid"]=temp[0]
                     dcdetails["dcflag"]=delchaldata["dcflag"]
 
-                    # dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
                     if stockdata["goid"] != None:
                         godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata["goid"]))
                         goname = godata.fetchone()
