@@ -93,6 +93,10 @@ class api_drcr(object):
                     queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
                     queryParams.update(dataset)
                     queryParams.update(vdataset)
+                    if dataset["roundoffflag"] == 1:
+                        roundOffAmount = float(dataset["totreduct"]) - round(float(dataset["totreduct"]))
+                        if float(roundOffAmount) != 0.00:
+                            queryParams["roundoffamt"] = float(roundOffAmount)
                     try:
                         drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
                         return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":1, "vchCode":drcrautoVch}}
@@ -449,9 +453,13 @@ def drcrVoucher(queryParams, orgcode):
     con = eng.connect()
     taxRateDict = {5:2.5,12:6,18:9,28:14}
     voucherDict = {}
+    vouchersList = []
+    vchCodes = []
     taxDict = {}
     crs = {}
     drs = {}
+    rdcrs = {}
+    rddrs = {}
     taxAmount = 0.00
     cessAmount = 0.00
     cgstAmount = 0.00
@@ -532,6 +540,42 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
@@ -601,6 +645,42 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
@@ -670,6 +750,42 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
@@ -739,8 +855,45 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
 
     elif int(queryParams["drcrmode"]) == 18:
+        vchProdAcc = ""
         if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -750,11 +903,13 @@ def drcrVoucher(queryParams, orgcode):
                     prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                     prodAccount = prodAcc.fetchone()
                     drs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
                 salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                 saleAcc = salesAccount.fetchone()
                 drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
@@ -820,6 +975,44 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[vchProdAcc] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[vchProdAcc] = "%.2f"%float(queryParams["roundoffamt"])
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+            
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -829,11 +1022,13 @@ def drcrVoucher(queryParams, orgcode):
                     prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                     prodAccount = prodAcc.fetchone()
                     drs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
                 salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                 saleAcc = salesAccount.fetchone()
                 drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
@@ -899,6 +1094,44 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" from "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+            
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -908,11 +1141,13 @@ def drcrVoucher(queryParams, orgcode):
                     prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                     prodAccount = prodAcc.fetchone()
                     crs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
                 salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                 saleAcc = salesAccount.fetchone()
                 crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
@@ -978,6 +1213,43 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Sold goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
+
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
+
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+            
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
@@ -987,11 +1259,13 @@ def drcrVoucher(queryParams, orgcode):
                     prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                     prodAccount = prodAcc.fetchone()
                     crs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
                 salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                 saleAcc = salesAccount.fetchone()
                 crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
                 abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
                 abb = abv.fetchone()
@@ -1057,28 +1331,68 @@ def drcrVoucher(queryParams, orgcode):
             Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
             voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            vouchersList.append(voucherDict)
 
-    voucherDict["orgcode"] = orgcode
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                if float(queryParams["roundoffamt"]) > 0.00:
+                    # user has spent rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
 
-    # generate voucher number if it is not sent.
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Paid",orgcode)
+                        accCode = a["accountcode"]
 
-    if voucherDict["vouchertype"] == "creditnote":
-        initialType = "cr"
-    if voucherDict["vouchertype"] == "debitnote":
-        initialType = "dr"
-    vchCountResult = con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
-    vchCount = vchCountResult.fetchone()
-    if vchCount["vcount"] == 0:
-        initialType = initialType + "1"
-    else:
-        vchCodeResult = con.execute("select max(vouchercode) as vcode from vouchers")
-        vchCode = vchCodeResult.fetchone()
-        initialType = initialType + str(vchCode["vcode"])
-    voucherDict["vouchernumber"] = initialType
+                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
 
-    result = con.execute(vouchers.insert(),[voucherDict])
-    for drkeys in drs.keys():
-        con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
-    for crkeys in crs.keys():
-        con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
-    return vchCode["vcode"]
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+                if float(queryParams["roundoffamt"]) < 0.00:
+                    # user has earned rounded of amount
+                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundRow = roundAcc.fetchone()
+
+                    try:
+                        accCode = roundRow["accountcode"]
+                    except:
+                        a = createAccount(18,"Round Off Received",orgcode)
+                        accCode = a["accountcode"]
+
+                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    vouchersList.append(rd_VoucherDict)
+
+    for vch in vouchersList:
+        vch["orgcode"] = orgcode
+
+        # generate voucher number if it is not sent.
+
+        if vch["vouchertype"] == "creditnote":
+            initialType = "cr"
+        if vch["vouchertype"] == "debitnote":
+            initialType = "dr"
+        if vch["vouchertype"] == "journal":
+            initialType = "jr"
+        vchCountResult = con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCount = vchCountResult.fetchone()
+        if vchCount["vcount"] == 0:
+            initialType = initialType + "1"
+        else:
+            vchCodeResult = con.execute("select max(vouchercode) as vcode from vouchers")
+            vchCode = vchCodeResult.fetchone()
+            initialType = initialType + str(vchCode["vcode"])
+        vch["vouchernumber"] = initialType
+
+        result = con.execute(vouchers.insert(),[vch])
+        for drkeys in vch["drs"].keys():
+            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+        for crkeys in vch["crs"].keys():
+            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+        vchCodes.append(initialType)
+    return vchCodes
