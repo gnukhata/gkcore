@@ -1408,7 +1408,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 invid = dataset["invid"]
@@ -1419,9 +1419,6 @@ The bills grid calld gkresult will return a list as it's value.
                 userDetails = userdetails.fetchone()
                 temp = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)))
                 invData = temp.fetchone()
-                print invData["sourcestate"], "source"
-                print invData["taxstate"], "destina"
-
                 invprodresult.append(invData["contents"])
                 qtyc =invData["contents"]
                 discounts = invData["discount"]
@@ -1533,11 +1530,9 @@ The bills grid calld gkresult will return a list as it's value.
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
                 temp = temp.fetchone()
-                # print temp ,"temp"
                 dcdetails = {}
                 custdata = self.con.execute(select([customerandsupplier]).where(customerandsupplier.c.custid.in_(select([invoice.c.custid]).where(invoice.c.invid==invid)))) 
                 custname = custdata.fetchone()
-                print custname,"custdata"
                 custsupstatecodedata = getStateCode(custname["state"],self.con)["statecode"]
                 dcdetails = {"custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"],"custsupstatecodedata":custsupstatecodedata,"taxflag":invData["taxflag"]}
                 if int(invData["taxflag"]) == 22:
@@ -1582,13 +1577,12 @@ The bills grid calld gkresult will return a list as it's value.
                         dcdetails["goname"] = goname["goname"]
                         dcdetails["gostate"] = goname["state"]
                         dcdetails["goaddr"] = goname["goaddr"]
-                    print dcdetails
                     
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
-            # except:
-            #     return {"gkstatus":enumdict["ConnectionFailed"]}
-            # finally:
-            #     self.con.close()
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
                 
     '''This method gives list of invoices. with all details of invoice.
     This method will be used to see report of list of invoices.

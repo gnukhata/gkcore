@@ -252,12 +252,17 @@ class api_rejectionnote(object):
                     if invdata["address"]!=None:
                         rejinvdata["address"]=invdata["address"]
                     if invdata["sourcestate"] != None or invdata["taxstate"] !=None:
-                        rejinvdata["sourcestate"] = invdata["sourcestate"]
                         sourceStateCode = getStateCode(invdata["sourcestate"],self.con)["statecode"]
                         rejinvdata["sourcestatecode"] = sourceStateCode
-                        rejinvdata["taxstate"]=invdata["taxstate"]
                         taxStateCode=getStateCode(invdata["taxstate"],self.con)["statecode"]
                         rejinvdata["taxstatecode"]=taxStateCode
+                        if invdata["inoutflag"] == 15:
+                            rejinvdata["sourcestate"] = invdata["sourcestate"]
+                            rejinvdata["taxstate"]=invdata["taxstate"]
+                        else:
+                            rejinvdata["sourcestate"] = invdata["taxstate"]
+                            rejinvdata["taxstate"]=invdata["sourcestate"]
+                        
                     rejectionnotedata["rejinvdata"]=rejinvdata
                     dcinvdata = self.con.execute(select([dcinv.c.dcid]).distinct().where(dcinv.c.invid == invdata["invid"]))
                     dcinvdata = dcinvdata.fetchone()
@@ -268,7 +273,7 @@ class api_rejectionnote(object):
                     if custdata["custtan"] != None:
                         custSupDetails["custtin"] = custdata["custtan"]
                     if custdata["gstin"] != None:
-                        if int(custdata["csflag"]) == 3 :
+                        if int(invdata["inoutflag"]) == 15 :
                            try:
                                custSupDetails["custgstin"] = custdata["gstin"][str(taxStateCode)]
                            except:
