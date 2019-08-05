@@ -580,7 +580,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 roundoffvalue = 0.00
                 if invrow["roundoffflag"] == 1:
                     roundoffvalue = round(invrow["invoicetotal"])
-                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"ewaybillno":invrow["ewaybillno"], "invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"],"narration":invrow["invnarration"]}
+                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"], "discflag":invrow["discflag"],"narration":invrow["invnarration"]}
                 
                 # below field deletable is for check whether invoice having voucher or not
                 #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
@@ -770,7 +770,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
 
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
-                    invContents[pc]["discflag"] = invrow["discflag"]
                 #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
                 billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
                 billwise_entry= billwiseentry.fetchone() 
@@ -821,8 +820,9 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 self.con = eng.connect()
                 result = self.con.execute(select([invoicebin]).where(invoicebin.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
-                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"]}
-
+                
+                inv = {"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"], "discflag":invrow["discflag"]}
+                
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(invrow["sourcestate"],self.con)["statecode"]
