@@ -113,8 +113,9 @@ class api_customer(object):
                     bankdetails = ""
                 else:
                     bankdetails = row["bankdetails"]
+
                 statelist=[]
-                if (row["gstin"] != None):
+                if (row["gstin"] != None and bool(row["gstin"])):
                     for statecd in row["gstin"]:
                         statedata = self.con.execute(select([gkdb.state.c.statename,gkdb.state.c.statecode]).where(gkdb.state.c.statecode == statecd))
                         statename = statedata.fetchone()
