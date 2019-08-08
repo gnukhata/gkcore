@@ -94,27 +94,24 @@ defaultflag '2' or '3' set to the '0'.
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
-                    if dflag == 180:
-                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
-                    if dflag == 181:
-                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
-                    for name in grpname:
-                        if name == "Bank":
-                            if dflag == 2:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
-                        elif name == "Cash":
-                            if dflag == 3:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
-                        elif name == "Purchase":
-                            if dflag == 16:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
-                        elif name == "Sales":
-                            if dflag == 19:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
+                    if (grpname["groupname"] == "Bank" and dflag == 2):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Cash" and dflag == 3):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Purchase" and dflag == 16):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Sales" and dflag == 19):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Indirect Expense" and dflag == 180):
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Indirect Income" and dflag == 181):
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(authDetails["orgcode"]))
+                
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
@@ -321,28 +318,28 @@ defaultflag '16' or '19' set to the '0'.
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                #To update defaultflag check whether key exists and then update only those accounts which are under the respective group.
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
-                    if dflag == 180:
-                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(dataset["orgcode"]))
-                    if dflag == 181:
-                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(dataset["orgcode"]))
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
                     grpname = grpnames.fetchone()
-                    for name in grpname:
-                        if name == "Bank":
-                            if dflag == 2:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2")
-                        elif name == "Cash":
-                            if dflag == 3:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3")
-                        elif name == "Purchase":
-                            if dflag == 16:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16")
-                        elif name == "Sales":
-                            if dflag == 19:
-                                setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19")
+                    if (grpname["groupname"] == "Bank" and dflag == 2):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=2 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Cash" and dflag == 3):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=3 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Purchase" and dflag == 16):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=16 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Sales" and dflag == 19):
+                        setdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=19 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Indirect Expense" and dflag == 180):
+                        setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(authDetails["orgcode"]))
+                    if (grpname["groupname"] == "Indirect Income" and dflag == 181):
+                        setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(authDetails["orgcode"]))
+
+                accPrevName = self.con.execute(select([gkdb.accounts.c.accountname]).where(gkdb.accounts.c.accountcode == dataset["accountcode"]))
+                accountName = accPrevName.fetchone()
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
