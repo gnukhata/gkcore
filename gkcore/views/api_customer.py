@@ -63,7 +63,15 @@ class api_customer(object):
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(gkdb.customerandsupplier.insert(),[dataset])
-                return {"gkstatus":enumdict["Success"]}
+                if result.rowcount==1:
+                    if "subgroupcode" in dataset:
+                        subgroupcode = int(dataset.pop("subgroupcode"))
+                    else:
+                        groupcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname==groupname)))
+                    # Account for customer / supplier
+                    accountData = {"openingbal":0.00,"accountname":dataset["custname"],"groupcode":subgroupcode,"orgcode":authDetails["orgcode"]}
+                    result = self.con.execute(gkdb.accounts.insert(),[accountData])
+                    return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
