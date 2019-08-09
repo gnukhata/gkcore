@@ -65,7 +65,6 @@ class api_drcr(object):
                 vdataset = wholedataset["vdataset"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 result=self.con.execute(drcr.insert(),[dataset])
-
                 lastdrcr = self.con.execute(select([drcr.c.drcrid]).where(and_(drcr.c.invid==dataset["invid"], drcr.c.drcrno==dataset["drcrno"],drcr.c.orgcode==dataset["orgcode"],drcr.c.dctypeflag==dataset["dctypeflag"])))
                 drcrid = lastdrcr.fetchone()
                 if int(dataset["drcrmode"]) == 18:
@@ -73,7 +72,8 @@ class api_drcr(object):
                     if int(dataset["dctypeflag"]) == 3:
                         stockdataset["inout"] = 9
                         if int(vdataset["inoutflag"]) == 15:
-                            stockdataset["dcinvtnflag"] = 2
+                             #value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                            stockdataset["dcinvtnflag"] = dataset["dcinvtnflag"]
                         else:
                             stockdataset["dcinvtnflag"] = 7
                     else:
