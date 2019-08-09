@@ -151,6 +151,10 @@ class api_organisation(object):
             if columnExists("purchaseorder","goid"):
                 self.con.execute("alter table purchaseorder drop column goid")
 
+            #In Below query we are adding field pincode to purchaseorder table
+            if not columnExists("purchaseorder","pincode"):
+                self.con.execute("alter table purchaseorder add pincode text")
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","modeflag"):
