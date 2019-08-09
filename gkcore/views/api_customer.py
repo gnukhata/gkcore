@@ -67,11 +67,19 @@ class api_customer(object):
                     if "subgroupcode" in dataset:
                         subgroupcode = int(dataset.pop("subgroupcode"))
                     else:
+                        if dataset["csflag"] == 3:
+                            groupname = "Sundry Debtors"
+                        else:
+                            groupname = "Sundry Creditors for Purchase"
                         groupcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname==groupname)))
+                        group = groupcode.fetchone()
+                        subgroupcode = group["groupcode"]
                     # Account for customer / supplier
                     accountData = {"openingbal":0.00,"accountname":dataset["custname"],"groupcode":subgroupcode,"orgcode":authDetails["orgcode"]}
                     result = self.con.execute(gkdb.accounts.insert(),[accountData])
                     return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
