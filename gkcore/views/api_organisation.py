@@ -158,9 +158,6 @@ class api_organisation(object):
             #Below query is to remove gbflag if it exists.
             if columnExists("godown","gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
-            #Below query is to remove goid filed from table purchaseorder if it exists.
-            if columnExists("purchaseorder","goid"):
-                self.con.execute("alter table purchaseorder drop column goid")
 
             #In Below query we are adding field pincode to purchaseorder table
             if not columnExists("purchaseorder","pincode"):
