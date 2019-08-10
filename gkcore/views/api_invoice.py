@@ -1370,14 +1370,12 @@ The bills grid calld gkresult will return a list as it's value.
                                         
                                     except:
                                         custSupDetails["custgstin"] = None
-                                        custSupDetails["custstate"] = None
                                 else:
                                     try:
                                         custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
                                         
                                     except:
                                         custSupDetails["custgstin"] = None
-                                        custSupDetails["custstate"] = None
                         allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"inoutflag":invrow["inoutflag"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
                                 
                 self.con.close()
@@ -1431,6 +1429,8 @@ The bills grid calld gkresult will return a list as it's value.
                     invDetails["designation"] = userDetails["userrole"]
                     
                 if invData["sourcestate"] != None or invData["taxstate"] !=None:
+                    #Please keep in mind that state of invoice in front end is always set as sourcestate key of invdetails.
+                    #if inoutflag is 15 customer/supplier state is taxstate and invoice state is sourcestate else customer/supllier state is sourcestate and invoice state is taxstate
                     if invData["inoutflag"] == 15:
                         invDetails["sourcestate"] =invData["sourcestate"]
                         invDetails["taxstate"]=invData["taxstate"]
@@ -1554,14 +1554,12 @@ The bills grid calld gkresult will return a list as it's value.
 
                             except:
                                 dcdetails["custgstin"] = None
-                                dcdetails["custstate"] = None
                         else:
                             try:
                                 dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
 
                             except:
                                 dcdetails["custgstin"] = None   
-                                dcdetails["custstate"] = None
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
