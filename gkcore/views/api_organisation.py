@@ -47,9 +47,10 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
+from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists, getOnDelete
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from datetime import datetime, timedelta
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -548,10 +549,21 @@ class api_organisation(object):
 
                 #In Below queries we are creating new table invoivebin which is act as bin for canceled invoices. 
             if not tableExists("invoicebin"):
-                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid))")
+                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid), foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE))")
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
-     
+            else:
+                #below code is for add forign key constraint to orgcode when it is not available in invoicebin table
+                fkeyavlb = getOnDelete("invoicebin", "invoicebin_orgcode_fkey")
+                if fkeyavlb == None:
+                    # this condition is apply for forign key available but not ondelete cascade 
+                    self.con.execute("alter table invoicebin drop constraint invoicebin_orgcode_fkey")
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == False:
+                    # this condition is apply for forign key and ondelete cascade both are not available
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == "CASCADE":
+                    pass
         except:            
             return 0
         finally:
@@ -1028,13 +1040,22 @@ class api_organisation(object):
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 if userRole[0]==-1:
+                    orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"%authDetails["orgcode"])
+                    getorgdata = orgdata.fetchone()
+                    lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
+                    checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    checkorgcode=checkorg.fetchone()
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
                         result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
                         orgcount = result.fetchone()
                         if orgcount["ocount"]==0:
                             result = self.con.execute(gkdb.signature.delete())
-                    self.con.close()
+                    if checkorgcode != None:
+                        resetroflag=self.con.execute("update organisation set roflag = 0 where orgcode='%d'"%(checkorgcode
+                        ["orgcode"]))
+                    
+                    self.con.close()    
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     {"gkstatus":  enumdict["BadPrivilege"]}
