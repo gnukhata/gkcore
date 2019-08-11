@@ -279,6 +279,12 @@ class api_drcr(object):
                 drcrdata['taxname'] = taxname
                 drcrdata["drcrcontents"] = drcrContents
                 drcrdata["invdata"]=invdata
+                #Flag sent to indicate whether goods returned where of badquality.
+                drcrGetSingleStockResult=self.con.execute("select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"%(int(self.request.params["drcrid"]), int(authDetails["orgcode"]))).fetchone()
+                if int(drcrGetSingleStockResult["drcrcount"]) == 0:
+                    drcrdata["badquality"] = 0
+                else:
+                    drcrdata["badquality"] = 1
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
