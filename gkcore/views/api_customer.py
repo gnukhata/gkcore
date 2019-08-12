@@ -73,8 +73,11 @@ class api_customer(object):
                     group = groupcode.fetchone()
                     subgroupcode = group["groupcode"]
                     accountData = {"openingbal":0.00,"accountname":dataset["custname"],"groupcode":subgroupcode,"orgcode":authDetails["orgcode"]}
-                    result = self.con.execute(gkdb.accounts.insert(),[accountData])
-                    return {"gkstatus":enumdict["Success"]}
+                    try:
+                        result = self.con.execute(gkdb.accounts.insert(),[accountData])
+                        return {"gkstatus":enumdict["Success"]}
+                    except:
+                        return {"gkstatus":enumdict["Success"]}
                 else:
                     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
