@@ -119,6 +119,16 @@ class api_organisation(object):
                 self.con.execute("alter table purchaseorder add column roundoffflag integer default 0")
                 self.con.execute("alter table delchal add column roundoffflag integer default 0")
                 self.con.execute("alter table drcr add column roundoffflag integer default 0")
+            # remove goid if present
+            if columnExists("purchaseorder","goid"):
+                self.con.execute("alter table purchaseorder drop column goid")
+                self.con.execute("alter table rejectionnote drop column goid")
+                self.con.execute("alter table drcr drop column goid")
+                self.con.execute("alter table budget drop column goid")
+                self.con.execute("alter table vouchers drop column goid")
+                self.con.execute("alter table invoice drop column goid")
+                self.con.execute("alter table delchal drop column goid")
+                
 
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
@@ -148,9 +158,6 @@ class api_organisation(object):
             #Below query is to remove gbflag if it exists.
             if columnExists("godown","gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
-            #Below query is to remove goid filed from table purchaseorder if it exists.
-            if columnExists("purchaseorder","goid"):
-                self.con.execute("alter table purchaseorder drop column goid")
 
             #In Below query we are adding field pincode to purchaseorder table
             if not columnExists("purchaseorder","pincode"):
@@ -543,7 +550,7 @@ class api_organisation(object):
                 self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
                 self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             if not tableExists("budget"):
-                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
                 #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
                 self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
 
