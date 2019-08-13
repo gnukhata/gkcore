@@ -1024,6 +1024,27 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
+    @view_config(request_method='GET',request_param="getinvid", renderer ='json')
+    def getinvid(self):
+        try: 
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token) 
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                invcount = self.con.execute("select count(invid) as icount from invoice where inoutflag=%d and orgcode = %d"%(int(self.request.params["type"]),authDetails["orgcode"]))
+                invoicecount = invcount.fetchone()
+                invid=int(invoicecount["icount"])+1
+                return {"gkstatus": 0,"invoiceid":invid}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+            
     @view_config(request_method='GET',request_param="forvoucher", renderer ='json')
     def getforvoucher(self):
         try:
