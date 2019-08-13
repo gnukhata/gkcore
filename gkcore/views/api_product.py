@@ -522,11 +522,11 @@ class api_product(object):
     '''
     A godown keeper can only access the list of products that are present in the godowns assigned to him.
     This function lets a godown keeper access the list of all products in an organisation.
-    Also, godown incharge cannot access products which are already having openingStock for perticular godown which is selected.
+    Also, godown incharge cannot access products which are already having openingStock for particular godown which is selected.
     '''
 
     @view_config(request_method='GET', request_param='list=allprod', renderer ='json')
-    def getallProdList(self):
+    def getAllProdList(self):
         try:
             token = self.request.headers["gktoken"]
         except:
