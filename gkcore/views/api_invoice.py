@@ -2493,7 +2493,7 @@ The bills grid calld gkresult will return a list as it's value.
                 v_No.append(vch["vouchernumber"])
                 v_ID.append(int(vouchercode["vcode"]))
             #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
-                if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
+                if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3 and "Round off amount" not in vch["narration"]:
                     upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
                     inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
             
