@@ -110,7 +110,7 @@ def deleteVoucherFun(vcode,orgcode):
             voucherToBeDeleted = con.execute(select([vouchers.c.vouchercode]).where(and_(vouchers.c.drcrid == int(drcridToBeDeleted["drcrid"]), vouchers.c.orgcode == int(orgcode), vouchers.c.narration.like('Round off amount%'))))
             voucherCodeToDelete = voucherToBeDeleted.fetchone()
             if voucherCodeToDelete and voucherCodeToDelete["vouchercode"]!=None:
-                voucherBinInsert(voucherCodeToDelete["vouchercode"], orgcode)
+                voucherBinInsert(con, voucherCodeToDelete["vouchercode"], orgcode)
         voucherBinInsert(con, vcode, orgcode)
         con.close()
         return {"gkstatus":enumdict["Success"]}
