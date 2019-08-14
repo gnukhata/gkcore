@@ -94,7 +94,7 @@ def deleteVoucherFun(vcode,orgcode):
             amt = con.execute("select adjamount from billwise  where vouchercode = %d and invid = %d "%(int(vcode),row["invid"]))
             adjamount = amt.fetchone()
             #Updating amountpaid field of invoice.
-            con.execute("update invoice set amountpaid = amountpaid - %d where invid =%d and orgcode = %d"%(adjamount["adjamount"],row["invid"],(int(orgcode))))
+            con.execute("update invoice set amountpaid = amountpaid - %.2f where invid =%d and orgcode = %d"%(float(adjamount["adjamount"]),row["invid"],(int(orgcode))))
             #Deleting round off vouchers.
             voucherToBeDeleted = con.execute(select([vouchers.c.vouchercode]).where(and_(vouchers.c.invid == int(row["invid"]), vouchers.c.orgcode == int(orgcode), vouchers.c.narration.like('Round off amount%'))))
             voucherCodeToDelete = voucherToBeDeleted.fetchone()
