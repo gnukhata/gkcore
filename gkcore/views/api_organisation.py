@@ -978,6 +978,10 @@ class api_organisation(object):
                     orgtelno=""
                 else:
                     orgtelno=row["orgtelno"]
+                if(row["orgfax"]==None):
+                    orgfax=""
+                else:
+                    orgfax=row["orgfax"]
                 if(row["orgemail"]==None):
                     orgemail=""
                 else:
@@ -993,7 +997,7 @@ class api_organisation(object):
                 else:
                     bankdetails = row["bankdetails"]
 
-                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgfax":orgfax, "orgemail":orgemail}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
