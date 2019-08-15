@@ -139,7 +139,7 @@ class api_drcr(object):
                 invdata={}
                 custSupDetails={}
                 drcrdata={}
-                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"], "drcrmode":drcrrow["drcrmode"], "drcr_narration":drcrrow["drcr_narration"]}
+                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"], "drcrmode":drcrrow["drcrmode"], "drcrnarration":drcrrow["drcrnarration"]}
                 # this will show that total amount is rounded of or not
                 drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
                 drcrdata["roundedoffvalue"] = "%.2f"%float(round(drcrrow["totreduct"]))
