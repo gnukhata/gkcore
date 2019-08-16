@@ -1,3 +1,17 @@
+[16 August 2019 Release 6.0 Updates] 
+* Round Off feature for Delivery note , Credit/Debit note and Purchase/Sales order with automatic accounting entries.
+* Accounts necessary for automatic accounting entries are created atomatically if they are found to be absent.
+* PIN Code of Customer/Supplier is saved.
+* AccountsByRule function tweaked to allow both customers and suppliers in Sale and Purchase vouchers.
+* P&L and Balance Sheet reports API accepts any range of date within a financial year.
+* Provision to have multiple sales invoice number series.
+*Field for eway bill has been added.
+* Field for narration in Invoice and Debit Credit Note.
+* Dashboard performance enhancement.
+* Performance Enhancements in APIs and database.
+* Bug Fixes.
+
+
 [26 April 2019 Release 6.0]
 * Added API for dashboard and made related modifications in other APIs.
 * Added API for Budget.
