@@ -7,6 +7,7 @@
 * Provision to have multiple sales invoice number series.
 * Field for eway bill has been added.
 * Field for narration in Invoice and Debit Credit Note.
+* Default accounts bug resolved.
 * Dashboard performance enhancement.
 * Performance Enhancements in APIs and database.
 * Bug Fixes.
