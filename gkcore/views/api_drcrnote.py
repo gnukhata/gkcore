@@ -540,8 +540,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                drs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
@@ -645,8 +645,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                drs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
@@ -750,8 +750,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                crs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
@@ -855,8 +855,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                crs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
@@ -975,8 +975,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                drs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
@@ -1094,8 +1094,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                drs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" from "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
 
@@ -1213,8 +1213,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                crs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Sold goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
@@ -1331,8 +1331,8 @@ def drcrVoucher(queryParams, orgcode):
                 vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["taxes"][prod])
-                crs[vatoutaccountcode["accountcode"]] = taxAmount
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
+                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
 
             Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
 
