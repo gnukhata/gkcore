@@ -5,7 +5,7 @@
 * AccountsByRule function tweaked to allow both customers and suppliers in Sale and Purchase vouchers.
 * P&L and Balance Sheet reports API accepts any range of date within a financial year.
 * Provision to have multiple sales invoice number series.
-*Field for eway bill has been added.
+* Field for eway bill has been added.
 * Field for narration in Invoice and Debit Credit Note.
 * Dashboard performance enhancement.
 * Performance Enhancements in APIs and database.
