@@ -176,10 +176,10 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total rounded off
-                                    # if invdataset["roundoffflag"] == 1:
-                                    #     roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
-                                    #     if float(roundOffAmount) != 0.00:
-                                    #         queryParams["roundoffamt"] = float(roundOffAmount)
+                                    if int(invdataset["roundoffflag"]) == 1:
+                                        roundOffAmount = float(invdataset["invoicetotal"]) - round(float(invdataset["invoicetotal"]))
+                                        if float(roundOffAmount) != 0.00:
+                                            queryParams["roundoffamt"] = float(roundOffAmount)
 
                                     if int(invdataset["taxflag"]) == 7:
                                         queryParams["gstname"]=avData["avtax"]["GSTName"]
@@ -429,7 +429,7 @@ class api_invoice(object):
                 invoicedata = invoicedata.fetchone()
 
                 #Add all data of cancel invoice into invoicebin"
-                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"]}
+                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"pincode":invoicedata["pincode"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"]}
                 bin = self.con.execute(invoicebin.insert(),[invoiceBinData])
                 
                 # below query is for delete billwise entry for cancel invoice.
@@ -558,8 +558,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 roundoffvalue = 0.00
                 if invrow["roundoffflag"] == 1:
                     roundoffvalue = round(invrow["invoicetotal"])
-
-                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"]}
+                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"ewaybillno":invrow["ewaybillno"], "invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"],"narration":invrow["invnarration"]}
                 
                 # below field deletable is for check whether invoice having voucher or not
                 #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
@@ -585,6 +584,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["address"]= ""
                 else:
                     inv["address"]=invrow["address"]
+                if invrow["pincode"] == None:
+                    inv["pincode"]= ""
+                else:
+                    inv["pincode"]=invrow["pincode"]                    
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
                     inv["designation"]=invrow["designation"]
@@ -610,10 +613,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
-                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag, customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
@@ -707,6 +710,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxAmt = totalTaxAmt + taxAmount
 
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                
+                #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
+                billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
+                billwise_entry= billwiseentry.fetchone() 
+                if (billwise_entry["invoicetotal"]>billwise_entry["amountpaid"]):
+                   inv["billentrysingleflag"] = 0
+                else:
+                   inv["billentrysingleflag"] = 1
+
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
@@ -759,6 +771,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     inv["address"]= ""
                 else:
                     inv["address"]=invrow["address"]
+                if invrow["pincode"] == None:
+                    inv["pincode"]= ""
+                else:
+                    inv["pincode"]=invrow["pincode"]                
                 if invrow["icflag"]==9:
                     inv["issuername"]=invrow["issuername"]
                     inv["designation"]=invrow["designation"]
@@ -784,10 +800,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
-                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
+                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr,customerandsupplier.c.pincode, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
@@ -1007,6 +1023,27 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
+    @view_config(request_method='GET',request_param="getinvid", renderer ='json')
+    def getinvid(self):
+        try: 
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token) 
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                invcount = self.con.execute("select count(invid) as icount from invoice where inoutflag=%d and orgcode = %d"%(int(self.request.params["type"]),authDetails["orgcode"]))
+                invoicecount = invcount.fetchone()
+                invid=int(invoicecount["icount"])+1
+                return {"gkstatus": 0,"invoiceid":invid}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+            
     @view_config(request_method='GET',request_param="forvoucher", renderer ='json')
     def getforvoucher(self):
         try:
@@ -1022,11 +1059,11 @@ The bills grid calld gkresult will return a list as it's value.
                 invsData = self.con.execute("select invid from invoice where icflag = 9 and orgcode = %d except select invid from vouchers where orgcode = %d"%(authDetails["orgcode"],authDetails["orgcode"]))
                 invoices = []
                 for inv in invsData:
-                    filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
+                    filteredInvoices = self.con.execute(select([invoice.c.invoiceno,invoice.c.inoutflag,invoice.c.invoicedate,invoice.c.custid,invoice.c.invoicetotal]).where(invoice.c.invid == inv["invid"]))
                     invdataset = filteredInvoices.fetchone()
                     csdata = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdataset["custid"]))
                     custname = csdata.fetchone()
-                    invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
+                    invoices.append({"invoiceno":invdataset["invoiceno"], "invid":inv["invid"],"custname":custname["custname"],"inoutflag":invdataset["inoutflag"],"invoicedate":datetime.strftime(invdataset["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(invdataset["invoicetotal"])})
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
@@ -1249,15 +1286,18 @@ The bills grid calld gkresult will return a list as it's value.
                     pass
 
                 for eachdcid in alldcids:
-                    singledcResult = self.con.execute(select([delchal.c.dcid, delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
+                    singledcResult = self.con.execute(select([delchal.c.dcid,delchal.c.inoutflag, delchal.c.dcno, delchal.c.dcdate, delchal.c.dateofsupply, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
                     singledcResult = singledcResult.fetchone()
                     dcResult.append(singledcResult)
-
                 temp_dict = {}
                 srno = 1
                 if dataset["type"] == "invoice":
                     for row in dcResult:
-                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"],"inoutflag":row["inoutflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+                        if row["dateofsupply"]!= None:
+                            temp_dict["dateofsupply"]=datetime.strftime(row["dateofsupply"],"%d-%m-%Y")
+                        else:
+                            temp_dict["dateofsupply"]=row["dateofsupply"]
                         if temp_dict["dcflag"] == 19:
                             #We don't have to consider sample.
                             temp_dict["dcflag"] = "Sample"
@@ -1271,7 +1311,7 @@ The bills grid calld gkresult will return a list as it's value.
                     #type=rejection note
                     #Here even delivery type sample and free Replacement can also be rejected.
                     for row in dcResult:
-                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
+                        temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "csflag": row["csflag"], "inoutflag":row["inoutflag"], "custname": row["custname"], "attachmentcount": row["attachmentcount"]}
                         dc_unbilled.append(temp_dict)
                         srno += 1
                 self.con.close()
@@ -1296,7 +1336,7 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                invResult = self.con.execute(select([invoice.c.invid,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
+                invResult = self.con.execute(select([invoice.c.invid,invoice.c.inoutflag,invoice.c.invoicedate,invoice.c.contents,invoice.c.invoiceno,invoice.c.custid,invoice.c.taxflag,invoice.c.sourcestate,invoice.c.taxstate]).where(and_(invoice.c.orgcode == authDetails["orgcode"], invoice.c.icflag == 9)))
                 allinv = invResult.fetchall()
                 allinvids = []
                 for invrow in allinv:
@@ -1350,15 +1390,13 @@ The bills grid calld gkresult will return a list as it's value.
                                         
                                     except:
                                         custSupDetails["custgstin"] = None
-                                        custSupDetails["custstate"] = None
                                 else:
                                     try:
                                         custSupDetails["custgstin"] = custData["gstin"][str(sourceStateCode)]
                                         
                                     except:
                                         custSupDetails["custgstin"] = None
-                                        custSupDetails["custstate"] = None
-                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
+                        allinvids.append({"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"inoutflag":invrow["inoutflag"],"invoicedate":datetime.strftime(invrow["invoicedate"],'%d-%m-%Y'),"rejcontent":rejContents,"custsupdetail": custSupDetails})
                                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult":allinvids}
@@ -1409,11 +1447,16 @@ The bills grid calld gkresult will return a list as it's value.
                 else:
                     invDetails["issuername"] = userDetails["username"]
                     invDetails["designation"] = userDetails["userrole"]
+                    
                 if invData["sourcestate"] != None or invData["taxstate"] !=None:
-                    invDetails["sourcestate"] = invData["sourcestate"]
-                    invDetails["taxstate"]=invData["taxstate"]
-                    taxStateCode=getStateCode(invData["taxstate"],self.con)["statecode"]
-                    invDetails["taxstatecode"]=taxStateCode
+                    #Please keep in mind that state of invoice in front end is always set as sourcestate key of invdetails.
+                    #if inoutflag is 15 customer/supplier state is taxstate and invoice state is sourcestate else customer/supllier state is sourcestate and invoice state is taxstate
+                    if invData["inoutflag"] == 15:
+                        invDetails["sourcestate"] =invData["sourcestate"]
+                        invDetails["taxstate"]=invData["taxstate"]
+                    else:
+                        invDetails["sourcestate"] = invData["taxstate"]
+                        invDetails["taxstate"]=invData["sourcestate"]
                 if invData["address"]!="":
                     invDetails["address"]=invData["address"]
 
@@ -1517,39 +1560,42 @@ The bills grid calld gkresult will return a list as it's value.
                         dcdetails["custtin"] = custname["custtan"]
                         dcdetails["custstate"] = custname["state"]
                 else:
-                    if invData["sourcestate"] != None:
-                        sourceStateCode = getStateCode(invData["sourcestate"],self.con)["statecode"]
-                        dcdetails["custstate"] = invData["sourcestate"]
-                    if invData["taxstate"] != None:
-                        taxStateCode =  getStateCode(invData["taxstate"],self.con)["statecode"]
-                        dcdetails["custstate"] = invData["taxstate"]
-                    if custname["gstin"] != None:
-                        if int(custname["csflag"]) == 3 :
-                            try:
-                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
-
-                            except:
-                                dcdetails["custgstin"] = None
-                                dcdetails["custstate"] = None
+                    if invData["sourcestate"] != None or invData["taxstate"] !=None:
+                        if invData["inoutflag"] == 15:
+                            sourceStateCode = getStateCode(invData["taxstate"],self.con)["statecode"]
+                            dcdetails["custstate"]=invData["taxstate"]
                         else:
+                            taxStateCode =  getStateCode(invData["sourcestate"],self.con)["statecode"]
+                            dcdetails["custstate"] = invData["sourcestate"]
+                    if custname["gstin"] != None:
+                        if int(invData["inoutflag"]) == 15 :
                             try:
                                 dcdetails["custgstin"] = custname["gstin"][str(sourceStateCode)]
 
                             except:
                                 dcdetails["custgstin"] = None
-                                dcdetails["custstate"] = None
+                        else:
+                            try:
+                                dcdetails["custgstin"] = custname["gstin"][str(taxStateCode)]
+
+                            except:
+                                dcdetails["custgstin"] = None   
                 if temp:
                     result = self.con.execute(select([delchal]).where(delchal.c.dcid==temp[0]))
                     delchaldata = result.fetchone()
-                    stockdata = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
-                    stockdata = stockdata.fetchone()
-                    dcdetails = {"dcid":temp[0], "custname":custname["custname"], "custaddr": custname["custaddr"], "custtin":custname["custtan"], "goid":"", "goname":"", "gostate":"", "dcflag":delchaldata["dcflag"]}
-                    godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata[0]))
-                    goname = godata.fetchone()
-                    dcdetails["goid"] = stockdata[0]
-                    dcdetails["goname"] = goname["goname"]
-                    dcdetails["gostate"] = goname["state"]
-                    dcdetails["goaddr"] = goname["goaddr"]
+                    stockdataval = self.con.execute(select([stock.c.goid]).where(and_(stock.c.dcinvtnflag==4,stock.c.dcinvtnid==temp[0])))
+                    stockdata = stockdataval.fetchone()
+                    dcdetails["dcid"]=temp[0]
+                    dcdetails["dcflag"]=delchaldata["dcflag"]
+
+                    if stockdata["goid"] != None:
+                        godata = self.con.execute(select([godown.c.goname,godown.c.state, godown.c.goaddr]).where(godown.c.goid==stockdata["goid"]))
+                        goname = godata.fetchone()
+                        dcdetails["goid"] = stockdata["goid"]
+                        dcdetails["goname"] = goname["goname"]
+                        dcdetails["gostate"] = goname["state"]
+                        dcdetails["goaddr"] = goname["goaddr"]
+                    
                 return {"gkstatus":enumdict["Success"], "gkresult": items, "delchal": dcdetails,"invDetails":invDetails}
             except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
@@ -1663,7 +1709,14 @@ The bills grid calld gkresult will return a list as it's value.
                             custtin  = customerdetails["custtan"]
                         except:
                             custtin = None
-                    
+
+                    #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentryflag to 0 else to 1 to create voucher for the same.
+                    billentryflag = 1
+                    billwiseentry=self.con.execute("select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "%(row["invid"],authDetails["orgcode"]))  
+                    billwise_entry= billwiseentry.fetchone() 
+                    if  billwise_entry > 0:
+                        billentryflag = 0
+
                     #below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
                     cancelinv = 1
                     exist_delchal=self.con.execute("select count(invid) as invcount from dcinv where invid=%d and orgcode=%d"%(row["invid"],authDetails["orgcode"]))  
@@ -1678,15 +1731,15 @@ The bills grid calld gkresult will return a list as it's value.
 
                     #flag=0, all invoices.
                     if self.request.params["flag"] == "0":
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                     #flag=1, sales invoices
-                    elif self.request.params["flag"] == "1" and customerdetails["csflag"] == 3:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                    elif self.request.params["flag"] == "1" and row["inoutflag"] == 15:
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                     #flag=2, purchase invoices.
-                    elif self.request.params["flag"] == "2" and customerdetails["csflag"] == 19:
-                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
+                    elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
+                        invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
@@ -1821,11 +1874,11 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=1, sales invoices
-                    elif self.request.params["flag"] == "1" and customerdetails["csflag"] == 3:
+                    elif self.request.params["flag"] == "1" and row["inoutflag"] == 15:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                     #flag=2, purchase invoices.
-                    elif self.request.params["flag"] == "2" and customerdetails["csflag"] == 19:
+                    elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
@@ -1834,6 +1887,74 @@ The bills grid calld gkresult will return a list as it's value.
             finally:
                 self.con.close()
 
+    def createAccount(self,type,accName,orgcode):
+        try:
+            """
+            Purpose: Create account.
+            While creating automatic voucher if required account not found then it will create that account.
+            It reurns that created accounts accountcode.
+            type is used to specify that what type of account is creating. Group name will be decides on basis of that.
+            And if the account is default then proper defaultflag will set for that.
+            """
+            self.con = eng.connect()
+            groupName = ""
+            default = 0
+            sys = 0
+            # product sale account
+            if(type == 19):
+                groupName = "Sales"
+                # sales default account
+                if (accName == "Sale A/C"):
+                    default = 19
+            # product purchase account
+            elif(type == 16):
+                groupName = "Purchase"
+                # purchase default account
+                if (accName == "Purchase A/C"):
+                    default = 16
+            # default cash account
+            elif(type == 3):
+                groupName = "Cash"
+                default = 3
+            # default bank account
+            elif(type == 2):
+                groupName = "Bank"
+                default = 2
+            # Tax account
+            elif(type == 20):
+                groupName = "Duties & Taxes"
+                sys = 1
+            # customer or supplier account when payment mode is on credit
+            elif(type == 15):
+                ustOrSupl = self.con.execute(select([gkdb.customerandsupplier.c.csflag]).where(and_(gkdb.customerandsupplier.c.custname == str(accName) , gkdb.customerandsupplier.c.orgcode == orgcode)))
+                flagCS = custOrSupl.fetchone()
+                # customer
+                if(int(flagCS["csflag"]) == 3):
+                    groupName = "Sundry Debtors"
+                # suplier
+                if(int(flagCS["csflag"]) == 19):
+                    groupName = "Sundry Creditors for Purchase"
+            # Roundoff default account
+            elif(type == 18):
+                # Roundoff paid is in expense group
+                if (accName == "Round Off Paid"):
+                    groupName = "Indirect Expense"
+                    default = 180
+                # Roundoff received in income group
+                if (accName == "Round Off Received"):
+                    groupName = "Indirect Income"
+                    default = 181
+
+            group = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.groupname == str(groupName), groupsubgroups.c.orgcode == int(orgcode))))
+            grpCode = group.fetchone()
+            resultp = self.con.execute(accounts.insert(),{"accountname":accName,"groupcode":grpCode["groupcode"],"orgcode":orgcode,"defaultflag":default,"sysaccount":sys})
+            # fetch accountcode
+            accCode = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == accName,accounts.c.defaultflag == default, accounts.c.orgcode == orgcode)))
+            accountCode = accCode.fetchone()
+
+            return {"gkstatus":enumdict["Success"],"accountcode":int(accountCode["accountcode"])}
+        except:
+            return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
 
     def getDefaultAcc(self,queryParams,orgcode):
         try:
@@ -1878,44 +1999,93 @@ The bills grid calld gkresult will return a list as it's value.
                         proN = str(prod)+ " Sale" 
                         prodAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                         prodAccount = prodAcc.fetchone()
-                        crs[prodAccount["accountcode"]] ="%.2f"%float( prodData[prod])
+
+                        try:
+                            accCode = prodAccount["accountcode"]
+                        except:
+                            a = self.createAccount(19,str(proN),orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] ="%.2f"%float( prodData[prod])
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
                     saleAcc = salesAccount.fetchone()
-                    crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+
+                    try:
+                        accCode = saleAcc["accountcode"]
+                    except:
+                        a = self.createAccount(19,"Sale A/C",orgcode)
+                        accCode = a["accountcode"]
+
+                    crs[accCode] = "%.2f"%float(totalTaxableVal)
                 # check customer or supplier name in queryParams i.e. Invoice
                 if "csname" in queryParams:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
-                        drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = bankRow["accountcode"]
+
+                        try:
+                            accCode = bankRow["accountcode"]
+                        except:
+                            a = self.createAccount(2,"Bank A/C",orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = cashRow["accountcode"]
+                        
+                        try:
+                            accCode = cashRow["accountcode"]
+                        except:
+                            a = self.createAccount(3,"Cash in hand",orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 15:
                         custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                         custAccount = custAcc.fetchone() 
-                        drs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
-                        csa = custAccount["accountcode"]
+
+                        try:
+                            accCode = custAccount["accountcode"]
+                        except:
+                            a = self.createAccount(15,str(queryParams["csname"]),orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        csa = accCode
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" to "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 else:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
-                        drs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = bankRow["accountcode"]
+
+                        try:
+                            accCode = bankRow["accountcode"]
+                        except:
+                            a = self.createAccount(2,"Bank A/C",orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        drs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = cashRow["accountcode"] 
+
+                        try:
+                            accCode = cashRow["accountcode"]
+                        except:
+                            a = self.createAccount(3,"Cash in hand",orgcode)
+                            accCode = a["accountcode"]
+                        
+                        drs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode 
                         Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                         
                 # collect all taxaccounts with the value that needs to be dr or cr
@@ -1976,13 +2146,26 @@ The bills grid calld gkresult will return a list as it's value.
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
                         
-                        crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                        try:
+                            accCode = taxRow["accountcode"]
+                        except:
+                            a = self.createAccount(20,str(Tax),orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(taxDict[Tax])
 
             
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_OUT",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
+
+                    try:
+                        accCode = taxRow["accountcode"]
+                    except:
+                        a = self.createAccount(20,"VAT_OUT",orgcode)
+                        accCode = a["accountcode"]
+
+                    crs[accCode] = "%.2f"%float(queryParams["taxpayment"])
 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"sales","invid":queryParams["invid"]}
                 vouchers_List.append(voucherDict)
@@ -1993,7 +2176,14 @@ The bills grid calld gkresult will return a list as it's value.
                         # user has spent rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rddrs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                        try:
+                            accCode = roundRow["accountcode"]
+                        except:
+                            a = self.createAccount(18,"Round Off Paid",orgcode)
+                            accCode = a["accountcode"]
+
+                        rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                             rdcrs[cba] = "%.2f"%float(queryParams["roundoffamt"])
                             rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round of amount spent","vouchertype":"payment","invid":queryParams["invid"]}
@@ -2009,7 +2199,14 @@ The bills grid calld gkresult will return a list as it's value.
                         # user has earned rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rdcrs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+
+                        try:
+                            accCode = roundRow["accountcode"]
+                        except:
+                            a = self.createAccount(18,"Round Off Received",orgcode)
+                            accCode = a["accountcode"]
+
+                        rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                             
                             rddrs[cba] = "%.2f"%float(abs(queryParams["roundoffamt"]))
@@ -2034,43 +2231,92 @@ The bills grid calld gkresult will return a list as it's value.
                         proN = str(prod)+ " Purchase" 
                         prodAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
                         prodAccount = prodAcc.fetchone()
-                        drs[prodAccount["accountcode"]] ="%.2f"%float( prodData[prod])
+    
+                        try:
+                            accCode = prodAccount["accountcode"]
+                        except:
+                            a = self.createAccount(16,str(proN),orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] ="%.2f"%float( prodData[prod])
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 16, accounts.c.orgcode == orgcode)))
                     saleAcc = salesAccount.fetchone()
-                    drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+
+                    try:
+                        accCode = saleAcc["accountcode"]
+                    except:
+                        a = self.createAccount(16,"Purchase A/C",orgcode)
+                        accCode = a["accountcode"]
+
+                    drs[accCode] = "%.2f"%float(totalTaxableVal)
                 if "csname" in queryParams:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
-                        crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = bankRow["accountcode"]
+
+                        try:
+                            accCode = bankRow["accountcode"]
+                        except:
+                            a = self.createAccount(2,"Bank A/C",orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = cashRow["accountcode"]
+
+                        try:
+                            accCode = cashRow["accountcode"]
+                        except:
+                            a = self.createAccount(3,"Cash in hand",orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 15:
                         custAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname ==queryParams["csname"] , accounts.c.orgcode == orgcode)))
                         custAccount = custAcc.fetchone() 
-                        crs[custAccount["accountcode"]] = "%.2f"%float(amountPaid)
-                        csa = custAccount["accountcode"]
+
+                        try:
+                            accCode = custAccount["accountcode"]
+                        except:
+                            a = self.createAccount(15,str(queryParams["csname"]),orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(amountPaid)
+                        csa = accCode
                         Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" from "+ str(queryParams["csname"])+" on credit "+ "ref invoice no. "+str(queryParams["invoiceno"])
                 else:
                     if int(queryParams["pmtmode"]) == 2:
                         bankAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 2, accounts.c.orgcode == orgcode)))
                         bankRow = bankAccount.fetchone()
-                        crs[bankRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = bankRow["accountcode"]
+
+                        try:
+                            accCode = bankRow["accountcode"]
+                        except:
+                            a = self.createAccount(2,"Bank A/C",orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
-                        crs[cashRow["accountcode"]] = "%.2f"%float(amountPaid)
-                        cba = cashRow["accountcode"]
+
+                        try:
+                            accCode = cashRow["accountcode"]
+                        except:
+                            a = self.createAccount(3,"Cash in hand",orgcode)
+                            accCode = a["accountcode"]
+
+                        crs[accCode] = "%.2f"%float(amountPaid)
+                        cba = accCode
                         Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
                        # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
@@ -2131,13 +2377,27 @@ The bills grid calld gkresult will return a list as it's value.
                     for Tax in taxDict:
                         taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
                         taxRow = taxAcc.fetchone()
-                        drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+
+                        try:
+                            accCode = taxRow["accountcode"]
+                        except:
+                            a = self.createAccount(20,str(Tax),orgcode)
+                            accCode = a["accountcode"]
+
+                        drs[accCode] = "%.2f"%float(taxDict[Tax])
 
 
                 if int(queryParams["taxType"]) == 22:
                     taxAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== "VAT_IN",accounts.c.orgcode == orgcode)))
                     taxRow = taxAcc.fetchone()
-                    drs[taxRow["accountcode"]] = "%.2f"%float(queryParams["taxpayment"])
+
+                    try:
+                        accCode = taxRow["accountcode"]
+                    except:
+                        a = self.createAccount(20,"VAT_IN",orgcode)
+                        accCode = a["accountcode"]
+
+                    drs[accCode] = "%.2f"%float(queryParams["taxpayment"])
 
                 voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["invoicedate"],"narration":Narration,"vouchertype":"purchase","invid":queryParams["invid"]}
                 vouchers_List.append(voucherDict)
@@ -2149,7 +2409,14 @@ The bills grid calld gkresult will return a list as it's value.
                         # user has received rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rdcrs[roundRow["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+
+                        try:
+                            accCode = roundRow["accountcode"]
+                        except:
+                            a = self.createAccount(18,"Round Off Received",orgcode)
+                            accCode = a["accountcode"]
+
+                        rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                             rddrs[cba] = "%.2f"%float(queryParams["roundoffamt"])
                             rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round off amount earned","vouchertype":"receipt","invid":queryParams["invid"]}
@@ -2165,7 +2432,14 @@ The bills grid calld gkresult will return a list as it's value.
                         # user has spent rounded of amount
                         roundAcc = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
                         roundRow = roundAcc.fetchone()
-                        rddrs[roundRow["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+
+                        try:
+                            accCode = roundRow["accountcode"]
+                        except:
+                            a = self.createAccount(18,"Round Off Paid",orgcode)
+                            accCode = a["accountcode"]
+
+                        rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                         if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
                             rdcrs[cba] = "%.2f"%float(abs(queryParams["roundoffamt"]))
                             rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["invoicedate"],"narration":"Round off amount spent","vouchertype":"payment","invid":queryParams["invid"]}
@@ -2218,7 +2492,7 @@ The bills grid calld gkresult will return a list as it's value.
                 v_No.append(vch["vouchernumber"])
                 v_ID.append(int(vouchercode["vcode"]))
             #once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
-                if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3:
+                if int(queryParams["pmtmode"]) == 2 or int(queryParams["pmtmode"]) == 3 and "Round off amount" not in vch["narration"]:
                     upAmt = self.con.execute(invoice.update().where(invoice.c.invid==queryParams["invid"]).values(amountpaid=amountPaid))
                     inAdjAmt = self.con.execute(billwise.insert(),[{"vouchercode":int(vouchercode["vcode"]),"adjamount":amountPaid,"invid":queryParams["invid"],"orgcode":orgcode}])
             

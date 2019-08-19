@@ -63,7 +63,23 @@ class api_customer(object):
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(gkdb.customerandsupplier.insert(),[dataset])
-                return {"gkstatus":enumdict["Success"]}
+                if result.rowcount==1:
+                    # Account for customer / supplier
+                    if dataset["csflag"] == 3:
+                        groupname = "Sundry Debtors"
+                    else:
+                        groupname = "Sundry Creditors for Purchase"
+                    groupcode = self.con.execute(select([gkdb.groupsubgroups.c.groupcode]).where(and_(gkdb.groupsubgroups.c.orgcode==authDetails["orgcode"],gkdb.groupsubgroups.c.groupname==groupname)))
+                    group = groupcode.fetchone()
+                    subgroupcode = group["groupcode"]
+                    accountData = {"openingbal":0.00,"accountname":dataset["custname"],"groupcode":subgroupcode,"orgcode":authDetails["orgcode"]}
+                    try:
+                        result = self.con.execute(gkdb.accounts.insert(),[accountData])
+                        return {"gkstatus":enumdict["Success"]}
+                    except:
+                        return {"gkstatus":enumdict["Success"]}
+                else:
+                    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             except exc.IntegrityError:
                 return {"gkstatus":enumdict["DuplicateEntry"]}
             except:
@@ -93,7 +109,7 @@ class api_customer(object):
                     bankdetails = ""
                 else:
                     bankdetails = row["bankdetails"]
-                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"], "bankdetails":bankdetails }
+                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"],"pincode":row["pincode"], "bankdetails":bankdetails }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }

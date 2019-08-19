@@ -47,9 +47,10 @@ import gkcore
 from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
 from gkcore.models.gkdb import metadata
-from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists 
+from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists, getOnDelete
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from datetime import datetime, timedelta
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -114,6 +115,23 @@ class api_organisation(object):
                     dictofuqc.pop(unit,0)
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
+            if not columnExists("purchaseorder","roundoffflag"):
+                self.con.execute("alter table purchaseorder add column roundoffflag integer default 0")
+                self.con.execute("alter table delchal add column roundoffflag integer default 0")
+                self.con.execute("alter table drcr add column roundoffflag integer default 0")
+            # remove goid if present
+            if columnExists("purchaseorder","goid"):
+                self.con.execute("alter table purchaseorder drop column goid")
+                self.con.execute("alter table rejectionnote drop column goid")
+                self.con.execute("alter table drcr drop column goid")
+                self.con.execute("alter table budget drop column goid")
+                self.con.execute("alter table vouchers drop column goid")
+                self.con.execute("alter table invoice drop column goid")
+                self.con.execute("alter table delchal drop column goid")
+                
+
+            # Round off is use to detect that total amount of invoice is rounded off or not.
+            # If the field is not exist then it will create field.
             # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.  
             if not columnExists("invoice","roundoffflag"):
                 self.con.execute("alter table invoice add column roundoffflag integer default 0")
@@ -128,8 +146,27 @@ class api_organisation(object):
                         grpCodeR = grpCodeReceived.fetchone()
                         rorAdd = self.con.execute(gkdb.accounts.insert(),[{"accountname":"Round Off Received","groupcode":grpCodeR["groupcode"],"orgcode":orgcode["orgcode"],"defaultflag":181}])
 
+            #In Below query we are adding field pincode to invoice table
+            if not columnExists("invoice","pincode"):
+                self.con.execute("alter table invoice add pincode text")
+            #In Below query we are adding field pincode to invoicebin table
+            if not columnExists("invoicebin","pincode"):
+                self.con.execute("alter table invoicebin add pincode text")                
+            #In Below query we are adding field pincode to customersupplier table
+            if not columnExists("customerandsupplier","pincode"):
+                self.con.execute("alter table customerandsupplier add pincode text")
+            #Below query is to remove gbflag if it exists.
+            if columnExists("godown","gbflag"):
+                self.con.execute("alter table godown drop column gbflag")
+
+            #In Below query we are adding field pincode to purchaseorder table
+            if not columnExists("purchaseorder","pincode"):
+                self.con.execute("alter table purchaseorder add pincode text")
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
+            if not columnExists("organisation","ainvnoflag"):
+                self.con.execute("alter table organisation add ainvnoflag integer default 0")    
             if not columnExists("organisation","modeflag"):
                 self.con.execute("alter table organisation add modeflag integer default 1")
             if not columnExists("organisation","avflag"):
@@ -454,7 +491,7 @@ class api_organisation(object):
             if not columnExists("rejectionnote","rejprods"):
                 self.con.execute("alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)")
             if not tableExists("drcr"):
-                self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
+                self.con.execute("create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, drcrnarration text, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))")
             if not columnExists("drcr","drcrmode"):
                 self.con.execute("alter table drcr add drcrmode integer default 4")
             if not columnExists("vouchers","drcrid"):
@@ -504,6 +541,12 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add attachment json")
             if not columnExists("invoice","attachmentcount"):
                 self.con.execute("alter table invoice add attachmentcount integer default 0")
+            if not columnExists("invoice","ewaybillno"):
+                self.con.execute("alter table invoice add ewaybillno text")
+            if not columnExists("drcr","drcrnarration"):        
+                self.con.execute("alter table drcr add drcrnarration text")
+            if not columnExists("invoice","invnarration"):        
+                self.con.execute("alter table invoice add invnarration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
@@ -515,16 +558,27 @@ class api_organisation(object):
                 self.con.execute("alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)")
                 self.con.execute("alter table transfernote add foreign key(fromgodown) references godown(goid)")
             if not tableExists("budget"):
-                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, goid int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(goid) references godown(goid) ON DELETE CASCADE, foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
+                self.con.execute("create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)")
                 #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
                 self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
 
                 #In Below queries we are creating new table invoivebin which is act as bin for canceled invoices. 
             if not tableExists("invoicebin"):
-                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid))")
+                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid), foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE))")
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
-     
+            else:
+                #below code is for add forign key constraint to orgcode when it is not available in invoicebin table
+                fkeyavlb = getOnDelete("invoicebin", "invoicebin_orgcode_fkey")
+                if fkeyavlb == None:
+                    # this condition is apply for forign key available but not ondelete cascade 
+                    self.con.execute("alter table invoicebin drop constraint invoicebin_orgcode_fkey")
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == False:
+                    # this condition is apply for forign key and ondelete cascade both are not available
+                    self.con.execute("alter table invoicebin add constraint invoicebin_orgcode_fkey foreign key(orgcode) references organisation(orgcode) on delete cascade")
+                if fkeyavlb == "CASCADE":
+                    pass
         except:            
             return 0
         finally:
@@ -847,7 +901,7 @@ class api_organisation(object):
                 else:
                     bankdetails=row["bankdetails"]
                  
-                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":row["maflag"],"avnoflag":row["avnoflag"],"modeflag":row["modeflag"]}
+                orgDetails={"orgname":row["orgname"], "orgtype":row["orgtype"], "yearstart":str(row["yearstart"]), "yearend":str(row["yearend"]),"orgcity":orgcity, "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgcountry":orgcountry, "orgtelno":orgtelno, "orgfax":orgfax, "orgwebsite":orgwebsite, "orgemail":orgemail, "orgpan":orgpan, "orgmvat":orgmvat, "orgstax":orgstax, "orgregno":orgregno, "orgregdate":orgregdate, "orgfcrano":orgfcrano, "orgfcradate":orgfcradate, "roflag":row["roflag"], "booksclosedflag":row["booksclosedflag"],"invflag":row["invflag"],"billflag":row["billflag"],"invsflag":row["invsflag"],"gstin":row["gstin"],"bankdetails":row["bankdetails"],"avflag":row["avflag"],"maflag":row["maflag"],"avnoflag":row["avnoflag"],"ainvnoflag":row["ainvnoflag"],"modeflag":row["modeflag"]}
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
@@ -924,6 +978,10 @@ class api_organisation(object):
                     orgtelno=""
                 else:
                     orgtelno=row["orgtelno"]
+                if(row["orgfax"]==None):
+                    orgfax=""
+                else:
+                    orgfax=row["orgfax"]
                 if(row["orgemail"]==None):
                     orgemail=""
                 else:
@@ -939,7 +997,7 @@ class api_organisation(object):
                 else:
                     bankdetails = row["bankdetails"]
 
-                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgemail":orgemail}
+                orgDetails={"orgname":row["orgname"], "orgaddr":orgaddr, "orgpincode":orgpincode, "orgstate":orgstate, "orgwebsite":orgwebsite, "orgpan":orgpan, "orgstategstin":gstin, "orgcity":orgcity, "bankdetails":bankdetails, "orgtelno":orgtelno, "orgfax":orgfax, "orgemail":orgemail}
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkdata":orgDetails}
             except:
@@ -1001,13 +1059,22 @@ class api_organisation(object):
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 if userRole[0]==-1:
+                    orgdata=self.con.execute("select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"%authDetails["orgcode"])
+                    getorgdata = orgdata.fetchone()
+                    lastdate=datetime.strftime(getorgdata["yearstart"] - timedelta(1), '%Y-%m-%d')
+                    checkorg=self.con.execute("select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"%(str(getorgdata["orgname"]),str(getorgdata["orgtype"]),lastdate))
+                    checkorgcode=checkorg.fetchone()
                     result = self.con.execute(gkdb.organisation.delete().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                     if result.rowcount == 1:
                         result = self.con.execute(select([func.count(gkdb.organisation.c.orgcode).label('ocount')]))
                         orgcount = result.fetchone()
                         if orgcount["ocount"]==0:
                             result = self.con.execute(gkdb.signature.delete())
-                    self.con.close()
+                    if checkorgcode != None:
+                        resetroflag=self.con.execute("update organisation set roflag = 0 where orgcode='%d'"%(checkorgcode
+                        ["orgcode"]))
+                    
+                    self.con.close()    
                     return {"gkstatus":enumdict["Success"]}
                 else:
                     {"gkstatus":  enumdict["BadPrivilege"]}

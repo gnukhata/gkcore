@@ -148,9 +148,13 @@ class api_purchaseorder(object):
                     "vehicleno" :podata["vehicleno"],
                     "paymentmode" :podata["paymentmode"],
                     "orgcode" :podata["orgcode"],
+                    "roundoffflag" :podata["roundoffflag"],
+                    "roundedoffvalue" : "%.2f"%float(round(podata["purchaseordertotal"]))
                     }
                 if podata["address"]!=None:
                     purchaseorderdetails["address"] = podata["address"]
+                if podata["pincode"]!=None:
+                    purchaseorderdetails["pincode"] = podata["pincode"]
                 if podata["dateofsupply"]!=None:
                     purchaseorderdetails["dateofsupply"] = datetime.strftime(podata["dateofsupply"],"%d-%m-%Y")
                 if podata["psflag"] == 16:
@@ -173,10 +177,10 @@ class api_purchaseorder(object):
                     purchaseorderdetails["goname"] = godowndetails["goname"]
                     purchaseorderdetails["goaddr"] = godowndetails["goaddr"]
                 #Customer And Supplier details    
-                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
+                custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.pincode,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==podata["csid"]))
                 custData = custandsup.fetchone()
                 custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"custsupstatecode":custsupstatecode}
+                custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
                 if custData["custtan"] != None:
                     custSupDetails["custtin"] = custData["custtan"]
                 if custData["gstin"] != None:
