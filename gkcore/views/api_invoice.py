@@ -649,7 +649,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
+                        if invrow["inoutflag"] == 15 :
                            try:
                                custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
                            except:
