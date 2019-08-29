@@ -580,7 +580,7 @@ class api_product(object):
         else:
             try:
                 self.con=eng.connect()
-                product = self.con.execute(select([gkdb.unitofmeasurement.c.uomid,gkdb.product.c.gscode]).where(and_(gkdb.product.c.productcode==self.request.params["productcode"],gkdb.product.c.orgcode==authDetails["orgcode"])))
+                product = self.con.execute(select([gkdb.product.c.uomid,gkdb.product.c.gscode]).where(and_(gkdb.product.c.productcode==self.request.params["productcode"],gkdb.product.c.orgcode==authDetails["orgcode"])))
                 productdetails = product.fetchone()
                 uom = self.con.execute(select([gkdb.unitofmeasurement.c.unitname]).where(gkdb.unitofmeasurement.c.uomid==productdetails["uomid"]))
                 unitname = uom.fetchone()
