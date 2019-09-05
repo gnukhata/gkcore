@@ -298,7 +298,7 @@ create method for delchal resource.
                 if custData["custtan"] != None:
                     singledelchal["custSupDetails"]["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
+                        if int(delchaldata["inoutflag"]) == 15 :
                             try:
                                 singledelchal["custSupDetails"]["custgstin"] = custData["gstin"][str(taxStateCode)]
                             except:
@@ -408,7 +408,6 @@ create method for delchal resource.
                     singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                     singledelchal['taxname'] = taxname
                     singledelchal["delchalContents"] = delchalContents
-
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
