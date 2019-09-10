@@ -547,6 +547,8 @@ class api_organisation(object):
                 self.con.execute("alter table drcr add drcrnarration text")
             if not columnExists("invoice","invnarration"):        
                 self.con.execute("alter table invoice add invnarration text")
+            if not columnExists("purchaseorder","psnarration"):        
+                self.con.execute("alter table purchaseorder add psnarration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
