@@ -2073,7 +2073,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                         drs[accCode] = "%.2f"%float(amountPaid)
                         cba = accCode
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque. "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque. "+ "ref cash memo no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
@@ -2086,7 +2086,7 @@ The bills grid calld gkresult will return a list as it's value.
                         
                         drs[accCode] = "%.2f"%float(amountPaid)
                         cba = accCode 
-                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Sold goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref cash memo no. "+str(queryParams["invoiceno"])
                         
                 # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
@@ -2304,7 +2304,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                         crs[accCode] = "%.2f"%float(amountPaid)
                         cba = accCode
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cheque "+ "ref cash memo no. "+str(queryParams["invoiceno"])
                     if int(queryParams["pmtmode"]) == 3:
                         cashAccount = self.con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 3, accounts.c.orgcode == orgcode)))
                         cashRow = cashAccount.fetchone()
@@ -2317,7 +2317,7 @@ The bills grid calld gkresult will return a list as it's value.
 
                         crs[accCode] = "%.2f"%float(amountPaid)
                         cba = accCode
-                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref invoice no. "+str(queryParams["invoiceno"])
+                        Narration = "Purchased goods worth rupees "+ "%.2f"%float(amountPaid) +" by cash "+ "ref cash memo no. "+str(queryParams["invoiceno"])
                        # collect all taxaccounts with the value that needs to be dr or cr
                 if int(queryParams["taxType"]) == 7:
                     abv = self.con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["destinationstate"]))
