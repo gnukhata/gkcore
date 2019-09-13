@@ -1313,7 +1313,7 @@ The bills grid calld gkresult will return a list as it's value.
                             i-=1
                     i+=1
                     pass
-
+                    
                 for eachdcid in alldcids:
                     singledcResult = self.con.execute(select([delchal.c.dcid,delchal.c.inoutflag, delchal.c.dcno, delchal.c.dcdate, delchal.c.dateofsupply, delchal.c.dcflag, customerandsupplier.c.custname, customerandsupplier.c.csflag, delchal.c.attachmentcount]).distinct().where(and_(delchal.c.orgcode == orgcode, customerandsupplier.c.orgcode == orgcode, eachdcid[0] == delchal.c.dcid, delchal.c.custid == customerandsupplier.c.custid, stock.c.dcinvtnflag == 4, eachdcid[0] == stock.c.dcinvtnid)))
                     singledcResult = singledcResult.fetchone()
