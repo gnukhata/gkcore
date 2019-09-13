@@ -494,7 +494,7 @@ create method for delchal resource.
                     items[int(pc)] = {"qty":float("%.2f"%float(proddata[pc][proddata[pc].keys()[0]])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
                 for frep in freeprod.keys():
                     items[int(frep)]["freeqty"] = float("%.2f"%float(freeprod[frep]))
-                
+
                 result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
                 linkedinvoices = result.fetchall()
                 #linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
@@ -513,7 +513,7 @@ create method for delchal resource.
                             items[int(pc)]["freeqty"] -= float("%.2f"%float(freeprodinv[pc]))
                         except:
                             pass
-                
+                            
                 allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == authDetails["orgcode"], rejectionnote.c.dcid == dcid)))
                 allrnidres = allrnidres.fetchall()
                 rnprodresult = []
