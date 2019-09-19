@@ -1242,9 +1242,9 @@ The bills grid calld gkresult will return a list as it's value.
                         dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
                         dcprodresult = dcprodresult.fetchall()
 
-                        dcdataqty = temp = self.con.execute(select([delchal.c.contents,delchal.c.freeqty]).where(and_(delchal.c.orgcode == orgcode, delchal.c.dcid == dcid[0])))
+                        dcdataqty = temp = self.con.execute(select([delchal.c.contents]).where(and_(delchal.c.orgcode == orgcode, delchal.c.dcid == dcid[0])))
                         dcprodqty =dcdataqty.fetchone()
-                        freeprod = dcprodqty["freeqty"]
+                        proddata = dcprodqty["contents"]
                         #I am assuming :productcode must be distinct. So, I haven't applied distinct construct.
                         #what if dcprodresult or invprodresult is empty?
                         invprodresult = []
