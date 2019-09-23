@@ -430,6 +430,8 @@ invoicebin = Table('invoicebin',metadata,
     Column('pincode',UnicodeText),
     Column('inoutflag',Integer),
     Column('invoicetotalword', UnicodeText),
+    Column('invnarration',UnicodeText),
+    Column('dcinfo',UnicodeText),
     Index("invoicebin_orgcodeindex","orgcode"),
     Index("invoicebin_invoicenoindex","invoiceno")
     )
