@@ -615,12 +615,41 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag, customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
+
+                    if (invrow["inoutflag"] == 15 ):
+                        custsc = inv["taxstatecode"]
+                        custSatename = inv["destinationstate"]
+                    else:
+                        custsc = inv["sourcestatecode"]
+                        custSatename = inv["sourcestate"]
+
+                    statelist=[]
+                    if (custData["gstin"] != None and bool(custData["gstin"])):
+                        # below code listed those state of customer which having gstin
+                        for statecd in custData["gstin"]:
+                            statedata = self.con.execute(select([state.c.statename,state.c.statecode]).where(state.c.statecode == statecd))
+                            statename = statedata.fetchone()
+                            statelist.append({statename["statecode"]: statename["statename"]})
+
+                        custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                        if (str(custsupstatecode) not in custData["gstin"].keys()):
+
+                            statelist.append({custsupstatecode: custData["state"]})
+                        if (custsc != custsupstatecode and str(custsc) not in custData["gstin"].keys()):
+                            statelist.append({custsc: custSatename})
+                    else:
+                        custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
+                        statelist.append({custsupstatecode: custData["state"]})
+                        if (custsc != custsupstatecode):
+                            statelist.append({custsc: custSatename})
+
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode}
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode,"custgstinlist":custData["gstin"],"statelist":statelist}
+
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
+                        if invrow["inoutflag"] == 15 :
                            try:
                                custSupDetails["custgstin"] = custData["gstin"][str(taxStateCode)]
                            except:
