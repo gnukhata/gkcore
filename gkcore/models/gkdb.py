@@ -486,6 +486,43 @@ delchal = Table('delchal',metadata,
     Index("delchal_dcnoindex","dcno")
     )
 """
+This is the table which acts as a bin for cancelled delivery notes.
+While these delivery notes cancelled, they are for investigation purpose if need be.
+"""
+
+delchalbin = Table('delchalbin',metadata,
+    Column('dcid',Integer,primary_key=True),
+    Column('dcno',UnicodeText,nullable=False),
+    Column('dcdate',DateTime,nullable=False),
+    Column('dcflag',Integer,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('noofpackages', Integer, nullable=False),
+    Column('modeoftransport', UnicodeText),
+    Column('attachment',JSON),
+    Column('consignee',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('freeqty',JSONB),
+    Column('discount',JSONB),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('delchaltotal', Numeric(13,2), nullable=False),
+    Column('attachmentcount',Integer,default=0),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
+    Column('orderid',Integer, ForeignKey('purchaseorder.orderid')),
+    Column('inoutflag',Integer,nullable=False),
+    Column('roundoffflag',Integer,default=0),
+    Index("delchalbin_orgcodeindex","orgcode"),
+    Index("delchalbin_dcnoindex","dcno")
+    )
+"""
 The join table which has keys from both inv and dc table.
 As explained before, one invoice may have many dc and one dc can be partially passed for many invoices.
 """
