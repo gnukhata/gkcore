@@ -26,6 +26,8 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 "Reshma Bhatawade" <reshma_b@riseup.net>
 "Sanket Kolnoorkar" <sanketf123@gmail.com>
+"Rupali Badgujar" <rupalibadgujar1234@gmail.com>
+
 """
 
 from gkcore import eng, enumdict
