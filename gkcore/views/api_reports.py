@@ -4031,6 +4031,14 @@ free replacement or sample are those which are excluded.
                 for row in dcResult:
                     #if (row["dcdate"].year < inputdate.year) or (row["dcdate"].year == inputdate.year and row["dcdate"].month < inputdate.month) or (row["dcdate"].year == inputdate.year and row["dcdate"].month == inputdate.month and row["dcdate"].day <= inputdate.day):
                         temp_dict = {"dcid": row["dcid"], "srno": srno, "dcno":row["dcno"], "dcdate": datetime.strftime(row["dcdate"],"%d-%m-%Y"), "dcflag": row["dcflag"], "custname": row["custname"]}
+
+                        canceldelchal = 1
+                        exist_dcinv=self.con.execute("select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"%(row["dcid"],authDetails["orgcode"]))
+                        existDcinv=exist_dcinv.fetchone()
+                        if  existDcinv["dccount"] > 0:
+                            canceldelchal = 0
+                        temp_dict["canceldelchal"] = canceldelchal
+
                         if "goname" in row.keys():
                             temp_dict["goname"] = row["goname"]
                         else:

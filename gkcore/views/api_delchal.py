@@ -31,7 +31,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import delchal, invoice, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote
+from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote, delchalbin,invoice
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -415,6 +415,53 @@ create method for delchal resource.
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+
+    #Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
+    @view_config(request_method='DELETE',request_param='type=canceldel',renderer='json')
+    def cancelDelchal(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dcid=self.request.json_body["dcid"]
+                print dcid,"dcid"
+                #to fetch data of all data of cancel delivery note.
+                delchalData=self.con.execute(select([delchal]).where(delchal.c.dcid == dcid))
+                delchaldata = delchalData.fetchone()
+                #Add all data of cancel delivry note into delchalbin"
+                delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"attachment":delchaldata["attachment"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"]}
+                bin = self.con.execute(delchalbin.insert(),[delchalbinData])
+
+                try:
+                    self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
+                except:
+                    pass
+                
+                #To delete delivery note enrty from delchal table
+                self.con.execute("delete from delchal  where dcid = %d and orgcode=%d"%(int(dcid),authDetails["orgcode"]))
+                return {"gkstatus":enumdict["Success"]}
+
+            except:
+                try:
+                    dcid=self.request.json_body["dcid"]
+                    # if delivery note entry is not deleted then delete that delivery note from bin table
+                    self.con.execute("delete from delchalbin  where dcid = %d and orgcode=%d"%(int(dcid),authDetails["orgcode"]))
+                    return {"gkstatus":enumdict["ConnectionFailed"]}
+                except:
+                    self.con.close()
+                    return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+
+
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
     def getLastDelChalDetails(self):
