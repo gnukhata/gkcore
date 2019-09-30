@@ -519,6 +519,7 @@ delchalbin = Table('delchalbin',metadata,
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid')),
     Column('inoutflag',Integer,nullable=False),
     Column('roundoffflag',Integer,default=0),
+    Column('goid',Integer),
     Index("delchalbin_orgcodeindex","orgcode"),
     Index("delchalbin_dcnoindex","dcno")
     )
