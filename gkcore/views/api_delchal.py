@@ -431,16 +431,18 @@ create method for delchal resource.
                 self.con = eng.connect()
                 dcid=self.request.json_body["dcid"]
                 print dcid,"dcid"
-                #to fetch data of all data of cancel delivery note.
+                #To fetch data of all data of cancel delivery note.
                 delchalData=self.con.execute(select([delchal]).where(delchal.c.dcid == dcid))
                 delchaldata = delchalData.fetchone()
                 #Add all data of cancel delivry note into delchalbin"
                 delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"attachment":delchaldata["attachment"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"]}
 
                 try:
+                    #To add goid for cancelled delivery note in delchalbin table before delete stock entry.
                     delgodown = self.con.execute("select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
                     degodowninfo = delgodown.fetchone()
                     delchalbinData["goid"] = degodowninfo["goid"]
+                    # To delete stock entry of cancel delivery note.
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
                 except:
                     pass
@@ -462,6 +464,80 @@ create method for delchal resource.
                     return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
+
+    #This function return list of cancelled delivery notes.      
+    @view_config(request_method='GET',request_param='type=listofcancelleddel',renderer='json')
+    def listofCancelDelchal(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                orgcode = authDetails["orgcode"]
+                dataset = self.request.json_body
+                inout = self.request.params["inout"]
+                inputdate = dataset["inputdate"]
+                del_cancelled_type = dataset["del_cancelled_type"]
+                new_inputdate = dataset["inputdate"]
+                new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
+                dc_unbilled = []
+                # Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
+                if inout == "i":#in
+                    if del_cancelled_type == "0":
+                        alldcids = self.con.execute(select([delchalbin]).where(and_(delchalbin.c.orgcode == orgcode, delchalbin.c.inoutflag == 9, delchalbin.c.dcdate <= new_inputdate)).order_by(delchalbin.c.dcdate))
+                    else:
+                        alldcids = self.con.execute(select([delchalbin]).where(and_(delchalbin.c.orgcode == orgcode, delchalbin.c.inoutflag == 9, delchalbin.c.dcflag == int(del_cancelled_type), delchalbin.c.dcdate <= new_inputdate)).order_by(delchalbin.c.dcdate))
+                if inout == "o":#out
+                    if del_cancelled_type == "0":
+                        alldcids = self.con.execute(select([delchalbin]).where(and_(delchalbin.c.orgcode == orgcode, delchalbin.c.inoutflag == 15, delchalbin.c.dcdate <= new_inputdate)).order_by(delchalbin.c.dcdate))
+                    else:
+                        alldcids = self.con.execute(select([delchalbin]).where(and_(delchalbin.c.orgcode == orgcode, delchalbin.c.inoutflag == 15, delchalbin.c.dcflag == int(del_cancelled_type), delchalbin.c.dcdate <= new_inputdate)).order_by(delchalbin.c.dcdate))
+                alldcids = alldcids.fetchall()
+                dcdata = []
+                for row in alldcids:
+                    godown = ""
+                    cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                    customerdetails = cresult.fetchone()
+                    if row["goid"] != None:
+                        godownres = self.con.execute("select goname, goaddr from godown where goid = %d" %int(row["goid"]))
+                        godownresult = godownres.fetchone()
+                        if godownresult != None:
+                            godownname = godownresult["goname"]
+                            godownaddrs = godownresult["goaddr"]
+                            godown =  godownname + "("+ godownaddrs + ")"
+                        else:
+                            godownname = ""
+                            godownaddrs = ""
+                            godown = ""
+
+                    if row["dcflag"] == 1:
+                        dcflag = "Approval"
+                    elif row["dcflag"] == 3:
+                        dcflag = "Consignment"
+                    elif row["dcflag"] == 4:
+                        dcflag = "Sale"
+                    elif row["dcflag"] == 16:
+                        dcflag = "Purchase"
+                    elif row["dcflag"] == 19:
+                        #We don't have to consider sample.
+                        dcflag = "Sample"
+                    elif row["dcflag"]== 6:
+                        #we ignore this as well
+                        dcflag = "Free Replacement"
+                    singledcdata={"dcid":row["dcid"],"dcno":row["dcno"],"dcdate":datetime.strftime(row["dcdate"],'%d-%m-%Y'),"dcflag":dcflag,"inoutflag":row["inoutflag"],"custname":customerdetails["custname"],"goname":godown}
+                    dcdata.append(singledcdata)
+                return {"gkstatus":enumdict["Success"],"gkresult":dcdata}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
     def getLastDelChalDetails(self):
