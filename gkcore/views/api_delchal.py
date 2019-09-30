@@ -416,7 +416,6 @@ create method for delchal resource.
             finally:
                 self.con.close()
 
-
     #Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
     @view_config(request_method='DELETE',request_param='type=canceldel',renderer='json')
     def cancelDelchal(self):
@@ -437,12 +436,16 @@ create method for delchal resource.
                 delchaldata = delchalData.fetchone()
                 #Add all data of cancel delivry note into delchalbin"
                 delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"attachment":delchaldata["attachment"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"]}
-                bin = self.con.execute(delchalbin.insert(),[delchalbinData])
 
                 try:
+                    delgodown = self.con.execute("select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
+                    degodowninfo = delgodown.fetchone()
+                    delchalbinData["goid"] = degodowninfo["goid"]
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
                 except:
                     pass
+
+                bin = self.con.execute(delchalbin.insert(),[delchalbinData])
                 
                 #To delete delivery note enrty from delchal table
                 self.con.execute("delete from delchal  where dcid = %d and orgcode=%d"%(int(dcid),authDetails["orgcode"]))
@@ -459,9 +462,6 @@ create method for delchal resource.
                     return {"gkstatus":enumdict["ConnectionFailed"] }
             finally:
                 self.con.close()
-
-
-
 
     @view_config(request_param="delchal=last",request_method='GET',renderer='json')
     def getLastDelChalDetails(self):
