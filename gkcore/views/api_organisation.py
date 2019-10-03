@@ -168,7 +168,7 @@ class api_organisation(object):
 
             #In Below query we are adding field dcinfo to invoicebin table
             if not columnExists("invoicebin","dcinfo"):
-                self.con.execute("alter table invoicebin add dcinfo text")
+                self.con.execute("alter table invoicebin add dcinfo jsonb")
 
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")

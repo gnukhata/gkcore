@@ -431,7 +431,7 @@ invoicebin = Table('invoicebin',metadata,
     Column('inoutflag',Integer),
     Column('invoicetotalword', UnicodeText),
     Column('invnarration',UnicodeText),
-    Column('dcinfo',UnicodeText),
+    Column('dcinfo',JSONB),
     Index("invoicebin_orgcodeindex","orgcode"),
     Index("invoicebin_invoicenoindex","invoiceno")
     )
