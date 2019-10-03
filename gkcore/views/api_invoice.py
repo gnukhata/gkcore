@@ -439,18 +439,22 @@ class api_invoice(object):
                 #in case of service based invoice above code will not work
                     pass
                 # Check invoice is associate with delivery note.
-                check_dcinv = self.con.execute("select dcid from dcinv where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
+                check_dcinv = self.con.execute("select dcid, dcinvid from dcinv where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
                 exist_dcinv = check_dcinv.fetchone()
                 if exist_dcinv != None:
-                    try:
-                        # if invoice is associated with delivery note delete that invoice record from dcinv table.
-                        deldata = self.con.execute("select dcno, dcdate from delchal where dcid=%d and orgcode=%d"%(int(exist_dcinv["dcid"]),authDetails["orgcode"]))
-                        delchal_data=deldata.fetchone()
-                        invoiceBinData["dcinfo"] = str(delchal_data["dcno"]) + ',' + str(datetime.strftime(delchal_data["dcdate"],"%d-%m-%Y"))
-
-                        self.con.execute("delete from dvinv  where dcinvid=%d and invid=%d and orgcode=%d"%(int(exist_dcinv["dcinvid"]),int(invid),authDetails["orgcode"]))
-                    except:
-                        pass
+                    dcinfo = {} 
+                    # if invoice is associated with delivery note delete that invoice record from dcinv table.
+                    deldata = self.con.execute("select dcno, dcdate from delchal where dcid=%d and orgcode=%d"%(int(exist_dcinv["dcid"]),authDetails["orgcode"]))
+                    delchal_data=deldata.fetchone()
+                    dcinfo["dcno"] = str(delchal_data["dcno"])
+                    dcinfo["dcdate"] = str(datetime.strftime(delchal_data["dcdate"],"%d-%m-%Y"))
+                    # Fetch godown id.
+                    godata = self.con.execute("select goid from stock where dcinvtnflag = 4 and dcinvtnid =%d and orgcode=%d"%(int(exist_dcinv["dcid"]),authDetails["orgcode"]))
+                    godown_data=godata.fetchone()
+                    if godown_data != None:
+                        dcinfo["goid"] = godown_data["goid"]
+                    invoiceBinData["dcinfo"]=dcinfo
+                    self.con.execute("delete from dcinv  where dcinvid=%d and invid=%d and orgcode=%d"%(int(exist_dcinv["dcinvid"]),int(invid),authDetails["orgcode"]))
                 else:
                     try:
                         # if invoice is not associated with delivery note delete stock record of invoice from stock table.
@@ -804,7 +808,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoicebin]).where(invoicebin.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -838,8 +842,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["destinationstate"]=invrow["taxstate"]
                         taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
                         inv["taxstatecode"] = taxStateCode
-                    dcno , dcdate = invrow["dcinfo"].split(",")
-                    inv["dcno"]=dcno
+                    print invrow["dcinfo"]
+                    if invrow["dcinfo"] != None:
+                        inv["dcno"]=invrow["dcinfo"]["dcno"]
+                        print inv["dcno"]
+                    else inv["dcno"] = ""
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr,customerandsupplier.c.pincode, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
@@ -944,11 +951,11 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
 
-                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            #     return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            # finally:
+            #     self.con.close()
 
     @view_config(request_method='GET',request_param="type=bwa", renderer ='json')
     def getCSUPBills(self):
@@ -1804,7 +1811,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 #fetch all invoices
 
@@ -1824,7 +1831,8 @@ The bills grid calld gkresult will return a list as it's value.
                     dcdate = ""
                     # godowns = ""
                     if (row["dcinfo"] != None ):
-                        dcno, dcdate = row["dcinfo"].split(",")
+                        dcno = row["dcinfo"]["dcno"]
+                        dcdate = row["dcinfo"]["dcdate"]
                     # dcresult = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode==authDetails["orgcode"], dcinv.c.invid == row["invid"])))
                     # dcresult = dcresult.fetchall()
                     #Assuming there are multiple delivery challans for a single invoice.
@@ -1921,10 +1929,10 @@ The bills grid calld gkresult will return a list as it's value.
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt,"custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv})
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            # finally:
+            #     self.con.close()
 
     def createAccount(self,type,accName,orgcode):
         try:
