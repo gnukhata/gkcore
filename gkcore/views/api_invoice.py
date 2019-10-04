@@ -29,6 +29,7 @@ Contributors:
 "Prajkta Patkar" <prajakta@dff.org.in>
 "Reshma Bhatwadekar" <bhatawadekar1reshma@gmail.com>
 "Aditya Shukla" <adityashukla9158.as@gmail.com>
+"Rupali Badgujar" <rupalibadgujar1234@gmail.com>
 "Rohan Khairnar" <rohankhairnar5@gmail.com>
 """
 
@@ -1241,6 +1242,10 @@ The bills grid calld gkresult will return a list as it's value.
                         #invid's will be distinct only. So no problem to explicitly applying distinct clause.
                         dcprodresult = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, dcid[0] == stock.c.dcinvtnid)))
                         dcprodresult = dcprodresult.fetchall()
+
+                        dcdataqty = temp = self.con.execute(select([delchal.c.contents]).where(and_(delchal.c.orgcode == orgcode, delchal.c.dcid == dcid[0])))
+                        dcprodqty =dcdataqty.fetchone()
+                        proddata = dcprodqty["contents"]
                         #I am assuming :productcode must be distinct. So, I haven't applied distinct construct.
                         #what if dcprodresult or invprodresult is empty?
                         invprodresult = []
@@ -1257,19 +1262,22 @@ The bills grid calld gkresult will return a list as it's value.
                         matchedproducts = []
                         remainingproducts = {}
                         totalqtyofdcprod = {}
-                        for eachitem in dcprodresult:
+                        for pc in proddata.keys():
+                        # for eachitem in dcprodresult:
                         #dcprodresult is a list of tuples. eachitem is one such tuple.
-                            totalqtyofdcprod.update({eachitem[0]:eachitem[1]})
+                            totalqtyofdcprod.update({pc:proddata[pc][proddata[pc].keys()[0]]})
                             for eachinvoice in invprodresult:
                             #invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
                                 for eachproductcode in eachinvoice.keys():
+
                                     #eachitem[0] is unique. It's not repeated.
-                                    dcprodcode = eachitem[0]
+                                    dcprodcode = pc
                                     if int(dcprodcode) == int(eachproductcode):
+
                                         #this means that the product in delchal matches with the product in invoice
                                         #now we will check its quantity
                                         invqty = eachinvoice[eachproductcode].values()[0]
-                                        dcqty = eachitem[1]
+                                        dcqty = proddata[pc][proddata[pc].keys()[0]]
                                         if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
                                             #this means the quantity of current individual product is matched exactly
                                             matchedproducts.append(int(eachproductcode))
@@ -1279,7 +1287,7 @@ The bills grid calld gkresult will return a list as it's value.
                                                 if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
                                                     matchedproducts.append(int(eachproductcode))
                                                     #whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
-                                                    del remainingproducts[int(eachproductcode)]
+                                                    del remainingproducts[(eachproductcode)]
                                                 else:
                                                     #It must not be the case that below addition is greater than dcqty.
                                                     remainingproducts[dcprodcode] = (float(remainingproducts[dcprodcode]) + float(invqty))

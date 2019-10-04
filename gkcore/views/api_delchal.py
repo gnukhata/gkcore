@@ -19,17 +19,19 @@ Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
-
+  
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 "Reshma Bhatawade" <reshma_b@riseup.net>
 "Sanket Kolnoorkar" <sanketf123@gmail.com>
+"Rupali Badgujar" <rupalibadgujar1234@gmail.com>
+
 """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote
+from gkcore.models.gkdb import delchal, invoice, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -298,7 +300,7 @@ create method for delchal resource.
                 if custData["custtan"] != None:
                     singledelchal["custSupDetails"]["custtin"] = custData["custtan"]
                     if custData["gstin"] != None:
-                        if int(custData["csflag"]) == 3 :
+                        if int(delchaldata["inoutflag"]) == 15 :
                             try:
                                 singledelchal["custSupDetails"]["custgstin"] = custData["gstin"][str(taxStateCode)]
                             except:
@@ -408,7 +410,6 @@ create method for delchal resource.
                     singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                     singledelchal['taxname'] = taxname
                     singledelchal["delchalContents"] = delchalContents
-
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -478,29 +479,43 @@ create method for delchal resource.
         if authDetails['auth'] == False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 dcid = self.request.params["dcid"]
                 items = {}
-                stockdata = self.con.execute(select([stock.c.productcode, stock.c.qty]).where(and_(stock.c.dcinvtnflag == 4, stock.c.dcinvtnid == dcid)))
-                for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gscode]).where(and_(product.c.productcode==stockrow["productcode"],product.c.gsflag==7)))
+                
+                delchalresult = self.con.execute(select([delchal.c.contents,delchal.c.freeqty]).where(delchal.c.dcid == dcid))
+                deliveryinfo = delchalresult.fetchone()
+                freeprod = deliveryinfo["freeqty"]
+                proddata = deliveryinfo["contents"]
+                for pc in proddata.keys():
+                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gscode]).where(and_(product.c.productcode==pc,product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
-                    items[stockrow["productcode"]] = {"qty":float("%.2f"%float(stockrow["qty"])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
+                    items[int(pc)] = {"qty":float("%.2f"%float(proddata[pc][proddata[pc].keys()[0]])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
+                for frep in freeprod.keys():
+                    items[int(frep)]["freeqty"] = float("%.2f"%float(freeprod[frep]))
+
                 result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
                 linkedinvoices = result.fetchall()
-                print linkedinvoices
                 #linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
-                for invoice in linkedinvoices:
-                    invprods = invoice[1]
-                    try:
-                        for productcode in invprods.keys():
-                            items[int(productcode)]["qty"] -= float(invprods[productcode])
-                    except:
-                        pass
-                #This code is for rejection note
+                for invoiceid in linkedinvoices:
+                    invresult = self.con.execute(select([invoice.c.contents,invoice.c.freeqty]).where(invoice.c.invid == invoiceid["invid"]))
+                    invoiceinfo = invresult.fetchone()
+                    freeprodinv = invoiceinfo["freeqty"]
+                    proddatainv = invoiceinfo["contents"]
+                    for pc in proddatainv.keys():
+                        try:
+                            items[int(pc)]["qty"] -= float("%.2f"%float(proddatainv[pc][proddatainv[pc].keys()[0]]))
+                        except:
+                            pass
+                    for pc in freeprodinv.keys():
+                        try:
+                            items[int(pc)]["freeqty"] -= float("%.2f"%float(freeprodinv[pc]))
+                        except:
+                            pass
+                            
                 allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == authDetails["orgcode"], rejectionnote.c.dcid == dcid)))
                 allrnidres = allrnidres.fetchall()
                 rnprodresult = []
@@ -520,7 +535,7 @@ create method for delchal resource.
                         if items[productcode]["qty"] == 0:
                             del items[productcode]
                 return {"gkstatus":enumdict["Success"], "gkresult": items}
-            #except:
+            except:
                 return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
+            finally:
                 self.con.close()
