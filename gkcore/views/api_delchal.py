@@ -614,7 +614,6 @@ create method for delchal resource.
             try:
                 self.con = eng.connect()
                 dcid=self.request.json_body["dcid"]
-                print dcid,"dcid"
                 #To fetch data of all data of cancel delivery note.
                 delchalData=self.con.execute(select([delchal]).where(delchal.c.dcid == dcid))
                 delchaldata = delchalData.fetchone()
@@ -625,7 +624,11 @@ create method for delchal resource.
                     #To add goid for cancelled delivery note in delchalbin table before delete stock entry.
                     delgodown = self.con.execute("select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
                     degodowninfo = delgodown.fetchone()
-                    delchalbinData["goid"] = degodowninfo["goid"]
+                    if (degodowninfo != None):
+                        delchalbinData["goid"] = degodowninfo["goid"]
+                except:
+                    pass
+                try:
                     # To delete stock entry of cancel delivery note.
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
                 except:
