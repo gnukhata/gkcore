@@ -261,8 +261,8 @@ create method for delchal resource.
                 if delchaldata["consignee"]!=None:
                     singledelchal["delchaldata"]["consignee"]=delchaldata["consignee"]
                 if delchaldata["delchaltotal"] != None:
-                    singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
-                    singledelchal["delchaldata"]["roundedoffvalue"] = float(round(delchaldata["delchaltotal"]))
+                    singledelchal["delchaldata"]["delchaltotal"] ="%.2f" %(float(delchaldata["delchaltotal"]))
+                    singledelchal["delchaldata"]["roundedoffvalue"] = "%.2f" %(float(round(delchaldata["delchaltotal"])))
                 
                 if delchaldata["cancelflag"] ==1:
                     singledelchal["delchaldata"]["canceldate"] = datetime.strftime(delchaldata["canceldate"],'%d-%m-%Y')
@@ -462,8 +462,8 @@ create method for delchal resource.
                 if delchaldata["consignee"]!=None:
                     singledelchal["delchaldata"]["consignee"]=delchaldata["consignee"]
                 if delchaldata["delchaltotal"] != None:
-                    singledelchal["delchaldata"]["delchaltotal"] =float(delchaldata["delchaltotal"]) 
-                    singledelchal["delchaldata"]["roundedoffvalue"] = float(round(delchaldata["delchaltotal"]))
+                    singledelchal["delchaldata"]["delchaltotal"] ="%.2f" %float(delchaldata["delchaltotal"]) 
+                    singledelchal["delchaldata"]["roundedoffvalue"] = "%.2f" %float(round(delchaldata["delchaltotal"]))
              
                 if goiddata!=None:
                     godata = self.con.execute(select([godown.c.goname,godown.c.state,godown.c.goaddr]).where(godown.c.goid==goiddata))
