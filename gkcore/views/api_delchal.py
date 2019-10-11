@@ -31,7 +31,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote, delchalbin,invoice
+from gkcore.models.gkdb import delchal, stock, customerandsupplier, godown, product, unitofmeasurement, dcinv,goprod, rejectionnote, delchalbin,invoice,log
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -642,6 +642,15 @@ create method for delchal resource.
                 try:
                     # To delete stock entry of cancel delivery note.
                     self.con.execute("delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"%(int(dcid),authDetails["orgcode"]))
+                except:
+                    pass
+                try:
+                    logdata = {}
+                    logdata["orgcode"] = authDetails["orgcode"]
+                    logdata["userid"] = authDetails["userid"]
+                    logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                    logdata["activity"] = str(delchaldata["dcno"])  + ' Delivery Note Cancelled'
+                    result = self.con.execute(log.insert(),[logdata])
                 except:
                     pass
 
