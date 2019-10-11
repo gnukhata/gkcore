@@ -35,7 +35,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise,cslastprice,invoicebin
+from gkcore.models.gkdb import invoice, dcinv, delchal, stock, product, customerandsupplier, unitofmeasurement, godown, rejectionnote,tax, state, users,organisation,accounts,state,vouchers,groupsubgroups,bankrecon,billwise,cslastprice,invoicebin,log
 from gkcore.views.api_tax  import calTax
 from sqlalchemy.sql import select
 import json
@@ -484,6 +484,15 @@ class api_invoice(object):
                     pass
                 #To delete invoice enrty from invoice table
                 self.con.execute("delete from invoice  where invid = %d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
+                try:
+                    logdata = {}
+                    logdata["orgcode"] = authDetails["orgcode"]
+                    logdata["userid"] = authDetails["userid"]
+                    logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                    logdata["activity"] = str(invoicedata["invoiceno"])  + ' Invoice Cancelled'
+                    result = self.con.execute(log.insert(),[logdata])
+                except:
+                    pass
                 return {"gkstatus":enumdict["Success"]}
             except:
                 try:
