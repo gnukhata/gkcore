@@ -92,7 +92,7 @@ defaultflag '2' or '3' set to the '0'.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 newdataset = self.request.json_body
                 dataset = newdataset["gkdata"]
@@ -119,31 +119,24 @@ defaultflag '2' or '3' set to the '0'.
                     moredata = newdataset["moredata"]
                     moredata["orgcode"]=authDetails["orgcode"]
                     result = self.con.execute(gkdb.customerandsupplier.insert(),[moredata])
-                    # try:
                     logdata = {}
                     logdata["orgcode"] = authDetails["orgcode"]
                     logdata["userid"] = authDetails["userid"]
                     logdata["time"] = datetime.today().strftime('%Y-%m-%d')
-                    print moredata
-                    if moredata["csflag"] == 3:
-                        print "fggggggggggggggggggg"
+                    if int(moredata["csflag"]) == 3:
                         logdata["activity"] = moredata["custname"] + " customer created"
                     else:
-                        print "ttttttttttttttttttt"
                         logdata["activity"] = moredata["custname"] + " supplier created"
                     result = self.con.execute(gkdb.log.insert(),[logdata])
-                    # except:
-                        # pass
-
                 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
-            # except exc.IntegrityError:
-            #     self.con.close()
-            #     return {"gkstatus":enumdict["DuplicateEntry"]}
-            # except:
-            #     self.con.close()
-            #     return {"gkstatus":enumdict["ConnectionFailed"]}
+            except exc.IntegrityError:
+                self.con.close()
+                return {"gkstatus":enumdict["DuplicateEntry"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(route_name='account', request_method='GET',renderer='json')
     def getAccount(self):
