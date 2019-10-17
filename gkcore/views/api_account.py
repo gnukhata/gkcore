@@ -42,6 +42,8 @@ from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import accounts
+from datetime import datetime,date
+
 """
 purpose:
 This class is the resource to create, update, read and delete accounts.
@@ -90,9 +92,10 @@ defaultflag '2' or '3' set to the '0'.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
+                newdataset = self.request.json_body
+                dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 
                 if 'defaultflag' in dataset:
@@ -111,16 +114,36 @@ defaultflag '2' or '3' set to the '0'.
                         setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(authDetails["orgcode"]))
                     if (grpname["groupname"] == "Indirect Income" and dflag == 181):
                         setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(authDetails["orgcode"]))
-                
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
+                if "moredata" in newdataset:
+                    moredata = newdataset["moredata"]
+                    moredata["orgcode"]=authDetails["orgcode"]
+                    result = self.con.execute(gkdb.customerandsupplier.insert(),[moredata])
+                    # try:
+                    logdata = {}
+                    logdata["orgcode"] = authDetails["orgcode"]
+                    logdata["userid"] = authDetails["userid"]
+                    logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                    print moredata
+                    if moredata["csflag"] == 3:
+                        print "fggggggggggggggggggg"
+                        logdata["activity"] = moredata["custname"] + " customer created"
+                    else:
+                        print "ttttttttttttttttttt"
+                        logdata["activity"] = moredata["custname"] + " supplier created"
+                    result = self.con.execute(gkdb.log.insert(),[logdata])
+                    # except:
+                        # pass
+
+                
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
-            except exc.IntegrityError:
-                self.con.close()
-                return {"gkstatus":enumdict["DuplicateEntry"]}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+            # except exc.IntegrityError:
+            #     self.con.close()
+            #     return {"gkstatus":enumdict["DuplicateEntry"]}
+            # except:
+            #     self.con.close()
+            #     return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(route_name='account', request_method='GET',renderer='json')
     def getAccount(self):
