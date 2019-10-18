@@ -645,7 +645,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["dcid"]=dcid["dcid"]
                         inv["dcno"]=delchalData["dcno"]
                         inv["dcdate"] = datetime.strftime(delchalData["dcdate"],"%d-%m-%Y")
-                    custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag, customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
+                    custandsup = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.state, customerandsupplier.c.custaddr, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag,customerandsupplier.c.custphone, customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
                     custData = custandsup.fetchone()
 
                     if (invrow["inoutflag"] == 15 ):
@@ -676,7 +676,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             statelist.append({custsc: custSatename})
 
                     custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custsupstatecode":custsupstatecode,"custgstinlist":custData["gstin"],"statelist":statelist}
+                    custSupDetails = {"custname":custData["custname"],"custsupstate":custData["state"],"custaddr":custData["custaddr"],"csflag":custData["csflag"],"pincode":custData["pincode"],"custphone":custData["custphone"],"custsupstatecode":custsupstatecode,"custgstinlist":custData["gstin"],"statelist":statelist}
 
                     if custData["custtan"] != None:
                         custSupDetails["custtin"] = custData["custtan"]
