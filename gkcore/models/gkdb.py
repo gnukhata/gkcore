@@ -385,6 +385,7 @@ invoice = Table('invoice',metadata,
     Column('pincode',UnicodeText),
     Column('inoutflag',Integer),
     Column('invoicetotalword', UnicodeText),
+    Column('othcharges',JSONB),
     UniqueConstraint('orgcode','invoiceno','custid','icflag'),
     Index("invoice_orgcodeindex","orgcode"),
     Index("invoice_invoicenoindex","invoiceno")
