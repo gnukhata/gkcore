@@ -462,7 +462,7 @@ class api_invoice(object):
                     except:
                         pass
 
-                bin = self.con.execute(invoicebin.insert(),[invoiceBinData])
+                invbin = self.con.execute(invoicebin.insert(),[invoiceBinData])
                 
                 # below query to get voucher code for cancel invoice for delete corsponding vouchers.
                 voucher_code=self.con.execute("select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"%(int(invid),authDetails["orgcode"]))
@@ -842,10 +842,8 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         inv["destinationstate"]=invrow["taxstate"]
                         taxStateCode =  getStateCode(invrow["taxstate"],self.con)["statecode"]
                         inv["taxstatecode"] = taxStateCode
-                    print invrow["dcinfo"]
                     if invrow["dcinfo"] != None:
                         inv["dcno"]=invrow["dcinfo"]["dcno"]
-                        print inv["dcno"]
                     else:
                         inv["dcno"] = ""
                     custandsup = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.state, customerandsupplier.c.custaddr,customerandsupplier.c.pincode, customerandsupplier.c.custtan,customerandsupplier.c.gstin, customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invrow["custid"]))
