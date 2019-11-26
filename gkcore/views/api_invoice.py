@@ -582,7 +582,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-           try:
+        #    try:
                 self.con = eng.connect()
                 result = self.con.execute(select([invoice]).where(invoice.c.invid==self.request.params["invid"]))
                 invrow = result.fetchone()
@@ -778,8 +778,63 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                
+                othchargeData = invrow["othcharges"]               
+                #ch will have the chargecode which will be the key in othchargeData.
+                if(othchargeData != None):
+                     # below code is for calcultion  charges 
+                    chargeContents = {}
+                    chtotalrateVal = 0.00
+                    chtotalTaxAmt = 0.00
+                    chtotalCessAmt = 0.00
+                    chrateAmount = 0.00
+                    chargesgrandtotal = chtotalrateVal + (chtotalTaxAmt*2) + chtotalCessAmt
 
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                    print othchargeData
+                    for ch in othchargeData.keys():
+                        #charges description
+                        chargedesc = self.con.execute(select([product.c.productdesc,product.c.gscode]).where(product.c.productcode == ch))
+                        chargerow = chargedesc.fetchone()
+                        chrateAmount = float(othchargeData[ch][othchargeData[ch].keys()[0]])
+
+                        chtaxRate = 0.00
+                        chtotalAmount = 0.00
+                        chcessRate = 0.00
+                        chcessAmount = 0.00
+                        chcessVal = 0.00
+                        chtaxname = ""
+                        chtaxRate =  float(othchargeData[ch][othchargeData[ch].keys()[1]])
+
+                        if float(othchargeData[ch][othchargeData[ch].keys()[2]]) != 0.00:
+                            chcessVal = float(othchargeData[ch][othchargeData[ch].keys()[2]])
+                            chcessAmount = (chrateAmount * (chcessVal/100))
+                            chtotalCessAmt = chtotalCessAmt + chcessAmount
+
+                        if invrow["sourcestate"] != invrow["taxstate"]:
+                            chtaxname = "IGST"
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
+                        else:
+                            chtaxname = "SGST"
+                            chtaxRate = (chtaxRate/2)
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + (chrateAmount * ((chtaxRate * 2)/100)) + chcessAmount  
+
+
+                        chtotalrateVal = chtotalrateVal + chrateAmount
+                        chtotalTaxAmt = chtotalTaxAmt + chtaxAmount
+                        
+                        chargeContents[ch] = {"chargename":chargerow["productdesc"],"gscode":chargerow["gscode"],"chrateamount":"%.2f"%(float(chrateAmount)),"chtotalamount":"%.2f"% (float(chtotalAmount)),"chtaxname":chtaxname,"chtaxrate":"%.2f"% (float(chtaxRate)),"chtaxamount":"%.2f"% (float(chtaxAmount)),"chcess":"%.2f"%(float(chcessAmount)),"chcessrate":"%.2f"%(float(chcessVal))}
+                    chargesgrandtotal = chtotalrateVal + (chtotalTaxAmt*2) + chtotalCessAmt
+                    inv["chargeContents"] = chargeContents
+                    inv["chtotalratevalue"] = "%.2f"% (float(chtotalrateVal))
+                    inv["chtotaltaxamt"] = "%.2f"% (float(chtotalTaxAmt))
+                    inv["chtotalcessamt"] = "%.2f"% (float(chtotalCessAmt))
+                    inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
+                    inv["invoicegrandtotal"]= "%.2f"% (float(chargesgrandtotal) + float(invrow["invoicetotal"]))
+                    inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
+
                 #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
                 billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
                 billwise_entry= billwiseentry.fetchone() 
@@ -794,14 +849,15 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
+                
                 voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
                 vCount = voucherCount.fetchone()
                 inv["vouchercount"] = vCount[0]
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
-           except:
-               return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-           finally:
-               self.con.close()
+        #    except:
+        #        return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+        #    finally:
+        #        self.con.close()
 
     @view_config(request_method='GET',request_param="inv=deletedsingle", renderer ='json')
     def getCanceledInvoiceDetails(self):
