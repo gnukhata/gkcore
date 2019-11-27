@@ -780,6 +780,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
                         invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 
+                chargesgrandtotal = 0.00                
                 othchargeData = invrow["othcharges"]               
                 #ch will have the chargecode which will be the key in othchargeData.
                 if(othchargeData != None):
@@ -789,7 +790,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     chtotalTaxAmt = 0.00
                     chtotalCessAmt = 0.00
                     chrateAmount = 0.00
-                    chargesgrandtotal = chtotalrateVal + (chtotalTaxAmt*2) + chtotalCessAmt
 
                     print othchargeData
                     for ch in othchargeData.keys():
@@ -813,26 +813,22 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
                         if invrow["sourcestate"] != invrow["taxstate"]:
                             chtaxname = "IGST"
-                            chtaxAmount = (chrateAmount * (chtaxRate/100))
-                            chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
                         else:
                             chtaxname = "SGST"
-                            chtaxRate = (chtaxRate/2)
-                            chtaxAmount = (chrateAmount * (chtaxRate/100))
-                            chtotalAmount = chrateAmount + (chrateAmount * ((chtaxRate * 2)/100)) + chcessAmount  
 
+                        chtaxAmount = (chrateAmount * (chtaxRate/100))
+                        chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
 
                         chtotalrateVal = chtotalrateVal + chrateAmount
                         chtotalTaxAmt = chtotalTaxAmt + chtaxAmount
                         
                         chargeContents[ch] = {"chargename":chargerow["productdesc"],"gscode":chargerow["gscode"],"chrateamount":"%.2f"%(float(chrateAmount)),"chtotalamount":"%.2f"% (float(chtotalAmount)),"chtaxname":chtaxname,"chtaxrate":"%.2f"% (float(chtaxRate)),"chtaxamount":"%.2f"% (float(chtaxAmount)),"chcess":"%.2f"%(float(chcessAmount)),"chcessrate":"%.2f"%(float(chcessVal))}
-                    chargesgrandtotal = chtotalrateVal + (chtotalTaxAmt*2) + chtotalCessAmt
+                    chargesgrandtotal = chtotalrateVal + chtotalTaxAmt + chtotalCessAmt
+                    print chargeContents
                     inv["chargeContents"] = chargeContents
                     inv["chtotalratevalue"] = "%.2f"% (float(chtotalrateVal))
                     inv["chtotaltaxamt"] = "%.2f"% (float(chtotalTaxAmt))
                     inv["chtotalcessamt"] = "%.2f"% (float(chtotalCessAmt))
-                    inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
-                    inv["invoicegrandtotal"]= "%.2f"% (float(chargesgrandtotal) + float(invrow["invoicetotal"]))
                     inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
 
                 #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
@@ -849,6 +845,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
+                inv["producttotal"] = "%.2f"% (float(invrow["invoicetotal"]) - float(chargesgrandtotal))
                 
                 voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
                 vCount = voucherCount.fetchone()
