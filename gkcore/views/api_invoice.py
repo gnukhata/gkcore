@@ -126,6 +126,7 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                     CSname = csName.fetchone()
+                                                             
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":(invdataset["invoicetotal"]),"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total is rounded off
                                     if invdataset["roundoffflag"] == 1:
@@ -218,6 +219,19 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                     CSname = csName.fetchone()
+                                    if invdataset.has_key("othcharges"):
+                                        chargedata = invdataset["othcharges"]
+                                        totalcharge = 0.00
+                                        for ch in chargedata.keys():
+                                            prod = self.con.execute(select([product.c.productdesc]).where(product.c.productcode == ch))
+                                            prodrow = prod.fetchone()
+                                            chargename = prodrow["productdesc"]
+                                            avData["product"][chargename] = chargedata[ch][chargedata[ch].keys()[0]]
+                                            avData["prodData"][ch] = float(chargedata[ch][chargedata[ch].keys()[0]])
+                                            invdataset["tax"][ch] = float(chargedata[ch][chargedata[ch].keys()[1]])
+                                            invdataset["cess"][ch] = float(chargedata[ch][chargedata[ch].keys()[2]])
+                                            totalcharge = totalcharge + float(chargedata[ch][chargedata[ch].keys()[0]])
+                                        avData["totaltaxable"] = avData["totaltaxable"] + totalcharge
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total rounded off
                                     if invdataset["roundoffflag"] == 1:
@@ -300,6 +314,7 @@ class api_invoice(object):
                     dcinvdataset["orgcode"]=invdataset["orgcode"]
                     dcinvdataset["invid"]=invdataset["invid"]
                     dcinvdataset["invprods"] = stockdataset["items"]
+
                     try:
                         updateinvoice = self.con.execute(invoice.update().where(invoice.c.invid==invdataset["invid"]).values(invdataset))
                         if len(pricedetails) > 0:
@@ -590,7 +605,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 if invrow["roundoffflag"] == 1:
                     roundoffvalue = round(invrow["invoicetotal"])
 
-                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"ewaybillno":invrow["ewaybillno"], "invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"],"narration":invrow["invnarration"], "discflag":invrow["discflag"], "othcharges":invrow["othcharges"]}
+                inv = {"roundoffvalue":"%.2f"%float(roundoffvalue),"invid":invrow["invid"],"taxflag":invrow["taxflag"],"invoiceno":invrow["invoiceno"],"ewaybillno":invrow["ewaybillno"], "invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"icflag":invrow["icflag"],"invoicetotal":"%.2f"%float(invrow["invoicetotal"]),"invoicetotalword":invrow["invoicetotalword"],"bankdetails":invrow["bankdetails"], "orgstategstin":invrow["orgstategstin"], "paymentmode":invrow["paymentmode"], "inoutflag" : invrow["inoutflag"],"roundoff" : invrow["roundoffflag"],"narration":invrow["invnarration"], "discflag":invrow["discflag"]}
                 
                 # below field deletable is for check whether invoice having voucher or not
                 #vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not 
@@ -791,7 +806,6 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                     chtotalCessAmt = 0.00
                     chrateAmount = 0.00
 
-                    print othchargeData
                     for ch in othchargeData.keys():
                         #charges description
                         chargedesc = self.con.execute(select([product.c.productdesc,product.c.gscode]).where(product.c.productcode == ch))
@@ -813,23 +827,26 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
 
                         if invrow["sourcestate"] != invrow["taxstate"]:
                             chtaxname = "IGST"
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
                         else:
                             chtaxname = "SGST"
-
-                        chtaxAmount = (chrateAmount * (chtaxRate/100))
-                        chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
-
+                            chtaxRate = (chtaxRate/2)
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + (chrateAmount * ((chtaxRate * 2)/100)) + chcessAmount
+  
                         chtotalrateVal = chtotalrateVal + chrateAmount
                         chtotalTaxAmt = chtotalTaxAmt + chtaxAmount
                         
                         chargeContents[ch] = {"chargename":chargerow["productdesc"],"gscode":chargerow["gscode"],"chrateamount":"%.2f"%(float(chrateAmount)),"chtotalamount":"%.2f"% (float(chtotalAmount)),"chtaxname":chtaxname,"chtaxrate":"%.2f"% (float(chtaxRate)),"chtaxamount":"%.2f"% (float(chtaxAmount)),"chcess":"%.2f"%(float(chcessAmount)),"chcessrate":"%.2f"%(float(chcessVal))}
-                    chargesgrandtotal = chtotalrateVal + chtotalTaxAmt + chtotalCessAmt
-                    print chargeContents
+                    if invrow["sourcestate"] != invrow["taxstate"]:
+                        chargesgrandtotal = chtotalrateVal + chtotalTaxAmt + chtotalCessAmt
+                    else:
+                        chargesgrandtotal = chtotalrateVal + (2*chtotalTaxAmt) + chtotalCessAmt
                     inv["chargeContents"] = chargeContents
                     inv["chtotalratevalue"] = "%.2f"% (float(chtotalrateVal))
                     inv["chtotaltaxamt"] = "%.2f"% (float(chtotalTaxAmt))
                     inv["chtotalcessamt"] = "%.2f"% (float(chtotalCessAmt))
-                    inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
 
                 #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
                 billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
@@ -845,6 +862,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
+                inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
                 inv["producttotal"] = "%.2f"% (float(invrow["invoicetotal"]) - float(chargesgrandtotal))
                 
                 voucherCount = self.con.execute("select count(vouchercode) from vouchers where orgcode = %d and invid = %d"%(int(authDetails['orgcode']),int(self.request.params["invid"])))
@@ -1803,7 +1821,8 @@ The bills grid calld gkresult will return a list as it's value.
                             dcdate =  dcdate + str(datetime.strftime(delchalres["dcdate"],'%d-%m-%Y')) + ", "
                             
                         i += 1
-                    taxamt = 0.00
+                    prodtaxamt = 0.00
+                    chtaxamt = 0.00
                     #calculate tax amount of an invoice.
                     for productservice in row["contents"].iterkeys():
                         try:
@@ -1836,9 +1855,21 @@ The bills grid calld gkresult will return a list as it's value.
                                 else:
                                     taxablevalue = float("%.2f"%float(ppu)) - float("%.2f"%float(discount))
                                 #Calculating tax amount.
-                                taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100))) + float("%.2f"%((taxablevalue * float(cessrate))/float(100)))
+                                prodtaxamt = prodtaxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100))) + float("%.2f"%((taxablevalue * float(cessrate))/float(100)))
                         except:
                             pass
+                    #calculate tax amount of an other chrges.
+                    chdata = row["othcharges"]
+                    if (chdata != None):
+                        for ch in chdata.keys():
+                            try:
+                                taxrate = float(chdata[ch][chdata[ch].keys()[1]])
+                                cessrate = float(chdata[ch][chdata[ch].keys()[2]])
+                                chargerate = float(chdata[ch][chdata[ch].keys()[0]])
+                                chtaxamt = chtaxamt + float("%.2f"%((chargerate * float(taxrate))/float(100))) + float("%.2f"%((chargerate * float(cessrate))/float(100)))
+                            except:
+                                pass
+                    taxamt = prodtaxamt + chtaxamt
                     netamt = float(row["invoicetotal"]) - taxamt
                     cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                     customerdetails = cresult.fetchone()
