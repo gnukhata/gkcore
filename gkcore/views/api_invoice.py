@@ -126,7 +126,19 @@ class api_invoice(object):
                                     maFlag = mafl.fetchone()
                                     csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                     CSname = csName.fetchone()
-                                                             
+                                    if invdataset.has_key("othcharges"):
+                                        chargedata = invdataset["othcharges"]
+                                        totalcharge = 0.00
+                                        for ch in chargedata.keys():
+                                            prod = self.con.execute(select([product.c.productdesc]).where(product.c.productcode == ch))
+                                            prodrow = prod.fetchone()
+                                            chargename = prodrow["productdesc"]
+                                            avData["product"][chargename] = chargedata[ch][chargedata[ch].keys()[0]]
+                                            avData["prodData"][ch] = float(chargedata[ch][chargedata[ch].keys()[0]])
+                                            invdataset["tax"][ch] = float(chargedata[ch][chargedata[ch].keys()[1]])
+                                            invdataset["cess"][ch] = float(chargedata[ch][chargedata[ch].keys()[2]])
+                                            totalcharge = totalcharge + float(chargedata[ch][chargedata[ch].keys()[0]])
+                                        avData["totaltaxable"] = avData["totaltaxable"] + totalcharge
                                     queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":(invdataset["invoicetotal"]),"invoicedate":invdataset["invoicedate"],"invid":invoiceid["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"]}
                                     # when invoice total is rounded off
                                     if invdataset["roundoffflag"] == 1:
@@ -335,6 +347,24 @@ class api_invoice(object):
                                 maFlag = mafl.fetchone()
                                 csName = self.con.execute(select([customerandsupplier.c.custname]).where(and_(customerandsupplier.c.orgcode == invdataset["orgcode"],customerandsupplier.c.custid==int(invdataset["custid"]))))
                                 CSname = csName.fetchone()
+                                if invdataset.has_key("othcharges"):
+                                    chargedata = invdataset["othcharges"]
+                                else:
+                                    othchargedata = self.con.execute(select([invoice.c.othcharges]).where(invoice.c.invid == invdataset["invid"]))
+                                    othchData = othchargedata.fetchone()
+                                    chargedata = othchData["othcharges"]
+                                if chargedata != None:
+                                    totalcharge = 0.00
+                                    for ch in chargedata.keys():
+                                        prod = self.con.execute(select([product.c.productdesc]).where(product.c.productcode == ch))
+                                        prodrow = prod.fetchone()
+                                        chargename = prodrow["productdesc"]
+                                        avData["product"][chargename] = chargedata[ch][chargedata[ch].keys()[0]]
+                                        avData["prodData"][ch] = float(chargedata[ch][chargedata[ch].keys()[0]])
+                                        invdataset["tax"][ch] = float(chargedata[ch][chargedata[ch].keys()[1]])
+                                        invdataset["cess"][ch] = float(chargedata[ch][chargedata[ch].keys()[2]])
+                                        totalcharge = totalcharge + float(chargedata[ch][chargedata[ch].keys()[0]])
+                                    avData["totaltaxable"] = avData["totaltaxable"] + totalcharge
                                 queryParams = {"invtype":invdataset["inoutflag"],"pmtmode":invdataset["paymentmode"],"taxType":invdataset["taxflag"],"destinationstate":invdataset["taxstate"],"totaltaxablevalue":avData["totaltaxable"],"maflag":maFlag["maflag"],"totalAmount":invdataset["invoicetotal"],"invoicedate":invdataset["invoicedate"],"invid":invdataset["invid"],"invoiceno":invdataset["invoiceno"],"csname":CSname["custname"],"taxes":invdataset["tax"],"cess":invdataset["cess"],"products":avData["product"],"prodData":avData["prodData"],"othcharges":invdataset["othcharges"]}
                                 # when invoice total is rounded off
                                 if invdataset["roundoffflag"] == 1:
