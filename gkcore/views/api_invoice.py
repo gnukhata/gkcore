@@ -493,7 +493,7 @@ class api_invoice(object):
                 invoicedata = invoicedata.fetchone()
 
                 #Add all data of cancel invoice into invoicebin"
-                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"pincode":invoicedata["pincode"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"invnarration":invoicedata["invnarration"]}
+                invoiceBinData={"invoiceno":invoicedata["invoiceno"],"invoicedate":invoicedata["invoicedate"],"taxflag":invoicedata["taxflag"],"contents":invoicedata["contents"],"issuername":invoicedata["issuername"],"designation":invoicedata["designation"],"tax":invoicedata["tax"],"cess":invoicedata["cess"],"amountpaid":invoicedata["amountpaid"],"invoicetotal":invoicedata["invoicetotal"],"icflag":invoicedata["icflag"],"taxstate":invoicedata["taxstate"],"sourcestate":invoicedata["sourcestate"],"orgstategstin":invoicedata["orgstategstin"],"attachment":invoicedata["attachment"],"attachmentcount":invoicedata["attachmentcount"],"orderid":invoicedata["orderid"],"orgcode":invoicedata["orgcode"],"custid":invoicedata["custid"],"consignee":invoicedata["consignee"],"freeqty":invoicedata["freeqty"],"reversecharge":invoicedata["reversecharge"],"bankdetails":invoicedata["bankdetails"],"transportationmode":invoicedata["transportationmode"],"vehicleno":invoicedata["vehicleno"],"dateofsupply":invoicedata["dateofsupply"],"discount":invoicedata["discount"],"paymentmode":invoicedata["paymentmode"],"address":invoicedata["address"],"pincode":invoicedata["pincode"],"inoutflag":invoicedata["inoutflag"],"invoicetotalword":invoicedata["invoicetotalword"],"invnarration":invoicedata["invnarration"],"othcharges":invoicedata["othcharges"]}
                 
                 # below query is for delete billwise entry for cancel invoice.
                 try:
@@ -1101,15 +1101,71 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                     invContents[pc]["discflag"] = invrow["discflag"]
+                chargesgrandtotal = 0.00                
+                othchargeData = invrow["othcharges"]               
+                #ch will have the chargecode which will be the key in othchargeData.
+                if(othchargeData != None):
+                     # below code is for calcultion  charges 
+                    chargeContents = {}
+                    chtotalrateVal = 0.00
+                    chtotalTaxAmt = 0.00
+                    chtotalCessAmt = 0.00
+                    chrateAmount = 0.00
+
+                    for ch in othchargeData.keys():
+                        #charges description
+                        chargedesc = self.con.execute(select([product.c.productdesc,product.c.gscode]).where(product.c.productcode == ch))
+                        chargerow = chargedesc.fetchone()
+                        chrateAmount = float(othchargeData[ch][othchargeData[ch].keys()[0]])
+
+                        chtaxRate = 0.00
+                        chtotalAmount = 0.00
+                        chcessRate = 0.00
+                        chcessAmount = 0.00
+                        chcessVal = 0.00
+                        chtaxname = ""
+                        chtaxRate =  float(othchargeData[ch][othchargeData[ch].keys()[1]])
+
+                        if float(othchargeData[ch][othchargeData[ch].keys()[2]]) != 0.00:
+                            chcessVal = float(othchargeData[ch][othchargeData[ch].keys()[2]])
+                            chcessAmount = (chrateAmount * (chcessVal/100))
+                            chtotalCessAmt = chtotalCessAmt + chcessAmount
+
+                        if invrow["sourcestate"] != invrow["taxstate"]:
+                            chtaxname = "IGST"
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + chtaxAmount + chcessAmount
+                        else:
+                            chtaxname = "SGST"
+                            chtaxRate = (chtaxRate/2)
+                            chtaxAmount = (chrateAmount * (chtaxRate/100))
+                            chtotalAmount = chrateAmount + (chrateAmount * ((chtaxRate * 2)/100)) + chcessAmount
+  
+                        chtotalrateVal = chtotalrateVal + chrateAmount
+                        chtotalTaxAmt = chtotalTaxAmt + chtaxAmount
+                   
+                        chargeContents[ch] = {"chargename":chargerow["productdesc"],"gscode":chargerow["gscode"],"chrateamount":"%.2f"%(float(chrateAmount)),"chtotalamount":"%.2f"% (float(chtotalAmount)),"chtaxname":chtaxname,"chtaxrate":"%.2f"% (float(chtaxRate)),"chtaxamount":"%.2f"% (float(chtaxAmount)),"chcess":"%.2f"%(float(chcessAmount)),"chcessrate":"%.2f"%(float(chcessVal))}
+
+                    if invrow["sourcestate"] != invrow["taxstate"]:
+                        chargesgrandtotal = chtotalrateVal + chtotalTaxAmt + chtotalCessAmt
+                    else:
+                        chargesgrandtotal = chtotalrateVal + (2*chtotalTaxAmt) + chtotalCessAmt
+                    inv["chargeContents"] = chargeContents
+                    inv["chtotalratevalue"] = "%.2f"% (float(chtotalrateVal))
+                    inv["chtotaltaxamt"] = "%.2f"% (float(chtotalTaxAmt))
+                    inv["chtotalcessamt"] = "%.2f"% (float(chtotalCessAmt))
+                
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 inv["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 inv["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                 inv['taxname'] = taxname
                 inv["invcontents"] = invContents
-
+                inv["chargesgrandtotal"] = "%.2f"% (float(chargesgrandtotal))
+                inv["producttotal"] = "%.2f"% (float(invrow["invoicetotal"]) - float(chargesgrandtotal))
+                    
                 return {"gkstatus":gkcore.enumdict["Success"],"gkresult":inv}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
@@ -2034,6 +2090,8 @@ The bills grid calld gkresult will return a list as it's value.
                                 godownaddrs = ""
                                 godowns = ""
                     taxamt = 0.00
+                    prodtaxamt = 0.00
+                    chtaxamt = 0.00
                     #calculate tax amount of an invoice.
                     for productservice in row["contents"].iterkeys():
                         try:
@@ -2066,9 +2124,21 @@ The bills grid calld gkresult will return a list as it's value.
                                 else:
                                     taxablevalue = float("%.2f"%float(ppu)) - float("%.2f"%float(discount))
                                 #Calculating tax amount.
-                                taxamt = taxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100))) + float("%.2f"%((taxablevalue * float(cessrate))/float(100)))
+                                prodtaxamt = prodtaxamt + float("%.2f"%((taxablevalue * float(taxrate))/float(100))) + float("%.2f"%((taxablevalue * float(cessrate))/float(100)))
                         except:
                             pass
+                    #calculate tax amount of an other chrges.
+                    chdata = row["othcharges"]
+                    if (chdata != None):
+                        for ch in chdata.keys():
+                            try:
+                                taxrate = float(chdata[ch][chdata[ch].keys()[1]])
+                                cessrate = float(chdata[ch][chdata[ch].keys()[2]])
+                                chargerate = float(chdata[ch][chdata[ch].keys()[0]])
+                                chtaxamt = chtaxamt + float("%.2f"%((chargerate * float(taxrate))/float(100))) + float("%.2f"%((chargerate * float(cessrate))/float(100)))
+                            except:
+                                pass
+                    taxamt = prodtaxamt + chtaxamt
                     netamt = float(row["invoicetotal"]) - taxamt
                     cresult = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag, customerandsupplier.c.custtan, customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                     customerdetails = cresult.fetchone()
