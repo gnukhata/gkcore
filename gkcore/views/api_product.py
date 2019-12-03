@@ -150,8 +150,7 @@ class api_product(object):
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
-
-                productDetails={ "productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
+                productDetails={ "discountpercent":"%.2f"%float(row["percentdiscount"]),"discountamount":"%.2f"%float(row["amountdiscount"]),"productcode":row["productcode"],"productdesc": row["productdesc"], "gsflag":row["gsflag"],"gscode":row["gscode"]}
 
                 # the field deletable is for check whether product/service are in use or not
                 #first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
@@ -415,6 +414,7 @@ class api_product(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
+                
                 godownFlag = dataset["godownflag"]
                 productCode = productDetails["productcode"]
                 pn = self.con.execute(select([gkdb.product.c.productdesc]).where(gkdb.product.c.productcode==productCode))

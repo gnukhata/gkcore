@@ -344,7 +344,15 @@ create method for delchal resource.
                     for pc in contentsData.keys():
                         #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                         if discounts != None:
-                            discount = discounts[pc]
+                            # discflag is for discount type. Percent=16/Amount=1
+                            # here we convert percent discount in to amount.
+                            if delchaldata["discflag"] == 16:
+                                qty = float(contentsData[str(pc)].keys()[0])
+                                price = float(contentsData[str(pc)].values()[0])
+                                totalWithoutDiscount = qty * price
+                                discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
+                            else:
+                                discount = discounts[pc]
                         else:
                             discount = 0.00
 
@@ -377,7 +385,7 @@ create method for delchal resource.
                             totalDisc = totalDisc + float(discount)
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                         else:
                             cessRate = 0.00
@@ -403,13 +411,14 @@ create method for delchal resource.
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                     singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
                     singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                     singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                     singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                     singledelchal['taxname'] = taxname
                     singledelchal["delchalContents"] = delchalContents
+                    singledelchal["discflag"] = delchaldata["discflag"]
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
@@ -593,6 +602,7 @@ create method for delchal resource.
                     singledelchal["totalcessamt"] = "%.2f"% (float(totalCessAmt))
                     singledelchal['taxname'] = taxname
                     singledelchal["delchalContents"] = delchalContents
+                    singledelchal["discflag"] = delchaldata["discflag"]
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
             except:
