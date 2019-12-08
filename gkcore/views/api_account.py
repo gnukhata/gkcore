@@ -332,7 +332,8 @@ defaultflag '16' or '19' set to the '0'.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
+                newdataset = self.request.json_body
+                dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 #To update defaultflag check whether key exists and then update only those accounts which are under the respective group.
                 if 'defaultflag' in dataset:
@@ -355,6 +356,44 @@ defaultflag '16' or '19' set to the '0'.
                 accPrevName = self.con.execute(select([gkdb.accounts.c.accountname]).where(gkdb.accounts.c.accountcode == dataset["accountcode"]))
                 accountName = accPrevName.fetchone()
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+
+                if newdataset["custsupflag"] == 1:
+                    custdataset = {}
+                    custdataset["orgcode"] = authDetails["orgcode"]
+                    custname = "'"+newdataset["oldcustname"]+"'"
+                    custnamelist= self.con.execute("select exists(select 1 from customerandsupplier where orgcode =%d and custname=%s)"%(authDetails["orgcode"],custname))
+                    listcust = custnamelist.fetchone()
+                    if listcust[0] == True:
+                        fcustid = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname==newdataset["oldcustname"])))
+                        fetchcustname=fcustid.fetchone()
+                        custid = fetchcustname["custid"]
+                        #if changs are in custsup data.
+                        if "moredata" in newdataset:
+                            custdataset = newdataset["moredata"]
+                            del custdataset["oldcustname"]
+                        else:
+                            #if change are only in account name then only custsup name will change and api call from edit account not from edit customersupplier.
+                            custdataset["custname"] = dataset["accountname"]
+                        result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid == custid).values(custdataset))
+                        if "moredata" in newdataset and 'bankdetails' not in custdataset:
+                            #if bankdetails are null, set bankdetails as null in database.
+                            self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custid))
+                        if "moredata" in newdataset and 'gstin' not in custdataset:
+                            #if gstin are null, set gstin as null in database.
+                            self.con.execute("update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"%int(custid))
+                    elif "moredata" in newdataset:
+                        custdataset = newdataset["moredata"]
+                        custdataset["orgcode"] = authDetails["orgcode"]
+                        result = self.con.execute(gkdb.customerandsupplier.insert(),[custdataset])
+                        logdata = {}
+                        logdata["orgcode"] = authDetails["orgcode"]
+                        logdata["userid"] = authDetails["userid"]
+                        logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                        if int(custdataset["csflag"]) == 3:
+                            logdata["activity"] = custdataset["custname"] + " customer created"
+                        else:
+                            logdata["activity"] = custdataset["custname"] + " supplier created"
+                        result = self.con.execute(gkdb.log.insert(),[logdata])
 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
