@@ -357,23 +357,27 @@ defaultflag '16' or '19' set to the '0'.
                 accountName = accPrevName.fetchone()
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
 
+                #custsupflag is 1 only when sub groub of selected account for edit is Sundry Debtors or Sundry Creditors for Purchase.
                 if newdataset["custsupflag"] == 1:
                     custdataset = {}
                     custdataset["orgcode"] = authDetails["orgcode"]
                     custname = "'"+newdataset["oldcustname"]+"'"
                     custnamelist= self.con.execute("select exists(select 1 from customerandsupplier where orgcode =%d and custname=%s)"%(authDetails["orgcode"],custname))
                     listcust = custnamelist.fetchone()
+                    #this condition is true when account name is match with custsup name.
                     if listcust[0] == True:
+                        #to fetch custid  using custname.
                         fcustid = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname==newdataset["oldcustname"])))
                         fetchcustname=fcustid.fetchone()
                         custid = fetchcustname["custid"]
-                        #if changs are in custsup data.
+                        #if custsup data already filled at time of create acount and then update.
                         if "moredata" in newdataset:
                             custdataset = newdataset["moredata"]
                             del custdataset["oldcustname"]
                         else:
-                            #if change are only in account name then only custsup name will change and api call from edit account not from edit customersupplier.
+                            #if change are only in account name then only custsup name will change at this time 'moredata' field is absent in newdataset.
                             custdataset["custname"] = dataset["accountname"]
+                        #update custsup data
                         result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid == custid).values(custdataset))
                         if "moredata" in newdataset and 'bankdetails' not in custdataset:
                             #if bankdetails are null, set bankdetails as null in database.
@@ -381,6 +385,7 @@ defaultflag '16' or '19' set to the '0'.
                         if "moredata" in newdataset and 'gstin' not in custdataset:
                             #if gstin are null, set gstin as null in database.
                             self.con.execute("update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"%int(custid))
+                    #when custsup details filled at the time of edit account.
                     elif "moredata" in newdataset:
                         custdataset = newdataset["moredata"]
                         custdataset["orgcode"] = authDetails["orgcode"]
