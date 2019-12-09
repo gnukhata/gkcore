@@ -361,8 +361,7 @@ defaultflag '16' or '19' set to the '0'.
                 if newdataset["custsupflag"] == 1:
                     custdataset = {}
                     custdataset["orgcode"] = authDetails["orgcode"]
-                    custname = "'"+newdataset["oldcustname"]+"'"
-                    custnamelist= self.con.execute("select exists(select 1 from customerandsupplier where orgcode =%d and custname=%s)"%(authDetails["orgcode"],custname))
+                    custnamelist= self.con.execute("select exists(select 1 from customerandsupplier where orgcode =%d and custname='%s')"%(authDetails["orgcode"],newdataset["oldcustname"]))
                     listcust = custnamelist.fetchone()
                     #this condition is true when account name is match with custsup name.
                     if listcust[0] == True:
