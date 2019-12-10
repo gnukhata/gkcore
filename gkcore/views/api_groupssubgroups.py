@@ -124,6 +124,7 @@ class api_user(object):
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
+				
 	# This fuction return group code of groupsubgroups for organisation
 	@view_config(route_name='groupsubgroups', request_param='orgbank', request_method='GET',renderer='json')
 	def getGroupSubgroupfororg(self):
