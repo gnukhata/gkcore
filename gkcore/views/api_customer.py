@@ -146,7 +146,7 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 dataset = self.request.params
                 result = self.con.execute(select([gkdb.customerandsupplier]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname == dataset["custname"] )))
@@ -170,10 +170,10 @@ class api_customer(object):
 
                     Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"],"pincode":row["pincode"], "bankdetails":bankdetails, "statelist":statelist }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
-            # except:
-            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            # finally:
-            #     self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     @view_config(request_method='PUT', renderer='json')
     def editCustomerSupplier(self):
