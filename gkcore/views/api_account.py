@@ -42,6 +42,8 @@ from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import accounts
+from datetime import datetime,date
+
 """
 purpose:
 This class is the resource to create, update, read and delete accounts.
@@ -92,7 +94,8 @@ defaultflag '2' or '3' set to the '0'.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
+                newdataset = self.request.json_body
+                dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 
                 if 'defaultflag' in dataset:
@@ -111,8 +114,21 @@ defaultflag '2' or '3' set to the '0'.
                         setROPdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"%int(authDetails["orgcode"]))
                     if (grpname["groupname"] == "Indirect Income" and dflag == 181):
                         setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(authDetails["orgcode"]))
-                
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
+                if "moredata" in newdataset:
+                    moredata = newdataset["moredata"]
+                    moredata["orgcode"]=authDetails["orgcode"]
+                    result = self.con.execute(gkdb.customerandsupplier.insert(),[moredata])
+                    logdata = {}
+                    logdata["orgcode"] = authDetails["orgcode"]
+                    logdata["userid"] = authDetails["userid"]
+                    logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                    if int(moredata["csflag"]) == 3:
+                        logdata["activity"] = moredata["custname"] + " customer created"
+                    else:
+                        logdata["activity"] = moredata["custname"] + " supplier created"
+                    result = self.con.execute(gkdb.log.insert(),[logdata])
+                
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
             except exc.IntegrityError:
@@ -316,7 +332,8 @@ defaultflag '16' or '19' set to the '0'.
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
+                newdataset = self.request.json_body
+                dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 #To update defaultflag check whether key exists and then update only those accounts which are under the respective group.
                 if 'defaultflag' in dataset:
@@ -339,6 +356,48 @@ defaultflag '16' or '19' set to the '0'.
                 accPrevName = self.con.execute(select([gkdb.accounts.c.accountname]).where(gkdb.accounts.c.accountcode == dataset["accountcode"]))
                 accountName = accPrevName.fetchone()
                 result = self.con.execute(gkdb.accounts.update().where(gkdb.accounts.c.accountcode==dataset["accountcode"]).values(dataset))
+
+                #custsupflag is 1 only when sub groub of selected account for edit is Sundry Debtors or Sundry Creditors for Purchase.
+                if newdataset["custsupflag"] == 1:
+                    custdataset = {}
+                    custdataset["orgcode"] = authDetails["orgcode"]
+                    custnamelist= self.con.execute("select exists(select 1 from customerandsupplier where orgcode =%d and custname='%s')"%(authDetails["orgcode"],newdataset["oldcustname"]))
+                    listcust = custnamelist.fetchone()
+                    #this condition is true when account name is match with custsup name.
+                    if listcust[0] == True:
+                        #to fetch custid  using custname.
+                        fcustid = self.con.execute(select([gkdb.customerandsupplier.c.custid]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname==newdataset["oldcustname"])))
+                        fetchcustname=fcustid.fetchone()
+                        custid = fetchcustname["custid"]
+                        #if custsup data already filled at time of create acount and then update.
+                        if "moredata" in newdataset:
+                            custdataset = newdataset["moredata"]
+                            del custdataset["oldcustname"]
+                        else:
+                            #if change are only in account name then only custsup name will change at this time 'moredata' field is absent in newdataset.
+                            custdataset["custname"] = dataset["accountname"]
+                        #update custsup data
+                        result = self.con.execute(gkdb.customerandsupplier.update().where(gkdb.customerandsupplier.c.custid == custid).values(custdataset))
+                        if "moredata" in newdataset and 'bankdetails' not in custdataset:
+                            #if bankdetails are null, set bankdetails as null in database.
+                            self.con.execute("update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"%int(custid))
+                        if "moredata" in newdataset and 'gstin' not in custdataset:
+                            #if gstin are null, set gstin as null in database.
+                            self.con.execute("update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"%int(custid))
+                    #when custsup details filled at the time of edit account.
+                    elif "moredata" in newdataset:
+                        custdataset = newdataset["moredata"]
+                        custdataset["orgcode"] = authDetails["orgcode"]
+                        result = self.con.execute(gkdb.customerandsupplier.insert(),[custdataset])
+                        logdata = {}
+                        logdata["orgcode"] = authDetails["orgcode"]
+                        logdata["userid"] = authDetails["userid"]
+                        logdata["time"] = datetime.today().strftime('%Y-%m-%d')
+                        if int(custdataset["csflag"]) == 3:
+                            logdata["activity"] = custdataset["custname"] + " customer created"
+                        else:
+                            logdata["activity"] = custdataset["custname"] + " supplier created"
+                        result = self.con.execute(gkdb.log.insert(),[logdata])
 
                 self.con.close()
                 return {"gkstatus":enumdict["Success"]}
