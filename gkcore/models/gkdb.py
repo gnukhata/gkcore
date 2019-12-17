@@ -191,13 +191,15 @@ product = Table('product',metadata,
     Column('productcode',Integer,primary_key=True),
     Column('gscode',UnicodeText),
     Column('gsflag',Integer),
+    Column('percentdiscount', Numeric(5,2) ,default=0.00),
+    Column('amountdiscount', Numeric(13,2) ,default=0.00),
     Column('productdesc',UnicodeText),
     Column('openingstock', Numeric(13,2),default=0.00),
     Column('specs', JSONB),
     Column('categorycode',Integer,ForeignKey('categorysubcategories.categorycode',ondelete="CASCADE")),
     Column('uomid',Integer,ForeignKey('unitofmeasurement.uomid',ondelete="CASCADE")),
-                Column('prodsp',Numeric(13,2)),
-                Column('prodmrp',Numeric(13,2)),
+    Column('prodsp',Numeric(13,2)),
+    Column('prodmrp',Numeric(13,2)),
     Column('orgcode',Integer, ForeignKey('organisation.orgcode', ondelete="CASCADE"), nullable=False),
     UniqueConstraint('categorycode','productdesc'),
     UniqueConstraint('productdesc','orgcode'),
@@ -342,6 +344,8 @@ paymentmode states that Mode of payment i.e 'bank' or 'cash'. Default value is s
 inoutflag states that invoice 'in' or 'out' (i.e 9 for 'in' and 15 for 'out') 
 Roundoff field is to check wheather invoice total is rounded off or not. 
 0 = no round off 1 = invoice total amount rounded off.
+discflag is used to check whether discount is in percent or in amount
+1 = discount in amount, 16 = discount in percent.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
@@ -359,6 +363,7 @@ invoice = Table('invoice',metadata,
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
     Column('roundoffflag',Integer,default=0),
+    Column('discflag',Integer,default=1),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
@@ -395,6 +400,8 @@ billwise = Table('billwise',metadata,
 """
 This is the table which acts as a bin for canceled invoices.
 While these invoices canceled, they are for investigation purpose if need be.
+discflag is used to check whether discount is in percent or in amount
+1 = discount in amount, 16 = discount in percent.
 """
 invoicebin = Table('invoicebin',metadata,
     Column('invid',Integer,primary_key=True),
@@ -409,6 +416,7 @@ invoicebin = Table('invoicebin',metadata,
     Column('amountpaid',Numeric(13,2),default=0.00),
     Column('invoicetotal', Numeric(13,2),nullable=False),
     Column('icflag',Integer,default=9),
+    Column('discflag',Integer,default=1),
     Column('taxstate',UnicodeText),
     Column('sourcestate',UnicodeText),
     Column('orgstategstin',UnicodeText),
@@ -430,6 +438,8 @@ invoicebin = Table('invoicebin',metadata,
     Column('pincode',UnicodeText),
     Column('inoutflag',Integer),
     Column('invoicetotalword', UnicodeText),
+    Column('invnarration',UnicodeText),
+    Column('dcinfo',JSONB),
     Index("invoicebin_orgcodeindex","orgcode"),
     Index("invoicebin_invoicenoindex","invoiceno")
     )
@@ -449,13 +459,15 @@ The key of this field is the 'productcode' while value is another dictionary.
 This has a key as price per unit (ppu) and value as quantity (qty).
 Roundoff field is to check wheather delivery chalan total is rounded off or not. 
 0 = no round off 1 = total amount rounded off.
+discflag is used to check whether discount is in percent or in amount
+1 = discount in amount, 16 = discount in percent.
 """
 delchal = Table('delchal',metadata,
     Column('dcid',Integer,primary_key=True),
     Column('dcno',UnicodeText,nullable=False),
     Column('dcdate',DateTime,nullable=False),
     Column('dcflag',Integer,nullable=False),
-    Column('taxflag',Integer,default=22),
+    Column('taxflag',Integer,default=7),
     Column('contents',JSONB),
     Column('tax', JSONB),
     Column('cess',JSONB),
@@ -463,7 +475,7 @@ delchal = Table('delchal',metadata,
     Column('designation', UnicodeText),
     Column('cancelflag',Integer,default=0),
     Column('canceldate',DateTime),
-    Column('noofpackages', Integer, nullable=False),
+    Column('noofpackages', Integer),
     Column('modeoftransport', UnicodeText),
     Column('attachment',JSON),
     Column('consignee',JSONB),
@@ -481,9 +493,48 @@ delchal = Table('delchal',metadata,
     Column('orderid',Integer, ForeignKey('purchaseorder.orderid',ondelete="CASCADE")),
     Column('inoutflag',Integer,nullable=False),
     Column('roundoffflag',Integer,default=0),
+    Column('discflag',Integer,default=1),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
+    )
+"""
+This is the table which acts as a bin for cancelled delivery notes.
+While these delivery notes cancelled, they are for investigation purpose if need be.
+"""
+
+delchalbin = Table('delchalbin',metadata,
+    Column('dcid',Integer,primary_key=True),
+    Column('dcno',UnicodeText,nullable=False),
+    Column('dcdate',DateTime,nullable=False),
+    Column('dcflag',Integer,nullable=False),
+    Column('taxflag',Integer,default=22),
+    Column('contents',JSONB),
+    Column('tax', JSONB),
+    Column('cess',JSONB),
+    Column('issuername', UnicodeText),
+    Column('designation', UnicodeText),
+    Column('noofpackages', Integer, nullable=False),
+    Column('modeoftransport', UnicodeText),
+    Column('attachment',JSON),
+    Column('consignee',JSONB),
+    Column('taxstate',UnicodeText),
+    Column('sourcestate',UnicodeText),
+    Column('orgstategstin',UnicodeText),
+    Column('freeqty',JSONB),
+    Column('discount',JSONB),
+    Column('vehicleno',UnicodeText),
+    Column('dateofsupply',DateTime),
+    Column('delchaltotal', Numeric(13,2), nullable=False),
+    Column('attachmentcount',Integer,default=0),
+    Column('orgcode',Integer, ForeignKey('organisation.orgcode',ondelete="CASCADE"), nullable=False),
+    Column('custid',Integer, ForeignKey('customerandsupplier.custid')),
+    Column('orderid',Integer, ForeignKey('purchaseorder.orderid')),
+    Column('inoutflag',Integer,nullable=False),
+    Column('roundoffflag',Integer,default=0),
+    Column('goid',Integer, ForeignKey('godown.goid')),
+    Index("delchalbin_orgcodeindex","orgcode"),
+    Index("delchalbin_dcnoindex","dcno")
     )
 """
 The join table which has keys from both inv and dc table.
@@ -594,6 +645,7 @@ purchaseorder = Table( 'purchaseorder' , metadata,
     Column('orderid',Integer, primary_key=True),
     Column('orderno',UnicodeText,nullable=False),
     Column('orderdate', DateTime, nullable=False),
+    Column('psnarration', UnicodeText),
     Column('creditperiod', UnicodeText),
     Column('payterms',UnicodeText),
     Column('modeoftransport', UnicodeText),

@@ -113,6 +113,17 @@ class api_organisation(object):
                     except:
                         self.con.execute("update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"%(desc,unit))
                     dictofuqc.pop(unit,0)
+
+            # discount flag is use to check whether discount is in percent or in amount.
+            # 1 = discount in amount, 16 = discount in percent.
+            if not columnExists("delchal","discflag"):
+                self.con.execute("alter table invoicebin add column discflag integer default 1")
+                self.con.execute("alter table invoice add column discflag integer default 1")
+                self.con.execute("alter table delchal add column discflag integer default 1")
+                # in product following two collumns are added for discount in percent and in amount.
+                self.con.execute("alter table product add column percentdiscount numeric(5,2) default 0.00")
+                self.con.execute("alter table product add column amountdiscount numeric(13,2) default 0.00")
+
             # Round off is use to detect that total amount of invoice is rounded off or not.
             # If the field is not exist then it will create field.
             if not columnExists("purchaseorder","roundoffflag"):
@@ -158,10 +169,17 @@ class api_organisation(object):
             #Below query is to remove gbflag if it exists.
             if columnExists("godown","gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
-
             #In Below query we are adding field pincode to purchaseorder table
             if not columnExists("purchaseorder","pincode"):
                 self.con.execute("alter table purchaseorder add pincode text")
+
+            #In Below query we are adding field invnarration to invoicebin table
+            if not columnExists("invoicebin","invnarration"):
+                self.con.execute("alter table invoicebin add invnarration text")
+
+            #In Below query we are adding field dcinfo to invoicebin table
+            if not columnExists("invoicebin","dcinfo"):
+                self.con.execute("alter table invoicebin add dcinfo jsonb")
 
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
@@ -547,6 +565,8 @@ class api_organisation(object):
                 self.con.execute("alter table drcr add drcrnarration text")
             if not columnExists("invoice","invnarration"):        
                 self.con.execute("alter table invoice add invnarration text")
+            if not columnExists("purchaseorder","psnarration"):        
+                self.con.execute("alter table purchaseorder add psnarration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
@@ -562,9 +582,15 @@ class api_organisation(object):
                 #In Below query we are removing company preference option Accounting with Invoicing. This query is written under above condition because we want to run the query only once while migrating to version 6.0
                 self.con.execute("update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0")
 
-                #In Below queries we are creating new table invoivebin which is act as bin for canceled invoices. 
+                #Below query is to create a new table to store cancelled deliverynotes. 
+            if not tableExists("delchalbin"):
+                self.con.execute("create table delchalbin(dcid serial, dcno text NOT NULL, dcdate timestamp NOT NULL, dcflag integer NOT NULL, taxflag integer default 7, contents jsonb, tax jsonb, cess jsonb, issuername text, designation text, noofpackages integer, modeoftransport text, attachment json, consignee jsonb, taxstate text,sourcestate text, orgstategstin text, freeqty jsonb, discount jsonb, vehicleno text, dateofsupply timestamp, delchaltotal numeric(13,2) NOT NULL, goid integer, attachmentcount integer default 0, orgcode integer NOT NULL, custid integer, orderid integer, inoutflag integer NOT NULL, roundoffflag integer default 0, primary key(dcid), foreign key(orderid) references purchaseorder(orderid), foreign key(custid) references customerandsupplier(custid), foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE,foreign key(goid) references godown(goid))")
+                self.con.execute("create index delchalbin_orgcodeindex on delchalbin using btree(orgcode)")
+                self.con.execute("create index delchalbin_dcnoindex on delchalbin using btree(dcno)")
+
+                #In Below queries we are creating new table invoivebin which is act as bin for cancelled invoices. 
             if not tableExists("invoicebin"):
-                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid), foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE))")
+                self.con.execute("create table invoicebin(invid serial, invoiceno text NOT NULL, invoicedate  timestamp NOT NULL, taxflag integer default 22, contents jsonb, issuername text, designation text, tax jsonb, cess jsonb, amountpaid numeric(13,2) default 0.00, invoicetotal numeric(13,2) NOT NULL, icflag integer default 9, taxstate text, sourcestate text, orgstategstin text, attachment json, attachmentcount integer default 0, orderid integer,orgcode integer NOT NULL, custid integer, consignee jsonb, freeqty jsonb, reversecharge text, bankdetails jsonb, transportationmode text,vehicleno text, dateofsupply timestamp, discount jsonb, paymentmode integer default 2,address text, inoutflag integer,invoicetotalword text, primary key(invid),foreign key(orderid) references purchaseorder(orderid),foreign key(custid) references customerandsupplier(custid), foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE)")
                 self.con.execute("create index invoicebin_orgcodeindex on invoicebin using btree(orgcode)")
                 self.con.execute("create index invoicebin_invoicenoindex on invoicebin using btree(invoiceno)")
             else:

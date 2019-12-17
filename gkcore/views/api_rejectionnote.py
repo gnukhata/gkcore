@@ -119,7 +119,13 @@ class api_rejectionnote(object):
                 rnotes = []
                 for row in result:
                     rnotes.append({"rnid":row["rnid"],"rnno":row["rnno"], "inout":row["inout"], "dcid":row["dcid"], "invid":row["invid"], "rndate":datetime.strftime(row["rndate"],'%d-%m-%Y')})
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":rnotes}
+
+                rejincount = self.con.execute("select count(rejectionnote) as rejin from rejectionnote where inout=9 and orgcode = %d"%(authDetails["orgcode"]))
+                incount = rejincount.fetchone()
+                rejoutcount = self.con.execute("select count(rejectionnote) as rejout from rejectionnote where inout=15 and orgcode = %d"%(authDetails["orgcode"]))
+                outcount = rejoutcount.fetchone()
+
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":rnotes, "rejincount":incount["rejin"], "rejoutcount":outcount["rejout"]}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
             finally:

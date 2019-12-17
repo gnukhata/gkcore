@@ -41,6 +41,10 @@ import gkcore
 from gkcore.views.api_login import authCheck
 
 
+def getStateCode(StateName,con):
+    stateData = con.execute(select([gkdb.state.c.statecode]).where(gkdb.state.c.statename == StateName))
+    staterow = stateData.fetchone()
+    return {"statecode":staterow["statecode"]}
 
 @view_defaults(route_name='customersupplier')
 class api_customer(object):
@@ -109,7 +113,62 @@ class api_customer(object):
                     bankdetails = ""
                 else:
                     bankdetails = row["bankdetails"]
-                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"],"pincode":row["pincode"], "bankdetails":bankdetails }
+
+                statelist=[]
+                if (row["gstin"] != None and bool(row["gstin"])):
+                    for statecd in row["gstin"]:
+                        statedata = self.con.execute(select([gkdb.state.c.statename,gkdb.state.c.statecode]).where(gkdb.state.c.statecode == statecd))
+                        statename = statedata.fetchone()
+                        statelist.append({statename["statecode"]: statename["statename"]})  
+                else:
+                    custsupstatecode = getStateCode(row["state"],self.con)["statecode"]
+                    statelist.append({custsupstatecode: row["state"]})  
+
+                Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"],"pincode":row["pincode"], "bankdetails":bankdetails, "statelist":statelist }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
+
+
+    @view_config(request_param="acc=single", request_method='GET',renderer='json')
+    def getCustSupacc(self):
+        """
+        this function returns details on one customer or supplier.
+        the request parameter determines that there is only single entity to be returned.
+ """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.params
+                result = self.con.execute(select([gkdb.customerandsupplier]).where(and_(gkdb.customerandsupplier.c.orgcode==authDetails["orgcode"],gkdb.customerandsupplier.c.custname == dataset["custname"] )))
+                row = result.fetchone()
+                Customer={}
+                if row != None:
+                    if(row["bankdetails"] == None):
+                        bankdetails = ""
+                    else:
+                        bankdetails = row["bankdetails"]
+
+                    statelist=[]
+                    if (row["gstin"] != None and bool(row["gstin"])):
+                        for statecd in row["gstin"]:
+                            statedata = self.con.execute(select([gkdb.state.c.statename,gkdb.state.c.statecode]).where(gkdb.state.c.statecode == statecd))
+                            statename = statedata.fetchone()
+                            statelist.append({statename["statecode"]: statename["statename"]})  
+                    else:
+                        custsupstatecode = getStateCode(row["state"],self.con)["statecode"]
+                        statelist.append({custsupstatecode: row["state"]})  
+
+                    Customer = {"custid":row["custid"], "custname":row["custname"], "custaddr":row["custaddr"], "custphone":row["custphone"], "custemail":row["custemail"], "custfax":row["custfax"], "custpan":row["custpan"], "custtan":row["custtan"],"state":row["state"], "custdoc":row["custdoc"], "csflag":row["csflag"],"gstin":row["gstin"],"pincode":row["pincode"], "bankdetails":bankdetails, "statelist":statelist }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":Customer}
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
