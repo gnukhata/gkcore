@@ -1,3 +1,18 @@
+[16 December 2019 Release 6.50]
+* Function to cancel delivery note.
+* New table to store cancelled delivery note data.
+* Function to cancel invoice when delivery note is associated with the invoice.
+* New fields in product table  to save discount in percent and as amount. 
+* New field discflag in table invoice , invoicebin and delchal.
+* Field to save narration in purchase and sales order.
+* Change in APIs related to the field added. 
+* Enhancement in code to calculate discount in Invoice, Cashmemo and Delivery note.
+* Function to show states of customers for which gstin is provided.
+* Performance Enhancements in APIs and database.
+* Bug Fixes.
+
+
+
 [16 August 2019 Release 6.0 Updates] 
 * Round Off feature for Delivery note , Credit/Debit note and Purchase/Sales order with automatic accounting entries.
 * Accounts necessary for automatic accounting entries are created atomatically if they are found to be absent.
