@@ -1299,5 +1299,19 @@ class api_organisation(object):
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
 
-    
-    
+    @view_config(route_name='organisations', request_param='type=sameyear', request_method='POST', renderer ='json')
+    def sameYear(self):
+        try:
+            self.con = eng.connect()
+            dates = self.request.params
+            startdate=dates['startdate']
+            enddate=dates['enddate']
+            result = self.con.execute('select orgname from organisation where yearstart = '+startdate+' and yearend = '+enddate)
+            gkdata = []
+            for row in result:
+                gkdata.append({"orgname":row[0]})
+            self.con.close()
+            return {"gkstatus":enumdict["Success"],"gkdata":gkdata}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
