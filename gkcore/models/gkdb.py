@@ -346,6 +346,8 @@ Roundoff field is to check wheather invoice total is rounded off or not.
 0 = no round off 1 = invoice total amount rounded off.
 discflag is used to check whether discount is in percent or in amount
 1 = discount in amount, 16 = discount in percent.
+othcharges is a json field which is nested dictionary.
+The key of this field is chargecode while value is another dictionary which has chargerate, tax, cess as keys along with its value.
 """
 invoice = Table('invoice',metadata,
     Column('invid',Integer,primary_key=True),
