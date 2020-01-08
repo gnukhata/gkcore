@@ -66,7 +66,6 @@ class api_rejectionnote(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                print dataset
                 rejectionnotedata = dataset["rejectionnotedata"]
                 stockdata = dataset["stockdata"]
                 rejectionnotedata["orgcode"] = authDetails["orgcode"]
