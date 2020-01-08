@@ -581,6 +581,8 @@ class api_organisation(object):
                 self.con.execute("alter table delchal add totalinword text")
             if not columnExists("delchalbin","totalinword"):
                 self.con.execute("alter table delchalbin add totalinword text")
+            if not columnExists("rejectionnote","rejnarration"):        
+                self.con.execute("alter table rejectionnote add rejnarration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
