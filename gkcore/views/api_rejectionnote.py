@@ -66,6 +66,7 @@ class api_rejectionnote(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                print dataset
                 rejectionnotedata = dataset["rejectionnotedata"]
                 stockdata = dataset["stockdata"]
                 rejectionnotedata["orgcode"] = authDetails["orgcode"]
@@ -156,7 +157,7 @@ class api_rejectionnote(object):
                 rndata = result.fetchone()
                 issuerdata = self.con.execute(select([users.c.username,users.c.userrole]).where(users.c.userid == rndata["issuerid"]))
                 issuerdata = issuerdata.fetchone()
-                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"rejectedtotal":"%.2f"% float(rndata["rejectedtotal"])}
+                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"rejectedtotal":"%.2f"% float(rndata["rejectedtotal"]),"rejnarration":rndata["rejnarration"]}
                 typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
                 """
                 If rejection_note created against the delivery Note.
