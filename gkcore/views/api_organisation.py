@@ -181,6 +181,10 @@ class api_organisation(object):
             if not columnExists("invoicebin","dcinfo"):
                 self.con.execute("alter table invoicebin add dcinfo jsonb")
 
+            #In Below query we are adding field dcnarration to delchal table
+            if not columnExists("delchal","dcnarration"):
+                self.con.execute("alter table delchal add dcnarration text")
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","ainvnoflag"):

@@ -255,6 +255,7 @@ create method for delchal resource.
                                     "attachmentcount": delchaldata["attachmentcount"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
                                     "inout":stockinout,
+                                    "dcnarration":delchaldata["dcnarration"],
                                     "roundoffflag": delchaldata["roundoffflag"]
                                 }}
 
