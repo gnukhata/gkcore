@@ -257,7 +257,8 @@ create method for delchal resource.
                                     "inout":stockinout,
                                     "dcnarration":delchaldata["dcnarration"],
                                     "roundoffflag": delchaldata["roundoffflag"],
-                                    "totalinword": delchaldata["totalinword"]
+                                    "totalinword": delchaldata["totalinword"],
+                                    "dcnarration":delchaldata["dcnarration"]
                                 }}
 
                 if delchaldata["consignee"]!=None:
