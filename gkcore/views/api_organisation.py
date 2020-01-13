@@ -185,6 +185,10 @@ class api_organisation(object):
             if not columnExists("delchal","dcnarration"):
                 self.con.execute("alter table delchal add dcnarration text")
 
+            #In Below query we are adding field dcnarration to delchalbin table
+            if not columnExists("delchalbin","dcnarration"):
+                self.con.execute("alter table delchalbin add dcnarration text")
+
             if not columnExists("organisation","avnoflag"):
                 self.con.execute("alter table organisation add avnoflag integer default 0")
             if not columnExists("organisation","ainvnoflag"):

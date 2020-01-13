@@ -444,7 +444,7 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            # try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchalbin]).where(delchalbin.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
@@ -464,6 +464,7 @@ create method for delchal resource.
                                     "modeoftransport": delchaldata["modeoftransport"],
                                     "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
+                                    "dcnarration":delchaldata["dcnarration"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
                                     # "inout":stockinout,
                                     "roundoffflag": delchaldata["roundoffflag"]
@@ -606,10 +607,10 @@ create method for delchal resource.
                     singledelchal["discflag"] = delchaldata["discflag"]
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
-            except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+            # except:
+            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            # finally:
+            #     self.con.close()
 
     #Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
     @view_config(request_method='DELETE',request_param='type=canceldel',renderer='json')
@@ -629,7 +630,7 @@ create method for delchal resource.
                 delchalData=self.con.execute(select([delchal]).where(delchal.c.dcid == dcid))
                 delchaldata = delchalData.fetchone()
                 #Add all data of cancel delivry note into delchalbin"
-                delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"],"discflag":delchaldata["discflag"]}
+                delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"],"discflag":delchaldata["discflag"],"dcnarration":delchaldata["dcnarration"]}
                 if(delchaldata["attachment"] != None): 
                     delchalbinData["attachment"] = delchaldata["attachment"]
                 try:
