@@ -654,7 +654,7 @@ create method for delchal resource.
                 except:
                     pass
 
-                bin = self.con.execute(delchalbin.insert(),[delchalbinData])
+                dcbin = self.con.execute(delchalbin.insert(),[delchalbinData])
                 
                 #To delete delivery note enrty from delchal table
                 self.con.execute("delete from delchal  where dcid = %d and orgcode=%d"%(int(dcid),authDetails["orgcode"]))
