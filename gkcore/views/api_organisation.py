@@ -50,7 +50,7 @@ from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists, getOnDelete
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -1299,19 +1299,26 @@ class api_organisation(object):
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
 
-    @view_config(route_name='organisations', request_param='type=sameyear', request_method='POST', renderer ='json')
+    @view_config(request_method='GET', request_param='type=sameyear', renderer='json' , route_name="organisations")
     def sameYear(self):
-        try:
-            self.con = eng.connect()
-            dates = self.request.params
-            startdate=dates['startdate']
-            enddate=dates['enddate']
-            result = self.con.execute('select orgname from organisation where yearstart = '+startdate+' and yearend = '+enddate)
-            gkdata = []
-            for row in result:
-                gkdata.append({"orgname":row[0]})
-            self.con.close()
-            return {"gkstatus":enumdict["Success"],"gkdata":gkdata}
-        except:
-            self.con.close()
-            return {"gkstatus":enumdict["ConnectionFailed"]}
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result =self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                orgfy = result.fetchone()
+
+                allorg= self.con.execute("select orgcode, orgname, orgtype from organisation where yearstart='%s' and yearend= '%s'"%(orgfy["yearstart"],orgfy["yearend"]))
+                allorgname = allorg.fetchall()
+                orgs = []
+                for row in allorgname:
+                    orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"],"orgcode":row["orgcode"],"yearstart":str(orgfy["yearstart"]), "yearend":str(orgfy["yearend"])})
+                    orgs.sort()
+
+                return {"gkstatus":enumdict["Success"],"gkdata":orgs}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
