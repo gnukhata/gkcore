@@ -1067,6 +1067,8 @@ class api_organisation(object):
                     result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
                     if 'bankdetails' not in dataset:
                         self.con.execute("update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"%int(orgcode))
+                    if 'gstin' not in dataset:
+                        self.con.execute("update organisation set gstin=NULL where orgcode=%d"%int(orgcode))
                     self.con.close()
                     return {"gkstatus":enumdict["Success"]}
                 else:
