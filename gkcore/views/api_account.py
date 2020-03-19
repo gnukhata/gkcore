@@ -95,7 +95,9 @@ defaultflag '2' or '3' set to the '0'.
             try:
                 self.con = eng.connect()
                 newdataset = self.request.json_body
-                dataset = newdataset["gkdata"]
+                dataset = newdataset
+                if "origin" in dataset and dataset["origin"] == "createaccount":
+                    dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 
                 if 'defaultflag' in dataset:
