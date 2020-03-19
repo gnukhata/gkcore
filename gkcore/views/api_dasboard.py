@@ -145,7 +145,7 @@ def topfivecustsup(inoutflag,orgcode):
 
 # this function use to show top five most bought product and service at dashbord in most bought product/service div  
 def topfiveprodsev(orgcode):
-    #try:
+    try:
         con = eng.connect()
         # this is to fetch top five product/service  which is sort by  invoice count. 
         topfiveprod= con.execute("select ky as productcode, count(*) as numkeys from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=9 group by ky order by count(*) desc limit(5)"%(orgcode))
@@ -153,18 +153,16 @@ def topfiveprodsev(orgcode):
                         
         prodinfolist=[]
         for prodinfo in topfiveprodlist:
-            print (prodinfo)
             proddesc=  con.execute("select productdesc as proddesc from product where productcode=%d and orgcode=%d"%(int(prodinfo["productcode"]),orgcode))
             proddesclist=proddesc.fetchone()
-            print (proddesclist)
             prodinfolist.append({"prodcode":prodinfo["productcode"],"count":prodinfo["numkeys"],"proddesc":proddesclist["proddesc"]})
         con.close()
         return {"gkstatus":enumdict["Success"],"prodinfolist":prodinfolist}       
-   # except:
-   #     con.close()  
-   #     return{"gkstatus":enumdict["ConnectionFailed"]}
-   # finally:
-   #     con.close()
+    except:
+        con.close()  
+        return{"gkstatus":enumdict["ConnectionFailed"]}
+    finally:
+        con.close()
 
 # this function use to show delchal count by month at dashbord in bar chart      
 def  delchalcountbymonth(inoutflag,orgcode):
@@ -304,7 +302,7 @@ class api_dashboard(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 userinfo = getUserRole(authDetails["userid"])
                 userrole= userinfo["gkresult"]["userrole"]
                 orgcode =authDetails["orgcode"]
@@ -346,8 +344,8 @@ class api_dashboard(object):
                     delchal_out=delchalcountbymonth(15,orgcode)
                     delchal_in=delchalcountbymonth(9,orgcode)
                     return{"gkstatus":enumdict["Success"],"userrole":userrole,"gkresult":{"delchalout":delchal_out["totalamount"],"delchalin":delchal_in["totalamount"]}}
-           # except:
-           #     return{"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                return{"gkstatus":enumdict["ConnectionFailed"]}
 
 
 

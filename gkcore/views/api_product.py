@@ -146,7 +146,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-           # try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([gkdb.product]).where(gkdb.product.c.productcode==self.request.params["productcode"]))
                 row = result.fetchone()
@@ -215,11 +215,11 @@ class api_product(object):
                 else:
                     return {"gkstatus":enumdict["Success"],"gkresult":productDetails}
 
-            #except:
-            #    self.con.close()
-            #    return {"gkstatus":enumdict["ConnectionFailed"]}
-            #finally:
-            #    self.con.close()
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
     @view_config(request_method='GET',request_param='type=pt',renderer='json')
     def getTaxForProduct(self):
         """
