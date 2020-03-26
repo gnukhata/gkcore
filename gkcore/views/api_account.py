@@ -95,7 +95,9 @@ defaultflag '2' or '3' set to the '0'.
             try:
                 self.con = eng.connect()
                 newdataset = self.request.json_body
-                dataset = newdataset["gkdata"]
+                dataset = newdataset
+                if "origin" in dataset and dataset["origin"] == "createaccount":
+                    dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 
                 if 'defaultflag' in dataset:
@@ -115,7 +117,7 @@ defaultflag '2' or '3' set to the '0'.
                     if (grpname["groupname"] == "Indirect Income" and dflag == 181):
                         setRORdflag = self.con.execute("update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"%int(authDetails["orgcode"]))
                 result = self.con.execute(gkdb.accounts.insert(),[dataset])
-                if "moredata" in newdataset:
+                if "moredata" in newdataset and len(newdataset["moredata"]) > 0:
                     moredata = newdataset["moredata"]
                     moredata["orgcode"]=authDetails["orgcode"]
                     result = self.con.execute(gkdb.customerandsupplier.insert(),[moredata])
