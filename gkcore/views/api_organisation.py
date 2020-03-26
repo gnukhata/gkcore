@@ -1309,13 +1309,12 @@ class api_organisation(object):
             try:
                 self.con = eng.connect()
                 result =self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
-                orgfy = result.fetchone()
-
-                allorg= self.con.execute("select orgcode, orgname, orgtype from organisation where yearstart='%s' and yearend= '%s'"%(orgfy["yearstart"],orgfy["yearend"]))
+                orgfy = result.fetchall()
+                allorg= self.con.execute("select orgcode, orgname, orgtype from organisation where yearstart='%s' and yearend= '%s'"%(orgfy[0]["yearstart"],orgfy[0]["yearend"]))
                 allorgname = allorg.fetchall()
                 orgs = []
                 for row in allorgname:
-                    orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"],"orgcode":row["orgcode"],"yearstart":str(orgfy["yearstart"]), "yearend":str(orgfy["yearend"])})
+                    orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"],"orgcode":row["orgcode"],"yearstart":str(orgfy[0]["yearstart"]), "yearend":str(orgfy[0]["yearend"])})
                     orgs.sort()
 
                 return {"gkstatus":enumdict["Success"],"gkdata":orgs}
