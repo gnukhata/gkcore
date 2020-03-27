@@ -50,7 +50,7 @@ from gkcore.models.gkdb import metadata
 from gkcore.models.meta import inventoryMigration,addFields, columnExists, tableExists, getOnDelete
 from gkcore.views.api_invoice import getStateCode 
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 con= Connection
 
 @view_defaults(route_name='organisations')
@@ -1299,5 +1299,25 @@ class api_organisation(object):
             except:
                 return {"gkstatus":  enumdict["ConnectionFailed"]}
 
-    
-    
+    @view_config(request_method='GET', request_param='type=sameyear', renderer='json' , route_name="organisations")
+    def sameYear(self):
+        token = self.request.headers['gktoken']
+        authDetails = authCheck(token)
+        if authDetails["auth"]==False:
+            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result =self.con.execute(select([gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
+                orgfy = result.fetchall()
+                allorg= self.con.execute("select orgcode, orgname, orgtype from organisation where yearstart='%s' and yearend= '%s'"%(orgfy[0]["yearstart"],orgfy[0]["yearend"]))
+                allorgname = allorg.fetchall()
+                orgs = []
+                for row in allorgname:
+                    orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"],"orgcode":row["orgcode"],"yearstart":str(orgfy[0]["yearstart"]), "yearend":str(orgfy[0]["yearend"])})
+                    orgs.sort()
+
+                return {"gkstatus":enumdict["Success"],"gkdata":orgs}
+                self.con.close()
+            except:
+                return {"gkstatus":  enumdict["ConnectionFailed"]}
