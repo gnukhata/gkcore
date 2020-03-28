@@ -255,6 +255,7 @@ create method for delchal resource.
                                     "attachmentcount": delchaldata["attachmentcount"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
                                     "inout":stockinout,
+                                    "dcnarration":delchaldata["dcnarration"],
                                     "roundoffflag": delchaldata["roundoffflag"]
                                 }}
 
@@ -463,6 +464,7 @@ create method for delchal resource.
                                     "modeoftransport": delchaldata["modeoftransport"],
                                     "vehicleno":delchaldata["vehicleno"],
                                     "attachmentcount": delchaldata["attachmentcount"],
+                                    "dcnarration":delchaldata["dcnarration"],
                                     "inoutflag": delchaldata["inoutflag"], #added inoutflag in get method
                                     # "inout":stockinout,
                                     "roundoffflag": delchaldata["roundoffflag"]
@@ -628,7 +630,7 @@ create method for delchal resource.
                 delchalData=self.con.execute(select([delchal]).where(delchal.c.dcid == dcid))
                 delchaldata = delchalData.fetchone()
                 #Add all data of cancel delivry note into delchalbin"
-                delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"],"discflag":delchaldata["discflag"]}
+                delchalbinData = {"dcid":delchaldata["dcid"],"dcno":delchaldata["dcno"],"dcdate":delchaldata["dcdate"],"dcflag":delchaldata["dcflag"],"taxflag":delchaldata["taxflag"],"contents":delchaldata["contents"],"tax":delchaldata["tax"],"cess":delchaldata["cess"],"issuername":delchaldata["issuername"],"designation":delchaldata["designation"],"noofpackages":delchaldata["noofpackages"],"modeoftransport":delchaldata["modeoftransport"],"consignee":delchaldata["consignee"],"taxstate":delchaldata["taxstate"],"sourcestate":delchaldata["sourcestate"],"orgstategstin":delchaldata["orgstategstin"],"freeqty":delchaldata["freeqty"],"discount":delchaldata["discount"],"vehicleno":delchaldata["vehicleno"],"dateofsupply":delchaldata["dateofsupply"],"delchaltotal":delchaldata["delchaltotal"],"attachmentcount":delchaldata["attachmentcount"],"orgcode":delchaldata["orgcode"],"custid":delchaldata["custid"],"orderid":delchaldata["orderid"],"inoutflag":delchaldata["inoutflag"],"roundoffflag":delchaldata["roundoffflag"],"discflag":delchaldata["discflag"],"dcnarration":delchaldata["dcnarration"]}
                 if(delchaldata["attachment"] != None): 
                     delchalbinData["attachment"] = delchaldata["attachment"]
                 try:
