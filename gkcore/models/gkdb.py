@@ -495,6 +495,7 @@ delchal = Table('delchal',metadata,
     Column('dcnarration',UnicodeText),
     Column('roundoffflag',Integer,default=0),
     Column('discflag',Integer,default=1),
+    Column('totalinword',UnicodeText),
     UniqueConstraint('orgcode','dcno','custid'),
     Index("delchal_orgcodeindex","orgcode"),
     Index("delchal_dcnoindex","dcno")
@@ -536,6 +537,7 @@ delchalbin = Table('delchalbin',metadata,
     Column('dcnarration',UnicodeText),
     Column('roundoffflag',Integer,default=0),
     Column('goid',Integer, ForeignKey('godown.goid')),
+    Column('totalinword',UnicodeText),
     Index("delchalbin_orgcodeindex","orgcode"),
     Index("delchalbin_dcnoindex","dcno")
     )

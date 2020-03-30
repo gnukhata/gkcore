@@ -577,6 +577,12 @@ class api_organisation(object):
                 self.con.execute("alter table purchaseorder add psnarration text")
             if not columnExists("rejectionnote","rejnarration"):        
                 self.con.execute("alter table rejectionnote add rejnarration text")
+            if not columnExists("delchal","totalinword"):
+                self.con.execute("alter table delchal add totalinword text")
+            if not columnExists("delchalbin","totalinword"):
+                self.con.execute("alter table delchalbin add totalinword text")
+            if not columnExists("rejectionnote","rejnarration"):        
+                self.con.execute("alter table rejectionnote add rejnarration text")
             if not tableExists("usergodown"):
                 self.con.execute("create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))")
             if not tableExists("log"):
@@ -594,7 +600,7 @@ class api_organisation(object):
 
                 #Below query is to create a new table to store cancelled deliverynotes. 
             if not tableExists("delchalbin"):
-                self.con.execute("create table delchalbin(dcid serial, dcno text NOT NULL, dcdate timestamp NOT NULL, dcflag integer NOT NULL, taxflag integer default 7, discflag integer default 1,contents jsonb, tax jsonb, cess jsonb, issuername text, designation text, noofpackages integer, modeoftransport text, attachment json, consignee jsonb, taxstate text,sourcestate text, orgstategstin text, freeqty jsonb, discount jsonb, vehicleno text, dateofsupply timestamp, delchaltotal numeric(13,2) NOT NULL, goid integer, attachmentcount integer default 0, orgcode integer NOT NULL, custid integer, orderid integer, inoutflag integer NOT NULL, roundoffflag integer default 0, primary key(dcid), foreign key(orderid) references purchaseorder(orderid), foreign key(custid) references customerandsupplier(custid), foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE,foreign key(goid) references godown(goid))")
+                self.con.execute("create table delchalbin(dcid serial, dcno text NOT NULL, dcdate timestamp NOT NULL, dcflag integer NOT NULL, taxflag integer default 7, discflag integer default 1,contents jsonb, tax jsonb, cess jsonb, issuername text, designation text, noofpackages integer, modeoftransport text, attachment json, consignee jsonb, taxstate text,sourcestate text, orgstategstin text, freeqty jsonb, discount jsonb, vehicleno text, dateofsupply timestamp, delchaltotal numeric(13,2) NOT NULL, goid integer, attachmentcount integer default 0, orgcode integer NOT NULL, custid integer, orderid integer, inoutflag integer NOT NULL, roundoffflag integer default 0, totalinword text, dcnarration text, primary key(dcid), foreign key(orderid) references purchaseorder(orderid), foreign key(custid) references customerandsupplier(custid), foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE,foreign key(goid) references godown(goid))")
                 self.con.execute("create index delchalbin_orgcodeindex on delchalbin using btree(orgcode)")
                 self.con.execute("create index delchalbin_dcnoindex on delchalbin using btree(dcno)")
 
