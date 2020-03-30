@@ -446,7 +446,7 @@ create method for delchal resource.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            # try:
+            try:
                 self.con = eng.connect()
                 result = self.con.execute(select([delchalbin]).where(delchalbin.c.dcid==self.request.params["dcid"]))
                 delchaldata = result.fetchone()
@@ -610,10 +610,10 @@ create method for delchal resource.
                     singledelchal["discflag"] = delchaldata["discflag"]
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":singledelchal}
-            # except:
-            #     return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-            # finally:
-            #     self.con.close()
+            except:
+                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            finally:
+                 self.con.close()
 
     #Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
     @view_config(request_method='DELETE',request_param='type=canceldel',renderer='json')
