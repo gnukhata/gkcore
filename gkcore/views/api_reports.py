@@ -46,7 +46,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_user import getUserRole
 from datetime import datetime,date
 import calendar
-from monthdelta import monthdelta
+from monthdelta import MonthDelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
@@ -581,7 +581,7 @@ class api_reports(object):
                         if (count["vcount"]==0):
                             clBal = {"month": calendar.month_name[startMonthDate.month], "Dr":"", "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"], "vcountDr":countDr["vcount"], "vcountCr":countCr["vcount"], "vcountLock":countLock["vcount"], "advflag":adverseflag}
                         monthlyBal.append(clBal)
-                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
+                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + MonthDelta(monthCounter)
                     endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
                     monthCounter  +=1
                 self.con.close()
