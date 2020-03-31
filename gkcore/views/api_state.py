@@ -45,7 +45,7 @@ class api_state(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "state initialized"
+        print("state initialized")
 
     @view_config(request_method='GET',renderer='json')
     def getAllStates(self):

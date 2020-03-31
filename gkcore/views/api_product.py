@@ -362,16 +362,16 @@ class api_product(object):
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
                 productDetails["orgcode"] = authDetails["orgcode"]
-                if productDetails.has_key("categorycode")==False:
+                if ("categorycode" in productDetails)==False:
                     duplicateproduct = self.con.execute(select([func.count(gkdb.product.c.productcode).label("productcount")]).where(and_(gkdb.product.c.productdesc== productDetails["productdesc"],gkdb.product.c.categorycode==None,gkdb.product.c.orgcode==productDetails["orgcode"])))
                     duplicateproductrow = duplicateproduct.fetchone()
                     if duplicateproductrow["productcount"]>0:
                         return {"gkstatus":enumdict["DuplicateEntry"]}
                 result = self.con.execute(gkdb.product.insert(),[productDetails])
                 spec = productDetails["specs"]
-                for sp in spec.keys():
+                for sp in list(spec.keys()):
                     self.con.execute("update categoryspecs set productcount = productcount +1 where spcode = %d"%(int(sp)))
-                if productDetails.has_key("categorycode")==False:
+                if ("categorycode" in productDetails)==False:
                     productDetails["categorycode"]=None
                 result = self.con.execute(select([gkdb.product.c.productcode]).where(and_(gkdb.product.c.productdesc==productDetails["productdesc"], gkdb.product.c.categorycode==productDetails["categorycode"],gkdb.product.c.orgcode==productDetails["orgcode"])))
                 row = result.fetchone()
@@ -379,7 +379,7 @@ class api_product(object):
                 if godownFlag:
                     goDetails = dataset["godetails"]
                     ttlOpening = 0.00
-                    for g in goDetails.keys():
+                    for g in list(goDetails.keys()):
                         ttlOpening = ttlOpening + float(goDetails[g])
                         goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
                         self.con.execute(goprod.insert(),[goro])
@@ -432,7 +432,7 @@ class api_product(object):
                     goDetails = dataset["godetails"]
                     result = self.con.execute(gkdb.goprod.delete().where(and_(gkdb.goprod.c.productcode==productCode,gkdb.goprod.c.orgcode==authDetails["orgcode"])))
                     ttlOpening = 0.0
-                    for g in goDetails.keys():
+                    for g in list(goDetails.keys()):
                         ttlOpening = ttlOpening + float(goDetails[g])
                         goro = {"productcode":productCode,"goid":g,"goopeningstock":goDetails[g],"orgcode":authDetails["orgcode"]}
                         self.con.execute(gkdb.goprod.insert(),[goro])
@@ -469,7 +469,7 @@ class api_product(object):
                 row = result.fetchone()
                 spec = row["specs"]
                 pn = row["productdesc"]
-                for sp in spec.keys():
+                for sp in list(spec.keys()):
                     self.con.execute("update categoryspecs set productcount = productcount -1 where spcode = %d"%(int(sp)))
                 
                 result = self.con.execute(gkdb.product.delete().where(gkdb.product.c.productcode==dataset["productcode"]))

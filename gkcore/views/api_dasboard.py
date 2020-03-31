@@ -289,7 +289,7 @@ class api_dashboard(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "dashboard initialize"
+        print("dashboard initialize")
 
     # This function is use to send user wise data for dashboard divs 
     @view_config(request_method='GET',renderer='json', request_param="type=dashboarddata")

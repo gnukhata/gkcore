@@ -49,7 +49,7 @@ class api_transfernote(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "transfernote initialized"
+        print("transfernote initialized")
 
 
     @view_config(request_method='POST',renderer='json')
@@ -91,7 +91,7 @@ class api_transfernote(object):
                     stockdata["inout"] = 15
                     items = stockdata.pop("items")
                     try:
-                        for key in items.keys():
+                        for key in list(items.keys()):
                             stockdata["productcode"] = key
                             stockdata["qty"] = items[key]
                             result = self.con.execute(stock.insert(),[stockdata])
@@ -265,7 +265,7 @@ class api_transfernote(object):
                 self.con = eng.connect()
                 startDate =datetime.strptime(str(self.request.params["startdate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
                 endDate =datetime.strptime(str(self.request.params["enddate"]),"%d-%m-%Y").strftime("%Y-%m-%d")
-                if self.request.params.has_key("goid"):
+                if "goid" in self.request.params:
                     tngodown = int(self.request.params["goid"])
                     if "orderflag" in self.request.params:
                         result = self.con.execute(select([transfernote]).where(and_(transfernote.c.orgcode==authDetails["orgcode"], transfernote.c.transfernotedate >= startDate, transfernote.c.transfernotedate <= endDate, or_(transfernote.c.fromgodown == tngodown, transfernote.c.togodown == tngodown))).order_by(desc(transfernote.c.transfernotedate)))

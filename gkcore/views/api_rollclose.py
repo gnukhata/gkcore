@@ -428,7 +428,7 @@ class api_rollclose(object):
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
-                print E
+                print(E)
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -523,7 +523,7 @@ class api_rollclose(object):
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
-                print E
+                print(E)
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 

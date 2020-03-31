@@ -101,7 +101,7 @@ def gstAccName(con,taxname,taxrate,orgcode):
         cust_sup_state = custState.fetchall()
         if custState.rowcount > 0:
             for b in cust_sup_state:
-                c = b[0].keys()
+                c = list(b[0].keys())
                 for css in c:
                     stAB = con.execute(select([state.c.abbreviation]).where(state.c.statecode == int(css)))
                     state_Abbre = stAB.fetchone()
@@ -219,7 +219,7 @@ class api_tax(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "tax initialized"
+        print("tax initialized")
 
     @view_config(request_method='POST',renderer='json')
     def addtax(self):
@@ -303,7 +303,7 @@ class api_tax(object):
                     catcoderow = result.fetchone()
                     tx = 0.00
                     if catcoderow["categorycode"]!=None:
-                        if(self.request.params.has_key("state")):
+                        if("state" in self.request.params):
                             result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.categorycode==catcoderow["categorycode"],tax.c.state==self.request.params["state"])))
                             if result.rowcount>0:
                                 taxrow = result.fetchone()
@@ -314,7 +314,7 @@ class api_tax(object):
                                 taxrow = result.fetchone()
                                 tx = taxrow["taxrate"]
                     else:
-                        if(self.request.params.has_key("state")):
+                        if("state" in self.request.params):
                             result = self.con.execute(select([tax.c.taxrate]).where(and_(tax.c.productcode==self.request.params["productcode"],tax.c.state==self.request.params["state"])))
                             if result.rowcount>0:
                                 taxrow = result.fetchone()

@@ -71,7 +71,7 @@ class bankreconciliation(object):
 		else:
 			try:
 				self.con = eng.connect()
-				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname==unicode('Bank')))))).order_by(accounts.c.accountname))
+				result = self.con.execute(select([accounts.c.accountname,accounts.c.accountcode]).where(and_(accounts.c.orgcode==authDetails["orgcode"],accounts.c.groupcode ==(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode==authDetails["orgcode"],groupsubgroups.c.groupname==str('Bank')))))).order_by(accounts.c.accountname))
 				accs = []
 				for row in result:
 					accs.append({"accountcode":row["accountcode"], "accountname":row["accountname"]})
@@ -117,8 +117,8 @@ class bankreconciliation(object):
 			voucher= voucherdata.fetchone()
 			if voucher==None:
 				continue
-			if voucher["drs"].has_key(str(record["accountcode"])):
-				for cr in voucher["crs"].keys():
+			if str(record["accountcode"]) in voucher["drs"]:
+				for cr in list(voucher["crs"].keys()):
 					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 					accountname = accountnameRow.fetchone()
 					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
@@ -133,8 +133,8 @@ class bankreconciliation(object):
 						reconRow["memo"]=record["memo"]
 					recongrid.append(reconRow)
 
-			if voucher["crs"].has_key(str(record["accountcode"])):
-				for dr in voucher["drs"].keys():
+			if str(record["accountcode"]) in voucher["crs"]:
+				for dr in list(voucher["drs"].keys()):
 					accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 					accountname = accountnameRow.fetchone()
 					reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}
@@ -199,8 +199,8 @@ class bankreconciliation(object):
 					voucher= voucherdata.fetchone()
 					if voucher==None:
 						continue
-					if voucher["drs"].has_key(str(record["accountcode"])):
-						for cr in voucher["crs"].keys():
+					if str(record["accountcode"]) in voucher["drs"]:
+						for cr in list(voucher["crs"].keys()):
 							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
 							accountname = accountnameRow.fetchone()
 							reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"dr":"%.2f"%float(voucher["crs"][cr]),"cr":"","narration":voucher["narration"]}
@@ -214,8 +214,8 @@ class bankreconciliation(object):
 								reconRow["memo"]=record["memo"]
 							recongrid.append(reconRow)
 
-					if voucher["crs"].has_key(str(record["accountcode"])):
-						for dr in voucher["drs"].keys():
+					if str(record["accountcode"]) in voucher["crs"]:
+						for dr in list(voucher["drs"].keys()):
 							accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
 							accountname = accountnameRow.fetchone()
 							reconRow ={"reconcode":record["reconcode"],"date":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"particulars":str(accountname["accountname"]),"vno":voucher["vouchernumber"],"cr":"%.2f"%float(voucher["drs"][dr]),"dr":"","narration":voucher["narration"]}

@@ -332,7 +332,7 @@ class api_budget(object):
                 startdate = str(budgetdata["startdate"])[0:10]
                 enddate = str(budgetdata["enddate"])[0:10]
                 content = budgetdata["contents"]
-                accountslist = content.keys()
+                accountslist = list(content.keys())
 
                 # To calaculate total Outflow and Inflow 
                 totalBudgetInflow = 0.00
@@ -413,12 +413,12 @@ class api_budget(object):
                     # accountlist already having accounts used in budget.
                     if len(inAcc) > 0 :
                         for vch in inAcc:
-                            for inAccode in vch[0].keys():
+                            for inAccode in list(vch[0].keys()):
                                 if inAccode not in accountslist:
                                     accountslist.append(inAccode)
                     if len(outAcc) > 0 :
                         for vch in outAcc:
-                            for outAccCode in vch[0].keys():
+                            for outAccCode in list(vch[0].keys()):
                                 if outAccCode not in accountslist:
                                     accountslist.append(outAccCode)
                 
@@ -443,11 +443,11 @@ class api_budget(object):
                         for vch in vchOfAcc:
                             # For Inflow field 
                             # As account is in crs then that account is income for budget
-                            if acc in vch["crs"].keys():
+                            if acc in list(vch["crs"].keys()):
                                 accType = "Inflow"
                                 # check wheather bank or cash account is in drs
                                 accIncbAccounts = 0
-                                for drs in vch["drs"].keys():
+                                for drs in list(vch["drs"].keys()):
                                     if int(drs) in cbAccountscode:
                                         accIncbAccounts = 1
                                 # If bank or cash account is in drs
@@ -459,7 +459,7 @@ class api_budget(object):
                             else:
                                 accType = "Outflow"
                                 accIncbAccounts = 0
-                                for crs in vch["crs"].keys():
+                                for crs in list(vch["crs"].keys()):
                                     if int(crs) in cbAccountscode:
                                         accIncbAccounts = 1
                                 if accIncbAccounts == 1:
@@ -553,7 +553,7 @@ class api_budget(object):
                 budgetdata = result.fetchone()
                 startdate = str(budgetdata["startdate"])[0:10]
                 enddate = str(budgetdata["enddate"])[0:10]
-                accountsList = budgetdata["contents"].keys()
+                accountsList = list(budgetdata["contents"].keys())
                 
                 directExpense=0.00
                 directIncome=0.00

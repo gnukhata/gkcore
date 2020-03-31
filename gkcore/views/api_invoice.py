@@ -107,7 +107,7 @@ class api_invoice(object):
                             except:
                                 updateprice = self.con.execute(cslastprice.update().where(and_(cslastprice.c.custid==price["custid"], cslastprice.c.productcode==price["productcode"], cslastprice.c.inoutflag==price["inoutflag"], cslastprice.c.orgcode==price["orgcode"])).values(price))
                     # when delivery note is selected 
-                    if invdataset.has_key("dcid"):
+                    if "dcid" in invdataset:
                         if result.rowcount == 1:
                             result = self.con.execute("select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"%(int(invdataset["custid"]), str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                             invoiceid = result.fetchone()
@@ -154,15 +154,15 @@ class api_invoice(object):
                     else:
                         try:
                             # if it is cash memo
-                            if invdataset.has_key('icflag'):
+                            if 'icflag' in invdataset:
                                 result = self.con.execute("select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"%(str(invdataset["invoiceno"]), int(invdataset["orgcode"])))
                                 invoiceid = result.fetchone()
                                 stockdataset["dcinvtnid"] = invoiceid["invid"]
-                                for item in items.keys():
+                                for item in list(items.keys()):
                                     gstResult = gst(item,self.con)
                                     if int(gstResult["gsflag"]) == 7:
                                         stockdataset["productcode"] = item
-                                        stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
+                                        stockdataset["qty"] = float(list(items[item].values())[0])+float(freeqty[item])
                                         stockdataset["dcinvtnflag"] = "3"
                                         stockdataset["stockdate"] = invdataset["invoicedate"]
                                         result = self.con.execute(stock.insert(),[stockdataset])
@@ -201,12 +201,12 @@ class api_invoice(object):
                                 invoiceid = result.fetchone()
                                 stockdataset["dcinvtnid"] = invoiceid["invid"]
                                 stockdataset["stockdate"] = invdataset["invoicedate"]
-                                for item in items.keys():
+                                for item in list(items.keys()):
                                     self.con = eng.connect()
                                     gstResult = gst(item,self.con)
                                     if int(gstResult["gsflag"]) == 7:
                                         stockdataset["productcode"] = item
-                                        stockdataset["qty"] = float(items[item].values()[0])+float(freeqty[item])
+                                        stockdataset["qty"] = float(list(items[item].values())[0])+float(freeqty[item])
                                         stockdataset["dcinvtnflag"] = "9"
                                         result = self.con.execute(stock.insert(),[stockdataset])
                                     # check automatic voucher flag  if it is 1 get maflag
@@ -295,7 +295,7 @@ class api_invoice(object):
                     pass
                 
                 # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
-                if invdataset.has_key("dcid"):
+                if "dcid" in invdataset:
                     dcinvdataset["dcid"]=invdataset.pop("dcid")
                     dcinvdataset["orgcode"]=invdataset["orgcode"]
                     dcinvdataset["invid"]=invdataset["invid"]
@@ -364,9 +364,9 @@ class api_invoice(object):
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
                         stockdataset["stockdate"] = invdataset["invoicedate"]
                         stockdataset["dcinvtnflag"] = "9"
-                        for item in items.keys():
+                        for item in list(items.keys()):
                             stockdataset["productcode"] = item
-                            stockdataset["qty"] = items[item].values()[0]
+                            stockdataset["qty"] = list(items[item].values())[0]
                             result = self.con.execute(stock.insert(),[stockdataset])
                         avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == invdataset["orgcode"]))
                         av = avfl.fetchone()
@@ -664,10 +664,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                             statelist.append({statename["statecode"]: statename["statename"]})
 
                         custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
-                        if (str(custsupstatecode) not in custData["gstin"].keys()):
+                        if (str(custsupstatecode) not in list(custData["gstin"].keys())):
 
                             statelist.append({custsupstatecode: custData["state"]})
-                        if (custsc != custsupstatecode and str(custsc) not in custData["gstin"].keys()):
+                        if (custsc != custsupstatecode and str(custsc) not in list(custData["gstin"].keys())):
                             statelist.append({custsc: custSatename})
                     else:
                         custsupstatecode = getStateCode(custData["state"],self.con)["statecode"]
@@ -710,14 +710,14 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 freeqtys = invrow["freeqty"]
                 #now looping through the contents.
                 #pc will have the productcode which will be the ke in invContents.
-                for pc in contentsData.keys():
+                for pc in list(contentsData.keys()):
                     #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                     if discounts != None:
                         # discflag is for discount type. Percent=16/Amount=1
                         # here we convert percent discount in to amount.
                         if invrow["discflag"] == 16:
-                            qty = float(contentsData[str(pc)].keys()[0])
-                            price = float(contentsData[str(pc)].values()[0])
+                            qty = float(list(contentsData[str(pc)].keys())[0])
+                            price = float(list(contentsData[str(pc)].values())[0])
                             totalWithoutDiscount = qty * price
                             discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
                         else:
@@ -735,10 +735,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                        taxableAmount = ((float(contentsData[pc][list(contentsData[pc].keys())[0]])) * float(list(contentsData[pc].keys())[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
-                        taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                        taxableAmount = float(list(contentsData[pc].keys())[0]) - float(discount)
                     
                        
                     taxRate = 0.00
@@ -752,7 +752,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                     else:
                         cessRate = 0.00
@@ -779,7 +779,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxAmt = totalTaxAmt + taxAmount
 
 
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 #below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
                 billwiseentry=self.con.execute("select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"%(int(self.request.params["invid"]),authDetails["orgcode"]))  
                 billwise_entry= billwiseentry.fetchone() 
@@ -901,14 +901,14 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                 freeqtys = invrow["freeqty"]
                 #now looping through the contents.
                 #pc will have the productcode which will be the ke in invContents.
-                for pc in contentsData.keys():
+                for pc in list(contentsData.keys()):
                     #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                     if discounts != None:
                         # discflag is for discount type. Percent=16/Amount=1
                         # here we convert percent discount in to amount.
                         if invrow["discflag"] == 16:
-                            qty = float(contentsData[str(pc)].keys()[0])
-                            price = float(contentsData[str(pc)].values()[0])
+                            qty = float(list(contentsData[str(pc)].keys())[0])
+                            price = float(list(contentsData[str(pc)].values())[0])
                             totalWithoutDiscount = qty * price
                             discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
                         else:
@@ -926,10 +926,10 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                         unitrow = um.fetchone()
                         unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                        taxableAmount = ((float(contentsData[pc][list(contentsData[pc].keys())[0]])) * float(list(contentsData[pc].keys())[0])) - float(discount)
                     else:
                         unitofMeasurement = ""
-                        taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                        taxableAmount = float(list(contentsData[pc].keys())[0]) - float(discount)
                     
                        
                     taxRate = 0.00
@@ -943,7 +943,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                     else:
                         cessRate = 0.00
@@ -969,7 +969,7 @@ There will be an icFlag which will determine if it's  an incrementing or decreme
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
-                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                        invContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"gsflag":prodrow["gsflag"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                     invContents[pc]["discflag"] = invrow["discflag"]
                 inv["totaldiscount"] = "%.2f"% (float(totalDisc))
                 inv["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
@@ -1052,7 +1052,7 @@ The bills grid calld gkresult will return a list as it's value.
                 for row in result:
                     customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
                     custname = customer.fetchone()
-                    if self.request.params.has_key('type'):
+                    if 'type' in self.request.params:
                         if str(self.request.params["type"]) == 'sale' and int(row['inoutflag']) == 15:
                             invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
                         elif str(self.request.params["type"]) == 'purchase' and int(row['inoutflag']) == 15:
@@ -1083,7 +1083,7 @@ The bills grid calld gkresult will return a list as it's value.
                 for row in result:
                     customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
                     custname = customer.fetchone()
-                    if self.request.params.has_key('type'):
+                    if 'type' in self.request.params:
                         if str(self.request.params["type"]) == 'sale' and int(row['inoutflag']) == 15:
                             invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
                         elif str(self.request.params["type"]) == 'purchase' and int(row['inoutflag']) == 9:
@@ -1306,13 +1306,13 @@ The bills grid calld gkresult will return a list as it's value.
                         matchedproducts = []
                         remainingproducts = {}
                         totalqtyofdcprod = {}
-                        for pc in proddata.keys():
+                        for pc in list(proddata.keys()):
                         # for eachitem in dcprodresult:
                         #dcprodresult is a list of tuples. eachitem is one such tuple.
-                            totalqtyofdcprod.update({pc:proddata[pc][proddata[pc].keys()[0]]})
+                            totalqtyofdcprod.update({pc:proddata[pc][list(proddata[pc].keys())[0]]})
                             for eachinvoice in invprodresult:
                             #invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
-                                for eachproductcode in eachinvoice.keys():
+                                for eachproductcode in list(eachinvoice.keys()):
 
                                     #eachitem[0] is unique. It's not repeated.
                                     dcprodcode = pc
@@ -1320,14 +1320,14 @@ The bills grid calld gkresult will return a list as it's value.
 
                                         #this means that the product in delchal matches with the product in invoice
                                         #now we will check its quantity
-                                        invqty = eachinvoice[eachproductcode].values()[0]
-                                        dcqty = proddata[pc][proddata[pc].keys()[0]]
+                                        invqty = list(eachinvoice[eachproductcode].values())[0]
+                                        dcqty = proddata[pc][list(proddata[pc].keys())[0]]
                                         if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
                                             #this means the quantity of current individual product is matched exactly
                                             matchedproducts.append(int(eachproductcode))
                                         elif float(dcqty) > float(invqty):
                                             #this means current invoice has not billed the whole product quantity.
-                                            if dcprodcode in remainingproducts.keys():
+                                            if dcprodcode in list(remainingproducts.keys()):
                                                 if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
                                                     matchedproducts.append(int(eachproductcode))
                                                     #whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
@@ -1426,8 +1426,8 @@ The bills grid calld gkresult will return a list as it's value.
                     rejectedResult =self.con.execute(select ([rejectionnote.c.rnid,rejectionnote.c.rejprods]).where(and_(rejectionnote.c.orgcode == authDetails["orgcode"],rejectionnote.c.invid == invrow["invid"])))
                     rejectedNotes = rejectedResult.fetchall()
                     gscounter = 0
-                    for content in invrow["contents"].keys():
-                        qty = float(invrow["contents"][content].values()[0])
+                    for content in list(invrow["contents"].keys()):
+                        qty = float(list(invrow["contents"][content].values())[0])
                         # for goods quantity will not be 0 anytime
                         if qty > 0:
                             gscounter = gscounter + 1
@@ -1441,8 +1441,8 @@ The bills grid calld gkresult will return a list as it's value.
 
                                 for rejrow in rejectedNotes:
                                     rejdict = rejrow["rejprods"]
-                                    if rejdict.has_key(content):
-                                        qty = qty - float(rejrow["rejprods"][content].values()[0])
+                                    if content in rejdict:
+                                        qty = qty - float(list(rejrow["rejprods"][content].values())[0])
                                         if qty > 0:
                                             rejContents[content] =  qty
                                         else:
@@ -1547,7 +1547,7 @@ The bills grid calld gkresult will return a list as it's value.
                 totalCessAmt = 0.00
  
                 items = {}
-                for eachitem in qtyc.keys():
+                for eachitem in list(qtyc.keys()):
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(and_(product.c.productcode==int(eachitem), product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     if productdesc == None :
@@ -1560,8 +1560,8 @@ The bills grid calld gkresult will return a list as it's value.
                         # discflag is for discount type. Percent=16/Amount=1
                         # here we convert percent discount in to amount.
                         if invData["discflag"] == 16:
-                            qty = float(invData["contents"][eachitem].keys()[0])
-                            price = float(invData["contents"][eachitem].values()[0])
+                            qty = float(list(invData["contents"][eachitem].keys())[0])
+                            price = float(list(invData["contents"][eachitem].values())[0])
                             totalWithoutDiscount = qty * price
                             discount = totalWithoutDiscount * float(float(discounts[eachitem]) / 100)
                         else:
@@ -1573,8 +1573,8 @@ The bills grid calld gkresult will return a list as it's value.
                     else:
                         freeqty = 0.00
                     items[int(eachitem)]={}
-                    result = "%.2f"%float(qtyc[eachitem].values()[0])
-                    ppu = qtyc[eachitem].keys()[0]                   
+                    result = "%.2f"%float(list(qtyc[eachitem].values())[0])
+                    ppu = list(qtyc[eachitem].keys())[0]                   
                     items[int(eachitem)] = {"qty":"%.2f"%float(result)}
                     #Checking Rejection Note Qty.
                     allrnidres = self.con.execute(select([rejectionnote.c.rnid]).distinct().where(and_(rejectionnote.c.orgcode == orgcode, rejectionnote.c.invid == invid)))
@@ -1603,7 +1603,7 @@ The bills grid calld gkresult will return a list as it's value.
                         totalDisc = totalDisc + float(discount)
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
-                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"feeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"discount":"%.2f"% (float(discounts[eachitem])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"uom":uom}
+                        items[int(eachitem)] = {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"feeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(qtyc[eachitem].keys())[0])),"discount":"%.2f"% (float(discounts[eachitem])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"uom":uom}
                     else:
                         cessRate = 0.00
                         cessAmount = 0.00
@@ -1628,13 +1628,13 @@ The bills grid calld gkresult will return a list as it's value.
                         totalTaxableVal = totalTaxableVal + taxableAmount
                         totalTaxAmt = totalTaxAmt + taxAmount
 
-                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discounts[eachitem])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"priceperunit":"%.2f"% (float(qtyc[eachitem].keys()[0])),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"uom":uom}
+                        items[int(eachitem)]= {"productdesc":productdesc["productdesc"],"gscode":productdesc["gscode"],"qty":float(items[int(eachitem)]["qty"]),"discount":"%.2f"% (float(discounts[eachitem])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"priceperunit":"%.2f"% (float(list(qtyc[eachitem].keys())[0])),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"uom":uom}
                 items[int(eachitem)]["discflag"] = invData["discflag"]
                 invDetails["totaldiscount"]="%.2f"% (float(totalDisc))
                 invDetails["totaltaxablevalue"]="%.2f"% (float(totalTaxableVal))
                 invDetails["totaltaxamt"]="%.2f"% (float(totalTaxAmt))
                 invDetails["totalcessamt"]="%.2f"% (float(totalCessAmt))
-                for productcode in items.keys():
+                for productcode in list(items.keys()):
                     if items[productcode]["qty"] == 0:
                         del items[productcode]
                 temp = self.con.execute(select([dcinv.c.dcid]).where(and_(dcinv.c.orgcode == orgcode, dcinv.c.invid == invid)))
@@ -1752,11 +1752,11 @@ The bills grid calld gkresult will return a list as it's value.
                         i += 1
                     taxamt = 0.00
                     #calculate tax amount of an invoice.
-                    for productservice in row["contents"].iterkeys():
+                    for productservice in row["contents"].keys():
                         try:
                             taxrate = "%.2f"%float(row["tax"][productservice])
                             cessrate = 0.00
-                            if row["cess"].has_key(productservice):
+                            if productservice in row["cess"]:
                                 cessrate = "%.2f"%float(row["cess"][productservice])
                             discount =0.00
                             #Fetching GSFlag of product.
@@ -1764,14 +1764,14 @@ The bills grid calld gkresult will return a list as it's value.
                             gsflag = psdetails.fetchone()["gsflag"]
                             #Fetching discount and price for each product.
                             #Taxabe amount is also found out considering whether the item is a product/service
-                            for productprice in row["contents"][productservice].iterkeys():
+                            for productprice in row["contents"][productservice].keys():
                                 ppu = productprice
-                                if row["discount"].has_key(productservice):
+                                if productservice in row["discount"]:
                                     # discflag is for discount type. Percent=16/Amount=1
                                     # here we convert percent discount in to amount.
                                     if row["discflag"] == 16:
-                                        qty = float(row["contents"][str(productservice)].keys()[0])
-                                        price = float(row["contents"][str(productservice)].values()[0])
+                                        qty = float(list(row["contents"][str(productservice)].keys())[0])
+                                        price = float(list(row["contents"][str(productservice)].values())[0])
                                         totalWithoutDiscount = qty * price
                                         discount = totalWithoutDiscount * float(float(row["discount"][productservice]) / 100)
                                     else:
@@ -1877,7 +1877,7 @@ The bills grid calld gkresult will return a list as it's value.
                         delinfo = row["dcinfo"]
                         dcno = delinfo["dcno"]
                         dcdate = delinfo["dcdate"]
-                        if delinfo.has_key("goid"):
+                        if "goid" in delinfo:
                             godownres = self.con.execute("select goname, goaddr from godown where goid = %d" %int(row["dcinfo"]["goid"]))
                             godownresult = godownres.fetchone()
                             if godownresult != None:
@@ -1890,11 +1890,11 @@ The bills grid calld gkresult will return a list as it's value.
                                 godowns = ""
                     taxamt = 0.00
                     #calculate tax amount of an invoice.
-                    for productservice in row["contents"].iterkeys():
+                    for productservice in row["contents"].keys():
                         try:
                             taxrate = "%.2f"%float(row["tax"][productservice])
                             cessrate = 0.00
-                            if row["cess"].has_key(productservice):
+                            if productservice in row["cess"]:
                                 cessrate = "%.2f"%float(row["cess"][productservice])
                             discount =0.00
                             #Fetching GSFlag of product.
@@ -1902,14 +1902,14 @@ The bills grid calld gkresult will return a list as it's value.
                             gsflag = psdetails.fetchone()["gsflag"]
                             #Fetching discount and price for each product.
                             #Taxabe amount is also found out considering whether the item is a product/service
-                            for productprice in row["contents"][productservice].iterkeys():
+                            for productprice in row["contents"][productservice].keys():
                                 ppu = productprice
-                                if row["discount"].has_key(productservice):
+                                if productservice in row["discount"]:
                                     # discflag is for discount type. Percent=16/Amount=1
                                     # here we convert percent discount in to amount.
                                     if row["discflag"] == 16:
-                                        qty = float(row["contents"][str(productservice)].keys()[0])
-                                        price = float(row["contents"][str(productservice)].values()[0])
+                                        qty = float(list(row["contents"][str(productservice)].keys())[0])
+                                        price = float(list(row["contents"][str(productservice)].values())[0])
                                         totalWithoutDiscount = qty * price
                                         discount = totalWithoutDiscount * float(float(row["discount"][productservice]) / 100)
                                     else:
@@ -2560,13 +2560,13 @@ The bills grid calld gkresult will return a list as it's value.
                 result = self.con.execute(vouchers.insert(),[vch])
                 vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                 vouchercode =vouchercodedata.fetchone()
-                for drkeys in drs.keys():
+                for drkeys in list(drs.keys()):
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
                     accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":orgcode}])
-                for crkeys in crs.keys():
+                for crkeys in list(crs.keys()):
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
                     accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
                     accgrp = accgrpdata.fetchone()

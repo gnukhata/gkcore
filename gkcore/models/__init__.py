@@ -24,4 +24,4 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
-import gkdb
+from . import gkdb

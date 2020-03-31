@@ -59,7 +59,7 @@ class api_purchaseorder(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "Purchase order initialized"
+        print("Purchase order initialized")
 
     @view_config(request_method='POST',renderer='json')
     def addPoSo(self):

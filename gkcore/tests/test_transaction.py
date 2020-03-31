@@ -114,15 +114,15 @@ class TestTransaction:
 		""" Check if this order of deleting is correct? """
 		gkdata={"vouchercode": self.demo_vouchercode}
 		result = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
-		print "gkstatus voucher delete: ", result.json()["gkstatus"]
+		print("gkstatus voucher delete: ", result.json()["gkstatus"])
 
 		gkdata={"accountcode":self.demo_accountcode1}
 		result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
-		print "gkstatus acc 1 delete: ", result.json()["gkstatus"]
+		print("gkstatus acc 1 delete: ", result.json()["gkstatus"])
 
 		gkdata={"accountcode":self.demo_accountcode2}
 		result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
-		print "gkstatus acc 2 delete: ", result.json()["gkstatus"]
+		print("gkstatus acc 2 delete: ", result.json()["gkstatus"])
 
 	def test_create_and_delete_voucher(self):
 		""" Create and Delete Voucher Code """
@@ -131,7 +131,7 @@ class TestTransaction:
 		""" Initialization of two Accounts for creating a voucher """
 		gkdata = {"accountname":"India Bank","openingbal":500,"groupcode":self.demo_grpcode}
 		result = requests.post("http://127.0.0.1:6543/accounts", data =json.dumps(gkdata),headers=self.header)
-		print "acc 1 create: ", result.json()["gkstatus"]
+		print("acc 1 create: ", result.json()["gkstatus"])
 
 		result = requests.get("http://127.0.0.1:6543/accounts", headers=self.header)
 		for record in result.json()["gkresult"]:
@@ -141,7 +141,7 @@ class TestTransaction:
 
 		gkdata = {"accountname":"Badoda Bank","openingbal":1000,"groupcode":self.demo_grpcode}
 		result = requests.post("http://127.0.0.1:6543/accounts", data =json.dumps(gkdata),headers=self.header)
-		print "acc 2 create: ", result.json()["gkstatus"]
+		print("acc 2 create: ", result.json()["gkstatus"])
 		result = requests.get("http://127.0.0.1:6543/accounts", headers=self.header)
 		for record in result.json()["gkresult"]:
 			if record["accountname"] == "Badoda Bank":
@@ -153,7 +153,7 @@ class TestTransaction:
 		self.vouchernumber = 111
 		gkdata={"invid": None,"attachment":None,"attachmentcount":0,"vouchernumber":self.vouchernumber,"voucherdate":"2016-03-20","narration":"Test Narration","drs":drs,"crs":crs,"vouchertype":"purchase","projectcode":int(self.projectcode)}
 		result_post = requests.post("http://127.0.0.1:6543/transaction",data=json.dumps(gkdata) , headers=self.header)
-		print "voucher create: ", result_post.json()["gkstatus"]
+		print("voucher create: ", result_post.json()["gkstatus"])
 
 		""" Delete voucher """
 		vnum = "111"#string or integer?
@@ -162,15 +162,15 @@ class TestTransaction:
 		vouchercode = result.json()["gkresult"][0]["vouchercode"]
 		gkdata={"vouchercode": vouchercode}
 		result_delete = requests.delete("http://127.0.0.1:6543/transaction",data =json.dumps(gkdata), headers=self.header)
-		print "voucher delete: ", result_delete.json()["gkstatus"]
+		print("voucher delete: ", result_delete.json()["gkstatus"])
 
 		gkdata={"accountcode":self.accountcode1}
 		result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
-		print "acc 1 delete: ", result.json()["gkstatus"]
+		print("acc 1 delete: ", result.json()["gkstatus"])
 
 		gkdata={"accountcode":self.accountcode2}
 		result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
-		print "acc 2 delete: ", result.json()["gkstatus"]
+		print("acc 2 delete: ", result.json()["gkstatus"])
 
 		assert result_post.json()["gkstatus"] == 0 and result_delete.json()["gkstatus"] == 0 and result.json()["gkstatus"] == 0
 
