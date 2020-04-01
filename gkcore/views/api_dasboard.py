@@ -39,7 +39,7 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts,organisation
 from datetime import datetime, date
-from monthdelta import monthdelta
+from monthdelta import MonthDelta
 from operator import itemgetter
 from natsort import natsorted
 import calendar
@@ -267,7 +267,7 @@ def cashbankbalance(orgcode):
                     cashbalance = float(cashbalance) + float(calbaldata["curbal"])
             cashbalancedata.append(cashbalance)
 
-            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + monthdelta(monthCounter)
+            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + MonthDelta(monthCounter)
             endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
 
             monthCounter  +=1
@@ -289,7 +289,7 @@ class api_dashboard(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "dashboard initialize"
+        print("dashboard initialize")
 
     # This function is use to send user wise data for dashboard divs 
     @view_config(request_method='GET',renderer='json', request_param="type=dashboarddata")

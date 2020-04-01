@@ -67,7 +67,7 @@ class api_account(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "accounts initialized"
+        print("accounts initialized")
 
     @view_config(request_method='POST',renderer='json')
     def addAccount(self):

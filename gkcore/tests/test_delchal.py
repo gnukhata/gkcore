@@ -66,7 +66,7 @@ class TestDelChal:
 		""" Product Creation """
 		categorydata = {"categoryname":"Test Category", "subcategoryof": None}
 		result = requests.post("http://127.0.0.1:6543/categories",data=json.dumps(categorydata) ,headers=self.header)
-		print "categories creation: ", result.json()["gkstatus"]
+		print("categories creation: ", result.json()["gkstatus"])
 		result = requests.get("http://127.0.0.1:6543/categories", headers=self.header)
 		for record in result.json()["gkresult"]:
 			if record["categoryname"] == "Test Category":
@@ -75,7 +75,7 @@ class TestDelChal:
 
 		uomdata = {"unitname":"kilogram"}
 		result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps(uomdata), headers=self.header)
-		print "unitofmeasurement creation: ", result.json()["gkstatus"]
+		print("unitofmeasurement creation: ", result.json()["gkstatus"])
 		result = requests.get("http://127.0.0.1:6543/unitofmeasurement?qty=all", headers=self.header)
 		for record in result.json()["gkresult"]:
 			if record["unitname"] == "kilogram":
@@ -84,7 +84,7 @@ class TestDelChal:
 
 		specdata= {"attrname":"Type","attrtype":0,"categorycode":self.democategorycode}
 		specresult = requests.post("http://127.0.0.1:6543/categoryspecs",data=json.dumps(specdata) ,headers=self.header)
-		print "category-specs creation: ", result.json()["gkstatus"]
+		print("category-specs creation: ", result.json()["gkstatus"])
 		result = requests.get("http://127.0.0.1:6543/categoryspecs?categorycode=%d"%(int(self.democategorycode)), headers=self.header)
 		for record in result.json()["gkresult"]:
 			if record["attrname"] == "Type":
@@ -94,7 +94,7 @@ class TestDelChal:
 		proddetails = {"productdesc":"Sugar","specs":{self.demospeccode: "Pure"}, "uomid":self.demouomid, "categorycode": self.democategorycode}
 		productdetails = {"productdetails":proddetails, "godetails":None, "godownflag":False}
 		result = requests.post("http://127.0.0.1:6543/products", data=json.dumps(productdetails),headers=self.header)
-		print "product creation: ", result.json()["gkstatus"]
+		print("product creation: ", result.json()["gkstatus"])
 		self.demoproductcode = result.json()["gkresult"]
 
 		""" Creating Delchallan """
@@ -106,7 +106,7 @@ class TestDelChal:
 		stockdata = {"inout": 9, "items": products}
 		self.demo_delchalwholedata = {"delchaldata": delchaldata, "stockdata": stockdata}
 		result = requests.post("http://127.0.0.1:6543/delchal",data=json.dumps(self.demo_delchalwholedata),headers=self.header)
-		print  "delchal creation: ", result.json()["gkstatus"]
+		print("delchal creation: ", result.json()["gkstatus"])
 		result = requests.get("http://127.0.0.1:6543/delchal?delchal=all", headers=self.header)
 		for record in result.json()["gkresult"]:
 			if record["dcno"] == "15":
@@ -118,18 +118,18 @@ class TestDelChal:
 		""" Actually no need to do all this before deleting an organisation. Since, organisation can be deleted directly which deltes all the data underneath it. Still we have done."""
 		deldata = {"dcid": self.demo_delchalid,"cancelflag": 1}
 		result = requests.delete("http://127.0.0.1:6543/delchal",data=json.dumps(deldata), headers=self.header)
-		print "delchal delete: ", result.json()["gkstatus"]
+		print("delchal delete: ", result.json()["gkstatus"])
 		result = requests.delete("http://127.0.0.1:6543/products", data=json.dumps({"productcode":int(self.demoproductcode)}),headers=self.header)
-		print "products delete: ", result.json()["gkstatus"]
+		print("products delete: ", result.json()["gkstatus"])
 		result = requests.delete("http://127.0.0.1:6543/categoryspecs",data=json.dumps({"spcode": int(self.demospeccode)}) ,headers=self.header)
-		print "categoryspecs delete: ", result.json()["gkstatus"]
+		print("categoryspecs delete: ", result.json()["gkstatus"])
 		gkdata = {"categorycode": self.democategorycode}
 		result = requests.delete("http://127.0.0.1:6543/categories", data =json.dumps(gkdata), headers=self.header)
-		print "categories delete: ", result.json()["gkstatus"]
+		print("categories delete: ", result.json()["gkstatus"])
 		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
-		print "organisations delete: ", result.json()["gkstatus"]
+		print("organisations delete: ", result.json()["gkstatus"])
 		result = requests.delete("http://127.0.0.1:6543/unitofmeasurement", data = json.dumps({"uomid":self.demouomid}), headers=self.header)
-		print "unitofmeasurement delete: ", result.json()["gkstatus"]
+		print("unitofmeasurement delete: ", result.json()["gkstatus"])
 
 	def test_create_and_delete_delchal(self):
 		""" Create and Delete Delivery Challan """
@@ -154,7 +154,7 @@ class TestDelChal:
 				break
 		deldata = {"dcid": self.delchalid,"cancelflag": 1}
 		result = requests.delete("http://127.0.0.1:6543/delchal",data=json.dumps(deldata), headers=self.header)
-		print "delchal: status ",result.json()["gkstatus"]
+		print("delchal: status ",result.json()["gkstatus"])
 		assert result.json()["gkstatus"] == 0
 
 	def test_update_delchal(self):

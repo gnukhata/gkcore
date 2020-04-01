@@ -100,7 +100,7 @@ class TestUser:
 		gkdata = {"username":"test","userpassword":"test","userrole":3,"userquestion":"test","useranswer":"test","golist":json.loads(str([self.goid, self.goid2]))}
 		result = requests.post("http://127.0.0.1:6543/users", data =json.dumps(gkdata), headers=self.header)
 		result = requests.get("http://127.0.0.1:6543/users?type=list", headers=self.header)
-		print result.json()["gkresult"]
+		print(result.json()["gkresult"])
 		assert result.json()["gkstatus"] == 0
 
 	def test_get_single_user(self):

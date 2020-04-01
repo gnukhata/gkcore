@@ -212,13 +212,13 @@ class api_drcr(object):
                 totalCessAmt = 0.00
                 
                 #pc will have the productcode which will be the key in contentsData.
-                for pc in idrateData.keys():
+                for pc in list(idrateData.keys()):
                     if str(pc) != "quantities":
                         pcquantity = 0.00
                         if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
                             pcquantity = idrateData["quantities"][pc]
                         else:
-                            pcquantity = float(contentsData[pc][contentsData[pc].keys()[0]])
+                            pcquantity = float(contentsData[pc][list(contentsData[pc].keys())[0]])
                         prodresult = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                         prodrow = prodresult.fetchone()
                         #product or service check and taxableAmount calculate=newppu*newqty
@@ -232,14 +232,14 @@ class api_drcr(object):
                             if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
                                 reductprice=float(idrateData[pc])
                             else:
-                                reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
+                                reductprice=((float(contentsData[pc][list(contentsData[pc].keys())[0]]))*(float(idrateData[pc])))
                             taxRate =  float(invrow["tax"][pc])
                             taxAmount = (reductprice * float(taxRate/100))
                             taxname = 'VAT'
                             totalAmount = reductprice + taxAmount
                             totalTaxableVal = totalTaxableVal + reductprice
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
+                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
                         else:   
                             if int(prodrow["gsflag"]) == 7:
                                 umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
@@ -248,7 +248,7 @@ class api_drcr(object):
                                 if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
                                     reductprice=float(idrateData[pc])
                                 else:
-                                    reductprice=((float(contentsData[pc][contentsData[pc].keys()[0]]))*(float(idrateData[pc])))
+                                    reductprice=((float(contentsData[pc][list(contentsData[pc].keys())[0]]))*(float(idrateData[pc])))
                             else:
                                 unitofMeasurement = ""
                                 reductprice=float(idrateData[pc])
@@ -272,7 +272,7 @@ class api_drcr(object):
                                 totalAmount = reductprice + (2*taxAmount) + cessAmount                   
                             totalTaxableVal = totalTaxableVal + reductprice
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
+                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
                 drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 drcrdata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
@@ -311,7 +311,7 @@ class api_drcr(object):
                     invdata=inv.fetchone()
                     custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
                     custsuppdata= custsupp.fetchone()
-                    if self.request.params.has_key('drcrflag'):                       
+                    if 'drcrflag' in self.request.params:                       
                         if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
                             drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
                     else:
@@ -425,7 +425,7 @@ class api_drcr(object):
                     if row["invid"] not in DrCrInvs:
                         customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
                         custname = customer.fetchone()
-                        if self.request.params.has_key('type'):
+                        if 'type' in self.request.params:
                             if str(self.request.params["type"]) == 'sale' and row["inoutflag"]== 15:
                                 invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
                             elif str(self.request.params["type"]) == 'purchase' and row["inoutflag"]== 9:
@@ -1396,9 +1396,9 @@ def drcrVoucher(queryParams, orgcode):
         vch["vouchernumber"] = initialType
 
         result = con.execute(vouchers.insert(),[vch])
-        for drkeys in vch["drs"].keys():
+        for drkeys in list(vch["drs"].keys()):
             con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
-        for crkeys in vch["crs"].keys():
+        for crkeys in list(vch["crs"].keys()):
             con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
         vchCodes.append(initialType)
     return vchCodes

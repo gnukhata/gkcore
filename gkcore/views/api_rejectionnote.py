@@ -80,11 +80,11 @@ class api_rejectionnote(object):
                     stockdata["dcinvtnflag"] = 18
                     stockdata["stockdate"] = rnidrow["rndate"]
                     try:
-                        for key in items.keys():
+                        for key in list(items.keys()):
                             stockdata["productcode"] = key
-                            stockdata["qty"] = float(items[key].values()[0])
+                            stockdata["qty"] = float(list(items[key].values())[0])
                             result = self.con.execute(stock.insert(),[stockdata])
-                            if stockdata.has_key("goid"):
+                            if "goid" in stockdata:
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
                                 if resultgoprod.rowcount == 0:
                                     result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
@@ -200,14 +200,14 @@ class api_rejectionnote(object):
                     totalTaxableVal = 0.00
                     totalTaxAmt = 0.00
                     totalCessAmt = 0.00
-                    for pc in rejqty.keys():
+                    for pc in list(rejqty.keys()):
                         prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                         prodrow = prod.fetchone()
                         if int(prodrow["gsflag"]) == 7:
                             um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(rejqty[pc][rejqty[pc].keys()[0]])) * float(rejqty[pc].keys()[0]))
+                            taxableAmount = ((float(rejqty[pc][list(rejqty[pc].keys())[0]])) * float(list(rejqty[pc].keys())[0]))
                             
                         taxRate = 0.00
                         totalAmount = 0.00
@@ -219,7 +219,7 @@ class api_rejectionnote(object):
                             totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][rejqty[pc].keys()[0]])),"priceperunit":"%.2f"% (float(rejqty[pc].keys()[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                         else:
                             cessRate = 0.00
                             cessAmount = 0.00
@@ -241,7 +241,7 @@ class api_rejectionnote(object):
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][rejqty[pc].keys()[0]])),"priceperunit":"%.2f"% (float(rejqty[pc].keys()[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 """
                 If rejection_note created against the Invoice.
                 """
@@ -301,14 +301,14 @@ class api_rejectionnote(object):
                     totalTaxableVal = 0.00
                     totalTaxAmt = 0.00
                     totalCessAmt = 0.00
-                    for pc in rejqty.keys():
+                    for pc in list(rejqty.keys()):
                         prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
                         prodrow = prod.fetchone()
                         if int(prodrow["gsflag"]) == 7:
                             um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(rejqty[pc][rejqty[pc].keys()[0]])) * float(rejqty[pc].keys()[0]))
+                            taxableAmount = ((float(rejqty[pc][list(rejqty[pc].keys())[0]])) * float(list(rejqty[pc].keys())[0]))
                             
                         taxRate = 0.00
                         totalAmount = 0.00
@@ -320,7 +320,7 @@ class api_rejectionnote(object):
                             totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][rejqty[pc].keys()[0]])),"priceperunit":"%.2f"% (float(rejqty[pc].keys()[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
                         else:
                             cessRate = 0.00
                             cessAmount = 0.00
@@ -342,7 +342,7 @@ class api_rejectionnote(object):
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][rejqty[pc].keys()[0]])),"priceperunit":"%.2f"% (float(rejqty[pc].keys()[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                 rejectionnotedata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                 rejectionnotedata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
                 rejectionnotedata["totalcessamt"] = "%.2f"% (float(totalCessAmt))

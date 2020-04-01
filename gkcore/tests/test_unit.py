@@ -57,7 +57,7 @@ class Testunit:
 		assert result.json()["gkstatus"]==0
 
 	def test_create_subunit(self):
-		print self.demoid
+		print(self.demoid)
 		gkdata = {'unitname': 'test_c', 'conversionrate': float(5), 'subunitof': int(self.demoid)}
 		result = requests.post("http://127.0.0.1:6543/unitofmeasurement", data =json.dumps(gkdata),headers=self.header)
 		assert result.json()["gkstatus"]==0

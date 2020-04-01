@@ -58,9 +58,9 @@ def voucherBinInsert(con, vcode, orgcode):
     #Updating vouchercount field of accounts.
     DrData = voucherRow["drs"]
     CrData = voucherRow["crs"]
-    for drKey in DrData.keys():
+    for drKey in list(DrData.keys()):
         con.execute("update accounts set vouchercount = (vouchercount -1) where accountcode = %d"%(int(drKey)))
-    for crKey in CrData.keys():
+    for crKey in list(CrData.keys()):
         con.execute("update accounts set vouchercount = (vouchercount -1) where accountcode = %d"%(int(crKey)))
     finalCrs = {}
     finalDrs = {}
@@ -72,11 +72,11 @@ def voucherBinInsert(con, vcode, orgcode):
         projectName  = ""
     else:
         projectName = prjNameRow["projectname"]
-    for d in DrData.keys():
+    for d in list(DrData.keys()):
         accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
         account = accname.fetchone()
         finalDrs[account["accountname"]] = DrData[d]
-    for c in CrData.keys():
+    for c in list(CrData.keys()):
         accname = con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
         account = accname.fetchone()
         finalCrs[account["accountname"]] = CrData[c]
@@ -214,17 +214,17 @@ class api_transaction(object):
                 dataset["orgcode"] = authDetails["orgcode"]
                 drs = dataset["drs"]
                 crs = dataset["crs"]
-                if dataset.has_key("instrumentdate"):
+                if "instrumentdate" in dataset:
                     instrumentdate=dataset["instrumentdate"]
                     dataset["instrumentdate"] = datetime.strptime(instrumentdate, "%Y-%m-%d")
                 
                 # generate voucher number if it is not sent.
-                if dataset.has_key("vouchernumber") == False:
+                if ("vouchernumber" in dataset) == False:
                     voucherType = dataset["vouchertype"]
                     vchNo = self.__genVoucherNumber(self.con,voucherType,dataset["orgcode"])
                     dataset["vouchernumber"] = vchNo
                 result = self.con.execute(vouchers.insert(),[dataset])
-                for drkeys in drs.keys():
+                for drkeys in list(drs.keys()):
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
                     accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
                     accgrp = accgrpdata.fetchone()
@@ -232,7 +232,7 @@ class api_transaction(object):
                         vouchercodedata = self.con.execute("select max(vouchercode) as vcode from vouchers")
                         vouchercode =vouchercodedata.fetchone()
                         recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode["vcode"]),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
-                for crkeys in crs.keys():
+                for crkeys in list(crs.keys()):
                     self.con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
                     accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
                     accgrp = accgrpdata.fetchone()
@@ -322,7 +322,7 @@ class api_transaction(object):
                     vdetails["crs"], vdetails["drs"] = constructDrCr(payment_mode)
 
                 # Database expects vouchernumber to be unicode encoded
-                vdetails["vouchernumber"] = unicode(self.__genVoucherNumber(self.con,vdetails["vouchertype"],vdetails["orgcode"]))
+                vdetails["vouchernumber"] = str(self.__genVoucherNumber(self.con,vdetails["vouchertype"],vdetails["orgcode"]))
 
                 self.con.execute(vouchers.insert(), [vdetails])
 
@@ -402,12 +402,12 @@ class api_transaction(object):
                 rawCr = dict(row["crs"])
                 finalDR = {}
                 finalCR = {}
-                for d in rawDr.keys():
+                for d in list(rawDr.keys()):
                     accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
                     account = accname.fetchone()
                     finalDR[account["accountname"]] = rawDr[d]
 
-                for c in rawCr.keys():
+                for c in list(rawCr.keys()):
                     accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
                     account = accname.fetchone()
                     finalCR[account["accountname"]] = rawCr[c]
@@ -450,7 +450,7 @@ class api_transaction(object):
                     finalCR = {}
                     tdr=0.00
                     tcr=0.00
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawDr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawDr)>1):
@@ -462,9 +462,9 @@ class api_transaction(object):
 
                         finalDR["%s"%(drcount)] = tdr
                     else:
-                        finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
+                        finalDR[account["accountname"]]=rawDr[list(rawDr.keys())[0]]
 
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawCr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawCr)>1):
@@ -475,7 +475,7 @@ class api_transaction(object):
                             tcr = tcr+float(rawCr[d])
                         finalCR["%s"%(crcount)] = tcr
                     else:
-                        finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
+                        finalCR[account["accountname"]]=rawCr[list(rawCr.keys())[0]]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
 
@@ -511,12 +511,12 @@ class api_transaction(object):
                     tdr=0.00
                     tcr=0.00
                     
-                    for d in rawDr.keys():
+                    for d in list(rawDr.keys()):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(d)))
                         account = accname.fetchone()
                         finalDR[account["accountname"]] = rawDr[d]
 
-                    for c in rawCr.keys():
+                    for c in list(rawCr.keys()):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(c)))
                         account = accname.fetchone()
                         finalCR[account["accountname"]] = rawCr[c]
@@ -556,7 +556,7 @@ class api_transaction(object):
                     tdr=0.00
                     tcr=0.00
                     
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawDr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawDr)>1):
@@ -568,9 +568,9 @@ class api_transaction(object):
 
                         finalDR["%s"%(drcount)] = tdr
                     else:
-                        finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
+                        finalDR[account["accountname"]]=rawDr[list(rawDr.keys())[0]]
 
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawCr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawCr)>1):
@@ -581,7 +581,7 @@ class api_transaction(object):
                             tcr = tcr+float(rawCr[d])
                         finalCR["%s"%(crcount)] = tcr
                     else:
-                        finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
+                        finalCR[account["accountname"]]=rawCr[list(rawCr.keys())[0]]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
@@ -612,7 +612,7 @@ class api_transaction(object):
                 for vr in vouchersData:
                     total = 0.00
                     drs = dict(vr["drs"])
-                    for d in drs.keys():
+                    for d in list(drs.keys()):
                         total = total + float(drs[d])
                     if total==float(voucherAmount):
                         voucherDetailsData = self.con.execute(select([vouchers.c.vouchercode,vouchers.c.attachmentcount,vouchers.c.vouchernumber,vouchers.c.voucherdate,vouchers.c.narration,vouchers.c.drs,vouchers.c.crs,vouchers.c.prjcrs,vouchers.c.prjdrs,vouchers.c.vouchertype,vouchers.c.lockflag,vouchers.c.delflag,vouchers.c.projectcode,vouchers.c.orgcode]).where(vouchers.c.vouchercode == vr["vouchercode"]))
@@ -623,7 +623,7 @@ class api_transaction(object):
                         finalCR = {}
                         tdr=0.00
                         tcr=0.00
-                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
+                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawDr.keys())[0])))
                         account = accname.fetchone()
 
                         if(len(rawDr)>1):
@@ -635,9 +635,9 @@ class api_transaction(object):
 
                             finalDR["%s"%(drcount)] = tdr
                         else:
-                            finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
+                            finalDR[account["accountname"]]=rawDr[list(rawDr.keys())[0]]
 
-                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
+                        accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawCr.keys())[0])))
                         account = accname.fetchone()
 
                         if(len(rawCr)>1):
@@ -648,7 +648,7 @@ class api_transaction(object):
                                 tcr = tcr+float(rawCr[d])
                             finalCR["%s"%(crcount)] = tcr
                         else:
-                            finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
+                            finalCR[account["accountname"]]=rawCr[list(rawCr.keys())[0]]
                         if voucher["narration"]=="null":
                             voucher["narration"]=""
                         voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
@@ -685,7 +685,7 @@ class api_transaction(object):
                     finalCR = {}
                     tdr=0.00
                     tcr=0.00
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawDr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawDr)>1):
@@ -697,9 +697,9 @@ class api_transaction(object):
 
                         finalDR["%s"%(drcount)] = tdr
                     else:
-                        finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
+                        finalDR[account["accountname"]]=rawDr[list(rawDr.keys())[0]]
 
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawCr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawCr)>1):
@@ -710,7 +710,7 @@ class api_transaction(object):
                             tcr = tcr+float(rawCr[d])
                         finalCR["%s"%(crcount)] = tcr
                     else:
-                        finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
+                        finalCR[account["accountname"]]=rawCr[list(rawCr.keys())[0]]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
@@ -746,7 +746,7 @@ class api_transaction(object):
                     finalCR = {}
                     tdr=0.00
                     tcr=0.00
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawDr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawDr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawDr)>1):
@@ -758,9 +758,9 @@ class api_transaction(object):
 
                         finalDR["%s"%(drcount)] = tdr
                     else:
-                        finalDR[account["accountname"]]=rawDr[rawDr.keys()[0]]
+                        finalDR[account["accountname"]]=rawDr[list(rawDr.keys())[0]]
 
-                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(rawCr.keys()[0])))
+                    accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(list(rawCr.keys())[0])))
                     account = accname.fetchone()
 
                     if(len(rawCr)>1):
@@ -771,7 +771,7 @@ class api_transaction(object):
                             tcr = tcr+float(rawCr[d])
                         finalCR["%s"%(crcount)] = tcr
                     else:
-                        finalCR[account["accountname"]]=rawCr[rawCr.keys()[0]]
+                        finalCR[account["accountname"]]=rawCr[list(rawCr.keys())[0]]
                     if voucher["narration"]=="null":
                         voucher["narration"]=""
                     voucherRecords.append({"vouchercode":voucher["vouchercode"],"attachmentcount":voucher["attachmentcount"],"vouchernumber":voucher["vouchernumber"],"voucherdate":datetime.strftime(voucher["voucherdate"],"%d-%m-%Y"),"narration":voucher["narration"],"drs":finalDR,"crs":finalCR,"prjdrs":voucher["prjdrs"],"prjcrs":voucher["prjcrs"],"vouchertype":voucher["vouchertype"],"delflag":voucher["delflag"],"orgcode":voucher["orgcode"],"status":voucher["lockflag"]})
@@ -817,7 +817,7 @@ class api_transaction(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                if dataset.has_key("lockflag"):
+                if "lockflag" in dataset:
                     if dataset["lockflag"]=="True":
                         dataset["lockflag"]=True
                     else:
@@ -825,17 +825,17 @@ class api_transaction(object):
                     result = self.con.execute(vouchers.update().where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
                 else:
                     result = self.con.execute(vouchers.update().where(vouchers.c.lockflag=="f").where(vouchers.c.vouchercode==dataset["vouchercode"]).values(dataset))
-                if dataset.has_key("drs"):
+                if "drs" in dataset:
                     drs = dataset["drs"]
                     crs = dataset["crs"]
                     delrecoresult = self.con.execute("delete from bankrecon where vouchercode = %d"%(int(dataset["vouchercode"])))
-                    for drkeys in drs.keys():
+                    for drkeys in list(drs.keys()):
                         accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(drkeys)))))
                         accgrp = accgrpdata.fetchone()
                         if accgrp["groupname"] == "Bank":
                             vouchercode =dataset["vouchercode"]
                             recoresult = self.con.execute(bankrecon.insert(),[{"vouchercode":int(vouchercode),"accountcode":drkeys,"orgcode":authDetails["orgcode"]}])
-                    for crkeys in crs.keys():
+                    for crkeys in list(crs.keys()):
                         accgrpdata = self.con.execute(select([groupsubgroups.c.groupname,groupsubgroups.c.groupcode]).where(groupsubgroups.c.groupcode==(select([accounts.c.groupcode]).where(accounts.c.accountcode==int(crkeys)))))
                         accgrp = accgrpdata.fetchone()
                         if accgrp["groupname"] == "Bank":
@@ -899,11 +899,11 @@ class api_transaction(object):
                     rawCr = dict(voucher["crs"])
                     finalDR = {}
                     finalCR = {}
-                    for Dac in rawDr.keys():
+                    for Dac in list(rawDr.keys()):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Dac)))
                         account = accname.fetchone()
                         finalDR[account["accountname"]]=rawDr[Dac]
-                    for Cac in rawCr.keys():
+                    for Cac in list(rawCr.keys()):
                         accname = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(Cac)))
                         account = accname.fetchone()
                         finalCR[account["accountname"]]=rawCr[Cac]

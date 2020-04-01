@@ -67,7 +67,7 @@ class category(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print "category initialized"
+        print("category initialized")
 
     @view_config(request_method='POST',renderer='json')
     def addCategory(self):

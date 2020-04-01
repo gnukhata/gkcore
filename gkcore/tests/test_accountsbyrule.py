@@ -72,11 +72,11 @@ class TestAccountsByRule:
 				i = i + 1
 				accountname = "India Bank" + str(i)
 
-		print "no of accounts created: ", i - 1
+		print("no of accounts created: ", i - 1)
 
 	@classmethod
 	def teardown_class(self):
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			gkdata={"accountcode": accountcode}
 			result = requests.delete("http://127.0.0.1:6543/accounts",data =json.dumps(gkdata), headers=self.header)
 
@@ -87,7 +87,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s"%(type), headers=self.header)
 		contralist = []
 		""" Now the question is : How order of the list items can be put the same way as it will be received in result? """
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
 				contralist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -103,7 +103,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s"%(type), headers=self.header)
 		journallist = []
 		""" Now the question is : How order of the list items can be put the same way as it will be received in result? """
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
 				journallist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -142,7 +142,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		paymentlist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
 				paymentlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -154,7 +154,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		paymentlist = [] # will it work? we have to empty the previous contents of this paymentlist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
 				paymentlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -171,7 +171,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		receiptlist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] != "Bank" and accountinfolist[1] != "Cash":
 				receiptlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -183,7 +183,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		receiptlist = [] # will it work? we have to empty the previous contents of this receiptlist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash":
 				receiptlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -200,7 +200,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		saleslist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Current Liabilities" or accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income" or accountinfolist[2] == "Current Liabilities" or accountinfolist[2] == "Direct Income" or accountinfolist[2] == "Indirect Income":
 				saleslist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -213,7 +213,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		saleslist = [] # will it work? we have to empty the previous contents of this saleslist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Debtors":
 				saleslist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -230,7 +230,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		purchaselist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Current Liabilities" or accountinfolist[2] == "Current Liabilities":
 				purchaselist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -243,7 +243,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		purchaselist = [] # will it work? we have to empty the previous contents of this purchaselist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense" or accountinfolist[1] == "Current Liabilities" or accountinfolist[2] == "Direct Expense" or accountinfolist[2] == "Indirect Expense" or accountinfolist[2] == "Current Liabilities":
 				purchaselist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -262,7 +262,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		salesreturnlist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Creditors for Purchase" or accountinfolist[1] == "Sundry Creditors for Expense":
 				salesreturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -275,7 +275,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		salesreturnlist = [] # will it work? we have to empty the previous contents of this salesreturnlist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense":
 				salesreturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -293,7 +293,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		purchasereturnlist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income":
 				purchasereturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -306,7 +306,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		purchasereturnlist = [] # will it work? we have to empty the previous contents of this purchasereturnlist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Debtors":
 				purchasereturnlist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -324,7 +324,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		debitnotelist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Direct Income" or accountinfolist[1] == "Indirect Income":
 				debitnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -337,7 +337,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		debitnotelist = [] # will it work? we have to empty the previous contents of this debitnotelist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Debtors":
 				debitnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -355,7 +355,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		creditnotelist = []
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Bank" or accountinfolist[1] == "Cash" or accountinfolist[1] == "Sundry Creditors for Purchase" or accountinfolist[1] == "Sundry Creditors for Expense":
 				creditnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})
@@ -368,7 +368,7 @@ class TestAccountsByRule:
 		result = requests.get("http://127.0.0.1:6543/accountsbyrule?type=%s&side=%s"%(type,side), headers=self.header)
 		receivedlist = result.json()["gkresult"]
 		creditnotelist = [] # will it work? we have to empty the previous contents of this creditnotelist.
-		for accountcode in self.demoaccountcode.keys():
+		for accountcode in list(self.demoaccountcode.keys()):
 			accountinfolist = self.demoaccountcode[accountcode]
 			if accountinfolist[1] == "Direct Expense" or accountinfolist[1] == "Indirect Expense":
 				creditnotelist.append({"accountcode": accountcode, "accountname": accountinfolist[0]})

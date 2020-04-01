@@ -51,7 +51,7 @@ def taxable_value(inv, productcode, con, drcr=False):
     change in ppu and new rate has to be retrieved
     """
 
-    rate, qty = inv["contents"][productcode].items()[0]
+    rate, qty = list(inv["contents"][productcode].items())[0]
     query = (select([product.c.gsflag])
              .where(product.c.productcode == productcode))
     gsflag = con.execute(query).fetchone()[0]
@@ -114,7 +114,7 @@ def product_level(inv, con, drcr=False):
 
     data = {}
     if drcr:
-        products = inv["reductionval"].keys()
+        products = list(inv["reductionval"].keys())
         if inv["drcrmode"] == 18:
             products.remove("quantities")
     else:
@@ -146,7 +146,7 @@ def b2b_r1(invoices, con):
             else:
                 return False
 
-        invs = filter(b2b_filter, invoices)
+        invs = list(filter(b2b_filter, invoices))
 
         b2b = []
         for inv in invs:
@@ -167,7 +167,7 @@ def b2b_r1(invoices, con):
             else:
                 row["reverse_charge"] == "Y"
 
-            for rate, tax_cess in product_level(inv, con).items():
+            for rate, tax_cess in list(product_level(inv, con).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -199,7 +199,7 @@ def b2cl_r1(invoices, con):
                 return True
             return False
 
-        invs = filter(b2cl_filter, invoices)
+        invs = list(filter(b2cl_filter, invoices))
 
         b2cl = []
         for inv in invs:
@@ -215,7 +215,7 @@ def b2cl_r1(invoices, con):
             row["ecommerce_gstin"] = ""
             row["sale_from_bonded_wh"] = "N"
 
-            for rate, tax_cess in product_level(inv, con).items():
+            for rate, tax_cess in list(product_level(inv, con).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -249,7 +249,7 @@ def b2cs_r1(invoices, con):
                 return True
             return False
 
-        invs = filter(b2cs_filter, invoices)
+        invs = list(filter(b2cs_filter, invoices))
 
         b2cs = []
         for inv in invs:
@@ -305,7 +305,7 @@ def cdnr_r1(drcr_all, con):
             else:
                 return False
 
-        drcrs = filter(cdnr_filter, drcr_all)
+        drcrs = list(filter(cdnr_filter, drcr_all))
 
         cdnr = []
         for note in drcrs:
@@ -330,7 +330,7 @@ def cdnr_r1(drcr_all, con):
                 row["pregst"] = "N"
             else:
                 row["pregst"] = "Y"
-            for rate, tax_cess in product_level(note, con, drcr=True).items():
+            for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -361,7 +361,7 @@ def cdnur_r1(drcr_all, con):
                 return False
             return True
 
-        drcrs = filter(cdnur_filter, drcr_all)
+        drcrs = list(filter(cdnur_filter, drcr_all))
 
         for note in drcrs:
 
@@ -386,7 +386,7 @@ def cdnur_r1(drcr_all, con):
                 row["pregst"] = "N"
             else:
                 row["pregst"] = "Y"
-            for rate, tax_cess in product_level(note, con, drcr=True).items():
+            for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -431,7 +431,7 @@ Store this data in following formats:
                     taxable_Value = 0.00
                     cn = literal_eval(inv["content"])
                     ds = float(literal_eval(inv["disc"]))
-                    ppu = float(cn.keys()[0])
+                    ppu = float(list(cn.keys())[0])
                     tx = float(literal_eval(inv["tax"]))
                     cs = float(literal_eval(inv["cess"]))
                     # check condition for product and service
@@ -501,7 +501,7 @@ class GstReturn(object):
         """
         
         token = self.request.headers.get("gktoken", None)
-        print "GST return"
+        print("GST return")
         if token is None:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 

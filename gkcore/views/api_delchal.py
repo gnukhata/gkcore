@@ -94,11 +94,11 @@ create method for delchal resource.
                     stockdata["stockdate"] = dcidrow["dcdate"]
                     try:
                         
-                        for key in items.keys():
+                        for key in list(items.keys()):
                             stockdata["productcode"] = key
-                            stockdata["qty"] = float(items[key].values()[0])+float(freeqty[key])
+                            stockdata["qty"] = float(list(items[key].values())[0])+float(freeqty[key])
                             result = self.con.execute(stock.insert(),[stockdata])
-                            if stockdata.has_key("goid"):
+                            if "goid" in stockdata:
                                 resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
                                 if resultgoprod.rowcount == 0:
                                     result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
@@ -141,7 +141,7 @@ create method for delchal resource.
                 if result.rowcount==1:
                     result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==delchaldata["dcid"],stock.c.dcinvtnflag==4)))
                     items = stockdata.pop("items")
-                    for key in items.keys():
+                    for key in list(items.keys()):
                         stockdata["productcode"] = key
                         stockdata["qty"] = items[key]
                         result = self.con.execute(stock.insert(),[stockdata])
@@ -169,7 +169,7 @@ create method for delchal resource.
                 given below is the condition to check the values is delivery in,out or all.
                 if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
                 '''
-                if self.request.params.has_key("inoutflag"):
+                if "inoutflag" in self.request.params:
                     result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(and_(delchal.c.inoutflag==int(self.request.params["inoutflag"]),delchal.c.orgcode==authDetails["orgcode"])))
                 else:
                     result = self.con.execute(select([delchal.c.dcid,delchal.c.dcno,delchal.c.custid,delchal.c.dcdate, delchal.c.noofpackages, delchal.c.modeoftransport, delchal.c.attachmentcount]).where(delchal.c.orgcode==authDetails["orgcode"]).order_by(delchal.c.dcno))
@@ -344,14 +344,14 @@ create method for delchal resource.
                     freeqtys = delchaldata["freeqty"]
                     #now looping through the contents.
                     #pc will have the productcode which will be the key in delchalContents.
-                    for pc in contentsData.keys():
+                    for pc in list(contentsData.keys()):
                         #freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization. 
                         if discounts != None:
                             # discflag is for discount type. Percent=16/Amount=1
                             # here we convert percent discount in to amount.
                             if delchaldata["discflag"] == 16:
-                                qty = float(contentsData[str(pc)].keys()[0])
-                                price = float(contentsData[str(pc)].values()[0])
+                                qty = float(list(contentsData[str(pc)].keys())[0])
+                                price = float(list(contentsData[str(pc)].values())[0])
                                 totalWithoutDiscount = qty * price
                                 discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
                             else:
@@ -371,11 +371,11 @@ create method for delchal resource.
                             um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                            taxableAmount = ((float(contentsData[pc][list(contentsData[pc].keys())[0]])) * float(list(contentsData[pc].keys())[0])) - float(discount)
                         # For 'Service'
                         else:
                             unitofMeasurement = ""
-                            taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                            taxableAmount = float(list(contentsData[pc].keys())[0]) - float(discount)
                         
                         taxRate = 0.00
                         totalAmount = 0.00
@@ -388,7 +388,7 @@ create method for delchal resource.
                             totalDisc = totalDisc + float(discount)
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                         else:
                             cessRate = 0.00
@@ -414,7 +414,7 @@ create method for delchal resource.
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discounts[pc])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                     singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
                     singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                     singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
@@ -538,7 +538,7 @@ create method for delchal resource.
                     freeqtys = delchaldata["freeqty"]
                     #now looping through the contents.
                     #pc will have the productcode which will be the key in delchalContents.
-                    for pc in contentsData.keys():
+                    for pc in list(contentsData.keys()):
                        
                         if discounts != None:
                             discount = discounts[pc]
@@ -557,11 +557,11 @@ create method for delchal resource.
                             um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(contentsData[pc][contentsData[pc].keys()[0]])) * float(contentsData[pc].keys()[0])) - float(discount)
+                            taxableAmount = ((float(contentsData[pc][list(contentsData[pc].keys())[0]])) * float(list(contentsData[pc].keys())[0])) - float(discount)
                         # For 'Service'
                         else:
                             unitofMeasurement = ""
-                            taxableAmount = float(contentsData[pc].keys()[0]) - float(discount)
+                            taxableAmount = float(list(contentsData[pc].keys())[0]) - float(discount)
                         
                         taxRate = 0.00
                         totalAmount = 0.00
@@ -574,7 +574,7 @@ create method for delchal resource.
                             totalDisc = totalDisc + float(discount)
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
 
                         else:
                             cessRate = 0.00
@@ -600,7 +600,7 @@ create method for delchal resource.
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][contentsData[pc].keys()[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(contentsData[pc].keys()[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            delchalContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(contentsData[pc][list(contentsData[pc].keys())[0]])),"freeqty":"%.2f"% (float(freeqty)),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"discount":"%.2f"% (float(discount)),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
                     singledelchal["totaldiscount"] = "%.2f"% (float(totalDisc))
                     singledelchal["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
                     singledelchal["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
@@ -825,13 +825,13 @@ create method for delchal resource.
                 deliveryinfo = delchalresult.fetchone()
                 freeprod = deliveryinfo["freeqty"]
                 proddata = deliveryinfo["contents"]
-                for pc in proddata.keys():
+                for pc in list(proddata.keys()):
                     productdata = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gscode]).where(and_(product.c.productcode==pc,product.c.gsflag==7)))
                     productdesc = productdata.fetchone()
                     uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
                     unitnamrrow = uomresult.fetchone()
-                    items[int(pc)] = {"qty":float("%.2f"%float(proddata[pc][proddata[pc].keys()[0]])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
-                for frep in freeprod.keys():
+                    items[int(pc)] = {"qty":float("%.2f"%float(proddata[pc][list(proddata[pc].keys())[0]])),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"],"gscode":productdesc["gscode"]}
+                for frep in list(freeprod.keys()):
                     items[int(frep)]["freeqty"] = float("%.2f"%float(freeprod[frep]))
 
                 result = self.con.execute(select([dcinv.c.invid, dcinv.c.invprods]).where(dcinv.c.dcid == dcid))
@@ -842,12 +842,12 @@ create method for delchal resource.
                     invoiceinfo = invresult.fetchone()
                     freeprodinv = invoiceinfo["freeqty"]
                     proddatainv = invoiceinfo["contents"]
-                    for pc in proddatainv.keys():
+                    for pc in list(proddatainv.keys()):
                         try:
-                            items[int(pc)]["qty"] -= float("%.2f"%float(proddatainv[pc][proddatainv[pc].keys()[0]]))
+                            items[int(pc)]["qty"] -= float("%.2f"%float(proddatainv[pc][list(proddatainv[pc].keys())[0]]))
                         except:
                             pass
-                    for pc in freeprodinv.keys():
+                    for pc in list(freeprodinv.keys()):
                         try:
                             items[int(pc)]["freeqty"] -= float("%.2f"%float(freeprodinv[pc]))
                         except:
@@ -868,7 +868,7 @@ create method for delchal resource.
                     except:
                         pass
                 if len(linkedinvoices) != 0 or len(rnprodresult) != 0:
-                    for productcode in items.keys():
+                    for productcode in list(items.keys()):
                         if items[productcode]["qty"] == 0:
                             del items[productcode]
                 return {"gkstatus":enumdict["Success"], "gkresult": items}

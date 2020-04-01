@@ -53,7 +53,7 @@ It will be used for creating entries in the billwise table and updating it as ne
         self.request = Request
         self.request = request
         self.con = Connection
-        print "billwise initialized"
+        print("billwise initialized")
     @view_config(request_method='POST',renderer='json')
     def adjustBills(self):
         """
@@ -233,7 +233,7 @@ It will be used for creating entries in the billwise table and updating it as ne
                     custData = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custid]).where(customerandsupplier.c.custid == inv["custid"]))
                     customerdata = custData.fetchone()
                     # If there is a invtype parameter then only sale/purchase invoices are returned depending on the value of type.
-                    if self.request.params.has_key('invtype'):
+                    if 'invtype' in self.request.params:
                         if str(self.request.params["invtype"]) == 'sale' and int(customerdata['csflag']) == 3:
                             unAdjInvoices.append({"invid":inv["invid"],"invoiceno":inv["invoiceno"],"invoicedate":datetime.strftime(inv["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%(float(inv["invoicetotal"])),"balanceamount":"%.2f"%(float(inv["invoicetotal"]-inv["amountpaid"])), "custname":customerdata["custname"], "custid":customerdata["custid"], "csflag": customerdata["csflag"]})
                         elif str(self.request.params["invtype"]) == 'purchase' and int(customerdata['csflag']) == 19:

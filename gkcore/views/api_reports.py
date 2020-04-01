@@ -46,7 +46,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_user import getUserRole
 from datetime import datetime,date
 import calendar
-from monthdelta import monthdelta
+from monthdelta import MonthDelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
@@ -581,14 +581,14 @@ class api_reports(object):
                         if (count["vcount"]==0):
                             clBal = {"month": calendar.month_name[startMonthDate.month], "Dr":"", "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"], "vcountDr":countDr["vcount"], "vcountCr":countCr["vcount"], "vcountLock":countLock["vcount"], "advflag":adverseflag}
                         monthlyBal.append(clBal)
-                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
+                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + MonthDelta(monthCounter)
                     endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
                     monthCounter  +=1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": monthlyBal, "accountcode":accountCode,"accountname":accname}
 
             except Exception as E:
-                print E
+                print(E)
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
 
@@ -680,12 +680,12 @@ class api_reports(object):
                 drtotal = 0.00
                 for transaction in transactions:
                     ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"], "advflag":""}
-                    if transaction["drs"].has_key(accountCode):
+                    if accountCode in transaction["drs"]:
                         ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
                         ledgerRecord["Cr"] = ""
                         drtotal += float(transaction["drs"][accountCode])
                         par=[]
-                        for cr in transaction["crs"].keys():
+                        for cr in list(transaction["crs"].keys()):
                             accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
                             accountname = accountnameRow.fetchone()
                             if len(transaction['crs'])>1:
@@ -695,12 +695,12 @@ class api_reports(object):
                         ledgerRecord["particulars"] = par
                         bal = bal + float(transaction["drs"][accountCode])
 
-                    if transaction["crs"].has_key(accountCode):
+                    if accountCode in transaction["crs"]:
                         ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
                         ledgerRecord["Dr"] = ""
                         crtotal += float(transaction["crs"][accountCode])
                         par=[]
-                        for dr in transaction["drs"].keys():
+                        for dr in list(transaction["drs"].keys()):
                             accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
                             accountname = accountnameRow.fetchone()
                             if len(transaction['drs'])>1:
@@ -827,7 +827,7 @@ class api_reports(object):
                         ledgerRecord["Dr"] = "%.2f"%float(transaction["drs"][accountCode])
                         ledgerRecord["Cr"] = ""
                         par=[]
-                        for cr in transaction["crs"].keys():
+                        for cr in list(transaction["crs"].keys()):
                             accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(cr)))
                             accountname = accountnameRow.fetchone()
                             if len(transaction['crs'])>1:
@@ -856,7 +856,7 @@ class api_reports(object):
                         ledgerRecord["Cr"] = "%.2f"%float(transaction["crs"][accountCode])
                         ledgerRecord["Dr"] = ""
                         par=[]
-                        for dr in transaction["drs"].keys():
+                        for dr in list(transaction["drs"].keys()):
                             accountnameRow = self.con.execute(select([accounts.c.accountname]).where(accounts.c.accountcode==int(dr)))
                             accountname = accountnameRow.fetchone()
                             if len(transaction['drs'])>1:
@@ -3969,20 +3969,20 @@ free replacement or sample are those which are excluded.
                         #dcprodresult is a list of tuples. eachitem is one such tuple.
                             for eachinvoice in invprodresult:
                             #invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
-                                for eachproductcode in eachinvoice.keys():
+                                for eachproductcode in list(eachinvoice.keys()):
                                     #eachitem[0] is unique. It's not repeated.
                                     dcprodcode = eachitem[0]
                                     if int(dcprodcode) == int(eachproductcode):#why do we need to convert these into string to compare?
                                         #this means that the product in delchal matches with the product in invoice
                                         #now we will check its quantity
-                                        invqty = eachinvoice[eachproductcode].values()[0]
+                                        invqty = list(eachinvoice[eachproductcode].values())[0]
                                         dcqty = eachitem[1]
                                         if float(dcqty) == float(invqty):#conversion of datatypes to compatible ones is very important when comparing them.
                                             #this means the quantity of current individual product is matched exactly
                                             matchedproducts.append(int(eachproductcode))
                                         elif float(dcqty) > float(invqty):
                                             #this means current invoice has not billed the whole product quantity.
-                                            if dcprodcode in remainingproducts.keys():
+                                            if dcprodcode in list(remainingproducts.keys()):
                                                 if float(dcqty) == (float(remainingproducts[dcprodcode]) + float(invqty)):
                                                     matchedproducts.append(int(eachproductcode))
                                                     #whether we use eachproductcode or dcprodcode, doesn't matter. Because, both values are the same here.
@@ -4039,7 +4039,7 @@ free replacement or sample are those which are excluded.
                             canceldelchal = 0
                         temp_dict["canceldelchal"] = canceldelchal
 
-                        if "goname" in row.keys():
+                        if "goname" in list(row.keys()):
                             temp_dict["goname"] = row["goname"]
                         else:
                             temp_dict["goname"] = None
@@ -4118,7 +4118,7 @@ free replacement or sample are those which are excluded.
                     try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
-                        print row["invoiceno"]
+                        print(row["invoiceno"])
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 
                         taxname = ""
@@ -4169,7 +4169,7 @@ free replacement or sample are those which are excluded.
                         here 20.00 is price per unit and quantity is 2.
                         The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate'''
                         
-                        for pc in row["contents"].iterkeys():
+                        for pc in row["contents"].keys():
                             discamt = 0.00
                             taxrate = float(row["tax"][pc])
                             if disc != None:
@@ -4177,7 +4177,7 @@ free replacement or sample are those which are excluded.
                             else:
                                 discamt = 0.00
                                 
-                            for pcprice in row["contents"][pc].iterkeys():
+                            for pcprice in row["contents"][pc].keys():
                                 ppu = pcprice
     
                                 gspc = self.con.execute(select([product.c.gsflag]).where(product.c.productcode==pc))
@@ -4202,7 +4202,7 @@ free replacement or sample are those which are excluded.
                             if taxrate != 0.00:
                                 if taxname !="% SGST":
                                     taxnames = "%.2f"%taxrate + taxname
-                                    if taxdata.has_key(str(taxnames)):
+                                    if str(taxnames) in taxdata:
                                         taxdata[taxnames]="%.2f"%(float(taxdata[taxnames]) + taxamount)
                                         taxamountdata[taxnames]="%.2f"%(float(taxamountdata[taxnames]) + taxamount*float(taxrate)/100.00)
                                     else:
@@ -4223,7 +4223,7 @@ free replacement or sample are those which are excluded.
                                     taxrate = taxrate/2
                                     sgstTax = "%.2f"%taxrate + "% SGST"
                                     cgstTax = "%.2f"%taxrate + "% CGST"
-                                    if taxdata.has_key(sgstTax):
+                                    if sgstTax in taxdata:
                                         taxdata[sgstTax]="%.2f"%(float(taxdata[sgstTax]) + taxamount)
                                         taxamountdata[sgstTax]="%.2f"%(float(taxamountdata[sgstTax]) + taxamount*float(taxrate)/100.00)
                                         
@@ -4240,7 +4240,7 @@ free replacement or sample are those which are excluded.
                                         totalrow["taxamount"][sgstTax] = "%.2f"%(float(totalrow["taxamount"][sgstTax]) + float(taxamount*float(taxrate)/100.00))
                                         totalrow["tax"][sgstTax] =  "%.2f"%(float(totalrow["tax"][sgstTax]) + taxamount)
                                         
-                                    if taxdata.has_key(cgstTax):
+                                    if cgstTax in taxdata:
                                         taxdata[cgstTax]="%.2f"%(float(taxdata[cgstTax]) + taxamount)
                                         taxamountdata[cgstTax]="%.2f"%(float(taxamountdata[cgstTax]) + taxamount*float(taxrate)/100.00)
                                         
@@ -4267,7 +4267,7 @@ free replacement or sample are those which are excluded.
                                 cessrate = "%.2f"%float(row["cess"][pc])
                                 Cessname = str(cessrate) + "% CESS"
                                 if cessrate != "0.00":
-                                    if taxdata.has_key(str(Cessname)):
+                                    if str(Cessname) in taxdata:
                                         taxdata[Cessname]="%.2f"%(float(taxdata[Cessname]) + taxamount)
                                         taxamountdata[Cessname]="%.2f"%(float(taxamountdata[Cessname]) + taxamount*float(cessrate)/100.00)
                                     else:

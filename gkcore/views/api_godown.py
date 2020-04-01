@@ -273,9 +273,9 @@ class api_godown(object):
             finally:
                 self.con.close()
 
-	"""
-	The below function "getGodownProd" will be called when user select Dispatched From for Transfer Note, it will return Godown Name with Address containing products.
-	"""
+    """
+    The below function "getGodownProd" will be called when user select Dispatched From for Transfer Note, it will return Godown Name with Address containing products.
+    """
     @view_config(request_method='GET', request_param='value=1',renderer='json')
     def getGodownProd(self):
        

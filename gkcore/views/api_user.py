@@ -308,7 +308,7 @@ class api_user(object):
                     if "golist" in dataset:
                         result = self.con.execute(gkdb.usergodown.delete().where(gkdb.usergodown.c.userid==dataset["userid"]))
                     #dataset["userrole"] gives userrole of new user
-                    if dataset.has_key("userrole"):
+                    if "userrole" in dataset:
                         # if golist is present then it has access related to godown / branch
                         if "golist" in dataset:
                             golists = tuple(dataset.pop("golist"))
