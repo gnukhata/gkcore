@@ -629,7 +629,7 @@ class api_organisation(object):
 
     @view_config(request_method='GET', renderer ='json')
     def getOrgs(self):
-        #try:
+        try:
             self.gkUpgrade()
             self.con=eng.connect()
             result = self.con.execute(select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]).order_by(gkdb.organisation.c.orgname).distinct())
@@ -639,9 +639,9 @@ class api_organisation(object):
             sorted(orgs, key = lambda orgList: orgList['orgname'])  
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
-        #except:
-            #self.con.close()
-            #return {"gkstatus":enumdict["ConnectionFailed"]}
+        except:
+            self.con.close()
+            return {"gkstatus":enumdict["ConnectionFailed"]}
 
     @view_config(request_method='GET', request_param='type=orgcodelist', renderer='json' , route_name="organisations")
     def getsubOrgs(self):
