@@ -39,7 +39,7 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts,organisation
 from datetime import datetime, date
-from monthdelta import MonthDelta
+from monthdelta import monthdelta
 from operator import itemgetter
 from natsort import natsorted
 import calendar

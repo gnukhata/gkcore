@@ -46,7 +46,7 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_user import getUserRole
 from datetime import datetime,date
 import calendar
-from monthdelta import MonthDelta
+from monthdelta import monthdelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
