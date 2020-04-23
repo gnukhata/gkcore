@@ -267,7 +267,7 @@ def cashbankbalance(orgcode):
                     cashbalance = float(cashbalance) + float(calbaldata["curbal"])
             cashbalancedata.append(cashbalance)
 
-            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + MonthDelta(monthCounter)
+            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + monthdelta(monthCounter)
             endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
 
             monthCounter  +=1
