@@ -74,7 +74,7 @@ def cess_amount(inv, productcode, con, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
     """
-    if inv["cess"].get(productcode) is 0 or inv["cess"] == {}:
+    if inv["cess"].get(productcode) == 0 or inv["cess"] == {}:
         return 0
     else:
         cess_rate = float(inv["cess"][productcode])
@@ -281,7 +281,7 @@ def b2cs_r1(invoices, con):
 
         for row in b2cs:
             row["taxable_value"] = "%.2f" % row["taxable_value"]
-            if row["cess"] is 0:
+            if row["cess"] == 0:
                 row["cess"] = "0.00"
             else:
                 row["cess"] = "%.2f" % row["cess"]
@@ -502,11 +502,11 @@ class GstReturn(object):
         
         token = self.request.headers.get("gktoken", None)
         print("GST return")
-        if token is None:
+        if token == None:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         authDetails = authCheck(token)
-        if authDetails["auth"] is False:
+        if authDetails["auth"] == False:
             return {"gkstatus":  enumdict["UnauthorisedAccess"]}
 
         try:
