@@ -674,7 +674,6 @@ class api_organisation(object):
 
     @view_config(request_method='POST',renderer='json')
     def postOrg(self):
-
         try:
             self.con = eng.connect()
             dataset = self.request.json_body
@@ -823,6 +822,7 @@ class api_organisation(object):
                             record = result.fetchone()
 
                             token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+                            token = token.decode("ascii")
                             self.con.close()
                             return {"gkstatus":enumdict["Success"],"token":token, "orgcode":userdata["orgcode"]}
                         else:
