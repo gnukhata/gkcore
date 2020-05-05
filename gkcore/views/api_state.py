@@ -59,7 +59,7 @@ class api_state(object):
             states = []
             for st in getStateData:
                 states.append({st["statecode"]: st["statename"]})  
-        return {"gkstatus":enumdict["Success"], "gkresult": states}
+            return {"gkstatus":enumdict["Success"], "gkresult": states}
         except:
             return{"gkstatus":enumdict["ConnectionFailed"]}
 
