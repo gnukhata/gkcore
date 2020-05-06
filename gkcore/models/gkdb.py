@@ -54,7 +54,9 @@ metadata = MetaData()
 This will be generated during the database setup.
 """
 signature = Table('signature', metadata,
-    Column('secretcode',UnicodeText, primary_key=True))
+                  Column('secretcode',UnicodeText),
+                  Index('secretcode',postgresql_using='hash(secretcode)')
+)
 
 
 """
