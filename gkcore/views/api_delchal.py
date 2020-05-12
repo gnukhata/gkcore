@@ -93,7 +93,6 @@ create method for delchal resource.
                     stockdata["dcinvtnflag"] = 4
                     stockdata["stockdate"] = dcidrow["dcdate"]
                     try:
-                        
                         for key in list(items.keys()):
                             stockdata["productcode"] = key
                             stockdata["qty"] = float(list(items[key].values())[0])+float(freeqty[key])

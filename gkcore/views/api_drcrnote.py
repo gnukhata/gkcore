@@ -148,6 +148,7 @@ class api_drcr(object):
                 if drcrrow["reference"] == None:
                     drcrdata["reference"]= ""
                 else:
+                    drcrrow["reference"]["dcdate"] = datetime.strftime(datetime.strptime(drcrrow["reference"]["dcdate"],"%Y-%m-%d").date(),'%d-%m-%Y')
                     drcrdata["reference"]=drcrrow["reference"]
                 #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
