@@ -1232,18 +1232,16 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 dataset = self.request.json_body
-                print (dataset)
                 inputdate = dataset["inputdate"]
                 new_inputdate = dataset["inputdate"]
                 new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
                 dc_unbilled = []
                 alldcids = self.con.execute(select([delchal.c.dcid, delchal.c.dcdate]).distinct().where(and_(delchal.c.orgcode == orgcode, delchal.c.dcdate <= new_inputdate, stock.c.orgcode == orgcode, stock.c.dcinvtnflag == 4, delchal.c.dcid == stock.c.dcinvtnid)).order_by(delchal.c.dcdate))
                 alldcids = alldcids.fetchall()
-                print (alldcids)
                 dcResult = []
                 i = 0
                 while(i < len(alldcids)):
@@ -1398,12 +1396,12 @@ The bills grid calld gkresult will return a list as it's value.
                         srno += 1
                 self.con.close()
                 return {"gkstatus":enumdict["Success"], "gkresult": dc_unbilled}
-            #except exc.IntegrityError:
-            #    return {"gkstatus":enumdict["ActionDisallowed"]}
-            #except:
-            #    return {"gkstatus":enumdict["ConnectionFailed"] }
-            #finally:
-            #    self.con.close()
+            except exc.IntegrityError:
+                return {"gkstatus":enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus":enumdict["ConnectionFailed"] }
+            finally:
+                self.con.close()
 
     '''This mehtod gives all invoices which are not fully rejected yet. It is used in rejection note, to prepare rejection note against these invoices'''
     @view_config(request_method='GET', request_param="type=nonrejected", renderer ='json')
