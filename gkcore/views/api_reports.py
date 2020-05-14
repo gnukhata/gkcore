@@ -1253,7 +1253,7 @@ class api_reports(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-          #  try:
+            try:
                 self.con = eng.connect()
                 calculateTo = self.request.params["calculateto"]
                 financialStart = self.request.params["financialstart"]
@@ -1267,13 +1267,11 @@ class api_reports(object):
                 projectStatement = []
                 for accountRow in grpaccs:
                     statementRow = {}
-                    print (accountRow['groupcode'],accountRow['accountname'])
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
                     
                     group = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accountRow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accountRow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accountRow["groupcode"])))))
                     groupRow = group.fetchone()
-                    print (groupRow)
                     
                     drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
                     drresultRow = drresult.fetchone()
@@ -1298,15 +1296,13 @@ class api_reports(object):
                     srno = srno +1
                     statementRow["ttlRunDr"] = "%.2f"%(totalDr)
                     statementRow["ttlRunCr"] = "%.2f"%(totalCr)
-                    print (statementRow)
                     projectStatement.append(statementRow)
                 projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
                 self.con.close()
-                print(projectStatement)
                 return {"gkstatus":enumdict["Success"],"gkresult":projectStatement}
-           # except:
-           #     self.con.close()
-           #     return {"gkstatus":enumdict["ConnectionFailed"]}
+            except:
+                self.con.close()
+                return {"gkstatus":enumdict["ConnectionFailed"]}
            
 
     @view_config(request_param="type=balancesheet",renderer="json")
@@ -4132,7 +4128,6 @@ free replacement or sample are those which are excluded.
                     try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
-                        print(row["invoiceno"])
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 
                         taxname = ""
