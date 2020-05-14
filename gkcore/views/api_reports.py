@@ -33,6 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
+from gkcore.models import gkdb
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
 from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state, drcr
@@ -51,6 +52,7 @@ from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 from natsort import natsorted
+from sqlalchemy.sql.expression import null
 """
 purpose:
 This class is the resource to generate reports,
@@ -1258,25 +1260,29 @@ class api_reports(object):
                 projectCode= self.request.params["projectcode"]
                 totalDr = 0.00
                 totalCr = 0.00
-                grpacc = self.con.execute("select accountcode , accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and (groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income') or groupname in (select groupname from groupsubgroups where subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')and orgcode = %d))))) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"] ,authDetails["orgcode"],authDetails["orgcode"]))
-                print (grpacc.fetchall())
-
-                
-                '''
-                grpaccsdata = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and (groupcode in (select groupcode from groupsubgroups where orgcode = %d and (groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')) or groupname  (select groupcode from groupsubgroups where subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income'))))) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"] ,authDetails["orgcode"]))
+                grpaccsdata = self.con.execute("select accountcode , accountname, groupcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and (groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income') or groupname in (select groupname from groupsubgroups where subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')and orgcode = %d))))) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"] ,authDetails["orgcode"],authDetails["orgcode"]))
                 grpaccs = grpaccsdata.fetchall()
-                print (grpaccs)
+                
                 srno = 1
                 projectStatement = []
                 for accountRow in grpaccs:
                     statementRow = {}
-                    group = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
+                    print (accountRow['groupcode'],accountRow['accountname'])
+                    g = gkdb.groupsubgroups.alias("g")
+                    sg = gkdb.groupsubgroups.alias("sg")
+                    
+                    group = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accountRow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accountRow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accountRow["groupcode"])))))
                     groupRow = group.fetchone()
+                    print (groupRow)
+                    
                     drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
                     drresultRow = drresult.fetchone()
                     crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
                     crresultRow = crresult.fetchone()
-                    statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
+                    if (groupRow["groupname"]==groupRow["subgroupname"]):
+                        statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"subgroupname":"","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
+                    else:
+                        statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"subgroupname":groupRow["subgroupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
                     if drresultRow["total"]==None:
                         statementRow["totalout"] = '%.2f'%float(0.00)
                     else:
@@ -1301,7 +1307,7 @@ class api_reports(object):
            # except:
            #     self.con.close()
            #     return {"gkstatus":enumdict["ConnectionFailed"]}
-           '''
+           
 
     @view_config(request_param="type=balancesheet",renderer="json")
     def balanceSheet(self):

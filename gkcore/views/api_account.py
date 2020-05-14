@@ -465,7 +465,7 @@ defaultflag '16' or '19' set to the '0'.
                 default_acc={0:"",2:"Bank Transaction",3:"Cash Transaction",16:"Purchase Tansaction",19:"Sale Transaction",180:"Round Off Paid",181:"Round Off Received"} #it is use for default flag
                 for accrow in result:
                     g = gkdb.groupsubgroups.alias("g")
-                    sg = gkdb.groupsubgroups.alias("sg")
+                    sg= gkdb.groupsubgroups.alias("sg")
                     
                     defaultflag=default_acc[accrow["defaultflag"]]
                     resultset = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accrow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accrow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accrow["groupcode"])))))
