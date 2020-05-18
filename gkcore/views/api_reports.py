@@ -3050,14 +3050,14 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 orgcode = int(orgcode)
                 user = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
                 userrole = user.fetchone()
                 vouchers = []
-                if userrole[0] == -1:
+                if (userrole[0] == -1 or userrole[0] == 0):
                     if "orderflag" in self.request.params:
                         voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(desc(voucherbin.c.voucherdate),voucherbin.c.vouchercode))
                     else:
@@ -3070,9 +3070,9 @@ class api_reports(object):
                 else:
                     self.con.close()
                     return {"gkstatus":enumdict["BadPrivilege"]}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+            #except:
+            #    self.con.close()
+            #    return {"gkstatus":enumdict["ConnectionFailed"]}
     @view_config(request_param="type=stockreport",renderer="json")
     def stockReport(self):
         """

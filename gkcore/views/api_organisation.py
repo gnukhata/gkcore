@@ -1074,10 +1074,11 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
+        
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-                if userRole[0]==-1:
+                if (userRole[0]==-1 or userRole[0]== 0):
                     result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
                     if 'bankdetails' not in dataset:
                         self.con.execute("update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"%int(orgcode))
