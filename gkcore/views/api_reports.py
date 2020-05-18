@@ -1297,7 +1297,7 @@ class api_reports(object):
                     statementRow["ttlRunDr"] = "%.2f"%(totalDr)
                     statementRow["ttlRunCr"] = "%.2f"%(totalCr)
                     projectStatement.append(statementRow)
-                projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
+                projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","subgroupname":"","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
                 self.con.close()
                 return {"gkstatus":enumdict["Success"],"gkresult":projectStatement}
             except:
