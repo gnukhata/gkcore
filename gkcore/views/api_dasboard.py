@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import billwise, invoice, customerandsupplier, vouchers,accounts,organisation
 from datetime import datetime, date
-from monthdelta import MonthDelta
+from monthdelta import monthdelta
 from operator import itemgetter
 from natsort import natsorted
 import calendar
@@ -267,7 +267,7 @@ def cashbankbalance(orgcode):
                     cashbalance = float(cashbalance) + float(calbaldata["curbal"])
             cashbalancedata.append(cashbalance)
 
-            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + MonthDelta(monthCounter)
+            startMonthDate = date(financialStartresult["financialstart"].year,financialStartresult["financialstart"].month,financialStartresult["financialstart"].day) + monthdelta(monthCounter)
             endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
 
             monthCounter  +=1

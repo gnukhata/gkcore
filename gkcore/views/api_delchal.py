@@ -1,7 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -93,7 +93,6 @@ create method for delchal resource.
                     stockdata["dcinvtnflag"] = 4
                     stockdata["stockdate"] = dcidrow["dcdate"]
                     try:
-                        
                         for key in list(items.keys()):
                             stockdata["productcode"] = key
                             stockdata["qty"] = float(list(items[key].values())[0])+float(freeqty[key])

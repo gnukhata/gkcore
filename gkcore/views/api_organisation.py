@@ -1,7 +1,7 @@
 
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -636,7 +636,7 @@ class api_organisation(object):
             orgs = []
             for row in result:
                 orgs.append({"orgname":row["orgname"], "orgtype":row["orgtype"]})
-            orgs.sort()
+            sorted(orgs, key = lambda orgList: orgList['orgname'])  
             self.con.close()
             return {"gkstatus":enumdict["Success"], "gkdata":orgs}
         except:
@@ -674,7 +674,6 @@ class api_organisation(object):
 
     @view_config(request_method='POST',renderer='json')
     def postOrg(self):
-
         try:
             self.con = eng.connect()
             dataset = self.request.json_body
@@ -823,6 +822,7 @@ class api_organisation(object):
                             record = result.fetchone()
 
                             token = jwt.encode({"orgcode":userdata["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+                            token = token.decode("ascii")
                             self.con.close()
                             return {"gkstatus":enumdict["Success"],"token":token, "orgcode":userdata["orgcode"]}
                         else:
@@ -1074,10 +1074,11 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
+        
                 user=self.con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
                 userRole = user.fetchone()
                 dataset = self.request.json_body
-                if userRole[0]==-1:
+                if (userRole[0]==-1 or userRole[0]== 0):
                     result = self.con.execute(gkdb.organisation.update().where(gkdb.organisation.c.orgcode==authDetails["orgcode"]).values(dataset))
                     if 'bankdetails' not in dataset:
                         self.con.execute("update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"%int(orgcode))

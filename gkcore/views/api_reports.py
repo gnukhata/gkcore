@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
+from gkcore.models import gkdb
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_invoice import getStateCode
 from gkcore.models.gkdb import accounts, vouchers, groupsubgroups, projects, organisation, users, voucherbin,delchal,invoice,customerandsupplier,stock,product,transfernote,goprod, dcinv, log,godown, categorysubcategories, rejectionnote,state, drcr
@@ -46,11 +47,12 @@ from pyramid.view import view_defaults,  view_config
 from gkcore.views.api_user import getUserRole
 from datetime import datetime,date
 import calendar
-from monthdelta import MonthDelta
+from monthdelta import monthdelta
 from gkcore.models.meta import dbconnect
 from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 from natsort import natsorted
+from sqlalchemy.sql.expression import null
 """
 purpose:
 This class is the resource to generate reports,
@@ -581,7 +583,7 @@ class api_reports(object):
                         if (count["vcount"]==0):
                             clBal = {"month": calendar.month_name[startMonthDate.month], "Dr":"", "Cr":"", "period":str(startMonthDate)+":"+str(endMonthDate), "vcount":count["vcount"], "vcountDr":countDr["vcount"], "vcountCr":countCr["vcount"], "vcountLock":countLock["vcount"], "advflag":adverseflag}
                         monthlyBal.append(clBal)
-                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + MonthDelta(monthCounter)
+                    startMonthDate = date(financialStart.year,financialStart.month,financialStart.day) + monthdelta(monthCounter)
                     endMonthDate = date(startMonthDate.year, startMonthDate.month, calendar.monthrange(startMonthDate.year, startMonthDate.month)[1])
                     monthCounter  +=1
                 self.con.close()
@@ -1258,18 +1260,27 @@ class api_reports(object):
                 projectCode= self.request.params["projectcode"]
                 totalDr = 0.00
                 totalCr = 0.00
-                grpaccsdata = self.con.execute("select accountcode, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"]))
+                grpaccsdata = self.con.execute("select accountcode , accountname, groupcode from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and (groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income') or groupname in (select groupname from groupsubgroups where subgroupof in (select groupcode from groupsubgroups where groupname in ('Direct Expense','Direct Income','Indirect Expense','Indirect Income')and orgcode = %d))))) order by accountname"%(authDetails["orgcode"],authDetails["orgcode"] ,authDetails["orgcode"],authDetails["orgcode"]))
                 grpaccs = grpaccsdata.fetchall()
+                
                 srno = 1
                 projectStatement = []
                 for accountRow in grpaccs:
-                    group = self.con.execute("select groupname from groupsubgroups where subgroupof is null and groupcode = (select groupcode from accounts where accountcode = %d) or groupcode = (select subgroupof from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d));"%(int(accountRow["accountcode"]),int(accountRow["accountcode"])))
+                    statementRow = {}
+                    g = gkdb.groupsubgroups.alias("g")
+                    sg = gkdb.groupsubgroups.alias("sg")
+                    
+                    group = self.con.execute(select([(g.c.groupcode).label('groupcode'),(g.c.groupname).label('groupname'),(sg.c.groupcode).label('subgroupcode'),(sg.c.groupname).label('subgroupname')]).where(or_(and_(g.c.groupcode==int(accountRow["groupcode"]),g.c.subgroupof==null(),sg.c.groupcode==int(accountRow["groupcode"]),sg.c.subgroupof==null()),and_(g.c.groupcode==sg.c.subgroupof,sg.c.groupcode==int(accountRow["groupcode"])))))
                     groupRow = group.fetchone()
+                    
                     drresult = self.con.execute("select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
                     drresultRow = drresult.fetchone()
                     crresult = self.con.execute("select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"%(int(accountRow["accountcode"]),financialStart, calculateTo, int(projectCode)))
                     crresultRow = crresult.fetchone()
-                    statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
+                    if (groupRow["groupname"]==groupRow["subgroupname"]):
+                        statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"subgroupname":"","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
+                    else:
+                        statementRow ={"srno":srno,"accountcode":accountRow["accountcode"],"accountname":accountRow["accountname"],"groupname":groupRow["groupname"],"subgroupname":groupRow["subgroupname"],"totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)}
                     if drresultRow["total"]==None:
                         statementRow["totalout"] = '%.2f'%float(0.00)
                     else:
@@ -1286,14 +1297,13 @@ class api_reports(object):
                     statementRow["ttlRunDr"] = "%.2f"%(totalDr)
                     statementRow["ttlRunCr"] = "%.2f"%(totalCr)
                     projectStatement.append(statementRow)
-                projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
+                projectStatement.append({"srno":"","accountcode":"","accountname":"","groupname":"Total","subgroupname":"","totalout":'%.2f'%float(totalDr),"totalin":'%.2f'%float(totalCr)})
                 self.con.close()
-
-
                 return {"gkstatus":enumdict["Success"],"gkresult":projectStatement}
             except:
                 self.con.close()
                 return {"gkstatus":enumdict["ConnectionFailed"]}
+           
 
     @view_config(request_param="type=balancesheet",renderer="json")
     def balanceSheet(self):
@@ -3040,14 +3050,14 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+           # try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 orgcode = int(orgcode)
                 user = self.con.execute(select([users.c.userrole]).where(users.c.userid == authDetails["userid"]))
                 userrole = user.fetchone()
                 vouchers = []
-                if userrole[0] == -1:
+                if (userrole[0] == -1 or userrole[0] == 0):
                     if "orderflag" in self.request.params:
                         voucherRow = self.con.execute(select([voucherbin]).where(voucherbin.c.orgcode == orgcode).order_by(desc(voucherbin.c.voucherdate),voucherbin.c.vouchercode))
                     else:
@@ -3060,9 +3070,9 @@ class api_reports(object):
                 else:
                     self.con.close()
                     return {"gkstatus":enumdict["BadPrivilege"]}
-            except:
-                self.con.close()
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+            #except:
+            #    self.con.close()
+            #    return {"gkstatus":enumdict["ConnectionFailed"]}
     @view_config(request_param="type=stockreport",renderer="json")
     def stockReport(self):
         """
@@ -4118,7 +4128,6 @@ free replacement or sample are those which are excluded.
                     try:
                         custdata = self.con.execute(select([customerandsupplier.c.custname, customerandsupplier.c.csflag, customerandsupplier.c.custtan,customerandsupplier.c.gstin]).where(customerandsupplier.c.custid==row["custid"]))
                         rowcust = custdata.fetchone()
-                        print(row["invoiceno"])
                         invoicedata = {"srno":srno,"invid": row["invid"], "invoiceno":row["invoiceno"], "invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'), "customername": rowcust["custname"], "customertin": rowcust["custtan"], "grossamount": "%.2f"%row["invoicetotal"], "taxfree":"0.00", "tax":"", "taxamount": ""}
 
                         taxname = ""

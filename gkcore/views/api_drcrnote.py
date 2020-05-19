@@ -1,6 +1,6 @@
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
-Copyright (C) 2017, 2018 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
+Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
   GNUKhata is Free Software; you can redistribute it and/or modify
@@ -148,6 +148,7 @@ class api_drcr(object):
                 if drcrrow["reference"] == None:
                     drcrdata["reference"]= ""
                 else:
+                    drcrrow["reference"]["dcdate"] = datetime.strftime(datetime.strptime(drcrrow["reference"]["dcdate"],"%Y-%m-%d").date(),'%d-%m-%Y')
                     drcrdata["reference"]=drcrrow["reference"]
                 #taken data of invoice on the basis of invid.
                 invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
