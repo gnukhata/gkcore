@@ -193,6 +193,46 @@ def calculateBalance(con,accountCode,financialStart,calculateFrom,calculateTo):
         balType = "Cr"
     return {"balbrought":float(balanceBrought),"curbal":float(currentBalance),"totalcrbal":float(ttlCrBalance),"totaldrbal":float(ttlDrBalance),"baltype":balType,"openbaltype":openingBalanceType,"grpname":groupName}
 
+def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
+    try:
+        con = eng.connect()
+        dcinfo = ""
+        if invid == None:
+            billdetl = con.execute("select invid, adjamount from billwise where vouchercode = %d and orgcode =%d"%(vouchercode, orgcode)) 
+            billDetails=billdetl.fetchall()
+            if len(billDetails) != 0:
+                inno = "Invoice Nos.:"
+                cmno = "Cash Memo Nos.:"
+                for inv in billDetails:
+                    invno = con.execute("select invoiceno, icflag from invoice where invid = %d and orgcode = %d"%(inv["invid"],orgcode))
+                    invinfo= invno.fetchone()
+                    if invinfo["icflag"] == 9:
+                        inno += str(invinfo["invoiceno"]) +":" +str(inv["adjamount"])+ ","
+                        dcinfo = inno
+                    else:
+                        cmno += str(invinfo["invoiceno"]) +":" +str(inv["adjamount"])+ ","
+                        dcinfo = cmno
+        else: 
+            invno = con.execute("select  invoiceno, icflag from invoice where invid = %d and orgcode = %d"%(invid,orgcode))
+            invinfo = invno.fetchone()
+            if invinfo["icflag"] == 9:
+                dcinfo = "Invoice No.:" + str(invinfo["invoiceno"])
+            else:
+                dcinfo = "Cash Memo No.:" + str(invinfo["invoiceno"])
+        if drcrid != None:
+            drcrno = con.execute("select drcrno, dctypeflag from drcr where drcrid = %d and orgcode = %d"%(drcrid,orgcode))
+            drcrinfo = drcrno.fetchone()
+            if drcrinfo["dctypeflag"] == 3:
+                dcinfo = "Credit note no.:" + str(drcrinfo["drcrno"])
+            else:
+                dcinfo = "Dedit note no.:" + str(drcrinfo["drcrno"])
+        return dcinfo
+        con.close()
+    except:
+        con.close()
+        return {"gkstatus":enumdict["ConnectionFailed"]}
+
+
 def stockonhandfun(orgcode, productCode,endDate):
     try:
         con = eng.connect()
@@ -667,14 +707,14 @@ class api_reports(object):
                     vouchergrid.append(openingrow)
                 if projectCode == "":
                     if "orderflag" in self.request.params:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
                     else:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode ,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"%(calculateFrom, calculateTo, accountCode,accountCode))
                 else:
                     if "orderflag" in self.request.params:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
                     else:
-                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
+                        transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"%(calculateFrom, calculateTo,int(projectCode),accountCode,accountCode))
 
                 transactions = transactionsRecords.fetchall()
 
@@ -719,7 +759,12 @@ class api_reports(object):
                         ledgerRecord["balance"] = "%.2f"%(0.00)
                     ledgerRecord["ttlRunDr"] = "%.2f"%(drtotal)
                     ledgerRecord["ttlRunCr"] = "%.2f"%(crtotal)
+                    # get related document details
+                    dcinfo = billwiseEntryLedger(self.con, orgcode, transaction["vouchercode"], transaction["invid"], transaction["drcrid"])
+                    if dcinfo != "":
+                        ledgerRecord["dcinfo"]=dcinfo
                     vouchergrid.append(ledgerRecord)
+                    
                 if projectCode=="":
                     if calbalDict["openbaltype"] == "Cr":
                         calbalDict["totalcrbal"] -= calbalDict["balbrought"]
@@ -771,10 +816,9 @@ class api_reports(object):
                             vouchergrid.append(ledgerRecord)
                 else:
                     ledgerRecord = {"vouchercode":"","vouchernumber":"","voucherdate":"","narration":"","Dr":"%.2f"%(drtotal),"Cr":"%.2f"%(crtotal),"particulars":[{'accountname':"Total of Transactions"}],"balance":"","status":"", "vouchertype":"", "advflag":""}
+                    
                     vouchergrid.append(ledgerRecord)
                 self.con.close()
-
-
                 return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
             except:
                 self.con.close()
@@ -814,14 +858,14 @@ class api_reports(object):
                 if side=="dr":
                     if projectCode == "":
                         if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
                         else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
                         if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                         else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                             
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
@@ -837,6 +881,11 @@ class api_reports(object):
                             else:
                                 par.append({'accountname':accountname['accountname']})
                         ledgerRecord["particulars"] = par
+                        # get deatils of related documents
+                        dcinfo = billwiseEntryLedger(self.con, orgcode, transaction["vouchercode"], transaction["invid"], transaction["drcrid"])
+                        if dcinfo != "":
+                            ledgerRecord["dcinfo"]=dcinfo
+
                         vouchergrid.append(ledgerRecord)
                     self.con.close()
                     return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
@@ -844,14 +893,14 @@ class api_reports(object):
                 if side=="cr":
                     if projectCode == "":
                         if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo, accountCode))
                         else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo, accountCode))
                     else:
                         if "orderflag" in self.request.params:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                         else:
-                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
+                            transactionsRecords = self.con.execute("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,invid,drcrid,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"%(calculateFrom, calculateTo,int(projectCode),accountCode))
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
                         ledgerRecord = {"vouchercode":transaction["vouchercode"],"vouchernumber":transaction["vouchernumber"],"voucherdate":str(transaction["voucherdate"].date().strftime('%d-%m-%Y')),"narration":transaction["narration"],"status":transaction["lockflag"], "vouchertype":transaction["vouchertype"]}
@@ -866,6 +915,11 @@ class api_reports(object):
                             else:
                                 par.append({'accountname':accountname['accountname']})
                         ledgerRecord["particulars"] = par
+                        #get documents details
+                        dcinfo = billwiseEntryLedger(self.con, orgcode, transaction["vouchercode"], transaction["invid"], transaction["drcrid"])
+                        if dcinfo != "":
+                            ledgerRecord["dcinfo"]=dcinfo
+
                         vouchergrid.append(ledgerRecord)
                     self.con.close()
                     return {"gkstatus":enumdict["Success"],"gkresult":vouchergrid,"userrole":urole["userrole"],"ledgerheader":headerrow}
