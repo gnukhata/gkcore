@@ -95,11 +95,12 @@ defaultflag '2' or '3' set to the '0'.
             try:
                 self.con = eng.connect()
                 newdataset = self.request.json_body
-                dataset = newdataset
-                if "origin" in dataset and dataset["origin"] == "createaccount":
+                dataset = {}
+                if 'gkdata' in newdataset:
                     dataset = newdataset["gkdata"]
+                if "accountname" in newdataset:
+                    dataset = newdataset
                 dataset["orgcode"] = authDetails["orgcode"]
-                
                 if 'defaultflag' in dataset:
                     dflag = dataset["defaultflag"]
                     grpnames = self.con.execute(select([gkdb.groupsubgroups.c.groupname]).where(and_(gkdb.groupsubgroups.c.groupcode==dataset["groupcode"],gkdb.groupsubgroups.c.orgcode==dataset["orgcode"])))
