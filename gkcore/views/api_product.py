@@ -505,7 +505,7 @@ class api_product(object):
         if authDetails["auth"]==False:
             return {"gkstatus":enumdict["UnauthorisedAccess"]}
         else:
-            try:
+          #  try:
                 self.con=eng.connect()
                 result = self.con.execute(select([gkdb.organisation.c.yearstart,gkdb.organisation.c.yearend]).where(gkdb.organisation.c.orgcode==authDetails["orgcode"]))
                 yearstartandend=result.fetchone()
@@ -522,10 +522,10 @@ class api_product(object):
                 elif(gstdate<=financialStart and gstdate<=financialEnd):
                     gstorvatflag=7
                 return {"gkstatus":enumdict["Success"],"gkresult":str(gstorvatflag)}
-            except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
-            finally:
-                self.con.close()
+          #  except:
+          #      return {"gkstatus":enumdict["ConnectionFailed"] }
+          #  finally:
+           #     self.con.close()
 
     '''
     A godown keeper can only access the list of products that are present in the godowns assigned to him.
