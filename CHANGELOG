@@ -1,3 +1,14 @@
+[19 June 2020 Release 7.0]
+* Upgraded entire code base to Python 3 (Python3.8).
+* Documents details in ledger.
+* Total amount in word in Delivery Note.
+* New field narration in Rejection Note and Delivery Note.
+* Removed contents of gstin field if the key is not sent to edit organisation API.
+* Enhanced functionality to add customer/supplier data in API for Accounts .
+* New function to select all companies with same financial year.
+* Minor bugfixes and enhancements.
+
+
 [16 December 2019 Release 6.50]
 * Function to cancel delivery note.
 * New table to store cancelled delivery note data.
