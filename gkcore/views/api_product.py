@@ -156,7 +156,6 @@ class api_product(object):
                 #first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
                 #if count is grater than 0 it send 1 else it send 0 as value of deletable key
                 if int(row["gsflag"]) == 19:
-                    print ("product")
                     prod_countinv =self.con.execute("SELECT (contents ::json)->'%s' is NULL FROM invoice where orgcode ='%d'"%((str(self.request.params["productcode"])),(int(authDetails["orgcode"])))).fetchall()
                     if (False,) in prod_countinv:
                         productDetails["deletable"] = 1
