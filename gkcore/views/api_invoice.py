@@ -1707,7 +1707,6 @@ The bills grid calld gkresult will return a list as it's value.
         else:
             try:
                 self.con = eng.connect()
-                print (self.request.params)
                 if "orderflag" in self.request.params:
                     result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
                 else:
@@ -1716,7 +1715,6 @@ The bills grid calld gkresult will return a list as it's value.
                 srno = 1
                 #for each invoice
                 for row in result:
-                    print (row["sourcestate"])
                     if row["sourcestate"] != None:
                         sourceStateCode = getStateCode(row["sourcestate"],self.con)["statecode"]
                     if row["taxstate"] != None:
