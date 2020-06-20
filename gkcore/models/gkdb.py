@@ -55,7 +55,6 @@ This will be generated during the database setup.
 """
 signature = Table('signature', metadata,
                   Column('secretcode',UnicodeText),
-                  Index('secretcode',postgresql_using='hash(secretcode)')
 )
 
 
