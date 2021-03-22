@@ -1710,7 +1710,7 @@ The bills grid calld gkresult will return a list as it's value.
         if authDetails["auth"] == False:
             return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            #try:
+            try:
                 self.con = eng.connect()
                 if "orderflag" in self.request.params:
                     result = self.con.execute(select([invoice]).where(and_(invoice.c.orgcode==authDetails["orgcode"], invoice.c.icflag == 9, invoice.c.invoicedate <= self.request.params["todate"], invoice.c.invoicedate >= self.request.params["fromdate"])).order_by(desc(invoice.c.invoicedate)))
@@ -1951,10 +1951,10 @@ The bills grid calld gkresult will return a list as it's value.
                     # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true ;path=/'}
                     return Response(contents, headerlist=list(headerList.items()))
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
-            #except:
-            #    return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
-            #finally:
-            #    self.con.close()
+            except:
+                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
         '''This function gives list of invoices. with all details of canceled invoice.
     This method will be used to see report of list of invoices.
