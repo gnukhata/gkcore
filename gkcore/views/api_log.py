@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -63,7 +62,7 @@ class api_log(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				dataset["userid"] = authDetails["userid"]
-				dataset["time"] = datetime.today().strftime('%Y-%m-%d')
+				dataset["time"] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 				result = self.con.execute(log.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
