@@ -50,7 +50,12 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
-
+import io
+import openpyxl
+from openpyxl.styles import Font, Alignment
+from openpyxl.utils import get_column_letter
+import base64
+from io import BytesIO
 
 def gst(ProductCode,con):
     gstData = con.execute(select([product.c.gsflag,product.c.gscode]).where(product.c.productcode == ProductCode))
@@ -1832,6 +1837,119 @@ The bills grid calld gkresult will return a list as it's value.
                     elif self.request.params["flag"] == "2" and row["inoutflag"] == 9:
                         invoices.append({"srno": srno, "invoiceno":row["invoiceno"], "invid":row["invid"],"dcno":dcno, "dcdate":dcdate, "netamt": "%.2f"%netamt, "taxamt":"%.2f"%taxamt, "godown":godowns, "custname":customerdetails["custname"],"csflag":customerdetails["csflag"],"custtin":custtin,"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"grossamt":"%.2f"%float(row["invoicetotal"]),"cancelflag":cancelinv,"billentryflag":billentryflag,"inoutflag":row["inoutflag"]})
                         srno += 1
+                if "spreadsheet" in self.request.params:
+                    fystart = str(self.request.params["fystart"])
+                    fyend = str(self.request.params["fyend"])
+                    orgname = str(self.request.params["orgname"])
+                    invflag = int(self.request.params["flag"])
+                    invoicewb = openpyxl.Workbook()
+                    sheet = invoicewb.active
+                    sheet.column_dimensions['A'].width = 8
+                    sheet.column_dimensions['B'].width = 12
+                    sheet.column_dimensions['C'].width = 10
+                    sheet.column_dimensions['D'].width = 16
+                    sheet.column_dimensions['E'].width = 16
+                    sheet.column_dimensions['F'].width = 16
+                    sheet.column_dimensions['G'].width = 16
+                    sheet.column_dimensions['H'].width = 10
+                    sheet.column_dimensions['I'].width = 16
+                    sheet.merge_cells('A1:K2')
+                    sheet['A1'].font = Font(name='Liberation Serif',size='16',bold=True)
+                    sheet['A1'].alignment = Alignment(horizontal = 'center', vertical='center')
+                    sheet['A1'] = orgname + ' (FY: ' + fystart + ' to ' + fyend +')'
+                    sheet.merge_cells('A3:K3')
+                    sheet['A3'].font = Font(name='Liberation Serif',size='14',bold=True)
+                    sheet['A3'].alignment = Alignment(horizontal = 'center', vertical='center')
+                    if invflag == 0:
+                        sheet.title = "List of All Invoices"
+                        sheet['A3'] = "List of All Invoices"
+                    elif invflag == 1:
+                        sheet.title = "List of Sales Invoices"
+                        sheet['A3'] = "List of Sales Invoices"
+                    elif invflag == 2:
+                        sheet.title = "List of Purchase Invoices"
+                        sheet['A3'] = "List of Purchase Invoices"
+                    sheet.merge_cells('A4:K4')
+                    sheet['A4'] = 'Period: ' + datetime.strptime(self.request.params["fromdate"],'%Y-%m-%d').strftime('%d-%m-%Y') + ' to ' + datetime.strptime(self.request.params["todate"],'%Y-%m-%d').strftime('%d-%m-%Y')
+
+                    sheet['A4'].font = Font(name='Liberation Serif',size='14',bold=True)
+                    sheet['A4'].alignment = Alignment(horizontal = 'center', vertical='center')
+                    sheet['A5'] = 'Sr. No.'
+                    sheet['B5'] = 'INV No.'
+                    sheet['C5'] = 'INV Date'
+                    sheet['D5'] = 'Deli. Note '
+                    if invflag == 0:
+                        sheet['E5'] = 'Cust/Supp Name'
+                    elif invflag == 1:
+                        sheet['E5'] = 'Customer Name'
+                    elif invflag == 2:
+                        sheet['E5'] = 'Supplier Name'
+                    sheet['F5'] = 'Gross Amt'
+                    sheet['G5'] = 'Net Amt'
+                    sheet['H5'] = 'Tax Amt'
+                    sheet['I5'] = 'Godown'
+                    titlerow = sheet.row_dimensions[5]
+                    titlerow.font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['A5'].alignment = Alignment(horizontal='center')
+                    sheet['B5'].alignment = Alignment(horizontal='center')
+                    sheet['C5'].alignment = Alignment(horizontal='center')
+                    sheet['D5'].alignment = Alignment(horizontal='center')
+                    sheet['E5'].alignment = Alignment(horizontal='center')
+                    sheet['F5'].alignment = Alignment(horizontal='right')
+                    sheet['G5'].alignment = Alignment(horizontal='right')
+                    sheet['H5'].alignment = Alignment(horizontal='right')
+                    sheet['I5'].alignment = Alignment(horizontal='center')
+                    sheet['A5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['B5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['C5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['D5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['E5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['F5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['G5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['H5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    sheet['I5'].font = Font(name='Liberation Serif',size=12,bold=True)
+                    row = 6
+                    # Looping each dictionaries in list result to store data in cells and apply styles.
+                    for sheetdata in invoices:
+                        sheet['A'+str(row)] = sheetdata['srno']
+                        sheet['A'+str(row)].alignment = Alignment(horizontal='center')
+                        sheet['A'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['B'+str(row)] = sheetdata['invoiceno']
+                        sheet['B'+str(row)].alignment = Alignment(horizontal='center')
+                        sheet['B'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['C'+str(row)] = sheetdata['invoicedate']
+                        sheet['C'+str(row)].alignment = Alignment(horizontal='center')
+                        sheet['C'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        if sheetdata['dcno'] != "" and sheetdata['dcdate'] != "":
+                            sheet['D'+str(row)] = sheetdata['dcno'] +','+ sheetdata['dcdate']
+                            sheet['D'+str(row)].alignment = Alignment(horizontal='center')
+                            sheet['D'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['E'+str(row)] = sheetdata['custname']
+                        sheet['E'+str(row)].alignment = Alignment(horizontal='center')
+                        sheet['E'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['F'+str(row)] =float("%.2f"%float(sheetdata['grossamt']))
+                        sheet['F'+str(row)].number_format="0.00"
+                        sheet['F'+str(row)].alignment = Alignment(horizontal='right')
+                        sheet['F'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['G'+str(row)] = float("%.2f"%float(sheetdata['netamt']))
+                        sheet['G'+str(row)].number_format="0.00"
+                        sheet['G'+str(row)].alignment = Alignment(horizontal='right')
+                        sheet['G'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['H'+str(row)] = float("%.2f"%float(sheetdata['taxamt']))
+                        sheet['H'+str(row)].number_format="0.00"
+                        sheet['H'+str(row)].alignment = Alignment(horizontal='right')
+                        sheet['H'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        sheet['I'+str(row)] = sheetdata['godown']
+                        sheet['I'+str(row)].alignment = Alignment(horizontal='center')
+                        sheet['I'+str(row)].font = Font(name='Liberation Serif', size='12', bold=False)
+                        row = row + 1
+                    output = io.BytesIO()
+                    invoicewb.save(output)
+                    contents = output.getvalue()
+                    output.close()
+                    headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','X-Content-Type-Options':'nosniff', 'Set-Cookie':'fileDownload=true ;path=/ [;HttpOnly]'}
+                    # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true ;path=/'}
+                    return Response(contents, headerlist=list(headerList.items()))
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
