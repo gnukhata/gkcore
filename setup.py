@@ -34,17 +34,17 @@ with open(os.path.join(here, 'README.rst')) as f:
     README = f.read()
 
 requires = [
-    'pyramid',
-    'psycopg2',
-    'WebOb',
-    'waitress',
-    'wsgicors',
-    'sqlalchemy',
-    'monthdelta',
-    'pyjwt',
-    'pycryptodome',
-    'supervisor',
-    'natsort'
+    'pyramid == 1.10.5',
+    'psycopg2 == 2.8.6',
+    'requests == 2.25.0',
+    'sqlalchemy == 1.3.20',
+    'monthdelta == 0.9.1',
+    'pyjwt == 1.7.1',
+    'pycryptodome == 3.9.9',
+    'supervisor == 4.2.1',
+    'natsort == 7.1.0',
+    'waitress == 1.4.4',
+    'pillow == 8.0.1',
 ]
 
 setup(name='gkcore',
