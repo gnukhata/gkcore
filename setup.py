@@ -45,6 +45,8 @@ requires = [
     'natsort == 7.1.0',
     'waitress == 1.4.4',
     'pillow == 8.0.1',
+    'wsgicors == 0.7.0',
+    'openpyxl == 2.5.0',
 ]
 
 setup(name='gkcore',
