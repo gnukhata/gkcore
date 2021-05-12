@@ -134,10 +134,10 @@ class api_unitOfMeasurement(object):
             try:
                 self.con = eng.connect()
                 #there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname,gkdb.unitofmeasurement.c.uomid, gkdb.unitofmeasurement.c.description]).order_by(gkdb.unitofmeasurement.c.unitname))
+                result = self.con.execute(select([gkdb.unitofmeasurement.c.unitname,gkdb.unitofmeasurement.c.uomid, gkdb.unitofmeasurement.c.description, gkdb.unitofmeasurement.c.subunitof, gkdb.unitofmeasurement.c.sysunit]).order_by(gkdb.unitofmeasurement.c.unitname))
                 unitofmeasurements = []
                 for row in result:
-                    unitofmeasurements.append({"uomid":row["uomid"], "unitname":row["unitname"],"description":row['description']})
+                    unitofmeasurements.append({"uomid":row["uomid"],"unitname":row["unitname"],"description":row['description'],"subunitof":row['subunitof'], "sysunit": row['sysunit']})
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult":unitofmeasurements }
             except:
                 return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
