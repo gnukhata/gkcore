@@ -51,7 +51,55 @@ try:
     uomscount = eng.execute(select([func.count(gkdb.unitofmeasurement.c.uomid).label("numofuom")]))
     numofuom = uomscount.fetchone()
     if int(numofuom["numofuom"]) == 0:
-        dictofuqc = {'BAG':'BAG','BGS':'BAGS','BLS':'BAILS','BTL':'BOTTLES','BOU':'BOU','BOX':'BOXES','BKL':'BUCKLES','BLK':'BULK','BUN':'BUNCHES','BDL':'BUNDLES','CAN':'CANS','CTN':'CARTONS','CAS':'CASES','CMS':'CENTIMETER','CHI':'CHEST','CLS':'COILS','COL':'COLLIES','CRI':'CRATES','CCM':'CUBIC CENTIMETER','CIN':'CUBIC INCHES','CBM':'CUBIC METER','CQM':'CUBIC METERS','CYL':'CYLINDER','SDM':'DECAMETER SQUARE','DAY':'DAYS','DOZ':'DOZEN','DRM':'DRUMS','FTS':'FEET','FLK':'FLASKS','GMS':'GRAMS','TON':'GREAT BRITAIN TON','GGR':'GREAT GROSS','GRS':'GROSS','GYD':'GROSS YARDS','HBK':'HABBUCK','HKS':'HANKS','HRS':'HOURS','INC':'INCHES','JTA':'JOTTA','KGS':'KILOGRAMS','KLR':'KILOLITER','KME':'KILOMETERS','LTR':'LITERS','LOG':'LOGS','LOT':'LOTS','MTR':'METER','MTS':'METRIC TON','MGS':'MILLIGRAMS','MLT':'MILLILITER','MMT':'MILLIMETER','NONE':'NOT CHOSEN','NOS':'NUMBERS','ODD':'ODDS','PAC':'PACKS','PAI':'PAILS','PRS':'PAIRS','PLT':'PALLETS','PCS':'PIECES','LBS':'POUNDS','QTL':'QUINTAL','REL':'REELS','ROL':'ROLLS','SET':'SETS','SHT':'SHEETS','SLB':'SLABS','SQF':'SQUARE FEET','SQI':'SQUARE INCHES','SQC':'SQUARE CENTIMETERS','SQM':'SQUARE METER','SQY':'SQUARE YARDS','BLO':'STEEL BLOCKS','TBL':'TABLES','TBS':'TABLETS','TGM':'TEN GROSS','THD':'THOUSANDS','TIN':'TINS','TOL':'TOLA','TRK':'TRUNK','TUB':'TUBES','UNT':'UNITS','UGS':'US GALLONS','VLS':'VIALS','CSK':'WOODEN CASES','YDS':'YARDS'}
+        #dictofuqc = {'BAG':'BAG','BGS':'BAGS','BLS':'BAILS','BTL':'BOTTLES','BOU':'BOU','BOX':'BOXES','BKL':'BUCKLES','BLK':'BULK','BUN':'BUNCHES','BDL':'BUNDLES','CAN':'CANS','CTN':'CARTONS','CAS':'CASES','CMS':'CENTIMETER','CHI':'CHEST','CLS':'COILS','COL':'COLLIES','CRI':'CRATES','CCM':'CUBIC CENTIMETER','CIN':'CUBIC INCHES','CBM':'CUBIC METER','CQM':'CUBIC METERS','CYL':'CYLINDER','SDM':'DECAMETER SQUARE','DAY':'DAYS','DOZ':'DOZEN','DRM':'DRUMS','FTS':'FEET','FLK':'FLASKS','GMS':'GRAMS','TON':'GREAT BRITAIN TON','GGR':'GREAT GROSS','GRS':'GROSS','GYD':'GROSS YARDS','HBK':'HABBUCK','HKS':'HANKS','HRS':'HOURS','INC':'INCHES','JTA':'JOTTA','KGS':'KILOGRAMS','KLR':'KILOLITER','KME':'KILOMETERS','LTR':'LITERS','LOG':'LOGS','LOT':'LOTS','MTR':'METER','MTS':'METRIC TON','MGS':'MILLIGRAMS','MLT':'MILLILITER','MMT':'MILLIMETER','NONE':'NOT CHOSEN','NOS':'NUMBERS','ODD':'ODDS','PAC':'PACKS','PAI':'PAILS','PRS':'PAIRS','PLT':'PALLETS','PCS':'PIECES','LBS':'POUNDS','QTL':'QUINTAL','REL':'REELS','ROL':'ROLLS','SET':'SETS','SHT':'SHEETS','SLB':'SLABS','SQF':'SQUARE FEET','SQI':'SQUARE INCHES','SQC':'SQUARE CENTIMETERS','SQM':'SQUARE METER','SQY':'SQUARE YARDS','BLO':'STEEL BLOCKS','TBL':'TABLES','TBS':'TABLETS','TGM':'TEN GROSS','THD':'THOUSANDS','TIN':'TINS','TOL':'TOLA','TRK':'TRUNK','TUB':'TUBES','UNT':'UNITS','UGS':'US GALLONS','VLS':'VIALS','CSK':'WOODEN CASES','YDS':'YARDS'}
+        # UQC list as per Indian GST law
+        dictofuqc = {
+            'BAG': 'BAGS',
+            'BAL': 'BALE',
+            'BDL': 'BUNDLES',
+            'BKL': 'BUCKLES',
+            'BOU': 'BILLIONS OF UNITS',
+            'BOX': 'BOX',
+            'BTL': 'BOTTLES',
+            'BUN': 'BUNCHES',
+            'CAN': 'CANS',
+            'CBM': 'CUBIC METER',
+            'CCM': 'CUBIC CENTIMETER',
+            'CMS': 'CENTIMETER',
+            'CRT': 'Carat',
+            'CTN': 'CARTONS',
+            'DOZ': 'DOZEN',
+            'DRM': 'DRUM',
+            'GGK': 'GREAT GROSS',
+            'GMS': 'GRAMS',
+            'GRS': 'GROSS',
+            'GYD': 'GROSS YARDS',
+            'KGS': 'KILOGRAMS',
+            'KLR': 'KILOLITER',
+            'KME': 'KILOMETERS',
+            'MLT': 'MILLILITER',
+            'MTR': 'METER',
+            'MTS': 'METRIC TON',
+            'NOS': 'NUMBER',
+            'OTH': 'OTHERS',
+            'PAC': 'PACKS',
+            'PCS': 'PIECES',
+            'PRS': 'PAIRS',
+            'QTL': 'QUINTAL',
+            'ROL': 'ROLLS',
+            'SET': 'SETS',
+            'SQF': 'SQUARE FEET',
+            'SQM': 'SQUARE METER',
+            'SQY': 'SQUARE YARDS',
+            'TBS': 'TABLETS',
+            'TGM': 'TEN GRAMS',
+            'THD': 'THOUSANDS',
+            'TON': 'GREAT BRITAIN TON',
+            'TUB': 'TUBES',
+            'UGS': 'US GALLONS',
+            'UNT': 'UNITS',
+            'YDS': 'YARDS'
+        }
 
         for unit, desc in list(dictofuqc.items()):
             eng.execute("insert into unitofmeasurement(unitname, conversionrate, description, sysunit)values('%s',0.00,'%s',1)"%(unit,desc))
@@ -97,6 +145,8 @@ try:
         eng.execute("insert into state( statecode, statename, abbreviation)values(35, 'Andaman and Nicobar Islands', 'AN')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(36, 'Telangana', 'TS')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(37, 'Andhra Pradesh (New)', 'AP')")
+        eng.execute("insert into state( statecode, statename, abbreviation)values(38, 'Ladakh', 'LA')")
+
         eng.execute("alter table transfernote add recieveddate date")
     eng.execute("alter table delchal add noofpackages int")
     eng.execute("alter table delchal add modeoftransport text")
