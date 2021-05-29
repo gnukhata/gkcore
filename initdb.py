@@ -132,8 +132,8 @@ try:
         eng.execute("insert into state( statecode, statename, abbreviation)values(22, 'Chhattisgarh', 'CG')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(23, 'Madhya Pradesh', 'MP')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(24, 'Gujarat', 'GJ')")
-        eng.execute("insert into state( statecode, statename, abbreviation)values(25, 'Daman and Diu', 'DD')")
-        eng.execute("insert into state( statecode, statename, abbreviation)values(26, 'Dadra and Nagar Haveli', 'DH')")
+        eng.execute("insert into state( statecode, statename, abbreviation)values(25, 'Daman and Diu (Old)', 'DD')")
+        eng.execute("insert into state( statecode, statename, abbreviation)values(26, 'Daman and Diu & Dadra and Nagar Haveli (New)', 'DH')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(27, 'Maharashtra', 'MH')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(28, 'Andhra Pradesh', 'AP')")
         eng.execute("insert into state( statecode, statename, abbreviation)values(29, 'Karnataka', 'KA')")
@@ -148,11 +148,9 @@ try:
         eng.execute("insert into state( statecode, statename, abbreviation)values(38, 'Ladakh', 'LA')")
 
         eng.execute("alter table transfernote add recieveddate date")
-    eng.execute("alter table delchal add noofpackages int")
-    eng.execute("alter table delchal add modeoftransport text")
+        eng.execute("alter table delchal add noofpackages int")
+        eng.execute("alter table delchal add modeoftransport text")
 except:
     pass
-
-
 
 print("secret signature generated")
