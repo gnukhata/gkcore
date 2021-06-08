@@ -62,13 +62,12 @@ class api_log(object):
 				dataset = self.request.json_body
 				dataset["orgcode"] = authDetails["orgcode"]
 				dataset["userid"] = authDetails["userid"]
-				dataset["time"] = datetime.today().strftime('%H:%M:%S')
-				dataset["date"] = datetime.today().strftime('%Y-%m-%d')
+				dataset["time"] = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 				result = self.con.execute(log.insert(),[dataset])
 				return {"gkstatus":enumdict["Success"]}
 			except exc.IntegrityError:
 				return {"gkstatus":enumdict["DuplicateEntry"]}
-			except:
+			except
 				return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
 			finally:
 				self.con.close()
