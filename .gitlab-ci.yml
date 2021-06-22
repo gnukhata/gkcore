@@ -1,0 +1,28 @@
+# TODO
+# - Fix tests
+image: python:3.8-slim-buster
+
+variables:
+  POSTGRES_USER: "gkadmin"
+  POSTGRES_PASSWORD: "gkadmin"
+  POSTGRES_DB: "gkdata"
+  GKCORE_DB_URL: "postgres://gkadmin:gkadmin@postgres:5432/gkdata"
+
+services:
+  - postgres:alpine
+
+stages:
+  - build
+  - test
+
+init:
+  stage: build
+  script:
+    - apt update && apt install -y build-essential libpq-dev
+    - python3 setup.py develop
+    - python3 initdb.py
+
+gkcore-tests:
+  stage: test
+  script:
+    - python3 tests.py
