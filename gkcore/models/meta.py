@@ -32,9 +32,9 @@ Contributors:
 #inspect is another functions from alchemy which helps to find details info on tables or columns.
 
 from sqlalchemy.engine import create_engine
-from sqlalchemy import inspect
 from sqlalchemy.dialects.postgresql.base import PGInspector
 import sys
+import os
 
 from gkcore.models.gkdb import metadata
 def dbconnect():
@@ -49,7 +49,11 @@ def dbconnect():
     if sys.platform.startswith("win"):
         stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
     else:
-        stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
+        # if env variable GKCORE_DB_URL is set, Use it
+        if os.getenv('GKCORE_DB_URL') != None:
+            stmt = os.getenv('GKCORE_DB_URL')
+        else:
+            stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
 #now we will create an engine instance to connect to the given database.
     #Note that the echo parameter set to False means sql queries will not be printed to the termina.
     #Pool size is important to balance between database holding capacity in ram and speed.
