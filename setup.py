@@ -35,7 +35,7 @@ with open(os.path.join(here, 'README.md')) as f:
 
 requires = [
     'pyramid == 1.10.5',
-    'psycopg2 == 2.8.6',
+    'psycopg2 == 2.9.1', # previously 2.8.6
     'requests == 2.25.0',
     'sqlalchemy == 1.3.20',
     'monthdelta == 0.9.1',
@@ -43,7 +43,6 @@ requires = [
     'pycryptodome == 3.9.9',
     'supervisor == 4.2.1',
     'natsort == 7.1.0',
-    #'waitress == 1.4.4',
     'gunicorn==20.1.0',
     'pillow == 8.0.1',
     'wsgicors == 0.7.0',
@@ -61,9 +60,9 @@ setup(name='gkcore',
           "Topic :: Internet :: WWW/HTTP :: WSGI :: Application"
       ],
       keywords="web services",
-      author='',
+      author='GNUKhata Team',
       author_email='',
-      url='',
+      url='https://gnukhata.in',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
