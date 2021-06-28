@@ -26,15 +26,14 @@ Contributors:
 'Prajkta Patkar'<prajkta@riseup.net>
 """
 
-
+import json
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import calculateBalance
-from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, projects, organisation, users
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, organisation, users, customerandsupplier
 from sqlalchemy.sql import select
 from sqlalchemy import func
-import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_ , between
 from pyramid.request import Request
@@ -58,6 +57,28 @@ class api_rollclose(object):
         self.request = Request
         self.request = request
         self.con = Connection
+    @view_config(request_param='task=test',renderer='json')
+    def test(self):
+        self.con = eng.connect()
+        self.res = self.con.execute('select * from customerandsupplier where orgcode = 1')
+        obj =[]
+        for row in self.res:
+            obj.append({"custname":row["custname"],
+                        "custaddr":row["custaddr"],
+                        "custphone":row["custphone"],
+                        "custemail":row["custemail"],
+                        "custfax":row["custfax"],
+                        "custpan":row["custpan"],
+                        "custtan":row["custtan"],
+                        "state":row["state"],
+                        "custdoc":row["custdoc"],
+                        "csflag":row["csflag"],
+                        "gstin":row["gstin"],
+                        "pincode":row["pincode"],
+                        "bankdetails":row['bankdetails'],
+                        "orgcode": row['orgcode'] + 1
+                        })
+        return obj
     @view_config(request_param='task=closebooks',renderer='json')
     def closeBooks(self):
         """
@@ -418,13 +439,13 @@ class api_rollclose(object):
                             newGrpResult = self.con.execute(select([groupsubgroups.c.groupcode]).where(and_(groupsubgroups.c.orgcode == RoOrgCode,groupsubgroups.c.groupname == grpName["groupname"])))
                             grpCD = newGrpResult.fetchone()
                             # This is structure of account data {u'accountname': u'ICICI', u'openingbal': u'550.00', 'orgcode': 31, u'groupcode': u'1180'}
-                            
+
                             dataset = {"accountname":acc["accountname"],"openingbal":closBal,"groupcode":grpCD["groupcode"],"orgcode":RoOrgCode}
                             insACC = self.con.execute(accounts.insert(),[dataset])
                         else:
                             newAcc = newAccData.fetchone()
                             updateData = self.con.execute(accounts.update().where(accounts.c.accountcode==newAcc["accountcode"]).values(openingbal=closBal))
-                            
+
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
@@ -517,9 +538,26 @@ class api_rollclose(object):
                     crs = {sabCode:"%.2f"%(csob)}
                     drs = {osCode:"%.2f"%(csob)}
                     self.con.execute(vouchers.insert(), {"vouchernumber":"1","voucherdate":str(newYearStart),"entrydate":str(newYearStart),"narration":"jv for stock","drs":drs,"crs":crs,"orgcode": newOrgCode,"vouchertype":"journal" } )
-
-
-                ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(orgCode))
+                '''
+                Transfer all contacts from old org to new org
+                '''
+                oldContacts = self.con.execute("select * from customerandsupplier where orgcode = %d"%(orgCode))
+                for row in oldContacts:
+                    self.con.execute(customerandsupplier.insert(), {"custname":row["custname"],
+                                "custaddr":row["custaddr"],
+                                "custphone":row["custphone"],
+                                "custemail":row["custemail"],
+                                "custfax":row["custfax"],
+                                "custpan":row["custpan"],
+                                "custtan":row["custtan"],
+                                "state":row["state"],
+                                "custdoc":row["custdoc"],
+                                "csflag":row["csflag"],
+                                "gstin":row["gstin"],
+                                "pincode":row["pincode"],
+                                "bankdetails":row['bankdetails'],
+                                "orgcode": newOrgCode})
+                # ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(orgCode))
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
             except Exception as E:
@@ -547,8 +585,3 @@ class api_rollclose(object):
         nxtOrgCodeRow = nxtOrgCodeRecord.fetchone()
         nxtOrgcode = nxtOrgCodeRow["orgcode"]
         return nxtOrgcode
-        
-        
-        
-
-        
