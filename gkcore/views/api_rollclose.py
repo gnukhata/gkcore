@@ -31,7 +31,7 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import calculateBalance
-from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, organisation, users, customerandsupplier
+from gkcore.models.gkdb import vouchers, accounts, groupsubgroups, organisation, users, customerandsupplier, product, categorysubcategories, categoryspecs
 from sqlalchemy.sql import select
 from sqlalchemy import func
 from sqlalchemy.engine.base import Connection
@@ -557,6 +557,61 @@ class api_rollclose(object):
                                 "pincode":row["pincode"],
                                 "bankdetails":row['bankdetails'],
                                 "orgcode": newOrgCode})
+                ## Category Migration
+                oldToNewCatCodes = {} # old category code to new category code referrence dict
+                oldCategoryData = self.con.execute("select * from categorysubcategories where orgcode = %d and subcategoryof is null"%(orgCode))
+                oldCategoryRows = oldCategoryData.fetchall()
+                for category in oldCategoryRows:
+                    children = [category]
+                    while len(children):
+                        cat = children.pop()
+                        parentCode = None
+                        if cat["subcategoryof"] in oldToNewCatCodes:
+                            parentCode = oldToNewCatCodes[cat["subcategoryof"]]
+                        self.con.execute(categorysubcategories.insert(), {
+                            "categoryname": cat["categoryname"],
+                            "subcategoryof": parentCode,
+                            "orgcode": newOrgCode
+                        })
+                        newCatCodeData = self.con.execute("select categorycode from categorysubcategories where orgcode = %d and categoryname = '%s'"%(newOrgCode, cat["categoryname"]))
+                        newCatCodeRow = newCatCodeData.fetchone()
+                        newCatCode = newCatCodeRow["categorycode"]
+                        oldToNewCatCodes[cat["categorycode"]] = newCatCode
+                        grandchildrenData = self.con.execute("select * from categorysubcategories where orgcode = %d and subcategoryof = %d"%(orgCode, cat["categorycode"]))
+                        if grandchildrenData.rowcount > 0:
+                            children.extend(grandchildrenData.fetchall())
+                oldCategorySpecData = self.con.execute("select * from categoryspecs where orgcode = %d"%(orgCode))
+                oldCategorySpecRows = oldCategorySpecData.fetchall()
+                for categorySpec in oldCategorySpecRows:
+                    self.con.execute(categoryspecs.insert(), {
+                        'attrname': categorySpec['attrname'],
+                        'attrtype': categorySpec['attrtype'],
+                        'productcount': categorySpec['productcount'],
+                        'categorycode': oldToNewCatCodes[categorySpec['categorycode']],
+                        'orgcode': newOrgCode,
+                    })
+
+                ## Product/ Service Migration
+                oldProductData = self.con.execute("select * from product where orgcode = %d"%(orgCode))
+                oldProductRows = oldProductData.fetchall()
+                for prodRow in oldProductRows:
+                    categoryCode = None
+                    if prodRow["categorycode"] is not None and prodRow["categorycode"] in oldToNewCatCodes:
+                        categoryCode = oldToNewCatCodes[prodRow["categorycode"]]
+                    self.con.execute(product.insert(), {
+                        "gscode": prodRow["gscode"],
+                        "gsflag": prodRow["gsflag"],
+                        "percentdiscount": prodRow["percentdiscount"],
+                        "amountdiscount": prodRow["amountdiscount"],
+                        "productdesc": prodRow["productdesc"],
+                        "openingstock": prodRow["openingstock"], # Needs to be modified
+                        "specs": prodRow["specs"],
+                        "categorycode": categoryCode,
+                        "uomid": prodRow["uomid"],
+                        "prodsp": prodRow["prodsp"],
+                        "prodmrp": prodRow["prodmrp"],
+                        "orgcode": newOrgCode
+                    })
                 # ro = self.con.execute("update organisation set roflag =1 where orgcode = %d"%(orgCode))
                 self.con.close()
                 return {"gkstatus": enumdict["Success"]}
