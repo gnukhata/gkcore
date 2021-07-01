@@ -40,6 +40,7 @@ from gkcore.models.gkdb import (
     categoryspecs,
     godown,
     goprod,
+    usergodown,
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
@@ -1385,6 +1386,19 @@ class api_rollclose(object):
                             "goid": row["goid"],
                             "productcode": row["productcode"],
                             "goopeningstock": row["goopeningstock"],
+                            "orgcode": newOrgCode,
+                        },
+                    )
+                # User Godowns
+                oldUserGodowns = self.con.execute(
+                    "select * from usergodown where orgcode = %d" % (orgCode)
+                )
+                for row in oldUserGodowns:
+                    self.con.execute(
+                        usergodown.insert(),
+                        {
+                            "goid": row["goid"],
+                            "userid": row["userid"],
                             "orgcode": newOrgCode,
                         },
                     )
