@@ -32,16 +32,19 @@ from sqlalchemy.engine.base import Connection
 from collections import defaultdict
 from sqlalchemy.sql import select, and_
 from pyramid.request import Request
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults, view_config
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import (invoice,
-                                customerandsupplier,
-                                state,
-                                product,
-                                drcr,
-                                unitofmeasurement)
+from gkcore.models.gkdb import (
+    invoice,
+    customerandsupplier,
+    state,
+    product,
+    drcr,
+    unitofmeasurement,
+)
 from ast import literal_eval
+
 
 def taxable_value(inv, productcode, con, drcr=False):
     """
@@ -52,8 +55,7 @@ def taxable_value(inv, productcode, con, drcr=False):
     """
 
     rate, qty = list(inv["contents"][productcode].items())[0]
-    query = (select([product.c.gsflag])
-             .where(product.c.productcode == productcode))
+    query = select([product.c.gsflag]).where(product.c.productcode == productcode)
     gsflag = con.execute(query).fetchone()[0]
     if gsflag == 19:
         qty = 1
@@ -84,17 +86,16 @@ def cess_amount(inv, productcode, con, drcr=False):
 
         return float(cess_amount)
 
+
 def state_name_code(con, statename=None, statecode=None):
     """
     Returns statecode if statename is given
     Returns statename if statecode is given
     """
     if statename:
-        query = (select([state.c.statecode])
-                 .where(state.c.statename == statename))
+        query = select([state.c.statecode]).where(state.c.statename == statename)
     else:
-        query = (select([state.c.statename])
-                 .where(state.c.statecode == statecode))
+        query = select([state.c.statename]).where(state.c.statecode == statecode)
     result = con.execute(query).fetchone()[0]
     return result
 
@@ -139,6 +140,7 @@ def b2b_r1(invoices, con):
     """
 
     try:
+
         def b2b_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if inv["gstin"].get(str(ts_code)):
@@ -188,6 +190,7 @@ def b2cl_r1(invoices, con):
     """
 
     try:
+
         def b2cl_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
 
@@ -239,6 +242,7 @@ def b2cs_r1(invoices, con):
     """
 
     try:
+
         def b2cs_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if inv["gstin"].get(str(ts_code)):
@@ -270,8 +274,10 @@ def b2cs_r1(invoices, con):
                 prod_row["cess"] = cess_amount(inv, prod, con) if cess != "" else 0
 
                 for existing in b2cs:
-                    if (existing["place_of_supply"] == prod_row["place_of_supply"]
-                            and existing["rate"] == prod_row["rate"]):
+                    if (
+                        existing["place_of_supply"] == prod_row["place_of_supply"]
+                        and existing["rate"] == prod_row["rate"]
+                    ):
 
                         existing["taxable_value"] += prod_row["taxable_value"]
                         existing["cess"] += prod_row["cess"]
@@ -298,6 +304,7 @@ def cdnr_r1(drcr_all, con):
     """
 
     try:
+
         def cdnr_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if inv["gstin"].get(str(ts_code)):
@@ -397,37 +404,65 @@ def cdnur_r1(drcr_all, con):
     except:
         return {"status": 3}
 
-def hsn_r1(orgcode,start,end,con):
-    
-    """
-Retrieve all products data including product code,product description , hsn code, UOM.
-Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
 
-Store this data in following formats:
-{'SGSTamt': '40.50', 'uqc': u'PCS', 'qty': '11.00', 'prodctname': u'Madhura Sugar', 'IGSTamt': '9.90', 'hsnsac': u'45678', 'taxableamt': '505.00', 'totalvalue': '541.10', 'CESSamt': '10.10'},................, {'grand_Value': '6089.20', 'grand_CESSValue': '68.20', 'grand_CGSTValue': '158.00', 'hsnNo': 2, 'grand_ttl_TaxableValue': '6260.00', 'grand_IGSTValue': '69.80'}]
-"""
+def hsn_r1(orgcode, start, end, con):
+
+    """
+    Retrieve all products data including product code,product description , hsn code, UOM.
+    Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
+
+    Store this data in following formats:
+    {'SGSTamt': '40.50', 'uqc': u'PCS', 'qty': '11.00', 'prodctname': u'Madhura Sugar', 'IGSTamt': '9.90', 'hsnsac': u'45678', 'taxableamt': '505.00', 'totalvalue': '541.10', 'CESSamt': '10.10'},................, {'grand_Value': '6089.20', 'grand_CESSValue': '68.20', 'grand_CGSTValue': '158.00', 'hsnNo': 2, 'grand_ttl_TaxableValue': '6260.00', 'grand_IGSTValue': '69.80'}]"""
     try:
         orgcode = orgcode
         start = start
         end = end
         Final = []
 
-        prodData = con.execute(select([product.c.productcode,product.c.gscode,product.c.productdesc,product.c.gsflag,product.c.uomid]).where(product.c.orgcode==orgcode))
+        prodData = con.execute(
+            select(
+                [
+                    product.c.productcode,
+                    product.c.gscode,
+                    product.c.productdesc,
+                    product.c.gsflag,
+                    product.c.uomid,
+                ]
+            ).where(product.c.orgcode == orgcode)
+        )
         prodData_result = prodData.fetchall()
         for products in prodData_result:
-            prodHSN = {"hsnsac":products["gscode"],"prodctname":products["productdesc"]}
-            invData = con.execute("select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"%(products["productcode"],products["productcode"],products["productcode"],products["productcode"],products["productcode"],int(orgcode),15,7,9,str(start),str(end)))
+            prodHSN = {
+                "hsnsac": products["gscode"],
+                "prodctname": products["productdesc"],
+            }
+            invData = con.execute(
+                "select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"
+                % (
+                    products["productcode"],
+                    products["productcode"],
+                    products["productcode"],
+                    products["productcode"],
+                    products["productcode"],
+                    int(orgcode),
+                    15,
+                    7,
+                    9,
+                    str(start),
+                    str(end),
+                )
+            )
             invoice_Data = invData.fetchall()
 
             ttl_Value = 0.00
             ttl_TaxableValue = 0.00
-            ttl_CGSTval =0.00
+            ttl_CGSTval = 0.00
             ttl_IGSTval = 0.00
             ttl_CESSval = 0.00
             ttl_qty = 0.00
 
             if invoice_Data != None and len(invoice_Data) > 0:
-                for inv in invoice_Data:  
+                for inv in invoice_Data:
                     taxable_Value = 0.00
                     cn = literal_eval(inv["content"])
                     ds = float(literal_eval(inv["disc"]))
@@ -436,10 +471,14 @@ Store this data in following formats:
                     cs = float(literal_eval(inv["cess"]))
                     # check condition for product and service
                     if products["gsflag"] == 7:
-                        qty = float(cn["%.2f"%float(ppu)])
+                        qty = float(cn["%.2f" % float(ppu)])
                         ttl_qty += qty
                         taxable_Value = (ppu * qty) - ds
-                        um = con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(products["uomid"])))
+                        um = con.execute(
+                            select([unitofmeasurement.c.unitname]).where(
+                                unitofmeasurement.c.uomid == int(products["uomid"])
+                            )
+                        )
                         unitrow = um.fetchone()
                         prodHSN["uqc"] = unitrow["unitname"]
                     else:
@@ -449,44 +488,50 @@ Store this data in following formats:
 
                     # calculate state level and center level GST
                     if inv["sourcestate"] == inv["taxstate"]:
-                        cgst = tx/2.00
-                        cgst_amt = (taxable_Value * (cgst/100.00))
+                        cgst = tx / 2.00
+                        cgst_amt = taxable_Value * (cgst / 100.00)
                         ttl_CGSTval += cgst_amt
                     else:
-                        igst_amt = (taxable_Value *(tx/100.00)) 
+                        igst_amt = taxable_Value * (tx / 100.00)
                         ttl_IGSTval += igst_amt
 
-                    cess_amount = (taxable_Value *(cs/100.00))
+                    cess_amount = taxable_Value * (cs / 100.00)
                     ttl_CESSval += cess_amount
 
-                    ttl_Value = float(taxable_Value) + float(2*(ttl_CGSTval)) + float(ttl_CESSval)
+                    ttl_Value = (
+                        float(taxable_Value)
+                        + float(2 * (ttl_CGSTval))
+                        + float(ttl_CESSval)
+                    )
 
-                prodHSN["qty"] = "%.2f"%float(ttl_qty)
-                prodHSN["totalvalue"] =  "%.2f"%float(float(ttl_TaxableValue) + (2*ttl_CGSTval) + float(ttl_IGSTval) + float(ttl_CESSval))
-                prodHSN["taxableamt"] = "%.2f"%float(ttl_TaxableValue)
-                prodHSN["SGSTamt"] = "%.2f"%float(ttl_CGSTval)
-                prodHSN["IGSTamt"] =  "%.2f"%float(ttl_IGSTval)
-                prodHSN["CESSamt"] = "%.2f"%float(ttl_CESSval)
+                prodHSN["qty"] = "%.2f" % float(ttl_qty)
+                prodHSN["totalvalue"] = "%.2f" % float(
+                    float(ttl_TaxableValue)
+                    + (2 * ttl_CGSTval)
+                    + float(ttl_IGSTval)
+                    + float(ttl_CESSval)
+                )
+                prodHSN["taxableamt"] = "%.2f" % float(ttl_TaxableValue)
+                prodHSN["SGSTamt"] = "%.2f" % float(ttl_CGSTval)
+                prodHSN["IGSTamt"] = "%.2f" % float(ttl_IGSTval)
+                prodHSN["CESSamt"] = "%.2f" % float(ttl_CESSval)
                 Final.append(prodHSN)
-       
+
         return {"status": 0, "data": Final}
     except:
         return {"status": 3}
 
-     
 
-@view_defaults(route_name='gstreturns')
+@view_defaults(route_name="gstreturns")
 class GstReturn(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
 
-    @view_config(request_method='GET',
-                 request_param="type=r1",
-                 renderer='json')
+    @view_config(request_method="GET", request_param="type=r1", renderer="json")
     def r1(self):
-        
+
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
@@ -499,7 +544,7 @@ class GstReturn(object):
             products will be added)
             Product 2 will have a separate entry
         """
-        
+
         token = self.request.headers.get("gktoken", None)
         print("GST return")
         if token == None:
@@ -507,7 +552,7 @@ class GstReturn(object):
 
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return {"gkstatus":  enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         try:
             self.con = eng.connect()
@@ -517,38 +562,37 @@ class GstReturn(object):
             orgcode = authDetails["orgcode"]
 
             # invoices
-            query = (select([invoice,
-                            customerandsupplier.c.gstin,
-                            customerandsupplier.c.custname])
-                     .where(
-                         and_(
-                             invoice.c.invoicedate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             invoice.c.taxflag == 7,
-                             invoice.c.orgcode == orgcode,
-                             invoice.c.custid == customerandsupplier.c.custid,
-                         )
-                     ))
+            query = select(
+                [invoice, customerandsupplier.c.gstin, customerandsupplier.c.custname]
+            ).where(
+                and_(
+                    invoice.c.invoicedate.between(
+                        start_period.strftime("%Y-%m-%d"),
+                        end_period.strftime("%Y-%m-%d"),
+                    ),
+                    invoice.c.inoutflag == 15,
+                    invoice.c.taxflag == 7,
+                    invoice.c.orgcode == orgcode,
+                    invoice.c.custid == customerandsupplier.c.custid,
+                )
+            )
             invoices = self.con.execute(query).fetchall()
 
             # debit/credit notes
-            query1 = (select([drcr, invoice, customerandsupplier])
-                     .select_from(
-                        drcr.join(invoice).join(customerandsupplier)
-                     )
-                     .where(
-                         and_(
-                             drcr.c.drcrdate.between(
-                                 start_period.strftime("%Y-%m-%d"),
-                                 end_period.strftime("%Y-%m-%d")
-                             ),
-                             invoice.c.inoutflag == 15,
-                             drcr.c.orgcode == orgcode,
-                         )
-                     ))
+            query1 = (
+                select([drcr, invoice, customerandsupplier])
+                .select_from(drcr.join(invoice).join(customerandsupplier))
+                .where(
+                    and_(
+                        drcr.c.drcrdate.between(
+                            start_period.strftime("%Y-%m-%d"),
+                            end_period.strftime("%Y-%m-%d"),
+                        ),
+                        invoice.c.inoutflag == 15,
+                        drcr.c.orgcode == orgcode,
+                    )
+                )
+            )
 
             drcrs_all = self.con.execute(query1).fetchall()
 
@@ -558,11 +602,12 @@ class GstReturn(object):
             gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
             gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
             gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
-            gkdata["hsn1"] = hsn_r1(orgcode,dataset["start"],dataset["end"], self.con).get("data", [])
+            gkdata["hsn1"] = hsn_r1(
+                orgcode, dataset["start"], dataset["end"], self.con
+            ).get("data", [])
 
             self.con.close()
             return {"gkresult": 0, "gkdata": gkdata}
-
 
         except:
             return {"status": 3}

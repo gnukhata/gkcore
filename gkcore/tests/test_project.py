@@ -25,58 +25,103 @@ Contributors:
 
 import requests, json
 
+
 class TestProject:
-	@classmethod
-	def setup_class(self):
-		orgdata = {"orgdetails":{'orgname': 'Test Organisation', 'yearend': '2016-03-31', 'yearstart': '2015-04-01', 'orgtype': 'Profit Making', 'invflag': 1}, "userdetails":{"username":"admin", "userpassword":"admin","userquestion":"who am i?", "useranswer":"hacker"}}
-		result = requests.post("http://127.0.0.1:6543/organisations",data=json.dumps(orgdata))
-		self.key = result.json()["token"]
-		self.header={"gktoken":self.key}
+    @classmethod
+    def setup_class(self):
+        orgdata = {
+            "orgdetails": {
+                "orgname": "Test Organisation",
+                "yearend": "2016-03-31",
+                "yearstart": "2015-04-01",
+                "orgtype": "Profit Making",
+                "invflag": 1,
+            },
+            "userdetails": {
+                "username": "admin",
+                "userpassword": "admin",
+                "userquestion": "who am i?",
+                "useranswer": "hacker",
+            },
+        }
+        result = requests.post(
+            "http://127.0.0.1:6543/organisations", data=json.dumps(orgdata)
+        )
+        self.key = result.json()["token"]
+        self.header = {"gktoken": self.key}
 
-	@classmethod
-	def teardown_class(self):
-		result = requests.delete("http://127.0.0.1:6543/organisations", headers=self.header)
+    @classmethod
+    def teardown_class(self):
+        result = requests.delete(
+            "http://127.0.0.1:6543/organisations", headers=self.header
+        )
 
-	def setup(self):
-		gkdata = {"projectname":"dff","sanctionedamount":float(5000)}
-		result = requests.post("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
-		result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
-		for record in result.json()["gkresult"]:
-			if record["projectname"] == "dff":
-				self.demo_projectcode = record["projectcode"]
-				break
+    def setup(self):
+        gkdata = {"projectname": "dff", "sanctionedamount": float(5000)}
+        result = requests.post(
+            "http://127.0.0.1:6543/projects",
+            data=json.dumps(gkdata),
+            headers=self.header,
+        )
+        result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
+        for record in result.json()["gkresult"]:
+            if record["projectname"] == "dff":
+                self.demo_projectcode = record["projectcode"]
+                break
 
-	def teardown(self):
-		gkdata = {"projectcode":self.demo_projectcode}
-		result = requests.delete("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
+    def teardown(self):
+        gkdata = {"projectcode": self.demo_projectcode}
+        result = requests.delete(
+            "http://127.0.0.1:6543/projects",
+            data=json.dumps(gkdata),
+            headers=self.header,
+        )
 
-	def test_create_project(self):
-		gkdata = {"projectname":"freedomfoundation","sanctionedamount":float(10000)}
-		result = requests.post("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+    def test_create_project(self):
+        gkdata = {"projectname": "freedomfoundation", "sanctionedamount": float(10000)}
+        result = requests.post(
+            "http://127.0.0.1:6543/projects",
+            data=json.dumps(gkdata),
+            headers=self.header,
+        )
+        assert result.json()["gkstatus"] == 0
 
-	def test_delete_project(self):
-		result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
-		for record in result.json()["gkresult"]:
-			if record["projectname"] == "freedomfoundation":
-				projectcode = record["projectcode"]
-				break
-		gkdata = {"projectcode":projectcode}
-		result = requests.delete("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+    def test_delete_project(self):
+        result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
+        for record in result.json()["gkresult"]:
+            if record["projectname"] == "freedomfoundation":
+                projectcode = record["projectcode"]
+                break
+        gkdata = {"projectcode": projectcode}
+        result = requests.delete(
+            "http://127.0.0.1:6543/projects",
+            data=json.dumps(gkdata),
+            headers=self.header,
+        )
+        assert result.json()["gkstatus"] == 0
 
-	def test_update_project(self):
-		gkdata = {"projectcode":self.demo_projectcode,"projectname":"dff_updated","sanctionedamount":float(5555)}
-		result = requests.put("http://127.0.0.1:6543/projects",data=json.dumps(gkdata), headers=self.header)
-		assert result.json()["gkstatus"] == 0
+    def test_update_project(self):
+        gkdata = {
+            "projectcode": self.demo_projectcode,
+            "projectname": "dff_updated",
+            "sanctionedamount": float(5555),
+        }
+        result = requests.put(
+            "http://127.0.0.1:6543/projects",
+            data=json.dumps(gkdata),
+            headers=self.header,
+        )
+        assert result.json()["gkstatus"] == 0
 
-	def test_get_all_projects(self):
-		result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
-		assert result.json()["gkstatus"] == 0
+    def test_get_all_projects(self):
+        result = requests.get("http://127.0.0.1:6543/projects", headers=self.header)
+        assert result.json()["gkstatus"] == 0
 
-	def test_get_single_project(self):
-		code = self.demo_projectcode
-		result = requests.get("http://127.0.0.1:6543/project/%s"%(code), headers=self.header)
-		data = result.json()["gkresult"]
-		assert data["projectname"] == "dff"
-		"""and int(data["sanctionedamount"]) == 5000"""
+    def test_get_single_project(self):
+        code = self.demo_projectcode
+        result = requests.get(
+            "http://127.0.0.1:6543/project/%s" % (code), headers=self.header
+        )
+        data = result.json()["gkresult"]
+        assert data["projectname"] == "dff"
+        """and int(data["sanctionedamount"]) == 5000"""

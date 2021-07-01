@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs 
@@ -41,62 +40,70 @@ from gkcore.views import *
 from webob import request
 from webob.request import Request
 from wsgicors import CORS
+
 try:
     eng = dbconnect()
     resultset = eng.execute("select * from signature")
     row = resultset.fetchone()
     secret = row[0]
-    #print secret
+    # print secret
 except:
     secret = ""
 
-enumdict = {"Success":0,"DuplicateEntry":1,"UnauthorisedAccess":2,"ConnectionFailed":3,"BadPrivilege":4, "ActionDisallowed":5}
+enumdict = {
+    "Success": 0,
+    "DuplicateEntry": 1,
+    "UnauthorisedAccess": 2,
+    "ConnectionFailed": 3,
+    "BadPrivilege": 4,
+    "ActionDisallowed": 5,
+}
 
-
-                        
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
-    config.add_route("organisation","/organisation")
-    config.add_route("invoice","/invoice")
-    config.add_route("budget","/budget")
-    config.add_route("organisations","/organisations")
-    config.add_route("categoryspecs","/categoryspecs")
-    config.add_route("orgyears","/orgyears/{orgname}/{orgtype}")
-    config.add_route("transaction","/transaction")
-    config.add_route("users",'/users')
-    config.add_route('user','/user')
-    config.add_route('bankrecon','/bankrecon')
-    config.add_route("accounts",'/accounts')
-    config.add_route("account",'/account/{accountcode}')
-    config.add_route("projects",'/projects')
-    config.add_route("project",'/project/{projectcode}')
-    config.add_route("customersupplier",'/customersupplier')
-    config.add_route("unitofmeasurement","/unitofmeasurement")
-    config.add_route("accountsbyrule",'/accountsbyrule')
-    config.add_route("login",'/login')
-    config.add_route("groupallsubgroup","/groupallsubgroup/{groupcode}")
-    config.add_route("groupsubgroup","/groupsubgroup/{groupcode}")
-    config.add_route("groupsubgroups","/groupsubgroups")
-    config.add_route("groupDetails","/groupDetails/{groupcode}")
-    config.add_route("report","/report")
-    config.add_route("rollclose","/rollclose")
-    config.add_route("forgotpassword","/forgotpassword")
-    config.add_route("categories","/categories")
-    config.add_route("products","/products")
-    config.add_route("godown","/godown")
-    config.add_route("delchal","/delchal")
-    config.add_route("purchaseorder","/purchaseorder")
-    config.add_route("transfernote","/transfernote")
-    config.add_route("discrepancynote","/discrepancynote")
-    config.add_route("tax","/tax")
+    config.add_route("organisation", "/organisation")
+    config.add_route("invoice", "/invoice")
+    config.add_route("budget", "/budget")
+    config.add_route("organisations", "/organisations")
+    config.add_route("categoryspecs", "/categoryspecs")
+    config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")
+    config.add_route("transaction", "/transaction")
+    config.add_route("users", "/users")
+    config.add_route("user", "/user")
+    config.add_route("bankrecon", "/bankrecon")
+    config.add_route("accounts", "/accounts")
+    config.add_route("account", "/account/{accountcode}")
+    config.add_route("projects", "/projects")
+    config.add_route("project", "/project/{projectcode}")
+    config.add_route("customersupplier", "/customersupplier")
+    config.add_route("unitofmeasurement", "/unitofmeasurement")
+    config.add_route("accountsbyrule", "/accountsbyrule")
+    config.add_route("login", "/login")
+    config.add_route("groupallsubgroup", "/groupallsubgroup/{groupcode}")
+    config.add_route("groupsubgroup", "/groupsubgroup/{groupcode}")
+    config.add_route("groupsubgroups", "/groupsubgroups")
+    config.add_route("groupDetails", "/groupDetails/{groupcode}")
+    config.add_route("report", "/report")
+    config.add_route("rollclose", "/rollclose")
+    config.add_route("forgotpassword", "/forgotpassword")
+    config.add_route("categories", "/categories")
+    config.add_route("products", "/products")
+    config.add_route("godown", "/godown")
+    config.add_route("delchal", "/delchal")
+    config.add_route("purchaseorder", "/purchaseorder")
+    config.add_route("transfernote", "/transfernote")
+    config.add_route("discrepancynote", "/discrepancynote")
+    config.add_route("tax", "/tax")
     config.add_route("log", "/log")
     config.add_route("rejectionnote", "/rejectionnote")
-    config.add_route('billwise','/billwise')
-    config.add_route("state","/state")
-    config.add_route("drcrnote","/drcrnote")
+    config.add_route("billwise", "/billwise")
+    config.add_route("state", "/state")
+    config.add_route("drcrnote", "/drcrnote")
     config.add_route("gstreturns", "/gstreturns")
-    config.add_route("dashboard", "/dashboard")	
+    config.add_route("dashboard", "/dashboard")
     config.scan("gkcore.views")
 
-    return CORS(config.make_wsgi_app(),headers="*",methods="*",maxage="180",origin="*")
+    return CORS(
+        config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
+    )

@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pvt. Ltd.
@@ -27,26 +26,28 @@ Contributors:
 """
 
 
-#login function
+# login function
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_ , func
+from sqlalchemy import and_, func
 from pyramid.request import Request
 from pyramid.response import Response
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
-from gkcore.models.meta import inventoryMigration,addFields
+from gkcore.models.meta import inventoryMigration, addFields
 import jwt
 import gkcore
-con= Connection
 
-@view_config(route_name='login',request_method='POST',renderer='json')
+con = Connection
+
+
+@view_config(route_name="login", request_method="POST", renderer="json")
 def gkLogin(request):
-    
+
     """
     purpose: take org code, username and password and authenticate the user.
     Return true if username and password matches or false otherwise.
@@ -57,78 +58,109 @@ def gkLogin(request):
     Else the function will not issue any token.
     """
     try:
-        con= eng.connect()
+        con = eng.connect()
         try:
             con.execute(select([gkdb.organisation.c.invflag]))
         except:
-            inventoryMigration(con,eng)
+            inventoryMigration(con, eng)
         try:
-            con.execute(select([gkdb.delchal.c.modeoftransport,gkdb.delchal.c.noofpackages]))
+            con.execute(
+                select([gkdb.delchal.c.modeoftransport, gkdb.delchal.c.noofpackages])
+            )
             con.execute(select([gkdb.transfernote.c.recieveddate]))
         except:
-            addFields(con,eng)
+            addFields(con, eng)
         dataset = request.json_body
-        result = con.execute(select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(and_(gkdb.users.c.username==dataset["username"], gkdb.users.c.userpassword== dataset["userpassword"], gkdb.users.c.orgcode==dataset["orgcode"])) )
+        result = con.execute(
+            select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(
+                and_(
+                    gkdb.users.c.username == dataset["username"],
+                    gkdb.users.c.userpassword == dataset["userpassword"],
+                    gkdb.users.c.orgcode == dataset["orgcode"],
+                )
+            )
+        )
         if result.rowcount == 1:
             record = result.fetchone()
             result = con.execute(select([gkdb.signature]))
             sign = result.fetchone()
             if sign == None:
                 key = RSA.generate(2560)
-                privatekey = key.exportKey('PEM')
-                sig = {"secretcode":privatekey}
+                privatekey = key.exportKey("PEM")
+                sig = {"secretcode": privatekey}
                 gkcore.secret = privatekey
-                result = con.execute(gkdb.signature.insert(),[sig])
+                result = con.execute(gkdb.signature.insert(), [sig])
             elif len(sign["secretcode"]) <= 20:
                 result = con.execute(gkdb.signature.delete())
                 if result.rowcount == 1:
                     key = RSA.generate(2560)
-                    privatekey = key.exportKey('PEM')
-                    sig = {"secretcode":privatekey}
+                    privatekey = key.exportKey("PEM")
+                    sig = {"secretcode": privatekey}
                     gkcore.secret = privatekey
-                    result = con.execute(gkdb.signature.insert(),[sig])
-            token = jwt.encode({"orgcode":dataset["orgcode"],"userid":record["userid"]},gkcore.secret,algorithm='HS256')
+                    result = con.execute(gkdb.signature.insert(), [sig])
+            token = jwt.encode(
+                {"orgcode": dataset["orgcode"], "userid": record["userid"]},
+                gkcore.secret,
+                algorithm="HS256",
+            )
             token = token.decode("ascii")
-            return {"gkstatus":enumdict["Success"],"token":token }
+            return {"gkstatus": enumdict["Success"], "token": token}
         else:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
     except:
-        return {"gkstatus":enumdict["ConnectionFailed"]}
+        return {"gkstatus": enumdict["ConnectionFailed"]}
     finally:
-            con.close()
+        con.close()
 
-@view_config(route_name='login',request_method='GET',renderer='json')
+
+@view_config(route_name="login", request_method="GET", renderer="json")
 def getuserorgdetails(request):
     try:
-        token =request.headers["gktoken"]
+        token = request.headers["gktoken"]
     except:
-        return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+        return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
     authDetails = authCheck(token)
     if authDetails["auth"] == False:
-        return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+        return {"gkstatus": enumdict["UnauthorisedAccess"]}
     else:
         try:
             con = eng.connect()
-            user=con.execute(select([gkdb.users.c.userrole]).where(gkdb.users.c.userid == authDetails["userid"] ))
+            user = con.execute(
+                select([gkdb.users.c.userrole]).where(
+                    gkdb.users.c.userid == authDetails["userid"]
+                )
+            )
             row = user.fetchone()
-            flagsdata=con.execute(select([gkdb.organisation.c.booksclosedflag,gkdb.organisation.c.roflag]).where(gkdb.organisation.c.orgcode == authDetails["orgcode"] ))
+            flagsdata = con.execute(
+                select(
+                    [gkdb.organisation.c.booksclosedflag, gkdb.organisation.c.roflag]
+                ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
+            )
             flags = flagsdata.fetchone()
-            return {"gkstatus": gkcore.enumdict["Success"], "gkresult":{"userrole":int(row["userrole"]),"booksclosedflag":int(flags["booksclosedflag"]),"roflag":int(flags["roflag"])}}
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": {
+                    "userrole": int(row["userrole"]),
+                    "booksclosedflag": int(flags["booksclosedflag"]),
+                    "roflag": int(flags["roflag"]),
+                },
+            }
         except:
-            return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
         finally:
-            con.close();
+            con.close()
+
 
 def authCheck(token):
     """
     Purpose: on every request check if userid and orgcode are valid combinations
     """
     try:
-        tokendict = jwt.decode(token,gkcore.secret,algorithms=['HS256'])
+        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
         tokendict["auth"] = True
-        tokendict["orgcode"]=int(tokendict["orgcode"])
-        tokendict["userid"]=int(tokendict["userid"])
+        tokendict["orgcode"] = int(tokendict["orgcode"])
+        tokendict["userid"] = int(tokendict["userid"])
         return tokendict
     except:
-        tokendict = {"auth":False}
+        tokendict = {"auth": False}
         return tokendict

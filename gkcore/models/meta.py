@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
 Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs 
@@ -27,9 +26,9 @@ Contributors:
 "Prajkta Patkar"<prajkta.patkar007@gmail.com>
 """
 
-#this module contains the functions and objects needed for database objects configuration.
-#Metadata is one such object which helps to get all database related info.
-#inspect is another functions from alchemy which helps to find details info on tables or columns.
+# this module contains the functions and objects needed for database objects configuration.
+# Metadata is one such object which helps to get all database related info.
+# inspect is another functions from alchemy which helps to find details info on tables or columns.
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.dialects.postgresql.base import PGInspector
@@ -37,6 +36,8 @@ import sys
 import os
 
 from gkcore.models.gkdb import metadata
+
+
 def dbconnect():
     """
     purpose:
@@ -50,32 +51,39 @@ def dbconnect():
         stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
     else:
         # if env variable GKCORE_DB_URL is set, Use it
-        if os.getenv('GKCORE_DB_URL') != None:
-            stmt = os.getenv('GKCORE_DB_URL')
+        if os.getenv("GKCORE_DB_URL") != None:
+            stmt = os.getenv("GKCORE_DB_URL")
         else:
-            stmt = 'postgresql+psycopg2:///gkdata?host=/var/run/postgresql'
-#now we will create an engine instance to connect to the given database.
-    #Note that the echo parameter set to False means sql queries will not be printed to the termina.
-    #Pool size is important to balance between database holding capacity in ram and speed.
+            stmt = "postgresql+psycopg2:///gkdata?host=/var/run/postgresql"
+    # now we will create an engine instance to connect to the given database.
+    # Note that the echo parameter set to False means sql queries will not be printed to the termina.
+    # Pool size is important to balance between database holding capacity in ram and speed.
 
-    engine = create_engine(stmt, echo=False, pool_size = 15, max_overflow=100)
+    engine = create_engine(stmt, echo=False, pool_size=15, max_overflow=100)
     return engine
 
-def inventoryMigration(con,eng):
+
+def inventoryMigration(con, eng):
     metadata.create_all(eng)
-    con.execute("alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)")
-    con.execute("alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)")
+    con.execute(
+        "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
+    )
+    con.execute(
+        "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
+    )
     con.execute("alter table organisation add column invflag Integer default 0 ")
     con.execute("alter table vouchers add column invid Integer")
-    con.execute("alter table vouchers add foreign key (invid) references invoice(invid)")
+    con.execute(
+        "alter table vouchers add foreign key (invid) references invoice(invid)"
+    )
     try:
         con.execute("select themename from users")
     except:
         con.execute("alter table users add column themename text default 'Default'")
     return 0
-    
-    
-def addFields(con,eng):
+
+
+def addFields(con, eng):
     metadata.create_all(eng)
     try:
         con.execute("select noofpackages,modeoftransport from delchal")
@@ -85,6 +93,7 @@ def addFields(con,eng):
         con.execute("alter table delchal add noofpackages int")
         con.execute("alter table delchal add modeoftransport text")
     return 0
+
 
 def columnExists(tableName, columnName):
     """
@@ -102,8 +111,8 @@ def columnExists(tableName, columnName):
         if col["name"] in columnName:
             return True
     return False
-    
-        
+
+
 def tableExists(tblName):
     """
     purpose:
@@ -113,6 +122,7 @@ def tableExists(tblName):
     gkInspect = PGInspector(dbconnect())
     tblList = gkInspect.get_table_names()
     return tblName in tblList
+
 
 def getOnDelete(tblName, keyName):
     """

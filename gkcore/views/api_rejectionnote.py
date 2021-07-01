@@ -1,4 +1,3 @@
-
 """
 Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   This file is part of GNUKhata:A modular,robust and Free Accounting System.
@@ -25,14 +24,26 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import rejectionnote, stock, customerandsupplier, goprod, users, godown, delchal, invoice, product, unitofmeasurement, dcinv
+from gkcore.models.gkdb import (
+    rejectionnote,
+    stock,
+    customerandsupplier,
+    goprod,
+    users,
+    godown,
+    delchal,
+    invoice,
+    product,
+    unitofmeasurement,
+    dcinv,
+)
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
-from pyramid.view import view_defaults,  view_config
+from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
 import jwt
 import gkcore
@@ -40,12 +51,14 @@ from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_invoice import getStateCode
 
-@view_defaults(route_name='rejectionnote')
+
+@view_defaults(route_name="rejectionnote")
 class api_rejectionnote(object):
-    def __init__(self,request):
+    def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
+
     """
     create method for rejectionnote resource.
     stock table is also updated after rejection entry is made.
@@ -53,15 +66,16 @@ class api_rejectionnote(object):
         -dcinvtnflag column will be set to 18 for rejection note entry.
     If stock table insert fails then the rejectionnote entry will be deleted.
     """
-    @view_config(request_method='POST',renderer='json')
+
+    @view_config(request_method="POST", renderer="json")
     def addRejectionNote(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
@@ -72,9 +86,17 @@ class api_rejectionnote(object):
                 stockdata["orgcode"] = authDetails["orgcode"]
                 rejectionnotedata["issuerid"] = authDetails["userid"]
                 items = rejectionnotedata["rejprods"]
-                result = self.con.execute(rejectionnote.insert(),[rejectionnotedata])
-                if result.rowcount==1:
-                    rniddata = self.con.execute(select([rejectionnote.c.rnid,rejectionnote.c.rndate]).where(and_(rejectionnote.c.orgcode==authDetails["orgcode"],rejectionnote.c.rnno==rejectionnotedata["rnno"], rejectionnote.c.inout==rejectionnotedata["inout"])))
+                result = self.con.execute(rejectionnote.insert(), [rejectionnotedata])
+                if result.rowcount == 1:
+                    rniddata = self.con.execute(
+                        select([rejectionnote.c.rnid, rejectionnote.c.rndate]).where(
+                            and_(
+                                rejectionnote.c.orgcode == authDetails["orgcode"],
+                                rejectionnote.c.rnno == rejectionnotedata["rnno"],
+                                rejectionnote.c.inout == rejectionnotedata["inout"],
+                            )
+                        )
+                    )
                     rnidrow = rniddata.fetchone()
                     stockdata["dcinvtnid"] = rnidrow["rnid"]
                     stockdata["dcinvtnflag"] = 18
@@ -83,51 +105,103 @@ class api_rejectionnote(object):
                         for key in list(items.keys()):
                             stockdata["productcode"] = key
                             stockdata["qty"] = float(list(items[key].values())[0])
-                            result = self.con.execute(stock.insert(),[stockdata])
+                            result = self.con.execute(stock.insert(), [stockdata])
                             if "goid" in stockdata:
-                                resultgoprod = self.con.execute(select([goprod]).where(and_(goprod.c.goid == stockdata["goid"], goprod.c.productcode==key)))
+                                resultgoprod = self.con.execute(
+                                    select([goprod]).where(
+                                        and_(
+                                            goprod.c.goid == stockdata["goid"],
+                                            goprod.c.productcode == key,
+                                        )
+                                    )
+                                )
                                 if resultgoprod.rowcount == 0:
-                                    result = self.con.execute(goprod.insert(),[{"goid":stockdata["goid"],"productcode": key,"goopeningstock":0.00, "orgcode":authDetails["orgcode"]}])
+                                    result = self.con.execute(
+                                        goprod.insert(),
+                                        [
+                                            {
+                                                "goid": stockdata["goid"],
+                                                "productcode": key,
+                                                "goopeningstock": 0.00,
+                                                "orgcode": authDetails["orgcode"],
+                                            }
+                                        ],
+                                    )
 
                     except:
-                        result = self.con.execute(stock.delete().where(and_(stock.c.dcinvtnid==rnidrow["rnid"],stock.c.dcinvtnflag==18)))
-                        result = self.con.execute(rejectionnote.delete().where(rejectionnote.c.rnid==rnidrow["rnid"]))
-                        return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
-                    return {"gkstatus":enumdict["Success"]}
+                        result = self.con.execute(
+                            stock.delete().where(
+                                and_(
+                                    stock.c.dcinvtnid == rnidrow["rnid"],
+                                    stock.c.dcinvtnflag == 18,
+                                )
+                            )
+                        )
+                        result = self.con.execute(
+                            rejectionnote.delete().where(
+                                rejectionnote.c.rnid == rnidrow["rnid"]
+                            )
+                        )
+                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                    return {"gkstatus": enumdict["Success"]}
                 else:
-                    return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
+                return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param="type=all", renderer ='json')
+    @view_config(request_method="GET", request_param="type=all", renderer="json")
     def getAllRejectionNotes(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.orgcode==authDetails["orgcode"]).order_by(rejectionnote.c.rnno))
+                result = self.con.execute(
+                    select([rejectionnote])
+                    .where(rejectionnote.c.orgcode == authDetails["orgcode"])
+                    .order_by(rejectionnote.c.rnno)
+                )
                 rnotes = []
                 for row in result:
-                    rnotes.append({"rnid":row["rnid"],"rnno":row["rnno"], "inout":row["inout"], "dcid":row["dcid"], "invid":row["invid"], "rndate":datetime.strftime(row["rndate"],'%d-%m-%Y')})
+                    rnotes.append(
+                        {
+                            "rnid": row["rnid"],
+                            "rnno": row["rnno"],
+                            "inout": row["inout"],
+                            "dcid": row["dcid"],
+                            "invid": row["invid"],
+                            "rndate": datetime.strftime(row["rndate"], "%d-%m-%Y"),
+                        }
+                    )
 
-                rejincount = self.con.execute("select count(rejectionnote) as rejin from rejectionnote where inout=9 and orgcode = %d"%(authDetails["orgcode"]))
+                rejincount = self.con.execute(
+                    "select count(rejectionnote) as rejin from rejectionnote where inout=9 and orgcode = %d"
+                    % (authDetails["orgcode"])
+                )
                 incount = rejincount.fetchone()
-                rejoutcount = self.con.execute("select count(rejectionnote) as rejout from rejectionnote where inout=15 and orgcode = %d"%(authDetails["orgcode"]))
+                rejoutcount = self.con.execute(
+                    "select count(rejectionnote) as rejout from rejectionnote where inout=15 and orgcode = %d"
+                    % (authDetails["orgcode"])
+                )
                 outcount = rejoutcount.fetchone()
 
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":rnotes, "rejincount":incount["rejin"], "rejoutcount":outcount["rejout"]}
+                return {
+                    "gkstatus": gkcore.enumdict["Success"],
+                    "gkresult": rnotes,
+                    "rejincount": incount["rejin"],
+                    "rejoutcount": outcount["rejout"],
+                }
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
@@ -140,233 +214,492 @@ class api_rejectionnote(object):
         'rejcontents' contains 'rejected quantity' with calculation of tax and tax amounts. 
         
     """
-    @view_config(request_method='GET',request_param="type=single", renderer ='json')
+
+    @view_config(request_method="GET", request_param="type=single", renderer="json")
     def getRejectionNote(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([rejectionnote]).where(rejectionnote.c.rnid==self.request.params["rnid"]))
+                result = self.con.execute(
+                    select([rejectionnote]).where(
+                        rejectionnote.c.rnid == self.request.params["rnid"]
+                    )
+                )
                 rndata = result.fetchone()
-                issuerdata = self.con.execute(select([users.c.username,users.c.userrole]).where(users.c.userid == rndata["issuerid"]))
+                issuerdata = self.con.execute(
+                    select([users.c.username, users.c.userrole]).where(
+                        users.c.userid == rndata["issuerid"]
+                    )
+                )
                 issuerdata = issuerdata.fetchone()
-                rejectionnotedata = {"rnid": rndata["rnid"], "rndate": datetime.strftime(rndata["rndate"],"%d-%m-%Y"), "rnno": rndata["rnno"], "inout":rndata["inout"], "dcid": rndata["dcid"], "invid": rndata["invid"],"rejectedtotal":"%.2f"% float(rndata["rejectedtotal"]),"rejnarration":rndata["rejnarration"]}
-                typeoftrans = {1:"Approval", 3:"Consignment",5:"Free Replacement",4: "Sales",19:"Sample"}
+                rejectionnotedata = {
+                    "rnid": rndata["rnid"],
+                    "rndate": datetime.strftime(rndata["rndate"], "%d-%m-%Y"),
+                    "rnno": rndata["rnno"],
+                    "inout": rndata["inout"],
+                    "dcid": rndata["dcid"],
+                    "invid": rndata["invid"],
+                    "rejectedtotal": "%.2f" % float(rndata["rejectedtotal"]),
+                    "rejnarration": rndata["rejnarration"],
+                }
+                typeoftrans = {
+                    1: "Approval",
+                    3: "Consignment",
+                    5: "Free Replacement",
+                    4: "Sales",
+                    19: "Sample",
+                }
                 """
                 If rejection_note created against the delivery Note.
                 """
                 if rejectionnotedata["dcid"] != None:
-                    dcdata = self.con.execute(select([delchal]).where(delchal.c.dcid==rejectionnotedata["dcid"]))
+                    dcdata = self.con.execute(
+                        select([delchal]).where(
+                            delchal.c.dcid == rejectionnotedata["dcid"]
+                        )
+                    )
                     dcdata = dcdata.fetchone()
-                    custdata = self.con.execute("select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"%int(rejectionnotedata["dcid"]))
+                    custdata = self.con.execute(
+                        "select custname, custaddr, custtan from customerandsupplier where custid = (select custid from delchal where dcid = %d)"
+                        % int(rejectionnotedata["dcid"])
+                    )
                     custdata = custdata.fetchone()
-                    rejdcdata={"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]], "custname": custdata["custname"], "custaddr":custdata["custaddr"], "custtin":custdata["custtan"]}
-                    if dcdata["sourcestate"] != None or dcdata["taxstate"] !=None:
+                    rejdcdata = {
+                        "dcno": dcdata["dcno"],
+                        "dcdate": datetime.strftime(dcdata["dcdate"], "%d-%m-%Y"),
+                        "transactiontype": typeoftrans[dcdata["dcflag"]],
+                        "custname": custdata["custname"],
+                        "custaddr": custdata["custaddr"],
+                        "custtin": custdata["custtan"],
+                    }
+                    if dcdata["sourcestate"] != None or dcdata["taxstate"] != None:
                         rejdcdata["sourcestate"] = dcdata["sourcestate"]
-                        sourceStateCode = getStateCode(dcdata["sourcestate"],self.con)["statecode"]
+                        sourceStateCode = getStateCode(dcdata["sourcestate"], self.con)[
+                            "statecode"
+                        ]
                         rejdcdata["sourcestatecode"] = sourceStateCode
-                        rejdcdata["taxstate"]=dcdata["taxstate"]
-                        taxStateCode=getStateCode(dcdata["taxstate"],self.con)["statecode"]
-                        rejdcdata["taxstatecode"]=taxStateCode
-                    rejectionnotedata["rejdcdata"]=rejdcdata
-                    custsupdata = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.state,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==dcdata["custid"]))
+                        rejdcdata["taxstate"] = dcdata["taxstate"]
+                        taxStateCode = getStateCode(dcdata["taxstate"], self.con)[
+                            "statecode"
+                        ]
+                        rejdcdata["taxstatecode"] = taxStateCode
+                    rejectionnotedata["rejdcdata"] = rejdcdata
+                    custsupdata = self.con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custid,
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.custaddr,
+                                customerandsupplier.c.gstin,
+                                customerandsupplier.c.state,
+                                customerandsupplier.c.custtan,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == dcdata["custid"])
+                    )
                     custdata = custsupdata.fetchone()
-                    custsupstatecode = getStateCode(custdata["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custdata["custname"],"custsupstate":custdata["state"],"custaddr":custdata["custaddr"],"csflag":custdata["csflag"],"custsupstatecode":custsupstatecode}
+                    custsupstatecode = getStateCode(custdata["state"], self.con)[
+                        "statecode"
+                    ]
+                    custSupDetails = {
+                        "custname": custdata["custname"],
+                        "custsupstate": custdata["state"],
+                        "custaddr": custdata["custaddr"],
+                        "csflag": custdata["csflag"],
+                        "custsupstatecode": custsupstatecode,
+                    }
                     if custdata["custtan"] != None:
                         custSupDetails["custtin"] = custdata["custtan"]
                     if custdata["gstin"] != None:
-                        if int(custdata["csflag"]) == 3 :
-                           try:
-                               custSupDetails["custgstin"] = custdata["gstin"][str(taxStateCode)]
-                           except:
-                               custSupDetails["custgstin"] = None
-                        else:
+                        if int(custdata["csflag"]) == 3:
                             try:
-                                custSupDetails["custgstin"] = custdata["gstin"][str(sourceStateCode)]
+                                custSupDetails["custgstin"] = custdata["gstin"][
+                                    str(taxStateCode)
+                                ]
                             except:
                                 custSupDetails["custgstin"] = None
-                        rejectionnotedata["rejdcdata"]["custSupDetails"] = custSupDetails
+                        else:
+                            try:
+                                custSupDetails["custgstin"] = custdata["gstin"][
+                                    str(sourceStateCode)
+                                ]
+                            except:
+                                custSupDetails["custgstin"] = None
+                        rejectionnotedata["rejdcdata"][
+                            "custSupDetails"
+                        ] = custSupDetails
 
                     # 'rejprods' nested Dictionary
                     rejqty = rndata["rejprods"]
-                    rejcontents={}
+                    rejcontents = {}
                     totalTaxableVal = 0.00
                     totalTaxAmt = 0.00
                     totalCessAmt = 0.00
                     for pc in list(rejqty.keys()):
-                        prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                        prod = self.con.execute(
+                            select(
+                                [
+                                    product.c.productdesc,
+                                    product.c.uomid,
+                                    product.c.gsflag,
+                                    product.c.gscode,
+                                ]
+                            ).where(product.c.productcode == pc)
+                        )
                         prodrow = prod.fetchone()
                         if int(prodrow["gsflag"]) == 7:
-                            um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                            um = self.con.execute(
+                                select([unitofmeasurement.c.unitname]).where(
+                                    unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                                )
+                            )
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(rejqty[pc][list(rejqty[pc].keys())[0]])) * float(list(rejqty[pc].keys())[0]))
-                            
+                            taxableAmount = (
+                                float(rejqty[pc][list(rejqty[pc].keys())[0]])
+                            ) * float(list(rejqty[pc].keys())[0])
+
                         taxRate = 0.00
                         totalAmount = 0.00
-                        taxRate =  float(dcdata["tax"][pc])
+                        taxRate = float(dcdata["tax"][pc])
                         if int(dcdata["taxflag"]) == 22:
-                            taxRate =  float(dcdata["tax"][pc])
-                            taxAmount = (taxableAmount * float(taxRate/100))
-                            taxname = 'VAT'
-                            totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                            taxRate = float(dcdata["tax"][pc])
+                            taxAmount = taxableAmount * float(taxRate / 100)
+                            taxname = "VAT"
+                            totalAmount = float(taxableAmount) + (
+                                float(taxableAmount) * float(taxRate / 100)
+                            )
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            rejcontents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f"
+                                % (float(rejqty[pc][list(rejqty[pc].keys())[0]])),
+                                "priceperunit": "%.2f"
+                                % (float(list(rejqty[pc].keys())[0])),
+                                "taxableamount": "%.2f" % (float(taxableAmount)),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": "VAT",
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                            }
                         else:
                             cessRate = 0.00
                             cessAmount = 0.00
                             cessVal = 0.00
                             if dcdata["cess"] != None:
-                                cessVal = float(dcdata[ "cess"][pc])
-                                cessAmount = (taxableAmount * (cessVal/100))
+                                cessVal = float(dcdata["cess"][pc])
+                                cessAmount = taxableAmount * (cessVal / 100)
                                 totalCessAmt = totalCessAmt + cessAmount
 
                             if dcdata["sourcestate"] != dcdata["taxstate"]:
                                 taxname = "IGST"
-                                taxAmount = (taxableAmount * (taxRate/100))
+                                taxAmount = taxableAmount * (taxRate / 100)
                                 totalAmount = taxableAmount + taxAmount + cessAmount
                             else:
                                 taxname = "SGST"
-                                taxRate = (taxRate/2)
-                                taxAmount = (taxableAmount * (taxRate/100))
-                                totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+                                taxRate = taxRate / 2
+                                taxAmount = taxableAmount * (taxRate / 100)
+                                totalAmount = (
+                                    taxableAmount
+                                    + (taxableAmount * ((taxRate * 2) / 100))
+                                    + cessAmount
+                                )
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
+                            rejcontents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f"
+                                % (float(rejqty[pc][list(rejqty[pc].keys())[0]])),
+                                "priceperunit": "%.2f"
+                                % (float(list(rejqty[pc].keys())[0])),
+                                "taxableamount": "%.2f" % (float(taxableAmount)),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": taxname,
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                                "cess": "%.2f" % (float(cessAmount)),
+                                "cessrate": "%.2f" % (float(cessVal)),
+                            }
                 """
                 If rejection_note created against the Invoice.
                 """
                 if rejectionnotedata["invid"] != None:
-                    invdata = self.con.execute(select([invoice]).where(invoice.c.invid==rejectionnotedata["invid"]))
+                    invdata = self.con.execute(
+                        select([invoice]).where(
+                            invoice.c.invid == rejectionnotedata["invid"]
+                        )
+                    )
                     invdata = invdata.fetchone()
-                    rejinvdata={"invno":invdata["invoiceno"], "invdate":datetime.strftime(invdata["invoicedate"],"%d-%m-%Y"),"taxflag":invdata["taxflag"],"tax":invdata["tax"],"orgstategstin":invdata["orgstategstin"],"inoutflag":invdata["inoutflag"]}
+                    rejinvdata = {
+                        "invno": invdata["invoiceno"],
+                        "invdate": datetime.strftime(
+                            invdata["invoicedate"], "%d-%m-%Y"
+                        ),
+                        "taxflag": invdata["taxflag"],
+                        "tax": invdata["tax"],
+                        "orgstategstin": invdata["orgstategstin"],
+                        "inoutflag": invdata["inoutflag"],
+                    }
                     if invdata["inoutflag"] == 15:
                         rejinvdata["issuername"] = invdata["issuername"]
                         rejinvdata["designation"] = invdata["designation"]
                     else:
                         rejinvdata["issuername"] = issuerdata["username"]
                         rejinvdata["designation"] = issuerdata["userrole"]
-                    if invdata["address"]!=None:
-                        rejinvdata["address"]=invdata["address"]
-                    if invdata["sourcestate"] != None or invdata["taxstate"] !=None:
-                        sourceStateCode = getStateCode(invdata["sourcestate"],self.con)["statecode"]
+                    if invdata["address"] != None:
+                        rejinvdata["address"] = invdata["address"]
+                    if invdata["sourcestate"] != None or invdata["taxstate"] != None:
+                        sourceStateCode = getStateCode(
+                            invdata["sourcestate"], self.con
+                        )["statecode"]
                         rejinvdata["sourcestatecode"] = sourceStateCode
-                        taxStateCode=getStateCode(invdata["taxstate"],self.con)["statecode"]
-                        rejinvdata["taxstatecode"]=taxStateCode
+                        taxStateCode = getStateCode(invdata["taxstate"], self.con)[
+                            "statecode"
+                        ]
+                        rejinvdata["taxstatecode"] = taxStateCode
                         if invdata["inoutflag"] == 15:
                             rejinvdata["sourcestate"] = invdata["sourcestate"]
-                            rejinvdata["taxstate"]=invdata["taxstate"]
+                            rejinvdata["taxstate"] = invdata["taxstate"]
                         else:
                             rejinvdata["sourcestate"] = invdata["taxstate"]
-                            rejinvdata["taxstate"]=invdata["sourcestate"]
-                        
-                    rejectionnotedata["rejinvdata"]=rejinvdata
-                    dcinvdata = self.con.execute(select([dcinv.c.dcid]).distinct().where(dcinv.c.invid == invdata["invid"]))
+                            rejinvdata["taxstate"] = invdata["sourcestate"]
+
+                    rejectionnotedata["rejinvdata"] = rejinvdata
+                    dcinvdata = self.con.execute(
+                        select([dcinv.c.dcid])
+                        .distinct()
+                        .where(dcinv.c.invid == invdata["invid"])
+                    )
                     dcinvdata = dcinvdata.fetchone()
-                    custsupdata = self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.state,customerandsupplier.c.custtan,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
+                    custsupdata = self.con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custid,
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.custaddr,
+                                customerandsupplier.c.gstin,
+                                customerandsupplier.c.state,
+                                customerandsupplier.c.custtan,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == invdata["custid"])
+                    )
                     custdata = custsupdata.fetchone()
-                    custsupstatecode = getStateCode(custdata["state"],self.con)["statecode"]
-                    custSupDetails = {"custname":custdata["custname"],"custsupstate":custdata["state"],"custaddr":custdata["custaddr"],"csflag":custdata["csflag"],"custsupstatecode":custsupstatecode}
+                    custsupstatecode = getStateCode(custdata["state"], self.con)[
+                        "statecode"
+                    ]
+                    custSupDetails = {
+                        "custname": custdata["custname"],
+                        "custsupstate": custdata["state"],
+                        "custaddr": custdata["custaddr"],
+                        "csflag": custdata["csflag"],
+                        "custsupstatecode": custsupstatecode,
+                    }
                     if custdata["custtan"] != None:
                         custSupDetails["custtin"] = custdata["custtan"]
                     if custdata["gstin"] != None:
-                        if int(invdata["inoutflag"]) == 15 :
-                           try:
-                               custSupDetails["custgstin"] = custdata["gstin"][str(taxStateCode)]
-                           except:
-                               custSupDetails["custgstin"] = None
+                        if int(invdata["inoutflag"]) == 15:
+                            try:
+                                custSupDetails["custgstin"] = custdata["gstin"][
+                                    str(taxStateCode)
+                                ]
+                            except:
+                                custSupDetails["custgstin"] = None
                         else:
                             try:
-                                custSupDetails["custgstin"] = custdata["gstin"][str(sourceStateCode)]
+                                custSupDetails["custgstin"] = custdata["gstin"][
+                                    str(sourceStateCode)
+                                ]
                             except:
                                 custSupDetails["custgstin"] = None
                     rejectionnotedata["rejinvdata"]["custSupDetails"] = custSupDetails
-                    #Details of dcinv table
+                    # Details of dcinv table
                     if dcinvdata != None:
-                        dcdata = self.con.execute(select([delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]).where(delchal.c.dcid==dcinvdata[0]))
+                        dcdata = self.con.execute(
+                            select(
+                                [delchal.c.dcno, delchal.c.dcdate, delchal.c.dcflag]
+                            ).where(delchal.c.dcid == dcinvdata[0])
+                        )
                         dcdata = dcdata.fetchone()
-                        rejectionnotedata.update({"dcno":dcdata["dcno"], "dcdate":datetime.strftime(dcdata["dcdate"],"%d-%m-%Y"), "transactiontype":typeoftrans[dcdata["dcflag"]]})
+                        rejectionnotedata.update(
+                            {
+                                "dcno": dcdata["dcno"],
+                                "dcdate": datetime.strftime(
+                                    dcdata["dcdate"], "%d-%m-%Y"
+                                ),
+                                "transactiontype": typeoftrans[dcdata["dcflag"]],
+                            }
+                        )
                     # 'rejprods' nested Dictionary
                     rejqty = rndata["rejprods"]
-                    rejcontents={}
+                    rejcontents = {}
                     totalTaxableVal = 0.00
                     totalTaxAmt = 0.00
                     totalCessAmt = 0.00
                     for pc in list(rejqty.keys()):
-                        prod = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                        prod = self.con.execute(
+                            select(
+                                [
+                                    product.c.productdesc,
+                                    product.c.uomid,
+                                    product.c.gsflag,
+                                    product.c.gscode,
+                                ]
+                            ).where(product.c.productcode == pc)
+                        )
                         prodrow = prod.fetchone()
                         if int(prodrow["gsflag"]) == 7:
-                            um = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                            um = self.con.execute(
+                                select([unitofmeasurement.c.unitname]).where(
+                                    unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                                )
+                            )
                             unitrow = um.fetchone()
                             unitofMeasurement = unitrow["unitname"]
-                            taxableAmount = ((float(rejqty[pc][list(rejqty[pc].keys())[0]])) * float(list(rejqty[pc].keys())[0]))
-                            
+                            taxableAmount = (
+                                float(rejqty[pc][list(rejqty[pc].keys())[0]])
+                            ) * float(list(rejqty[pc].keys())[0])
+
                         taxRate = 0.00
                         totalAmount = 0.00
-                        taxRate =  float(invdata["tax"][pc])
+                        taxRate = float(invdata["tax"][pc])
                         if int(invdata["taxflag"]) == 22:
-                            taxRate =  float(invdata["tax"][pc])
-                            taxAmount = (taxableAmount * float(taxRate/100))
-                            taxname = 'VAT'
-                            totalAmount = float(taxableAmount) + (float(taxableAmount) * float(taxRate/100))
+                            taxRate = float(invdata["tax"][pc])
+                            taxAmount = taxableAmount * float(taxRate / 100)
+                            taxname = "VAT"
+                            totalAmount = float(taxableAmount) + (
+                                float(taxableAmount) * float(taxRate / 100)
+                            )
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount))}
+                            rejcontents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f"
+                                % (float(rejqty[pc][list(rejqty[pc].keys())[0]])),
+                                "priceperunit": "%.2f"
+                                % (float(list(rejqty[pc].keys())[0])),
+                                "taxableamount": "%.2f" % (float(taxableAmount)),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": "VAT",
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                            }
                         else:
                             cessRate = 0.00
                             cessAmount = 0.00
                             cessVal = 0.00
                             if invdata["cess"] != None:
-                                cessVal = float(invdata[ "cess"][pc])
-                                cessAmount = (taxableAmount * (cessVal/100))
+                                cessVal = float(invdata["cess"][pc])
+                                cessAmount = taxableAmount * (cessVal / 100)
                                 totalCessAmt = totalCessAmt + cessAmount
 
                             if invdata["sourcestate"] != invdata["taxstate"]:
                                 taxname = "IGST"
-                                taxAmount = (taxableAmount * (taxRate/100))
+                                taxAmount = taxableAmount * (taxRate / 100)
                                 totalAmount = taxableAmount + taxAmount + cessAmount
                             else:
                                 taxname = "SGST"
-                                taxRate = (taxRate/2)
-                                taxAmount = (taxableAmount * (taxRate/100))
-                                totalAmount = taxableAmount + (taxableAmount * ((taxRate * 2)/100)) + cessAmount
+                                taxRate = taxRate / 2
+                                taxAmount = taxableAmount * (taxRate / 100)
+                                totalAmount = (
+                                    taxableAmount
+                                    + (taxableAmount * ((taxRate * 2) / 100))
+                                    + cessAmount
+                                )
                             totalTaxableVal = totalTaxableVal + taxableAmount
                             totalTaxAmt = totalTaxAmt + taxAmount
 
-                            rejcontents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"% (float(rejqty[pc][list(rejqty[pc].keys())[0]])),"priceperunit":"%.2f"% (float(list(rejqty[pc].keys())[0])),"taxableamount":"%.2f"%(float(taxableAmount)),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal))}
-                rejectionnotedata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
-                rejectionnotedata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
-                rejectionnotedata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
-                rejectionnotedata['taxname'] = taxname
+                            rejcontents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f"
+                                % (float(rejqty[pc][list(rejqty[pc].keys())[0]])),
+                                "priceperunit": "%.2f"
+                                % (float(list(rejqty[pc].keys())[0])),
+                                "taxableamount": "%.2f" % (float(taxableAmount)),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": taxname,
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                                "cess": "%.2f" % (float(cessAmount)),
+                                "cessrate": "%.2f" % (float(cessVal)),
+                            }
+                rejectionnotedata["totaltaxablevalue"] = "%.2f" % (
+                    float(totalTaxableVal)
+                )
+                rejectionnotedata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
+                rejectionnotedata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
+                rejectionnotedata["taxname"] = taxname
                 rejectionnotedata["rejcontents"] = rejcontents
-                    
-                #Product Description
+
+                # Product Description
                 items = {}
-                stockdata = self.con.execute(select([stock.c.productcode,stock.c.qty,stock.c.inout,stock.c.goid]).where(and_(stock.c.dcinvtnflag==18,stock.c.dcinvtnid==self.request.params["rnid"])))
+                stockdata = self.con.execute(
+                    select(
+                        [stock.c.productcode, stock.c.qty, stock.c.inout, stock.c.goid]
+                    ).where(
+                        and_(
+                            stock.c.dcinvtnflag == 18,
+                            stock.c.dcinvtnid == self.request.params["rnid"],
+                        )
+                    )
+                )
                 for stockrow in stockdata:
-                    productdata = self.con.execute(select([product.c.productdesc,product.c.uomid]).where(product.c.productcode==stockrow["productcode"]))
+                    productdata = self.con.execute(
+                        select([product.c.productdesc, product.c.uomid]).where(
+                            product.c.productcode == stockrow["productcode"]
+                        )
+                    )
                     productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid==productdesc["uomid"]))
+                    uomresult = self.con.execute(
+                        select([unitofmeasurement.c.unitname]).where(
+                            unitofmeasurement.c.uomid == productdesc["uomid"]
+                        )
+                    )
                     unitnamrrow = uomresult.fetchone()
-                    items[stockrow["productcode"]] = {"qty":"%.2f"%float(stockrow["qty"]),"productdesc":productdesc["productdesc"],"unitname":unitnamrrow["unitname"]}
+                    items[stockrow["productcode"]] = {
+                        "qty": "%.2f" % float(stockrow["qty"]),
+                        "productdesc": productdesc["productdesc"],
+                        "unitname": unitnamrrow["unitname"],
+                    }
                     goiddata = stockrow["goid"]
-                rejectionnotedata.update({"rejected":items})
-                if goiddata!=None:
-                    godata = self.con.execute(select([godown.c.goname,godown.c.state]).where(godown.c.goid==goiddata))
+                rejectionnotedata.update({"rejected": items})
+                if goiddata != None:
+                    godata = self.con.execute(
+                        select([godown.c.goname, godown.c.state]).where(
+                            godown.c.goid == goiddata
+                        )
+                    )
                     goname = godata.fetchone()
-                
-                    rejectionnotedata.update({"goid": goiddata, "goname": goname["goname"], "gostate": goname["state"]})
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": rejectionnotedata}
+
+                    rejectionnotedata.update(
+                        {
+                            "goid": goiddata,
+                            "goname": goname["goname"],
+                            "gostate": goname["state"],
+                        }
+                    )
+                return {
+                    "gkstatus": gkcore.enumdict["Success"],
+                    "gkresult": rejectionnotedata,
+                }
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()

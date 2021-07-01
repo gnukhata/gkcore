@@ -26,37 +26,52 @@ Contributors:
 'Abhijith Balan'<abhijith@dff.org.in>
 """
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import invoice,tax,state,drcr,customerandsupplier,users,product,unitofmeasurement, organisation, accounts, vouchers, stock
-from gkcore.views.api_tax  import calTax
+from gkcore.models.gkdb import (
+    invoice,
+    tax,
+    state,
+    drcr,
+    customerandsupplier,
+    users,
+    product,
+    unitofmeasurement,
+    organisation,
+    accounts,
+    vouchers,
+    stock,
+)
+from gkcore.views.api_tax import calTax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from pyramid.request import Request
 from pyramid.response import Response
-from pyramid.view import view_defaults,  view_config
-from datetime import datetime,date
+from pyramid.view import view_defaults, view_config
+from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_invoice import getStateCode
 
-@view_defaults(route_name='drcrnote')
+
+@view_defaults(route_name="drcrnote")
 class api_drcr(object):
-    def __init__(self,request):
+    def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
-    @view_config(request_method='POST',renderer='json')
+
+    @view_config(request_method="POST", renderer="json")
     def createDrCrNote(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
@@ -64,15 +79,28 @@ class api_drcr(object):
                 dataset = wholedataset["dataset"]
                 vdataset = wholedataset["vdataset"]
                 dataset["orgcode"] = authDetails["orgcode"]
-                result=self.con.execute(drcr.insert(),[dataset])
-                lastdrcr = self.con.execute(select([drcr.c.drcrid]).where(and_(drcr.c.invid==dataset["invid"], drcr.c.drcrno==dataset["drcrno"],drcr.c.orgcode==dataset["orgcode"],drcr.c.dctypeflag==dataset["dctypeflag"])))
+                result = self.con.execute(drcr.insert(), [dataset])
+                lastdrcr = self.con.execute(
+                    select([drcr.c.drcrid]).where(
+                        and_(
+                            drcr.c.invid == dataset["invid"],
+                            drcr.c.drcrno == dataset["drcrno"],
+                            drcr.c.orgcode == dataset["orgcode"],
+                            drcr.c.dctypeflag == dataset["dctypeflag"],
+                        )
+                    )
+                )
                 drcrid = lastdrcr.fetchone()
                 if int(dataset["drcrmode"]) == 18:
-                    stockdataset = {"dcinvtnid":drcrid["drcrid"], "orgcode":dataset["orgcode"], "stockdate":dataset["drcrdate"]}
+                    stockdataset = {
+                        "dcinvtnid": drcrid["drcrid"],
+                        "orgcode": dataset["orgcode"],
+                        "stockdate": dataset["drcrdate"],
+                    }
                     if int(dataset["dctypeflag"]) == 3:
                         stockdataset["inout"] = 9
                         if int(vdataset["inoutflag"]) == 15:
-                             #value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                            # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
                             stockdataset["dcinvtnflag"] = dataset["dcinvtnflag"]
                         else:
                             stockdataset["dcinvtnflag"] = 7
@@ -81,37 +109,59 @@ class api_drcr(object):
                         stockdataset["dcinvtnflag"] = 7
                     for item in dataset["reductionval"]["quantities"]:
                         stockdataset["productcode"] = item
-                        stockdataset["qty"] = dataset["reductionval"]["quantities"][item]
+                        stockdataset["qty"] = dataset["reductionval"]["quantities"][
+                            item
+                        ]
                         self.con.execute(stock.insert(), [stockdataset])
-                
+
                 # check automatic voucher flag  if it is 1 get maflag
-                avfl = self.con.execute(select([organisation.c.avflag]).where(organisation.c.orgcode == dataset["orgcode"]))
+                avfl = self.con.execute(
+                    select([organisation.c.avflag]).where(
+                        organisation.c.orgcode == dataset["orgcode"]
+                    )
+                )
                 av = avfl.fetchone()
                 if av["avflag"] == 1:
-                    mafl = self.con.execute(select([organisation.c.maflag]).where(organisation.c.orgcode == dataset["orgcode"]))
+                    mafl = self.con.execute(
+                        select([organisation.c.maflag]).where(
+                            organisation.c.orgcode == dataset["orgcode"]
+                        )
+                    )
                     maFlag = mafl.fetchone()
-                    queryParams = {"maflag":maFlag["maflag"], "cessname":"CESS", "drcrid":drcrid["drcrid"]}
+                    queryParams = {
+                        "maflag": maFlag["maflag"],
+                        "cessname": "CESS",
+                        "drcrid": drcrid["drcrid"],
+                    }
                     queryParams.update(dataset)
                     queryParams.update(vdataset)
                     if dataset["roundoffflag"] == 1:
-                        roundOffAmount = float(dataset["totreduct"]) - round(float(dataset["totreduct"]))
+                        roundOffAmount = float(dataset["totreduct"]) - round(
+                            float(dataset["totreduct"])
+                        )
                         if float(roundOffAmount) != 0.00:
                             queryParams["roundoffamt"] = float(roundOffAmount)
                     try:
-                        drcrautoVch = drcrVoucher(queryParams,int(dataset["orgcode"]))
-                        return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":1, "vchCode":drcrautoVch}}
+                        drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
+                        return {
+                            "gkstatus": enumdict["Success"],
+                            "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
+                        }
                     except:
-                        return {"gkstatus":enumdict["Success"], "vchCode":{"vflag":0}}
+                        return {
+                            "gkstatus": enumdict["Success"],
+                            "vchCode": {"vflag": 0},
+                        }
                 else:
-                    return {"gkstatus":enumdict["Success"]}
+                    return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:
-                return {"gkstatus":enumdict["DuplicateEntry"]}
+                return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-                
-    @view_config(request_method='GET',request_param="drcr=single", renderer ='json')
+
+    @view_config(request_method="GET", request_param="drcr=single", renderer="json")
     def getDrCrDetails(self):
         """
         purpose: gets details of single debit or credit note from it's drcrid.
@@ -126,294 +176,532 @@ class api_drcr(object):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
-                #taken credit/debit note data on the basis on drcrid
-                drcrresult=self.con.execute(select([drcr]).where(drcr.c.drcrid==self.request.params["drcrid"]))
-                drcrrow=drcrresult.fetchone()
-                invdata={}
-                custSupDetails={}
-                drcrdata={}
-                drcrdata = {"drcrid":drcrrow["drcrid"],"drcrno":drcrrow["drcrno"],"drcrdate":datetime.strftime(drcrrow["drcrdate"],"%d-%m-%Y"),"dctypeflag":drcrrow["dctypeflag"],"totreduct":"%.2f"%float(drcrrow["totreduct"]),"reduct":drcrrow["reductionval"], "drcrmode":drcrrow["drcrmode"], "drcrnarration":drcrrow["drcrnarration"]}
+                # taken credit/debit note data on the basis on drcrid
+                drcrresult = self.con.execute(
+                    select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
+                )
+                drcrrow = drcrresult.fetchone()
+                invdata = {}
+                custSupDetails = {}
+                drcrdata = {}
+                drcrdata = {
+                    "drcrid": drcrrow["drcrid"],
+                    "drcrno": drcrrow["drcrno"],
+                    "drcrdate": datetime.strftime(drcrrow["drcrdate"], "%d-%m-%Y"),
+                    "dctypeflag": drcrrow["dctypeflag"],
+                    "totreduct": "%.2f" % float(drcrrow["totreduct"]),
+                    "reduct": drcrrow["reductionval"],
+                    "drcrmode": drcrrow["drcrmode"],
+                    "drcrnarration": drcrrow["drcrnarration"],
+                }
                 # this will show that total amount is rounded of or not
                 drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
-                drcrdata["roundedoffvalue"] = "%.2f"%float(round(drcrrow["totreduct"]))
-                #reference is a dictionary which contains reference number as key and reference date as value.
-                #if reference field is not None then send refernce dictionary.
+                drcrdata["roundedoffvalue"] = "%.2f" % float(
+                    round(drcrrow["totreduct"])
+                )
+                # reference is a dictionary which contains reference number as key and reference date as value.
+                # if reference field is not None then send refernce dictionary.
                 if drcrrow["reference"] == None:
-                    drcrdata["reference"]= ""
+                    drcrdata["reference"] = ""
                 else:
-                    drcrrow["reference"]["dcdate"] = datetime.strftime(datetime.strptime(drcrrow["reference"]["dcdate"],"%Y-%m-%d").date(),'%d-%m-%Y')
-                    drcrdata["reference"]=drcrrow["reference"]
-                #taken data of invoice on the basis of invid.
-                invresult=self.con.execute(select([invoice]).where(invoice.c.invid==drcrrow["invid"]))
-                invrow=invresult.fetchone()
-                invdata={"invid":invrow["invid"],"invoiceno":invrow["invoiceno"],"invoicedate":datetime.strftime(invrow["invoicedate"],"%d-%m-%Y"),"inoutflag":invrow["inoutflag"],"taxflag":invrow["taxflag"],"tax":invrow["tax"],"orgstategstin":invrow["orgstategstin"]}
+                    drcrrow["reference"]["dcdate"] = datetime.strftime(
+                        datetime.strptime(
+                            drcrrow["reference"]["dcdate"], "%Y-%m-%d"
+                        ).date(),
+                        "%d-%m-%Y",
+                    )
+                    drcrdata["reference"] = drcrrow["reference"]
+                # taken data of invoice on the basis of invid.
+                invresult = self.con.execute(
+                    select([invoice]).where(invoice.c.invid == drcrrow["invid"])
+                )
+                invrow = invresult.fetchone()
+                invdata = {
+                    "invid": invrow["invid"],
+                    "invoiceno": invrow["invoiceno"],
+                    "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
+                    "inoutflag": invrow["inoutflag"],
+                    "taxflag": invrow["taxflag"],
+                    "tax": invrow["tax"],
+                    "orgstategstin": invrow["orgstategstin"],
+                }
                 drcrdata["contents"] = invrow["contents"]
                 contentsData = invrow["contents"]
-                if invrow["sourcestate"] != None or invrow["taxstate"] !=None:
-                        invdata["sourcestate"] = invrow["sourcestate"]
-                        sourceStateCode = getStateCode(invrow["sourcestate"],self.con)["statecode"]
-                        invdata["sourcestatecode"] = sourceStateCode
-                        invdata["taxstate"]=invrow["taxstate"]
-                        taxStateCode=getStateCode(invrow["taxstate"],self.con)["statecode"]
-                        invdata["taxstatecode"]=taxStateCode
-                #taken data of customerandsupplier on the basis of custid
-                custresult=self.con.execute(select([customerandsupplier.c.custid,customerandsupplier.c.custname,customerandsupplier.c.custaddr,customerandsupplier.c.gstin,customerandsupplier.c.custtan,customerandsupplier.c.csflag,customerandsupplier.c.pincode]).where(customerandsupplier.c.custid==invrow["custid"]))
-                custrow=custresult.fetchone()
-                custSupDetails={"custid":custrow["custid"],"custname":custrow["custname"],"custaddr":custrow["custaddr"],"gstin":custrow["gstin"],"custtin":custrow["custtan"],"pincode":custrow["pincode"]}
-                #tin and gstin checked.
+                if invrow["sourcestate"] != None or invrow["taxstate"] != None:
+                    invdata["sourcestate"] = invrow["sourcestate"]
+                    sourceStateCode = getStateCode(invrow["sourcestate"], self.con)[
+                        "statecode"
+                    ]
+                    invdata["sourcestatecode"] = sourceStateCode
+                    invdata["taxstate"] = invrow["taxstate"]
+                    taxStateCode = getStateCode(invrow["taxstate"], self.con)[
+                        "statecode"
+                    ]
+                    invdata["taxstatecode"] = taxStateCode
+                # taken data of customerandsupplier on the basis of custid
+                custresult = self.con.execute(
+                    select(
+                        [
+                            customerandsupplier.c.custid,
+                            customerandsupplier.c.custname,
+                            customerandsupplier.c.custaddr,
+                            customerandsupplier.c.gstin,
+                            customerandsupplier.c.custtan,
+                            customerandsupplier.c.csflag,
+                            customerandsupplier.c.pincode,
+                        ]
+                    ).where(customerandsupplier.c.custid == invrow["custid"])
+                )
+                custrow = custresult.fetchone()
+                custSupDetails = {
+                    "custid": custrow["custid"],
+                    "custname": custrow["custname"],
+                    "custaddr": custrow["custaddr"],
+                    "gstin": custrow["gstin"],
+                    "custtin": custrow["custtan"],
+                    "pincode": custrow["pincode"],
+                }
+                # tin and gstin checked.
                 if custSupDetails["custtin"] != None:
                     custSupDetails["custtin"] = custSupDetails["custtin"]
                 if custSupDetails["gstin"] != None:
-                    if int(custrow["csflag"]) == 3 :
+                    if int(custrow["csflag"]) == 3:
                         try:
-                            custSupDetails["custgstin"] = custrow["gstin"][str(taxStateCode)]
+                            custSupDetails["custgstin"] = custrow["gstin"][
+                                str(taxStateCode)
+                            ]
                         except:
                             custSupDetails["custgstin"] = None
                     else:
                         try:
-                            custSupDetails["custgstin"] = custrow["gstin"][str(sourceStateCode)]
+                            custSupDetails["custgstin"] = custrow["gstin"][
+                                str(sourceStateCode)
+                            ]
                         except:
                             custSupDetails["custgstin"] = None
-                drcrdata["custSupDetails"] = custSupDetails              
+                drcrdata["custSupDetails"] = custSupDetails
 
-                #all data checked using inout flag,
-                if int(invrow["inoutflag"])==15:
-                    #if inoutflag=15 then issuername and designation is same as invoice details
-                    invdata["issuername"]=invrow["issuername"]
-                    invdata["designation"]=invrow["designation"]
-                elif int(invrow["inoutflag"])==9 :
-                    #if inoutflag=9 then issuername and designation is taken from login details.
-                    #user deatils
-                    userresult=self.con.execute(select([users.c.userid,users.c.username,users.c.userrole]).where(users.c.userid==drcrrow["userid"]))
-                    userrow=userresult.fetchone()
-                    userdata={"userid":userrow["userid"],"username":userrow["username"],"userrole":userrow["userrole"]}
-                    invdata["issuername"]=userrow["username"]
-                    invdata["designation"]=userrow["userrole"]
-                    
-                #calculations 
-                #contents is a nested dictionary from drcr table.
-                #It contains productcode as the key with a value as a dictionary.
-                #this dictionary has two key value pair, priceperunit and quantity.
-                idrateData=drcrrow["reductionval"]
-                #drcrdata is the final dictionary which will not just have the dataset from original contents,
-                #but also productdesc,unitname,taxname,taxrate,amount and taxamount
-                #invdata containing invoice details.
+                # all data checked using inout flag,
+                if int(invrow["inoutflag"]) == 15:
+                    # if inoutflag=15 then issuername and designation is same as invoice details
+                    invdata["issuername"] = invrow["issuername"]
+                    invdata["designation"] = invrow["designation"]
+                elif int(invrow["inoutflag"]) == 9:
+                    # if inoutflag=9 then issuername and designation is taken from login details.
+                    # user deatils
+                    userresult = self.con.execute(
+                        select(
+                            [users.c.userid, users.c.username, users.c.userrole]
+                        ).where(users.c.userid == drcrrow["userid"])
+                    )
+                    userrow = userresult.fetchone()
+                    userdata = {
+                        "userid": userrow["userid"],
+                        "username": userrow["username"],
+                        "userrole": userrow["userrole"],
+                    }
+                    invdata["issuername"] = userrow["username"]
+                    invdata["designation"] = userrow["userrole"]
+
+                # calculations
+                # contents is a nested dictionary from drcr table.
+                # It contains productcode as the key with a value as a dictionary.
+                # this dictionary has two key value pair, priceperunit and quantity.
+                idrateData = drcrrow["reductionval"]
+                # drcrdata is the final dictionary which will not just have the dataset from original contents,
+                # but also productdesc,unitname,taxname,taxrate,amount and taxamount
+                # invdata containing invoice details.
                 drcrContents = {}
-                idrate={}
-                #get the dictionary of discount and access it inside the loop for one product each.
+                idrate = {}
+                # get the dictionary of discount and access it inside the loop for one product each.
                 totalTaxableVal = 0.00
                 totalTaxAmt = 0.00
                 totalCessAmt = 0.00
-                
-                #pc will have the productcode which will be the key in contentsData.
+
+                # pc will have the productcode which will be the key in contentsData.
                 for pc in list(idrateData.keys()):
                     if str(pc) != "quantities":
                         pcquantity = 0.00
                         if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
                             pcquantity = idrateData["quantities"][pc]
                         else:
-                            pcquantity = float(contentsData[pc][list(contentsData[pc].keys())[0]])
-                        prodresult = self.con.execute(select([product.c.productdesc,product.c.uomid,product.c.gsflag,product.c.gscode]).where(product.c.productcode == pc))
+                            pcquantity = float(
+                                contentsData[pc][list(contentsData[pc].keys())[0]]
+                            )
+                        prodresult = self.con.execute(
+                            select(
+                                [
+                                    product.c.productdesc,
+                                    product.c.uomid,
+                                    product.c.gsflag,
+                                    product.c.gscode,
+                                ]
+                            ).where(product.c.productcode == pc)
+                        )
                         prodrow = prodresult.fetchone()
-                        #product or service check and taxableAmount calculate=newppu*newqty
+                        # product or service check and taxableAmount calculate=newppu*newqty
                         taxRate = 0.00
                         totalAmount = 0.00
-                        taxRate =  float(invrow["tax"][pc])
+                        taxRate = float(invrow["tax"][pc])
                         if int(invrow["taxflag"]) == 22:
-                            umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                            umresult = self.con.execute(
+                                select([unitofmeasurement.c.unitname]).where(
+                                    unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                                )
+                            )
                             umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
                             if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                                reductprice=float(idrateData[pc])
+                                reductprice = float(idrateData[pc])
                             else:
-                                reductprice=((float(contentsData[pc][list(contentsData[pc].keys())[0]]))*(float(idrateData[pc])))
-                            taxRate =  float(invrow["tax"][pc])
-                            taxAmount = (reductprice * float(taxRate/100))
-                            taxname = 'VAT'
+                                reductprice = (
+                                    float(
+                                        contentsData[pc][
+                                            list(contentsData[pc].keys())[0]
+                                        ]
+                                    )
+                                ) * (float(idrateData[pc]))
+                            taxRate = float(invrow["tax"][pc])
+                            taxAmount = reductprice * float(taxRate / 100)
+                            taxname = "VAT"
                             totalAmount = reductprice + taxAmount
                             totalTaxableVal = totalTaxableVal + reductprice
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":"VAT","taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
-                        else:   
+                            drcrContents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f" % float(pcquantity),
+                                "priceperunit": "%.2f"
+                                % (float(list(contentsData[pc].keys())[0])),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": "VAT",
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                                "newtaxableamnt": "%.2f" % (float(reductprice)),
+                                "reductionval": "%.2f" % float(idrateData[pc]),
+                            }
+                        else:
                             if int(prodrow["gsflag"]) == 7:
-                                umresult = self.con.execute(select([unitofmeasurement.c.unitname]).where(unitofmeasurement.c.uomid == int(prodrow["uomid"])))
+                                umresult = self.con.execute(
+                                    select([unitofmeasurement.c.unitname]).where(
+                                        unitofmeasurement.c.uomid
+                                        == int(prodrow["uomid"])
+                                    )
+                                )
                                 umrow = umresult.fetchone()
                                 unitofMeasurement = umrow["unitname"]
-                                if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                                    reductprice=float(idrateData[pc])
+                                if (
+                                    drcrrow["drcrmode"]
+                                    and int(drcrrow["drcrmode"]) == 18
+                                ):
+                                    reductprice = float(idrateData[pc])
                                 else:
-                                    reductprice=((float(contentsData[pc][list(contentsData[pc].keys())[0]]))*(float(idrateData[pc])))
+                                    reductprice = (
+                                        float(
+                                            contentsData[pc][
+                                                list(contentsData[pc].keys())[0]
+                                            ]
+                                        )
+                                    ) * (float(idrateData[pc]))
                             else:
                                 unitofMeasurement = ""
-                                reductprice=float(idrateData[pc])
+                                reductprice = float(idrateData[pc])
                             cessRate = 0.00
                             cessAmount = 0.00
                             cessVal = 0.00
                             taxname = ""
                             if invrow["cess"] != None:
                                 cessVal = float(invrow["cess"][pc])
-                                cessAmount = (reductprice * (cessVal/100))
+                                cessAmount = reductprice * (cessVal / 100)
                                 totalCessAmt = totalCessAmt + cessAmount
 
                             if invrow["sourcestate"] != invrow["taxstate"]:
                                 taxname = "IGST"
-                                taxAmount = (reductprice * (taxRate/100))
+                                taxAmount = reductprice * (taxRate / 100)
                                 totalAmount = reductprice + taxAmount + cessAmount
                             else:
                                 taxname = "SGST"
                                 # SGST and CGST rates are equal and exactly half the IGST rate.
-                                taxAmount = (reductprice * (taxRate/200))
-                                totalAmount = reductprice + (2*taxAmount) + cessAmount                   
+                                taxAmount = reductprice * (taxRate / 200)
+                                totalAmount = reductprice + (2 * taxAmount) + cessAmount
                             totalTaxableVal = totalTaxableVal + reductprice
                             totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {"proddesc":prodrow["productdesc"],"gscode":prodrow["gscode"],"uom":unitofMeasurement,"qty":"%.2f"%float(pcquantity),"priceperunit":"%.2f"% (float(list(contentsData[pc].keys())[0])),"totalAmount":"%.2f"% (float(totalAmount)),"taxname":taxname,"taxrate":"%.2f"% (float(taxRate)),"taxamount":"%.2f"% (float(taxAmount)),"cess":"%.2f"%(float(cessAmount)),"cessrate":"%.2f"%(float(cessVal)),"newtaxableamnt":"%.2f"% (float(reductprice)), "reductionval":"%.2f"% float(idrateData[pc])}
-                drcrdata["totaltaxablevalue"] = "%.2f"% (float(totalTaxableVal))
-                drcrdata["totaltaxamt"] = "%.2f"% (float(totalTaxAmt))
-                drcrdata["totalcessamt"] = "%.2f"% (float(totalCessAmt))
-                drcrdata['taxname'] = taxname
+                            drcrContents[pc] = {
+                                "proddesc": prodrow["productdesc"],
+                                "gscode": prodrow["gscode"],
+                                "uom": unitofMeasurement,
+                                "qty": "%.2f" % float(pcquantity),
+                                "priceperunit": "%.2f"
+                                % (float(list(contentsData[pc].keys())[0])),
+                                "totalAmount": "%.2f" % (float(totalAmount)),
+                                "taxname": taxname,
+                                "taxrate": "%.2f" % (float(taxRate)),
+                                "taxamount": "%.2f" % (float(taxAmount)),
+                                "cess": "%.2f" % (float(cessAmount)),
+                                "cessrate": "%.2f" % (float(cessVal)),
+                                "newtaxableamnt": "%.2f" % (float(reductprice)),
+                                "reductionval": "%.2f" % float(idrateData[pc]),
+                            }
+                drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
+                drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
+                drcrdata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
+                drcrdata["taxname"] = taxname
                 drcrdata["drcrcontents"] = drcrContents
-                drcrdata["invdata"]=invdata
-                #Flag sent to indicate whether goods returned where of badquality.
-                drcrGetSingleStockResult=self.con.execute("select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"%(int(self.request.params["drcrid"]), int(authDetails["orgcode"]))).fetchone()
+                drcrdata["invdata"] = invdata
+                # Flag sent to indicate whether goods returned where of badquality.
+                drcrGetSingleStockResult = self.con.execute(
+                    "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
+                    % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
+                ).fetchone()
                 if int(drcrGetSingleStockResult["drcrcount"]) == 0:
                     drcrdata["badquality"] = 0
                 else:
                     drcrdata["badquality"] = 1
-                return {"gkstatus":gkcore.enumdict["Success"],"gkresult":drcrdata}
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-                
-    @view_config(request_method='GET',request_param="drcr=all", renderer ='json')
+
+    @view_config(request_method="GET", request_param="drcr=all", renderer="json")
     def getAlldrcr(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(select([drcr.c.drcrno,drcr.c.drcrid,drcr.c.drcrdate,drcr.c.invid,drcr.c.dctypeflag,drcr.c.totreduct,drcr.c.attachmentcount]).where(drcr.c.orgcode==authDetails["orgcode"]).order_by(drcr.c.drcrdate))
+                result = self.con.execute(
+                    select(
+                        [
+                            drcr.c.drcrno,
+                            drcr.c.drcrid,
+                            drcr.c.drcrdate,
+                            drcr.c.invid,
+                            drcr.c.dctypeflag,
+                            drcr.c.totreduct,
+                            drcr.c.attachmentcount,
+                        ]
+                    )
+                    .where(drcr.c.orgcode == authDetails["orgcode"])
+                    .order_by(drcr.c.drcrdate)
+                )
                 drcrdata = []
                 for row in result:
-                    #invoice,cust
-                    inv=self.con.execute(select([invoice.c.custid]).where(invoice.c.invid==row["invid"]))
-                    invdata=inv.fetchone()
-                    custsupp=self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==invdata["custid"]))
-                    custsuppdata= custsupp.fetchone()
-                    if 'drcrflag' in self.request.params:                       
-                        if int(self.request.params["drcrflag"])==int(row["dctypeflag"]):
-                            drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
+                    # invoice,cust
+                    inv = self.con.execute(
+                        select([invoice.c.custid]).where(
+                            invoice.c.invid == row["invid"]
+                        )
+                    )
+                    invdata = inv.fetchone()
+                    custsupp = self.con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == invdata["custid"])
+                    )
+                    custsuppdata = custsupp.fetchone()
+                    if "drcrflag" in self.request.params:
+                        if int(self.request.params["drcrflag"]) == int(
+                            row["dctypeflag"]
+                        ):
+                            drcrdata.append(
+                                {
+                                    "drcrid": row["drcrid"],
+                                    "drcrno": row["drcrno"],
+                                    "drcrdate": datetime.strftime(
+                                        row["drcrdate"], "%d-%m-%Y"
+                                    ),
+                                    "dctypeflag": row["dctypeflag"],
+                                    "totreduct": "%.2f" % float(row["totreduct"]),
+                                    "invid": row["invid"],
+                                    "attachmentcount": row["attachmentcount"],
+                                    "custid": invdata["custid"],
+                                    "custname": custsuppdata["custname"],
+                                    "csflag": custsuppdata["csflag"],
+                                }
+                            )
                     else:
-                        drcrdata.append({"drcrid":row["drcrid"],"drcrno":row["drcrno"],"drcrdate":datetime.strftime(row["drcrdate"],'%d-%m-%Y'),"dctypeflag":row["dctypeflag"],"totreduct":"%.2f"%float(row["totreduct"]),"invid":row["invid"],"attachmentcount":row["attachmentcount"],"custid":invdata["custid"],"custname":custsuppdata["custname"],"csflag":custsuppdata["csflag"]})
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":drcrdata }
+                        drcrdata.append(
+                            {
+                                "drcrid": row["drcrid"],
+                                "drcrno": row["drcrno"],
+                                "drcrdate": datetime.strftime(
+                                    row["drcrdate"], "%d-%m-%Y"
+                                ),
+                                "dctypeflag": row["dctypeflag"],
+                                "totreduct": "%.2f" % float(row["totreduct"]),
+                                "invid": row["invid"],
+                                "attachmentcount": row["attachmentcount"],
+                                "custid": invdata["custid"],
+                                "custname": custsuppdata["custname"],
+                                "csflag": custsuppdata["csflag"],
+                            }
+                        )
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-    '''
+
+    """
     Deleteing drcr on the basis of reference field and drcrid
     if credit/debit note number is not used as reference then it can be deleted.
-    '''
-    @view_config(request_method='DELETE', renderer ='json')
+    """
+
+    @view_config(request_method="DELETE", renderer="json")
     def deletedrcr(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"]==False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result=self.con.execute(select([drcr.c.drcrid,drcr.c.reference]).where(drcr.c.drcrid==dataset["drcrid"]))
-                row=result.fetchone()                
+                result = self.con.execute(
+                    select([drcr.c.drcrid, drcr.c.reference]).where(
+                        drcr.c.drcrid == dataset["drcrid"]
+                    )
+                )
+                row = result.fetchone()
                 if not row["reference"]:
-                     result = self.con.execute(drcr.delete().where(drcr.c.drcrid==dataset["drcrid"]))
-                return {"gkstatus":enumdict["Success"]}
+                    result = self.con.execute(
+                        drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
+                    )
+                return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:
-                return {"gkstatus":enumdict["ActionDisallowed"]}
+                return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
-                return {"gkstatus":enumdict["ConnectionFailed"] }
+                return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    @view_config(request_method='GET',request_param='attach=image', renderer='json')
+    @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
         try:
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails['auth'] == False:
-            return {"gkstatus":enumdict["UnauthorisedAccess"]}
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
                 ur = getUserRole(authDetails["userid"])
                 urole = ur["gkresult"]
                 drcrid = self.request.params["drcrid"]
-                drcrData = self.con.execute(select([drcr.c.drcrno, drcr.c.attachment]).where(drcr.c.drcrid == drcrid))
+                drcrData = self.con.execute(
+                    select([drcr.c.drcrno, drcr.c.attachment]).where(
+                        drcr.c.drcrid == drcrid
+                    )
+                )
                 attachment = drcrData.fetchone()
-                return {"gkstatus":enumdict["Success"],"gkresult":attachment["attachment"],"drcrno":attachment["drcrno"],"userrole":urole["userrole"]}
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": attachment["attachment"],
+                    "drcrno": attachment["drcrno"],
+                    "userrole": urole["userrole"],
+                }
             except:
-                return {"gkstatus":enumdict["ConnectionFailed"]}
+                return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-    '''This is a function to update .
+
+    """This is a function to update .
     This function is primarily used to enable editing of debit and credit note.
     It receives a dictionary with information regarding debit and credit note
-        Update for debit and credit note.'''
-    @view_config(request_method='PUT', renderer='json')
+        Update for debit and credit note."""
+
+    @view_config(request_method="PUT", renderer="json")
     def editDrCrNote(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(drcr.update().where(drcr.c.drcrid==dataset["drcrid"]).values(dataset))
-                return {"gkstatus":enumdict["Success"]}
+                result = self.con.execute(
+                    drcr.update()
+                    .where(drcr.c.drcrid == dataset["drcrid"])
+                    .values(dataset)
+                )
+                return {"gkstatus": enumdict["Success"]}
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"] }
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
-                self.con.close()   
+                self.con.close()
 
-    @view_config(request_method='GET',request_param="inv=all", renderer ='json')
+    @view_config(request_method="GET", request_param="inv=all", renderer="json")
     def getAllinvoices(self):
         try:
             token = self.request.headers["gktoken"]
         except:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
-            return  {"gkstatus":  gkcore.enumdict["UnauthorisedAccess"]}
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
                 self.con = eng.connect()
                 drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
-                invsInDrCr = self.con.execute(select([drcr.c.invid]).where(and_(drcr.c.orgcode==authDetails["orgcode"], drcr.c.dctypeflag == drcrflag)))
-                invData = self.con.execute(select([invoice.c.invoiceno,invoice.c.invid,invoice.c.invoicedate,invoice.c.custid,invoice.c.inoutflag,invoice.c.invoicetotal,invoice.c.attachmentcount]).where(and_(invoice.c.orgcode==authDetails["orgcode"],invoice.c.icflag==9)).order_by(invoice.c.invoicedate))
-                lastdrcrno = self.con.execute("select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"%(int(authDetails["orgcode"]),int(drcrflag)))
+                invsInDrCr = self.con.execute(
+                    select([drcr.c.invid]).where(
+                        and_(
+                            drcr.c.orgcode == authDetails["orgcode"],
+                            drcr.c.dctypeflag == drcrflag,
+                        )
+                    )
+                )
+                invData = self.con.execute(
+                    select(
+                        [
+                            invoice.c.invoiceno,
+                            invoice.c.invid,
+                            invoice.c.invoicedate,
+                            invoice.c.custid,
+                            invoice.c.inoutflag,
+                            invoice.c.invoicetotal,
+                            invoice.c.attachmentcount,
+                        ]
+                    )
+                    .where(
+                        and_(
+                            invoice.c.orgcode == authDetails["orgcode"],
+                            invoice.c.icflag == 9,
+                        )
+                    )
+                    .order_by(invoice.c.invoicedate)
+                )
+                lastdrcrno = self.con.execute(
+                    "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
+                    % (int(authDetails["orgcode"]), int(drcrflag))
+                )
                 lastdrcrno = lastdrcrno.fetchone()
                 if lastdrcrno == None:
                     lastdrcrno = ""
@@ -424,41 +712,97 @@ class api_drcr(object):
                 invoices = []
                 for row in invData:
                     if row["invid"] not in DrCrInvs:
-                        customer = self.con.execute(select([customerandsupplier.c.custname,customerandsupplier.c.csflag]).where(customerandsupplier.c.custid==row["custid"]))
+                        customer = self.con.execute(
+                            select(
+                                [
+                                    customerandsupplier.c.custname,
+                                    customerandsupplier.c.csflag,
+                                ]
+                            ).where(customerandsupplier.c.custid == row["custid"])
+                        )
                         custname = customer.fetchone()
-                        if 'type' in self.request.params:
-                            if str(self.request.params["type"]) == 'sale' and row["inoutflag"]== 15:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                            elif str(self.request.params["type"]) == 'purchase' and row["inoutflag"]== 9:
-                                invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
+                        if "type" in self.request.params:
+                            if (
+                                str(self.request.params["type"]) == "sale"
+                                and row["inoutflag"] == 15
+                            ):
+                                invoices.append(
+                                    {
+                                        "invoiceno": row["invoiceno"],
+                                        "invid": row["invid"],
+                                        "custname": custname["custname"],
+                                        "csflag": custname["csflag"],
+                                        "invoicedate": datetime.strftime(
+                                            row["invoicedate"], "%d-%m-%Y"
+                                        ),
+                                        "invoicetotal": "%.2f"
+                                        % float(row["invoicetotal"]),
+                                        "attachmentcount": row["attachmentcount"],
+                                    }
+                                )
+                            elif (
+                                str(self.request.params["type"]) == "purchase"
+                                and row["inoutflag"] == 9
+                            ):
+                                invoices.append(
+                                    {
+                                        "invoiceno": row["invoiceno"],
+                                        "invid": row["invid"],
+                                        "custname": custname["custname"],
+                                        "csflag": custname["csflag"],
+                                        "invoicedate": datetime.strftime(
+                                            row["invoicedate"], "%d-%m-%Y"
+                                        ),
+                                        "invoicetotal": "%.2f"
+                                        % float(row["invoicetotal"]),
+                                        "attachmentcount": row["attachmentcount"],
+                                    }
+                                )
                         else:
-                            invoices.append({"invoiceno":row["invoiceno"], "invid":row["invid"],"custname":custname["custname"],"csflag":custname["csflag"],"invoicedate":datetime.strftime(row["invoicedate"],'%d-%m-%Y'),"invoicetotal":"%.2f"%float(row["invoicetotal"]), "attachmentcount":row["attachmentcount"]})
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult":invoices,"lastdrcrno":lastdrcrno }
+                            invoices.append(
+                                {
+                                    "invoiceno": row["invoiceno"],
+                                    "invid": row["invid"],
+                                    "custname": custname["custname"],
+                                    "csflag": custname["csflag"],
+                                    "invoicedate": datetime.strftime(
+                                        row["invoicedate"], "%d-%m-%Y"
+                                    ),
+                                    "invoicetotal": "%.2f" % float(row["invoicetotal"]),
+                                    "attachmentcount": row["attachmentcount"],
+                                }
+                            )
+                return {
+                    "gkstatus": gkcore.enumdict["Success"],
+                    "gkresult": invoices,
+                    "lastdrcrno": lastdrcrno,
+                }
             except:
-                return {"gkstatus":gkcore.enumdict["ConnectionFailed"]}
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
+
 def drcrVoucher(queryParams, orgcode):
-    '''
+    """
     This function creates voucher for Debit and Credit Notes.
 
     When a Debit Note or Credit Note is created corresponding voucher must also be created.
-    GNUKhata has vouchers of types Debit Note and Credit Note. The choice of accounts for 
-    creating these vouchers depends on the purpose for which a Debit  or a Credit Note is 
-    created. This could be either change in the amount to be paid or recived or a change in 
+    GNUKhata has vouchers of types Debit Note and Credit Note. The choice of accounts for
+    creating these vouchers depends on the purpose for which a Debit  or a Credit Note is
+    created. This could be either change in the amount to be paid or recived or a change in
     the quantity of products.
 
-    When there is change in price, Discount Paid/Discount Received accounts, Party's account and 
+    When there is change in price, Discount Paid/Discount Received accounts, Party's account and
     accounts of taxes are used to create vouchers. When there is change in quantity, corresponding
-    Sale/Purchase accounts, Party's Account, and accounts of taxes are used. The name of these 
-    accounts are found out using information from queryParams variable passed to this function. 
-    Then, corresponding account codes are found out and a dictionary is created with crs, drs, 
-    type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a 
+    Sale/Purchase accounts, Party's Account, and accounts of taxes are used. The name of these
+    accounts are found out using information from queryParams variable passed to this function.
+    Then, corresponding account codes are found out and a dictionary is created with crs, drs,
+    type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a
     Debit or Credit Note Voucher.
-    '''
+    """
     con = eng.connect()
-    taxRateDict = {5:2.5,12:6,18:9,28:14}
+    taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
     voucherDict = {}
     vouchersList = []
     vchCodes = []
@@ -472,18 +816,43 @@ def drcrVoucher(queryParams, orgcode):
     cgstAmount = 0.00
     sgstAmount = 0.00
 
-    partyaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == queryParams["custname"],accounts.c.orgcode == orgcode)))
+    partyaccount = con.execute(
+        select([accounts.c.accountcode]).where(
+            and_(
+                accounts.c.accountname == queryParams["custname"],
+                accounts.c.orgcode == orgcode,
+            )
+        )
+    )
     partyaccountcode = partyaccount.fetchone()
     if int(queryParams["drcrmode"]) == 4:
-        discountpaidaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "Discount Paid",accounts.c.orgcode == orgcode)))
+        discountpaidaccount = con.execute(
+            select([accounts.c.accountcode]).where(
+                and_(
+                    accounts.c.accountname == "Discount Paid",
+                    accounts.c.orgcode == orgcode,
+                )
+            )
+        )
         discountpaidaccountcode = discountpaidaccount.fetchone()
-        discountreceivedaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "Discount Received",accounts.c.orgcode == orgcode)))
+        discountreceivedaccount = con.execute(
+            select([accounts.c.accountcode]).where(
+                and_(
+                    accounts.c.accountname == "Discount Received",
+                    accounts.c.orgcode == orgcode,
+                )
+            )
+        )
         discountreceivedaccountcode = discountreceivedaccount.fetchone()
         if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             drs[discountpaidaccountcode["accountcode"]] = queryParams["totaltaxable"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -491,20 +860,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -512,13 +893,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -526,69 +913,143 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSOUT_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_OUT",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Paid Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Credit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "creditnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             drs[discountpaidaccountcode["accountcode"]] = queryParams["totaltaxable"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -596,20 +1057,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            taxHalf = (taxRateDict[int(taxRate)])
-                            tx = (float(taxRate)/2)
+                            taxHalf = taxRateDict[int(taxRate)]
+                            tx = float(taxRate) / 2
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -617,13 +1090,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -631,69 +1110,147 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSIN_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_IN",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Paid Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Credit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "creditnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
-        elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
+        elif (
+            int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15
+        ):
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
-            crs[discountreceivedaccountcode["accountcode"]] = queryParams["totaltaxable"]
+            crs[discountreceivedaccountcode["accountcode"]] = queryParams[
+                "totaltaxable"
+            ]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -701,20 +1258,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -722,13 +1291,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -736,69 +1311,145 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSOUT_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    crs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_OUT",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Received Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Received Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Debit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "debitnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
-            crs[discountreceivedaccountcode["accountcode"]] = queryParams["totaltaxable"]
+            crs[discountreceivedaccountcode["accountcode"]] = queryParams[
+                "totaltaxable"
+            ]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -806,20 +1457,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -827,13 +1490,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -841,62 +1510,132 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSIN_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    crs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_IN",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Paid Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Paid Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Debit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "debitnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
+                    rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
     elif int(queryParams["drcrmode"]) == 18:
@@ -906,19 +1645,36 @@ def drcrVoucher(queryParams, orgcode):
             if int(queryParams["maflag"]) == 1:
                 prodDataP = queryParams["product"]
                 for prod in prodDataP:
-                    proN = str(prod)+ " Sale" 
-                    prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                    proN = str(prod) + " Sale"
+                    prodAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == proN,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     prodAccount = prodAcc.fetchone()
-                    drs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    drs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
                     vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
-                salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                salesAccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                        )
+                    )
+                )
                 saleAcc = salesAccount.fetchone()
-                drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                drs[saleAcc["accountcode"]] = "%.2f" % float(totalTaxableVal)
                 vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -926,20 +1682,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -947,13 +1715,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -961,83 +1735,165 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSOUT_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_OUT",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" returned by "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Received goods worth Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " returned by "
+                + str(queryParams["custname"])
+                + " ref Credit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "creditnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rdcrs[vchProdAcc] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rdcrs[vchProdAcc] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rddrs[vchProdAcc] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rddrs[vchProdAcc] = "%.2f" % float(queryParams["roundoffamt"])
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
-            
         elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
             crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
                 prodDataP = queryParams["product"]
                 for prod in prodDataP:
-                    proN = str(prod)+ " Purchase" 
-                    prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                    proN = str(prod) + " Purchase"
+                    prodAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == proN,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     prodAccount = prodAcc.fetchone()
-                    drs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    drs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
                     vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
-                salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                salesAccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                        )
+                    )
+                )
                 saleAcc = salesAccount.fetchone()
-                drs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                drs[saleAcc["accountcode"]] = "%.2f" % float(totalTaxableVal)
                 vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -1045,20 +1901,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -1066,13 +1934,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -1080,83 +1954,171 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSIN_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    drs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_IN",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                drs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Received goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" from "+ str(queryParams["custname"])+" ref Credit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Received goods worth Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " from "
+                + str(queryParams["custname"])
+                + " ref Credit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"creditnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "creditnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
-            
-        elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15:
+        elif (
+            int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15
+        ):
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
                 prodDataP = queryParams["product"]
                 for prod in prodDataP:
-                    proN = str(prod)+ " Sale" 
-                    prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                    proN = str(prod) + " Sale"
+                    prodAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == proN,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     prodAccount = prodAcc.fetchone()
-                    crs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    crs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
                     vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
-                salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                salesAccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                        )
+                    )
+                )
                 saleAcc = salesAccount.fetchone()
-                crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                crs[saleAcc["accountcode"]] = "%.2f" % float(totalTaxableVal)
                 vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -1164,20 +2126,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTOUT_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -1185,13 +2159,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTOUT_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTOUT_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -1199,82 +2179,169 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSOUT_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSOUT_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    crs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_OUT", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_OUT",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Sold goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Sold goods worth Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Debit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "debitnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"payment","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "payment",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
-            
+
         elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
             drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
             if int(queryParams["maflag"]) == 1:
                 prodDataP = queryParams["product"]
                 for prod in prodDataP:
-                    proN = str(prod)+ " Purchase" 
-                    prodAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == proN, accounts.c.orgcode == orgcode)))
+                    proN = str(prod) + " Purchase"
+                    prodAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == proN,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     prodAccount = prodAcc.fetchone()
-                    crs[prodAccount["accountcode"]] ="%.2f"%float( prodDataP[prod])
+                    crs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
                     vchProdAcc = prodAccount["accountcode"]
             else:
                 # if multiple acc is 0 , then select default sale account
-                salesAccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode)))
+                salesAccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                        )
+                    )
+                )
                 saleAcc = salesAccount.fetchone()
-                crs[saleAcc["accountcode"]] = "%.2f"%float(totalTaxableVal)
+                crs[saleAcc["accountcode"]] = "%.2f" % float(totalTaxableVal)
                 vchProdAcc = saleAcc["accountcode"]
             if int(queryParams["taxflag"]) == 7:
-                abv = con.execute(select([state.c.abbreviation]).where(state.c.statename == queryParams["taxstate"]))
+                abv = con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["taxstate"]
+                    )
+                )
                 abb = abv.fetchone()
                 taxName = queryParams["taxname"]
                 if taxName == "SGST":
@@ -1282,20 +2349,32 @@ def drcrVoucher(queryParams, orgcode):
                         taxRate = float(queryParams["taxes"][prod])
                         taxable = float(queryParams["prodData"][prod])
                         if taxRate > 0.00:
-                            tx = (float(taxRate)/2)
-                            taxHalf = (taxRateDict[int(taxRate)])
+                            tx = float(taxRate) / 2
+                            taxHalf = taxRateDict[int(taxRate)]
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameSGST = "SGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
-                            taxNameCGST = "CGSTIN_"+str(abb["abbreviation"])+"@"+str(taxHalf)+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameSGST = (
+                                "SGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
+                            taxNameCGST = (
+                                "CGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
+                            )
                             if taxNameSGST not in taxDict:
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal)
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameSGST])
-                                taxDict[taxNameSGST] = "%.2f"%float(taxVal + val) 
-                                taxDict[taxNameCGST] = "%.2f"%float(taxVal + val)
-                                
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
                 if taxName == "IGST":
                     for prod in queryParams["prodData"]:
                         taxRate = float(queryParams["taxes"][prod])
@@ -1303,13 +2382,19 @@ def drcrVoucher(queryParams, orgcode):
                         if taxRate > 0.00:
                             tx = float(taxRate)
                             # this is the value which is going to Dr/Cr
-                            taxVal = taxable * (tx/100)
-                            taxNameIGST = "IGSTIN_"+str(abb["abbreviation"])+"@"+str(int(taxRate))+"%"
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGSTIN_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
                             if taxNameIGST not in taxDict:
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
                             else:
                                 val = float(taxDict[taxNameIGST])
-                                taxDict[taxNameIGST] = "%.2f"%float(taxVal + val)
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
 
                 for prod in queryParams["prodData"]:
                     cessRate = float(queryParams["cess"][prod])
@@ -1317,62 +2402,132 @@ def drcrVoucher(queryParams, orgcode):
                     if cessRate > 0.00:
                         cs = float(cessRate)
                         # this is the value which is going to Dr/Cr
-                        csVal = CStaxable * (cs/100)
-                        taxNameCESS = "CESSIN_"+str(abb["abbreviation"])+"@"+str(int(cs))+"%"
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESSIN_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
+                        )
                         if taxNameCESS not in taxDict:
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
                         else:
                             val = float(taxDict[taxNameCESS])
-                            taxDict[taxNameCESS] = "%.2f"%float(csVal + val)
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                 for Tax in taxDict:
-                    taxAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname== Tax,accounts.c.orgcode == orgcode)))
+                    taxAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.accountname == Tax,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     taxRow = taxAcc.fetchone()
-                    crs[taxRow["accountcode"]] = "%.2f"%float(taxDict[Tax])
+                    crs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
             else:
-                vatoutaccount = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.accountname == "VAT_IN", accounts.c.orgcode == orgcode)))
+                vatoutaccount = con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_IN",
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
                 vatoutaccountcode = vatoutaccount.fetchone()
                 for prod in queryParams["taxes"]:
-                    taxAmount = taxAmount + float(queryParams["prodData"][prod])*(float(queryParams["taxes"][prod])/100)
-                crs[vatoutaccountcode["accountcode"]] = "%.2f"%float(taxAmount)
+                    taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        float(queryParams["taxes"][prod]) / 100
+                    )
+                crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
-            Narration = "Returned goods worth Rupees "+ "%.2f"%float(queryParams["totreduct"]) +" to "+ str(queryParams["custname"])+" ref Debit Note No. "+str(queryParams["drcrno"])
+            Narration = (
+                "Returned goods worth Rupees "
+                + "%.2f" % float(queryParams["totreduct"])
+                + " to "
+                + str(queryParams["custname"])
+                + " ref Debit Note No. "
+                + str(queryParams["drcrno"])
+            )
 
-            voucherDict = {"drs":drs,"crs":crs,"voucherdate":queryParams["drcrdate"],"narration":Narration,"vouchertype":"debitnote","drcrid":queryParams["drcrid"]}
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["drcrdate"],
+                "narration": Narration,
+                "vouchertype": "debitnote",
+                "drcrid": queryParams["drcrid"],
+            }
             vouchersList.append(voucherDict)
 
             # check whether amount paid is rounded off
             if "roundoffamt" in queryParams:
                 if float(queryParams["roundoffamt"]) > 0.00:
                     # user has spent rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 180,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 180,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Paid",orgcode)
+                        a = createAccount(18, "Round Off Paid", orgcode)
                         accCode = a["accountcode"]
 
-                    rddrs[accCode] = "%.2f"%float(queryParams["roundoffamt"])
-                    rdcrs[partyaccountcode["accountcode"]] = "%.2f"%float(queryParams["roundoffamt"])
+                    rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                    rdcrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        queryParams["roundoffamt"]
+                    )
 
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f spent"%float(queryParams["roundoffamt"]),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f spent"
+                        % float(queryParams["roundoffamt"]),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
                 if float(queryParams["roundoffamt"]) < 0.00:
                     # user has earned rounded of amount
-                    roundAcc = con.execute(select([accounts.c.accountcode]).where(and_(accounts.c.defaultflag== 181,accounts.c.orgcode == orgcode)))
+                    roundAcc = con.execute(
+                        select([accounts.c.accountcode]).where(
+                            and_(
+                                accounts.c.defaultflag == 181,
+                                accounts.c.orgcode == orgcode,
+                            )
+                        )
+                    )
                     roundRow = roundAcc.fetchone()
 
                     try:
                         accCode = roundRow["accountcode"]
                     except:
-                        a = createAccount(18,"Round Off Received",orgcode)
+                        a = createAccount(18, "Round Off Received", orgcode)
                         accCode = a["accountcode"]
 
-                    rdcrs[accCode] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rddrs[partyaccountcode["accountcode"]] = "%.2f"%float(abs(queryParams["roundoffamt"]))
-                    rd_VoucherDict = {"drs":rddrs,"crs":rdcrs,"voucherdate":queryParams["drcrdate"],"narration":"Round off amount %.2f earned"%float(abs(queryParams["roundoffamt"])),"vouchertype":"journal","drcrid":queryParams["drcrid"]}
+                    rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                    rddrs[partyaccountcode["accountcode"]] = "%.2f" % float(
+                        abs(queryParams["roundoffamt"])
+                    )
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["drcrdate"],
+                        "narration": "Round off amount %.2f earned"
+                        % float(abs(queryParams["roundoffamt"])),
+                        "vouchertype": "journal",
+                        "drcrid": queryParams["drcrid"],
+                    }
                     vouchersList.append(rd_VoucherDict)
 
     for vch in vouchersList:
@@ -1386,20 +2541,31 @@ def drcrVoucher(queryParams, orgcode):
             initialType = "dr"
         if vch["vouchertype"] == "journal":
             initialType = "jr"
-        vchCountResult = con.execute("select count(vouchercode) as vcount from vouchers where orgcode = %d"%(int(orgcode)))
+        vchCountResult = con.execute(
+            "select count(vouchercode) as vcount from vouchers where orgcode = %d"
+            % (int(orgcode))
+        )
         vchCount = vchCountResult.fetchone()
         if vchCount["vcount"] == 0:
             initialType = initialType + "1"
         else:
-            vchCodeResult = con.execute("select max(vouchercode) as vcode from vouchers")
+            vchCodeResult = con.execute(
+                "select max(vouchercode) as vcode from vouchers"
+            )
             vchCode = vchCodeResult.fetchone()
             initialType = initialType + str(vchCode["vcode"])
         vch["vouchernumber"] = initialType
 
-        result = con.execute(vouchers.insert(),[vch])
+        result = con.execute(vouchers.insert(), [vch])
         for drkeys in list(vch["drs"].keys()):
-            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(drkeys)))
+            con.execute(
+                "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
+                % (int(drkeys))
+            )
         for crkeys in list(vch["crs"].keys()):
-            con.execute("update accounts set vouchercount = vouchercount +1 where accountcode = %d"%(int(crkeys)))
+            con.execute(
+                "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
+                % (int(crkeys))
+            )
         vchCodes.append(initialType)
     return vchCodes
