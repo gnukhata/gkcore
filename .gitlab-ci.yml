@@ -25,4 +25,5 @@ init:
 gkcore-tests:
   stage: test
   script:
+    - pip3 install requests
     - python3 tests.py
