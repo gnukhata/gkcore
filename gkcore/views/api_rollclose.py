@@ -1273,9 +1273,9 @@ class api_rollclose(object):
                         },
                     )
                 ## Category Migration
-                oldToNewCatCodes = (
-                    {}
-                )  # old category code to new category code referrence dict
+
+                # old category code to new category code referrence dict
+                oldToNewCatCodes = {}
                 oldCategoryData = self.con.execute(
                     "select * from categorysubcategories where orgcode = %d and subcategoryof is null"
                     % (orgCode)
@@ -1332,6 +1332,9 @@ class api_rollclose(object):
                     "select * from product where orgcode = %d" % (orgCode)
                 )
                 oldProductRows = oldProductData.fetchall()
+
+                # old product code to new product code reference dict
+                oldToNewProdCodes = {}
                 for prodRow in oldProductRows:
                     categoryCode = None
                     if (
@@ -1358,6 +1361,14 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
+                    newProdData = self.con.execute(
+                        "select productcode from product where orgcode = %d and productdesc = '%s'"
+                        % (newOrgCode, prodRow["productdesc"])
+                    )
+                    newProdRow = newProdData.fetchone()
+                    oldToNewProdCodes[prodRow["productcode"]] = newProdRow[
+                        "productcode"
+                    ]
                 # Godowns Migration
                 oldGodowns = self.con.execute(
                     "select * from godown where orgcode = %d" % (orgCode)
@@ -1380,12 +1391,16 @@ class api_rollclose(object):
                     "select * from goprod where orgcode = %d" % (orgCode)
                 )
                 for row in oldGp:
+                    oldProdCode = row["productcode"]
+                    newProdCode = None
+                    if(oldProdCode is not None and oldProdCode in oldToNewProdCodes):
+                        newProdCode = oldToNewProdCodes[oldProdCode]
                     self.con.execute(
                         goprod.insert(),
                         {
                             "goid": row["goid"],
-                            "productcode": row["productcode"],
-                            "goopeningstock": row["goopeningstock"],
+                            "productcode": newProdCode,
+                            "goopeningstock": row["goopeningstock"], # Needs to be modified
                             "orgcode": newOrgCode,
                         },
                     )
