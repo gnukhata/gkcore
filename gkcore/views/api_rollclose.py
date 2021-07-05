@@ -38,6 +38,7 @@ from gkcore.models.gkdb import (
     product,
     categorysubcategories,
     categoryspecs,
+    tax,
     godown,
     goprod,
     usergodown,
@@ -1063,8 +1064,7 @@ class api_rollclose(object):
                 self.con = eng.connect()
                 orgCode = int(authDetails["orgcode"])
                 financialStartEnd = self.con.execute(
-                    "select orgname,yearstart, yearend, orgtype from organisation where orgcode = %d"
-                    % int(orgCode)
+                    "select * from organisation where orgcode = %d" % int(orgCode)
                 )
                 startEndRow = financialStartEnd.fetchone()
                 oldstartDate = startEndRow["yearstart"]
@@ -1078,6 +1078,35 @@ class api_rollclose(object):
                     "orgtype": startEndRow["orgtype"],
                     "yearstart": newYearStart,
                     "yearend": newYearEnd,
+                    "orgcity": startEndRow["orgcity"],
+                    "orgaddr": startEndRow["orgaddr"],
+                    "orgpincode": startEndRow["orgpincode"],
+                    "orgstate": startEndRow["orgstate"],
+                    "orgcountry": startEndRow["orgcountry"],
+                    "orgtelno": startEndRow["orgtelno"],
+                    "orgfax": startEndRow["orgfax"],
+                    "orgwebsite": startEndRow["orgwebsite"],
+                    "orgemail": startEndRow["orgemail"],
+                    "orgpan": startEndRow["orgpan"],
+                    "orgmvat": startEndRow["orgmvat"],
+                    "orgstax": startEndRow["orgstax"],
+                    "orgregno": startEndRow["orgregno"],
+                    "orgregdate": startEndRow["orgregdate"],
+                    "orgfcrano": startEndRow["orgfcrano"],
+                    "orgfcradate": startEndRow["orgfcradate"],
+                    "roflag": startEndRow["roflag"],
+                    "booksclosedflag": 0,
+                    "invflag": startEndRow["invflag"],
+                    "billflag": startEndRow["billflag"],
+                    "invsflag": startEndRow["invsflag"],
+                    "avflag": startEndRow["avflag"],
+                    "maflag": startEndRow["maflag"],
+                    "modeflag": startEndRow["modeflag"],
+                    "avnoflag": startEndRow["avnoflag"],
+                    "ainvnoflag": startEndRow["ainvnoflag"],
+                    "logo": startEndRow["logo"],
+                    "gstin": startEndRow["gstin"],
+                    "bankdetails": startEndRow["bankdetails"],
                 }
                 self.con.execute(organisation.insert(), newOrg)
                 newOrgCodeData = self.con.execute(
@@ -1369,6 +1398,33 @@ class api_rollclose(object):
                     oldToNewProdCodes[prodRow["productcode"]] = newProdRow[
                         "productcode"
                     ]
+
+                # Tax Migration
+                oldTaxData = self.con.execute(
+                    "select * from tax where orgcode = %d" % (orgCode)
+                )
+                oldTaxRows = oldTaxData.fetchall()
+                for taxRow in oldTaxRows:
+                    newProdCode = None
+                    newCatCode = None
+                    oldProdCode = taxRow["productcode"]
+                    oldCatCode = taxRow["categorycode"]
+                    if oldCatCode is not None and oldCatCode in oldToNewCatCodes:
+                        newCatCode = oldToNewCatCodes[oldCatCode]
+                    if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
+                        newProdCode = oldToNewProdCodes[oldProdCode]
+                    self.con.execute(
+                        tax.insert(),
+                        {
+                            "taxname": taxRow["taxname"],
+                            "taxrate": taxRow["taxrate"],
+                            "state": taxRow["state"],
+                            "productcode": newProdCode,
+                            "categorycode": newCatCode,
+                            "orgcode": newOrgCode,
+                        },
+                    )
+
                 # Godowns Migration
                 oldGodowns = self.con.execute(
                     "select * from godown where orgcode = %d" % (orgCode)
@@ -1393,14 +1449,15 @@ class api_rollclose(object):
                 for row in oldGp:
                     oldProdCode = row["productcode"]
                     newProdCode = None
-                    if(oldProdCode is not None and oldProdCode in oldToNewProdCodes):
+                    if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
                     self.con.execute(
                         goprod.insert(),
                         {
                             "goid": row["goid"],
                             "productcode": newProdCode,
-                            "goopeningstock": row["goopeningstock"], # Needs to be modified
+                            # 'goopeningstock' Needs to be modified
+                            "goopeningstock": row["goopeningstock"],
                             "orgcode": newOrgCode,
                         },
                     )
