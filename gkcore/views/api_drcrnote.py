@@ -146,14 +146,19 @@ class api_drcr(object):
                         return {
                             "gkstatus": enumdict["Success"],
                             "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
+                            "gkresult": drcrid["drcrid"],
                         }
                     except:
                         return {
                             "gkstatus": enumdict["Success"],
                             "vchCode": {"vflag": 0},
+                            "gkresult": drcrid["drcrid"],
                         }
                 else:
-                    return {"gkstatus": enumdict["Success"]}
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": drcrid["drcrid"],
+                    }
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:

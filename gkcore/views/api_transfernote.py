@@ -132,7 +132,10 @@ class api_transfernote(object):
                             )
                         )
                         return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                    return {"gkstatus": enumdict["Success"]}
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": transfernoteidrow["transfernoteid"],
+                    }
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:

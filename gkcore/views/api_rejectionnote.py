@@ -143,7 +143,10 @@ class api_rejectionnote(object):
                             )
                         )
                         return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                    return {"gkstatus": enumdict["Success"]}
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": rnidrow["rnid"],
+                    }
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
