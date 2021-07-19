@@ -1423,25 +1423,6 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
-                # Godown Producs
-                oldGp = self.con.execute(
-                    "select * from goprod where orgcode = %d" % (orgCode)
-                )
-                for row in oldGp:
-                    oldProdCode = row["productcode"]
-                    newProdCode = None
-                    if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
-                        newProdCode = oldToNewProdCodes[oldProdCode]
-                    self.con.execute(
-                        goprod.insert(),
-                        {
-                            "goid": row["goid"],
-                            "productcode": newProdCode,
-                            # 'goopeningstock' Needs to be modified
-                            "goopeningstock": row["goopeningstock"],
-                            "orgcode": newOrgCode,
-                        },
-                    )
                 # Old/New Godown Id's mapping
                 oldgo = self.con.execute(
                     f"select * from godown where orgcode={orgCode}"
@@ -1454,6 +1435,25 @@ class api_rollclose(object):
                     ).fetchone()
                     godownMap[i["goid"]] = newgo["goid"]
 
+                # Godown Producs
+                oldGp = self.con.execute(
+                    "select * from goprod where orgcode = %d" % (orgCode)
+                )
+                for row in oldGp:
+                    oldProdCode = row["productcode"]
+                    newProdCode = None
+                    if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
+                        newProdCode = oldToNewProdCodes[oldProdCode]
+                    self.con.execute(
+                        goprod.insert(),
+                        {
+                            "goid": godownMap[row["goid"]],
+                            "productcode": newProdCode,
+                            # 'goopeningstock' Needs to be modified
+                            "goopeningstock": row["goopeningstock"],
+                            "orgcode": newOrgCode,
+                        },
+                    )
                 # User Godowns migration
                 oldUserGodowns = self.con.execute(
                     f"select * from usergodown where orgcode={orgCode}"
@@ -1477,6 +1477,7 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
+                return {"gkstatus": enumdict["Success"]}
 
             except Exception as E:
                 print(E)
