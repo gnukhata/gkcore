@@ -2194,7 +2194,13 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
-                dataset = self.request.json_body
+                try:
+                    dataset = self.request.json_body
+                except:
+                    dataset = {
+                        "inputdate": self.request.params["inputdate"],
+                        "type": self.request.params["type"],
+                    }
                 inputdate = dataset["inputdate"]
                 new_inputdate = dataset["inputdate"]
                 new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")

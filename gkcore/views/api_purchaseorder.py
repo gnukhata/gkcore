@@ -86,8 +86,20 @@ class api_purchaseorder(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(purchaseorder.insert(), [dataset])
-                return {"gkstatus": enumdict["Success"]}
+                self.con.execute(purchaseorder.insert(), [dataset])
+                orderIdData = self.con.execute(
+                    select([purchaseorder.c.orderid]).where(
+                        and_(
+                            purchaseorder.c.orderno == dataset["orderno"],
+                            purchaseorder.c.orderdate == dataset["orderdate"],
+                        )
+                    )
+                )
+                orderIdRow = orderIdData.fetchone()
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": orderIdRow["orderid"],
+                }
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
