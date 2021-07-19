@@ -69,25 +69,6 @@ class api_rollclose(object):
         self.request = request
         self.con = Connection
 
-    @view_config(request_param="task=test", renderer="json")
-    def test(self):
-        self.con = eng.connect()
-        self.res = self.con.execute("select * from godown where orgcode = 1")
-        obj = []
-        for row in self.res:
-            obj.append(
-                {
-                    "goid": row["goid"],
-                    "goname": row["goname"],
-                    "goaddr": row["goaddr"],
-                    "gocontact": row["gocontact"],
-                    "state": row["state"],
-                    "contactname": row["contactname"],
-                    "designation": row["designation"],
-                }
-            )
-        return obj
-
     @view_config(request_param="task=closebooks", renderer="json")
     def closeBooks(self):
         """
@@ -1461,20 +1442,42 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
-                # User Godowns
+                # Old/New Godown Id's mapping
+                oldgo = self.con.execute(
+                    f"select * from godown where orgcode={orgCode}"
+                ).fetchall()
+                godownMap = {}
+                for i in oldgo:
+                    newgo = self.con.execute(
+                        f"select * from godown where orgcode={newOrgCode} and goname='%s'"
+                        % (i["goname"])
+                    ).fetchone()
+                    godownMap[i["goid"]] = newgo["goid"]
+
+                # User Godowns migration
                 oldUserGodowns = self.con.execute(
-                    "select * from usergodown where orgcode = %d" % (orgCode)
-                )
+                    f"select * from usergodown where orgcode={orgCode}"
+                ).fetchall()
+                oldgi = self.con.execute(
+                    f"select * from users where userrole=3 and orgcode={orgCode}"
+                ).fetchall()
+                gimap = {}
+                for i in oldgi:
+                    newgi = self.con.execute(
+                        f"select userid from users where userrole=3 and orgcode={newOrgCode} and username='%s'"
+                        % (i["username"])
+                    ).fetchone()
+                    gimap[i["userid"]] = newgi["userid"]
                 for row in oldUserGodowns:
                     self.con.execute(
                         usergodown.insert(),
                         {
-                            "goid": row["goid"],
-                            "userid": row["userid"],
+                            "goid": godownMap[row["goid"]],
+                            "userid": gimap[row["userid"]],
                             "orgcode": newOrgCode,
                         },
                     )
-                return {"gkstatus": enumdict["Success"]}
+
             except Exception as E:
                 print(E)
                 self.con.close()
