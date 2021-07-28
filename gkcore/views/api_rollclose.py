@@ -27,7 +27,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_reports import calculateBalance
+from gkcore.views.api_reports import calculateBalance, stockonhandfun
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
@@ -1352,6 +1352,15 @@ class api_rollclose(object):
                         and prodRow["categorycode"] in oldToNewCatCodes
                     ):
                         categoryCode = oldToNewCatCodes[prodRow["categorycode"]]
+
+                    stockData = stockonhandfun(orgCode, prodRow['productcode'], endDate)
+                    openingStock = float(0)
+                    if stockData['gkstatus'] == 0:
+                        openingStock = stockData['gkresult'][0]['balance']
+                        if(openingStock == 'nan'):
+                            openingStock = 0
+                        openingStock = float(openingStock)
+                                           
                     self.con.execute(
                         product.insert(),
                         {
@@ -1360,9 +1369,7 @@ class api_rollclose(object):
                             "percentdiscount": prodRow["percentdiscount"],
                             "amountdiscount": prodRow["amountdiscount"],
                             "productdesc": prodRow["productdesc"],
-                            "openingstock": prodRow[
-                                "openingstock"
-                            ],  # Needs to be modified
+                            "openingstock": openingStock,
                             "specs": prodRow["specs"],
                             "categorycode": categoryCode,
                             "uomid": prodRow["uomid"],
