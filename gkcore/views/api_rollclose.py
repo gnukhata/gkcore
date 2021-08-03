@@ -27,7 +27,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_reports import calculateBalance, stockonhandfun
+from gkcore.views.api_reports import calculateBalance, stockonhandfun, godownwisestockonhandfun
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
@@ -1451,13 +1451,16 @@ class api_rollclose(object):
                     newProdCode = None
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
+                    stockData = godownwisestockonhandfun(self.con, orgCode, endDate, 'pg', oldProdCode, row["goid"])
+                    stockBalance = 0
+                    if len(stockData) and 'balance' in stockData[0] :
+                        stockBalance = float(stockData[0]['balance'])
                     self.con.execute(
                         goprod.insert(),
                         {
                             "goid": godownMap[row["goid"]],
                             "productcode": newProdCode,
-                            # 'goopeningstock' Needs to be modified
-                            "goopeningstock": row["goopeningstock"],
+                            "goopeningstock": stockBalance,
                             "orgcode": newOrgCode,
                         },
                     )
