@@ -129,6 +129,7 @@ class api_purchaseorder(object):
                                 purchaseorder.c.orderno,
                                 purchaseorder.c.csid,
                                 purchaseorder.c.attachmentcount,
+                                purchaseorder.c.purchaseordertotal,
                             ]
                         )
                         .where(
@@ -149,6 +150,7 @@ class api_purchaseorder(object):
                                 purchaseorder.c.orderno,
                                 purchaseorder.c.csid,
                                 purchaseorder.c.attachmentcount,
+                                purchaseorder.c.purchaseordertotal,
                             ]
                         )
                         .where(purchaseorder.c.orgcode == authDetails["orgcode"])
@@ -171,6 +173,7 @@ class api_purchaseorder(object):
                             ),
                             "attachmentcount": row["attachmentcount"],
                             "customer": custrow["custname"],
+                            "ordertotal": float(row["purchaseordertotal"]),
                         }
                     )
                 self.con.close()

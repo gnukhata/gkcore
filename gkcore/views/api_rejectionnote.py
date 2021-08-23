@@ -175,6 +175,9 @@ class api_rejectionnote(object):
                 )
                 rnotes = []
                 for row in result:
+                    invno = {}
+                    if row["invid"]:
+                        invno = self.con.execute("select invoiceno from invoice where invid = %d" %(row["invid"])).fetchone()
                     rnotes.append(
                         {
                             "rnid": row["rnid"],
@@ -182,7 +185,9 @@ class api_rejectionnote(object):
                             "inout": row["inout"],
                             "dcid": row["dcid"],
                             "invid": row["invid"],
+                            "invoiceno": invno["invoiceno"],
                             "rndate": datetime.strftime(row["rndate"], "%d-%m-%Y"),
+                            "rntotal": float(row["rejectedtotal"]),
                         }
                     )
 

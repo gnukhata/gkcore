@@ -2073,7 +2073,7 @@ class api_invoice(object):
                 self.con = eng.connect()
                 result = self.con.execute(
                     select(
-                        [invoice.c.invoiceno, invoice.c.invid, invoice.c.invoicedate]
+                        [invoice.c.invoiceno, invoice.c.invid, invoice.c.invoicedate, invoice.c.invoicetotal]
                     )
                     .where(
                         and_(
@@ -2093,6 +2093,7 @@ class api_invoice(object):
                             "invoicedate": datetime.strftime(
                                 row["invoicedate"], "%d-%m-%Y"
                             ),
+                            "invoicetotal": float(row["invoicetotal"])
                         }
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
