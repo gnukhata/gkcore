@@ -36,16 +36,13 @@ from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
-from sqlalchemy.sql import select, distinct
+from sqlalchemy.sql import select
 from sqlalchemy import func, desc
-import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 import jwt
 import gkcore
-from gkcore.models.meta import dbconnect
 from Crypto.PublicKey import RSA
-from gkcore.models.gkdb import metadata
 from gkcore.models.meta import (
     inventoryMigration,
     addFields,
@@ -53,9 +50,7 @@ from gkcore.models.meta import (
     tableExists,
     getOnDelete,
 )
-from gkcore.views.api_invoice import getStateCode
-from gkcore.models.gkdb import godown, usergodown, stock, goprod
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 
 con = Connection
 
@@ -166,92 +161,52 @@ class api_organisation(object):
 
                 """ Following dictionary of uom, first try to insert single uqc if it fail means uqc is exists in table then updated its description and sysunit"""
                 dictofuqc = {
-                    "BAG": "BAG",
-                    "BGS": "BAGS",
-                    "BLS": "BAILS",
-                    "BTL": "BOTTLES",
-                    "BOU": "BOU",
-                    "BOX": "BOXES",
-                    "BKL": "BUCKLES",
-                    "BLK": "BULK",
-                    "BUN": "BUNCHES",
+                    "BAG": "BAGS",
+                    "BAL": "BALE",
                     "BDL": "BUNDLES",
+                    "BKL": "BUCKLES",
+                    "BOU": "BILLIONS OF UNITS",
+                    "BOX": "BOX",
+                    "BTL": "BOTTLES",
+                    "BUN": "BUNCHES",
                     "CAN": "CANS",
-                    "CTN": "CARTONS",
-                    "CAS": "CASES",
-                    "CMS": "CENTIMETER",
-                    "CHI": "CHEST",
-                    "CLS": "COILS",
-                    "COL": "COLLIES",
-                    "CRI": "CRATES",
-                    "CCM": "CUBIC CENTIMETER",
-                    "CIN": "CUBIC INCHES",
                     "CBM": "CUBIC METER",
-                    "CQM": "CUBIC METERS",
-                    "CYL": "CYLINDER",
-                    "SDM": "DECAMETER SQUARE",
-                    "DAY": "DAYS",
+                    "CCM": "CUBIC CENTIMETER",
+                    "CMS": "CENTIMETER",
+                    "CRT": "Carat",
+                    "CTN": "CARTONS",
                     "DOZ": "DOZEN",
-                    "DRM": "DRUMS",
-                    "FTS": "FEET",
-                    "FLK": "FLASKS",
+                    "DRM": "DRUM",
+                    "GGK": "GREAT GROSS",
                     "GMS": "GRAMS",
-                    "TON": "GREAT BRITAIN TON",
-                    "GGR": "GREAT GROSS",
                     "GRS": "GROSS",
                     "GYD": "GROSS YARDS",
-                    "HBK": "HABBUCK",
-                    "HKS": "HANKS",
-                    "HRS": "HOURS",
-                    "INC": "INCHES",
-                    "JTA": "JOTTA",
                     "KGS": "KILOGRAMS",
                     "KLR": "KILOLITER",
                     "KME": "KILOMETERS",
-                    "LTR": "LITERS",
-                    "LOG": "LOGS",
-                    "LOT": "LOTS",
+                    "MLT": "MILLILITER",
                     "MTR": "METER",
                     "MTS": "METRIC TON",
-                    "MGS": "MILLIGRAMS",
-                    "MLT": "MILLILITER",
-                    "MMT": "MILLIMETER",
-                    "NONE": "NOT CHOSEN",
-                    "NOS": "NUMBERS",
-                    "ODD": "ODDS",
+                    "NOS": "NUMBER",
+                    "OTH": "OTHERS",
                     "PAC": "PACKS",
-                    "PAI": "PAILS",
-                    "PRS": "PAIRS",
-                    "PLT": "PALLETS",
                     "PCS": "PIECES",
-                    "LBS": "POUNDS",
+                    "PRS": "PAIRS",
                     "QTL": "QUINTAL",
-                    "REL": "REELS",
                     "ROL": "ROLLS",
                     "SET": "SETS",
-                    "SHT": "SHEETS",
-                    "SLB": "SLABS",
                     "SQF": "SQUARE FEET",
-                    "SQI": "SQUARE INCHES",
-                    "SQC": "SQUARE CENTIMETERS",
                     "SQM": "SQUARE METER",
                     "SQY": "SQUARE YARDS",
-                    "BLO": "STEEL BLOCKS",
-                    "TBL": "TABLES",
                     "TBS": "TABLETS",
-                    "TGM": "TEN GROSS",
+                    "TGM": "TEN GRAMS",
                     "THD": "THOUSANDS",
-                    "TIN": "TINS",
-                    "TOL": "TOLA",
-                    "TRK": "TRUNK",
+                    "TON": "GREAT BRITAIN TON",
                     "TUB": "TUBES",
-                    "UNT": "UNITS",
                     "UGS": "US GALLONS",
-                    "VLS": "VIALS",
-                    "CSK": "WOODEN CASES",
+                    "UNT": "UNITS",
                     "YDS": "YARDS",
                 }
-
                 for unit, desc in list(dictofuqc.items()):
                     try:
                         self.con.execute(
@@ -1250,10 +1205,10 @@ class api_organisation(object):
                     "insert into state( statecode, statename)values(24, 'Gujarat')"
                 )
                 self.con.execute(
-                    "insert into state( statecode, statename)values(25, 'Daman and Diu')"
+                    "insert into state( statecode, statename)values(25, 'Daman and Diu (Old)')"
                 )
                 self.con.execute(
-                    "insert into state( statecode, statename)values(26, 'Dadra and Nagar Haveli')"
+                    "insert into state( statecode, statename)values(26, 'Daman and Diu & Dadra and Nagar Haveli (New)')"
                 )
                 self.con.execute(
                     "insert into state( statecode, statename)values(27, 'Maharashtra')"
@@ -1288,6 +1243,9 @@ class api_organisation(object):
                 self.con.execute(
                     "insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')"
                 )
+                self.con.execute(
+                    "insert into state( statecode, statename)values(38, 'Ladakh')"
+                )
             if not columnExists("state", "abbreviation"):
                 self.con.execute("alter table state add abbreviation text")
                 self.con.execute("update state set abbreviation='JK' where statecode=1")
@@ -1299,6 +1257,7 @@ class api_organisation(object):
                 self.con.execute("update state set abbreviation='DL' where statecode=7")
                 self.con.execute("update state set abbreviation='RJ' where statecode=8")
                 self.con.execute("update state set abbreviation='UP' where statecode=9")
+
                 self.con.execute(
                     "update state set abbreviation='BR' where statecode=10"
                 )
@@ -1382,6 +1341,9 @@ class api_organisation(object):
                 )
                 self.con.execute(
                     "update state set abbreviation='AP' where statecode=37"
+                )
+                self.con.execute(
+                    "update state set abbreviation='LA' where statecode=38"
                 )
             if columnExists("invoice", "reversecharge"):
                 countResult = self.con.execute(
