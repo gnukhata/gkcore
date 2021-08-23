@@ -8403,7 +8403,13 @@ class api_reports(object):
             try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
-                dataset = self.request.json_body
+                if "inputdate" in self.request.params:
+                    dataset = {
+                        "inputdate": self.request.params["inputdate"],
+                        "del_unbilled_type": self.request.params["del_unbilled_type"],
+                    }
+                else:
+                    dataset = self.request.json_body
                 inout = self.request.params["inout"]
                 inputdate = dataset["inputdate"]
                 del_unbilled_type = dataset["del_unbilled_type"]
@@ -8794,6 +8800,8 @@ class api_reports(object):
                     elif temp_dict["dcflag"] == 6:
                         # we ignore this as well
                         temp_dict["dcflag"] = "Free Replacement"
+                    else:
+                        temp_dict["dcflag"] = "Bad Input"
                     if (
                         temp_dict["dcflag"] != "Sample"
                         and temp_dict["dcflag"] != "Free Replacement"

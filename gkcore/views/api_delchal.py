@@ -1174,7 +1174,13 @@ create method for delchal resource.
             try:
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
-                dataset = self.request.json_body
+                if "inputdate" in self.request.params:
+                    dataset = {
+                        "inputdate": self.request.params["inputdate"],
+                        "del_cancelled_type": self.request.params["del_cancelled_type"],
+                    }
+                else:
+                    dataset = self.request.json_body
                 inout = self.request.params["inout"]
                 inputdate = dataset["inputdate"]
                 del_cancelled_type = dataset["del_cancelled_type"]
@@ -1262,7 +1268,6 @@ create method for delchal resource.
                             godownname = ""
                             godownaddrs = ""
                             godown = ""
-
                     if row["dcflag"] == 1:
                         dcflag = "Approval"
                     elif row["dcflag"] == 3:
@@ -1277,6 +1282,8 @@ create method for delchal resource.
                     elif row["dcflag"] == 6:
                         # we ignore this as well
                         dcflag = "Free Replacement"
+                    else:
+                        dcflag = "Bad Input"
                     singledcdata = {
                         "dcid": row["dcid"],
                         "dcno": row["dcno"],
