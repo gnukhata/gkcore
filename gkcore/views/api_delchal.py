@@ -267,6 +267,15 @@ create method for delchal resource.
                         .where(delchal.c.orgcode == authDetails["orgcode"])
                         .order_by(delchal.c.dcno)
                     )
+                # Creating a godown id to godown data map, to add godown details to the delchal list data
+                godata = self.con.execute(
+                    "select goid, goname from godown where orgcode = %d"
+                    % (authDetails["orgcode"])
+                )
+                gorows = godata.fetchall()
+                godownMap = {}
+                for gorow in gorows:
+                    godownMap[gorow["goid"]] = {"goname": gorow["goname"]}
 
                 """
                 An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
@@ -280,45 +289,29 @@ create method for delchal resource.
                 If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
                 """
                 usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
-                if usergodowmns:
-                    godowns = []
-                    for godown in usergodowmns:
-                        godowns.append(godown["goid"])
-                    for row in result:
-                        delchalgodown = self.con.execute(
-                            select([stock.c.goid]).where(
-                                and_(
-                                    stock.c.dcinvtnid == row["dcid"],
-                                    stock.c.dcinvtnflag == 4,
-                                )
+                godowns = []
+                for godown in usergodowmns:
+                    godowns.append(godown["goid"])
+                for row in result:
+                    delchalgodown = self.con.execute(
+                        select([stock.c.goid]).where(
+                            and_(
+                                stock.c.dcinvtnid == row["dcid"],
+                                stock.c.dcinvtnflag == 4,
                             )
                         )
-                        delchalgodata = delchalgodown.fetchone()
-                        delchalgoid = delchalgodata["goid"]
+                    )
+                    delchalgodata = delchalgodown.fetchone()
+                    delchalgoid = delchalgodata["goid"]
+                    proceed = False
+                    if usergodowmns:
                         if delchalgoid in godowns:
-                            custdata = self.con.execute(
-                                select(
-                                    [
-                                        customerandsupplier.c.custname,
-                                        customerandsupplier.c.csflag,
-                                    ]
-                                ).where(customerandsupplier.c.custid == row["custid"])
-                            )
-                            custrow = custdata.fetchone()
-                            delchals.append(
-                                {
-                                    "dcid": row["dcid"],
-                                    "dcno": row["dcno"],
-                                    "custname": custrow["custname"],
-                                    "csflag": custrow["csflag"],
-                                    "dcdate": datetime.strftime(
-                                        row["dcdate"], "%d-%m-%Y"
-                                    ),
-                                    "attachmentcount": row["attachmentcount"],
-                                }
-                            )
-                else:
-                    for row in result:
+                            # If the user has godowns assigned, then only those delchals mapped to the user godowns will be returned
+                            proceed = True
+                    else:
+                        # If the user has no godowns assigned to them, then all delivery challans will be returned
+                        proceed = True
+                    if proceed:
                         custdata = self.con.execute(
                             select(
                                 [
@@ -336,6 +329,7 @@ create method for delchal resource.
                                 "csflag": custrow["csflag"],
                                 "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
                                 "attachmentcount": row["attachmentcount"],
+                                "goname": godownMap[delchalgoid]["goname"] or "",
                             }
                         )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
