@@ -80,6 +80,17 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing,
 maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
 modeflag=0 old interface for payment and receipt voucher is used.
 modeflag=1 new user friendly interface for payment and receipt voucher is used.
+
+userconf Format:
+{
+    page_id: {
+        config_id: {
+            config
+        }
+    }
+}
+
+page_id and config_id will be stored in client side as enums.
 """
 organisation = Table(
     "organisation",
@@ -105,6 +116,7 @@ organisation = Table(
     Column("orgregdate", UnicodeText),
     Column("orgfcrano", UnicodeText),
     Column("orgfcradate", UnicodeText),
+    Column("orgconf", JSONB, default='{}'),
     Column("roflag", Integer, default=0),
     Column("booksclosedflag", Integer, default=0),
     Column("invflag", Integer, default=0),
@@ -730,7 +742,19 @@ stock = Table(
 """ table to store users for an organization.
 Table for storing users for a particular organisation.
 So orgcode is foreign key like other tables.
-In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 internal auditor:2 Godown In Charge:3"""
+In addition this table has a field userrole which determines if the user is an admin:-1 manager:0 or operater:1 internal auditor:2 Godown In Charge:3
+
+userconf Format:
+{
+    page_id: {
+        config_id: {
+            config
+        }
+    }
+}
+
+page_id and config_id will be stored in client side as enums.
+"""
 users = Table(
     "users",
     metadata,
@@ -741,6 +765,7 @@ users = Table(
     Column("userquestion", Text, nullable=False),
     Column("useranswer", Text, nullable=False),
     Column("themename", Text, default="Default"),
+    Column("userconf", JSONB, default='{}'),
     Column(
         "orgcode",
         Integer,

@@ -1550,6 +1550,13 @@ class api_organisation(object):
                     )
                 if fkeyavlb == "CASCADE":
                     pass
+            # Add config columns for user and organisation if not present and init to {}
+            if not columnExists("users", "userconf"):
+                self.con.execute("alter table users add userconf jsonb default '{}'")
+            if not columnExists("organisation", "orgconf"):
+                self.con.execute(
+                    "alter table organisation add orgconf jsonb default '{}'"
+                )
         except:
             return 0
         finally:
