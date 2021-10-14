@@ -47,6 +47,7 @@ requires = [
     "wsgicors == 0.7.0",
     "openpyxl == 2.5.0",
     "black == 21.6b0",
+    "jsonschema == 4.0.1",
 ]
 
 setup(

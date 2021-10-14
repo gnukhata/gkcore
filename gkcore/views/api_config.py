@@ -37,7 +37,30 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
+from jsonschema import RefResolver, Draft202012Validator, validate
+from gkcore.config_schema import (
+    payloadSchema1,
+    payloadSchema2,
+    transactionBaseSchema,
+    transactionConfigSchema,
+    transactionPageSchema,
+    workflowConfigSchema
+)
 
+schema_store = {
+    transactionBaseSchema["$id"]: transactionBaseSchema,
+    transactionConfigSchema["$id"]: transactionConfigSchema,
+    transactionPageSchema["party"]["$id"]: transactionPageSchema["party"],
+    transactionPageSchema["ship"]["$id"]: transactionPageSchema["ship"],
+    transactionPageSchema["bill"]["$id"]: transactionPageSchema["bill"],
+    transactionPageSchema["payment"]["$id"]: transactionPageSchema["payment"],
+    transactionPageSchema["transport"]["$id"]: transactionPageSchema["transport"],
+    transactionPageSchema["total"]["$id"]: transactionPageSchema["total"],
+    transactionPageSchema["comments"]["$id"]: transactionPageSchema["comments"],
+}
+
+resolver = RefResolver.from_schema(transactionBaseSchema, store=schema_store)
+validator = Draft202012Validator(transactionConfigSchema, resolver=resolver)
 
 @view_defaults(route_name="config")
 class api_config(object):
@@ -136,8 +159,45 @@ class api_config(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
 
+                # Validate the payload structure
+                try:
+                    validate(instance=dataset, schema=payloadSchema2)
+                    print("Config Structure Validated")
+                except Exception as e:
+                    print(e)
+                    return {
+                        "gkstatus": enumdict["ActionDisallowed"],
+                        "gkmessage": "Invalid Payload. Please check the payload structure",
+                    }
+
                 # Array of keys in descending order of hierarchy [parent, child, grand child, etc.]
                 pathArr = dataset["path"]
+
+                confToValidate = {}
+                target = confToValidate
+                pathLen = len(pathArr)
+                for pathIndex, path in enumerate(pathArr):
+                    target[path] = {}
+                    if pathIndex + 1 < pathLen:
+                        target = target[path]
+                    else:
+                        target[path] = dataset["config"]
+
+                # Validate the config structure
+                try:
+                    # print(confToValidate)
+                    if self.request.params["confcategory"] == "transaction":
+                        validator.validate(confToValidate)
+                    else:
+                        validate(instance=confToValidate, schema=workflowConfigSchema)
+                    print("Config Validated")
+                except Exception as e:
+                    # print(e)
+                    # print(confToValidate)
+                    return {
+                        "gkstatus": enumdict["ActionDisallowed"],
+                        "gkmessage": "Invalid Config. Please check the config structure",
+                    }
 
                 newConfig = dataset["config"]
                 oldConfig = self.getConf(
@@ -145,6 +205,7 @@ class api_config(object):
                     authDetails["orgcode"],
                     authDetails["userid"],
                 )
+
                 target = oldConfig
                 targetPath = []
                 targetParent = oldConfig
@@ -181,7 +242,7 @@ class api_config(object):
                             )
                             .values(userconf=payload)
                         )
-                    else:
+                    elif self.request.params["conftype"] == "org":
                         self.con.execute(
                             organisation.update()
                             .where(organisation.c.orgcode == authDetails["orgcode"])
@@ -200,14 +261,14 @@ class api_config(object):
                                 authDetails["userid"],
                             )
                         )
-                    else:
+                    elif self.request.params["conftype"] == "org":
                         self.con.execute(
                             "update organisation set orgconf = jsonb_set(orgconf, %s, %s) where orgcode = %d;"
                             % (path, payload, authDetails["orgcode"])
                         )
                 return {"gkstatus": enumdict["Success"]}
             except Exception as e:
-                print(e)
+                # print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -227,7 +288,7 @@ class api_config(object):
                     )
                 ).fetchone()
                 config = configRow["userconf"]
-            else:
+            elif confType == "org":
                 configRow = self.con.execute(
                     select([organisation.c.orgconf]).where(
                         organisation.c.orgcode == orgcode,
