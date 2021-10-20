@@ -94,6 +94,1501 @@ Depending on the request_param, different methods will be called on the route gi
 """
 
 
+def getSpreadSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
+    con = eng.connect()
+    financialstart = con.execute(
+        "select yearstart, orgtype from organisation where orgcode = %d" % int(orgcode)
+    )
+    financialstartRow = financialstart.fetchone()
+    financialStart = financialstartRow["yearstart"]
+    orgtype = financialstartRow["orgtype"]
+    sbalanceSheet = []
+    abalanceSheet = []
+    sourcesTotal = 0.00
+    applicationsTotal = 0.00
+    difference = 0.00
+    sbalanceSheet.append(
+        {
+            "groupAccname": "Sources:",
+            "amount": "",
+            "groupAcccode": "",
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    capital_Corpus = ""
+    if orgtype == "Profit Making":
+        capital_Corpus = "Capital"
+    if orgtype == "Not For Profit":
+        capital_Corpus = "Corpus"
+    groupWiseTotal = 0.00
+
+    # Calculate grouptotal for group Capital/Corpus
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"
+        % (orgcode, orgcode, capital_Corpus)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='%s');"
+        % (orgcode, orgcode, capital_Corpus)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='%s');"
+        % (orgcode, capital_Corpus)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Cr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Cr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+    sourcesTotal += groupWiseTotal
+    sbalanceSheet.append(
+        {
+            "groupAccname": capital_Corpus,
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    sbalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group Loans(Liability)
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Loans(Liability)');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Loans(Liability)');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Cr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Cr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    sourcesTotal += groupWiseTotal
+    sbalanceSheet.append(
+        {
+            "groupAccname": "Loans(Liability)",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    sbalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group Current Liabilities
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Current Liabilities');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Current Liabilities');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Cr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Cr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    sourcesTotal += groupWiseTotal
+    sbalanceSheet.append(
+        {
+            "groupAccname": "Current Liabilities",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    sbalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group "Reserves"
+    groupWiseTotal = 0.00
+    incomeTotal = 0.00
+    expenseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Reserves');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Reserves');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Cr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Cr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Dr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    # Calculate all income(Direct and Indirect Income)
+    accountcodeData = con.execute(
+        "select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"
+        % (orgcode, orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    for accountRow in accountCodes:
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Cr":
+            incomeTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Dr":
+            incomeTotal -= accountDetails["curbal"]
+
+    # Calculate all expense(Direct and Indirect Expense)
+    accountcodeData = con.execute(
+        "select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"
+        % (orgcode, orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    for accountRow in accountCodes:
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Dr":
+            expenseTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Cr":
+            expenseTotal -= accountDetails["curbal"]
+
+    # Calculate Profit/Loss for the year
+    profit = 0
+    exp = float("%.2f" % (expenseTotal))
+    incm = float("%.2f" % (incomeTotal))
+    if exp > incm:
+        profit = expenseTotal - incomeTotal
+        groupWiseTotal -= profit
+        sbalanceSheet.append(
+            {
+                "groupAccname": "Reserves",
+                "amount": "%.2f" % (groupWiseTotal),
+                "groupAcccode": groupcode,
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        if orgtype == "Profit Making":
+            sbalanceSheet.append(
+                {
+                    "groupAccname": "Loss for the Year:",
+                    "amount": "%.2f" % (profit),
+                    "groupAcccode": "",
+                    "subgroupof": groupcode,
+                    "accountof": "",
+                    "groupAccflag": 2,
+                    "advflag": "",
+                }
+            )
+        else:
+            sbalanceSheet.append(
+                {
+                    "groupAccname": "Deficit for the Year:",
+                    "amount": "%.2f" % (profit),
+                    "groupAcccode": "",
+                    "subgroupof": groupcode,
+                    "accountof": "",
+                    "groupAccflag": 2,
+                    "advflag": "",
+                }
+            )
+
+    if exp < incm:
+        profit = incomeTotal - expenseTotal
+        groupWiseTotal += profit
+        sbalanceSheet.append(
+            {
+                "groupAccname": "Reserves",
+                "amount": "%.2f" % (groupWiseTotal),
+                "groupAcccode": groupcode,
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        if orgtype == "Profit Making":
+            sbalanceSheet.append(
+                {
+                    "groupAccname": "Profit for the Year:",
+                    "amount": "%.2f" % (profit),
+                    "groupAcccode": "",
+                    "subgroupof": groupcode,
+                    "accountof": "",
+                    "groupAccflag": 2,
+                    "advflag": "",
+                }
+            )
+        else:
+            sbalanceSheet.append(
+                {
+                    "groupAccname": "Surplus for the Year:",
+                    "amount": "%.2f" % (profit),
+                    "groupAcccode": "",
+                    "subgroupof": groupcode,
+                    "accountof": "",
+                    "groupAccflag": 2,
+                    "advflag": "",
+                }
+            )
+    if expenseTotal == incomeTotal:
+        sbalanceSheet.append(
+            {
+                "groupAccname": "Reserves",
+                "amount": "%.2f" % (groupWiseTotal),
+                "groupAcccode": groupcode,
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+
+    sbalanceSheet += groupAccSubgroup
+    sourcesTotal += groupWiseTotal
+    sbalanceSheet.append(
+        {
+            "groupAccname": "Total",
+            "amount": "%.2f" % (sourcesTotal),
+            "groupAcccode": "",
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+
+    # Applications:
+    abalanceSheet.append(
+        {
+            "groupAccname": "Applications:",
+            "amount": "",
+            "groupAcccode": "",
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+
+    # Calculate grouptotal for group "Fixed Assets"
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Fixed Assets');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Fixed Assets');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Dr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Dr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    applicationsTotal += groupWiseTotal
+    abalanceSheet.append(
+        {
+            "groupAccname": "Fixed Assets",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    abalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group "Investments"
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Investments');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Investments');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Dr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Dr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    applicationsTotal += groupWiseTotal
+    abalanceSheet.append(
+        {
+            "groupAccname": "Investments",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    abalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group "Current Assets"
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Current Assets');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Current Assets');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Dr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Dr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    applicationsTotal += groupWiseTotal
+    abalanceSheet.append(
+        {
+            "groupAccname": "Current Assets",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    abalanceSheet += groupAccSubgroup
+
+    # Calculate grouptotal for group Loans(Asset)
+    groupWiseTotal = 0.00
+    accountcodeData = con.execute(
+        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)') order by accountname;"
+        % (orgcode, orgcode)
+    )
+    accountCodes = accountcodeData.fetchall()
+    subgroupDataRow = con.execute(
+        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Loans(Asset)');"
+        % (orgcode, orgcode)
+    )
+    subgroupData = subgroupDataRow.fetchall()
+    groupCode = con.execute(
+        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Loans(Asset)');"
+        % (orgcode)
+    )
+    groupcode = groupCode.fetchone()["groupcode"]
+    groupAccSubgroup = []
+
+    for accountRow in accountCodes:
+        accountTotal = 0.00
+        adverseflag = 0
+        accountDetails = calculateBalance(
+            con,
+            accountRow["accountcode"],
+            financialStart,
+            calculatefrom,
+            calculateTo,
+        )
+        if accountDetails["baltype"] == "Dr":
+            groupWiseTotal += accountDetails["curbal"]
+            accountTotal += accountDetails["curbal"]
+        if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+            adverseflag = 1
+            accountTotal -= accountDetails["curbal"]
+            groupWiseTotal -= accountDetails["curbal"]
+        groupAccSubgroup.append(
+            {
+                "groupAccname": accountRow["accountname"],
+                "amount": "%.2f" % (accountTotal),
+                "groupAcccode": accountRow["accountcode"],
+                "subgroupof": "",
+                "accountof": groupcode,
+                "groupAccflag": 1,
+                "advflag": adverseflag,
+            }
+        )
+
+    for subgroup in subgroupData:
+        subgroupTotal = 0.00
+        accounts = []
+        subgroupAccDataRow = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+            % (orgcode, subgroup["groupcode"])
+        )
+        subgroupAccData = subgroupAccDataRow.fetchall()
+        for account in subgroupAccData:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                account["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Dr":
+                subgroupTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                subgroupTotal -= accountDetails["curbal"]
+                accountTotal -= accountDetails["curbal"]
+            if accountDetails["curbal"] != 0:
+                accounts.append(
+                    {
+                        "groupAccname": account["accountname"],
+                        "amount": "%.2f" % (accountTotal),
+                        "groupAcccode": account["accountcode"],
+                        "subgroupof": groupcode,
+                        "accountof": subgroup["groupcode"],
+                        "groupAccflag": 2,
+                        "advflag": adverseflag,
+                    }
+                )
+        groupWiseTotal += subgroupTotal
+        groupAccSubgroup.append(
+            {
+                "groupAccname": subgroup["groupname"],
+                "amount": "%.2f" % (subgroupTotal),
+                "groupAcccode": subgroup["groupcode"],
+                "subgroupof": groupcode,
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        groupAccSubgroup += accounts
+
+    applicationsTotal += groupWiseTotal
+    abalanceSheet.append(
+        {
+            "groupAccname": "Loans(Asset)",
+            "amount": "%.2f" % (groupWiseTotal),
+            "groupAcccode": groupcode,
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    abalanceSheet += groupAccSubgroup
+
+    if orgtype == "Profit Making":
+        # Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
+        groupWiseTotal = 0.00
+        accountcodeData = con.execute(
+            "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)') order by accountname;"
+            % (orgcode, orgcode)
+        )
+        accountCodes = accountcodeData.fetchall()
+        subgroupDataRow = con.execute(
+            "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Miscellaneous Expenses(Asset)');"
+            % (orgcode, orgcode)
+        )
+        subgroupData = subgroupDataRow.fetchall()
+        groupCode = con.execute(
+            "select groupcode from groupsubgroups where (orgcode=%d and groupname='Miscellaneous Expenses(Asset)');"
+            % (orgcode)
+        )
+        groupcode = groupCode.fetchone()["groupcode"]
+        groupAccSubgroup = []
+
+        for accountRow in accountCodes:
+            accountTotal = 0.00
+            adverseflag = 0
+            accountDetails = calculateBalance(
+                con,
+                accountRow["accountcode"],
+                financialStart,
+                calculatefrom,
+                calculateTo,
+            )
+            if accountDetails["baltype"] == "Dr":
+                groupWiseTotal += accountDetails["curbal"]
+                accountTotal += accountDetails["curbal"]
+            if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                adverseflag = 1
+                accountTotal -= accountDetails["curbal"]
+                groupWiseTotal -= accountDetails["curbal"]
+            groupAccSubgroup.append(
+                {
+                    "groupAccname": accountRow["accountname"],
+                    "amount": "%.2f" % (accountTotal),
+                    "groupAcccode": accountRow["accountcode"],
+                    "subgroupof": "",
+                    "accountof": groupcode,
+                    "groupAccflag": 1,
+                    "advflag": adverseflag,
+                }
+            )
+
+        for subgroup in subgroupData:
+            subgroupTotal = 0.00
+            accounts = []
+            subgroupAccDataRow = con.execute(
+                "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
+                % (orgcode, subgroup["groupcode"])
+            )
+            subgroupAccData = subgroupAccDataRow.fetchall()
+            for account in subgroupAccData:
+                accountTotal = 0.00
+                adverseflag = 0
+                accountDetails = calculateBalance(
+                    con,
+                    account["accountcode"],
+                    financialStart,
+                    calculatefrom,
+                    calculateTo,
+                )
+                if accountDetails["baltype"] == "Dr":
+                    subgroupTotal += accountDetails["curbal"]
+                    accountTotal += accountDetails["curbal"]
+                if accountDetails["baltype"] == "Cr" and accountDetails["curbal"] != 0:
+                    adverseflag = 1
+                    subgroupTotal -= accountDetails["curbal"]
+                    accountTotal -= accountDetails["curbal"]
+                if accountDetails["curbal"] != 0:
+                    accounts.append(
+                        {
+                            "groupAccname": account["accountname"],
+                            "amount": "%.2f" % (accountTotal),
+                            "groupAcccode": account["accountcode"],
+                            "subgroupof": groupcode,
+                            "accountof": subgroup["groupcode"],
+                            "groupAccflag": 2,
+                            "advflag": adverseflag,
+                        }
+                    )
+            groupWiseTotal += subgroupTotal
+            groupAccSubgroup.append(
+                {
+                    "groupAccname": subgroup["groupname"],
+                    "amount": "%.2f" % (subgroupTotal),
+                    "groupAcccode": subgroup["groupcode"],
+                    "subgroupof": groupcode,
+                    "accountof": "",
+                    "groupAccflag": "",
+                    "advflag": "",
+                }
+            )
+            groupAccSubgroup += accounts
+
+        applicationsTotal += groupWiseTotal
+        abalanceSheet.append(
+            {
+                "groupAccname": "Miscellaneous Expenses(Asset)",
+                "amount": "%.2f" % (groupWiseTotal),
+                "groupAcccode": groupcode,
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        abalanceSheet += groupAccSubgroup
+
+    abalanceSheet.append(
+        {
+            "groupAccname": "Total",
+            "amount": "%.2f" % (applicationsTotal),
+            "groupAcccode": "",
+            "subgroupof": "",
+            "accountof": "",
+            "groupAccflag": "",
+            "advflag": "",
+        }
+    )
+    sourcesTotal = round(sourcesTotal, 2)
+    applicationsTotal = round(applicationsTotal, 2)
+    difference = abs(sourcesTotal - applicationsTotal)
+
+    if sourcesTotal > applicationsTotal:
+        abalanceSheet.append(
+            {
+                "groupAccname": "Difference",
+                "amount": "%.2f" % (difference),
+                "groupAcccode": "",
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        abalanceSheet.append(
+            {
+                "groupAccname": "Total",
+                "amount": "%.2f" % (sourcesTotal),
+                "groupAcccode": "",
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+    if applicationsTotal > sourcesTotal:
+        sbalanceSheet.append(
+            {
+                "groupAccname": "Difference",
+                "amount": "%.2f" % (difference),
+                "groupAcccode": "",
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+        sbalanceSheet.append(
+            {
+                "groupAccname": "Total",
+                "amount": "%.2f" % (applicationsTotal),
+                "groupAcccode": "",
+                "subgroupof": "",
+                "accountof": "",
+                "groupAccflag": "",
+                "advflag": "",
+            }
+        )
+
+    if balancetype == 1:
+        if orgtype == "Profit Making":
+            if applicationsTotal > sourcesTotal and profit == 0:
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if sourcesTotal > applicationsTotal and profit == 0:
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if applicationsTotal > sourcesTotal and profit != 0:
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if sourcesTotal > applicationsTotal and profit != 0:
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if difference == 0 and profit == 0:
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if difference == 0 and profit != 0:
+                emptyno = 0
+        if orgtype == "Not For Profit":
+            if applicationsTotal > sourcesTotal and profit == 0:
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if sourcesTotal > applicationsTotal and profit == 0:
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if applicationsTotal > sourcesTotal and profit != 0:
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if sourcesTotal > applicationsTotal and profit != 0:
+                sbalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+            if difference == 0 and profit == 0:
+                emptyno = 0
+            if difference == 0 and profit != 0:
+                abalanceSheet.insert(
+                    -1,
+                    {
+                        "groupAccname": "",
+                        "amount": "",
+                        "groupAcccode": "",
+                        "subgroupof": "",
+                        "accountof": "",
+                        "groupAccflag": "",
+                        "advflag": "",
+                    },
+                )
+
+    con.close()
+    return {"leftlist": sbalanceSheet, "rightlist": abalanceSheet}
+
+
 def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateTo):
     """
     purpose:
@@ -2812,1559 +4307,16 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
-                self.con = eng.connect()
-                orgcode = authDetails["orgcode"]
-                financialstart = self.con.execute(
-                    "select yearstart, orgtype from organisation where orgcode = %d"
-                    % int(orgcode)
+                balanceSheet = getSpreadSheet(
+                    self.con,
+                    authDetails["orgcode"],
+                    self.request.params["calculateto"],
+                    self.request.params["calculatefrom"],
+                    int(self.request.params["baltype"]),
                 )
-                financialstartRow = financialstart.fetchone()
-                financialStart = financialstartRow["yearstart"]
-                orgtype = financialstartRow["orgtype"]
-                calculateTo = self.request.params["calculateto"]
-                calculatefrom = self.request.params["calculatefrom"]
-                balancetype = int(self.request.params["baltype"])
-                sbalanceSheet = []
-                abalanceSheet = []
-                sourcesTotal = 0.00
-                applicationsTotal = 0.00
-                difference = 0.00
-                sbalanceSheet.append(
-                    {
-                        "groupAccname": "Sources:",
-                        "amount": "",
-                        "groupAcccode": "",
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                capital_Corpus = ""
-                if orgtype == "Profit Making":
-                    capital_Corpus = "Capital"
-                if orgtype == "Not For Profit":
-                    capital_Corpus = "Corpus"
-                groupWiseTotal = 0.00
-
-                # Calculate grouptotal for group Capital/Corpus
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"
-                    % (orgcode, orgcode, capital_Corpus)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='%s');"
-                    % (orgcode, orgcode, capital_Corpus)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='%s');"
-                    % (orgcode, capital_Corpus)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Cr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Dr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Cr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Dr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-                sourcesTotal += groupWiseTotal
-                sbalanceSheet.append(
-                    {
-                        "groupAccname": capital_Corpus,
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                sbalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group Loans(Liability)
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Liability)') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Loans(Liability)');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Loans(Liability)');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Cr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Dr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Cr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Dr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                sourcesTotal += groupWiseTotal
-                sbalanceSheet.append(
-                    {
-                        "groupAccname": "Loans(Liability)",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                sbalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group Current Liabilities
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Liabilities') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Current Liabilities');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Current Liabilities');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Cr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Dr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Cr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Dr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                sourcesTotal += groupWiseTotal
-                sbalanceSheet.append(
-                    {
-                        "groupAccname": "Current Liabilities",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                sbalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group "Reserves"
-                groupWiseTotal = 0.00
-                incomeTotal = 0.00
-                expenseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Reserves') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Reserves');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Reserves');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Cr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Dr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Cr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Dr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                # Calculate all income(Direct and Indirect Income)
-                accountcodeData = self.con.execute(
-                    "select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income','Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"
-                    % (orgcode, orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Cr":
-                        incomeTotal += accountDetails["curbal"]
-                    if accountDetails["baltype"] == "Dr":
-                        incomeTotal -= accountDetails["curbal"]
-
-                # Calculate all expense(Direct and Indirect Expense)
-                accountcodeData = self.con.execute(
-                    "select accountcode from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense','Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"
-                    % (orgcode, orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                for accountRow in accountCodes:
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Dr":
-                        expenseTotal += accountDetails["curbal"]
-                    if accountDetails["baltype"] == "Cr":
-                        expenseTotal -= accountDetails["curbal"]
-
-                # Calculate Profit/Loss for the year
-                profit = 0
-                exp = float("%.2f" % (expenseTotal))
-                incm = float("%.2f" % (incomeTotal))
-                if exp > incm:
-                    profit = expenseTotal - incomeTotal
-                    groupWiseTotal -= profit
-                    sbalanceSheet.append(
-                        {
-                            "groupAccname": "Reserves",
-                            "amount": "%.2f" % (groupWiseTotal),
-                            "groupAcccode": groupcode,
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    if orgtype == "Profit Making":
-                        sbalanceSheet.append(
-                            {
-                                "groupAccname": "Loss for the Year:",
-                                "amount": "%.2f" % (profit),
-                                "groupAcccode": "",
-                                "subgroupof": groupcode,
-                                "accountof": "",
-                                "groupAccflag": 2,
-                                "advflag": "",
-                            }
-                        )
-                    else:
-                        sbalanceSheet.append(
-                            {
-                                "groupAccname": "Deficit for the Year:",
-                                "amount": "%.2f" % (profit),
-                                "groupAcccode": "",
-                                "subgroupof": groupcode,
-                                "accountof": "",
-                                "groupAccflag": 2,
-                                "advflag": "",
-                            }
-                        )
-
-                if exp < incm:
-                    profit = incomeTotal - expenseTotal
-                    groupWiseTotal += profit
-                    sbalanceSheet.append(
-                        {
-                            "groupAccname": "Reserves",
-                            "amount": "%.2f" % (groupWiseTotal),
-                            "groupAcccode": groupcode,
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    if orgtype == "Profit Making":
-                        sbalanceSheet.append(
-                            {
-                                "groupAccname": "Profit for the Year:",
-                                "amount": "%.2f" % (profit),
-                                "groupAcccode": "",
-                                "subgroupof": groupcode,
-                                "accountof": "",
-                                "groupAccflag": 2,
-                                "advflag": "",
-                            }
-                        )
-                    else:
-                        sbalanceSheet.append(
-                            {
-                                "groupAccname": "Surplus for the Year:",
-                                "amount": "%.2f" % (profit),
-                                "groupAcccode": "",
-                                "subgroupof": groupcode,
-                                "accountof": "",
-                                "groupAccflag": 2,
-                                "advflag": "",
-                            }
-                        )
-                if expenseTotal == incomeTotal:
-                    sbalanceSheet.append(
-                        {
-                            "groupAccname": "Reserves",
-                            "amount": "%.2f" % (groupWiseTotal),
-                            "groupAcccode": groupcode,
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-
-                sbalanceSheet += groupAccSubgroup
-                sourcesTotal += groupWiseTotal
-                sbalanceSheet.append(
-                    {
-                        "groupAccname": "Total",
-                        "amount": "%.2f" % (sourcesTotal),
-                        "groupAcccode": "",
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-
-                # Applications:
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Applications:",
-                        "amount": "",
-                        "groupAcccode": "",
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-
-                # Calculate grouptotal for group "Fixed Assets"
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Fixed Assets') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Fixed Assets');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Fixed Assets');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Dr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Cr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Dr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Cr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                applicationsTotal += groupWiseTotal
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Fixed Assets",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                abalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group "Investments"
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Investments') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Investments');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Investments');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Dr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Cr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Dr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Cr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                applicationsTotal += groupWiseTotal
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Investments",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                abalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group "Current Assets"
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Current Assets') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Current Assets');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Current Assets');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Dr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Cr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Dr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Cr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                applicationsTotal += groupWiseTotal
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Current Assets",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                abalanceSheet += groupAccSubgroup
-
-                # Calculate grouptotal for group Loans(Asset)
-                groupWiseTotal = 0.00
-                accountcodeData = self.con.execute(
-                    "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Loans(Asset)') order by accountname;"
-                    % (orgcode, orgcode)
-                )
-                accountCodes = accountcodeData.fetchall()
-                subgroupDataRow = self.con.execute(
-                    "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Loans(Asset)');"
-                    % (orgcode, orgcode)
-                )
-                subgroupData = subgroupDataRow.fetchall()
-                groupCode = self.con.execute(
-                    "select groupcode from groupsubgroups where (orgcode=%d and groupname='Loans(Asset)');"
-                    % (orgcode)
-                )
-                groupcode = groupCode.fetchone()["groupcode"]
-                groupAccSubgroup = []
-
-                for accountRow in accountCodes:
-                    accountTotal = 0.00
-                    adverseflag = 0
-                    accountDetails = calculateBalance(
-                        self.con,
-                        accountRow["accountcode"],
-                        financialStart,
-                        calculatefrom,
-                        calculateTo,
-                    )
-                    if accountDetails["baltype"] == "Dr":
-                        groupWiseTotal += accountDetails["curbal"]
-                        accountTotal += accountDetails["curbal"]
-                    if (
-                        accountDetails["baltype"] == "Cr"
-                        and accountDetails["curbal"] != 0
-                    ):
-                        adverseflag = 1
-                        accountTotal -= accountDetails["curbal"]
-                        groupWiseTotal -= accountDetails["curbal"]
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": accountRow["accountname"],
-                            "amount": "%.2f" % (accountTotal),
-                            "groupAcccode": accountRow["accountcode"],
-                            "subgroupof": "",
-                            "accountof": groupcode,
-                            "groupAccflag": 1,
-                            "advflag": adverseflag,
-                        }
-                    )
-
-                for subgroup in subgroupData:
-                    subgroupTotal = 0.00
-                    accounts = []
-                    subgroupAccDataRow = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                        % (orgcode, subgroup["groupcode"])
-                    )
-                    subgroupAccData = subgroupAccDataRow.fetchall()
-                    for account in subgroupAccData:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            account["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Dr":
-                            subgroupTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Cr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            subgroupTotal -= accountDetails["curbal"]
-                            accountTotal -= accountDetails["curbal"]
-                        if accountDetails["curbal"] != 0:
-                            accounts.append(
-                                {
-                                    "groupAccname": account["accountname"],
-                                    "amount": "%.2f" % (accountTotal),
-                                    "groupAcccode": account["accountcode"],
-                                    "subgroupof": groupcode,
-                                    "accountof": subgroup["groupcode"],
-                                    "groupAccflag": 2,
-                                    "advflag": adverseflag,
-                                }
-                            )
-                    groupWiseTotal += subgroupTotal
-                    groupAccSubgroup.append(
-                        {
-                            "groupAccname": subgroup["groupname"],
-                            "amount": "%.2f" % (subgroupTotal),
-                            "groupAcccode": subgroup["groupcode"],
-                            "subgroupof": groupcode,
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    groupAccSubgroup += accounts
-
-                applicationsTotal += groupWiseTotal
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Loans(Asset)",
-                        "amount": "%.2f" % (groupWiseTotal),
-                        "groupAcccode": groupcode,
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                abalanceSheet += groupAccSubgroup
-
-                if orgtype == "Profit Making":
-                    # Calculate grouptotal for group "Miscellaneous Expenses(Asset)"
-                    groupWiseTotal = 0.00
-                    accountcodeData = self.con.execute(
-                        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = 'Miscellaneous Expenses(Asset)') order by accountname;"
-                        % (orgcode, orgcode)
-                    )
-                    accountCodes = accountcodeData.fetchall()
-                    subgroupDataRow = self.con.execute(
-                        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='Miscellaneous Expenses(Asset)');"
-                        % (orgcode, orgcode)
-                    )
-                    subgroupData = subgroupDataRow.fetchall()
-                    groupCode = self.con.execute(
-                        "select groupcode from groupsubgroups where (orgcode=%d and groupname='Miscellaneous Expenses(Asset)');"
-                        % (orgcode)
-                    )
-                    groupcode = groupCode.fetchone()["groupcode"]
-                    groupAccSubgroup = []
-
-                    for accountRow in accountCodes:
-                        accountTotal = 0.00
-                        adverseflag = 0
-                        accountDetails = calculateBalance(
-                            self.con,
-                            accountRow["accountcode"],
-                            financialStart,
-                            calculatefrom,
-                            calculateTo,
-                        )
-                        if accountDetails["baltype"] == "Dr":
-                            groupWiseTotal += accountDetails["curbal"]
-                            accountTotal += accountDetails["curbal"]
-                        if (
-                            accountDetails["baltype"] == "Cr"
-                            and accountDetails["curbal"] != 0
-                        ):
-                            adverseflag = 1
-                            accountTotal -= accountDetails["curbal"]
-                            groupWiseTotal -= accountDetails["curbal"]
-                        groupAccSubgroup.append(
-                            {
-                                "groupAccname": accountRow["accountname"],
-                                "amount": "%.2f" % (accountTotal),
-                                "groupAcccode": accountRow["accountcode"],
-                                "subgroupof": "",
-                                "accountof": groupcode,
-                                "groupAccflag": 1,
-                                "advflag": adverseflag,
-                            }
-                        )
-
-                    for subgroup in subgroupData:
-                        subgroupTotal = 0.00
-                        accounts = []
-                        subgroupAccDataRow = self.con.execute(
-                            "select accountcode, accountname from accounts where orgcode = %d and groupcode = %d order by accountname"
-                            % (orgcode, subgroup["groupcode"])
-                        )
-                        subgroupAccData = subgroupAccDataRow.fetchall()
-                        for account in subgroupAccData:
-                            accountTotal = 0.00
-                            adverseflag = 0
-                            accountDetails = calculateBalance(
-                                self.con,
-                                account["accountcode"],
-                                financialStart,
-                                calculatefrom,
-                                calculateTo,
-                            )
-                            if accountDetails["baltype"] == "Dr":
-                                subgroupTotal += accountDetails["curbal"]
-                                accountTotal += accountDetails["curbal"]
-                            if (
-                                accountDetails["baltype"] == "Cr"
-                                and accountDetails["curbal"] != 0
-                            ):
-                                adverseflag = 1
-                                subgroupTotal -= accountDetails["curbal"]
-                                accountTotal -= accountDetails["curbal"]
-                            if accountDetails["curbal"] != 0:
-                                accounts.append(
-                                    {
-                                        "groupAccname": account["accountname"],
-                                        "amount": "%.2f" % (accountTotal),
-                                        "groupAcccode": account["accountcode"],
-                                        "subgroupof": groupcode,
-                                        "accountof": subgroup["groupcode"],
-                                        "groupAccflag": 2,
-                                        "advflag": adverseflag,
-                                    }
-                                )
-                        groupWiseTotal += subgroupTotal
-                        groupAccSubgroup.append(
-                            {
-                                "groupAccname": subgroup["groupname"],
-                                "amount": "%.2f" % (subgroupTotal),
-                                "groupAcccode": subgroup["groupcode"],
-                                "subgroupof": groupcode,
-                                "accountof": "",
-                                "groupAccflag": "",
-                                "advflag": "",
-                            }
-                        )
-                        groupAccSubgroup += accounts
-
-                    applicationsTotal += groupWiseTotal
-                    abalanceSheet.append(
-                        {
-                            "groupAccname": "Miscellaneous Expenses(Asset)",
-                            "amount": "%.2f" % (groupWiseTotal),
-                            "groupAcccode": groupcode,
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    abalanceSheet += groupAccSubgroup
-
-                abalanceSheet.append(
-                    {
-                        "groupAccname": "Total",
-                        "amount": "%.2f" % (applicationsTotal),
-                        "groupAcccode": "",
-                        "subgroupof": "",
-                        "accountof": "",
-                        "groupAccflag": "",
-                        "advflag": "",
-                    }
-                )
-                sourcesTotal = round(sourcesTotal, 2)
-                applicationsTotal = round(applicationsTotal, 2)
-                difference = abs(sourcesTotal - applicationsTotal)
-
-                if sourcesTotal > applicationsTotal:
-                    abalanceSheet.append(
-                        {
-                            "groupAccname": "Difference",
-                            "amount": "%.2f" % (difference),
-                            "groupAcccode": "",
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    abalanceSheet.append(
-                        {
-                            "groupAccname": "Total",
-                            "amount": "%.2f" % (sourcesTotal),
-                            "groupAcccode": "",
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                if applicationsTotal > sourcesTotal:
-                    sbalanceSheet.append(
-                        {
-                            "groupAccname": "Difference",
-                            "amount": "%.2f" % (difference),
-                            "groupAcccode": "",
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-                    sbalanceSheet.append(
-                        {
-                            "groupAccname": "Total",
-                            "amount": "%.2f" % (applicationsTotal),
-                            "groupAcccode": "",
-                            "subgroupof": "",
-                            "accountof": "",
-                            "groupAccflag": "",
-                            "advflag": "",
-                        }
-                    )
-
-                if balancetype == 1:
-                    if orgtype == "Profit Making":
-                        if applicationsTotal > sourcesTotal and profit == 0:
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if sourcesTotal > applicationsTotal and profit == 0:
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if applicationsTotal > sourcesTotal and profit != 0:
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if sourcesTotal > applicationsTotal and profit != 0:
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if difference == 0 and profit == 0:
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if difference == 0 and profit != 0:
-                            emptyno = 0
-                    if orgtype == "Not For Profit":
-                        if applicationsTotal > sourcesTotal and profit == 0:
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if sourcesTotal > applicationsTotal and profit == 0:
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if applicationsTotal > sourcesTotal and profit != 0:
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if sourcesTotal > applicationsTotal and profit != 0:
-                            sbalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-                        if difference == 0 and profit == 0:
-                            emptyno = 0
-                        if difference == 0 and profit != 0:
-                            abalanceSheet.insert(
-                                -1,
-                                {
-                                    "groupAccname": "",
-                                    "amount": "",
-                                    "groupAcccode": "",
-                                    "subgroupof": "",
-                                    "accountof": "",
-                                    "groupAccflag": "",
-                                    "advflag": "",
-                                },
-                            )
-
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
-                    "gkresult": {"leftlist": sbalanceSheet, "rightlist": abalanceSheet},
+                    "gkresult": balanceSheet,
                 }
 
             except:
