@@ -103,6 +103,7 @@ def main(global_config, **settings):
     config.add_route("gstreturns", "/gstreturns")
     config.add_route("dashboard", "/dashboard")
     config.add_route("config", "/config")
+    config.add_route("spreadsheet", "/spreadsheet")
     config.scan("gkcore.views")
 
     return CORS(
