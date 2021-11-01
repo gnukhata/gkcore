@@ -94,7 +94,7 @@ Depending on the request_param, different methods will be called on the route gi
 """
 
 
-def getSpreadSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
+def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
     con = eng.connect()
     financialstart = con.execute(
         "select yearstart, orgtype from organisation where orgcode = %d" % int(orgcode)
@@ -4307,7 +4307,7 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
-                balanceSheet = getSpreadSheet(
+                balanceSheet = getBalanceSheet(
                     self.con,
                     authDetails["orgcode"],
                     self.request.params["calculateto"],
