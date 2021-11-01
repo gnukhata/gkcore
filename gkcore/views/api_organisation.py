@@ -51,6 +51,7 @@ from gkcore.models.meta import (
     getOnDelete,
 )
 from datetime import datetime, timedelta
+import os
 
 con = Connection
 
@@ -61,6 +62,7 @@ class api_organisation(object):
         self.request = Request
         self.request = request
         self.con = Connection
+        self.disableRegistration = os.getenv("GKCORE_DISABLE_REGISTRATION")
 
     def gkUpgrade(self):
         """
@@ -1658,8 +1660,26 @@ class api_organisation(object):
             self.con.close()
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
+    @view_config(
+        request_method="GET", request_param="registration-status", renderer="json"
+    )
+    def checkRegistrationStatus(self):
+        """
+        This function checks if registrations are disabled by server admin & return corresponding gkstatus code
+        """
+        if self.disableRegistration == 'yes':
+            return {"gkstatus": enumdict["ActionDisallowed"]}
+        else:
+            return {"gkstatus": enumdict["Success"]}
+
     @view_config(request_method="POST", renderer="json")
     def postOrg(self):
+        """
+        This function checks if registrations are disabled by server admin & return corresponding gkstatus code
+        else create org based on parameters provided
+        """
+        if self.disableRegistration == 'yes':
+            return {"gkstatus": enumdict["ActionDisallowed"]}
         try:
             self.con = eng.connect()
             dataset = self.request.json_body
