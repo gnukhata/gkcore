@@ -44,6 +44,9 @@ from gkcore.models.gkdb import (
     unitofmeasurement,
 )
 from ast import literal_eval
+import requests
+from base64 import b64decode, b64encode
+from json import dumps, loads
 
 
 def taxable_value(inv, productcode, con, drcr=False):
@@ -611,3 +614,48 @@ class GstReturn(object):
 
         except:
             return {"status": 3}
+
+    @view_config(
+        request_method="GET", request_param="type=gstin_captcha", renderer="json"
+    )
+    def getGstinCaptcha(self):
+        URL = "https://services.gst.gov.in/services/captcha"
+        req = requests.get(url=URL)
+        if req.status_code == 200:
+            cookieString = "Lang=en;"
+            for cookie in req.cookies:
+                cookieString += cookie.name + "=" + cookie.value + ";"
+            img = b64encode(req.content).decode("utf-8")
+            payload = {
+                "gkstatus": enumdict["Success"],
+                "gkresult": {
+                    "captcha": img,
+                    "cookie": cookieString,
+                },
+            }
+        else:
+            print(req.status_code)
+            payload = {"gkstatus": enumdict["ConnectionFailed"]}
+        return payload
+
+    @view_config(
+        request_method="POST", request_param="type=gstin_captcha", renderer="json"
+    )
+    def validateGstinCaptcha(self):
+        dataset = self.request.json_body
+        URL = "https://services.gst.gov.in/services/api/search/taxpayerDetails"
+        headers = {
+            "Referer": "https://services.gst.gov.in/services/searchtp",
+            "Cookie": dataset["cookie"],
+            "Content-Type": "application/json",
+        }
+        req = requests.post(url=URL, data=dumps(dataset["payload"]), headers=headers)
+        if req.status_code == 200:
+            resp = loads(req.text)
+            if "errorCode" in resp:
+                payload = {"gkstatus": enumdict["ConnectionFailed"], "gkerror": resp}
+            else:
+                payload = {"gkstatus": enumdict["Success"], "gkresult": resp}
+        else:
+            payload = {"gkstatus": enumdict["ConnectionFailed"]}
+        return payload
