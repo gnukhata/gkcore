@@ -489,7 +489,7 @@ workflowConfigSchema = {
                                 "type": "string",
                                 "enum": [
                                     "dateObj",
-                                    "custname",
+                                    "customer",
                                     "ordertotal",
                                     "orderno",
                                 ],
