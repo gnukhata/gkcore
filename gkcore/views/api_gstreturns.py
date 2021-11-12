@@ -613,7 +613,7 @@ class GstReturn(object):
             return {"gkresult": 0, "gkdata": gkdata}
 
         except:
-            return {"gkstatus": enumdict['ConnectionFailed']}
+            return {"gkresult": enumdict['ConnectionFailed']}
 
     @view_config(
         request_method="GET", request_param="type=gstin_captcha", renderer="json"
