@@ -135,13 +135,14 @@ class api_customer(object):
                     bankdetails = row["bankdetails"]
 
                 statelist = []
-                statedata = self.con.execute(
-                    select([gkdb.state.c.statecode]).where(
-                        gkdb.state.c.statename == row["state"]
+                if row["state"] != None:
+                    statedata = self.con.execute(
+                        select([gkdb.state.c.statecode]).where(
+                            gkdb.state.c.statename == row["state"]
+                        )
                     )
-                )
-                statename = statedata.fetchone()
-                statelist.append({statename["statecode"]: row["state"]})
+                    statename = statedata.fetchone()
+                    statelist.append({statename["statecode"]: row["state"]})
 
                 if row["gstin"] != None and bool(row["gstin"]):
                     for statecd in row["gstin"]:
@@ -154,7 +155,7 @@ class api_customer(object):
                         statelist.append(
                             {statename["statecode"]: statename["statename"]}
                         )
-                else:
+                elif row["state"] != None:
                     custsupstatecode = getStateCode(row["state"], self.con)["statecode"]
                     statelist.append({custsupstatecode: row["state"]})
 
