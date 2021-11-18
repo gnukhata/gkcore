@@ -18,6 +18,7 @@ class api_ifsc(object):
         This method first checks the user auth status, Then validates given
         ifsc code with the razorpay/ifsc docker server & get's the response
         """
+        # Check whether the user is registered & valid
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -36,12 +37,14 @@ class api_ifsc(object):
         if custom_ifsc_server != None:
             ifsc_server = custom_ifsc_server
 
+        # grab the ifsc code provided in api params
         ifsc_code = self.request.params["check"]
 
+        # validate the ifsc with razorpay ifsc server & return appropriate response
         result = {"gkstatus": enumdict['ConnectionFailed']}
 
         try:
-            api_response = requests.get(f"{ifsc_server}/{ifsc_code}")
+            api_response = requests.get(url=f"{ifsc_server}/{ifsc_code}")
 
             if api_response.status_code == 200:
                 result["gkstatus"] = enumdict['Success']
