@@ -5,7 +5,7 @@ from pyramid.view import view_defaults, view_config
 import requests, os
 
 @view_defaults(route_name="ifsc")
-class IFSC(object):
+class api_ifsc(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
@@ -22,7 +22,7 @@ class IFSC(object):
         #     token = self.request.headers["gktoken"]
         # except:
         #     return {"gkstatus": enumdict["UnauthorisedAccess"]}
-
+y
         # auth_details = authCheck(token)
 
         # if auth_details["auth"] == False:
