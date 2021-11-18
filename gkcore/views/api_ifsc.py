@@ -22,7 +22,7 @@ class api_ifsc(object):
         #     token = self.request.headers["gktoken"]
         # except:
         #     return {"gkstatus": enumdict["UnauthorisedAccess"]}
-y
+
         # auth_details = authCheck(token)
 
         # if auth_details["auth"] == False:
