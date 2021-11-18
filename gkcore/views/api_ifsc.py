@@ -31,10 +31,10 @@ class IFSC(object):
         ifsc_server = "http://127.0.0.1:6545"
 
         # check for custom IFSC server URL & set it when provided
-        custom_ifsc_server = os.getenv('GKCORE_IFSC_SERVER')
+        # custom_ifsc_server = os.getenv('GKCORE_IFSC_SERVER')
 
-        if custom_ifsc_server != None:
-            ifsc_server = custom_ifsc_server
+        # if custom_ifsc_server != None:
+        #     ifsc_server = custom_ifsc_server
 
         ifsc_code = self.request.params["check"]
         api_response = requests.get(f"{ifsc_server}/{ifsc_code}")
