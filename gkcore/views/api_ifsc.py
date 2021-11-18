@@ -28,7 +28,7 @@ class IFSC(object):
         if auth_details["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
-        ifsc_server = "http://localhost:6545"
+        ifsc_server = "http://127.0.0.1:6545"
 
         # check for custom IFSC server URL & set it when provided
         custom_ifsc_server = os.getenv('GKCORE_IFSC_SERVER')
