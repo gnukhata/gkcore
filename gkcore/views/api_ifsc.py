@@ -1,7 +1,7 @@
 from pyramid.request import Request
 from gkcore import enumdict
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_login import authCheck
+# from gkcore.views.api_login import authCheck
 import requests, os
 
 @view_defaults(route_name="ifsc")
@@ -18,15 +18,15 @@ class IFSC(object):
         This method first checks the user auth status, Then validates given
         ifsc code with the razorpay/ifsc docker server & get's the response
         """
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # try:
+        #     token = self.request.headers["gktoken"]
+        # except:
+        #     return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
-        auth_details = authCheck(token)
+        # auth_details = authCheck(token)
 
-        if auth_details["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # if auth_details["auth"] == False:
+        #     return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         ifsc_server = "http://127.0.0.1:6545"
 
