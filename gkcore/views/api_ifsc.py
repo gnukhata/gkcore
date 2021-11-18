@@ -37,10 +37,20 @@ class api_ifsc(object):
             ifsc_server = custom_ifsc_server
 
         ifsc_code = self.request.params["check"]
-        api_response = requests.get(f"{ifsc_server}/{ifsc_code}")
+
         result = {"gkstatus": enumdict['ConnectionFailed']}
 
-        if api_response.status_code == 200:
-            result["gkstatus"] = enumdict['Success']
-            result["gkresult"] = api_response.json()
-        return result
+        try:
+            api_response = requests.get(f"{ifsc_server}/{ifsc_code}")
+
+            if api_response.status_code == 200:
+                result["gkstatus"] = enumdict['Success']
+                result["gkresult"] = api_response.json()
+                return result
+            else:
+               result['gkstatus'] = enumdict['ConnectionFailed']
+               return result
+        except:
+            result['gkstatus'] = enumdict['ConnectionFailed']
+            return result
+
