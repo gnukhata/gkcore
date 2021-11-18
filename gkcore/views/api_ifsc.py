@@ -54,6 +54,6 @@ class api_ifsc(object):
                result['gkstatus'] = enumdict['ConnectionFailed']
                return result
         except:
-            result['gkstatus'] = enumdict['ConnectionFailed']
+            result['gkstatus'] = enumdict['ProxyServerError']
             return result
 

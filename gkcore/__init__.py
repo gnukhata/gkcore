@@ -57,6 +57,7 @@ enumdict = {
     "ConnectionFailed": 3,
     "BadPrivilege": 4,
     "ActionDisallowed": 5,
+    "ProxyServerError": 6,
 }
 
 
