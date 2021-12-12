@@ -74,6 +74,7 @@ from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
 
+
 def gst(ProductCode, con):
     gstData = con.execute(
         select([product.c.gsflag, product.c.gscode]).where(
@@ -125,13 +126,9 @@ def getInvoiceList(con, orgcode, reqParams):
         # for each invoice
         for row in result:
             if row["sourcestate"] != None:
-                sourceStateCode = getStateCode(row["sourcestate"], con)[
-                    "statecode"
-                ]
+                sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
             if row["taxstate"] != None:
-                destinationStateCode = getStateCode(row["taxstate"], con)[
-                    "statecode"
-                ]
+                destinationStateCode = getStateCode(row["taxstate"], con)["statecode"]
             dcno = ""
             dcdate = ""
             godowns = ""
@@ -373,6 +370,7 @@ def getInvoiceList(con, orgcode, reqParams):
         return invoices
     except:
         return []
+
 
 @view_defaults(route_name="invoice")
 class api_invoice(object):
@@ -933,9 +931,9 @@ class api_invoice(object):
                             invdataset["paymentmode"]
                         )  # Loading paymentmode.
                         idinv = int(invdataset["invid"])  # Loading invoiceid.
-                        # checking paymentmod whether it is 2 or 3 (i.e. 2 for bank and 3 for cash).
-                        if getpaymentmode == 3:
-                            # Updating bankdetails to NULL if paymentmod is 3.
+                        # checking paymentmod whether it is 2 or 3 (i.e. 2 -> bank (pos), 3 -> cash (pos), 4 -> bank (party), 5 -> cash (party)).
+                        if getpaymentmode in [3, 5]:
+                            # Updating bankdetails to NULL if paymentmod is 3 or 5.
                             updatebankdetails = self.con.execute(
                                 "update invoice set bankdetails = NULL where invid = %d"
                                 % (idinv)
@@ -3331,7 +3329,9 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
-                invoices = getInvoiceList(self.con, authDetails['orgcode'], self.request.params)
+                invoices = getInvoiceList(
+                    self.con, authDetails["orgcode"], self.request.params
+                )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
@@ -3733,7 +3733,12 @@ class api_invoice(object):
             taxDict = {"SGSTIN_MH@12%":600,"CESSIN_MH@2%":800}
 
             in case of Vat we need total taxable value and totaltax amount which will be dr/cr in sale/purchase a/c and vat a/c resprectively.
-            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax,"prodData":productcode:taxabale value ....,"taxes":{productcode:tax}}
+            So the structure of queryParams = {"invtype":19 or 16 ,"csname":customer/supplier name ,"pmtmode":2 or 3 or 15 or 4 or 5,"taxType":7 or 22,"gstname":"CGST / IGST","cessname":"cess","maflag":True /False,"products":{"productname":Taxable value,"productname1":Taxabe value,.........},"destination":taxstate,"totaltaxablevalue":value,"totalAmount":invoicetotal,"invoicedate":invDate,"invid":id,"invoiceno":invno,"taxpayement":VATtax,"prodData":productcode:taxabale value ....,"taxes":{productcode:tax}}
+
+            payment modes = 2 - Bank (POS), 3  - Cash (POS), 4  - Bank (Party), 5  - Cash (Party), 15 - Credit
+
+            * POS creates vouchers directly between sale/purchase a/c and mode of payment a/c.
+            * Party creates voucher first between sale/purchase a/c and the party a/c, then between party a/c and mode of payment a/c.
             """
             self.con = eng.connect()
             taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
@@ -3742,9 +3747,12 @@ class api_invoice(object):
             rd_VoucherDict = {}
             crs = {}
             drs = {}
-            rdcrs = {}
-            rddrs = {}
+            rctCrs = {}  # Receipt crs
+            rctDrs = {}  # Receipt drs
+            rdcrs = {}  # Round off crs
+            rddrs = {}  # Round off drs
             Narration = ""
+            rctNarration = ""  # Receipt Narration
             v_No = []
             v_ID = []
             totalTaxableVal = float(queryParams["totaltaxablevalue"])
@@ -3752,298 +3760,343 @@ class api_invoice(object):
             taxDict = {}
             taxRate = 0.00
             cessRate = 0.00
+
+            isSale = int(queryParams["invtype"]) == 15
+            invType = (
+                ["Sale", "Sold", "to", "OUT"]
+                if isSale
+                else ["Purchase", "Bought", "from", "IN"]
+            )
+            defAccFlag = 19 if isSale else 16
+            formType = "invoice" if ("csname" in queryParams) else "cash memo"
             # first check the invoice type sale or purchase.
             # 15 = out = sale & 9 = in = purchase
-            if int(queryParams["invtype"]) == 15:
-                # if multiple account is 1 , then search for all the sale accounts of products in invoices
-                if int(queryParams["maflag"]) == 1:
-                    prodData = queryParams["products"]
-                    for prod in prodData:
-                        proN = str(prod) + " Sale"
-                        prodAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == proN,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        prodAccount = prodAcc.fetchone()
 
-                        try:
-                            accCode = prodAccount["accountcode"]
-                        except:
-                            a = self.createAccount(19, str(proN), orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(prodData[prod])
-                else:
-                    # if multiple acc is 0 , then select default sale account
-                    salesAccount = self.con.execute(
+            # if multiple account is 1 , then search for all the sale accounts of products in invoices
+            if int(queryParams["maflag"]) == 1:
+                prodData = queryParams["products"]
+                for prod in prodData:
+                    proN = str(prod) + " " + invType[0]
+                    prodAcc = self.con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.defaultflag == 19,
+                                accounts.c.accountname == proN,
                                 accounts.c.orgcode == orgcode,
                             )
                         )
                     )
-                    saleAcc = salesAccount.fetchone()
+                    prodAccount = prodAcc.fetchone()
 
                     try:
-                        accCode = saleAcc["accountcode"]
+                        accCode = prodAccount["accountcode"]
                     except:
-                        a = self.createAccount(19, "Sale A/C", orgcode)
+                        a = self.createAccount(defAccFlag, str(proN), orgcode)
                         accCode = a["accountcode"]
-
-                    crs[accCode] = "%.2f" % float(totalTaxableVal)
-                # check customer or supplier name in queryParams i.e. Invoice
-                if "csname" in queryParams:
-                    if int(queryParams["pmtmode"]) == 2:
-                        bankAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 2,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        bankRow = bankAccount.fetchone()
-
-                        try:
-                            accCode = bankRow["accountcode"]
-                        except:
-                            a = self.createAccount(2, "Bank A/C", orgcode)
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Sold goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " to "
-                            + str(queryParams["csname"])
-                            + " by cheque. "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 3:
-                        cashAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 3,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        cashRow = cashAccount.fetchone()
-
-                        try:
-                            accCode = cashRow["accountcode"]
-                        except:
-                            a = self.createAccount(3, "Cash in hand", orgcode)
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Sold goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " to "
-                            + str(queryParams["csname"])
-                            + " by cash "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 15:
-                        custAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == queryParams["csname"],
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        custAccount = custAcc.fetchone()
-
-                        try:
-                            accCode = custAccount["accountcode"]
-                        except:
-                            a = self.createAccount(
-                                15, str(queryParams["csname"]), orgcode
-                            )
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(amountPaid)
-                        csa = accCode
-                        Narration = (
-                            "Sold goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " to "
-                            + str(queryParams["csname"])
-                            + " on credit "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                else:
-                    if int(queryParams["pmtmode"]) == 2:
-                        bankAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 2,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        bankRow = bankAccount.fetchone()
-
-                        try:
-                            accCode = bankRow["accountcode"]
-                        except:
-                            a = self.createAccount(2, "Bank A/C", orgcode)
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Sold goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " by cheque. "
-                            + "ref cash memo no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 3:
-                        cashAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 3,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        cashRow = cashAccount.fetchone()
-
-                        try:
-                            accCode = cashRow["accountcode"]
-                        except:
-                            a = self.createAccount(3, "Cash in hand", orgcode)
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Sold goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " by cash "
-                            + "ref cash memo no. "
-                            + str(queryParams["invoiceno"])
-                        )
-
-                # collect all taxaccounts with the value that needs to be dr or cr
-                if int(queryParams["taxType"]) == 7:
-                    abv = self.con.execute(
-                        select([state.c.abbreviation]).where(
-                            state.c.statename == queryParams["destinationstate"]
+                    if isSale:
+                        crs[accCode] = "%.2f" % float(prodData[prod])
+                    else:
+                        drs[accCode] = "%.2f" % float(prodData[prod])
+            else:
+                # if multiple acc is 0 , then select default sale account
+                salesAccount = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == defAccFlag,
+                            accounts.c.orgcode == orgcode,
                         )
                     )
-                    abb = abv.fetchone()
-                    taxName = queryParams["gstname"]
-                    if taxName == "CGST":
-                        for prod in queryParams["prodData"]:
-                            taxRate = float(queryParams["taxes"][prod])
-                            taxable = float(queryParams["prodData"][prod])
-                            if taxRate > 0.00:
-                                tx = float(taxRate) / 2
-                                inTaxrate = int(taxRate)
-                                taxHalf = taxRateDict[inTaxrate]
-                                # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
-                                taxNameSGST = (
-                                    "SGSTOUT_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(taxHalf)
-                                    + "%"
-                                )
-                                taxNameCGST = (
-                                    "CGSTOUT_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(taxHalf)
-                                    + "%"
-                                )
+                )
+                saleAcc = salesAccount.fetchone()
 
-                                if taxNameSGST not in taxDict:
-                                    taxDict[taxNameSGST] = "%.2f" % float(taxVal)
-                                    taxDict[taxNameCGST] = "%.2f" % float(taxVal)
-                                else:
-                                    val = float(taxDict[taxNameSGST])
-                                    taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
-                                    taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+                try:
+                    accCode = saleAcc["accountcode"]
+                except:
+                    a = self.createAccount(defAccFlag, invType[0] + " A/C", orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    crs[accCode] = "%.2f" % float(totalTaxableVal)
+                else:
+                    drs[accCode] = "%.2f" % float(totalTaxableVal)
+            # check customer or supplier name in queryParams i.e. Invoice
+            if int(queryParams["pmtmode"]) == 2:
+                bankAccount = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 2,
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
+                bankRow = bankAccount.fetchone()
 
-                    if taxName == "IGST":
-                        for prod in queryParams["prodData"]:
-                            taxRate = float(queryParams["taxes"][prod])
-                            taxable = float(queryParams["prodData"][prod])
-                            if taxRate > 0.00:
-                                tx = float(taxRate)
-                                # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
-                                taxNameIGST = (
-                                    "IGSTOUT_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(int(taxRate))
-                                    + "%"
-                                )
-                                if taxNameIGST not in taxDict:
-                                    taxDict[taxNameIGST] = "%.2f" % float(taxVal)
-                                else:
-                                    val = float(taxDict[taxNameIGST])
-                                    taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
+                try:
+                    accCode = bankRow["accountcode"]
+                except:
+                    a = self.createAccount(2, "Bank A/C", orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    drs[accCode] = "%.2f" % float(amountPaid)
+                else:
+                    crs[accCode] = "%.2f" % float(amountPaid)
+                cba = accCode
+                Narration = (
+                    invType[1]
+                    + " goods worth rupees "
+                    + "%.2f" % float(amountPaid)
+                    + " "
+                    + invType[2]
+                    + " "
+                    + str(queryParams["csname"])
+                    + " by cheque. "
+                    + "ref "
+                    + formType
+                    + " no. "
+                    + str(queryParams["invoiceno"])
+                )
+            if int(queryParams["pmtmode"]) == 3:
+                cashAccount = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 3,
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
+                cashRow = cashAccount.fetchone()
 
+                try:
+                    accCode = cashRow["accountcode"]
+                except:
+                    a = self.createAccount(3, "Cash in hand", orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    drs[accCode] = "%.2f" % float(amountPaid)
+                else:
+                    crs[accCode] = "%.2f" % float(amountPaid)
+                cba = accCode
+                Narration = (
+                    invType[1]
+                    + " goods worth rupees "
+                    + "%.2f" % float(amountPaid)
+                    + " "
+                    + invType[2]
+                    + " "
+                    + str(queryParams["csname"])
+                    + " by cash "
+                    + "ref "
+                    + formType
+                    + " no. "
+                    + str(queryParams["invoiceno"])
+                )
+            if int(queryParams["pmtmode"]) in [15, 4, 5]:
+                custAcc = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == queryParams["csname"],
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
+                custAccount = custAcc.fetchone()
+
+                try:
+                    custAccCode = custAccount["accountcode"]
+                except:
+                    a = self.createAccount(15, str(queryParams["csname"]), orgcode)
+                    custAccCode = a["accountcode"]
+
+                if isSale:
+                    drs[custAccCode] = "%.2f" % float(amountPaid)
+                else:
+                    crs[custAccCode] = "%.2f" % float(amountPaid)
+                csa = custAccCode
+                Narration = (
+                    invType[1]
+                    + " goods worth rupees "
+                    + "%.2f" % float(amountPaid)
+                    + " "
+                    + invType[2]
+                    + " "
+                    + str(queryParams["csname"])
+                    + " on credit "
+                    + "ref "
+                    + formType
+                    + " no. "
+                    + str(queryParams["invoiceno"])
+                )
+
+            if int(queryParams["pmtmode"]) == 4:
+                bankAccount = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 2,
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
+                bankRow = bankAccount.fetchone()
+
+                try:
+                    accCode = bankRow["accountcode"]
+                except:
+                    a = self.createAccount(2, "Bank A/C", orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    rctDrs[accCode] = "%.2f" % float(amountPaid)
+                    rctCrs[csa] = "%.2f" % float(amountPaid)
+                else:
+                    rctCrs[accCode] = "%.2f" % float(amountPaid)
+                    rctDrs[csa] = "%.2f" % float(amountPaid)
+                cba = accCode
+                rctNarration = (
+                    invType[1]
+                    + " goods worth rupees "
+                    + "%.2f" % float(amountPaid)
+                    + " "
+                    + invType[2]
+                    + " "
+                    + str(queryParams["csname"])
+                    + " by cheque. "
+                    + "ref "
+                    + formType
+                    + " no. "
+                    + str(queryParams["invoiceno"])
+                )
+
+            if int(queryParams["pmtmode"]) == 5:
+                cashAccount = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == 3,
+                            accounts.c.orgcode == orgcode,
+                        )
+                    )
+                )
+                cashRow = cashAccount.fetchone()
+
+                try:
+                    accCode = cashRow["accountcode"]
+                except:
+                    a = self.createAccount(3, "Cash in hand", orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    rctDrs[accCode] = "%.2f" % float(amountPaid)
+                    rctCrs[csa] = "%.2f" % float(amountPaid)
+                else:
+                    rctCrs[accCode] = "%.2f" % float(amountPaid)
+                    rctDrs[csa] = "%.2f" % float(amountPaid)
+                cba = accCode
+                rctNarration = (
+                    invType[1]
+                    + " goods worth rupees "
+                    + "%.2f" % float(amountPaid)
+                    + " "
+                    + invType[2]
+                    + " "
+                    + str(queryParams["csname"])
+                    + " by cash "
+                    + "ref "
+                    + formType
+                    + " no. "
+                    + str(queryParams["invoiceno"])
+                )
+            # collect all taxaccounts with the value that needs to be dr or cr
+            if int(queryParams["taxType"]) == 7:
+                abv = self.con.execute(
+                    select([state.c.abbreviation]).where(
+                        state.c.statename == queryParams["destinationstate"]
+                    )
+                )
+                abb = abv.fetchone()
+                taxName = queryParams["gstname"]
+                if taxName == "CGST":
                     for prod in queryParams["prodData"]:
-                        cessRate = float(queryParams["cess"][prod])
-                        CStaxable = float(queryParams["prodData"][prod])
-                        if cessRate > 0.00:
-                            cs = float(cessRate)
+                        taxRate = float(queryParams["taxes"][prod])
+                        taxable = float(queryParams["prodData"][prod])
+                        if taxRate > 0.00:
+                            tx = float(taxRate) / 2
                             # this is the value which is going to Dr/Cr
-                            csVal = CStaxable * (cs / 100)
-                            taxNameCESS = (
-                                "CESSOUT_"
+                            taxVal = taxable * (tx / 100)
+                            inTaxrate = int(taxRate)
+                            taxHalf = taxRateDict[inTaxrate]
+                            taxNameSGST = (
+                                "SGST"
+                                + invType[3]
+                                + "_"
                                 + str(abb["abbreviation"])
                                 + "@"
-                                + str(int(cs))
+                                + str(taxHalf)
                                 + "%"
                             )
-                            if taxNameCESS not in taxDict:
-                                taxDict[taxNameCESS] = "%.2f" % float(csVal)
-                            else:
-                                val = float(taxDict[taxNameCESS])
-                                taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
-                    for Tax in taxDict:
-                        taxAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == Tax,
-                                    accounts.c.orgcode == orgcode,
-                                )
+                            taxNameCGST = (
+                                "CGST"
+                                + invType[3]
+                                + "_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(taxHalf)
+                                + "%"
                             )
+
+                            if taxNameSGST not in taxDict:
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal)
+                            else:
+                                val = float(taxDict[taxNameSGST])
+                                taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
+                                taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
+
+                if taxName == "IGST":
+                    for prod in queryParams["prodData"]:
+                        taxRate = float(queryParams["taxes"][prod])
+                        taxable = float(queryParams["prodData"][prod])
+                        if taxRate > 0.00:
+                            tx = float(taxRate)
+                            # this is the value which is going to Dr/Cr
+                            taxVal = taxable * (tx / 100)
+                            taxNameIGST = (
+                                "IGST"
+                                + invType[3]
+                                + "_"
+                                + str(abb["abbreviation"])
+                                + "@"
+                                + str(int(taxRate))
+                                + "%"
+                            )
+                            if taxNameIGST not in taxDict:
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal)
+                            else:
+                                val = float(taxDict[taxNameIGST])
+                                taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
+
+                for prod in queryParams["prodData"]:
+                    cessRate = float(queryParams["cess"][prod])
+                    CStaxable = float(queryParams["prodData"][prod])
+
+                    if cessRate > 0.00:
+                        cs = float(cessRate)
+                        # this is the value which is going to Dr/Cr
+                        csVal = CStaxable * (cs / 100)
+                        taxNameCESS = (
+                            "CESS"
+                            + invType[3]
+                            + "_"
+                            + str(abb["abbreviation"])
+                            + "@"
+                            + str(int(cs))
+                            + "%"
                         )
-                        taxRow = taxAcc.fetchone()
+                        if taxNameCESS not in taxDict:
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal)
+                        else:
+                            val = float(taxDict[taxNameCESS])
+                            taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
 
-                        try:
-                            accCode = taxRow["accountcode"]
-                        except:
-                            a = self.createAccount(20, str(Tax), orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(taxDict[Tax])
-
-                if int(queryParams["taxType"]) == 22:
+                for Tax in taxDict:
                     taxAcc = self.con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.accountname == "VAT_OUT",
+                                accounts.c.accountname == Tax,
                                 accounts.c.orgcode == orgcode,
                             )
                         )
@@ -4053,529 +4106,139 @@ class api_invoice(object):
                     try:
                         accCode = taxRow["accountcode"]
                     except:
-                        a = self.createAccount(20, "VAT_OUT", orgcode)
+                        a = self.createAccount(20, str(Tax), orgcode)
                         accCode = a["accountcode"]
-
-                    crs[accCode] = "%.2f" % float(queryParams["taxpayment"])
-
-                voucherDict = {
-                    "drs": drs,
-                    "crs": crs,
-                    "voucherdate": queryParams["invoicedate"],
-                    "narration": Narration,
-                    "vouchertype": "sales",
-                    "invid": queryParams["invid"],
-                }
-                vouchers_List.append(voucherDict)
-
-                # check whether amount paid is rounded off
-                if "roundoffamt" in queryParams:
-                    if float(queryParams["roundoffamt"]) > 0.00:
-                        # user has spent rounded of amount
-                        roundAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 180,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        roundRow = roundAcc.fetchone()
-
-                        try:
-                            accCode = roundRow["accountcode"]
-                        except:
-                            a = self.createAccount(18, "Round Off Paid", orgcode)
-                            accCode = a["accountcode"]
-
-                        rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
-                        if (
-                            int(queryParams["pmtmode"]) == 2
-                            or int(queryParams["pmtmode"]) == 3
-                        ):
-                            rdcrs[cba] = "%.2f" % float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round of amount spent",
-                                "vouchertype": "payment",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                        # for credit invoice transaction is not made hence create journal voucher
-                        if int(queryParams["pmtmode"]) == 15:
-                            rdcrs[csa] = "%.2f" % float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round of amount spent",
-                                "vouchertype": "journal",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                    if float(queryParams["roundoffamt"]) < 0.00:
-                        # user has earned rounded of amount
-                        roundAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 181,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        roundRow = roundAcc.fetchone()
-
-                        try:
-                            accCode = roundRow["accountcode"]
-                        except:
-                            a = self.createAccount(18, "Round Off Received", orgcode)
-                            accCode = a["accountcode"]
-
-                        rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                        if (
-                            int(queryParams["pmtmode"]) == 2
-                            or int(queryParams["pmtmode"]) == 3
-                        ):
-
-                            rddrs[cba] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round of amount earned",
-                                "vouchertype": "receipt",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                        if int(queryParams["pmtmode"]) == 15:
-                            rddrs[csa] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round of amount spent",
-                                "vouchertype": "journal",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-            """ ######### Purchase  ##########"""
-            if int(queryParams["invtype"]) == 9:
-
-                # if multiple account is 1 , then search for all the sale accounts of products in invoices
-                if int(queryParams["maflag"]) == 1:
-                    prodData = queryParams["products"]
-                    for prod in prodData:
-                        proN = str(prod) + " Purchase"
-                        prodAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == proN,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        prodAccount = prodAcc.fetchone()
-
-                        try:
-                            accCode = prodAccount["accountcode"]
-                        except:
-                            a = self.createAccount(16, str(proN), orgcode)
-                            accCode = a["accountcode"]
-
-                        drs[accCode] = "%.2f" % float(prodData[prod])
-                else:
-                    # if multiple acc is 0 , then select default sale account
-                    salesAccount = self.con.execute(
-                        select([accounts.c.accountcode]).where(
-                            and_(
-                                accounts.c.defaultflag == 16,
-                                accounts.c.orgcode == orgcode,
-                            )
-                        )
-                    )
-                    saleAcc = salesAccount.fetchone()
-
-                    try:
-                        accCode = saleAcc["accountcode"]
-                    except:
-                        a = self.createAccount(16, "Purchase A/C", orgcode)
-                        accCode = a["accountcode"]
-
-                    drs[accCode] = "%.2f" % float(totalTaxableVal)
-                if "csname" in queryParams:
-                    if int(queryParams["pmtmode"]) == 2:
-                        bankAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 2,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        bankRow = bankAccount.fetchone()
-
-                        try:
-                            accCode = bankRow["accountcode"]
-                        except:
-                            a = self.createAccount(2, "Bank A/C", orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Purchased goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " from "
-                            + str(queryParams["csname"])
-                            + " by cheque "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 3:
-                        cashAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 3,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        cashRow = cashAccount.fetchone()
-
-                        try:
-                            accCode = cashRow["accountcode"]
-                        except:
-                            a = self.createAccount(3, "Cash in hand", orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Purchased goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " from "
-                            + str(queryParams["csname"])
-                            + " by cash "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 15:
-                        custAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == queryParams["csname"],
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        custAccount = custAcc.fetchone()
-
-                        try:
-                            accCode = custAccount["accountcode"]
-                        except:
-                            a = self.createAccount(
-                                15, str(queryParams["csname"]), orgcode
-                            )
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(amountPaid)
-                        csa = accCode
-                        Narration = (
-                            "Purchased goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " from "
-                            + str(queryParams["csname"])
-                            + " on credit "
-                            + "ref invoice no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                else:
-                    if int(queryParams["pmtmode"]) == 2:
-                        bankAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 2,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        bankRow = bankAccount.fetchone()
-
-                        try:
-                            accCode = bankRow["accountcode"]
-                        except:
-                            a = self.createAccount(2, "Bank A/C", orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Purchased goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " by cheque "
-                            + "ref cash memo no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    if int(queryParams["pmtmode"]) == 3:
-                        cashAccount = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 3,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        cashRow = cashAccount.fetchone()
-
-                        try:
-                            accCode = cashRow["accountcode"]
-                        except:
-                            a = self.createAccount(3, "Cash in hand", orgcode)
-                            accCode = a["accountcode"]
-
-                        crs[accCode] = "%.2f" % float(amountPaid)
-                        cba = accCode
-                        Narration = (
-                            "Purchased goods worth rupees "
-                            + "%.2f" % float(amountPaid)
-                            + " by cash "
-                            + "ref cash memo no. "
-                            + str(queryParams["invoiceno"])
-                        )
-                    # collect all taxaccounts with the value that needs to be dr or cr
-                if int(queryParams["taxType"]) == 7:
-                    abv = self.con.execute(
-                        select([state.c.abbreviation]).where(
-                            state.c.statename == queryParams["destinationstate"]
-                        )
-                    )
-                    abb = abv.fetchone()
-                    taxName = queryParams["gstname"]
-                    if taxName == "CGST":
-                        for prod in queryParams["prodData"]:
-                            taxRate = float(queryParams["taxes"][prod])
-                            taxable = float(queryParams["prodData"][prod])
-                            if taxRate > 0.00:
-                                tx = float(taxRate) / 2
-                                # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
-                                inTaxrate = int(taxRate)
-                                taxHalf = taxRateDict[inTaxrate]
-                                taxNameSGST = (
-                                    "SGSTIN_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(taxHalf)
-                                    + "%"
-                                )
-                                taxNameCGST = (
-                                    "CGSTIN_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(taxHalf)
-                                    + "%"
-                                )
-
-                                if taxNameSGST not in taxDict:
-                                    taxDict[taxNameSGST] = "%.2f" % float(taxVal)
-                                    taxDict[taxNameCGST] = "%.2f" % float(taxVal)
-                                else:
-                                    val = float(taxDict[taxNameSGST])
-                                    taxDict[taxNameSGST] = "%.2f" % float(taxVal + val)
-                                    taxDict[taxNameCGST] = "%.2f" % float(taxVal + val)
-
-                    if taxName == "IGST":
-                        for prod in queryParams["prodData"]:
-                            taxRate = float(queryParams["taxes"][prod])
-                            taxable = float(queryParams["prodData"][prod])
-                            if taxRate > 0.00:
-                                tx = float(taxRate)
-                                # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
-                                taxNameIGST = (
-                                    "IGSTIN_"
-                                    + str(abb["abbreviation"])
-                                    + "@"
-                                    + str(int(taxRate))
-                                    + "%"
-                                )
-                                if taxNameIGST not in taxDict:
-                                    taxDict[taxNameIGST] = "%.2f" % float(taxVal)
-                                else:
-                                    val = float(taxDict[taxNameIGST])
-                                    taxDict[taxNameIGST] = "%.2f" % float(taxVal + val)
-
-                    for prod in queryParams["prodData"]:
-                        cessRate = float(queryParams["cess"][prod])
-                        CStaxable = float(queryParams["prodData"][prod])
-
-                        if cessRate > 0.00:
-                            cs = float(cessRate)
-                            # this is the value which is going to Dr/Cr
-                            csVal = CStaxable * (cs / 100)
-                            taxNameCESS = (
-                                "CESSIN_"
-                                + str(abb["abbreviation"])
-                                + "@"
-                                + str(int(cs))
-                                + "%"
-                            )
-                            if taxNameCESS not in taxDict:
-                                taxDict[taxNameCESS] = "%.2f" % float(csVal)
-                            else:
-                                val = float(taxDict[taxNameCESS])
-                                taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
-
-                    for Tax in taxDict:
-                        taxAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.accountname == Tax,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        taxRow = taxAcc.fetchone()
-
-                        try:
-                            accCode = taxRow["accountcode"]
-                        except:
-                            a = self.createAccount(20, str(Tax), orgcode)
-                            accCode = a["accountcode"]
-
+                    if isSale:
+                        crs[accCode] = "%.2f" % float(taxDict[Tax])
+                    else:
                         drs[accCode] = "%.2f" % float(taxDict[Tax])
 
-                if int(queryParams["taxType"]) == 22:
-                    taxAcc = self.con.execute(
-                        select([accounts.c.accountcode]).where(
-                            and_(
-                                accounts.c.accountname == "VAT_IN",
-                                accounts.c.orgcode == orgcode,
-                            )
+            if int(queryParams["taxType"]) == 22:
+                taxAcc = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.accountname == "VAT_" + invType[3],
+                            accounts.c.orgcode == orgcode,
                         )
                     )
-                    taxRow = taxAcc.fetchone()
+                )
+                taxRow = taxAcc.fetchone()
 
-                    try:
-                        accCode = taxRow["accountcode"]
-                    except:
-                        a = self.createAccount(20, "VAT_IN", orgcode)
-                        accCode = a["accountcode"]
-
+                try:
+                    accCode = taxRow["accountcode"]
+                except:
+                    a = self.createAccount(20, "VAT_" + invType[3], orgcode)
+                    accCode = a["accountcode"]
+                if isSale:
+                    crs[accCode] = "%.2f" % float(queryParams["taxpayment"])
+                else:
                     drs[accCode] = "%.2f" % float(queryParams["taxpayment"])
 
-                voucherDict = {
-                    "drs": drs,
-                    "crs": crs,
+            voucherDict = {
+                "drs": drs,
+                "crs": crs,
+                "voucherdate": queryParams["invoicedate"],
+                "narration": Narration,
+                "vouchertype": "sales" if isSale else "purchase",
+                "invid": queryParams["invid"],
+            }
+            vouchers_List.append(voucherDict)
+
+            if int(queryParams["pmtmode"]) in [4, 5]:
+                rctVoucherDict = {
+                    "drs": rctDrs,
+                    "crs": rctCrs,
                     "voucherdate": queryParams["invoicedate"],
-                    "narration": Narration,
-                    "vouchertype": "purchase",
+                    "narration": rctNarration,
+                    "vouchertype": "receipt",
                     "invid": queryParams["invid"],
                 }
-                vouchers_List.append(voucherDict)
+                vouchers_List.append(rctVoucherDict)
 
-                # check whether amount paid is rounded off
-                if "roundoffamt" in queryParams:
-
-                    if float(queryParams["roundoffamt"]) > 0.00:
-                        # user has received rounded of amount
-                        roundAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 181,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
+            # check whether amount paid is rounded off
+            if "roundoffamt" in queryParams:
+                isRoundOffPositive = float(queryParams["roundoffamt"]) > 0.00
+                isRoundOffNegative = float(queryParams["roundoffamt"]) < 0.00
+                if isRoundOffPositive:
+                    defRoundOffFlag = 180 if isSale else 181
+                    voucherType = "payment" if isSale else "receipt"
+                    narration = (
+                        "Round off amount spent"
+                        if isSale
+                        else "Round off amount earned"
+                    )
+                    accName = "Round Off Paid" if isSale else "Round Off Received"
+                elif isRoundOffNegative:
+                    defRoundOffFlag = 181 if isSale else 180
+                    voucherType = "receipt" if isSale else "payment"
+                    narration = (
+                        "Round off amount earned"
+                        if isSale
+                        else "Round off amount spent"
+                    )
+                    accName = "Round Off Received" if isSale else "Round Off Paid"
+                # user has spent rounded of amount
+                roundAcc = self.con.execute(
+                    select([accounts.c.accountcode]).where(
+                        and_(
+                            accounts.c.defaultflag == defRoundOffFlag,
+                            accounts.c.orgcode == orgcode,
                         )
-                        roundRow = roundAcc.fetchone()
+                    )
+                )
+                roundRow = roundAcc.fetchone()
 
-                        try:
-                            accCode = roundRow["accountcode"]
-                        except:
-                            a = self.createAccount(18, "Round Off Received", orgcode)
-                            accCode = a["accountcode"]
+                try:
+                    accCode = roundRow["accountcode"]
+                except:
+                    a = self.createAccount(18, accName, orgcode)
+                    accCode = a["accountcode"]
+                if (isSale and isRoundOffPositive) or (
+                    not isSale and not isRoundOffPositive
+                ):
+                    rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                elif (isSale and not isRoundOffPositive) or (
+                    not isSale and isRoundOffPositive
+                ):
+                    rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
+                if int(queryParams["pmtmode"]) in [2, 3, 4, 5]:
+                    if (isSale and isRoundOffPositive) or (
+                        not isSale and not isRoundOffPositive
+                    ):
+                        rdcrs[cba] = "%.2f" % float(queryParams["roundoffamt"])
+                    elif (isSale and not isRoundOffPositive) or (
+                        not isSale and isRoundOffPositive
+                    ):
+                        rddrs[cba] = "%.2f" % float(queryParams["roundoffamt"])
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["invoicedate"],
+                        "narration": narration,
+                        "vouchertype": voucherType,
+                        "invid": queryParams["invid"],
+                    }
+                    vouchers_List.append(rd_VoucherDict)
 
-                        rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
-                        if (
-                            int(queryParams["pmtmode"]) == 2
-                            or int(queryParams["pmtmode"]) == 3
-                        ):
-                            rddrs[cba] = "%.2f" % float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round off amount earned",
-                                "vouchertype": "receipt",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                        # for credit invoice transaction is not made hence create journal voucher
-                        if int(queryParams["pmtmode"]) == 15:
-                            rddrs[csa] = "%.2f" % float(queryParams["roundoffamt"])
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round off amount earned",
-                                "vouchertype": "journal",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                    if float(queryParams["roundoffamt"]) < 0.00:
-                        # user has spent rounded of amount
-                        roundAcc = self.con.execute(
-                            select([accounts.c.accountcode]).where(
-                                and_(
-                                    accounts.c.defaultflag == 180,
-                                    accounts.c.orgcode == orgcode,
-                                )
-                            )
-                        )
-                        roundRow = roundAcc.fetchone()
-
-                        try:
-                            accCode = roundRow["accountcode"]
-                        except:
-                            a = self.createAccount(18, "Round Off Paid", orgcode)
-                            accCode = a["accountcode"]
-
-                        rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                        if (
-                            int(queryParams["pmtmode"]) == 2
-                            or int(queryParams["pmtmode"]) == 3
-                        ):
-                            rdcrs[cba] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round off amount spent",
-                                "vouchertype": "payment",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
-
-                        if int(queryParams["pmtmode"]) == 15:
-                            rdcrs[csa] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                            rd_VoucherDict = {
-                                "drs": rddrs,
-                                "crs": rdcrs,
-                                "voucherdate": queryParams["invoicedate"],
-                                "narration": "Round off amount spent",
-                                "vouchertype": "journal",
-                                "invid": queryParams["invid"],
-                            }
-                            vouchers_List.append(rd_VoucherDict)
+                # for credit invoice transaction is not made hence create journal voucher
+                if int(queryParams["pmtmode"]) == 15:
+                    if (isSale and isRoundOffPositive) or (
+                        not isSale and not isRoundOffPositive
+                    ):
+                        rdcrs[csa] = "%.2f" % float(queryParams["roundoffamt"])
+                    elif (isSale and not isRoundOffPositive) or (
+                        not isSale and isRoundOffPositive
+                    ):
+                        rddrs[csa] = "%.2f" % float(queryParams["roundoffamt"])
+                    rd_VoucherDict = {
+                        "drs": rddrs,
+                        "crs": rdcrs,
+                        "voucherdate": queryParams["invoicedate"],
+                        "narration": narration,
+                        "vouchertype": "journal",
+                        "invid": queryParams["invid"],
+                    }
+                    vouchers_List.append(rd_VoucherDict)
 
             for vch in vouchers_List:
                 drs = vch["drs"]
@@ -4669,8 +4332,7 @@ class api_invoice(object):
                 v_ID.append(int(vouchercode["vcode"]))
                 # once transaction is made with cash or bank, we have to make entry of payment in invoice table and billwise table as well.
                 if (
-                    int(queryParams["pmtmode"]) == 2
-                    or int(queryParams["pmtmode"]) == 3
+                    int(queryParams["pmtmode"]) in [2, 3, 4, 5]
                     and "Round off amount" not in vch["narration"]
                 ):
                     upAmt = self.con.execute(
