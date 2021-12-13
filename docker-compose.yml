@@ -20,8 +20,13 @@ services:
   pgadmin:
     image: dpage/pgadmin4:latest
     restart: on-failure
+    volumes:
+      - pgadmin:/var/lib/pgadmin
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@gkcore.gk
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
       - "3000:80"
+
+volumes:
+  pgadmin:
