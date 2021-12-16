@@ -30,14 +30,9 @@ from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
 from gkcore.models.gkdb import state
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
-import gkcore
 
 
 @view_defaults(route_name="state")
@@ -117,3 +112,25 @@ class api_state(object):
                 }
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", renderer="json", request_param="full")
+    def allStateInfo(self):
+        """
+        Return an array of state objects with name, abbr and code
+        """
+        self.con = eng.connect()
+        try:
+            state_data = self.con.execute("select * from state").fetchall()
+            states = []
+            for state in state_data:
+                states.append({
+                    "state_code": state["statecode"],
+                    "state_name": state["statename"],
+                    "state_abbr": state["abbreviation"]
+                })
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": states
+                }
+        except:
+            return {'gkstatus': enumdict['ConnectionFailed']}

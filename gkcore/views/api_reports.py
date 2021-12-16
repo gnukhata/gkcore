@@ -9224,7 +9224,12 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
+                # check if data is supplied as json or url params
+                try:
+                    dataset = self.request.json_body
+                except:
+                    dataset = self.request.params
+
                 stateD = dataset["statename"]
                 # Get abbreviation of state
                 stateA = self.con.execute(
