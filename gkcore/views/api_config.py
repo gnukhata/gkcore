@@ -44,7 +44,8 @@ from gkcore.config_schema import (
     transactionBaseSchema,
     transactionConfigSchema,
     transactionPageSchema,
-    workflowConfigSchema
+    workflowConfigSchema,
+    globalConfigSchema,
 )
 
 schema_store = {
@@ -61,6 +62,7 @@ schema_store = {
 
 resolver = RefResolver.from_schema(transactionBaseSchema, store=schema_store)
 validator = Draft202012Validator(transactionConfigSchema, resolver=resolver)
+
 
 @view_defaults(route_name="config")
 class api_config(object):
@@ -86,16 +88,25 @@ class api_config(object):
         else:
             try:
                 self.con = eng.connect()
+                pageid = None
+                confid = None
+                if "pageid" in self.request.params:
+                    pageid = self.request.params["pageid"]
+                if "confid" in self.request.params:
+                    confid = self.request.params["confid"]
                 config = self.getConf(
                     self.request.params["conftype"],
                     authDetails["orgcode"],
                     authDetails["userid"],
+                    pageid,
+                    confid,
                 )
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": config,
                 }
-            except:
+            except Exception as e:
+                # print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     """
@@ -136,7 +147,7 @@ class api_config(object):
                     )
                 return {"gkstatus": enumdict["Success"]}
             except Exception as e:
-                print(e)
+                # print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -164,7 +175,7 @@ class api_config(object):
                     validate(instance=dataset, schema=payloadSchema2)
                     print("Config Structure Validated")
                 except Exception as e:
-                    print(e)
+                    # print(e)
                     return {
                         "gkstatus": enumdict["ActionDisallowed"],
                         "gkmessage": "Invalid Payload. Please check the payload structure",
@@ -188,6 +199,8 @@ class api_config(object):
                     # print(confToValidate)
                     if self.request.params["confcategory"] == "transaction":
                         validator.validate(confToValidate)
+                    elif self.request.params["confcategory"] == "global":
+                        validate(instance=confToValidate, schema=globalConfigSchema)
                     else:
                         validate(instance=confToValidate, schema=workflowConfigSchema)
                     print("Config Validated")
@@ -204,6 +217,8 @@ class api_config(object):
                     self.request.params["conftype"],
                     authDetails["orgcode"],
                     authDetails["userid"],
+                    None,
+                    None
                 )
 
                 target = oldConfig
@@ -273,28 +288,52 @@ class api_config(object):
             finally:
                 self.con.close()
 
-    def getConf(self, confType, orgcode, userid):
+    def getConf(self, confType, orgcode, userid, pageid, confid):
         try:
             self.con = eng.connect()
-            confType = self.request.params["conftype"]
             config = {}
             if confType == "user":
-                configRow = self.con.execute(
-                    select([users.c.userconf]).where(
-                        and_(
-                            users.c.orgcode == orgcode,
-                            users.c.userid == userid,
+                if pageid:
+                    if confid:
+                        configRow = self.con.execute(
+                            "select u.userconf#>'{%s,%s}' as userconf from users u where orgcode = %d and userid = %d;"
+                            % (str(pageid), str(confid), orgcode, userid)
+                        ).fetchone()
+                    else:
+                        configRow = self.con.execute(
+                            "select u.userconf#>'{%s}' as userconf from users u where orgcode = %d and userid = %d;"
+                            % (str(pageid), orgcode, userid)
+                        ).fetchone()
+                else:
+                    configRow = self.con.execute(
+                        select([users.c.userconf]).where(
+                            and_(
+                                users.c.orgcode == orgcode,
+                                users.c.userid == userid,
+                            )
                         )
-                    )
-                ).fetchone()
+                    ).fetchone()
                 config = configRow["userconf"]
             elif confType == "org":
-                configRow = self.con.execute(
-                    select([organisation.c.orgconf]).where(
-                        organisation.c.orgcode == orgcode,
-                    )
-                ).fetchone()
+                if pageid:
+                    if confid:
+                        configRow = self.con.execute(
+                            "select org.orgconf#>'{%s,%s}' as orgconf from organisation org where orgcode = %d;"
+                            % (str(pageid), str(confid), orgcode)
+                        ).fetchone()
+                    else:
+                        configRow = self.con.execute(
+                            "select org.orgconf#>'{%s}' as orgconf from organisation org where orgcode = %d;"
+                            % (str(pageid), orgcode)
+                        ).fetchone()
+                else:
+                    configRow = self.con.execute(
+                        select([organisation.c.orgconf]).where(
+                            organisation.c.orgcode == orgcode,
+                        )
+                    ).fetchone()
                 config = configRow["orgconf"]
             return config
-        except:
-            return {}
+        except Exception as e:
+            # print(e)
+            return e

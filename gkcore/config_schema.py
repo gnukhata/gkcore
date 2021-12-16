@@ -1,5 +1,6 @@
 CONFIG_ENUM = {
     "PAGES": {
+        "global": 0,
         "workflow": 10,
         "workflow-invoice": 20,
         "workflow-dc-note": 30,
@@ -13,7 +14,7 @@ CONFIG_ENUM = {
         "workflow-contacts": 110,
         "create-invoice": 120,
     },
-    "CONFIGS": {"workflow-left-pane-columns": 11, "page-layout": 121},
+    "CONFIGS": {"global": 0, "workflow-left-pane-columns": 11, "page-layout": 121},
 }
 
 payloadSchema1 = {
@@ -283,6 +284,36 @@ transactionConfigSchema = {
 transactionBaseSchema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "gkschema.transaction.base.json",
+}
+
+'''
+ Schema for Global Config
+'''
+globalConfigSchema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "gkschema.global.json",
+    "type": "object",
+    "additionalProperties": False,
+    "properties": {
+        CONFIG_ENUM["PAGES"]["global"]: {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                CONFIG_ENUM["CONFIGS"]["global"]: {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "general": {
+                            "type": "object",
+                        },
+                        "transaction": {
+                            "type": "object",
+                        },
+                    },
+                }
+            },
+        }
+    },
 }
 
 workflowConfigSchema = {
