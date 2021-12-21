@@ -27,9 +27,15 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import organisation, unitofmeasurement, product, goprod, stock, categorysubcategories
+from gkcore.models.gkdb import (
+    organisation,
+    unitofmeasurement,
+    product,
+    goprod,
+    stock,
+    categorysubcategories,
+)
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
 from pyramid.request import Request
@@ -41,6 +47,9 @@ from gkcore.views.api_invoice import getInvoiceList
 from datetime import datetime, date
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
+import requests
+import json
+from gkcore.views.spreadsheets import *
 
 # Spreadsheet libraries
 import io
@@ -473,13 +482,15 @@ class api_spreadsheet(object):
         else:
             try:
                 self.con = eng.connect()
-                
+
                 # params fromdate and todate are required to fetch the invoices list
                 fystart = str(self.request.params["fystart"])
                 fyend = str(self.request.params["fyend"])
                 orgname = str(self.request.params["orgname"])
                 invflag = int(self.request.params["flag"])
-                invoices = getInvoiceList(self.con, authDetails['orgcode'], self.request.params)
+                invoices = getInvoiceList(
+                    self.con, authDetails["orgcode"], self.request.params
+                )
                 invoicewb = openpyxl.Workbook()
                 sheet = invoicewb.active
                 sheet.column_dimensions["A"].width = 8
@@ -804,12 +815,9 @@ class api_spreadsheet(object):
                         osProductrow = openingStockResult.fetchone()
                         openingStock = osProductrow["openingstock"]
                         productstockin = self.con.execute(
-                            select(
-                                [func.sum(stock.c.qty).label("sumofins")]
-                            ).where(
+                            select([func.sum(stock.c.qty).label("sumofins")]).where(
                                 and_(
-                                    stock.c.productcode
-                                    == productrow["productcode"],
+                                    stock.c.productcode == productrow["productcode"],
                                     stock.c.inout == 9,
                                 )
                             )
@@ -818,12 +826,9 @@ class api_spreadsheet(object):
                         if stockinsum["sumofins"] != None:
                             openingStock = openingStock + stockinsum["sumofins"]
                         productstockout = self.con.execute(
-                            select(
-                                [func.sum(stock.c.qty).label("sumofouts")]
-                            ).where(
+                            select([func.sum(stock.c.qty).label("sumofouts")]).where(
                                 and_(
-                                    stock.c.productcode
-                                    == productrow["productcode"],
+                                    stock.c.productcode == productrow["productcode"],
                                     stock.c.inout == 15,
                                 )
                             )
@@ -955,3 +960,1139 @@ class api_spreadsheet(object):
             except:
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="GET", request_param="type=stockreport", renderer="json"
+    )
+    def stockreport_spreadsheet(self):
+        print("stock report")
+        try:
+            header = {"gktoken": self.request.headers["gktoken"]}
+            godownflag = int(self.request.params["godownflag"])
+            if godownflag == 1:
+                goaddr = self.request.params["goaddr"]
+                goid = int(self.request.params["goid"])
+                goname = self.request.params["goname"]
+            productcode = int(self.request.params["productcode"])
+            calculatefrom = self.request.params["calculatefrom"]
+            calculateto = self.request.params["calculateto"]
+            scalculatefrom = datetime.strptime(calculatefrom, "%d-%m-%Y").strftime(
+                "%Y-%m-%d"
+            )
+            scalculateto = datetime.strptime(calculateto, "%d-%m-%Y").strftime(
+                "%Y-%m-%d"
+            )
+            productdesc = self.request.params["productdesc"]
+            if godownflag > 0:
+                subreq = Request.blank(
+                    "/report?type=godownstockreport&productcode=%d&startdate=%s&enddate=%s&goid=%d&godownflag=%d"
+                    % (productcode, scalculatefrom, scalculateto, goid, godownflag),
+                    headers=header,
+                )
+                result = self.request.invoke_subrequest(subreq)
+            else:
+                subr = Request.blank(
+                    "/report?type=stockreport&productcode=%d&startdate=%s&enddate=%s"
+                    % (productcode, scalculatefrom, scalculateto),
+                    headers=header,
+                )
+                result = self.request.invoke_subrequest(subr)
+            result = json.loads(result.text)["gkresult"]
+            fystart = datetime.strptime(
+                self.request.params["fystart"], "%Y-%m-%d"
+            ).strftime("%d-%m-%Y")
+            fyend = str(self.request.params["fyend"])
+            orgname = str(self.request.params["orgname"])
+            # A workbook is opened.
+            prowb = openpyxl.Workbook()
+            # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
+            sheet = prowb.active
+            # Title of the sheet and width of columns are set.
+            sheet.title = "Product Report"
+            sheet.column_dimensions["A"].width = 10
+            sheet.column_dimensions["B"].width = 18
+            sheet.column_dimensions["C"].width = 22
+            sheet.column_dimensions["D"].width = 18
+            sheet.column_dimensions["E"].width = 14
+            sheet.column_dimensions["F"].width = 14
+            sheet.column_dimensions["G"].width = 14
+            sheet.column_dimensions["H"].width = 14
+            sheet.column_dimensions["I"].width = 14
+            sheet.column_dimensions["J"].width = 14
+            # Cells of first two rows are merged to display organisation details properly.
+            sheet.merge_cells("A1:I2")
+            # Name and Financial Year of organisation is fetched to be displayed on the first row.
+            sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
+            sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
+            # Organisation name and financial year are displayed.
+            sheet.merge_cells("A3:J3")
+            sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
+            sheet["A3"].alignment = Alignment(horizontal="center", vertical="center")
+            sheet.merge_cells("A4:J4")
+            sheet["A4"].font = Font(name="Liberation Serif", size="14", bold=True)
+            sheet["A4"].alignment = Alignment(horizontal="center", vertical="center")
+            trn = ""
+            if godownflag > 0:
+                sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
+                sheet["A3"] = (
+                    "Godown Wise Product Report  (Period : "
+                    + calculatefrom
+                    + " to "
+                    + calculateto
+                    + ")"
+                )
+                sheet["A4"] = "Name of the Product: " + productdesc
+                sheet.merge_cells("A5:J5")
+                sheet["A5"].font = Font(name="Liberation Serif", size="14", bold=True)
+                sheet["A5"] = (
+                    "Name of the Godown : " + goname + ", Godown Address: " + goaddr
+                )
+                sheet["A6"] = "Date"
+                sheet["B6"] = "Particulars"
+                sheet["C6"] = "Document Type"
+                sheet["D6"] = "Deli Note No."
+                sheet["E6"] = "INV/DR/CR No."
+                sheet["F6"] = "RN No."
+                sheet["G6"] = "TN No."
+                sheet["H6"] = "Inward"
+                sheet["I6"] = "Outward"
+                sheet["J6"] = "Balance"
+                titlerow = sheet.row_dimensions[6]
+                titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+                titlerow.alignment = Alignment(horizontal="center", vertical="center")
+                sheet["H6"].alignment = Alignment(horizontal="right")
+                sheet["H6"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["I6"].alignment = Alignment(horizontal="right")
+                sheet["I6"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["J6"].alignment = Alignment(horizontal="right")
+                sheet["J6"].font = Font(name="Liberation Serif", size=12, bold=True)
+                row = 7
+
+                for stock in result:
+                    if stock["trntype"] == "delchal":
+                        trn = "Delivery Note"
+                    if stock["trntype"] == "invoice":
+                        trn = "Invoice "
+                    if stock["trntype"] == "delchal&invoice":
+                        trn = "Delivery Note & Invoice"
+                    if stock["trntype"] == "transfer note":
+                        trn = "Transfer Note "
+                    if stock["trntype"] == "Rejection Note":
+                        trn = "Rejection Note"
+                    if stock["trntype"] == "Debit Note":
+                        trn = "Debit Note"
+                    if stock["trntype"] == "Credit Note":
+                        trn = "Credit Note"
+
+                    if (
+                        stock["particulars"] == "opening stock"
+                        and stock["dcno"] == ""
+                        and stock["invno"] == ""
+                        and stock["date"] == ""
+                    ):
+                        sheet["A" + str(row)] = ""
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"].title()
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)] = ""
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = ""
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = ""
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["G" + str(row)] = ""
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["H" + str(row)] = float("%.2f" % float(stock["inward"]))
+                        sheet["H" + str(row)].number_format = "0.00"
+                        sheet["H" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["H" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["I" + str(row)] = ""
+                        sheet["I" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["I" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["J" + str(row)] = ""
+                        sheet["J" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["J" + str(row)].alignment = Alignment(horizontal="right")
+                    if (
+                        stock["particulars"] != "Total"
+                        and (
+                            stock["dcno"] != ""
+                            or stock["invno"] != ""
+                            or stock["tnno"] != ""
+                            or stock["rnno"] != ""
+                        )
+                        and stock["date"] != ""
+                    ):
+
+                        sheet["A" + str(row)] = stock["date"]
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"]
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)] = trn
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = stock["dcno"]
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        if stock["invno"] != "":
+
+                            sheet["E" + str(row)] = stock["invno"]
+                        elif "drcrno" in stock and stock["drcrno"] != "":
+
+                            sheet["E" + str(row)] = stock["drcrno"]
+                        else:
+
+                            sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = stock["rnno"]
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["G" + str(row)] = stock["tnno"]
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="center")
+                        if stock["inwardqty"] != "":
+
+                            sheet["H" + str(row)] = float(
+                                "%.2f" % float(stock["inwardqty"])
+                            )
+                            sheet["H" + str(row)].number_format = "0.00"
+                            sheet["H" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=False
+                            )
+                            sheet["H" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                        if stock["outwardqty"] != "":
+
+                            sheet["I" + str(row)] = float(
+                                "%.2f" % float(stock["outwardqty"])
+                            )
+                            sheet["I" + str(row)].number_format = "0.00"
+                            sheet["I" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=False
+                            )
+                            sheet["I" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                        sheet["J" + str(row)] = float("%.2f" % float(stock["balance"]))
+                        sheet["J" + str(row)].number_format = "0.00"
+                        sheet["J" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["J" + str(row)].alignment = Alignment(horizontal="right")
+                    if (
+                        stock["particulars"] == "Total"
+                        and stock["dcno"] == ""
+                        and stock["invno"] == ""
+                        and stock["date"] == ""
+                    ):
+
+                        sheet["A" + str(row)] = ""
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"].title()
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)] = ""
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = ""
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = ""
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["G" + str(row)] = ""
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["H" + str(row)] = float(
+                            "%.2f" % float(stock["totalinwardqty"])
+                        )
+                        sheet["H" + str(row)].number_format = "0.00"
+                        sheet["H" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["H" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["I" + str(row)] = float(
+                            "%.2f" % float(stock["totaloutwardqty"])
+                        )
+                        sheet["I" + str(row)].number_format = "0.00"
+                        sheet["I" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["I" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["J" + str(row)] = ""
+                        sheet["J" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["J" + str(row)].alignment = Alignment(horizontal="right")
+                    row += 1
+            else:
+                sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
+                sheet["A3"] = (
+                    "Product Report (Period : "
+                    + calculatefrom
+                    + " to "
+                    + calculateto
+                    + ")"
+                )
+                sheet["A4"] = "Name of the Product: " + productdesc
+                sheet["A5"] = "Date"
+                sheet["B5"] = "Particulars"
+                sheet["C5"] = "Document Type"
+                sheet["D5"] = "Deli Note No."
+                sheet["E5"] = "INV/DR/CR No."
+                sheet["F5"] = "RN No."
+                sheet["G5"] = "Inward"
+                sheet["H5"] = "Outward"
+                sheet["I5"] = "Balance"
+                titlerow = sheet.row_dimensions[5]
+                titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+                titlerow.alignment = Alignment(horizontal="center", vertical="center")
+                sheet["G5"].alignment = Alignment(horizontal="right")
+                sheet["G5"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["H5"].alignment = Alignment(horizontal="right")
+                sheet["H5"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["I5"].alignment = Alignment(horizontal="right")
+                sheet["I5"].font = Font(name="Liberation Serif", size=12, bold=True)
+                row = 6
+
+                for stock in result:
+                    if stock["trntype"] == "delchal":
+                        trn = "Delivery Note"
+                    if stock["trntype"] == "invoice":
+                        trn = "Invoice "
+                    if stock["trntype"] == "delchal&invoice":
+                        trn = "Delivery Note & Invoice"
+                    if stock["trntype"] == "transfer note":
+                        trn = "Transfer Note "
+                    if stock["trntype"] == "Rejection Note":
+                        trn = "Rejection Note"
+                    if stock["trntype"] == "Debit Note":
+                        trn = "Debit Note"
+                    if stock["trntype"] == "Credit Note":
+                        trn = "Credit Note"
+
+                    if (
+                        stock["particulars"] == "opening stock"
+                        and stock["dcno"] == ""
+                        and stock["invno"] == ""
+                        and stock["date"] == ""
+                    ):
+                        sheet["A" + str(row)] = ""
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"].title()
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)] = ""
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = ""
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = ""
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["G" + str(row)] = float("%.2f" % float(stock["inward"]))
+                        sheet["G" + str(row)].number_format = "0.00"
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["H" + str(row)] = ""
+                        sheet["H" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["H" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["I" + str(row)] = ""
+                        sheet["I" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["I" + str(row)].alignment = Alignment(horizontal="right")
+                    if (
+                        stock["particulars"] != "Total"
+                        and (
+                            stock["dcno"] != ""
+                            or stock["invno"] != ""
+                            or stock["rnid"] != ""
+                            or stock["drcrno"] != ""
+                        )
+                        and stock["date"] != ""
+                    ):
+                        sheet["A" + str(row)] = stock["date"]
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"]
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+
+                        sheet["C" + str(row)] = trn
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = stock["dcno"]
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        if stock["invno"] != "":
+                            sheet["E" + str(row)] = stock["invno"]
+                        elif "drcrno" in stock and stock["drcrno"] != "":
+                            sheet["E" + str(row)] = stock["drcrno"]
+                        else:
+                            sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = stock["rnno"]
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                        if stock["inwardqty"] != "":
+                            sheet["G" + str(row)] = float(
+                                "%.2f" % float(stock["inwardqty"])
+                            )
+                            sheet["G" + str(row)].number_format = "0.00"
+                            sheet["G" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=False
+                            )
+                            sheet["G" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                        if stock["outwardqty"] != "":
+                            sheet["H" + str(row)] = float(
+                                "%.2f" % float(stock["outwardqty"])
+                            )
+                            sheet["H" + str(row)].number_format = "0.00"
+                            sheet["H" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=False
+                            )
+                            sheet["H" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                        sheet["I" + str(row)] = float("%.2f" % float(stock["balance"]))
+                        sheet["I" + str(row)].number_format = "0.00"
+                        sheet["I" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["I" + str(row)].alignment = Alignment(horizontal="right")
+                    if (
+                        stock["particulars"] == "Total"
+                        and stock["dcno"] == ""
+                        and stock["invno"] == ""
+                        and stock["date"] == ""
+                    ):
+                        sheet["A" + str(row)] = ""
+                        sheet["A" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["B" + str(row)] = stock["particulars"].title()
+                        sheet["B" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)] = ""
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["D" + str(row)] = ""
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["E" + str(row)] = ""
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["F" + str(row)] = ""
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="center")
+                        sheet["G" + str(row)] = float(
+                            "%.2f" % float(stock["totalinwardqty"])
+                        )
+                        sheet["G" + str(row)].number_format = "0.00"
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["H" + str(row)] = float(
+                            "%.2f" % float(stock["totaloutwardqty"])
+                        )
+                        sheet["H" + str(row)].number_format = "0.00"
+                        sheet["H" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["H" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["I" + str(row)] = ""
+                        sheet["I" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        sheet["I" + str(row)].alignment = Alignment(horizontal="right")
+                    row += 1
+            output = io.BytesIO()
+            prowb.save(output)
+            contents = output.getvalue()
+            output.close()
+            headerList = {
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Content-Length": len(contents),
+                "Content-Disposition": "attachment; filename=report.xlsx",
+                "X-Content-Type-Options": "nosniff",
+                "Set-Cookie": "fileDownload=true; path=/ [;HttpOnly]",
+            }
+            # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true; path=/'}
+
+            return Response(contents, headerlist=list(headerList.items()))
+        except Exception as e:
+            print("exception:", e)
+            return {"gkstatus": 3}
+
+    @view_config(
+        request_method="GET", request_param="type=trialbalance", renderer="json"
+    )
+    def print_trial_balance(self):
+        """
+        This function returns a spreadsheet form of Trial Balance Report.
+        The spreadsheet in XLSX format is generated by the frontendend.
+        """
+        try:
+            header = {"gktoken": self.request.headers["gktoken"]}
+            orgname = self.request.params["orgname"]
+            financialstart = self.request.params["fystart"]
+            fyend = str(self.request.params["fyend"])
+            startdate = self.request.params["fystart"]
+            calculateto = self.request.params["calculateto"]
+            trialbalancetype = int(self.request.params["trialbalancetype"])
+            if trialbalancetype == 1:
+                subreq = Request.blank(
+                    "/report?type=nettrialbalance&calculateto=%s&financialstart=%s"
+                    % (calculateto, financialstart),
+                    headers=header,
+                )
+                result = self.request.invoke_subrequest(subreq)
+            elif trialbalancetype == 2:
+                subreq = Request.blank(
+                    "/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"
+                    % (calculateto, financialstart),
+                    headers=header,
+                )
+                result = self.request.invoke_subrequest(subreq)
+            elif trialbalancetype == 3:
+                subreq = Request.blank(
+                    "/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"
+                    % (calculateto, financialstart),
+                    headers=header,
+                )
+                result = self.request.invoke_subrequest(subreq)
+            records = json.loads(result.text)["gkresult"]
+            trialbalancewb = openpyxl.Workbook()
+            sheet = trialbalancewb.active
+            sheet.title = "Trial Balance of %s" % (str(orgname))
+            # Condition for Net Trial Balance
+            if trialbalancetype == 1:
+                sheet.column_dimensions["A"].width = 8
+                sheet.column_dimensions["B"].width = 20
+                sheet.column_dimensions["C"].width = 14
+                sheet.column_dimensions["D"].width = 16
+                sheet.column_dimensions["E"].width = 22
+                # Cells of first two rows are merged to display organisation details properly.
+                sheet.merge_cells("A1:E2")
+                # Name and Financial Year of organisation is fetched to be displayed on the first row.
+                sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
+                sheet["A1"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                # Organisation name and financial year are displayed.
+                sheet["A1"] = (
+                    orgname
+                    + " (FY: "
+                    + datetime.strptime(str(financialstart), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    )
+                    + " to "
+                    + fyend
+                    + ")"
+                )
+                sheet.merge_cells("A3:F3")
+                sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
+                sheet["A3"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                sheet["A3"] = "Net Trial Balance for the period from %s to %s" % (
+                    datetime.strptime(str(startdate), "%Y-%m-%d").strftime("%d-%m-%Y"),
+                    datetime.strptime(str(calculateto), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    ),
+                )
+                sheet["A4"] = "Sr. No."
+                sheet["B4"] = "Account Name"
+                sheet["C4"] = "Debit"
+                sheet["D4"] = "Credit"
+                sheet["E4"] = "Group Name"
+                titlerow = sheet.row_dimensions[4]
+                titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["C4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["D4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["E4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["c4"].alignment = Alignment(horizontal="right")
+                sheet["D4"].alignment = Alignment(horizontal="right")
+                sheet["E4"].alignment = Alignment(horizontal="center")
+                row = 5
+                for record in records:
+                    sheet["A" + str(row)] = record["srno"]
+                    sheet["A" + str(row)].alignment = Alignment(horizontal="left")
+                    sheet["A" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["B" + str(row)] = record["accountname"]
+                    sheet["B" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    if record["advflag"] == 1:
+                        if record["Dr"] != "":
+                            sheet["C" + str(row)] = float("%.2f" % float(record["Dr"]))
+                            sheet["C" + str(row)].number_format = "0.00"
+                            sheet["C" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                            sheet["C" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=True, color=RED
+                            )
+                        if record["Cr"] != "":
+                            sheet["D" + str(row)] = float("%.2f" % float(record["Cr"]))
+                            sheet["D" + str(row)].number_format = "0.00"
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=True, color=RED
+                        )
+                    else:
+                        if record["Dr"] != "":
+                            sheet["C" + str(row)] = float("%.2f" % float(record["Dr"]))
+                            sheet["C" + str(row)].number_format = "0.00"
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        if record["Cr"] != "":
+                            sheet["D" + str(row)] = float("%.2f" % float(record["Cr"]))
+                            sheet["D" + str(row)].number_format = "0.00"
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    sheet["E" + str(row)] = record["groupname"]
+                    sheet["E" + str(row)].alignment = Alignment(horizontal="center")
+                    sheet["E" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    row = row + 1
+            # Condition for Gross Trial Balance
+            elif trialbalancetype == 2:
+                sheet.column_dimensions["A"].width = 8
+                sheet.column_dimensions["B"].width = 20
+                sheet.column_dimensions["C"].width = 18
+                sheet.column_dimensions["D"].width = 18
+                sheet.column_dimensions["E"].width = 20
+                sheet.column_dimensions["F"].width = 20
+                sheet.column_dimensions["G"].width = 20
+                # Cells of first two rows are merged to display organisation details properly.
+                sheet.merge_cells("A1:G2")
+                # Name and Financial Year of organisation is fetched to be displayed on the first row.
+                sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
+                sheet["A1"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                # Organisation name and financial year are displayed.
+                sheet["A1"] = (
+                    orgname
+                    + " (FY: "
+                    + datetime.strptime(str(financialstart), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    )
+                    + " to "
+                    + fyend
+                    + ")"
+                )
+                sheet.merge_cells("A3:G3")
+                sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
+                sheet["A3"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                sheet["A3"] = "Gross Trial Balance for the period from %s to %s" % (
+                    datetime.strptime(str(startdate), "%Y-%m-%d").strftime("%d-%m-%Y"),
+                    datetime.strptime(str(calculateto), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    ),
+                )
+                sheet["A4"] = "Sr. No. "
+                sheet["B4"] = "Account Name"
+                sheet["C4"] = "Debit"
+                sheet["D4"] = "Credit"
+                sheet["E4"] = "Dr Balance"
+                sheet["F4"] = "Cr Balance"
+                sheet["G4"] = "Group Name"
+                titlerow = sheet.row_dimensions[4]
+                titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["C4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["D4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["E4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["F4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["G4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["c4"].alignment = Alignment(horizontal="right")
+                sheet["D4"].alignment = Alignment(horizontal="right")
+                sheet["E4"].alignment = Alignment(horizontal="right")
+                sheet["F4"].alignment = Alignment(horizontal="right")
+                sheet["G4"].alignment = Alignment(horizontal="center")
+                row = 5
+                for record in records:
+                    sheet["A" + str(row)] = record["srno"]
+                    sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                    sheet["A" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["B" + str(row)] = record["accountname"]
+                    sheet["B" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    if record["totaldr"] != "":
+                        sheet["C" + str(row)] = float("%.2f" % float(record["totaldr"]))
+                        sheet["C" + str(row)].number_format = "0.00"
+                    sheet["C" + str(row)].alignment = Alignment(horizontal="right")
+                    sheet["C" + str(row)].font = Font(
+                        name="Liberation Serif", bold=False
+                    )
+                    if record["totalcr"] != "":
+                        sheet["D" + str(row)] = float("%.2f" % float(record["totalcr"]))
+                        sheet["D" + str(row)].number_format = "0.00"
+                    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
+                    sheet["D" + str(row)].font = Font(
+                        name="Liberation Serif", bold=False
+                    )
+                    if record["advflag"] == 1:
+                        if record["curbaldr"] != "":
+                            sheet["E" + str(row)] = float(
+                                "%.2f" % float(record["curbaldr"])
+                            )
+                            sheet["E" + str(row)].number_format = "0.00"
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=True, color=RED
+                        )
+                        if record["curbalcr"] != "":
+                            sheet["F" + str(row)] = float(
+                                "%.2f" % float(record["curbalcr"])
+                            )
+                            sheet["F" + str(row)].number_format = "0.00"
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=True, color=RED
+                        )
+                    else:
+                        if record["curbaldr"] != "":
+                            sheet["E" + str(row)] = float(
+                                "%.2f" % float(record["curbaldr"])
+                            )
+                            sheet["E" + str(row)].number_format = "0.00"
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        if record["curbalcr"] != "":
+                            sheet["F" + str(row)] = float(
+                                "%.2f" % float(record["curbalcr"])
+                            )
+                            sheet["F" + str(row)].number_format = "0.00"
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    sheet["G" + str(row)] = record["groupname"]
+                    sheet["G" + str(row)].alignment = Alignment(horizontal="center")
+                    sheet["G" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    row = row + 1
+            # Condition for Extended Trial Balance
+            elif trialbalancetype == 3:
+                sheet.column_dimensions["A"].width = 8
+                sheet.column_dimensions["B"].width = 20
+                sheet.column_dimensions["C"].width = 18
+                sheet.column_dimensions["D"].width = 16
+                sheet.column_dimensions["E"].width = 16
+                sheet.column_dimensions["F"].width = 16
+                sheet.column_dimensions["G"].width = 16
+                sheet.column_dimensions["H"].width = 20
+                # Cells of first two rows are merged to display organisation details properly.
+                sheet.merge_cells("A1:H2")
+                # Name and Financial Year of organisation is fetched to be displayed on the first row.
+                sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
+                sheet["A1"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                # Organisation name and financial year are displayed.
+                sheet["A1"] = (
+                    orgname
+                    + " (FY: "
+                    + datetime.strptime(str(financialstart), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    )
+                    + " to "
+                    + fyend
+                    + ")"
+                )
+                sheet.merge_cells("A3:H3")
+                sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
+                sheet["A3"].alignment = Alignment(
+                    horizontal="center", vertical="center"
+                )
+                sheet["A3"] = "Extended Trial Balance for the period from %s to %s" % (
+                    datetime.strptime(str(startdate), "%Y-%m-%d").strftime("%d-%m-%Y"),
+                    datetime.strptime(str(calculateto), "%Y-%m-%d").strftime(
+                        "%d-%m-%Y"
+                    ),
+                )
+                sheet["A4"] = "Sr. No. "
+                sheet["B4"] = "Account Name"
+                sheet["C4"] = "Opening Balance"
+                sheet["D4"] = "Total Debit"
+                sheet["E4"] = "Total Credit"
+                sheet["F4"] = "Debit Balance"
+                sheet["G4"] = "Credit Balance"
+                sheet["H4"] = "Group Name"
+                titlerow = sheet.row_dimensions[4]
+                titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["C4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["D4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["E4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["F4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["G4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["H4"].font = Font(name="Liberation Serif", size=12, bold=True)
+                sheet["c4"].alignment = Alignment(horizontal="right")
+                sheet["D4"].alignment = Alignment(horizontal="right")
+                sheet["E4"].alignment = Alignment(horizontal="right")
+                sheet["F4"].alignment = Alignment(horizontal="right")
+                sheet["G4"].alignment = Alignment(horizontal="right")
+                sheet["H4"].alignment = Alignment(horizontal="center")
+                row = 5
+                for record in records:
+                    sheet["A" + str(row)] = record["srno"]
+                    sheet["A" + str(row)].alignment = Alignment(horizontal="center")
+                    sheet["A" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["B" + str(row)] = record["accountname"]
+                    sheet["B" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    if record["openingbalance"] == "0.00":
+                        sheet["C" + str(row)] = float(
+                            "%.2f" % float(record["openingbalance"])
+                        )
+                        sheet["C" + str(row)].number_format = "0.00"
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    else:
+                        sheet["C" + str(row)] = record["openingbalance"]
+                        sheet["C" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    if record["totaldr"] != "":
+                        sheet["D" + str(row)] = float("%.2f" % float(record["totaldr"]))
+                        sheet["D" + str(row)].number_format = "0.00"
+                        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["D" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    if record["totalcr"] != "":
+                        sheet["E" + str(row)] = float("%.2f" % float(record["totalcr"]))
+                        sheet["E" + str(row)].number_format = "0.00"
+                        sheet["E" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["E" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    if record["advflag"] == 1:
+                        if record["curbaldr"] != "":
+                            sheet["F" + str(row)] = float(
+                                "%.2f" % float(record["curbaldr"])
+                            )
+                            sheet["F" + str(row)].number_format = "0.00"
+                            sheet["F" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                            sheet["F" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=True, color=RED
+                            )
+                        if record["curbalcr"] != "":
+                            sheet["G" + str(row)] = float(
+                                "%.2f" % float(record["curbalcr"])
+                            )
+                            sheet["G" + str(row)].number_format = "0.00"
+                            sheet["G" + str(row)].alignment = Alignment(
+                                horizontal="right"
+                            )
+                            sheet["G" + str(row)].font = Font(
+                                name="Liberation Serif", size="12", bold=True, color=RED
+                            )
+                    else:
+                        if record["curbaldr"] != "":
+                            sheet["F" + str(row)] = float(
+                                "%.2f" % float(record["curbaldr"])
+                            )
+                            sheet["F" + str(row)].number_format = "0.00"
+                        sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["F" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                        if record["curbalcr"] != "":
+                            sheet["G" + str(row)] = float(
+                                "%.2f" % float(record["curbalcr"])
+                            )
+                            sheet["G" + str(row)].number_format = "0.00"
+                        sheet["G" + str(row)].alignment = Alignment(horizontal="right")
+                        sheet["G" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    sheet["H" + str(row)] = record["groupname"]
+                    sheet["H" + str(row)].alignment = Alignment(horizontal="center")
+                    sheet["H" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    row = row + 1
+            output = io.BytesIO()
+            trialbalancewb.save(output)
+            contents = output.getvalue()
+            output.close()
+            headerList = {
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Content-Length": len(contents),
+                "Content-Disposition": "attachment; filename=report.xlsx",
+                "X-Content-Type-Options": "nosniff",
+                "Set-Cookie": "fileDownload=true; path=/ [;HttpOnly]",
+            }
+            # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true; path=/'}
+
+            return Response(contents, headerlist=list(headerList.items()))
+        except:
+            print("file not found")
+            return {"gkstatus": 3}
+
+    @view_config(request_method="GET", request_param="type=pslist", renderer="json")
+    def product_service_list(self):
+
+        """
+        This function returns a spreadsheet form of List of Products Report.
+        The spreadsheet in XLSX format is generated by the backend and sent in base64 encoded format.
+        It is decoded and returned along with mime information.
+
+        params:
+
+        fystart = financial year beginning in yyyymmdd format
+        fyend = financial year ending in yyyymmdd format
+        orgname = organisation name
+        """
+        try:
+            header = {"gktoken": self.request.headers["gktoken"]}
+            subreq = Request.blank("/products", headers=header)
+            # result = requests.get("http://127.0.0.1:6543/products", headers=header)
+            result = self.request.invoke_subrequest(subreq)
+            subreq2 = Request.blank("/products?tax=vatorgst", headers=header)
+            result2 = self.request.invoke_subrequest(subreq2)
+            # resultgstvat = resultgstvat.json()["gkresult"]
+            resultgstvat = json.loads(result2.text)["gkresult"]
+            result = json.loads(result.text)["gkresult"]
+            fystart = str(self.request.params["fystart"])
+            fyend = str(self.request.params["fyend"])
+            orgname = str(self.request.params["orgname"])
+            # A workbook is opened.
+            productwb = openpyxl.Workbook()
+            # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
+            sheet = productwb.active
+            # Title of the sheet and width of columns are set.
+            sheet.title = "List of Products"
+            sheet.column_dimensions["A"].width = 8
+            sheet.column_dimensions["B"].width = 24
+            sheet.column_dimensions["C"].width = 18
+            sheet.column_dimensions["D"].width = 24
+            sheet.column_dimensions["E"].width = 16
+            # Cells of first two rows are merged to display organisation details properly.
+            sheet.merge_cells("A1:E2")
+            # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
+            sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
+            sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
+            # Organisation name and financial year are displayed.
+            sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
+            sheet.merge_cells("A3:E3")
+            sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
+            sheet["A3"].alignment = Alignment(horizontal="center", vertical="center")
+            sheet["A3"] = "List of Products"
+            sheet.merge_cells("A3:E3")
+            sheet["A4"] = "Sr.No."
+            if resultgstvat == "22":
+                sheet["B4"] = "Product"
+                sheet["C4"] = "Category"
+                sheet["D4"] = "UOM"
+            else:
+                sheet["B4"] = "Product/service"
+                sheet["C4"] = "Type"
+                sheet["D4"] = "Category"
+                sheet["E4"] = "Uom"
+            titlerow = sheet.row_dimensions[4]
+            titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
+            srno = 1
+            if resultgstvat == "22":
+                row = 5
+                for stock in result:
+                    sheet["A" + str(row)] = srno
+                    sheet["A" + str(row)].alignment = Alignment(horizontal="left")
+                    sheet["A" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["B" + str(row)] = stock["productdesc"]
+                    sheet["B" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["C" + str(row)] = stock["categoryname"]
+                    sheet["C" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["D" + str(row)] = stock["unitname"]
+                    sheet["D" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    row += 1
+                    srno += 1
+            else:
+                row = 5
+                for stock in result:
+                    sheet["A" + str(row)] = srno
+                    sheet["A" + str(row)].alignment = Alignment(horizontal="left")
+                    sheet["A" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["B" + str(row)] = stock["productdesc"]
+                    sheet["B" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    if stock["gsflag"] == 7:
+                        sheet["C" + str(row)] = "Product"
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    else:
+                        sheet["C" + str(row)] = "Service"
+                        sheet["C" + str(row)].font = Font(
+                            name="Liberation Serif", size="12", bold=False
+                        )
+                    sheet["D" + str(row)] = stock["categoryname"]
+                    sheet["D" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    sheet["E" + str(row)] = stock["unitname"]
+                    sheet["E" + str(row)].font = Font(
+                        name="Liberation Serif", size="12", bold=False
+                    )
+                    row += 1
+                    srno += 1
+            output = io.BytesIO()
+            productwb.save(output)
+            contents = output.getvalue()
+            output.close()
+            headerList = {
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Content-Length": len(contents),
+                "Content-Disposition": "attachment; filename=report.xlsx",
+                "X-Content-Type-Options": "nosniff",
+                "Set-Cookie": "fileDownload=true; path=/ [;HttpOnly]",
+            }
+            # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true; path=/'}
+            return Response(contents, headerlist=list(headerList.items()))
+        except:
+            return {"gkstatus": 3}
