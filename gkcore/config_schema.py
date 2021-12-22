@@ -207,6 +207,7 @@ transactionPageSchema = {
         "type": "object",
         "additionalProperties": False,
         "properties": {
+            "packageCount": {"type": "boolean"},
             "mode": {"type": "boolean"},
             "vno": {"type": "boolean"},
             "date": {"type": "boolean"},
@@ -257,7 +258,7 @@ transactionConfigSchema = {
                             "properties": {
                                 "no": {"type": "boolean"},
                                 "date": {"type": "boolean"},
-                                "delNote": {"type": "boolean"},
+                                "delNote": {"type": ["boolean", "object"]},
                                 "ebn": {"type": "boolean"},
                                 "addr": {"type": "boolean"},
                                 "pin": {"type": "boolean"},
