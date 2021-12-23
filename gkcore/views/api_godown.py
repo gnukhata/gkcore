@@ -124,7 +124,15 @@ class api_godown(object):
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(godown.insert(), [dataset])
-                return {"gkstatus": enumdict["Success"]}
+                godownCreated = self.con.execute(
+                    select([godown.c.goid]).where(
+                        and_(
+                            godown.c.orgcode == authDetails["orgcode"],
+                            godown.c.goname == dataset["goname"],
+                        )
+                    )
+                ).fetchone()
+                return {"gkstatus": enumdict["Success"], 'gkresult': godownCreated['goid']}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
