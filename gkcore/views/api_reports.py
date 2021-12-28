@@ -7527,7 +7527,7 @@ class api_reports(object):
 
         *product and godown = pg
         *all product and all godown = apag
-        *all godown and single product = apg
+        *all product and single godown = apg
         *product and all godown = pag
         """
         try:
@@ -7539,19 +7539,45 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
+                self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 endDate = datetime.strptime(
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
                 stocktype = self.request.params["type"]
                 productCode = self.request.params["productcode"]
-                if stocktype == "pg":
+                if stocktype in "pg" or stocktype == "apg":
                     godownCode = self.request.params["goid"]
                 else:
                     godownCode = 0
-                result = godownwisestockonhandfun(
-                    self.con, orgcode, endDate, stocktype, productCode, godownCode
-                )
+
+                result = {}
+                if stocktype == "apg":
+                    prows = self.con.execute( 
+                        select([goprod.c.productcode]).where(
+                            and_(
+                                goprod.c.goid == godownCode,
+                                goprod.c.orgcode == orgcode,
+                            )
+                        )
+                    )
+                    products = prows.fetchall()
+                    for product in products:
+                        pcode = product["productcode"]
+                        temp = godownwisestockonhandfun(
+                            self.con,
+                            orgcode,
+                            endDate,
+                            "pg",
+                            pcode,
+                            godownCode,
+                        )
+                        if(len(temp)):
+                            result[pcode] = temp[0]
+                else:
+                    result = godownwisestockonhandfun(
+                        self.con, orgcode, endDate, stocktype, productCode, godownCode
+                    )
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
