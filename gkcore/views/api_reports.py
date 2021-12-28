@@ -2170,6 +2170,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                         "totalinwardqty": "%.2f" % float(totalinward),
                         "totaloutwardqty": "%.2f" % float(totaloutward),
                         "balance": "%.2f" % float(openingStock),
+                        "productcode": productCd
                     }
                 )
                 srno = srno + 1
@@ -7551,9 +7552,22 @@ class api_reports(object):
                 else:
                     godownCode = 0
 
-                result = {}
+                result = []
                 if stocktype == "apg":
-                    prows = self.con.execute( 
+                    prows = self.con.execute(
+                        select([product.c.productcode, product.c.productdesc]).where(
+                            and_(
+                                product.c.orgcode == orgcode,
+                            )
+                        )
+                    )
+                    products = prows.fetchall()
+                    pmap = {}
+                    for prod in products:
+                        pmap[prod["productcode"]] = prod["productdesc"]
+
+                    # gpc - godown product code
+                    gpcrows = self.con.execute( 
                         select([goprod.c.productcode]).where(
                             and_(
                                 goprod.c.goid == godownCode,
@@ -7561,9 +7575,9 @@ class api_reports(object):
                             )
                         )
                     )
-                    products = prows.fetchall()
-                    for product in products:
-                        pcode = product["productcode"]
+                    gpcodes = gpcrows.fetchall()
+                    for gpcode in gpcodes:
+                        pcode = gpcode["productcode"]
                         temp = godownwisestockonhandfun(
                             self.con,
                             orgcode,
@@ -7573,13 +7587,17 @@ class api_reports(object):
                             godownCode,
                         )
                         if(len(temp)):
-                            result[pcode] = temp[0]
+                            temp[0]["srno"] = len(result)+1
+                            temp[0]["productcode"] = pcode
+                            temp[0]["productname"] = pmap[pcode]
+                            result.append(temp[0])
                 else:
                     result = godownwisestockonhandfun(
                         self.con, orgcode, endDate, stocktype, productCode, godownCode
                     )
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
-            except:
+            except Exception as e:
+                print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="type=categorywisestockonhand", renderer="json")
