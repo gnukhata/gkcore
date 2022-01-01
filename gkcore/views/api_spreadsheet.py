@@ -425,3 +425,7 @@ class api_spreadsheet(object):
     @view_config(request_method="GET", request_param="cash-flow", renderer="json")
     def caf(self):
         return sheets.cash_flow.print_cash_flow(self)
+
+    @view_config(request_method="GET", request_param="accounts", renderer="json")
+    def caf(self):
+        return sheets.accounts.print_account_list(self)
