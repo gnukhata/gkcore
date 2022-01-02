@@ -33,10 +33,12 @@ with open(os.path.join(here, "README.md")) as f:
     README = f.read()
 
 requires = [
-    "pyramid == 1.10.5",
-    "psycopg2 == 2.9.1",  # previously 2.8.6
+    # "pyramid == 1.10.5",
+    "pyramid == 2.0",
+    "psycopg2 == 2.9.3",  # previously 2.8.6
     "requests == 2.25.0",
     "sqlalchemy == 1.3.20",
+    # "sqlalchemy == 1.4.29",
     "monthdelta == 0.9.1",
     "pyjwt == 1.7.1",
     "pycryptodome == 3.9.9",
@@ -52,7 +54,7 @@ requires = [
 
 setup(
     name="gkcore",
-    version=0.1,
+    version="0.1",
     description="gkcore",
     long_description=README,
     classifiers=[
