@@ -32,9 +32,11 @@ Contributors:
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.dialects.postgresql.base import PGInspector
-import sys
-import os
+import sys, os, json
 
+from pyramid.request import Request
+
+# from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import metadata
 
 
@@ -139,3 +141,23 @@ def getOnDelete(tblName, keyName):
         if fkey["name"] == keyName:
             onDelete = fkey["options"]["ondelete"]
     return onDelete
+
+
+def gk_api(url: str, header: object, request: object):
+    """Call's gkcore api internally
+
+    If success, returns result object, else raises Exception.
+
+    params
+    ======
+    url = api url
+    header = url headers
+    request = request object
+    """
+    try:
+        subreq = Request.blank(url, headers=header)
+        result = json.loads(request.invoke_subrequest(subreq).text)
+        return result
+    except Exception as e:
+        print(e)
+        raise

@@ -25,7 +25,7 @@ Contributors:
 
 """
 from pyramid.response import Response
-from pyramid.request import Request
+from gkcore.models.meta import gk_api
 
 # Spreadsheet libraries
 import openpyxl
@@ -33,7 +33,8 @@ from openpyxl.styles import Font, Alignment
 
 # from io import BytesIO
 import io
-import json
+
+# import json
 
 
 def print_account_list(self):
@@ -45,8 +46,9 @@ def print_account_list(self):
 
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
-        subreq = Request.blank("/accounts", headers=header)
-        result = json.loads(self.request.invoke_subrequest(subreq).text)["gkresult"]
+        # subreq = Request.blank("/accounts", headers=header)
+        # result = json.loads(self.request.invoke_subrequest(subreq).text)["gkresult"]
+        result = gk_api("/accounts", header, self.request)["gkresult"]
         fystart = str(self.request.params["fystart"])
         fyend = str(self.request.params["fyend"])
         orgname = str(self.request.params["orgname"])
