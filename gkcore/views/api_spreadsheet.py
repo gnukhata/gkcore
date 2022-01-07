@@ -429,3 +429,7 @@ class api_spreadsheet(object):
     @view_config(request_method="GET", request_param="accounts", renderer="json")
     def caf(self):
         return sheets.accounts.print_account_list(self)
+
+    @view_config(request_method="GET", request_param="all-godowns", renderer="json")
+    def caf(self):
+        return sheets.godown.godown_list(self)

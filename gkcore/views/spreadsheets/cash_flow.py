@@ -36,6 +36,8 @@ from openpyxl.styles import Font, Alignment
 import io
 import json
 
+from gkcore.models.meta import gk_api
+
 
 def print_cash_flow(self):
     """
@@ -60,10 +62,10 @@ def print_cash_flow(self):
         orgname = self.request.params["orgname"]
         orgtype = self.request.params["orgtype"]
         header = {"gktoken": self.request.headers["gktoken"]}
-        subreq = Request.blank(
-            "/report?type=cashflow&calculateto=%s&financialstart=%s&calculatefrom=%s"
-            % (calculateto, financialstart, calculatefrom),
-            headers=header,
+        subreq = gk_api(
+            f"/report?type=cashflow&calculateto={calculateto}s&financialstart={financialstart}&calculatefrom={calculatefrom}",
+            header,
+            self.request,
         )
         result = json.loads(self.request.invoke_subrequest(subreq).text)
         receipt = result["rcgkresult"]
