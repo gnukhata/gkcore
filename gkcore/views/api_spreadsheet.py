@@ -427,9 +427,17 @@ class api_spreadsheet(object):
         return sheets.cash_flow.print_cash_flow(self)
 
     @view_config(request_method="GET", request_param="accounts", renderer="json")
-    def caf(self):
+    def acc(self):
         return sheets.accounts.print_account_list(self)
 
     @view_config(request_method="GET", request_param="all-godowns", renderer="json")
-    def caf(self):
+    def ag(self):
         return sheets.godown.godown_list(self)
+
+    @view_config(request_method="GET", request_param="user-list", renderer="json")
+    def uli(self):
+        return sheets.user.user_list(self)
+
+    @view_config(request_method="GET", request_param="transfer-notes", renderer="json")
+    def tnl(self):
+        return sheets.transfer_note.all_transfer_notes(self)
