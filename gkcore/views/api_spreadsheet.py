@@ -144,3 +144,8 @@ class api_spreadsheet(object):
     def uli(self):
         self.check_auth
         return sheets.user.user_list(self)
+
+    @view_config(request_method="GET", request_param="all-categories", renderer="json")
+    def alc(self):
+        self.check_auth
+        return sheets.category.all_categories(self)
