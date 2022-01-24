@@ -150,7 +150,7 @@ def gk_api(url: str, header: object, request: object):
 
     params
     ======
-    url = api url
+    url = api url (eg: '/state')
     header = url headers
     request = request object
     """
