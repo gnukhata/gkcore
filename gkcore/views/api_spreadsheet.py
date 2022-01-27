@@ -149,3 +149,29 @@ class api_spreadsheet(object):
     def alc(self):
         self.check_auth
         return sheets.category.all_categories(self)
+
+    @view_config(request_method="GET", request_param="budget", renderer="json")
+    def bud(self):
+        self.check_auth
+        return sheets.budget.cash_report(self)
+
+    @view_config(request_method="GET", request_param="budget-pnl", renderer="json")
+    def bud_pnl(self):
+        self.check_auth
+        return sheets.budget.pnl(self)
+
+    @view_config(
+        request_method="GET", request_param="delivery-challan-unbilled", renderer="json"
+    )
+    def delcu(self):
+        self.check_auth
+        return sheets.delivery_challan.unbilled(self)
+
+    @view_config(
+        request_method="GET",
+        request_param="delivery-challan-cancelled",
+        renderer="json",
+    )
+    def delcc(self):
+        self.check_auth
+        return sheets.delivery_challan.cancelled(self)
