@@ -36,13 +36,14 @@ import gkcore.views.spreadsheets as sheets
 
 # from openpyxl.styles.colors import RED
 
-"""
-    This API returns a spreadsheet in XLSX format of the desired report.
-"""
-
 
 @view_defaults(route_name="spreadsheet")
 class api_spreadsheet(object):
+
+    """
+    This API returns a spreadsheet in XLSX format of the desired report.
+    """
+
     def __init__(self, request):
         self.request = Request
         self.request = request
@@ -175,3 +176,12 @@ class api_spreadsheet(object):
     def delcc(self):
         self.check_auth
         return sheets.delivery_challan.cancelled(self)
+
+    @view_config(
+        request_method="GET",
+        request_param="gst-r1",
+        renderer="json",
+    )
+    def gst_r1(self):
+        self.check_auth
+        return sheets.gst.r1_summary(self)
