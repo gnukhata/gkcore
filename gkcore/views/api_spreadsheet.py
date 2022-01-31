@@ -179,9 +179,27 @@ class api_spreadsheet(object):
 
     @view_config(
         request_method="GET",
-        request_param="gst-r1",
+        request_param="gstr1",
         renderer="json",
     )
     def gst_r1(self):
         self.check_auth
-        return sheets.gst.r1_summary(self)
+        return sheets.gst.r1(self)
+
+    @view_config(
+        request_method="GET",
+        request_param="gst-summary",
+        renderer="json",
+    )
+    def gst_summ(self):
+        self.check_auth
+        return sheets.gst.summary(self)
+
+    @view_config(
+        request_method="GET",
+        request_param="cost-center-summary",
+        renderer="son",
+    )
+    def cost_cen_st(self):
+        self.check_auth
+        return sheets.cost_center.statement(self)
