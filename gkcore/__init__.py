@@ -36,9 +36,6 @@ This module also scanns for the secret from the database which is then used for 
 
 from pyramid.config import Configurator
 from gkcore.models.meta import dbconnect
-from gkcore.views import *
-from webob import request
-from webob.request import Request
 from wsgicors import CORS
 
 try:
