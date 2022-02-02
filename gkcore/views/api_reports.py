@@ -7546,8 +7546,9 @@ class api_reports(object):
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
                 stocktype = self.request.params["type"]
-                productCode = self.request.params["productcode"]
-                if stocktype in "pg" or stocktype == "apg":
+                productCode = self.request.params["productcode"] if "productcode" in self.request.params else ""
+
+                if stocktype in ["pg", "apg"]:
                     godownCode = self.request.params["goid"]
                 else:
                     godownCode = 0
