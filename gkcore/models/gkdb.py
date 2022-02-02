@@ -116,7 +116,7 @@ organisation = Table(
     Column("orgregdate", UnicodeText),
     Column("orgfcrano", UnicodeText),
     Column("orgfcradate", UnicodeText),
-    Column("orgconf", JSONB, default='{}'),
+    Column("orgconf", JSONB, default="{}"),
     Column("roflag", Integer, default=0),
     Column("booksclosedflag", Integer, default=0),
     Column("invflag", Integer, default=0),
@@ -765,7 +765,7 @@ users = Table(
     Column("userquestion", Text, nullable=False),
     Column("useranswer", Text, nullable=False),
     Column("themename", Text, default="Default"),
-    Column("userconf", JSONB, default='{}'),
+    Column("userconf", JSONB, default="{}"),
     Column(
         "orgcode",
         Integer,
@@ -1060,6 +1060,39 @@ tax = Table(
     ),
     UniqueConstraint("state", "taxname", "productcode", "orgcode"),
     UniqueConstraint("state", "taxname", "categorycode", "orgcode"),
+    Index("taxindex", "productcode", "taxname"),
+    Index("tax_taxindex", "categorycode", "taxname"),
+)
+
+"""
+table to store tax for products along with the time they are valid for
+This taxex would be vat , gst etc. For particular product and category (mutually exelusive)
+"""
+tax2 = Table(
+    "tax2",
+    metadata,
+    Column("taxid", Integer, primary_key=True),
+    Column("taxname", UnicodeText, nullable=False),
+    Column("taxrate", Numeric(5, 2), nullable=False),
+    Column("taxfromdate", DateTime, nullable=False),
+    Column("state", UnicodeText),
+    Column(
+        "productcode",
+        Integer,
+        ForeignKey("product.productcode", ondelete="CASCADE"),
+    ),
+    Column(
+        "categorycode",
+        Integer,
+        ForeignKey("categorysubcategories.categorycode", ondelete="CASCADE"),
+    ),
+    Column(
+        "orgcode",
+        Integer,
+        ForeignKey("organisation.orgcode", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    UniqueConstraint("taxname", "state" ,"taxrate", "taxfromdate", "productcode", "orgcode"),
     Index("taxindex", "productcode", "taxname"),
     Index("tax_taxindex", "categorycode", "taxname"),
 )

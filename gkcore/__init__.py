@@ -96,6 +96,7 @@ def main(global_config, **settings):
     config.add_route("transfernote", "/transfernote")
     config.add_route("discrepancynote", "/discrepancynote")
     config.add_route("tax", "/tax")
+    config.add_route("tax2", "/tax2")
     config.add_route("log", "/log")
     config.add_route("rejectionnote", "/rejectionnote")
     config.add_route("billwise", "/billwise")

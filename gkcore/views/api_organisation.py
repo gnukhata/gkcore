@@ -1559,7 +1559,33 @@ class api_organisation(object):
                 self.con.execute(
                     "alter table organisation add orgconf jsonb default '{}'"
                 )
-        except:
+            if not tableExists("tax2"):
+                self.con.execute(
+                    "create table if not exists tax2( taxid serial, taxname text NOT NULL, taxrate numeric(5,2) NOT NULL, taxfromdate date NOT NULL, state text, productcode integer, categorycode integer, orgcode integer NOT NULL, primary key (taxid),foreign key (productcode) references product(productcode) ON DELETE CASCADE,foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, foreign key (categorycode) references categorysubcategories(categorycode) ON DELETE CASCADE, unique(taxname, state, taxrate, taxfromdate, productcode, orgcode))")
+                orgs = self.con.execute("select orgcode, yearstart, yearend from organisation").fetchall()
+                dates = {}
+                for org in orgs:
+                    dates[org["orgcode"]] = {"from": org["yearstart"], "to": org["yearend"]}
+                
+                taxes = self.con.execute("select * from tax").fetchall()
+                for tax in taxes:
+                    from_date = dates[tax["orgcode"]]["from"]
+                    to_date = dates[tax["orgcode"]]["to"]
+                    self.con.execute(
+                        "insert into tax2(taxname, taxrate, taxfromdate, state, productcode, categorycode, orgcode)values('%s', %0.2f, '%s', '%s', %s, %s, %s)" 
+                        % (
+                            str(tax["taxname"]),
+                            float(tax["taxrate"]),
+                            str(from_date),
+                            str(tax["state"] or ""),
+                            str(tax["productcode"] or "null"),
+                            str(tax["categorycode"] or "null"),
+                            str(tax["orgcode"])
+                        ) 
+                    )
+                
+        except Exception as e:
+            print(e)
             return 0
         finally:
             self.con.close()
@@ -1667,7 +1693,7 @@ class api_organisation(object):
         """
         This function checks if registrations are disabled by server admin & return corresponding gkstatus code
         """
-        if self.disableRegistration == 'yes':
+        if self.disableRegistration == "yes":
             return {"gkstatus": enumdict["ActionDisallowed"]}
         else:
             return {"gkstatus": enumdict["Success"]}
@@ -1678,7 +1704,7 @@ class api_organisation(object):
         This function checks if registrations are disabled by server admin & return corresponding gkstatus code
         else create org based on parameters provided
         """
-        if self.disableRegistration == 'yes':
+        if self.disableRegistration == "yes":
             return {"gkstatus": enumdict["ActionDisallowed"]}
         try:
             self.con = eng.connect()
