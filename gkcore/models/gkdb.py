@@ -1093,8 +1093,8 @@ tax2 = Table(
         nullable=False,
     ),
     UniqueConstraint("taxname", "state" ,"taxrate", "taxfromdate", "productcode", "orgcode"),
-    Index("taxindex", "productcode", "taxname"),
-    Index("tax_taxindex", "categorycode", "taxname"),
+    Index("taxindex2", "productcode", "taxname"),
+    Index("tax_taxindex2", "categorycode", "taxname"),
 )
 
 """Table to store Log of users
