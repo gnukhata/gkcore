@@ -33,24 +33,41 @@ with open(os.path.join(here, "README.md")) as f:
     README = f.read()
 
 requires = [
-    # "pyramid == 1.10.5",
-    "pyramid == 2.0",
-    "psycopg2 == 2.9.3",  # previously 2.8.6
-    "requests == 2.25.0",
-    "sqlalchemy == 1.3.20",
-    # "sqlalchemy == 1.4.29",
-    "monthdelta == 0.9.1",
-    "pyjwt == 1.7.1",
-    "pycryptodome == 3.9.9",
-    "supervisor == 4.2.1",
-    "natsort == 7.1.0",
-    "gunicorn==20.1.0",
-    "pillow == 8.0.1",
-    "wsgicors == 0.7.0",
-    "openpyxl == 2.5.0",
-    "black == 21.6b0",
-    "jsonschema == 4.0.1",
+    "pyramid",
+    "psycopg2",
+    "requests",
+    "sqlalchemy",
+    "monthdelta",
+    "pyjwt",
+    "pycryptodome",
+    "supervisor",
+    "natsort",
+    "gunicorn",
+    "pillow",
+    "wsgicors",
+    "openpyxl",
+    "black",
+    "jsonschema",
 ]
+# requires = [
+#     # "pyramid == 1.10.5",
+#     "pyramid == 2.0",
+#     "psycopg2 == 2.9.3",  # previously 2.8.6
+#     "requests == 2.25.0",
+#     "sqlalchemy == 1.3.20",
+#     # "sqlalchemy == 1.4.29",
+#     "monthdelta == 0.9.1",
+#     "pyjwt == 1.7.1",
+#     "pycryptodome == 3.9.9",
+#     "supervisor == 4.2.1",
+#     "natsort == 7.1.0",
+#     "gunicorn==20.1.0",
+#     "pillow == 8.0.1",
+#     "wsgicors == 0.7.0",
+#     "openpyxl",
+#     "black == 22.1.0",
+#     "jsonschema == 4.0.1",
+# ]
 
 setup(
     name="gkcore",
