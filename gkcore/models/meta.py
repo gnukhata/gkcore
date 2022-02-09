@@ -32,8 +32,7 @@ Contributors:
 
 from sqlalchemy.engine import create_engine
 from sqlalchemy.dialects.postgresql.base import PGInspector
-import sys, os, json
-
+import sys, os, json, pathlib
 from pyramid.request import Request
 
 # from sqlalchemy.sql.expression import null
@@ -156,8 +155,46 @@ def gk_api(url: str, header: object, request: object):
     """
     try:
         subreq = Request.blank(url, headers=header)
+        Request.POST
         result = json.loads(request.invoke_subrequest(subreq).text)
         return result
     except Exception as e:
         print(e)
         raise
+
+
+def gk_hsn():
+    """Read HSN Code file and return an array of hsn codes"""
+    try:
+        gkcore_root = pathlib.Path("././").resolve()
+        with open(f"{gkcore_root}/static/gst-hsn.json", "r") as f:
+            hsn_array = json.load(f)
+        return hsn_array
+        # wb = openpyxl.load_workbook(f"{gkcore_root}/static/HSN_SAC.xlsx")
+        # ws = wb["HSN"]
+        # for row in ws.values:
+        #     # hsn_array.append({"hsn_code": row[0], "hsn_desc": row[1]})
+
+        #     # first object is useless. So, remove it.
+        #     # hsn_array.pop(0)
+
+        #     print(hsn_array)
+        #     return hsn_array
+    except Exception as e:
+        print(e)
+        raise e
+
+
+# def gk_auth(**params):
+#     """Verify user's identity\n
+#     __Params:__\n
+#     token: jwt token
+
+#     """
+#     print("params: ", params)
+#     # token = params["token"] or None
+#     # if token == None:
+#     #     return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+#     authDetails = ac(params["token"])
+#     if authDetails["auth"] == False:
+#         return {"gkstatus": 2}
