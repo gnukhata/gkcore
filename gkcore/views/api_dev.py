@@ -53,7 +53,7 @@ def recalculateStock(con, data, data_type):
         id = item[id_key]
         orgcode = item["orgcode"]
         for prod_code in item["contents"]:
-            if prod_code:
+            if prod_code and prod_code != 'undefined':
                 # print("================")
                 p_qty = (
                     float(
