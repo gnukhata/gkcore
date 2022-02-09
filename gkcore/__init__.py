@@ -104,6 +104,7 @@ def main(global_config, **settings):
     config.add_route("config", "/config")
     config.add_route("spreadsheet", "/spreadsheet")
     config.add_route("ifsc", "/ifsc")
+    config.add_route("dev", "/dev") # Comment in production
     config.scan("gkcore.views")
 
     return CORS(
