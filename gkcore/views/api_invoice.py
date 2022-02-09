@@ -1327,6 +1327,15 @@ class api_invoice(object):
                     "discflag": invrow["discflag"],
                 }
 
+                # If purchase invoice, send suplier invoice no and date
+                if invrow["inoutflag"] == 9:
+                    inv["supinvno"] = invrow["supinvno"] or ""
+                    inv["supinvdate"] = (
+                        datetime.strftime(invrow["supinvdate"], "%d-%m-%Y")
+                        if invrow["supinvdate"]
+                        else ""
+                    )
+
                 # below field deletable is for check whether invoice having voucher or not
                 # vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not
                 v_count = self.con.execute(

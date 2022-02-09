@@ -1583,6 +1583,10 @@ class api_organisation(object):
                             str(tax["orgcode"])
                         ) 
                     )
+            if not columnExists("invoice", "supinvno"):
+                self.con.execute("alter table invoice add supinvno text")
+            if not columnExists("invoice", "supinvdate"):
+                self.con.execute("alter table invoice add supinvdate date")
                 
         except Exception as e:
             print(e)

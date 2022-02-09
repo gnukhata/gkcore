@@ -459,6 +459,8 @@ invoice = Table(
     Column("invoiceno", UnicodeText, nullable=False),
     Column("ewaybillno", UnicodeText),
     Column("invoicedate", DateTime, nullable=False),
+    Column("supinvno", UnicodeText),
+    Column("supinvdate", DateTime),
     Column("invnarration", UnicodeText),
     Column("taxflag", Integer, default=22),
     Column("contents", JSONB),
