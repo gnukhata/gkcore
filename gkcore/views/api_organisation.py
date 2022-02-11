@@ -37,6 +37,7 @@ from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
+from sqlalchemy.types import DATE
 from sqlalchemy import func, desc
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -47,6 +48,7 @@ from gkcore.models.meta import (
     inventoryMigration,
     addFields,
     columnExists,
+    columnTypeMatches,
     tableExists,
     getOnDelete,
 )
@@ -1583,6 +1585,9 @@ class api_organisation(object):
                             str(tax["orgcode"])
                         ) 
                     )
+            else:
+                if not columnTypeMatches("tax2", "taxfromdate", DATE):
+                    self.con.execute("alter table tax2 alter column taxfromdate type date")
             if not columnExists("invoice", "supinvno"):
                 self.con.execute("alter table invoice add supinvno text")
             if not columnExists("invoice", "supinvdate"):

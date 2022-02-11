@@ -113,6 +113,14 @@ def columnExists(tableName, columnName):
             return True
     return False
 
+def columnTypeMatches(tableName, columnName, columnType):
+    gkInspect = PGInspector(dbconnect())
+    cols = gkInspect.get_columns(tableName)
+    for col in cols:
+        if col["name"] in columnName:
+            if type(col["type"]) is columnType:
+                return True
+    return False
 
 def tableExists(tblName):
     """
