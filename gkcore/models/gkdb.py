@@ -1076,7 +1076,7 @@ tax2 = Table(
     Column("taxid", Integer, primary_key=True),
     Column("taxname", UnicodeText, nullable=False),
     Column("taxrate", Numeric(5, 2), nullable=False),
-    Column("taxfromdate", DateTime, nullable=False),
+    Column("taxfromdate", Date, nullable=False),
     Column("state", UnicodeText),
     Column(
         "productcode",
