@@ -203,3 +203,11 @@ class api_spreadsheet(object):
     def cost_cen_st(self):
         self.check_auth
         return sheets.cost_center.statement(self)
+
+    @view_config(
+        request_method="GET",
+        request_param="type=gstr3b",
+        renderer="json",
+    )
+    def gstr3b(self):
+        return sheets.gstr_3b.print_gstr_3b(self)
