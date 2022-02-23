@@ -262,6 +262,7 @@ def generate_3b_report(request, wb1, ws1, invoices):
                         tax_name == "SGST" or tax_name == "UTGST"
                     ):  # tax_obj.gst_type == 'sgst':
                         sgst_amount += float(prod["taxamount"])
+                        cgst_amount += float(prod["taxamount"]) # Currently since CGST and SGST are the same, gkcore only stores SGST.
                     
                     if "cess" in prod:
                         cess_amount += float(prod["cess"])
