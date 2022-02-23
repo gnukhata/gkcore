@@ -38,7 +38,7 @@ from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
-
+# import traceback  # for printing detailed exception logs
 
 def getStateCode(StateName, con):
     stateData = con.execute(
@@ -135,7 +135,8 @@ class api_customer(object):
                     bankdetails = row["bankdetails"]
 
                 statelist = []
-                if row["state"] != None:
+
+                if row["state"] is not None and row["state"]:
                     statedata = self.con.execute(
                         select([gkdb.state.c.statecode]).where(
                             gkdb.state.c.statename == row["state"]
@@ -155,7 +156,7 @@ class api_customer(object):
                         statelist.append(
                             {statename["statecode"]: statename["statename"]}
                         )
-                elif row["state"] != None:
+                elif row["state"] is not None and row["state"]:
                     custsupstatecode = getStateCode(row["state"], self.con)["statecode"]
                     statelist.append({custsupstatecode: row["state"]})
 
@@ -178,6 +179,7 @@ class api_customer(object):
                 }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
             except:
+                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
