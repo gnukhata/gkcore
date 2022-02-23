@@ -198,7 +198,8 @@ class api_config(object):
                 try:
                     # print(confToValidate)
                     if self.request.params["confcategory"] == "transaction":
-                        validator.validate(confToValidate)
+                        if "inv" in confToValidate:
+                            validator.validate(confToValidate)
                     elif self.request.params["confcategory"] == "global":
                         validate(instance=confToValidate, schema=globalConfigSchema)
                     else:

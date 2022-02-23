@@ -256,7 +256,7 @@ transactionConfigSchema = {
                         "inv": {
                             "type": "object",
                             "properties": {
-                                "no": {"type": "boolean"},
+                                "no": {"type": ["boolean", "object"]},
                                 "date": {"type": "boolean"},
                                 "delNote": {"type": ["boolean", "object"]},
                                 "ebn": {"type": "boolean"},
