@@ -213,7 +213,7 @@ def cancelled(self):
     fystart: dd-mm-yyyy
     fyend: dd-mm-yyyy
     inputdate:
-    del_cancelled_type: (Values: Approval | Consignment | Sale | Purchase)
+    del_cancelled_type: (Values: All | Approval | Consignment | Sale | Purchase)
     inout: (Values: 9, 15)
     """
 

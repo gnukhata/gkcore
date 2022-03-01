@@ -38,13 +38,15 @@ Contributors:
 # from sqlalchemy.sql import select
 # from sqlalchemy.engine.base import Connection
 # from sqlalchemy import and_, exc, func
-# from pyramid.request import Request
-# from pyramid.response import Response
+from pyramid.request import Request
+from pyramid.response import Response
+
 # from pyramid.view import view_defaults, view_config
 # import gkcore
 # from gkcore.views.api_reports import getBalanceSheet
 # from gkcore.views.api_invoice import getInvoiceList
-# from datetime import datetime, date
+from datetime import datetime
+
 # from gkcore.views.api_user import getUserRole
 # from gkcore.views.api_godown import getusergodowns
 import json
@@ -81,6 +83,7 @@ def print_trial_balance(self):
         startdate = self.request.params["fystart"]
         calculateto = self.request.params["calculateto"]
         trialbalancetype = int(self.request.params["trialbalancetype"])
+        result = {}
         if trialbalancetype == 1:
             subreq = Request.blank(
                 "/report?type=nettrialbalance&calculateto=%s&financialstart=%s"
@@ -90,7 +93,7 @@ def print_trial_balance(self):
             result = self.request.invoke_subrequest(subreq)
         elif trialbalancetype == 2:
             subreq = Request.blank(
-                "/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"
+                "/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"
                 % (calculateto, financialstart),
                 headers=header,
             )
@@ -121,11 +124,11 @@ def print_trial_balance(self):
             # Organisation name and financial year are displayed.
             sheet["A1"] = (
                 orgname
-                + " (FY: "
+                + " (From: "
                 + datetime.strptime(str(financialstart), "%Y-%m-%d").strftime(
                     "%d-%m-%Y"
                 )
-                + " to "
+                + " To: "
                 + fyend
                 + ")"
             )
@@ -465,6 +468,7 @@ def print_trial_balance(self):
         # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true; path=/'}
 
         return Response(contents, headerlist=list(headerList.items()))
-    except:
-        print("file not found")
+    except Exception as e:
+
+        print(e)
         return {"gkstatus": 3}
