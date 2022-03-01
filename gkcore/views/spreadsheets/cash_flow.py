@@ -25,7 +25,8 @@ Contributors:
 
 """
 from pyramid.response import Response
-from pyramid.request import Request
+
+# from pyramid.request import Request
 from datetime import datetime
 
 # Spreadsheet libraries
@@ -34,7 +35,6 @@ from openpyxl.styles import Font, Alignment
 
 # from io import BytesIO
 import io
-import json
 
 from gkcore.models.meta import gk_api
 
@@ -62,12 +62,11 @@ def print_cash_flow(self):
         orgname = self.request.params["orgname"]
         orgtype = self.request.params["orgtype"]
         header = {"gktoken": self.request.headers["gktoken"]}
-        subreq = gk_api(
-            f"/report?type=cashflow&calculateto={calculateto}s&financialstart={financialstart}&calculatefrom={calculatefrom}",
+        result = gk_api(
+            f"/report?type=cashflow&calculateto={calculateto}&financialstart={financialstart}&calculatefrom={calculatefrom}",
             header,
             self.request,
         )
-        result = json.loads(self.request.invoke_subrequest(subreq).text)
         receipt = result["rcgkresult"]
         payment = result["pygkresult"]
         fystart = datetime.strptime(
