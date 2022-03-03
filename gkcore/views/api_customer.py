@@ -40,6 +40,7 @@ import gkcore
 from gkcore.views.api_login import authCheck
 # import traceback  # for printing detailed exception logs
 
+
 def getStateCode(StateName, con):
     stateData = con.execute(
         select([gkdb.state.c.statecode]).where(gkdb.state.c.statename == StateName)
@@ -176,6 +177,8 @@ class api_customer(object):
                     "pincode": row["pincode"],
                     "bankdetails": bankdetails,
                     "statelist": statelist,
+                    "gst_reg_type": row["gst_reg_type"],
+                    "gst_party_type": row["gst_party_type"],
                 }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
             except:
@@ -252,6 +255,8 @@ class api_customer(object):
                         "pincode": row["pincode"],
                         "bankdetails": bankdetails,
                         "statelist": statelist,
+                        "gst_reg_type": row["gst_reg_type"],
+                        "gst_party_type": row["gst_party_type"],
                     }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
             except:

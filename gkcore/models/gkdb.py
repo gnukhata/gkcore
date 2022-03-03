@@ -271,6 +271,7 @@ The reason to store this data is that we may need it in both invoice and deliver
 Here the csflag is 3 for customer and 19 for supplier
 gstin to store unique code of cust/supp for gst for every state (json)
 Bankdetails is a dictionary will have bankname,accountno., branchname and ifsccode.
+Check enum.py for possible values for "gst_reg_type" and "gst_party_type"
 """
 customerandsupplier = Table(
     "customerandsupplier",
@@ -278,6 +279,8 @@ customerandsupplier = Table(
     Column("custid", Integer, primary_key=True),
     Column("custname", UnicodeText, nullable=False),
     Column("gstin", JSONB),
+    Column("gst_reg_type", Integer), 
+    Column("gst_party_type", Integer),
     Column("custaddr", UnicodeText),
     Column("pincode", UnicodeText),
     Column("custphone", UnicodeText),
@@ -1156,6 +1159,7 @@ Debited/Credited value of each product is stored in reductionval as values in a 
 Debit/Credit Note reference if any is stored in reference field.
 Documents attached is stored in attachment and its count stored in attachmentcount.
 Storing userid helps access username and userrole.
+check enum.py for all possible values of "drcrmode"
 """
 drcr = Table(
     "drcr",
