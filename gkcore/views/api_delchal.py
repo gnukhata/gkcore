@@ -58,6 +58,7 @@ from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from gkcore.views.api_invoice import getStateCode
+# import traceback  # for printing detailed exception logs
 
 
 @view_defaults(route_name="delchal")
@@ -162,6 +163,7 @@ create method for delchal resource.
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
+                # print(traceback.format_exc())
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
@@ -186,7 +188,8 @@ create method for delchal resource.
                 delchaldata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
                 stockdata["dcinvtnid"] = delchaldata["dcid"]
-                stockdata["stockdate"] = dcidrow["dcdate"]
+                stockdata["stockdate"] = delchaldata["dcdate"]
+                freeqty = delchaldata["freeqty"]
                 stockdata["dcinvtnflag"] = 4
                 result = self.con.execute(
                     delchal.update()
@@ -202,15 +205,19 @@ create method for delchal resource.
                             )
                         )
                     )
-                    items = stockdata.pop("items")
+                    items = delchaldata["contents"]
                     for key in list(items.keys()):
                         stockdata["productcode"] = key
-                        stockdata["qty"] = items[key]
+                        stockdata["qty"] = float(
+                            list(items[key].values())[0]
+                        ) + float(freeqty[key])
                         result = self.con.execute(stock.insert(), [stockdata])
                     return {"gkstatus": enumdict["Success"]}
                 else:
+                    # print(traceback.format_exc())
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except:
+                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -356,6 +363,8 @@ create method for delchal resource.
         else:
             try:
                 self.con = eng.connect()
+                if not self.request.params["dcid"]:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
                 result = self.con.execute(
                     select([delchal]).where(
                         delchal.c.dcid == self.request.params["dcid"]
@@ -380,6 +389,11 @@ create method for delchal resource.
                 for stockrow in stockdata:
                     stockinout = stockrow["inout"]
                     goiddata = stockrow["goid"]
+                if stockdata.rowcount == 0:
+                    return {
+                        "gkstatus": gkcore.enumdict["Success"],
+                        "gkresult": {},
+                    }
                 singledelchal = {
                     "delchaldata": {
                         "dcid": delchaldata["dcid"],
@@ -722,6 +736,7 @@ create method for delchal resource.
                     "gkresult": singledelchal,
                 }
             except:
+                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
