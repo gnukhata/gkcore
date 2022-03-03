@@ -37,6 +37,7 @@ This module also scanns for the secret from the database which is then used for 
 from pyramid.config import Configurator
 from gkcore.models.meta import dbconnect
 from wsgicors import CORS
+from gkcore.enum import STATUS_CODES
 
 try:
     eng = dbconnect()
@@ -47,15 +48,7 @@ try:
 except:
     secret = ""
 
-enumdict = {
-    "Success": 0,
-    "DuplicateEntry": 1,
-    "UnauthorisedAccess": 2,
-    "ConnectionFailed": 3,
-    "BadPrivilege": 4,
-    "ActionDisallowed": 5,
-    "ProxyServerError": 6,
-}
+enumdict = STATUS_CODES
 
 
 def main(global_config, **settings):

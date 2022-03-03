@@ -1,21 +1,4 @@
-CONFIG_ENUM = {
-    "PAGES": {
-        "global": 0,
-        "workflow": 10,
-        "workflow-invoice": 20,
-        "workflow-dc-note": 30,
-        "workflow-cash-memo": 40,
-        "workflow-delivery-note": 50,
-        "workflow-ps-order": 60,
-        "workflow-rejection-note": 70,
-        "workflow-transfer-note": 80,
-        "workflow-voucher": 90,
-        "workflow-business": 100,
-        "workflow-contacts": 110,
-        "create-invoice": 120,
-    },
-    "CONFIGS": {"global": 0, "workflow-left-pane-columns": 11, "page-layout": 121},
-}
+from gkcore.enum import CONFIG_ENUM
 
 payloadSchema1 = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
