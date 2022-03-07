@@ -249,6 +249,7 @@ create method for delchal resource.
                                 delchal.c.noofpackages,
                                 delchal.c.modeoftransport,
                                 delchal.c.attachmentcount,
+                                delchal.c.orgcode,
                             ]
                         ).where(
                             and_(
@@ -269,6 +270,7 @@ create method for delchal resource.
                                 delchal.c.noofpackages,
                                 delchal.c.modeoftransport,
                                 delchal.c.attachmentcount,
+                                delchal.c.orgcode,
                             ]
                         )
                         .where(delchal.c.orgcode == authDetails["orgcode"])
@@ -300,6 +302,17 @@ create method for delchal resource.
                 for godown in usergodowmns:
                     godowns.append(godown["goid"])
                 for row in result:
+                    # if delchal is linked to invoice, it shouldn't be cancelled. canceldelchal = 1 (if cancellable), 0 (if uncancellable)
+                    canceldelchal = 1
+                    exist_dcinv = self.con.execute(
+                        "select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"
+                        % (row["dcid"], authDetails["orgcode"])
+                    )
+                    existDcinv = exist_dcinv.fetchone()
+                    if existDcinv["dccount"] > 0:
+                        canceldelchal = 0
+                    
+
                     delchalgodown = self.con.execute(
                         select([stock.c.goid]).where(
                             and_(
@@ -337,6 +350,7 @@ create method for delchal resource.
                                 "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
                                 "attachmentcount": row["attachmentcount"],
                                 "goname": godownMap[delchalgoid]["goname"] or "",
+                                "canceldelchal": canceldelchal
                             }
                         )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
