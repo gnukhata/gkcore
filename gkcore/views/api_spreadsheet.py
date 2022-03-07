@@ -86,12 +86,12 @@ class api_spreadsheet(object):
     @view_config(request_method="GET", request_param="ledger", renderer="json")
     def led(self):
         self.check_auth
-        return sheets.ledger.print_ledger(self)
+        return sheets.ledger.ledger_report(self)
 
     @view_config(request_method="GET", request_param="ledger-monthly", renderer="json")
     def ledm(self):
         self.check_auth
-        return sheets.ledger.print_monthly_ledger(self)
+        return sheets.ledger.monthly_ledger(self)
 
     @view_config(
         request_method="GET", request_param="type=conv_bal_sheet", renderer="json"
@@ -197,8 +197,8 @@ class api_spreadsheet(object):
 
     @view_config(
         request_method="GET",
-        request_param="cost-center-summary",
-        renderer="son",
+        request_param="cost-center-statement",
+        renderer="json",
     )
     def cost_cen_st(self):
         self.check_auth

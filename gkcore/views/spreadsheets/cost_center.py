@@ -55,7 +55,7 @@ def statement(self):
     """
     try:
         calculateto = self.request.params["calculateto"]
-        financialstart = self.request.params["fystart"]
+        financialstart = self.request.params["finstart"]
         projectcode = int(self.request.params["projectcode"])
         projectname = self.request.params["projectname"]
         header = {"gktoken": self.request.headers["gktoken"]}

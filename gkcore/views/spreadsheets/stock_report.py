@@ -45,7 +45,8 @@ from pyramid.response import Response
 # import gkcore
 # from gkcore.views.api_reports import getBalanceSheet
 # from gkcore.views.api_invoice import getInvoiceList
-# from datetime import datetime, date
+from datetime import datetime
+
 # from gkcore.views.api_user import getUserRole
 # from gkcore.views.api_godown import getusergodowns
 # import requests
@@ -93,9 +94,10 @@ def print_stock_report(self):
             )
             result = self.request.invoke_subrequest(subr)
         result = json.loads(result.text)["gkresult"]
-        fystart = datetime.strptime(
-            self.request.params["fystart"], "%Y-%m-%d"
-        ).strftime("%d-%m-%Y")
+        fystart = self.request.params["fystart"]
+        # fystart = datetime.strptime(
+        #     self.request.params["fystart"], "%Y-%m-%d"
+        # ).strftime("%d-%m-%Y")
         fyend = str(self.request.params["fyend"])
         orgname = str(self.request.params["orgname"])
         # A workbook is opened.
