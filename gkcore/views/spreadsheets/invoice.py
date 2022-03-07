@@ -436,7 +436,6 @@ def outstanding_invoices(self):
             header,
             self.request,
         )
-        print(result)
         # A workbook is opened.
         billwisewb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
@@ -491,7 +490,7 @@ def outstanding_invoices(self):
         sheet["F5"].alignment = Alignment(horizontal="right")
         sheet["E5"].font = Font(name="Liberation Serif", size=12, bold=True)
         sheet["F5"].font = Font(name="Liberation Serif", size=12, bold=True)
-        unAdjInvoices = result.json()["invoices"]
+        unAdjInvoices = result["invoices"]
         row = 6
         # Looping each dictionaries in list unAdjInvoices to store data in cells and apply styles.
         srno = 1

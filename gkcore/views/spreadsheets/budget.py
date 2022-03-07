@@ -60,9 +60,7 @@ def cash_report(self):
             % (int(self.request.params["budid"]), str(financialstart)),
             header,
             self.request,
-        )
-        print(result)
-        # result = result.json()["gkresult"]
+        )['gkresult']
         budgetwb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
         sheet = budgetwb.active
@@ -83,7 +81,7 @@ def cash_report(self):
         sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
         sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
         sheet["A3"].alignment = Alignment(horizontal="center", vertical="center")
-        sheet["A3"] = "Cash Budget Report :" + str(budgetdetails)
+        sheet["A3"] = "Cash Budget Report : " + str(budgetdetails)
         sheet.merge_cells("A3:E3")
 
         sheet["A4"].font = Font(name="Liberation Serif", size="12", bold=True)
@@ -289,7 +287,6 @@ def pnl(self):
             header,
             self.request,
         )["gkresult"]
-        # result = result.json()["gkresult"]
         budgetwb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
         sheet = budgetwb.active
