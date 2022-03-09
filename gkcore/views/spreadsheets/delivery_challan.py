@@ -46,7 +46,7 @@ def unbilled(self):
     fystart: dd-mm-yyyy
     fyend: dd-mm-yyyy
     inputdate:
-    del_unbillled_type: (Values: All | Approval | Consignment | Sale | Purchase)
+    del_unbilled_type: (Values: All | Approval | Consignment | Sale | Purchase)
     inout: (Values: 9, 15)
     """
     try:
@@ -84,6 +84,7 @@ def unbilled(self):
             datetime.strptime(str(inputdate), "%Y-%m-%d").date(), "%d-%m-%Y"
         )
         inout = self.request.params["inout"]
+        result = None
         if inout == "9":
             result = gk_api(
                 f"/report?type=del_unbilled&inout=i&inputdate={inputdate}&del_unbilled_type={del_unbilled_type}",
@@ -105,7 +106,7 @@ def unbilled(self):
                 % deltype
             )
             title = "Customer Name"
-        # result = result.json()["gkresult"]
+        print(result)
         # A workbook is opened.
         unbilldelwb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
