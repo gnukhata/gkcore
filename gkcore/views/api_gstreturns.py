@@ -34,6 +34,7 @@ from sqlalchemy.sql import select, and_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from gkcore.views.api_login import authCheck
+from gkcore.views.api_invoice import getInvoiceList, getInvoiceData
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
@@ -47,6 +48,8 @@ from ast import literal_eval
 import requests
 from base64 import b64decode, b64encode
 from json import dumps, loads
+
+# import traceback  # for printing detailed exception logs
 
 
 def taxable_value(inv, productcode, con, drcr=False):
@@ -525,6 +528,203 @@ def hsn_r1(orgcode, start, end, con):
         return {"status": 3}
 
 
+"""
+generate_gstr_3b_data: generates the data required for creating gstr3b json and spreadsheet
+
+"""
+
+
+def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
+    try:
+        outward_taxable_supplies = {
+            "taxable_value": 0.0,
+            "igst": 0.0,
+            "cgst": 0.0,
+            "sgst": 0.0,
+            "cess": 0.0,
+        }
+        outward_taxable_zero_rated = {
+            "taxable_value": 0.0,
+            "igst": 0.0,
+            "cgst": 0.0,
+            "sgst": 0.0,
+            "cess": 0.0,
+        }
+        outward_taxable_exempted = {
+            "taxable_value": 0.0,
+            "igst": 0.0,
+            "cgst": 0.0,
+            "sgst": 0.0,
+            "cess": 0.0,
+        }
+        outward_non_gst = {
+            "taxable_value": 0.0,
+            "igst": 0.0,
+            "cgst": 0.0,
+            "sgst": 0.0,
+            "cess": 0.0,
+        }
+
+        inward_reverse_charge = {
+            "taxable_value": 0.0,
+            "igst": 0.0,
+            "cgst": 0.0,
+            "sgst": 0.0,
+            "cess": 0.0,
+        }
+        import_goods = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        import_service = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        inward_isd = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        all_itc = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        itc_reversed_1 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        itc_reversed_2 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        net_itc = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        ineligible_1 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+        ineligible_2 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+
+        inward_zero_gst = {"inter": 0.0, "intra": 0.0}
+        non_gst = {"inter": 0.0, "intra": 0.0}
+
+        interest = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
+
+        pos_unreg_comp_uin_igst = (
+            {}
+        )  # {PoS: Unreg_Taxable_Amt, Unreg_IGST, Composition_Taxable_Amt, Composition_IGST, UIN_Taxamble_Amt, UIN_IGST}
+
+        # For invoice in invoices
+        #   For product in invoice.products
+
+        invoices = getInvoiceList(
+            con, orgcode, {"fromdate": fromDate, "todate": toDate, "flag": "0"}
+        )
+
+        for invoice in invoices:
+            inv_data = getInvoiceData(
+                con, orgcode, {"inv": "single", "invid": invoice["invid"]}
+            )
+            if len(inv_data):
+                for prod_id in inv_data["invcontents"]:
+                    prod = inv_data["invcontents"][prod_id]
+                    line_uom = prod["uom"]
+                    line_qty = prod["qty"]
+                    line_amount = float(prod["taxableamount"])
+                    # line_price = invoice_line.price_unit * (1 - (invoice_line.discount or 0.0) / 100.0)
+                    # line_taxes = invoice_line.invoice_line_tax_ids.compute_all(line_price, invoice_line.invoice_id.currency_id, invoice_line.quantity, prod_id, invoice_line.invoice_id.partner_id)
+                    # _logger.info(line_taxes)
+                    igst_amount = cgst_amount = sgst_amount = cess_amount = 0.0
+
+                    # tax_obj = self.env['account.tax'].browse(tax_line['id'])
+                    tax_name = prod["taxname"]
+                    if tax_name == "IGST":  # tax_obj.gst_type == 'igst':
+                        igst_amount += float(prod["taxamount"])
+                    elif tax_name == "CGST":  # tax_obj.gst_type == 'cgst':
+                        cgst_amount += float(prod["taxamount"])
+                    elif (
+                        tax_name == "SGST" or tax_name == "UTGST"
+                    ):  # tax_obj.gst_type == 'sgst':
+                        sgst_amount += float(prod["taxamount"])
+                        cgst_amount += float(
+                            prod["taxamount"]
+                        )  # Currently since CGST and SGST are the same, gkcore only stores SGST.
+
+                    if "cess" in prod:
+                        cess_amount += float(prod["cess"])
+
+                    # cgst_amount = invoice_line.invoice_line_tax_ids.filtered(lambda r: r.gst_type == 'cgst').amount
+                    # sgst_amount = invoice_line.invoice_line_tax_ids.filtered(lambda r: r.gst_type == 'sgst').amount
+                    line_total_amount = float(prod["totalAmount"])
+                    # _logger.info(invoice_line.invoice_line_tax_ids)
+                    if line_amount < 0:
+                        line_total_amount = line_total_amount * -1
+                    if inv_data["inoutflag"] == 15:  # Customer Invoice
+                        if (
+                            line_total_amount > line_amount
+                        ):  # Taxable item, not zero rated/nil rated/exempted
+                            outward_taxable_supplies["taxable_value"] += line_amount
+                            outward_taxable_supplies["igst"] += igst_amount
+                            outward_taxable_supplies["cgst"] += cgst_amount
+                            outward_taxable_supplies["sgst"] += sgst_amount
+                            outward_taxable_supplies["cess"] += cess_amount
+                            if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
+                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
+                                    "unreg_taxable_amt"
+                                ] += line_amount
+                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
+                                    "unreg_igst"
+                                ] += igst_amount
+                            else:
+                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
+                                    "unreg_taxable_amt": line_amount,
+                                    "unreg_igst": igst_amount,
+                                    "comp_taxable_amt": 0,
+                                    "comp_igst": 0,
+                                    "uin_taxable_amt": 0,
+                                    "uin_igst": 0,
+                                }  # TODO: Handle Composition & UIN holders
+
+                        else:  # Tream them all as zero rated for now
+                            outward_taxable_zero_rated["taxable_value"] += line_amount
+                            outward_taxable_zero_rated["igst"] += igst_amount
+                            outward_taxable_zero_rated["cgst"] += cgst_amount
+                            outward_taxable_zero_rated["sgst"] += sgst_amount
+                            outward_taxable_zero_rated["cess"] += cess_amount
+
+                    # TODO: Vendor Bills with reverse charge doesn't have tax lines filled, so it must be calculated
+                    elif (
+                        inv_data["inoutflag"] == 9
+                    ):  # and invoice.reverse_charge: #Vendor Bills with Reverse Charge applicablle
+                        if int(inv_data["reversecharge"]) == 1:
+                            inward_reverse_charge["taxable_value"] += line_amount
+                            inward_reverse_charge["igst"] += igst_amount
+                            inward_reverse_charge["cgst"] += cgst_amount
+                            inward_reverse_charge["sgst"] += sgst_amount
+                            inward_reverse_charge["cess"] += cess_amount
+                        else:
+                            if line_total_amount == line_amount:  # Zero GST taxes
+                                if (
+                                    inv_data["taxstatecode"]
+                                    != inv_data["sourcestatecode"]
+                                ):
+                                    inward_zero_gst["inter"] += line_amount
+                                else:
+                                    inward_zero_gst["intra"] += line_amount
+                            else:  # Taxable purchase, eligible for ITC
+                                all_itc["igst"] += igst_amount
+                                all_itc["cgst"] += cgst_amount
+                                all_itc["sgst"] += sgst_amount
+        for tax_type in net_itc:
+            net_itc[tax_type] = (
+                import_goods[tax_type]
+                + import_service[tax_type]
+                + inward_reverse_charge[tax_type]
+                + inward_isd[tax_type]
+                + all_itc[tax_type]
+            ) - (itc_reversed_1[tax_type] + itc_reversed_2[tax_type])
+        return {
+            "outward_taxable_supplies": outward_taxable_supplies,
+            "outward_taxable_zero_rated": outward_taxable_zero_rated,
+            "outward_taxable_exempted": outward_taxable_exempted,
+            "outward_non_gst": outward_non_gst,
+            "inward_reverse_charge": inward_reverse_charge,
+            "import_goods": import_goods,
+            "import_service": import_service,
+            "inward_isd": inward_isd,
+            "all_itc": all_itc,
+            "net_itc": net_itc,
+            "itc_reversed_1": itc_reversed_1,
+            "itc_reversed_2": itc_reversed_2,
+            "ineligible_1": ineligible_1,
+            "ineligible_2": ineligible_2,
+            "inward_zero_gst": inward_zero_gst,
+            "non_gst": non_gst,
+            "interest": interest,
+            "pos_unreg_comp_uin_igst": pos_unreg_comp_uin_igst,
+        }
+    except:
+        # print(traceback.format_exc())
+        return {}
+
+
 @view_defaults(route_name="gstreturns")
 class GstReturn(object):
     def __init__(self, request):
@@ -610,10 +810,228 @@ class GstReturn(object):
             ).get("data", [])
 
             self.con.close()
-            return {"gkresult": 0, "gkdata": gkdata}
+            return {"gkstatus": enumdict["Success"], "gkdata": gkdata}
 
         except:
-            return {"gkresult": enumdict['ConnectionFailed']}
+            return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", request_param="type=r3b", renderer="json")
+    def r3b(self):
+        token = self.request.headers.get("gktoken", None)
+        print("GST return")
+        if token == None:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        try:
+            self.con = eng.connect()
+
+            gst_data = generate_gstr_3b_data(
+                self.con,
+                authDetails["orgcode"],
+                self.request.params["calculatefrom"],
+                self.request.params["calculateto"],
+            )
+
+            date_split = self.request.params["calculateto"].split("-")
+            ret_period = date_split[1] + date_split[0]
+
+            gst_json = {
+                "gstin": self.request.params["gstin"],
+                "ret_period": ret_period,
+            }
+
+            # 3.1 Details of Outward Supplies and inward supplies liable to reverse charge
+            gst_json["sup_details"] = {
+                "osup_zero": {
+                    "txval": round(
+                        gst_data["outward_taxable_zero_rated"]["taxable_value"], 2
+                    ),
+                    "iamt": round(gst_data["outward_taxable_zero_rated"]["igst"], 2),
+                    "camt": round(gst_data["outward_taxable_zero_rated"]["cgst"], 2),
+                    "samt": round(gst_data["outward_taxable_zero_rated"]["sgst"], 2),
+                    "csamt": round(gst_data["outward_taxable_zero_rated"]["cess"], 2),
+                },
+                "osup_nil_exmp": {
+                    "txval": round(
+                        gst_data["outward_taxable_exempted"]["taxable_value"], 2
+                    ),
+                    "iamt": round(gst_data["outward_taxable_exempted"]["igst"], 2),
+                    "camt": round(gst_data["outward_taxable_exempted"]["cgst"], 2),
+                    "samt": round(gst_data["outward_taxable_exempted"]["sgst"], 2),
+                    "csamt": round(gst_data["outward_taxable_exempted"]["cess"], 2),
+                },
+                "osup_det": {
+                    "txval": round(
+                        gst_data["outward_taxable_supplies"]["taxable_value"], 2
+                    ),
+                    "iamt": round(gst_data["outward_taxable_supplies"]["igst"], 2),
+                    "camt": round(gst_data["outward_taxable_supplies"]["cgst"], 2),
+                    "samt": round(gst_data["outward_taxable_supplies"]["sgst"], 2),
+                    "csamt": round(gst_data["outward_taxable_supplies"]["cess"], 2),
+                },
+                "isup_rev": {
+                    "txval": round(
+                        gst_data["inward_reverse_charge"]["taxable_value"], 2
+                    ),
+                    "iamt": round(gst_data["inward_reverse_charge"]["igst"], 2),
+                    "camt": round(gst_data["inward_reverse_charge"]["cgst"], 2),
+                    "samt": round(gst_data["inward_reverse_charge"]["sgst"], 2),
+                    "csamt": round(gst_data["inward_reverse_charge"]["cess"], 2),
+                },
+                "osup_nongst": {
+                    "txval": round(gst_data["outward_non_gst"]["taxable_value"], 2),
+                    "iamt": round(gst_data["outward_non_gst"]["igst"], 2),
+                    "camt": round(gst_data["outward_non_gst"]["cgst"], 2),
+                    "samt": round(gst_data["outward_non_gst"]["sgst"], 2),
+                    "csamt": round(gst_data["outward_non_gst"]["cess"], 2),
+                },
+            }
+
+            # 3.2  Of the supplies shown in 3.1 (a), details of inter-state supplies made to unregistered persons, composition taxable person and UIN
+            gst_json["inter_sup"] = {
+                "unreg_details": [],
+                "comp_details": [],
+                "uin_details": [],
+            }
+
+            for state_code in gst_data["pos_unreg_comp_uin_igst"]:
+                item = gst_data["pos_unreg_comp_uin_igst"][state_code]
+                gst_json["inter_sup"]["unreg_details"].append(
+                    {
+                        "pos": state_code,
+                        "txval": round(item["unreg_taxable_amt"], 2),
+                        "iamt": round(item["unreg_igst"], 2),
+                    }
+                )
+                gst_json["inter_sup"]["comp_details"].append(
+                    {
+                        "pos": state_code,
+                        "txval": round(item["comp_taxable_amt"], 2),
+                        "iamt": round(item["comp_igst"], 2),
+                    }
+                )
+                gst_json["inter_sup"]["uin_details"].append(
+                    {
+                        "pos": state_code,
+                        "txval": round(item["uin_taxable_amt"], 2),
+                        "iamt": round(item["uin_igst"], 2),
+                    }
+                )
+
+            # 4. Eligible ITC
+            gst_json["itc_elg"] = {
+                "itc_avl": [
+                    {
+                        "ty": "IMPS",
+                        "samt": round(gst_data["import_service"]["sgst"], 2),
+                        "csamt": round(gst_data["import_service"]["cess"], 2),
+                        "camt": round(gst_data["import_service"]["cgst"], 2),
+                        "iamt": round(gst_data["import_service"]["igst"], 2),
+                    },
+                    {
+                        "ty": "IMPG",
+                        "samt": round(gst_data["import_goods"]["sgst"], 2),
+                        "csamt": round(gst_data["import_goods"]["cess"], 2),
+                        "camt": round(gst_data["import_goods"]["cgst"], 2),
+                        "iamt": round(gst_data["import_goods"]["igst"], 2),
+                    },
+                    {
+                        "ty": "ISRC",
+                        "samt": round(gst_data["inward_reverse_charge"]["sgst"], 2),
+                        "csamt": round(gst_data["inward_reverse_charge"]["cess"], 2),
+                        "camt": round(gst_data["inward_reverse_charge"]["cgst"], 2),
+                        "iamt": round(gst_data["inward_reverse_charge"]["igst"], 2),
+                    },
+                    {
+                        "ty": "ISD",
+                        "samt": round(gst_data["inward_isd"]["sgst"], 2),
+                        "csamt": round(gst_data["inward_isd"]["cess"], 2),
+                        "camt": round(gst_data["inward_isd"]["cgst"], 2),
+                        "iamt": round(gst_data["inward_isd"]["igst"], 2),
+                    },
+                    {
+                        "ty": "OTH",
+                        "samt": round(gst_data["all_itc"]["sgst"], 2),
+                        "csamt": round(gst_data["all_itc"]["cess"], 2),
+                        "camt": round(gst_data["all_itc"]["cgst"], 2),
+                        "iamt": round(gst_data["all_itc"]["igst"], 2),
+                    },
+                ],
+                "itc_net": {
+                    "samt": round(gst_data["net_itc"]["sgst"], 2),
+                    "csamt": round(gst_data["net_itc"]["cess"], 2),
+                    "camt": round(gst_data["net_itc"]["cgst"], 2),
+                    "iamt": round(gst_data["net_itc"]["igst"], 2),
+                },
+                "itc_rev": [
+                    {
+                        "ty": "RUL",
+                        "samt": round(gst_data["itc_reversed_1"]["sgst"], 2),
+                        "csamt": round(gst_data["itc_reversed_1"]["cess"], 2),
+                        "camt": round(gst_data["itc_reversed_1"]["cgst"], 2),
+                        "iamt": round(gst_data["itc_reversed_1"]["igst"], 2),
+                    },
+                    {
+                        "ty": "OTH",
+                        "samt": round(gst_data["itc_reversed_2"]["sgst"], 2),
+                        "csamt": round(gst_data["itc_reversed_2"]["cess"], 2),
+                        "camt": round(gst_data["itc_reversed_2"]["cgst"], 2),
+                        "iamt": round(gst_data["itc_reversed_2"]["igst"], 2),
+                    },
+                ],
+                "itc_inelg": [
+                    {
+                        "ty": "RUL",
+                        "samt": round(gst_data["ineligible_1"]["sgst"], 2),
+                        "csamt": round(gst_data["ineligible_1"]["cess"], 2),
+                        "camt": round(gst_data["ineligible_1"]["cgst"], 2),
+                        "iamt": round(gst_data["ineligible_1"]["igst"], 2),
+                    },
+                    {
+                        "ty": "OTH",
+                        "samt": round(gst_data["ineligible_2"]["sgst"], 2),
+                        "csamt": round(gst_data["ineligible_2"]["cess"], 2),
+                        "camt": round(gst_data["ineligible_2"]["cgst"], 2),
+                        "iamt": round(gst_data["ineligible_2"]["igst"], 2),
+                    },
+                ],
+            }
+
+            # 5. Values of exempt, Nil-rated and non-GST inward supplies
+            gst_json["inward_sup"] = {
+                "isup_details": [
+                    {
+                        "ty": "GST",
+                        "inter": round(gst_data["inward_zero_gst"]["inter"], 2),
+                        "intra": round(gst_data["inward_zero_gst"]["intra"], 2),
+                    },
+                    {
+                        "ty": "NONGST",
+                        "inter": round(gst_data["non_gst"]["inter"], 2),
+                        "intra": round(gst_data["non_gst"]["intra"], 2),
+                    },
+                ]
+            }
+
+            # 5.1 Interest & late fee payable
+            gst_json["intr_ltfee"] = {
+                "intr_details": {
+                    "samt": round(gst_data["interest"]["sgst"], 2),
+                    "csamt": round(gst_data["interest"]["cess"], 2),
+                    "camt": round(gst_data["interest"]["cgst"], 2),
+                    "iamt": round(gst_data["interest"]["igst"], 2),
+                },
+                "ltfee_details": {},
+            }
+
+            return {"gkstatus": enumdict["Success"], "gkresult": gst_json}
+        except:
+            # print(traceback.format_exc())
+            return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(
         request_method="GET", request_param="type=gstin_captcha", renderer="json"

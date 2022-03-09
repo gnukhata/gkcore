@@ -37,7 +37,8 @@ import io
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Alignment, PatternFill, NamedStyle, Border, Side
-from gkcore.models.meta import gk_api
+from gkcore.views.api_gstreturns import generate_gstr_3b_data
+from gkcore.views.api_state import getStates
 
 
 def print_gstr_3b(self):
@@ -56,17 +57,18 @@ def print_gstr_3b(self):
             sheet = conventionalwb.active
             sheet.title = "GSTR-3B"
             params = self.request.params
-            # Get the invoices
-            # self.get_valid_invoices()
-            header = {"gktoken": self.request.headers["gktoken"]}
-            url = "/invoice?type=list&flag=0&fromdate=%s&todate=%s" % (
+
+            gst_data = generate_gstr_3b_data(
+                self.con,
+                authDetails["orgcode"],
                 params["calculatefrom"],
                 params["calculateto"],
             )
-            inv_res = gk_api(url, header, self.request)
-            if inv_res["gkstatus"] == 0:
-                invoices = inv_res["gkresult"]
-                res = generate_3b_report(self.request, conventionalwb, sheet, invoices)
+
+            if len(gst_data):
+                res = generate_3b_report(
+                    self.con, self.request, conventionalwb, sheet, gst_data
+                )
 
                 if res == -1:
                     self.con.close()
@@ -99,23 +101,21 @@ def print_gstr_3b(self):
 """ GSTR-3B Summary """
 
 
-def generate_3b_report(request, wb1, ws1, invoices):
+def generate_3b_report(con, request, wb1, ws1, gst_data):
     try:
         calculateto = request.params["calculateto"]
         calculatefrom = request.params["calculatefrom"]
         gstin = request.params["gstin"]
         orgname = request.params["orgname"]
 
-        state_res = gk_api("/state", {"gktoken": request.headers["gktoken"]}, request)
+        state_data = getStates(con)
 
         states = {}
-        if state_res["gkstatus"] == 0:
-            state_data = state_res["gkresult"]
+        if len(state_data):
             for state in state_data:
-                    code = int(list(state.keys())[0])
-                    name = list(state.values())[0]
-                    states[code] = name
-        
+                code = int(list(state.keys())[0])
+                name = list(state.values())[0]
+                states[code] = name
 
         ws1.column_dimensions["A"].width = 45
         ws1.column_dimensions["B"].width = 20
@@ -182,156 +182,25 @@ def generate_3b_report(request, wb1, ws1, invoices):
         cellRef.style = "sub_header_content_style"
 
         hsn_summary_data = {}
-        outward_taxable_supplies = {
-            "taxable_value": 0.0,
-            "igst": 0.0,
-            "cgst": 0.0,
-            "sgst": 0.0,
-            "cess": 0.0,
-        }
-        outward_taxable_zero_rated = {
-            "taxable_value": 0.0,
-            "igst": 0.0,
-            "cgst": 0.0,
-            "sgst": 0.0,
-            "cess": 0.0,
-        }
-        outward_taxable_exempted = {
-            "taxable_value": 0.0,
-            "igst": 0.0,
-            "cgst": 0.0,
-            "sgst": 0.0,
-            "cess": 0.0,
-        }
-        outward_non_gst = {
-            "taxable_value": 0.0,
-            "igst": 0.0,
-            "cgst": 0.0,
-            "sgst": 0.0,
-            "cess": 0.0,
-        }
-        inward_reverse_charge = {
-            "taxable_value": 0.0,
-            "igst": 0.0,
-            "cgst": 0.0,
-            "sgst": 0.0,
-            "cess": 0.0,
-        }
-        import_goods = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        import_service = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        inward_isd = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        all_itc = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        itc_reversed_1 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        itc_reversed_2 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        ineligible_1 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        ineligible_2 = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        inward_zero_gst = {"inter": 0.0, "intra": 0.0}
-        non_gst = {"inter": 0.0, "intra": 0.0}
-        interest = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
-        pos_unreg_comp_uin_igst = (
-            {}
-        )  # {PoS: Unreg_Taxable_Amt, Unreg_IGST, Composition_Taxable_Amt, Composition_IGST, UIN_Taxamble_Amt, UIN_IGST}
-
-        # For invoice in invoices
-        #   For product in invoice.products
-
-        for invoice in invoices:
-            inv_data_url = "/invoice?inv=single&invid=%d" % invoice["invid"]
-            inv_data_res = gk_api(
-                inv_data_url, {"gktoken": request.headers["gktoken"]}, request
-            )
-            if inv_data_res["gkstatus"] == 0:
-                inv_data = inv_data_res["gkresult"]
-                for prod_id in inv_data["invcontents"]:
-                    prod = inv_data["invcontents"][prod_id]
-                    line_uom = prod["uom"]
-                    line_qty = prod["qty"]
-                    line_amount = float(prod["taxableamount"])
-                    # line_price = invoice_line.price_unit * (1 - (invoice_line.discount or 0.0) / 100.0)
-                    # line_taxes = invoice_line.invoice_line_tax_ids.compute_all(line_price, invoice_line.invoice_id.currency_id, invoice_line.quantity, prod_id, invoice_line.invoice_id.partner_id)
-                    # _logger.info(line_taxes)
-                    igst_amount = cgst_amount = sgst_amount = cess_amount = 0.0
-
-                    # tax_obj = self.env['account.tax'].browse(tax_line['id'])
-                    tax_name = prod["taxname"]
-                    if tax_name == "IGST":  # tax_obj.gst_type == 'igst':
-                        igst_amount += float(prod["taxamount"])
-                    elif tax_name == "CGST":  # tax_obj.gst_type == 'cgst':
-                        cgst_amount += float(prod["taxamount"])
-                    elif (
-                        tax_name == "SGST" or tax_name == "UTGST"
-                    ):  # tax_obj.gst_type == 'sgst':
-                        sgst_amount += float(prod["taxamount"])
-                        cgst_amount += float(prod["taxamount"]) # Currently since CGST and SGST are the same, gkcore only stores SGST.
-                    
-                    if "cess" in prod:
-                        cess_amount += float(prod["cess"])
-
-                    # cgst_amount = invoice_line.invoice_line_tax_ids.filtered(lambda r: r.gst_type == 'cgst').amount
-                    # sgst_amount = invoice_line.invoice_line_tax_ids.filtered(lambda r: r.gst_type == 'sgst').amount
-                    line_total_amount = float(prod["totalAmount"])
-                    # _logger.info(invoice_line.invoice_line_tax_ids)
-                    if line_amount < 0:
-                        line_total_amount = line_total_amount * -1
-                    if inv_data["inoutflag"] == 15:  # Customer Invoice
-                        if (
-                            line_total_amount > line_amount
-                        ):  # Taxable item, not zero rated/nil rated/exempted
-                            outward_taxable_supplies["taxable_value"] += line_amount
-                            outward_taxable_supplies["igst"] += igst_amount
-                            outward_taxable_supplies["cgst"] += cgst_amount
-                            outward_taxable_supplies["sgst"] += sgst_amount
-                            outward_taxable_supplies["cess"] += cess_amount
-                            if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
-                                    "unreg_taxable_amt"
-                                ] += line_amount
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
-                                    "unreg_igst"
-                                ] += igst_amount
-                            else:
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
-                                    "unreg_taxable_amt": line_amount,
-                                    "unreg_igst": igst_amount,
-                                    "comp_taxable_amt": 0,
-                                    "comp_igst": 0,
-                                    "uin_taxable_amt": 0,
-                                    "uin_igst": 0,
-                                }  # TODO: Handle Composition & UIN holders
-
-                        else:  # Tream them all as zero rated for now
-                            outward_taxable_zero_rated["taxable_value"] += line_amount
-                            outward_taxable_zero_rated["igst"] += igst_amount
-                            outward_taxable_zero_rated["cgst"] += cgst_amount
-                            outward_taxable_zero_rated["sgst"] += sgst_amount
-                            outward_taxable_zero_rated["cess"] += cess_amount
-
-                    # TODO: Vendor Bills with reverse charge doesn't have tax lines filled, so it must be calculated
-                    elif (
-                        inv_data["inoutflag"] == 9
-                    ):  # and invoice.reverse_charge: #Vendor Bills with Reverse Charge applicablle
-                        if int(inv_data["reversecharge"]) == 1:
-                            inward_reverse_charge["taxable_value"] += line_amount
-                            inward_reverse_charge["igst"] += igst_amount
-                            inward_reverse_charge["cgst"] += cgst_amount
-                            inward_reverse_charge["sgst"] += sgst_amount
-                            inward_reverse_charge["cess"] += cess_amount
-                        else:
-                            if line_total_amount == line_amount:  # Zero GST taxes
-                                if (
-                                    inv_data["taxstatecode"]
-                                    != inv_data["sourcestatecode"]
-                                ):
-                                    inward_zero_gst["inter"] += line_amount
-                                else:
-                                    inward_zero_gst["intra"] += line_amount
-                            else:  # Taxable purchase, eligible for ITC
-                                all_itc["igst"] += igst_amount
-                                all_itc["cgst"] += cgst_amount
-                                all_itc["sgst"] += sgst_amount
-
-            # _logger.info(hsn_summary_data)
-
+        # print(gst_data)
+        outward_taxable_supplies = gst_data["outward_taxable_supplies"]
+        outward_taxable_zero_rated = gst_data["outward_taxable_zero_rated"]
+        outward_taxable_exempted = gst_data["outward_taxable_exempted"]
+        outward_non_gst = gst_data["outward_non_gst"]
+        inward_reverse_charge = gst_data["inward_reverse_charge"]
+        import_goods = gst_data["import_goods"]
+        import_service = gst_data["import_service"]
+        inward_isd = gst_data["inward_isd"]
+        all_itc = gst_data["all_itc"]
+        itc_reversed_1 = gst_data["itc_reversed_1"]
+        itc_reversed_2 = gst_data["itc_reversed_2"]
+        net_itc = gst_data["net_itc"]
+        ineligible_1 = gst_data["ineligible_1"]
+        ineligible_2 = gst_data["ineligible_2"]
+        inward_zero_gst = gst_data["inward_zero_gst"]
+        non_gst = gst_data["non_gst"]
+        interest = gst_data["interest"]
+        pos_unreg_comp_uin_igst = gst_data["pos_unreg_comp_uin_igst"]
         row += 2
 
         # Innter functions
@@ -601,9 +470,13 @@ def generate_3b_report(request, wb1, ws1, invoices):
                 column=col + 2, row=row + 9, value=itc_reversed_2["igst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 2, row=row + 11, value=ineligible_1["igst"])
+            cellRef = ws1.cell(
+                column=col + 2, row=row + 10, value=net_itc["igst"]
+            )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 2, row=row + 12, value=ineligible_2["igst"])
+            cellRef = ws1.cell(column=col + 2, row=row + 12, value=ineligible_1["igst"])
+            cellRef.style = "line_content_style"
+            cellRef = ws1.cell(column=col + 2, row=row + 13, value=ineligible_2["igst"])
             cellRef.style = "line_content_style"
 
             cellRef = ws1.cell(column=col + 3, row=row + 2, value=import_goods["cgst"])
@@ -628,9 +501,13 @@ def generate_3b_report(request, wb1, ws1, invoices):
                 column=col + 3, row=row + 9, value=itc_reversed_2["cgst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 3, row=row + 11, value=ineligible_1["cgst"])
+            cellRef = ws1.cell(
+                column=col + 3, row=row + 10, value=net_itc["cgst"]
+            )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 3, row=row + 12, value=ineligible_2["cgst"])
+            cellRef = ws1.cell(column=col + 3, row=row + 12, value=ineligible_1["cgst"])
+            cellRef.style = "line_content_style"
+            cellRef = ws1.cell(column=col + 3, row=row + 13, value=ineligible_2["cgst"])
             cellRef.style = "line_content_style"
 
             cellRef = ws1.cell(column=col + 4, row=row + 2, value=import_goods["sgst"])
@@ -655,9 +532,13 @@ def generate_3b_report(request, wb1, ws1, invoices):
                 column=col + 4, row=row + 9, value=itc_reversed_2["sgst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 4, row=row + 11, value=ineligible_1["sgst"])
+            cellRef = ws1.cell(
+                column=col + 4, row=row + 10, value=net_itc["sgst"]
+            )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 4, row=row + 12, value=ineligible_2["sgst"])
+            cellRef = ws1.cell(column=col + 4, row=row + 12, value=ineligible_1["sgst"])
+            cellRef.style = "line_content_style"
+            cellRef = ws1.cell(column=col + 4, row=row + 13, value=ineligible_2["sgst"])
             cellRef.style = "line_content_style"
 
             cellRef = ws1.cell(column=col + 5, row=row + 2, value=import_goods["cess"])
@@ -682,9 +563,13 @@ def generate_3b_report(request, wb1, ws1, invoices):
                 column=col + 5, row=row + 9, value=itc_reversed_2["cess"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 5, row=row + 11, value=ineligible_1["cess"])
+            cellRef = ws1.cell(
+                column=col + 5, row=row + 10, value=net_itc["cess"]
+            )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(column=col + 5, row=row + 12, value=ineligible_2["cess"])
+            cellRef = ws1.cell(column=col + 5, row=row + 12, value=ineligible_1["cess"])
+            cellRef.style = "line_content_style"
+            cellRef = ws1.cell(column=col + 5, row=row + 13, value=ineligible_2["cess"])
             cellRef.style = "line_content_style"
 
             row += 16
@@ -856,9 +741,7 @@ def generate_3b_report(request, wb1, ws1, invoices):
             for place_of_supply, tx_line in pos_unreg_comp_uin_igst.items():
                 row += 1
                 state_name = states[int(place_of_supply)] or place_of_supply
-                cellRef = ws1.cell(
-                    column=col + 1, row=row, value=state_name
-                )
+                cellRef = ws1.cell(column=col + 1, row=row, value=state_name)
                 cellRef.style = "line_content_style"
                 cellRef = ws1.cell(
                     column=col + 2, row=row, value=tx_line["unreg_taxable_amt"]
