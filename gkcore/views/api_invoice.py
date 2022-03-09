@@ -73,7 +73,7 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
-
+# import traceback  # for printing detailed exception logs
 
 def gst(ProductCode, con):
     gstData = con.execute(
@@ -91,6 +91,372 @@ def getStateCode(StateName, con):
     )
     staterow = stateData.fetchone()
     return {"statecode": staterow["statecode"]}
+
+
+def getInvoiceData(con, orgcode, params):
+    try:
+        result = con.execute(
+            select([invoice]).where(invoice.c.invid == params["invid"])
+        )
+        invrow = result.fetchone()
+        roundoffvalue = 0.00
+        if invrow["roundoffflag"] == 1:
+            roundoffvalue = round(invrow["invoicetotal"])
+
+        inv = {
+            "roundoffvalue": "%.2f" % float(roundoffvalue),
+            "invid": invrow["invid"],
+            "taxflag": invrow["taxflag"],
+            "invoiceno": invrow["invoiceno"],
+            "ewaybillno": invrow["ewaybillno"],
+            "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
+            "icflag": invrow["icflag"],
+            "invoicetotal": "%.2f" % float(invrow["invoicetotal"]),
+            "invoicetotalword": invrow["invoicetotalword"],
+            "bankdetails": invrow["bankdetails"],
+            "orgstategstin": invrow["orgstategstin"],
+            "paymentmode": invrow["paymentmode"],
+            "inoutflag": invrow["inoutflag"],
+            "roundoff": invrow["roundoffflag"],
+            "narration": invrow["invnarration"],
+            "discflag": invrow["discflag"],
+        }
+
+        # If purchase invoice, send suplier invoice no and date
+        if invrow["inoutflag"] == 9:
+            inv["supinvno"] = invrow["supinvno"] or ""
+            inv["supinvdate"] = (
+                datetime.strftime(invrow["supinvdate"], "%d-%m-%Y")
+                if invrow["supinvdate"]
+                else ""
+            )
+
+        # below field deletable is for check whether invoice having voucher or not
+        # vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not
+        v_count = con.execute(
+            "select count(vouchercode) as vcount from billwise where invid = '%d' "
+            % (int(params["invid"]))
+        )
+        vch_count = v_count.fetchone()
+        # vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not
+        cd_count = con.execute(
+            "select count(drcrno) as vcdcount from drcr where invid = '%d' "
+            % (int(params["invid"]))
+        )
+        cdh_count = cd_count.fetchone()
+        # r_count is checking wheather their is any entry of perticuler invid is available in rejection note
+        r_count = con.execute(
+            "select count(rnno) as vrncount from rejectionnote where invid = '%d' "
+            % (int(params["invid"]))
+        )
+        rc_count = r_count.fetchone()
+        # if any bilwise or dr cr or rejection note is available then should send 1
+        # 1 is : not delete and 0 is: delete permission.
+        if (
+            (vch_count["vcount"] > 0)
+            or (cdh_count["vcdcount"] > 0)
+            or (rc_count["vrncount"] > 0)
+        ):
+            inv["deletable"] = 1
+        else:
+            inv["deletable"] = 0
+        if invrow["sourcestate"] != None:
+            inv["sourcestate"] = invrow["sourcestate"]
+            inv["sourcestatecode"] = getStateCode(invrow["sourcestate"], con)[
+                "statecode"
+            ]
+            sourceStateCode = getStateCode(invrow["sourcestate"], con)["statecode"]
+        if invrow["address"] == None:
+            inv["address"] = ""
+        else:
+            inv["address"] = invrow["address"]
+        if invrow["pincode"] == None:
+            inv["pincode"] = ""
+        else:
+            inv["pincode"] = invrow["pincode"]
+        if invrow["icflag"] == 9:
+            inv["issuername"] = invrow["issuername"]
+            inv["designation"] = invrow["designation"]
+            inv["consignee"] = invrow["consignee"]
+            inv["attachmentcount"] = invrow["attachmentcount"]
+            if invrow["dateofsupply"] != None:
+                inv["dateofsupply"] = datetime.strftime(
+                    invrow["dateofsupply"], "%d-%m-%Y"
+                )
+            else:
+                inv["dateofsupply"] = ""
+            inv["transportationmode"] = invrow["transportationmode"]
+            inv["vehicleno"] = invrow["vehicleno"]
+            inv["reversecharge"] = invrow["reversecharge"]
+            if invrow["taxstate"] != None:
+                inv["destinationstate"] = invrow["taxstate"]
+                taxStateCode = getStateCode(invrow["taxstate"], con)["statecode"]
+                inv["taxstatecode"] = taxStateCode
+
+            result = con.execute(
+                select([dcinv.c.dcid]).where(dcinv.c.invid == invrow["invid"])
+            )
+            dcid = result.fetchone()
+            if result.rowcount > 0:
+                dc = con.execute(
+                    select([delchal.c.dcno, delchal.c.dcdate]).where(
+                        delchal.c.dcid == dcid["dcid"]
+                    )
+                )
+                delchalData = dc.fetchone()
+                inv["dcid"] = dcid["dcid"]
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
+            custandsup = con.execute(
+                select(
+                    [
+                        customerandsupplier.c.custname,
+                        customerandsupplier.c.state,
+                        customerandsupplier.c.custaddr,
+                        customerandsupplier.c.custtan,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.csflag,
+                        customerandsupplier.c.custphone,
+                        customerandsupplier.c.pincode,
+                    ]
+                ).where(customerandsupplier.c.custid == invrow["custid"])
+            )
+            custData = custandsup.fetchone()
+
+            if invrow["inoutflag"] == 15:
+                custsc = inv["taxstatecode"]
+                custSatename = inv["destinationstate"]
+            else:
+                custsc = inv["sourcestatecode"]
+                custSatename = inv["sourcestate"]
+
+            statelist = []
+            if custData["gstin"] != None and bool(custData["gstin"]):
+                # below code listed those state of customer which having gstin
+                for statecd in custData["gstin"]:
+                    statedata = con.execute(
+                        select([state.c.statename, state.c.statecode]).where(
+                            state.c.statecode == statecd
+                        )
+                    )
+                    statename = statedata.fetchone()
+                    statelist.append({statename["statecode"]: statename["statename"]})
+
+                custsupstatecode = getStateCode(custData["state"], con)["statecode"]
+                if str(custsupstatecode) not in list(custData["gstin"].keys()):
+
+                    statelist.append({custsupstatecode: custData["state"]})
+                if custsc != custsupstatecode and str(custsc) not in list(
+                    custData["gstin"].keys()
+                ):
+                    statelist.append({custsc: custSatename})
+            else:
+                custsupstatecode = getStateCode(custData["state"], con)["statecode"]
+                statelist.append({custsupstatecode: custData["state"]})
+                if custsc != custsupstatecode:
+                    statelist.append({custsc: custSatename})
+
+            custsupstatecode = getStateCode(custData["state"], con)["statecode"]
+            custSupDetails = {
+                "custname": custData["custname"],
+                "custsupstate": custData["state"],
+                "custaddr": custData["custaddr"],
+                "csflag": custData["csflag"],
+                "pincode": custData["pincode"],
+                "custphone": custData["custphone"],
+                "custsupstatecode": custsupstatecode,
+                "custgstinlist": custData["gstin"],
+                "statelist": statelist,
+            }
+
+            if custData["custtan"] != None:
+                custSupDetails["custtin"] = custData["custtan"]
+            if custData["gstin"] != None:
+                if invrow["inoutflag"] == 15:
+                    try:
+                        custSupDetails["custgstin"] = custData["gstin"][
+                            str(taxStateCode)
+                        ]
+                    except:
+                        custSupDetails["custgstin"] = None
+                else:
+                    try:
+                        custSupDetails["custgstin"] = custData["gstin"][
+                            str(sourceStateCode)
+                        ]
+                    except:
+                        custSupDetails["custgstin"] = None
+
+            inv["custSupDetails"] = custSupDetails
+        # contents is a nested dictionary from invoice table.
+        # It contains productcode as the key with a value as a dictionary.
+        # this dictionary has two key value pare, priceperunit and quantity.
+        contentsData = invrow["contents"]
+        # invContents is the finally dictionary which will not just have the dataset from original contents,
+        # but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
+        invContents = {}
+        # get the dictionary of discount and access it inside the loop for one product each.
+        # do the same with freeqty.
+        totalDisc = 0.00
+        totalTaxableVal = 0.00
+        totalTaxAmt = 0.00
+        totalCessAmt = 0.00
+        discounts = invrow["discount"]
+        freeqtys = invrow["freeqty"]
+        # now looping through the contents.
+        # pc will have the productcode which will be the ke in invContents.
+        for pc in list(contentsData.keys()):
+            if not pc:
+                continue
+            # freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization.
+            if discounts != None:
+                # discflag is for discount type. Percent=16/Amount=1
+                # here we convert percent discount in to amount.
+                if invrow["discflag"] == 16:
+                    qty = float(list(contentsData[str(pc)].keys())[0])
+                    price = float(list(contentsData[str(pc)].values())[0])
+                    totalWithoutDiscount = qty * price
+                    discount = totalWithoutDiscount * float(float(discounts[pc]) / 100)
+                else:
+                    discount = discounts[pc]
+            else:
+                discount = 0.00
+
+            if freeqtys != None:
+                freeqty = freeqtys[pc]
+            else:
+                freeqty = 0.00
+            prod = con.execute(
+                select(
+                    [
+                        product.c.productdesc,
+                        product.c.uomid,
+                        product.c.gsflag,
+                        product.c.gscode,
+                    ]
+                ).where(product.c.productcode == pc)
+            )
+            prodrow = prod.fetchone()
+            if int(prodrow["gsflag"]) == 7:
+                um = con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                    )
+                )
+                unitrow = um.fetchone()
+                unitofMeasurement = unitrow["unitname"]
+                taxableAmount = (
+                    (float(contentsData[pc][list(contentsData[pc].keys())[0]]))
+                    * float(list(contentsData[pc].keys())[0])
+                ) - float(discount)
+            else:
+                unitofMeasurement = ""
+                taxableAmount = float(list(contentsData[pc].keys())[0]) - float(
+                    discount
+                )
+
+            taxRate = 0.00
+            totalAmount = 0.00
+            taxRate = float(invrow["tax"][pc])
+            if int(invrow["taxflag"]) == 22:
+                taxRate = float(invrow["tax"][pc])
+                taxAmount = taxableAmount * float(taxRate / 100)
+                taxname = "VAT"
+                totalAmount = float(taxableAmount) + (
+                    float(taxableAmount) * float(taxRate / 100)
+                )
+                totalDisc = totalDisc + float(discount)
+                totalTaxableVal = totalTaxableVal + taxableAmount
+                totalTaxAmt = totalTaxAmt + taxAmount
+                invContents[pc] = {
+                    "proddesc": prodrow["productdesc"],
+                    "gscode": prodrow["gscode"],
+                    "uom": unitofMeasurement,
+                    "qty": "%.2f"
+                    % (float(contentsData[pc][list(contentsData[pc].keys())[0]])),
+                    "freeqty": "%.2f" % (float(freeqty)),
+                    "priceperunit": "%.2f" % (float(list(contentsData[pc].keys())[0])),
+                    "discount": "%.2f" % (float(discounts[pc])),
+                    "taxableamount": "%.2f" % (float(taxableAmount)),
+                    "totalAmount": "%.2f" % (float(totalAmount)),
+                    "taxname": "VAT",
+                    "taxrate": "%.2f" % (float(taxRate)),
+                    "taxamount": "%.2f" % (float(taxAmount)),
+                }
+
+            else:
+                cessRate = 0.00
+                cessAmount = 0.00
+                cessVal = 0.00
+                taxname = ""
+                if invrow["cess"] != None:
+                    cessVal = float(invrow["cess"][pc])
+                    cessAmount = taxableAmount * (cessVal / 100)
+                    totalCessAmt = totalCessAmt + cessAmount
+
+                if invrow["sourcestate"] != invrow["taxstate"]:
+                    taxname = "IGST"
+                    taxAmount = taxableAmount * (taxRate / 100)
+                    totalAmount = taxableAmount + taxAmount + cessAmount
+                else:
+                    taxname = "SGST"
+                    taxRate = taxRate / 2
+                    taxAmount = taxableAmount * (taxRate / 100)
+                    totalAmount = (
+                        taxableAmount
+                        + (taxableAmount * ((taxRate * 2) / 100))
+                        + cessAmount
+                    )
+
+                totalDisc = totalDisc + float(discount)
+                totalTaxableVal = totalTaxableVal + taxableAmount
+                totalTaxAmt = totalTaxAmt + taxAmount
+
+                invContents[pc] = {
+                    "proddesc": prodrow["productdesc"],
+                    "gscode": prodrow["gscode"],
+                    "gsflag": prodrow["gsflag"],
+                    "uom": unitofMeasurement,
+                    "qty": "%.2f"
+                    % (float(contentsData[pc][list(contentsData[pc].keys())[0]])),
+                    "freeqty": "%.2f" % (float(freeqty)),
+                    "priceperunit": "%.2f" % (float(list(contentsData[pc].keys())[0])),
+                    "discount": "%.2f" % (float(discounts[pc])),
+                    "taxableamount": "%.2f" % (float(taxableAmount)),
+                    "totalAmount": "%.2f" % (float(totalAmount)),
+                    "taxname": taxname,
+                    "taxrate": "%.2f" % (float(taxRate)),
+                    "taxamount": "%.2f" % (float(taxAmount)),
+                    "cess": "%.2f" % (float(cessAmount)),
+                    "cessrate": "%.2f" % (float(cessVal)),
+                }
+        # below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
+        billwiseentry = con.execute(
+            "select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"
+            % (int(params["invid"]), orgcode)
+        )
+        billwise_entry = billwiseentry.fetchone()
+        if billwise_entry["invoicetotal"] > billwise_entry["amountpaid"]:
+            inv["billentrysingleflag"] = 0
+        else:
+            inv["billentrysingleflag"] = 1
+
+        inv["totaldiscount"] = "%.2f" % (float(totalDisc))
+        inv["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
+        inv["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
+        inv["totalcessamt"] = "%.2f" % (float(totalCessAmt))
+        inv["taxname"] = taxname
+        inv["invcontents"] = invContents
+        voucherCount = con.execute(
+            "select count(vouchercode) from vouchers where orgcode = %d and invid = %d"
+            % (int(orgcode), int(params["invid"]))
+        )
+        vCount = voucherCount.fetchone()
+        inv["vouchercount"] = vCount[0]
+        return inv
+    except:
+        # print(traceback.format_exc())
+        return {}
 
 
 def getInvoiceList(con, orgcode, reqParams):
@@ -1298,390 +1664,11 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
-                result = self.con.execute(
-                    select([invoice]).where(
-                        invoice.c.invid == self.request.params["invid"]
-                    )
+                inv = getInvoiceData(
+                    self.con, authDetails["orgcode"], self.request.params
                 )
-                invrow = result.fetchone()
-                roundoffvalue = 0.00
-                if invrow["roundoffflag"] == 1:
-                    roundoffvalue = round(invrow["invoicetotal"])
-
-                inv = {
-                    "roundoffvalue": "%.2f" % float(roundoffvalue),
-                    "invid": invrow["invid"],
-                    "taxflag": invrow["taxflag"],
-                    "invoiceno": invrow["invoiceno"],
-                    "ewaybillno": invrow["ewaybillno"],
-                    "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
-                    "icflag": invrow["icflag"],
-                    "invoicetotal": "%.2f" % float(invrow["invoicetotal"]),
-                    "invoicetotalword": invrow["invoicetotalword"],
-                    "bankdetails": invrow["bankdetails"],
-                    "orgstategstin": invrow["orgstategstin"],
-                    "paymentmode": invrow["paymentmode"],
-                    "inoutflag": invrow["inoutflag"],
-                    "roundoff": invrow["roundoffflag"],
-                    "narration": invrow["invnarration"],
-                    "discflag": invrow["discflag"],
-                }
-
-                # If purchase invoice, send suplier invoice no and date
-                if invrow["inoutflag"] == 9:
-                    inv["supinvno"] = invrow["supinvno"] or ""
-                    inv["supinvdate"] = (
-                        datetime.strftime(invrow["supinvdate"], "%d-%m-%Y")
-                        if invrow["supinvdate"]
-                        else ""
-                    )
-
-                # below field deletable is for check whether invoice having voucher or not
-                # vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not
-                v_count = self.con.execute(
-                    "select count(vouchercode) as vcount from billwise where invid = '%d' "
-                    % (int(self.request.params["invid"]))
-                )
-                vch_count = v_count.fetchone()
-                # vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not
-                cd_count = self.con.execute(
-                    "select count(drcrno) as vcdcount from drcr where invid = '%d' "
-                    % (int(self.request.params["invid"]))
-                )
-                cdh_count = cd_count.fetchone()
-                # r_count is checking wheather their is any entry of perticuler invid is available in rejection note
-                r_count = self.con.execute(
-                    "select count(rnno) as vrncount from rejectionnote where invid = '%d' "
-                    % (int(self.request.params["invid"]))
-                )
-                rc_count = r_count.fetchone()
-                # if any bilwise or dr cr or rejection note is available then should send 1
-                # 1 is : not delete and 0 is: delete permission.
-                if (
-                    (vch_count["vcount"] > 0)
-                    or (cdh_count["vcdcount"] > 0)
-                    or (rc_count["vrncount"] > 0)
-                ):
-                    inv["deletable"] = 1
-                else:
-                    inv["deletable"] = 0
-                if invrow["sourcestate"] != None:
-                    inv["sourcestate"] = invrow["sourcestate"]
-                    inv["sourcestatecode"] = getStateCode(
-                        invrow["sourcestate"], self.con
-                    )["statecode"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"], self.con)[
-                        "statecode"
-                    ]
-                if invrow["address"] == None:
-                    inv["address"] = ""
-                else:
-                    inv["address"] = invrow["address"]
-                if invrow["pincode"] == None:
-                    inv["pincode"] = ""
-                else:
-                    inv["pincode"] = invrow["pincode"]
-                if invrow["icflag"] == 9:
-                    inv["issuername"] = invrow["issuername"]
-                    inv["designation"] = invrow["designation"]
-                    inv["consignee"] = invrow["consignee"]
-                    inv["attachmentcount"] = invrow["attachmentcount"]
-                    if invrow["dateofsupply"] != None:
-                        inv["dateofsupply"] = datetime.strftime(
-                            invrow["dateofsupply"], "%d-%m-%Y"
-                        )
-                    else:
-                        inv["dateofsupply"] = ""
-                    inv["transportationmode"] = invrow["transportationmode"]
-                    inv["vehicleno"] = invrow["vehicleno"]
-                    inv["reversecharge"] = invrow["reversecharge"]
-                    if invrow["taxstate"] != None:
-                        inv["destinationstate"] = invrow["taxstate"]
-                        taxStateCode = getStateCode(invrow["taxstate"], self.con)[
-                            "statecode"
-                        ]
-                        inv["taxstatecode"] = taxStateCode
-
-                    result = self.con.execute(
-                        select([dcinv.c.dcid]).where(dcinv.c.invid == invrow["invid"])
-                    )
-                    dcid = result.fetchone()
-                    if result.rowcount > 0:
-                        dc = self.con.execute(
-                            select([delchal.c.dcno, delchal.c.dcdate]).where(
-                                delchal.c.dcid == dcid["dcid"]
-                            )
-                        )
-                        delchalData = dc.fetchone()
-                        inv["dcid"] = dcid["dcid"]
-                        inv["dcno"] = delchalData["dcno"]
-                        inv["dcdate"] = datetime.strftime(
-                            delchalData["dcdate"], "%d-%m-%Y"
-                        )
-                    custandsup = self.con.execute(
-                        select(
-                            [
-                                customerandsupplier.c.custname,
-                                customerandsupplier.c.state,
-                                customerandsupplier.c.custaddr,
-                                customerandsupplier.c.custtan,
-                                customerandsupplier.c.gstin,
-                                customerandsupplier.c.csflag,
-                                customerandsupplier.c.custphone,
-                                customerandsupplier.c.pincode,
-                            ]
-                        ).where(customerandsupplier.c.custid == invrow["custid"])
-                    )
-                    custData = custandsup.fetchone()
-
-                    if invrow["inoutflag"] == 15:
-                        custsc = inv["taxstatecode"]
-                        custSatename = inv["destinationstate"]
-                    else:
-                        custsc = inv["sourcestatecode"]
-                        custSatename = inv["sourcestate"]
-
-                    statelist = []
-                    if custData["gstin"] != None and bool(custData["gstin"]):
-                        # below code listed those state of customer which having gstin
-                        for statecd in custData["gstin"]:
-                            statedata = self.con.execute(
-                                select([state.c.statename, state.c.statecode]).where(
-                                    state.c.statecode == statecd
-                                )
-                            )
-                            statename = statedata.fetchone()
-                            statelist.append(
-                                {statename["statecode"]: statename["statename"]}
-                            )
-
-                        custsupstatecode = getStateCode(custData["state"], self.con)[
-                            "statecode"
-                        ]
-                        if str(custsupstatecode) not in list(custData["gstin"].keys()):
-
-                            statelist.append({custsupstatecode: custData["state"]})
-                        if custsc != custsupstatecode and str(custsc) not in list(
-                            custData["gstin"].keys()
-                        ):
-                            statelist.append({custsc: custSatename})
-                    else:
-                        custsupstatecode = getStateCode(custData["state"], self.con)[
-                            "statecode"
-                        ]
-                        statelist.append({custsupstatecode: custData["state"]})
-                        if custsc != custsupstatecode:
-                            statelist.append({custsc: custSatename})
-
-                    custsupstatecode = getStateCode(custData["state"], self.con)[
-                        "statecode"
-                    ]
-                    custSupDetails = {
-                        "custname": custData["custname"],
-                        "custsupstate": custData["state"],
-                        "custaddr": custData["custaddr"],
-                        "csflag": custData["csflag"],
-                        "pincode": custData["pincode"],
-                        "custphone": custData["custphone"],
-                        "custsupstatecode": custsupstatecode,
-                        "custgstinlist": custData["gstin"],
-                        "statelist": statelist,
-                    }
-
-                    if custData["custtan"] != None:
-                        custSupDetails["custtin"] = custData["custtan"]
-                    if custData["gstin"] != None:
-                        if invrow["inoutflag"] == 15:
-                            try:
-                                custSupDetails["custgstin"] = custData["gstin"][
-                                    str(taxStateCode)
-                                ]
-                            except:
-                                custSupDetails["custgstin"] = None
-                        else:
-                            try:
-                                custSupDetails["custgstin"] = custData["gstin"][
-                                    str(sourceStateCode)
-                                ]
-                            except:
-                                custSupDetails["custgstin"] = None
-
-                    inv["custSupDetails"] = custSupDetails
-                # contents is a nested dictionary from invoice table.
-                # It contains productcode as the key with a value as a dictionary.
-                # this dictionary has two key value pare, priceperunit and quantity.
-                contentsData = invrow["contents"]
-                # invContents is the finally dictionary which will not just have the dataset from original contents,
-                # but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
-                invContents = {}
-                # get the dictionary of discount and access it inside the loop for one product each.
-                # do the same with freeqty.
-                totalDisc = 0.00
-                totalTaxableVal = 0.00
-                totalTaxAmt = 0.00
-                totalCessAmt = 0.00
-                discounts = invrow["discount"]
-                freeqtys = invrow["freeqty"]
-                # now looping through the contents.
-                # pc will have the productcode which will be the ke in invContents.
-                for pc in list(contentsData.keys()):
-                    # freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization.
-                    if discounts != None:
-                        # discflag is for discount type. Percent=16/Amount=1
-                        # here we convert percent discount in to amount.
-                        if invrow["discflag"] == 16:
-                            qty = float(list(contentsData[str(pc)].keys())[0])
-                            price = float(list(contentsData[str(pc)].values())[0])
-                            totalWithoutDiscount = qty * price
-                            discount = totalWithoutDiscount * float(
-                                float(discounts[pc]) / 100
-                            )
-                        else:
-                            discount = discounts[pc]
-                    else:
-                        discount = 0.00
-
-                    if freeqtys != None:
-                        freeqty = freeqtys[pc]
-                    else:
-                        freeqty = 0.00
-                    prod = self.con.execute(
-                        select(
-                            [
-                                product.c.productdesc,
-                                product.c.uomid,
-                                product.c.gsflag,
-                                product.c.gscode,
-                            ]
-                        ).where(product.c.productcode == pc)
-                    )
-                    prodrow = prod.fetchone()
-                    if int(prodrow["gsflag"]) == 7:
-                        um = self.con.execute(
-                            select([unitofmeasurement.c.unitname]).where(
-                                unitofmeasurement.c.uomid == int(prodrow["uomid"])
-                            )
-                        )
-                        unitrow = um.fetchone()
-                        unitofMeasurement = unitrow["unitname"]
-                        taxableAmount = (
-                            (float(contentsData[pc][list(contentsData[pc].keys())[0]]))
-                            * float(list(contentsData[pc].keys())[0])
-                        ) - float(discount)
-                    else:
-                        unitofMeasurement = ""
-                        taxableAmount = float(list(contentsData[pc].keys())[0]) - float(
-                            discount
-                        )
-
-                    taxRate = 0.00
-                    totalAmount = 0.00
-                    taxRate = float(invrow["tax"][pc])
-                    if int(invrow["taxflag"]) == 22:
-                        taxRate = float(invrow["tax"][pc])
-                        taxAmount = taxableAmount * float(taxRate / 100)
-                        taxname = "VAT"
-                        totalAmount = float(taxableAmount) + (
-                            float(taxableAmount) * float(taxRate / 100)
-                        )
-                        totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + taxableAmount
-                        totalTaxAmt = totalTaxAmt + taxAmount
-                        invContents[pc] = {
-                            "proddesc": prodrow["productdesc"],
-                            "gscode": prodrow["gscode"],
-                            "uom": unitofMeasurement,
-                            "qty": "%.2f"
-                            % (
-                                float(
-                                    contentsData[pc][list(contentsData[pc].keys())[0]]
-                                )
-                            ),
-                            "freeqty": "%.2f" % (float(freeqty)),
-                            "priceperunit": "%.2f"
-                            % (float(list(contentsData[pc].keys())[0])),
-                            "discount": "%.2f" % (float(discounts[pc])),
-                            "taxableamount": "%.2f" % (float(taxableAmount)),
-                            "totalAmount": "%.2f" % (float(totalAmount)),
-                            "taxname": "VAT",
-                            "taxrate": "%.2f" % (float(taxRate)),
-                            "taxamount": "%.2f" % (float(taxAmount)),
-                        }
-
-                    else:
-                        cessRate = 0.00
-                        cessAmount = 0.00
-                        cessVal = 0.00
-                        taxname = ""
-                        if invrow["cess"] != None:
-                            cessVal = float(invrow["cess"][pc])
-                            cessAmount = taxableAmount * (cessVal / 100)
-                            totalCessAmt = totalCessAmt + cessAmount
-
-                        if invrow["sourcestate"] != invrow["taxstate"]:
-                            taxname = "IGST"
-                            taxAmount = taxableAmount * (taxRate / 100)
-                            totalAmount = taxableAmount + taxAmount + cessAmount
-                        else:
-                            taxname = "SGST"
-                            taxRate = taxRate / 2
-                            taxAmount = taxableAmount * (taxRate / 100)
-                            totalAmount = (
-                                taxableAmount
-                                + (taxableAmount * ((taxRate * 2) / 100))
-                                + cessAmount
-                            )
-
-                        totalDisc = totalDisc + float(discount)
-                        totalTaxableVal = totalTaxableVal + taxableAmount
-                        totalTaxAmt = totalTaxAmt + taxAmount
-
-                        invContents[pc] = {
-                            "proddesc": prodrow["productdesc"],
-                            "gscode": prodrow["gscode"],
-                            "gsflag": prodrow["gsflag"],
-                            "uom": unitofMeasurement,
-                            "qty": "%.2f"
-                            % (
-                                float(
-                                    contentsData[pc][list(contentsData[pc].keys())[0]]
-                                )
-                            ),
-                            "freeqty": "%.2f" % (float(freeqty)),
-                            "priceperunit": "%.2f"
-                            % (float(list(contentsData[pc].keys())[0])),
-                            "discount": "%.2f" % (float(discounts[pc])),
-                            "taxableamount": "%.2f" % (float(taxableAmount)),
-                            "totalAmount": "%.2f" % (float(totalAmount)),
-                            "taxname": taxname,
-                            "taxrate": "%.2f" % (float(taxRate)),
-                            "taxamount": "%.2f" % (float(taxAmount)),
-                            "cess": "%.2f" % (float(cessAmount)),
-                            "cessrate": "%.2f" % (float(cessVal)),
-                        }
-                # below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentrysingleflag to 0 else to 1 to create voucher for the same.
-                billwiseentry = self.con.execute(
-                    "select invoicetotal, amountpaid from invoice where invid=%d and orgcode=%d"
-                    % (int(self.request.params["invid"]), authDetails["orgcode"])
-                )
-                billwise_entry = billwiseentry.fetchone()
-                if billwise_entry["invoicetotal"] > billwise_entry["amountpaid"]:
-                    inv["billentrysingleflag"] = 0
-                else:
-                    inv["billentrysingleflag"] = 1
-
-                inv["totaldiscount"] = "%.2f" % (float(totalDisc))
-                inv["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
-                inv["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
-                inv["totalcessamt"] = "%.2f" % (float(totalCessAmt))
-                inv["taxname"] = taxname
-                inv["invcontents"] = invContents
-                voucherCount = self.con.execute(
-                    "select count(vouchercode) from vouchers where orgcode = %d and invid = %d"
-                    % (int(authDetails["orgcode"]), int(self.request.params["invid"]))
-                )
-                vCount = voucherCount.fetchone()
-                inv["vouchercount"] = vCount[0]
+                if not len(inv):
+                    raise Exception("Issue fetching Invoice Data")
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": inv}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}

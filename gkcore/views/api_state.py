@@ -35,6 +35,18 @@ from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 
 
+def getStates(con):
+    try:
+        stateData = con.execute(select([state]).order_by(state.c.statename))
+        getStateData = stateData.fetchall()
+        states = []
+        for st in getStateData:
+            states.append({st["statecode"]: st["statename"]})
+        return states
+    except:
+        return []
+
+
 @view_defaults(route_name="state")
 class api_state(object):
     def __init__(self, request):
@@ -50,11 +62,9 @@ class api_state(object):
         """
         try:
             self.con = eng.connect()
-            stateData = self.con.execute(select([state]).order_by(state.c.statename))
-            getStateData = stateData.fetchall()
-            states = []
-            for st in getStateData:
-                states.append({st["statecode"]: st["statename"]})
+            states = getStates(self.con)
+            if not len(states):
+                raise Exception("Issue with fetching states")
             return {"gkstatus": enumdict["Success"], "gkresult": states}
         except:
             return {"gkstatus": enumdict["ConnectionFailed"]}
@@ -123,14 +133,13 @@ class api_state(object):
             state_data = self.con.execute("select * from state").fetchall()
             states = []
             for state in state_data:
-                states.append({
-                    "state_code": state["statecode"],
-                    "state_name": state["statename"],
-                    "state_abbr": state["abbreviation"]
-                })
-            return {
-                "gkstatus": enumdict["Success"],
-                "gkresult": states
-                }
+                states.append(
+                    {
+                        "state_code": state["statecode"],
+                        "state_name": state["statename"],
+                        "state_abbr": state["abbreviation"],
+                    }
+                )
+            return {"gkstatus": enumdict["Success"], "gkresult": states}
         except:
-            return {'gkstatus': enumdict['ConnectionFailed']}
+            return {"gkstatus": enumdict["ConnectionFailed"]}
