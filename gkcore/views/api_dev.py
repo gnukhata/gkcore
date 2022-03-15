@@ -52,8 +52,9 @@ def recalculateStock(con, data, data_type):
     for item in data:
         id = item[id_key]
         orgcode = item["orgcode"]
+        new_fqty = {}
         for prod_code in item["contents"]:
-            if prod_code and prod_code != 'undefined':
+            if prod_code and prod_code != "undefined":
                 # print("================")
                 p_qty = (
                     float(
@@ -64,8 +65,11 @@ def recalculateStock(con, data, data_type):
                     or 0
                 )
                 p_fqty = float(item["freeqty"][prod_code])
-                p_fqty = 0 if (p_fqty != p_fqty) else p_fqty
-                # print("p_qty = %s and p_fqty = %s" % (p_qty, p_fqty))
+
+                if p_fqty != p_fqty:
+                    new_fqty[prod_code] = 0
+                    p_fqty = 0
+
                 prod_qty = p_qty + p_fqty
                 stock_row = con.execute(
                     select([stock.c.stockid, stock.c.qty]).where(
@@ -82,8 +86,8 @@ def recalculateStock(con, data, data_type):
                 # )
                 if stock_row.rowcount > 0:
                     stock_data = stock_row.fetchone()
-                    # print(float(stock_data["qty"]))
-                    if float(stock_data["qty"]) != prod_qty:
+                    # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"]))
+                    if float(stock_data["qty"]) != prod_qty or true:
                         con.execute(
                             stock.update()
                             .where(stock.c.stockid == stock_data["stockid"])
@@ -97,6 +101,19 @@ def recalculateStock(con, data, data_type):
                         #         str(prod_qty),
                         #     )
                         # )
+        if len(new_fqty):
+            if data_type == "inv":
+                con.execute(
+                    invoice.update()
+                    .where(invoice.c.invid == item[id_key])
+                    .values(freeqty=new_fqty)
+                )
+            elif data_type == "dc":
+                con.execute(
+                    delchal.update()
+                    .where(delchal.c.dcid == item[id_key])
+                    .values(freeqty=new_fqty)
+                )
 
 
 @view_defaults(route_name="dev")
