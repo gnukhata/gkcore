@@ -59,39 +59,42 @@ def taxable_value(inv, productcode, con, drcr=False):
     present in reductionval dict with productcode as key else dr/cr must be a
     change in ppu and new rate has to be retrieved
     """
+    try:
+        rate, qty = list(inv["contents"][productcode].items())[0]
+        query = select([product.c.gsflag]).where(product.c.productcode == productcode)
+        gsflag = con.execute(query).fetchone()[0]
+        if gsflag == 19:
+            qty = 1
 
-    rate, qty = list(inv["contents"][productcode].items())[0]
-    query = select([product.c.gsflag]).where(product.c.productcode == productcode)
-    gsflag = con.execute(query).fetchone()[0]
-    if gsflag == 19:
-        qty = 1
+        if drcr:
+            if inv["drcrmode"] == 18:
+                return float(inv["reductionval"][productcode])
+            else:
+                rate = inv["reductionval"][productcode]
 
-    if drcr:
-        if inv["drcrmode"] == 18:
-            return float(inv["reductionval"][productcode])
-        else:
-            rate = inv["reductionval"][productcode]
-
-    taxable_value = float(rate) * float(qty)
-    if not drcr:
-        taxable_value -= float(inv["discount"][productcode])
-    return taxable_value
-
+        taxable_value = float(rate) * float(qty)
+        if not drcr:
+            taxable_value -= float(inv["discount"][productcode])
+        return taxable_value
+    except:
+        return 0
 
 def cess_amount(inv, productcode, con, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
     """
-    if inv["cess"].get(productcode) == 0 or inv["cess"] == {}:
+    try:
+        if inv["cess"].get(productcode) == 0 or inv["cess"] == {}:
+            return 0
+        else:
+            cess_rate = float(inv["cess"][productcode])
+
+            t_value = taxable_value(inv, productcode, con, drcr=drcr)
+            cess_amount = t_value * cess_rate / 100
+
+            return float(cess_amount)
+    except:
         return 0
-    else:
-        cess_rate = float(inv["cess"][productcode])
-
-        t_value = taxable_value(inv, productcode, con, drcr=drcr)
-        cess_amount = t_value * cess_rate / 100
-
-        return float(cess_amount)
-
 
 def state_name_code(con, statename=None, statecode=None):
     """
@@ -149,18 +152,17 @@ def b2b_r1(invoices, con):
 
         def b2b_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
-            if inv["gstin"].get(str(ts_code)):
+            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return True
             else:
                 return False
 
         invs = list(filter(b2b_filter, invoices))
-
         b2b = []
         for inv in invs:
             ts_code = state_name_code(con, statename=inv["taxstate"])
 
-            row = defaultdict()
+            row = defaultdict(dict)
             row["gstin"] = inv["gstin"][str(ts_code)]
             row["receiver"] = inv["custname"]
             row["invoice_number"] = inv["invoiceno"]
@@ -200,7 +202,7 @@ def b2cl_r1(invoices, con):
         def b2cl_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
 
-            if inv["gstin"].get(str(ts_code)):
+            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
             if inv["taxstate"] == inv["sourcestate"]:
                 return False
@@ -251,7 +253,7 @@ def b2cs_r1(invoices, con):
 
         def b2cs_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
-            if inv["gstin"].get(str(ts_code)):
+            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
             if inv["taxstate"] == inv["sourcestate"]:
                 return True
@@ -313,7 +315,7 @@ def cdnr_r1(drcr_all, con):
 
         def cdnr_filter(inv):
             ts_code = state_name_code(con, statename=inv["taxstate"])
-            if inv["gstin"].get(str(ts_code)):
+            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return True
             else:
                 return False
@@ -366,7 +368,7 @@ def cdnur_r1(drcr_all, con):
 
         def cdnur_filter(drcr):
             ts_code = state_name_code(con, statename=drcr["taxstate"])
-            if drcr["gstin"].get(str(ts_code)):
+            if drcr["gstin"] and drcr["gstin"].get(str(ts_code)):
                 return False
             if drcr["taxstate"] == drcr["sourcestate"]:
                 return False
@@ -477,7 +479,9 @@ def hsn_r1(orgcode, start, end, con):
                     cs = float(literal_eval(inv["cess"]))
                     # check condition for product and service
                     if products["gsflag"] == 7:
-                        qty = float(cn["%.2f" % float(ppu)])
+                        price = list(cn.keys())[0]
+                        qty = float(cn[price])
+                        # qty = float(cn["%.2f" % float(ppu)])
                         ttl_qty += qty
                         taxable_Value = (ppu * qty) - ds
                         um = con.execute(
