@@ -165,6 +165,7 @@ def b2b_r1(invoices, con):
             row = defaultdict(dict)
             row["gstin"] = inv["gstin"][str(ts_code)]
             row["receiver"] = inv["custname"]
+            row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
             row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
@@ -218,6 +219,7 @@ def b2cl_r1(invoices, con):
             ts_code = state_name_code(con, statename=inv["taxstate"])
 
             row = {}
+            row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
             row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
@@ -330,8 +332,10 @@ def cdnr_r1(drcr_all, con):
             row = {}
             row["gstin"] = note["gstin"][str(ts_code)]
             row["receiver"] = note["custname"]
+            row["invid"] = note["invid"]
             row["invoice_number"] = note["invoiceno"]
             row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
+            row["drcrid"] = note["drcrid"]
             row["voucher_number"] = note["drcrno"]
             row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
             if note["dctypeflag"] == 4:
@@ -386,7 +390,9 @@ def cdnur_r1(drcr_all, con):
             # ur_type can be ExportWithPay(EXPWP) / ExportWithoutPay(EXPWOP) / B2CL
             row["ur_type"] = "B2CL"
             row["invoice_number"] = note["invoiceno"]
+            row["invid"] = note["invid"]
             row["invoice_date"] = note["invoicedate"].strftime("%d-%b-%y")
+            row["drcrid"] = note["drcrid"]
             row["voucher_number"] = note["drcrno"]
             row["voucher_date"] = note["drcrdate"].strftime("%d-%b-%y")
             if note["dctypeflag"] == 4:
