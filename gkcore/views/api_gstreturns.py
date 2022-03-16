@@ -361,7 +361,7 @@ def cdnr_r1(drcr_all, con):
                 row["document_type"] = "D"
             else:
                 row["document_type"] = "C"
-            row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
+            row["place_of_supply"] = "%s-%s" % (str(ts_code), note["taxstate"])
             row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
             row["applicable_tax_rate"] = ""
             if note["taxflag"] == 7:
