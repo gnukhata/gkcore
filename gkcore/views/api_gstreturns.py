@@ -77,6 +77,7 @@ def taxable_value(inv, productcode, con, drcr=False):
             taxable_value -= float(inv["discount"][productcode])
         return taxable_value
     except:
+        # print(traceback.format_exc())
         return 0
 
 def cess_amount(inv, productcode, con, drcr=False):
@@ -94,6 +95,7 @@ def cess_amount(inv, productcode, con, drcr=False):
 
             return float(cess_amount)
     except:
+        # print(traceback.format_exc())
         return 0
 
 def state_name_code(con, statename=None, statecode=None):
@@ -108,6 +110,17 @@ def state_name_code(con, statename=None, statecode=None):
     result = con.execute(query).fetchone()[0]
     return result
 
+def normalise_state_code(statecode, gstin):
+    """
+        Sometimes statecode < 10 will be prefixed with zero and sometimes not
+        This causes issues while using the wrong the statecode in gstin objects
+        Returns a normalised statecode that is available in the gstin object 
+    """
+    if(int(statecode) < 10):
+        if statecode not in gstin:
+            if ("0"+str(statecode)) in gstin:
+                statecode = "0"+str(statecode)
+    return statecode
 
 def product_level(inv, con, drcr=False):
     """
@@ -151,16 +164,21 @@ def b2b_r1(invoices, con):
     try:
 
         def b2b_filter(inv):
-            ts_code = state_name_code(con, statename=inv["taxstate"])
-            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
-                return True
-            else:
+            try:
+                ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
+                
+                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
+                    return True
+                else:
+                    return False
+            except:
+                # print(traceback.format_exc())
                 return False
 
         invs = list(filter(b2b_filter, invoices))
         b2b = []
         for inv in invs:
-            ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
 
             row = defaultdict(dict)
             row["gstin"] = inv["gstin"][str(ts_code)]
@@ -169,7 +187,7 @@ def b2b_r1(invoices, con):
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
             row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
-            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["invoice_type"] = "Regular"
             row["ecommerce_gstin"] = ""
@@ -187,6 +205,7 @@ def b2b_r1(invoices, con):
 
         return {"status": 0, "data": b2b}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -201,7 +220,7 @@ def b2cl_r1(invoices, con):
     try:
 
         def b2cl_filter(inv):
-            ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
 
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
@@ -254,7 +273,7 @@ def b2cs_r1(invoices, con):
     try:
 
         def b2cs_filter(inv):
-            ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
             if inv["taxstate"] == inv["sourcestate"]:
@@ -316,7 +335,7 @@ def cdnr_r1(drcr_all, con):
     try:
 
         def cdnr_filter(inv):
-            ts_code = state_name_code(con, statename=inv["taxstate"])
+            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return True
             else:
@@ -327,7 +346,7 @@ def cdnr_r1(drcr_all, con):
         cdnr = []
         for note in drcrs:
 
-            ts_code = state_name_code(con, statename=note["taxstate"])
+            ts_code = normalise_state_code(state_name_code(con, statename=note["taxstate"]), note["gstin"])
 
             row = {}
             row["gstin"] = note["gstin"][str(ts_code)]
