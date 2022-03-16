@@ -8842,9 +8842,9 @@ class api_reports(object):
                 if int(self.request.params["flag"]) == 0:
                     if "orderflag" in self.request.params:
                         invquery = self.con.execute(
-                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
+                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND inoutflag = 15 AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
+                            # "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
                             % (
-                                authDetails["orgcode"],
                                 authDetails["orgcode"],
                                 datetime.strptime(
                                     str(self.request.params["calculatefrom"]),
@@ -8857,9 +8857,9 @@ class api_reports(object):
                         )
                     else:
                         invquery = self.con.execute(
-                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
+                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND inoutflag = 15 AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
+                            # "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax,cess ,freeqty, sourcestate, taxstate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=3) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
                             % (
-                                authDetails["orgcode"],
                                 authDetails["orgcode"],
                                 datetime.strptime(
                                     str(self.request.params["calculatefrom"]),
@@ -8875,9 +8875,9 @@ class api_reports(object):
                 elif int(self.request.params["flag"]) == 1:
                     if "orderflag" in self.request.params:
                         invquery = self.con.execute(
-                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
+                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND inoutflag = 9 AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
+                            # "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate DESC"
                             % (
-                                authDetails["orgcode"],
                                 authDetails["orgcode"],
                                 datetime.strptime(
                                     str(self.request.params["calculatefrom"]),
@@ -8890,9 +8890,9 @@ class api_reports(object):
                         )
                     else:
                         invquery = self.con.execute(
-                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
+                            "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND inoutflag = 9 AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
+                            # "select invid, invoiceno, invoicedate, custid, invoicetotal, contents, tax, cess,freeqty, taxstate,sourcestate,taxflag,discount from invoice where orgcode=%d AND custid IN (select custid from customerandsupplier where orgcode=%d AND csflag=19) AND invoicedate >= '%s' AND invoicedate <= '%s' order by invoicedate"
                             % (
-                                authDetails["orgcode"],
                                 authDetails["orgcode"],
                                 datetime.strptime(
                                     str(self.request.params["calculatefrom"]),
