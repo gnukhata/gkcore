@@ -3551,6 +3551,7 @@ class api_invoice(object):
                                 "taxamt": "%.2f" % taxamt,
                                 "custname": customerdetails["custname"],
                                 "csflag": customerdetails["csflag"],
+                                "inoutflag": row["inoutflag"],
                                 "custtin": custtin,
                                 "invoicedate": datetime.strftime(
                                     row["invoicedate"], "%d-%m-%Y"
@@ -3574,6 +3575,7 @@ class api_invoice(object):
                                 "taxamt": "%.2f" % taxamt,
                                 "custname": customerdetails["custname"],
                                 "csflag": customerdetails["csflag"],
+                                "inoutflag": row["inoutflag"],
                                 "custtin": custtin,
                                 "invoicedate": datetime.strftime(
                                     row["invoicedate"], "%d-%m-%Y"
@@ -3597,6 +3599,7 @@ class api_invoice(object):
                                 "taxamt": "%.2f" % taxamt,
                                 "custname": customerdetails["custname"],
                                 "csflag": customerdetails["csflag"],
+                                "inoutflag": row["inoutflag"],
                                 "custtin": custtin,
                                 "invoicedate": datetime.strftime(
                                     row["invoicedate"], "%d-%m-%Y"
