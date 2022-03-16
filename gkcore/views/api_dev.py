@@ -87,7 +87,7 @@ def recalculateStock(con, data, data_type):
                 if stock_row.rowcount > 0:
                     stock_data = stock_row.fetchone()
                     # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"]))
-                    if float(stock_data["qty"]) != prod_qty or true:
+                    if float(stock_data["qty"]) != prod_qty:
                         con.execute(
                             stock.update()
                             .where(stock.c.stockid == stock_data["stockid"])
