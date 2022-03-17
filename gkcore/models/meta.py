@@ -113,6 +113,7 @@ def columnExists(tableName, columnName):
             return True
     return False
 
+
 def columnTypeMatches(tableName, columnName, columnType):
     gkInspect = PGInspector(dbconnect())
     cols = gkInspect.get_columns(tableName)
@@ -121,6 +122,7 @@ def columnTypeMatches(tableName, columnName, columnType):
             if type(col["type"]) is columnType:
                 return True
     return False
+
 
 def tableExists(tblName):
     """
@@ -163,7 +165,6 @@ def gk_api(url: str, header: object, request: object):
     """
     try:
         subreq = Request.blank(url, headers=header)
-        Request.POST
         result = json.loads(request.invoke_subrequest(subreq).text)
         return result
     except Exception as e:
