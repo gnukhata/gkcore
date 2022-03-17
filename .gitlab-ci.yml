@@ -38,9 +38,9 @@ update-test-server:
   script:
     - apt update && apt install -y ssh
     - mkdir /root/.ssh
-    # - echo $SSH_PRIV_KEY > /root/.ssh/id_ed25519
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIV_KEY" | tr -d '\r' | ssh-add -
+    - echo $SSH_PRIV_KEY > /root/.ssh/id_ed25519
+    # - eval $(ssh-agent -s)
+    # - echo "$SSH_PRIV_KEY" | tr -d '\r' | ssh-add -
     - chmod 600 /root/.ssh/id_ed25519
     - ssh -T -o "StrictHostKeyChecking=no" $TEST_SERVER_ADDRESS /root/restart-gk.sh
   only:
