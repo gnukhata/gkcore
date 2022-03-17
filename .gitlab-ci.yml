@@ -14,7 +14,9 @@ services:
 stages:
   - build
   - test
+  - deploy
 
+# build gkcore
 gkcore-setup:
   stage: build
   script:
@@ -23,8 +25,20 @@ gkcore-setup:
     - python3 setup.py develop
     - python3 initdb.py
 
+# run tests
 gkcore-tests:
   stage: test
   script:
     - pip3 install requests
     - python3 tests.py
+
+# update the test server when devel branch is updated
+update-test-server:
+  stage: deploy
+  script:
+    - apt install ssh
+    - mkdir /root/.ssh
+    - cat $SSH_PRIV_KEY > /root/.ssh/id_25519
+    - ssh $TEST_SERVER_ADDRESS /root/restart-gk.sh
+  only:
+    - devel
