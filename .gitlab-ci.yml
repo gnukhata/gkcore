@@ -36,9 +36,9 @@ gkcore-tests:
 update-test-server:
   stage: deploy
   script:
-    - apt update && apt install ssh
+    - apt update && apt install -y ssh
     - mkdir /root/.ssh
     - cat $SSH_PRIV_KEY > /root/.ssh/id_25519
-    - ssh $TEST_SERVER_ADDRESS /root/restart-gk.sh
+    - ssh -o "StrictHostKeyChecking=no" $TEST_SERVER_ADDRESS /root/restart-gk.sh
   only:
     - devel
