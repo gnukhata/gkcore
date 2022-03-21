@@ -138,7 +138,7 @@ def product_level(inv, con, drcr=False):
     data = {}
     if drcr:
         products = list(inv["reductionval"].keys())
-        if inv["drcrmode"] == 18:
+        if "quantities" in products:
             products.remove("quantities")
     else:
         products = inv["contents"]
@@ -256,6 +256,7 @@ def b2cl_r1(invoices, con):
 
         return {"status": 0, "data": b2cl}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -323,6 +324,7 @@ def b2cs_r1(invoices, con):
 
         return {"status": 0, "data": b2cs}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -377,6 +379,7 @@ def cdnr_r1(drcr_all, con):
 
         return {"status": 0, "data": cdnr}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -435,6 +438,7 @@ def cdnur_r1(drcr_all, con):
 
         return {"status": 0, "data": cdnur}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -842,6 +846,7 @@ class GstReturn(object):
             return {"gkstatus": enumdict["Success"], "gkdata": gkdata}
 
         except:
+            # print(traceback.format_exc())
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="type=r3b", renderer="json")
