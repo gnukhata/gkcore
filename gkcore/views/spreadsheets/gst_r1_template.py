@@ -1358,8 +1358,7 @@ def docs_sheet(wb):
 
 
 def fill_data(result, wb):
-    for entry in result["gkdata"]["b2b"]:
-
+    for entry in result["b2b"]:
         row = (
             entry["gstin"],
             entry["receiver"],
@@ -1367,7 +1366,7 @@ def fill_data(result, wb):
             to_datetime(entry["invoice_date"]),
             float_or_none(entry["invoice_value"]),
             entry["place_of_supply"],
-            entry["reverse_charge"],
+            "" if type(entry["reverse_charge"]) == dict else entry["reverse_charge"],
             entry["applicable_tax_rate"],
             entry["invoice_type"],
             entry["ecommerce_gstin"],
@@ -1375,14 +1374,14 @@ def fill_data(result, wb):
             float_or_none(entry["taxable_value"]),
             float_or_none(entry["cess"]),
         )
-
+        # print(row)
         wb["b2b"].append(row)
 
         set_alignment(wb["b2b"], ["E5", "K5", "L5"], "right")
         set_number_format(wb["b2b"], ["E5", "K5", "L5"], "0.00")
         set_number_format(wb["b2b"], ["D5"], "dd-mmm-yy")
 
-    for entry in result["gkdata"]["b2cl"]:
+    for entry in result["b2cl"]:
 
         row = (
             entry["invoice_number"],
@@ -1403,7 +1402,7 @@ def fill_data(result, wb):
     set_number_format(wb["b2cl"], ["C5", "F5", "G5", "H5", "B5"], "0.00")
     set_number_format(wb["b2cl"], ["B5"], "dd-mmm-yy")
 
-    for entry in result["gkdata"]["b2cs"]:
+    for entry in result["b2cs"]:
 
         row = (
             entry["type"],
@@ -1420,7 +1419,7 @@ def fill_data(result, wb):
     set_alignment(wb["b2cs"], ["D5", "E5", "F5"], "right")
     set_number_format(wb["b2cs"], ["D5", "E5", "F5"], "0.00")
 
-    for entry in result["gkdata"]["cdnr"]:
+    for entry in result["cdnr"]:
 
         row = (
             entry["gstin"],
@@ -1445,7 +1444,7 @@ def fill_data(result, wb):
     set_number_format(wb["cdnr"], ["I5", "K5", "L5", "M5"], "0.00")
     set_number_format(wb["cdnr"], ["D5", "F5"], "dd-mmm-yy")
 
-    for entry in result["gkdata"]["cdnur"]:
+    for entry in result["cdnur"]:
 
         row = (
             entry["ur_type"],
@@ -1469,7 +1468,7 @@ def fill_data(result, wb):
     set_number_format(wb["cdnur"], ["H5", "J5", "K5", "L5"], "0.00")
     set_number_format(wb["cdnur"], ["C5", "F5"], "dd-mmm-yy")
 
-    for entry in result["gkdata"]["hsn1"]:
+    for entry in result["hsn1"]:
         row = (
             entry["hsnsac"],
             entry["prodctname"],
