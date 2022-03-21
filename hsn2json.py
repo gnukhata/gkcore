@@ -30,21 +30,41 @@ Sai Karthik <kskarthik@disroot.org>
 import requests, io, json, pathlib, openpyxl
 
 try:
+
+    print("📡 Getting HSN/SAC file from GST portal ...")
+
     gkcore_root = pathlib.Path("./").resolve()
     r = requests.get("https://tutorial.gst.gov.in/downloads/HSN_SAC.xlsx").content
     b = io.BytesIO(r)
     wb = openpyxl.load_workbook(b)
     hsn = wb["HSN"]
+    sac = wb["SAC"]
     hsn_array = []
+    sac_array = []
+
+    print("⚙ Extracting HSN/SAC from the spreadsheet ...")
 
     for i in hsn.values:
         hsn_array.append({"hsn_code": i[0], "hsn_desc": i[1]})
 
+    for i in sac.values:
+        sac_array.append({"hsn_code": str(i[0]), "hsn_desc": i[1]})
+
     # remove table column names
     hsn_array.pop(0)
+    sac_array.pop(0)
 
+    print("HSN codes: ", len(hsn_array))
+    print("SAC codes: ", len(sac_array))
+
+    # join SAC & HSN arrays
+    for i in sac_array:
+        hsn_array.append(i)
+
+    print("💾 Saving to file ...")
     with open(f"{gkcore_root}/static/gst-hsn.json", "w") as f:
-        f.write(json.dumps(hsn_array))
+        json.dump(hsn_array, f, indent=1)
 
+    print("total generated hsn/sac items: ", len(hsn_array))
 except Exception as e:
     print(e)
