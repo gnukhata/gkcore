@@ -152,19 +152,32 @@ def getOnDelete(tblName, keyName):
     return onDelete
 
 
-def gk_api(url: str, header: object, request: object):
+def gk_api(
+    url: str,
+    header: object,
+    request: object,
+    method: str = "GET",
+    body: dict = None,
+):
     """Call's gkcore api internally
 
     If success, returns result object, else raises Exception.
 
-    params
-    ======
-    url = api url (eg: '/state')
-    header = url headers
-    request = request object
+    **params**
+
+    `url` = api url (eg: '/state')\n
+    `header` = url headers\n
+    `request` = request object\n
+    `method` = valid REST method, Allowed values: `GET`, `POST`. Default is `GET`\n
+    `body` = request body as dict
     """
     try:
         subreq = Request.blank(url, headers=header)
+
+        if method == "POST":
+            Request.method = "POST"
+            Request.json_body = body
+
         result = json.loads(request.invoke_subrequest(subreq).text)
         return result
     except Exception as e:
@@ -179,31 +192,7 @@ def gk_hsn():
         with open(f"{gkcore_root}/static/gst-hsn.json", "r") as f:
             hsn_array = json.load(f)
         return hsn_array
-        # wb = openpyxl.load_workbook(f"{gkcore_root}/static/HSN_SAC.xlsx")
-        # ws = wb["HSN"]
-        # for row in ws.values:
-        #     # hsn_array.append({"hsn_code": row[0], "hsn_desc": row[1]})
 
-        #     # first object is useless. So, remove it.
-        #     # hsn_array.pop(0)
-
-        #     print(hsn_array)
-        #     return hsn_array
     except Exception as e:
         print(e)
         raise e
-
-
-# def gk_auth(**params):
-#     """Verify user's identity\n
-#     __Params:__\n
-#     token: jwt token
-
-#     """
-#     print("params: ", params)
-#     # token = params["token"] or None
-#     # if token == None:
-#     #     return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-#     authDetails = ac(params["token"])
-#     if authDetails["auth"] == False:
-#         return {"gkstatus": 2}
