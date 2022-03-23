@@ -58,12 +58,14 @@ def print_gstr_3b(self):
             sheet.title = "GSTR-3B"
             params = self.request.params
 
-            gst_data = generate_gstr_3b_data(
+            gst_result = generate_gstr_3b_data(
                 self.con,
                 authDetails["orgcode"],
                 params["calculatefrom"],
                 params["calculateto"],
             )
+
+            gst_data = gst_result["data"]
 
             if len(gst_data):
                 res = generate_3b_report(

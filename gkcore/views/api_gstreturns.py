@@ -80,6 +80,7 @@ def taxable_value(inv, productcode, con, drcr=False):
         # print(traceback.format_exc())
         return 0
 
+
 def cess_amount(inv, productcode, con, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
@@ -98,6 +99,7 @@ def cess_amount(inv, productcode, con, drcr=False):
         # print(traceback.format_exc())
         return 0
 
+
 def state_name_code(con, statename=None, statecode=None):
     """
     Returns statecode if statename is given
@@ -110,17 +112,19 @@ def state_name_code(con, statename=None, statecode=None):
     result = con.execute(query).fetchone()[0]
     return result
 
+
 def normalise_state_code(statecode, gstin):
     """
-        Sometimes statecode < 10 will be prefixed with zero and sometimes not
-        This causes issues while using the wrong the statecode in gstin objects
-        Returns a normalised statecode that is available in the gstin object 
+    Sometimes statecode < 10 will be prefixed with zero and sometimes not
+    This causes issues while using the wrong the statecode in gstin objects
+    Returns a normalised statecode that is available in the gstin object
     """
-    if(int(statecode) < 10):
+    if int(statecode) < 10:
         if statecode not in gstin:
-            if ("0"+str(statecode)) in gstin:
-                statecode = "0"+str(statecode)
+            if ("0" + str(statecode)) in gstin:
+                statecode = "0" + str(statecode)
     return statecode
+
 
 def product_level(inv, con, drcr=False):
     """
@@ -165,8 +169,10 @@ def b2b_r1(invoices, con):
 
         def b2b_filter(inv):
             try:
-                ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
-                
+                ts_code = normalise_state_code(
+                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+                )
+
                 if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                     return True
                 else:
@@ -178,7 +184,9 @@ def b2b_r1(invoices, con):
         invs = list(filter(b2b_filter, invoices))
         b2b = []
         for inv in invs:
-            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
+            ts_code = normalise_state_code(
+                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+            )
 
             row = defaultdict(dict)
             row["gstin"] = inv["gstin"][str(ts_code)]
@@ -220,7 +228,9 @@ def b2cl_r1(invoices, con):
     try:
 
         def b2cl_filter(inv):
-            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
+            ts_code = normalise_state_code(
+                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+            )
 
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
@@ -274,7 +284,9 @@ def b2cs_r1(invoices, con):
     try:
 
         def b2cs_filter(inv):
-            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
+            ts_code = normalise_state_code(
+                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+            )
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return False
             if inv["taxstate"] == inv["sourcestate"]:
@@ -337,7 +349,9 @@ def cdnr_r1(drcr_all, con):
     try:
 
         def cdnr_filter(inv):
-            ts_code = normalise_state_code(state_name_code(con, statename=inv["taxstate"]), inv["gstin"])
+            ts_code = normalise_state_code(
+                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+            )
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return True
             else:
@@ -348,7 +362,9 @@ def cdnr_r1(drcr_all, con):
         cdnr = []
         for note in drcrs:
 
-            ts_code = normalise_state_code(state_name_code(con, statename=note["taxstate"]), note["gstin"])
+            ts_code = normalise_state_code(
+                state_name_code(con, statename=note["taxstate"]), note["gstin"]
+            )
 
             row = {}
             row["gstin"] = note["gstin"][str(ts_code)]
@@ -627,6 +643,27 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
 
         interest = {"igst": 0.0, "cgst": 0.0, "sgst": 0.0, "cess": 0.0}
 
+        g3b_invs = {
+            "outward_taxable_supplies": [],
+            "outward_taxable_zero_rated": [],
+            "outward_taxable_exempted": [],
+            "outward_non_gst": [],
+            "inward_reverse_charge": [],
+            "import_goods": [],
+            "import_service": [],
+            "inward_isd": [],
+            "all_itc": [],
+            "net_itc": [],
+            "itc_reversed_1": [],
+            "itc_reversed_2": [],
+            "ineligible_1": [],
+            "ineligible_2": [],
+            "inward_zero_gst": [],
+            "non_gst": [],
+            "interest": [],
+            "pos_unreg_comp_uin_igst": {},
+        }
+
         pos_unreg_comp_uin_igst = (
             {}
         )  # {PoS: Unreg_Taxable_Amt, Unreg_IGST, Composition_Taxable_Amt, Composition_IGST, UIN_Taxamble_Amt, UIN_IGST}
@@ -685,6 +722,7 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             outward_taxable_supplies["cgst"] += cgst_amount
                             outward_taxable_supplies["sgst"] += sgst_amount
                             outward_taxable_supplies["cess"] += cess_amount
+                            g3b_invs["outward_taxable_supplies"].append(invoice)
                             if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
                                 pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
                                     "unreg_taxable_amt"
@@ -692,6 +730,9 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                 pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
                                     "unreg_igst"
                                 ] += igst_amount
+                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                    inv_data["taxstatecode"]
+                                ].append(invoice)
                             else:
                                 pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
                                     "unreg_taxable_amt": line_amount,
@@ -701,6 +742,12 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                     "uin_taxable_amt": 0,
                                     "uin_igst": 0,
                                 }  # TODO: Handle Composition & UIN holders
+                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                    inv_data["taxstatecode"]
+                                ] = []
+                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                    inv_data["taxstatecode"]
+                                ].append(invoice)
 
                         else:  # Tream them all as zero rated for now
                             outward_taxable_zero_rated["taxable_value"] += line_amount
@@ -708,6 +755,7 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             outward_taxable_zero_rated["cgst"] += cgst_amount
                             outward_taxable_zero_rated["sgst"] += sgst_amount
                             outward_taxable_zero_rated["cess"] += cess_amount
+                            g3b_invs["outward_taxable_zero_rated"].append(invoice)
 
                     # TODO: Vendor Bills with reverse charge doesn't have tax lines filled, so it must be calculated
                     elif (
@@ -719,6 +767,7 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             inward_reverse_charge["cgst"] += cgst_amount
                             inward_reverse_charge["sgst"] += sgst_amount
                             inward_reverse_charge["cess"] += cess_amount
+                            g3b_invs["inward_reverse_charge"].append(invoice)
                         else:
                             if line_total_amount == line_amount:  # Zero GST taxes
                                 if (
@@ -728,10 +777,12 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                     inward_zero_gst["inter"] += line_amount
                                 else:
                                     inward_zero_gst["intra"] += line_amount
+                                g3b_invs["inward_zero_gst"].append(invoice)
                             else:  # Taxable purchase, eligible for ITC
                                 all_itc["igst"] += igst_amount
                                 all_itc["cgst"] += cgst_amount
                                 all_itc["sgst"] += sgst_amount
+                                g3b_invs["all_itc"].append(invoice)
         for tax_type in net_itc:
             net_itc[tax_type] = (
                 import_goods[tax_type]
@@ -741,24 +792,27 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                 + all_itc[tax_type]
             ) - (itc_reversed_1[tax_type] + itc_reversed_2[tax_type])
         return {
-            "outward_taxable_supplies": outward_taxable_supplies,
-            "outward_taxable_zero_rated": outward_taxable_zero_rated,
-            "outward_taxable_exempted": outward_taxable_exempted,
-            "outward_non_gst": outward_non_gst,
-            "inward_reverse_charge": inward_reverse_charge,
-            "import_goods": import_goods,
-            "import_service": import_service,
-            "inward_isd": inward_isd,
-            "all_itc": all_itc,
-            "net_itc": net_itc,
-            "itc_reversed_1": itc_reversed_1,
-            "itc_reversed_2": itc_reversed_2,
-            "ineligible_1": ineligible_1,
-            "ineligible_2": ineligible_2,
-            "inward_zero_gst": inward_zero_gst,
-            "non_gst": non_gst,
-            "interest": interest,
-            "pos_unreg_comp_uin_igst": pos_unreg_comp_uin_igst,
+            "invoices": g3b_invs,
+            "data": {
+                "outward_taxable_supplies": outward_taxable_supplies,
+                "outward_taxable_zero_rated": outward_taxable_zero_rated,
+                "outward_taxable_exempted": outward_taxable_exempted,
+                "outward_non_gst": outward_non_gst,
+                "inward_reverse_charge": inward_reverse_charge,
+                "import_goods": import_goods,
+                "import_service": import_service,
+                "inward_isd": inward_isd,
+                "all_itc": all_itc,
+                "net_itc": net_itc,
+                "itc_reversed_1": itc_reversed_1,
+                "itc_reversed_2": itc_reversed_2,
+                "ineligible_1": ineligible_1,
+                "ineligible_2": ineligible_2,
+                "inward_zero_gst": inward_zero_gst,
+                "non_gst": non_gst,
+                "interest": interest,
+                "pos_unreg_comp_uin_igst": pos_unreg_comp_uin_igst,
+            },
         }
     except:
         # print(traceback.format_exc())
@@ -870,12 +924,15 @@ class GstReturn(object):
         try:
             self.con = eng.connect()
 
-            gst_data = generate_gstr_3b_data(
+            gst_result = generate_gstr_3b_data(
                 self.con,
                 authDetails["orgcode"],
                 self.request.params["calculatefrom"],
                 self.request.params["calculateto"],
             )
+
+            gst_data = gst_result["data"]
+            gst_invoices = gst_result["invoices"]
 
             date_split = self.request.params["calculateto"].split("-")
             ret_period = date_split[1] + date_split[0]
@@ -1069,7 +1126,10 @@ class GstReturn(object):
                 "ltfee_details": {},
             }
 
-            return {"gkstatus": enumdict["Success"], "gkresult": gst_json}
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": {"json": gst_json, "invoice": gst_invoices},
+            }
         except:
             # print(traceback.format_exc())
             return {"gkstatus": enumdict["ConnectionFailed"]}
