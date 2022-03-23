@@ -202,7 +202,7 @@ def b2b_r1(invoices, con):
             if inv["reversecharge"] == "0":
                 row["reverse_charge"] = "N"
             else:
-                row["reverse_charge"] == "Y"
+                row["reverse_charge"] = "Y"
 
             for rate, tax_cess in list(product_level(inv, con).items()):
                 prod_row = deepcopy(row)
@@ -544,7 +544,7 @@ def hsn_r1(orgcode, start, end, con):
                         prodHSN["uqc"] = unitrow["unitname"]
                     else:
                         taxable_Value = ppu - ds
-                        prodHSN["uqc"] = ""
+                        prodHSN["uqc"] = "OTH"
                     ttl_TaxableValue += taxable_Value
 
                     # calculate state level and center level GST
