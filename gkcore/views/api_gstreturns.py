@@ -469,8 +469,14 @@ def hsn_r1(orgcode, start, end, con):
         )
         prodData_result = prodData.fetchall()
         for products in prodData_result:
+            hsn = products["gscode"] or ""
+            if "{" in hsn:
+                hsn = loads(hsn)
+                if type(hsn) == dict:
+                    if "hsn_code" in hsn:
+                        hsn = hsn["hsn_code"] or ""
             prodHSN = {
-                "hsnsac": products["gscode"],
+                "hsnsac": hsn,
                 "prodctname": products["productdesc"],
             }
             invData = con.execute(
@@ -558,6 +564,7 @@ def hsn_r1(orgcode, start, end, con):
 
         return {"status": 0, "data": Final}
     except:
+        # print(traceback.format_exc())
         return {"status": 3}
 
 
