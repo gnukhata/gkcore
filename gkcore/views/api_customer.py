@@ -38,6 +38,7 @@ from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
+
 # import traceback  # for printing detailed exception logs
 
 
@@ -71,6 +72,15 @@ class api_customer(object):
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 result = self.con.execute(gkdb.customerandsupplier.insert(), [dataset])
+                custid = self.con.execute(
+                    select([gkdb.customerandsupplier.c.custid]).where(
+                        and_(
+                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
+                            gkdb.customerandsupplier.c.custname == dataset["custname"],
+                        )
+                    )
+                ).fetchone()
+                custid = custid["custid"]
                 if result.rowcount == 1:
                     # Account for customer / supplier
                     if dataset["csflag"] == 3:
@@ -95,14 +105,19 @@ class api_customer(object):
                     }
                     try:
                         result = self.con.execute(gkdb.accounts.insert(), [accountData])
-                        return {"gkstatus": enumdict["Success"]}
+                        return {
+                            "gkstatus": enumdict["Success"],
+                            "gkresult": {"custid": custid},
+                        }
                     except:
                         return {"gkstatus": enumdict["Success"]}
                 else:
+                    # print(traceback.format_exc())
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
+                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
