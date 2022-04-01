@@ -73,7 +73,7 @@ import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
-# import traceback  # for printing detailed exception logs
+import traceback  # for printing detailed exception logs
 
 def gst(ProductCode, con):
     gstData = con.execute(
@@ -288,6 +288,21 @@ def getInvoiceData(con, orgcode, params):
                         custSupDetails["custgstin"] = None
 
             inv["custSupDetails"] = custSupDetails
+        else:
+            result = con.execute(
+                select([dcinv.c.dcid]).where(dcinv.c.invid == invrow["invid"])
+            )
+            dcid = result.fetchone()
+            if result.rowcount > 0:
+                dc = con.execute(
+                    select([delchal.c.dcno, delchal.c.dcdate]).where(
+                        delchal.c.dcid == dcid["dcid"]
+                    )
+                )
+                delchalData = dc.fetchone()
+                inv["dcid"] = dcid["dcid"]
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
         # contents is a nested dictionary from invoice table.
         # It contains productcode as the key with a value as a dictionary.
         # this dictionary has two key value pare, priceperunit and quantity.
@@ -796,12 +811,14 @@ class api_invoice(object):
                 # when delivery note is selected
                 if "dcid" in invdataset:
                     if result.rowcount == 1:
+                        icflag = int(invdataset["icflag"]) if "icflag" in invdataset else 9
                         result = self.con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"
+                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = %d"
                             % (
                                 int(invdataset["custid"]),
                                 str(invdataset["invoiceno"]),
                                 int(invdataset["orgcode"]),
+                                icflag
                             )
                         )
                         invoiceid = result.fetchone()
@@ -1099,6 +1116,7 @@ class api_invoice(object):
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
+                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -4354,6 +4372,7 @@ class api_invoice(object):
             self.con.close()
             return {"gkstatus": enumdict["Success"], "vchNo": v_No, "vid": v_ID}
         except:
+            # print(traceback.format_exc())
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
         finally:
             self.con.close()
