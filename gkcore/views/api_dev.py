@@ -47,7 +47,7 @@ And hence must be commented out in __init__.py file outside this folder during p
 """
 
 
-def recalculateStock(con, data, data_type):
+def recalculateStock(con, data, data_type, flag):
     id_key = data_type + "id"
     for item in data:
         id = item[id_key]
@@ -77,6 +77,7 @@ def recalculateStock(con, data, data_type):
                             stock.c.orgcode == orgcode,
                             stock.c.dcinvtnid == id,
                             stock.c.productcode == prod_code,
+                            stock.c.dcinvtnflag == flag
                         )
                     )
                 )
@@ -86,7 +87,7 @@ def recalculateStock(con, data, data_type):
                 # )
                 if stock_row.rowcount > 0:
                     stock_data = stock_row.fetchone()
-                    # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"]))
+                    # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"])+ ", pqty = "+str(prod_qty))
                     if float(stock_data["qty"]) != prod_qty:
                         con.execute(
                             stock.update()
@@ -133,7 +134,8 @@ class api_dev(object):
         """
         try:
             self.con = eng.connect()
-
+            
+            # Rectify all invoice
             invoices = self.con.execute(
                 select(
                     [
@@ -144,8 +146,9 @@ class api_dev(object):
                     ]
                 )
             ).fetchall()
-            recalculateStock(self.con, invoices, "inv")
+            recalculateStock(self.con, invoices, "inv", 9)
 
+            # Rectify all Delivery Notes
             delnotes = self.con.execute(
                 select(
                     [
@@ -156,7 +159,39 @@ class api_dev(object):
                     ]
                 )
             ).fetchall()
-            recalculateStock(self.con, delnotes, "dc")
+            recalculateStock(self.con, delnotes, "dc", 4)
+
+            # Rectify any remaining entries that are NaN
+            # stocks = self.con.execute(
+            #     select([stock.c.dcinvtnid, stock.c.dcinvtnflag, stock.c.orgcode]).where(
+            #         stock.c.qty == "NaN"
+            #     )
+            # ).fetchall()
+            # stock_map = {}
+            # for item in stocks:
+            #     if not item["dcinvtnflag"] in stock_map:
+            #         stock_map[item["dcinvtnflag"]] = []
+            #     if item["dcinvtnflag"] == 4:
+            #         delnote = self.con.execute(
+            #             select(
+            #                 [
+            #                     delchal.c.dcid,
+            #                     delchal.c.contents,
+            #                     delchal.c.freeqty,
+            #                     delchal.c.orgcode,
+            #                 ]
+            #             ).where(
+            #                 and_(
+            #                     delchal.c.dcid == item["dcinvtnid"],
+            #                     delchal.c.orgcode == item["orgcode"],
+            #                 )
+            #             )
+            #         ).fetchone()
+            #         stock_map[item["dcinvtnflag"]].append(delnote)
+            # for stock_flag in stock_map:
+            #     # print(stock_map[stock_flag])
+            #     stock_type = "inv" if stock_flag == 9 else "dc"
+            #     recalculateStock(self.con, stock_map[stock_flag], stock_type, stock_flag)
 
             # dcinvtnflag = 3 for invoice and 4 for delchal
             self.con.close()
