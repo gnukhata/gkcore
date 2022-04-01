@@ -1451,7 +1451,7 @@ class api_rollclose(object):
                     newProdCode = None
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
-                    stockData = godownwisestockonhandfun(self.con, orgCode, endDate, 'pg', oldProdCode, row["goid"])
+                    stockData = godownwisestockonhandfun(self.con, orgCode, oldstartDate, endDate, 'pg', oldProdCode, row["goid"])
                     stockBalance = 0
                     if len(stockData) and 'balance' in stockData[0] :
                         stockBalance = float(stockData[0]['balance'])

@@ -75,6 +75,7 @@ from sqlalchemy.sql.functions import func
 from time import strftime, strptime
 from natsort import natsorted
 from sqlalchemy.sql.expression import null
+import traceback  # for printing detailed exception logs
 
 """
 purpose:
@@ -2170,7 +2171,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                         "totalinwardqty": "%.2f" % float(totalinward),
                         "totaloutwardqty": "%.2f" % float(totaloutward),
                         "balance": "%.2f" % float(openingStock),
-                        "productcode": productCd
+                        "productcode": productCd,
                     }
                 )
                 srno = srno + 1
@@ -2182,7 +2183,7 @@ def stockonhandfun(orgcode, productCode, endDate):
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
-def godownwisestockonhandfun(con, orgcode, endDate, stocktype, productCode, godownCode):
+def godownwisestockonhandfun(con, orgcode, startDate, endDate, stocktype, productCode, godownCode):
     try:
         con = eng.connect()
         stockReport = []
@@ -2230,6 +2231,8 @@ def godownwisestockonhandfun(con, orgcode, endDate, stocktype, productCode, godo
             )
             ysRow = ysData.fetchone()
             yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
+            if not startDate:
+                startDate = yearStart
             totalinward = totalinward + float(gopeningStock)
             for finalRow in stockData:
                 if finalRow["dcinvtnflag"] == 4:
@@ -2533,6 +2536,7 @@ def godownwisestockonhandfun(con, orgcode, endDate, stocktype, productCode, godo
             return stockReport
             con.close()
     except:
+        # print(traceback.format_exc())
         con.close()
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
@@ -7452,6 +7456,14 @@ class api_reports(object):
                 self.con = eng.connect()
 
                 orgcode = authDetails["orgcode"]
+
+                startDate = ""
+
+                if "startdate" in self.request.params:
+                    startDate = datetime.strptime(
+                        str(self.request.params["startdate"]), "%Y-%m-%d"
+                    )
+
                 endDate = datetime.strptime(
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
@@ -7474,6 +7486,7 @@ class api_reports(object):
                         result = godownwisestockonhandfun(
                             self.con,
                             orgcode,
+                            startDate,
                             endDate,
                             stocktype,
                             productCode,
@@ -7540,13 +7553,24 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
+                #
                 self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
+                startDate = ""
+
+                if "startdate" in self.request.params:
+                    startDate = datetime.strptime(
+                        str(self.request.params["startdate"]), "%Y-%m-%d"
+                    )
                 endDate = datetime.strptime(
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
                 stocktype = self.request.params["type"]
-                productCode = self.request.params["productcode"] if "productcode" in self.request.params else ""
+                productCode = (
+                    self.request.params["productcode"]
+                    if "productcode" in self.request.params
+                    else ""
+                )
 
                 if stocktype in ["pg", "apg"]:
                     godownCode = self.request.params["goid"]
@@ -7568,7 +7592,7 @@ class api_reports(object):
                         pmap[prod["productcode"]] = prod["productdesc"]
 
                     # gpc - godown product code
-                    gpcrows = self.con.execute( 
+                    gpcrows = self.con.execute(
                         select([goprod.c.productcode]).where(
                             and_(
                                 goprod.c.goid == godownCode,
@@ -7582,23 +7606,25 @@ class api_reports(object):
                         temp = godownwisestockonhandfun(
                             self.con,
                             orgcode,
+                            startDate,
                             endDate,
                             "pg",
                             pcode,
                             godownCode,
                         )
-                        if(len(temp)):
-                            temp[0]["srno"] = len(result)+1
+                        if len(temp):
+                            temp[0]["srno"] = len(result) + 1
                             temp[0]["productcode"] = pcode
                             temp[0]["productname"] = pmap[pcode]
                             result.append(temp[0])
                 else:
                     result = godownwisestockonhandfun(
-                        self.con, orgcode, endDate, stocktype, productCode, godownCode
+                        self.con, orgcode, startDate, endDate, stocktype, productCode, godownCode
                     )
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
             except Exception as e:
-                print(e)
+                # print(traceback.format_exc())
+                # print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="type=categorywisestockonhand", renderer="json")
