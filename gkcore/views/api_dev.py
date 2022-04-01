@@ -77,7 +77,7 @@ def recalculateStock(con, data, data_type, flag):
                             stock.c.orgcode == orgcode,
                             stock.c.dcinvtnid == id,
                             stock.c.productcode == prod_code,
-                            stock.c.dcinvtnflag == flag
+                            stock.c.dcinvtnflag == flag,
                         )
                     )
                 )
@@ -134,7 +134,7 @@ class api_dev(object):
         """
         try:
             self.con = eng.connect()
-            
+
             # Rectify all invoice
             invoices = self.con.execute(
                 select(
@@ -144,9 +144,22 @@ class api_dev(object):
                         invoice.c.freeqty,
                         invoice.c.orgcode,
                     ]
-                )
+                ).where(invoice.c.icflag == 9)
             ).fetchall()
             recalculateStock(self.con, invoices, "inv", 9)
+
+            # Rectify all cash memos
+            invoices = self.con.execute(
+                select(
+                    [
+                        invoice.c.invid,
+                        invoice.c.contents,
+                        invoice.c.freeqty,
+                        invoice.c.orgcode,
+                    ]
+                ).where(invoice.c.icflag == 3)
+            ).fetchall()
+            recalculateStock(self.con, invoices, "inv", 3)
 
             # Rectify all Delivery Notes
             delnotes = self.con.execute(
@@ -193,7 +206,7 @@ class api_dev(object):
             #     stock_type = "inv" if stock_flag == 9 else "dc"
             #     recalculateStock(self.con, stock_map[stock_flag], stock_type, stock_flag)
 
-            # dcinvtnflag = 3 for invoice and 4 for delchal
+            # dcinvtnflag = 3 for cash memo, 9 for invoice and 4 for delchal
             self.con.close()
             return {
                 "gkstatus": enumdict["Success"],
