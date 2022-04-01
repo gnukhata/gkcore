@@ -58,6 +58,7 @@ from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from gkcore.views.api_invoice import getStateCode
+
 # import traceback  # for printing detailed exception logs
 
 
@@ -208,9 +209,9 @@ create method for delchal resource.
                     items = delchaldata["contents"]
                     for key in list(items.keys()):
                         stockdata["productcode"] = key
-                        stockdata["qty"] = float(
-                            list(items[key].values())[0]
-                        ) + float(freeqty[key])
+                        stockdata["qty"] = float(list(items[key].values())[0]) + float(
+                            freeqty[key]
+                        )
                         result = self.con.execute(stock.insert(), [stockdata])
                     return {"gkstatus": enumdict["Success"]}
                 else:
@@ -311,7 +312,6 @@ create method for delchal resource.
                     existDcinv = exist_dcinv.fetchone()
                     if existDcinv["dccount"] > 0:
                         canceldelchal = 0
-                    
 
                     delchalgodown = self.con.execute(
                         select([stock.c.goid]).where(
@@ -350,7 +350,7 @@ create method for delchal resource.
                                 "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
                                 "attachmentcount": row["attachmentcount"],
                                 "goname": godownMap[delchalgoid]["goname"] or "",
-                                "canceldelchal": canceldelchal
+                                "canceldelchal": canceldelchal,
                             }
                         )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
@@ -1373,6 +1373,41 @@ create method for delchal resource.
             except:
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", request_param="type=dcid", renderer="json")
+    def getdelchalid(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                # invcount = self.con.execute(
+                #     "select count(invid) as icount from invoice where inoutflag=%d and orgcode = %d"
+                #     % (int(self.request.params["type"]), authDetails["orgcode"])
+                # )
+                dcstatus = int(self.request.params["status"])
+                dc_count = self.con.execute(
+                    select([func.count(delchal.c.dcid)])
+                    .where(
+                        and_(
+                            delchal.c.inoutflag == dcstatus,
+                            delchal.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                ).scalar()
+                print(dc_count)
+                # dcid = int(dc_count) + 1
+                dcid = int(dc_count) + 1
+                return {"gkstatus": 0, "dcid": dcid}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
