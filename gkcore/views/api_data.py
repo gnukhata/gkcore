@@ -26,7 +26,6 @@ Contributors:
 "Prajkta Patkar" <prajakta@dff.org.in>
 "Sai Karthik" <kskarthik@disroot.org>
 """
-
 from pyramid.view import view_config, view_defaults
 from pyramid.response import Response
 from pyramid.request import Request
@@ -34,12 +33,13 @@ from pyramid.request import Request
 from openpyxl import load_workbook
 from openpyxl import Workbook
 from openpyxl.styles import Font
-import requests, json, io
+import json, io
 from gkcore.models.meta import gk_api, dbconnect
 
 from sqlalchemy.engine.base import Connection
 from gkcore import eng, enumdict
 from gkcore.views.api_user import authCheck, getUserRole
+import xml.etree.ElementTree as ET
 
 # import datetime
 
@@ -64,8 +64,8 @@ class api_data(object):
         self.conn = Connection
         print("Data Module Loaded")
 
-    @view_config(request_param="import-tally", request_method="GET", renderer="json")
-    def tally_import(request):
+    @view_config(request_param="import-tally", request_method="POST", renderer="json")
+    def import_tally(self):
         """
          This function will take a spreadsheet containing data from tally or GNUKhata
          Then the code will read the file using parsing library (openpyxl).
@@ -102,8 +102,8 @@ class api_data(object):
         # First we will get list of existing groups and subgroups for this organisation.
         # we will of course lead the workbook from the request.
         try:
-            header = {"gktoken": request.headers["gktoken"]}
-            xlsxfile = request.POST["xlsxfile"].file
+            header = {"gktoken": self.request.headers["gktoken"]}
+            xlsxfile = self.request.POST["gkfile"].file
             wbTally = load_workbook(xlsxfile)
             wbTally._active_sheet_index = 0
             accountSheet = wbTally.active
@@ -126,31 +126,33 @@ class api_data(object):
                     if accRow[0].value in groups:
                         curgrpid = groups[accRow[0].value.strip()]
                     else:
-                        newsub = requests.post(
-                            "http://127.0.0.1:6543/groupsubgroups",
-                            data=json.dumps(
-                                {
-                                    "groupname": accRow[0].value,
-                                    "subgroupof": parentgroupid,
-                                }
-                            ),
-                            headers=header,
+                        newsub = gk_api(
+                            method="POST",
+                            url="/groupsubgroups",
+                            body={
+                                "groupname": accRow[0].value,
+                                "subgroupof": parentgroupid,
+                            },
+                            header=header,
+                            request=self.request,
                         )
-                        curgrpid = newsub.json()["gkresult"]
+                        curgrpid = newsub["gkresult"]
+                        print(1, curgrpid)
                 if accRow[0].font.i:
                     if len(accRow) > 2:
                         if accRow[1].value == None and accRow[2].value == None:
-                            newacc = requests.post(
-                                "http://127.0.0.1:6543/accounts",
-                                data=json.dumps(
-                                    {
-                                        "accountname": accRow[0].value,
-                                        "groupcode": curgrpid,
-                                        "openingbal": 0.00,
-                                    }
-                                ),
-                                headers=header,
+                            newacc = gk_api(
+                                method="POST",
+                                url="/accounts",
+                                body={
+                                    "accountname": accRow[0].value,
+                                    "groupcode": curgrpid,
+                                    "openingbal": 0.00,
+                                },
+                                header=header,
+                                request=self.request,
                             )
+                            print(2, newacc)
                             continue
                         # checking if opening Balance is not in Debit column. i.e. column no. 2 (B).
                         # It means value is in credit column
@@ -165,17 +167,18 @@ class api_data(object):
                                 or parentgroup == "Miscellaneous Expenses(Asset)"
                             ):
                                 openingBl = float(-openingBl)
-                            newacc = requests.post(
-                                "http://127.0.0.1:6543/accounts",
-                                data=json.dumps(
-                                    {
-                                        "accountname": accRow[0].value,
-                                        "groupcode": curgrpid,
-                                        "openingbal": openingBl,
-                                    }
-                                ),
-                                headers=header,
+                            newacc = gk_api(
+                                method="POST",
+                                url="/accounts",
+                                body={
+                                    "accountname": accRow[0].value,
+                                    "groupcode": curgrpid,
+                                    "openingbal": openingBl,
+                                },
+                                header=header,
+                                request=self.request,
                             )
+                            print(3, newacc)
                             continue
                         # checking if opening Balance is not in Credit column. i.e. column no. 2 (A).
                         # It means value is in debit column
@@ -189,38 +192,40 @@ class api_data(object):
                                 or parentgroup == "Reserves"
                             ):
                                 openingBl = float(-openingBl)
-                            newacc = requests.post(
-                                "http://127.0.0.1:6543/accounts",
-                                data=json.dumps(
-                                    {
-                                        "accountname": accRow[0].value,
-                                        "groupcode": curgrpid,
-                                        "openingbal": openingBl,
-                                    }
-                                ),
-                                headers=header,
+                            newacc = gk_api(
+                                method="POST",
+                                url="/accounts",
+                                body={
+                                    "accountname": accRow[0].value,
+                                    "groupcode": curgrpid,
+                                    "openingbal": openingBl,
+                                },
+                                header=header,
+                                request=self.request,
                             )
+                            print(4, newacc)
                             continue
 
                     if len(accRow) == 2:
-                        newsub = requests.post(
-                            "http://127.0.0.1:6543/accounts",
-                            data=json.dumps(
-                                {
-                                    "accountname": accRow[0].value,
-                                    "groupcode": curgrpid,
-                                    "openingbal": accRow[1].value,
-                                }
-                            ),
-                            headers=header,
+
+                        newsub = gk_api(
+                            method="POST",
+                            url="/accounts",
+                            body={
+                                "accountname": accRow[0].value,
+                                "groupcode": curgrpid,
+                                "openingbal": accRow[1].value,
+                            },
+                            header=header,
+                            request=self.request,
                         )
+                        print(5, newsub)
 
             # the dictionary thus returned will have
             # accountname as key and accountcode as value.
-            acclist = requests.get(
-                "http://127.0.0.1:6543/accounts?acclist", headers=header
-            )
-            accounts = acclist.json()["gkresult"]
+            acclist = gk_api("/accounts?acclist", header, self.request)
+            print("l ", acclist)
+            accounts = acclist["gkresult"]
             Wsheets = wbTally.worksheets
             # When data is imported from GNUKhata exported file
             if Wsheets[1].title == "Vouchers List":
@@ -266,11 +271,14 @@ class api_data(object):
                         "crs": crs,
                         "narration": gVch[7].value,
                     }
-                    gNewvch = requests.post(
-                        "http://127.0.0.1:6543/transaction",
-                        data=json.dumps(result),
-                        headers=header,
+                    gNewvch = gk_api(
+                        method="POST",
+                        url="/transaction",
+                        body=result,
+                        header=header,
+                        request=self.request,
                     )
+                    print(6, gNewvch)
                 return {"gkstatus": 0}
 
             else:
@@ -317,14 +325,71 @@ class api_data(object):
                             "crs": crs,
                             "narration": narrations,
                         }
-                        gNewvch = requests.post(
-                            "http://127.0.0.1:6543/transaction",
-                            data=json.dumps(result),
-                            headers=header,
+                        gNewvch = gk_api(
+                            method="POST",
+                            url="/transaction",
+                            body=result,
+                            header=header,
+                            request=self.request,
                         )
+                        print(7, gNewvch)
                 return {"gkstatus": 0}
-        except:
-            print("file not found")
+        except Exception as e:
+            print(e)
+            return {"gkstatus": 3}
+
+    @view_config(request_param="import-json", request_method="POST", renderer="json")
+    def import_json(self):
+        """Import org data from GNUKhata's json format"""
+        try:
+            header = {"gktoken": self.request.headers["gktoken"]}
+            f = self.request.POST["gkfile"].file
+            org = json.load(f)
+
+            # customers / suppliers
+            print("\n 🤝 importing customers/suppliers ...")
+            for i in org["customerandsupplier"]:
+                # remove foreign key
+                i.pop("custid")
+
+                response = gk_api(
+                    method="POST",
+                    url="/customersupplier",
+                    body=i,
+                    header=header,
+                    request=self.request,
+                )
+                print(i["custname"], response)
+            # Godowns
+            print("\n 📦 Importing Godowns ...")
+            for i in org["godown"]:
+
+                i.pop("goid")
+                response = gk_api(
+                    method="POST",
+                    url="/godown",
+                    body=i,
+                    header=header,
+                    request=self.request,
+                )
+                print(i["goname"], response)
+
+            # Invoice
+            print("\n 📦 Importing Invoicebin ...")
+            for i in org["invoicebin"]:
+                i.pop("goid")
+                response = gk_api(
+                    method="POST",
+                    url="/godown",
+                    body=i,
+                    header=header,
+                    request=self.request,
+                )
+                print(i["goname"], response)
+
+            return {"gkstatus": 0}
+        except Exception as e:
+            print(e)
             return {"gkstatus": 3}
 
     @view_config(request_param="export", request_method="GET", renderer="json")
@@ -525,6 +590,15 @@ class api_data(object):
             export_file,
             headerlist=list(headerList.items()),
         )
+
+    @view_config(
+        request_param="import-tally-xml", request_method="POST", renderer="json"
+    )
+    def import_tally_xml(self):
+        with open("/home/kar/Downloads/Master.xml", "r", encoding="utf-8") as f:
+            file = ET.parse(f)
+            print(file)
+            return 0
 
 
 def get_table_array(name: str, orgcode: int):
