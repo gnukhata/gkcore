@@ -26,8 +26,14 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
-from gkcore.models.gkdb import stock, invoice, delchal
+from gkcore.models.gkdb import (
+    stock,
+    invoice,
+    delchal,
+    organisation,
+    product,
+    customerandsupplier,
+)
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -37,6 +43,11 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
+
+from gkcore.views.api_login import authCheck
+from gkcore.views.api_transaction import getInvVouchers
+from gkcore.views.api_invoice import getDefaultAcc
+
 import traceback  # for printing detailed exception logs
 
 """
@@ -48,73 +59,179 @@ And hence must be commented out in __init__.py file outside this folder during p
 
 
 def recalculateStock(con, data, data_type, flag):
-    id_key = data_type + "id"
-    for item in data:
-        id = item[id_key]
-        orgcode = item["orgcode"]
-        new_fqty = {}
-        for prod_code in item["contents"]:
-            if prod_code and prod_code != "undefined":
-                # print("================")
-                p_qty = (
-                    float(
-                        item["contents"][prod_code][
-                            list(item["contents"][prod_code].keys())[0]
-                        ]
+    try:
+        id_key = data_type + "id"
+        for item in data:
+            id = item[id_key]
+            orgcode = item["orgcode"]
+            new_fqty = {}
+            for prod_code in item["contents"]:
+                if prod_code and prod_code != "undefined":
+                    # print("================")
+                    p_qty = (
+                        float(
+                            item["contents"][prod_code][
+                                list(item["contents"][prod_code].keys())[0]
+                            ]
+                        )
+                        or 0
                     )
-                    or 0
-                )
-                p_fqty = float(item["freeqty"][prod_code])
+                    p_fqty = float(item["freeqty"][prod_code])
 
-                if p_fqty != p_fqty:
-                    new_fqty[prod_code] = 0
-                    p_fqty = 0
+                    if p_fqty != p_fqty:
+                        new_fqty[prod_code] = 0
+                        p_fqty = 0
 
-                prod_qty = p_qty + p_fqty
-                stock_row = con.execute(
-                    select([stock.c.stockid, stock.c.qty]).where(
+                    prod_qty = p_qty + p_fqty
+                    stock_row = con.execute(
+                        select([stock.c.stockid, stock.c.qty]).where(
+                            and_(
+                                stock.c.orgcode == orgcode,
+                                stock.c.dcinvtnid == id,
+                                stock.c.productcode == prod_code,
+                                stock.c.dcinvtnflag == flag,
+                            )
+                        )
+                    )
+                    # print(
+                    #     "stock.c.orgcode == %s; stock.c.dcinvtnid == %s; stock.c.productcode == %s; stock.c.dcinvtnflag == 3"
+                    #     % (orgcode, invid, prod_code)
+                    # )
+                    if stock_row.rowcount > 0:
+                        stock_data = stock_row.fetchone()
+                        # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"])+ ", pqty = "+str(prod_qty))
+                        if float(stock_data["qty"]) != prod_qty:
+                            con.execute(
+                                stock.update()
+                                .where(stock.c.stockid == stock_data["stockid"])
+                                .values(qty=prod_qty)
+                            )
+                            # print(
+                            #     "stockid = %s;  bad qty = %s;  good qty = %s"
+                            #     % (
+                            #         str(stock_data["stockid"]),
+                            #         str(stock_data["qty"]),
+                            #         str(prod_qty),
+                            #     )
+                            # )
+            if len(new_fqty):
+                if data_type == "inv":
+                    con.execute(
+                        invoice.update()
+                        .where(invoice.c.invid == item[id_key])
+                        .values(freeqty=new_fqty)
+                    )
+                elif data_type == "dc":
+                    con.execute(
+                        delchal.update()
+                        .where(delchal.c.dcid == item[id_key])
+                        .values(freeqty=new_fqty)
+                    )
+    except:
+        print(traceback.format_exc())
+
+
+def recalculateVoucher(con, orgcode, invid, maflag):
+    try:
+        inv_data = con.execute(
+            select([invoice]).where(
+                and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)
+            )
+        ).fetchone()
+        vouchers = getInvVouchers(con, orgcode, invid)
+        voucherData = {}
+        if len(vouchers) > 0:
+            # recalculate vouchers
+            print("%s Has Voucher" % (str(invid)))
+        else:
+            # create vouchers
+            avData = {
+                "totaltaxable": 0,
+                "product": {},
+                "prodData": {},
+                "taxpayment": 0,
+                "avtax": {
+                    "GSTName": "CGST"
+                    if inv_data["taxstate"] == inv_data["sourcestate"]
+                    else "IGST",
+                    "CESSName": "CESS",
+                },
+            }
+            for pid in inv_data["contents"]:
+                prod_row = con.execute(
+                    select([product.c.productdesc]).where(
+                        and_(product.c.productcode == pid, product.c.orgcode == orgcode)
+                    )
+                ).fetchone()
+                pname = prod_row["productdesc"]
+                price = float(list(inv_data["contents"][pid].keys())[0]) or 0
+                qty = float(list(inv_data["contents"][pid].values())[0]) or 0
+                discount = float(inv_data["discount"][pid]) or 0
+                fqty = float(inv_data["freeqty"][pid]) or 0
+                taxable = (price * (qty - fqty)) - discount
+                avData["totaltaxable"] += taxable
+                avData["prodData"][pid] = taxable
+                avData["product"][pname] = taxable
+            avData["taxpayment"] = avData["totaltaxable"]
+
+            queryParams = {
+                "invtype": inv_data["inoutflag"],
+                "pmtmode": inv_data["paymentmode"],
+                "taxType": inv_data["taxflag"],
+                "destinationstate": inv_data["taxstate"],
+                "totaltaxablevalue": avData["totaltaxable"],
+                "maflag": maflag,
+                "totalAmount": (inv_data["invoicetotal"]),
+                "invoicedate": inv_data["invoicedate"],
+                "invid": invid,
+                "invoiceno": inv_data["invoiceno"],
+                "taxes": inv_data["tax"],
+                "cess": inv_data["cess"],
+                "products": avData["product"],
+                "prodData": avData["prodData"],
+                "csname": ""
+            }
+
+            if inv_data["custid"]:
+                csName = con.execute(
+                    select([customerandsupplier.c.custname]).where(
                         and_(
-                            stock.c.orgcode == orgcode,
-                            stock.c.dcinvtnid == id,
-                            stock.c.productcode == prod_code,
-                            stock.c.dcinvtnflag == flag,
+                            customerandsupplier.c.orgcode == orgcode,
+                            customerandsupplier.c.custid == int(inv_data["custid"]),
                         )
                     )
+                ).fetchone()
+                queryParams["csname"] = csName["custname"]
+            
+            # when invoice total is rounded off
+            if inv_data["roundoffflag"] == 1:
+                roundOffAmount = float(inv_data["invoicetotal"]) - round(
+                    float(inv_data["invoicetotal"])
                 )
-                # print(
-                #     "stock.c.orgcode == %s; stock.c.dcinvtnid == %s; stock.c.productcode == %s; stock.c.dcinvtnflag == 3"
-                #     % (orgcode, invid, prod_code)
-                # )
-                if stock_row.rowcount > 0:
-                    stock_data = stock_row.fetchone()
-                    # print(id_key + ": " + str(id) + ", qty = " +str(stock_data["qty"])+ ", pqty = "+str(prod_qty))
-                    if float(stock_data["qty"]) != prod_qty:
-                        con.execute(
-                            stock.update()
-                            .where(stock.c.stockid == stock_data["stockid"])
-                            .values(qty=prod_qty)
-                        )
-                        # print(
-                        #     "stockid = %s;  bad qty = %s;  good qty = %s"
-                        #     % (
-                        #         str(stock_data["stockid"]),
-                        #         str(stock_data["qty"]),
-                        #         str(prod_qty),
-                        #     )
-                        # )
-        if len(new_fqty):
-            if data_type == "inv":
-                con.execute(
-                    invoice.update()
-                    .where(invoice.c.invid == item[id_key])
-                    .values(freeqty=new_fqty)
-                )
-            elif data_type == "dc":
-                con.execute(
-                    delchal.update()
-                    .where(delchal.c.dcid == item[id_key])
-                    .values(freeqty=new_fqty)
-                )
+                if float(roundOffAmount) != 0.00:
+                    queryParams["roundoffamt"] = float(roundOffAmount)
+
+            if int(inv_data["taxflag"]) == 7:
+                queryParams["gstname"] = avData["avtax"]["GSTName"]
+                queryParams["cessname"] = avData["avtax"]["CESSName"]
+
+            if int(inv_data["taxflag"]) == 22:
+                queryParams["taxpayment"] = avData["taxpayment"]
+
+            # call getDefaultAcc
+            av_Result = getDefaultAcc(con, queryParams, orgcode)
+
+            if av_Result["gkstatus"] == 0:
+                voucherData["status"] = 0
+                voucherData["vchno"] = av_Result["vchNo"]
+                voucherData["vchid"] = av_Result["vid"]
+            else:
+                voucherData["status"] = 1
+
+        return voucherData
+    except:
+        print(traceback.format_exc())
+        return {}
 
 
 @view_defaults(route_name="dev")
@@ -211,6 +328,54 @@ class api_dev(object):
             return {
                 "gkstatus": enumdict["Success"],
             }
+        except Exception:
+            print(traceback.format_exc())
+            self.con.close()
+            return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="GET", request_param="task=voucher_rectify", renderer="json"
+    )
+    def rectifyVouchers(self):
+        """
+        This methods recalculates the vouchers, using the invoice data for a given orgcode.
+        """
+        try:
+            self.con = eng.connect()
+
+            orgcode = self.request.params["orgcode"]
+
+            # check automatic voucher flag  if it is 1 get maflag
+            avfl = self.con.execute(
+                select([organisation.c.avflag]).where(organisation.c.orgcode == orgcode)
+            )
+            av = avfl.fetchone()
+            if av["avflag"] == 1:
+                mafl = self.con.execute(
+                    select([organisation.c.maflag]).where(
+                        organisation.c.orgcode == orgcode
+                    )
+                ).fetchone()
+                maFlag = mafl["maflag"]
+
+                invlist = self.con.execute(
+                    select([invoice.c.invid]).where(invoice.c.orgcode == orgcode)
+                ).fetchall()
+
+                voucherData = {}
+                for inv in invlist:
+                    voucherData[inv["invid"]] = recalculateVoucher(
+                        self.con, orgcode, inv["invid"], maFlag
+                    )
+
+                self.con.close()
+                return {"gkstatus": enumdict["Success"], "gkresult": voucherData}
+            else:
+                self.con.close()
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                }
+
         except Exception:
             print(traceback.format_exc())
             self.con.close()
