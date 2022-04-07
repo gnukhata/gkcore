@@ -181,6 +181,90 @@ def deleteVoucherFun(vcode, orgcode):
     except:
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
+def getInvVouchers(con, orgcode, invid):
+    try:
+        vouchersData = con.execute(
+            select(
+                [
+                    vouchers.c.vouchercode,
+                    vouchers.c.attachmentcount,
+                    vouchers.c.vouchernumber,
+                    vouchers.c.voucherdate,
+                    vouchers.c.narration,
+                    vouchers.c.drs,
+                    vouchers.c.crs,
+                    vouchers.c.prjcrs,
+                    vouchers.c.prjdrs,
+                    vouchers.c.vouchertype,
+                    vouchers.c.lockflag,
+                    vouchers.c.delflag,
+                    vouchers.c.projectcode,
+                    vouchers.c.orgcode,
+                ]
+            )
+            .where(
+                and_(
+                    vouchers.c.orgcode == orgcode,
+                    vouchers.c.invid == invid,
+                    vouchers.c.delflag == False,
+                )
+            )
+            .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+        )
+        voucherRecords = []
+
+        for voucher in vouchersData:
+            rawDr = dict(voucher["drs"])
+            rawCr = dict(voucher["crs"])
+            finalDR = {}
+            finalCR = {}
+            tdr = 0.00
+            tcr = 0.00
+
+            for d in list(rawDr.keys()):
+                accname = con.execute(
+                    select([accounts.c.accountname]).where(
+                        accounts.c.accountcode == int(d)
+                    )
+                )
+                account = accname.fetchone()
+                finalDR[account["accountname"]] = rawDr[d]
+
+            for c in list(rawCr.keys()):
+                accname = con.execute(
+                    select([accounts.c.accountname]).where(
+                        accounts.c.accountcode == int(c)
+                    )
+                )
+                account = accname.fetchone()
+                finalCR[account["accountname"]] = rawCr[c]
+
+            if voucher["narration"] == "null":
+                voucher["narration"] = ""
+            voucherRecords.append(
+                {
+                    "invid": invid,
+                    "vouchercode": voucher["vouchercode"],
+                    "attachmentcount": voucher["attachmentcount"],
+                    "vouchernumber": voucher["vouchernumber"],
+                    "voucherdate": datetime.strftime(
+                        voucher["voucherdate"], "%d-%m-%Y"
+                    ),
+                    "narration": voucher["narration"],
+                    "drs": finalDR,
+                    "crs": finalCR,
+                    "prjdrs": voucher["prjdrs"],
+                    "prjcrs": voucher["prjcrs"],
+                    "vouchertype": voucher["vouchertype"],
+                    "delflag": voucher["delflag"],
+                    "orgcode": voucher["orgcode"],
+                    "status": voucher["lockflag"],
+                }
+            )
+        return voucherRecords
+    except:
+        return []
+
 
 @view_defaults(route_name="transaction")
 class api_transaction(object):
@@ -816,84 +900,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                vouchersData = self.con.execute(
-                    select(
-                        [
-                            vouchers.c.vouchercode,
-                            vouchers.c.attachmentcount,
-                            vouchers.c.vouchernumber,
-                            vouchers.c.voucherdate,
-                            vouchers.c.narration,
-                            vouchers.c.drs,
-                            vouchers.c.crs,
-                            vouchers.c.prjcrs,
-                            vouchers.c.prjdrs,
-                            vouchers.c.vouchertype,
-                            vouchers.c.lockflag,
-                            vouchers.c.delflag,
-                            vouchers.c.projectcode,
-                            vouchers.c.orgcode,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            vouchers.c.orgcode == authDetails["orgcode"],
-                            vouchers.c.invid == self.request.params["invid"],
-                            vouchers.c.delflag == False,
-                        )
-                    )
-                    .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
-                )
-                voucherRecords = []
-
-                for voucher in vouchersData:
-                    rawDr = dict(voucher["drs"])
-                    rawCr = dict(voucher["crs"])
-                    finalDR = {}
-                    finalCR = {}
-                    tdr = 0.00
-                    tcr = 0.00
-
-                    for d in list(rawDr.keys()):
-                        accname = self.con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(d)
-                            )
-                        )
-                        account = accname.fetchone()
-                        finalDR[account["accountname"]] = rawDr[d]
-
-                    for c in list(rawCr.keys()):
-                        accname = self.con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(c)
-                            )
-                        )
-                        account = accname.fetchone()
-                        finalCR[account["accountname"]] = rawCr[c]
-
-                    if voucher["narration"] == "null":
-                        voucher["narration"] = ""
-                    voucherRecords.append(
-                        {
-                            "invid": self.request.params["invid"],
-                            "vouchercode": voucher["vouchercode"],
-                            "attachmentcount": voucher["attachmentcount"],
-                            "vouchernumber": voucher["vouchernumber"],
-                            "voucherdate": datetime.strftime(
-                                voucher["voucherdate"], "%d-%m-%Y"
-                            ),
-                            "narration": voucher["narration"],
-                            "drs": finalDR,
-                            "crs": finalCR,
-                            "prjdrs": voucher["prjdrs"],
-                            "prjcrs": voucher["prjcrs"],
-                            "vouchertype": voucher["vouchertype"],
-                            "delflag": voucher["delflag"],
-                            "orgcode": voucher["orgcode"],
-                            "status": voucher["lockflag"],
-                        }
-                    )
+                voucherRecords = getInvVouchers(self.con, authDetails["orgcode"], self.request.params["invid"])
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
             except:
