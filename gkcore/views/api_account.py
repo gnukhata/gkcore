@@ -62,6 +62,31 @@ refer to the __init__.py of main gkcore package for details on routing url
 """
 
 
+def reset_acc_defaults(con, orgcode):
+    acc_list = con.execute(
+        select([accounts.c.accountcode, accounts.c.accountname]).where(
+            accounts.c.orgcode == orgcode
+        )
+    ).fetchall()
+    default_acc = {
+        "Bank A/C": 2,
+        "Cash in hand": 3,
+        "Purchase A/C": 16,
+        "Sale A/C": 19,
+        "Round Off Paid": 180,
+        "Round Off Received": 181,
+    }
+    for acc in acc_list:
+        default_code = 0
+        if acc["accountname"] in default_acc:
+            default_code = default_acc[acc["accountname"]]
+        con.execute(
+            accounts.update()
+            .where(accounts.c.accountcode == acc["accountcode"])
+            .values(defaultflag=default_code)
+        )
+
+
 @view_defaults(route_name="accounts")
 class api_account(object):
     # constructor will initialise request.
@@ -762,6 +787,30 @@ defaultflag '16' or '19' set to the '0'.
                     srno = srno + 1
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": accs}
+            except:
+                self.con.close()
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+
+    """
+    This function resets the defaultflag of all acounts to system default
+    """
+
+    @view_config(request_method="GET", renderer="json", request_param="type=reset_default_flags")
+    def reset_default_flags(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                reset_acc_defaults(self.con, self.request.params["orgcode"])
+                self.con.close()
+                return {"gkstatus": enumdict["Success"]}
             except:
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
