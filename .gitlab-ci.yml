@@ -13,11 +13,11 @@ services:
 
 stages:
   - build
-  - test
   - deploy
 
 # build gkcore
-build:
+setup:
+  stage: build
   script:
     - apt update && apt install -y build-essential libpq-dev
     - pip3 install -r requirements.txt
@@ -26,13 +26,16 @@ build:
     - pserve production.ini
 
 # run unit tests
-test:
+unit-tests:
+  stage: build
+  needs: ["setup"]
   script:
     - pip3 install requests
     - python3 gkcore/tests/public_apis.py
 
 # deploy devel branch to test server
 deploy:
+  stage: deploy
   script:
     - apt update && apt install -y curl
     - curl $TEST_SERVER_HOOK
