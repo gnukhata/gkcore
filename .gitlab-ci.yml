@@ -11,13 +11,13 @@ variables:
 services:
   - postgres:alpine
 
-# stages:
-#   - build
-#   - deploy
+stages:
+  - build
+  - deploy
 
 # build gkcore
-setup:
-  # stage: build
+build:
+  stage: build
   script:
     - apt update && apt install -y build-essential libpq-dev
     - pip3 install -r requirements.txt
@@ -26,19 +26,19 @@ setup:
     - pserve production.ini
 
 # run tests
-test:
-  # stage: build
+tests:
+  stage: build
   script:
     - pip3 install requests
     - python3 gkcore/tests/public_apis.py
   dependencies:
-    - setup
+    - build
 
 # deploy devel branch to test server
-deploy-devel:
-  # stage: deploy
+deploy:
+  stage: deploy
   dependencies:
-    - test
+    - tests
   script:
     - apt update && apt install -y curl
     - curl $TEST_SERVER_HOOK
