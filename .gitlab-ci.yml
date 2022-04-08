@@ -38,7 +38,7 @@ test:
 deploy-devel:
   # stage: deploy
   dependencies:
-    - tests
+    - test
   script:
     - apt update && apt install -y curl
     - curl $TEST_SERVER_HOOK
