@@ -16,7 +16,7 @@ stages:
   - deploy
 
 # build gkcore
-setup:
+gkcore_setup:
   stage: build
   script:
     - apt update && apt install -y build-essential libpq-dev
@@ -24,17 +24,19 @@ setup:
     - python3 setup.py develop
     - python3 initdb.py
     - pserve production.ini
-
-# run unit tests
-unit-tests:
-  stage: build
-  needs: ["setup"]
-  script:
-    - pip3 install requests
+    # run tests
     - python3 gkcore/tests/public_apis.py
 
-# deploy devel branch to test server
-deploy:
+# run unit tests
+# unit-tests:
+#   stage: build
+#   needs: ["setup"]
+#   script:
+#     - pip3 install requests
+#     - python3 gkcore/tests/public_apis.py
+
+# deploy devel branch changes to gkcore test server
+update_test_server:
   stage: deploy
   script:
     - apt update && apt install -y curl
