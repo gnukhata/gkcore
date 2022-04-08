@@ -49,7 +49,7 @@ import requests
 from base64 import b64decode, b64encode
 from json import dumps, loads
 
-# import traceback  # for printing detailed exception logs
+import traceback  # for printing detailed exception logs
 
 
 def taxable_value(inv, productcode, con, drcr=False):
@@ -77,7 +77,7 @@ def taxable_value(inv, productcode, con, drcr=False):
             taxable_value -= float(inv["discount"][productcode])
         return taxable_value
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return 0
 
 
@@ -96,7 +96,7 @@ def cess_amount(inv, productcode, con, drcr=False):
 
             return float(cess_amount)
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return 0
 
 
@@ -120,7 +120,7 @@ def normalise_state_code(statecode, gstin):
     Returns a normalised statecode that is available in the gstin object
     """
     if int(statecode) < 10:
-        if statecode not in gstin:
+        if gstin and statecode not in gstin:
             if ("0" + str(statecode)) in gstin:
                 statecode = "0" + str(statecode)
     return statecode
@@ -178,7 +178,7 @@ def b2b_r1(invoices, con):
                 else:
                     return False
             except:
-                # print(traceback.format_exc())
+                print(traceback.format_exc())
                 return False
 
         invs = list(filter(b2b_filter, invoices))
@@ -213,7 +213,7 @@ def b2b_r1(invoices, con):
 
         return {"status": 0, "data": b2b}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -228,18 +228,22 @@ def b2cl_r1(invoices, con):
     try:
 
         def b2cl_filter(inv):
-            ts_code = normalise_state_code(
-                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-            )
-
-            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
+            try:
+                ts_code = normalise_state_code(
+                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+                )
+                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
+                    return False
+                if inv["taxstate"] == inv["sourcestate"]:
+                    return False
+                if inv["invoicetotal"] > 250000:
+                    return True
                 return False
-            if inv["taxstate"] == inv["sourcestate"]:
+            except:
+                print(traceback.format_exc())
                 return False
-            if inv["invoicetotal"] > 250000:
-                return True
-            return False
 
+        # print("Invoice count = %d" % (len(invoices)))
         invs = list(filter(b2cl_filter, invoices))
 
         b2cl = []
@@ -266,7 +270,7 @@ def b2cl_r1(invoices, con):
 
         return {"status": 0, "data": b2cl}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -284,27 +288,34 @@ def b2cs_r1(invoices, con):
     try:
 
         def b2cs_filter(inv):
-            ts_code = normalise_state_code(
-                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-            )
-            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
+            try:
+                ts_code = normalise_state_code(
+                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
+                )
+                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
+                    return False
+                if inv["taxstate"] == inv["sourcestate"]:
+                    return True
+                if inv["invoicetotal"] <= 250000:
+                    return True
                 return False
-            if inv["taxstate"] == inv["sourcestate"]:
-                return True
-            if inv["invoicetotal"] <= 250000:
-                return True
-            return False
+            except:
+                print(traceback.format_exc())
+                return False
 
+       
         invs = list(filter(b2cs_filter, invoices))
 
         b2cs = []
         for inv in invs:
 
             ts_code = state_name_code(con, statename=inv["taxstate"])
-
+            if int(ts_code) < 10:
+                ts_code = "0"+str(ts_code)
             row = {}
+            row["invid"] = inv["invid"]
             row["type"] = "OE"
-            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["ecommerce_gstin"] = ""
 
@@ -315,17 +326,17 @@ def b2cs_r1(invoices, con):
                 cess = cess_amount(inv, prod, con)
                 prod_row["cess"] = cess_amount(inv, prod, con) if cess != "" else 0
 
-                for existing in b2cs:
-                    if (
-                        existing["place_of_supply"] == prod_row["place_of_supply"]
-                        and existing["rate"] == prod_row["rate"]
-                    ):
+                # for existing in b2cs:
+                #     if (
+                #         existing["place_of_supply"] == prod_row["place_of_supply"]
+                #         and existing["rate"] == prod_row["rate"]
+                #     ):
 
-                        existing["taxable_value"] += prod_row["taxable_value"]
-                        existing["cess"] += prod_row["cess"]
-                        break
-                else:
-                    b2cs.append(prod_row)
+                #         existing["taxable_value"] += prod_row["taxable_value"]
+                #         existing["cess"] += prod_row["cess"]
+                #         break
+                
+                b2cs.append(prod_row)
 
         for row in b2cs:
             row["taxable_value"] = "%.2f" % row["taxable_value"]
@@ -336,7 +347,7 @@ def b2cs_r1(invoices, con):
 
         return {"status": 0, "data": b2cs}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 
