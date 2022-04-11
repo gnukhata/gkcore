@@ -303,17 +303,18 @@ def b2cs_r1(invoices, con):
                 print(traceback.format_exc())
                 return False
 
-       
         invs = list(filter(b2cs_filter, invoices))
-
+        print("inv count = %d" % (len(invoices)))
         b2cs = []
         for inv in invs:
 
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if int(ts_code) < 10:
-                ts_code = "0"+str(ts_code)
+                ts_code = "0" + str(ts_code)
             row = {}
             row["invid"] = inv["invid"]
+            row["invoice_number"] = inv["invoiceno"]
+            row["icflag"] = inv["icflag"]
             row["type"] = "OE"
             row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
             row["applicable_tax_rate"] = ""
@@ -335,7 +336,7 @@ def b2cs_r1(invoices, con):
                 #         existing["taxable_value"] += prod_row["taxable_value"]
                 #         existing["cess"] += prod_row["cess"]
                 #         break
-                
+
                 b2cs.append(prod_row)
 
         for row in b2cs:
@@ -363,11 +364,13 @@ def cdnr_r1(drcr_all, con):
             ts_code = normalise_state_code(
                 state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
             )
+            # print("tscode = %s, gstin = %s" % (str(ts_code), inv["gstin"]))
             if inv["gstin"] and inv["gstin"].get(str(ts_code)):
                 return True
             else:
                 return False
 
+        # print("drcr notes = %d" % (len(drcr_all)))
         drcrs = list(filter(cdnr_filter, drcr_all))
 
         cdnr = []
@@ -376,8 +379,9 @@ def cdnr_r1(drcr_all, con):
             ts_code = normalise_state_code(
                 state_name_code(con, statename=note["taxstate"]), note["gstin"]
             )
-
+            # print(note.keys())
             row = {}
+            # print("Invoice id: %s"%(str(note["invid"])))
             row["gstin"] = note["gstin"][str(ts_code)]
             row["receiver"] = note["custname"]
             row["invid"] = note["invid"]
@@ -406,7 +410,7 @@ def cdnr_r1(drcr_all, con):
 
         return {"status": 0, "data": cdnr}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -421,6 +425,7 @@ def cdnur_r1(drcr_all, con):
 
         def cdnur_filter(drcr):
             ts_code = state_name_code(con, statename=drcr["taxstate"])
+            # print("Gstin = %s, tsCode = %s, taxstate = %s, sourcestate = %s, invoicetotal = %d"%(drcr["gstin"], ts_code, drcr["taxstate"], drcr["sourcestate"], drcr["invoicetotal"]))
             if drcr["gstin"] and drcr["gstin"].get(str(ts_code)):
                 return False
             if drcr["taxstate"] == drcr["sourcestate"]:
@@ -429,8 +434,10 @@ def cdnur_r1(drcr_all, con):
                 return False
             return True
 
+
         drcrs = list(filter(cdnur_filter, drcr_all))
 
+        # print("drcr notes = %d" % (len(drcrs)))
         for note in drcrs:
 
             ts_code = state_name_code(con, statename=note["taxstate"])
@@ -465,7 +472,7 @@ def cdnur_r1(drcr_all, con):
 
         return {"status": 0, "data": cdnur}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 
@@ -869,8 +876,34 @@ class GstReturn(object):
             end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
             orgcode = authDetails["orgcode"]
 
-            # invoices
-            query = select(
+            # All Sale Invoices
+            inv_all_query = select(
+                [invoice]
+            ).where(
+                and_(
+                    invoice.c.invoicedate.between(
+                        start_period.strftime("%Y-%m-%d"),
+                        end_period.strftime("%Y-%m-%d"),
+                    ),
+                    invoice.c.inoutflag == 15,
+                    invoice.c.taxflag == 7,
+                    invoice.c.orgcode == orgcode,
+                )
+            )
+            inv_all = self.con.execute(inv_all_query).fetchall()
+            invoices = []
+            inv_map = {}
+
+            counter = 0
+            for inv in inv_all:
+                invoices.append(dict(inv))
+                invoices[counter]["gstin"] = {}
+                invoices[counter]["custname"] = ""
+                inv_map[inv["invid"]] = counter
+                counter += 1
+            
+            # All sale invoices that have customers
+            cust_inv_query = select(
                 [invoice, customerandsupplier.c.gstin, customerandsupplier.c.custname]
             ).where(
                 and_(
@@ -884,11 +917,33 @@ class GstReturn(object):
                     invoice.c.custid == customerandsupplier.c.custid,
                 )
             )
-            invoices = self.con.execute(query).fetchall()
+            cust_invoices = self.con.execute(cust_inv_query).fetchall()
+            
+            for inv in cust_invoices:
+                id = inv["invid"]
+                index = inv_map[id]
+                invoices[index]["gstin"] = inv["gstin"]
+                invoices[index]["custname"] = inv["custname"]
+
 
             # debit/credit notes
             query1 = (
-                select([drcr, invoice, customerandsupplier])
+                select(
+                    [
+                        drcr,
+                        invoice.c.invoiceno,
+                        invoice.c.invoicedate,
+                        invoice.c.invoicetotal,
+                        invoice.c.taxstate,
+                        invoice.c.sourcestate,
+                        invoice.c.tax,
+                        invoice.c.cess,
+                        invoice.c.taxflag,
+                        invoice.c.contents,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custname,
+                    ]
+                )
                 .select_from(drcr.join(invoice).join(customerandsupplier))
                 .where(
                     and_(
@@ -918,7 +973,7 @@ class GstReturn(object):
             return {"gkstatus": enumdict["Success"], "gkdata": gkdata}
 
         except:
-            # print(traceback.format_exc())
+            print(traceback.format_exc())
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="type=r3b", renderer="json")
