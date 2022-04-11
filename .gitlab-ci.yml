@@ -1,8 +1,5 @@
-# TODO
-# - Fix tests
-# - Fix failing deploy job
 image: python:3.8-slim-buster
-include: "https://gitlab.com/gitlab-cd/ssh-template/raw/master/ssh.yml"
+# include: "https://gitlab.com/gitlab-cd/ssh-template/raw/master/ssh.yml"
 
 variables:
   POSTGRES_USER: "gkadmin"
@@ -10,40 +7,39 @@ variables:
   POSTGRES_DB: "gkdata"
   GKCORE_DB_URL: "postgres://gkadmin:gkadmin@postgres:5432/gkdata"
 
+# TODO add razorpay:ifsc image when related tests are added
 services:
   - postgres:alpine
 
 stages:
   - build
-  - test
-  # - deploy
+  - deploy
 
 # build gkcore
-gkcore-setup:
+gkcore_setup:
   stage: build
   script:
     - apt update && apt install -y build-essential libpq-dev
     - pip3 install -r requirements.txt
     - python3 setup.py develop
     - python3 initdb.py
+    - pserve production.ini
+    # run tests
+    - python3 gkcore/tests/public_apis.py
 
-# run tests
-gkcore-tests:
-  stage: test
-  script:
-    - pip3 install requests
-    - python3 tests.py
-# update the test server when devel branch is updated
-# update-test-server:
-#   stage: deploy
+# run unit tests
+# unit-tests:
+#   stage: build
+#   needs: ["setup"]
 #   script:
-#     - apt update && apt install -y ssh
-#     # - mkdir /root/.ssh
-#     # - echo $SSH_PRIV_KEY > /root/.ssh/id_ed25519
-#     # - eval $(ssh-agent -s)
-#     # - echo "$SSH_PRIV_KEY" | tr -d '\r' | ssh-add -
-#     # - chmod 600 /root/.ssh/id_ed25519
-#     # - ssh -T -o "StrictHostKeyChecking=no" $TEST_SERVER_ADDRESS /root/restart-gk.sh
-#     - ssh_run "root" $TEST_SERVER_ADDRESS $SSH_PRIVATE_KEY /root/restart-gk.sh
-#   only:
-#     - devel
+#     - pip3 install requests
+#     - python3 gkcore/tests/public_apis.py
+
+# deploy devel branch changes to gkcore test server
+update_test_server:
+  stage: deploy
+  script:
+    - apt update && apt install -y curl
+    - curl $TEST_SERVER_HOOK
+  only:
+    - devel
