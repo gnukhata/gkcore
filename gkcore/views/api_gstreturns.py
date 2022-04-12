@@ -679,7 +679,11 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
             "inward_zero_gst": [],
             "non_gst": [],
             "interest": [],
-            "pos_unreg_comp_uin_igst": {},
+            "pos_unreg_comp_uin_igst": {
+                "unreg": {},
+                "compos": {},
+                "uin": {}
+            },
         }
 
         pos_unreg_comp_uin_igst = (
@@ -748,7 +752,7 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                 pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
                                     "unreg_igst"
                                 ] += igst_amount
-                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
                                     inv_data["taxstatecode"]
                                 ].append(invoice)
                             else:
@@ -760,10 +764,10 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                     "uin_taxable_amt": 0,
                                     "uin_igst": 0,
                                 }  # TODO: Handle Composition & UIN holders
-                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
                                     inv_data["taxstatecode"]
                                 ] = []
-                                g3b_invs["pos_unreg_comp_uin_igst"][
+                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
                                     inv_data["taxstatecode"]
                                 ].append(invoice)
 
