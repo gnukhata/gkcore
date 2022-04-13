@@ -745,31 +745,34 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             outward_taxable_supplies["sgst"] += sgst_amount
                             outward_taxable_supplies["cess"] += cess_amount
                             g3b_invs["outward_taxable_supplies"].append(invoice)
-                            if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
-                                    "unreg_taxable_amt"
-                                ] += line_amount
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
-                                    "unreg_igst"
-                                ] += igst_amount
-                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
-                                    inv_data["taxstatecode"]
-                                ].append(invoice)
-                            else:
-                                pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
-                                    "unreg_taxable_amt": line_amount,
-                                    "unreg_igst": igst_amount,
-                                    "comp_taxable_amt": 0,
-                                    "comp_igst": 0,
-                                    "uin_taxable_amt": 0,
-                                    "uin_igst": 0,
-                                }  # TODO: Handle Composition & UIN holders
-                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
-                                    inv_data["taxstatecode"]
-                                ] = []
-                                g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
-                                    inv_data["taxstatecode"]
-                                ].append(invoice)
+                            
+                            # 3.2 Of the supplies shown in 3.1 (a) above, details of inter-State supplies made to unregisterd persons, composition taxable persons and UIN holders
+                            if inv_data["taxstatecode"] != inv_data["sourcestatecode"]:
+                                if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
+                                    pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
+                                        "unreg_taxable_amt"
+                                    ] += line_amount
+                                    pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
+                                        "unreg_igst"
+                                    ] += igst_amount
+                                    g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
+                                        inv_data["taxstatecode"]
+                                    ].append(invoice)
+                                else:
+                                    pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
+                                        "unreg_taxable_amt": line_amount,
+                                        "unreg_igst": igst_amount,
+                                        "comp_taxable_amt": 0,
+                                        "comp_igst": 0,
+                                        "uin_taxable_amt": 0,
+                                        "uin_igst": 0,
+                                    }  # TODO: Handle Composition & UIN holders
+                                    g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
+                                        inv_data["taxstatecode"]
+                                    ] = []
+                                    g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
+                                        inv_data["taxstatecode"]
+                                    ].append(invoice)
 
                         else:  # Tream them all as zero rated for now
                             outward_taxable_zero_rated["taxable_value"] += line_amount
