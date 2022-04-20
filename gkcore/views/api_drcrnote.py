@@ -339,7 +339,7 @@ class api_drcr(object):
                     if str(pc) != "quantities":
                         pcquantity = 0.00
                         if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                            pcquantity = idrateData["quantities"][pc]
+                            pcquantity = idrateData["quantities"][pc] if "quantities" in idrateData else 0
                         else:
                             pcquantity = float(
                                 contentsData[pc][list(contentsData[pc].keys())[0]]
@@ -476,6 +476,7 @@ class api_drcr(object):
                     drcrdata["badquality"] = 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
             except:
+                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
