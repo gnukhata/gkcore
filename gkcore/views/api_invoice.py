@@ -203,7 +203,19 @@ def getDefaultAcc(con, queryParams, orgcode):
         * Party creates voucher first between sale/purchase a/c and the party a/c, then between party a/c and mode of payment a/c.
         """
         # self.con = eng.connect()
-        taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
+        # taxRateDict = {0.1: 0.05, 0.25:  , 5: 2.5, 12: 6, 18: 9, 28: 14}
+        taxRateDict = {
+            1: 0.5,
+            3: 1.5,
+            5: 2.5,
+            12: 6,
+            18: 9,
+            28: 14,
+            0.1: 0.05,
+            0.25: 0.125,
+            1.5: 0.75,
+            7.5: 3.75,
+        }
         vouchers_List = []
         voucherDict = {}
         rd_VoucherDict = {}
@@ -480,8 +492,11 @@ def getDefaultAcc(con, queryParams, orgcode):
                         tx = float(taxRate) / 2
                         # this is the value which is going to Dr/Cr
                         taxVal = taxable * (tx / 100)
-                        inTaxrate = int(taxRate)
-                        taxHalf = taxRateDict[inTaxrate]
+                        isInt = ((taxRate * 10) % 10) == 0
+                        if isInt:
+                            taxRate = int(taxRate)
+                        taxHalf = taxRateDict[taxRate]
+                        
                         taxNameSGST = (
                             "SGST"
                             + invType[3]
