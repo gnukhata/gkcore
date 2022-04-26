@@ -1211,20 +1211,33 @@ class GstReturn(object):
         request_method="GET", request_param="type=gstin_captcha", renderer="json"
     )
     def getGstinCaptcha(self):
-        URL = "https://services.gst.gov.in/services/captcha"
-        req = requests.get(url=URL)
-        if req.status_code == 200:
-            cookieString = "Lang=en;"
-            for cookie in req.cookies:
-                cookieString += cookie.name + "=" + cookie.value + ";"
-            img = b64encode(req.content).decode("utf-8")
-            payload = {
-                "gkstatus": enumdict["Success"],
-                "gkresult": {
-                    "captcha": img,
-                    "cookie": cookieString,
-                },
+        req1 = requests.get("https://www.gst.gov.in/")
+        if req1.status_code == 200:
+            cookie1 = {}
+            for cookie in req1.cookies:
+                    cookie1[cookie.name] = cookie.value
+            URL = "https://services.gst.gov.in/services/captcha"
+            # print(req1.cookies)
+            headers = {
+                'User-Agent': 'GNUKhata_devel_0', # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
             }
+            req = requests.get(url=URL, cookies=cookie1, headers=headers)
+            if req.status_code == 200:
+                # print(req.content)
+                cookieString = "Lang=en;"
+                for cookie in req.cookies:
+                    cookieString += cookie.name + "=" + cookie.value + ";"
+                img = b64encode(req.content).decode("utf-8")
+                payload = {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": {
+                        "captcha": img,
+                        "cookie": cookieString,
+                    },
+                }
+            else:
+                print(req.status_code)
+                payload = {"gkstatus": enumdict["ConnectionFailed"]}
         else:
             print(req.status_code)
             payload = {"gkstatus": enumdict["ConnectionFailed"]}
@@ -1240,6 +1253,7 @@ class GstReturn(object):
             "Referer": "https://services.gst.gov.in/services/searchtp",
             "Cookie": dataset["cookie"],
             "Content-Type": "application/json",
+            'User-Agent': 'GNUKhata_devel_0',  # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
         }
         req = requests.post(url=URL, data=dumps(dataset["payload"]), headers=headers)
         if req.status_code == 200:
