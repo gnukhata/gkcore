@@ -18,10 +18,30 @@ Copyright (C) 2013, 2014, 2015, 2016 Digital Freedom Foundation
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 ```
 
-Contributors:
-"Krishnakant Mane" <kk@gmail.com>
+# Installation
 
-### Installation
+## Docker
+
+Requirements:
+
+- [docker-compose](https://docs.docker.com/compose/)
+- [virtualenv](https://pypi.org/project/virtualenv/)
+
+- Create a virtal environment named `gkenv`: `virtualenv gkenv`
+- `cd` into the cloned gkcore repository
+- activate the gkcore virtual environment
+- run `pip install -r requirements.txt` to install gkcore dependencies
+- set environment variable `export GKCORE_DB_URL="postgres://gkadmin:gkadmin@localhost:5432/gkdata"`
+- Run the command `docker-compose up -d` to start the containers on which gkcore depends
+- If you are running gkcore for the first time, run `python3 initdb.py` which initializes the database schema
+- For development purpose, run `pserve development.ini --reload`
+- For production, run `pserve production.ini`
+
+gkcore now can be accessed via `localhost:6543` from your web browser or at `0.0.0.0:6543` incase of production
+
+> The gkcore's data is stored under `gkdir` folder in the user's home directory.
+
+## Manual
 
 > Note: you have to press enter after completely typing every command.
 
@@ -81,10 +101,11 @@ Activate your virtualenv and then run initdb.py
 
 gkcore is now accessible at `http://localhost:6543`🎉
 
-### Credits
+# Credits
 
 - Razorpay: IFSC validation server is used as a docker service [source](https://github.com/razorpay/ifsc)
 - pgadmin: Helps visualizing gnukhata's database locally
+- GST Portal: For providing HSN/SAC codes spreadsheet
 
 <!--
 
