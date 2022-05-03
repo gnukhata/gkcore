@@ -113,6 +113,20 @@ def columnExists(tableName, columnName):
             return True
     return False
 
+def uniqueConstraintExists(tableName, constraints):
+    gkInspect = PGInspector(dbconnect())
+    cols = map(lambda x: x['column_names'], gkInspect.get_unique_constraints(tableName))
+    exists = True
+    col_names = list(cols)
+    for constraint in constraints:
+        if not constraint in col_names[0]:
+            exists = False
+            break
+        else:
+            print(constraint)
+    return exists
+            
+        
 
 def columnTypeMatches(tableName, columnName, columnType):
     gkInspect = PGInspector(dbconnect())

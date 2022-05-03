@@ -496,7 +496,7 @@ def getDefaultAcc(con, queryParams, orgcode):
                         if isInt:
                             taxRate = int(taxRate)
                         taxHalf = taxRateDict[taxRate]
-                        
+
                         taxNameSGST = (
                             "SGST"
                             + invType[3]
@@ -1513,6 +1513,36 @@ def getInvoiceList(con, orgcode, reqParams):
         return invoices
     except:
         return []
+
+
+"""
+Updates the Duplicate invoice numbers to be unique by prefixing them with a counter, i.e. counter-inv_no
+"""
+
+
+def rename_inv_no_uniquely(con, orgcode):
+    try:
+        invoice_list = con.execute(
+            select([invoice.c.invid, invoice.c.invoiceno]).where(invoice.c.orgcode == orgcode)
+        ).fetchall()
+        if len(invoice_list) > 1:
+            invoice_map = {}
+            for inv in invoice_list:
+                no = inv["invoiceno"]
+                if no in invoice_map:
+                    invoice_map[no] += 1
+                    new_no = str(invoice_map[no]) + "-" + str(no)
+                    con.execute(
+                        invoice.update()
+                        .where(invoice.c.invid == inv["invid"])
+                        .values(invoiceno=new_no)
+                    )
+                else:
+                    invoice_map[no] = 0
+        return 1
+    except:
+        print(traceback.format_exc())
+        return 0
 
 
 @view_defaults(route_name="invoice")

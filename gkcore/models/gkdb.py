@@ -502,7 +502,7 @@ invoice = Table(
     Column("pincode", UnicodeText),
     Column("inoutflag", Integer),
     Column("invoicetotalword", UnicodeText),
-    UniqueConstraint("orgcode", "invoiceno", "custid", "icflag"),
+    UniqueConstraint("orgcode", "invoiceno", name="invoice_orgcode_invoiceno_key"),
     Index("invoice_orgcodeindex", "orgcode"),
     Index("invoice_invoicenoindex", "invoiceno"),
 )

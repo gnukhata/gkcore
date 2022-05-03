@@ -51,9 +51,12 @@ from gkcore.models.meta import (
     columnTypeMatches,
     tableExists,
     getOnDelete,
+    uniqueConstraintExists,
 )
+from gkcore.views.api_invoice import rename_inv_no_uniquely
 from datetime import datetime, timedelta
 import os
+import traceback
 
 con = Connection
 
@@ -1596,9 +1599,26 @@ class api_organisation(object):
                 self.con.execute("alter table invoice add supinvno text")
             if not columnExists("invoice", "supinvdate"):
                 self.con.execute("alter table invoice add supinvdate date")
+
+            if uniqueConstraintExists("invoice", ["orgcode","invoiceno","custid","icflag"]):
+                print("Invoice Unique Constraint Update")
+                # rename invoice numbers that will violate the new constraint
+                orgs = self.con.execute(select([gkdb.organisation.c.orgcode])).fetchall()
+                rename_success = True
+                for org in orgs:
+                    if not rename_inv_no_uniquely(self.con, org["orgcode"]):
+                        rename_success = False
+                # drop the old constraint
+                if(rename_success):
+                    self.con.execute("ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_custid_icflag_key")
+                    self.con.execute("ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_key")
+                    self.con.execute("ALTER TABLE invoice ADD CONSTRAINT invoice_orgcode_invoiceno_key UNIQUE(orgcode, invoiceno)")
+            else:
+                print("Unique constraint failure")
                 
-        except Exception as e:
-            print(e)
+        except:
+            print(traceback.format_exc())
+            # print(e)
             return 0
         finally:
             self.con.close()
