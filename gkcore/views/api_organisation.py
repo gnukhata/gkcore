@@ -234,6 +234,9 @@ class api_organisation(object):
                         )
                     dictofuqc.pop(unit, 0)
 
+            if not columnExists("unitofmeasurement", "uqc"):
+                self.con.execute("alter table unitofmeasurement add uqc integer")
+
             # discount flag is use to check whether discount is in percent or in amount.
             # 1 = discount in amount, 16 = discount in percent.
             if not columnExists("delchal", "discflag"):
@@ -347,9 +350,13 @@ class api_organisation(object):
             if not columnExists("customerandsupplier", "pincode"):
                 self.con.execute("alter table customerandsupplier add pincode text")
             if not columnExists("customerandsupplier", "gst_reg_type"):
-                self.con.execute("alter table customerandsupplier add gst_reg_type integer")
+                self.con.execute(
+                    "alter table customerandsupplier add gst_reg_type integer"
+                )
             if not columnExists("customerandsupplier", "gst_party_type"):
-                self.con.execute("alter table customerandsupplier add gst_party_type integer")    
+                self.con.execute(
+                    "alter table customerandsupplier add gst_party_type integer"
+                )
             # Below query is to remove gbflag if it exists.
             if columnExists("godown", "gbflag"):
                 self.con.execute("alter table godown drop column gbflag")
@@ -1570,18 +1577,24 @@ class api_organisation(object):
                 )
             if not tableExists("tax2"):
                 self.con.execute(
-                    "create table if not exists tax2( taxid serial, taxname text NOT NULL, taxrate numeric(5,2) NOT NULL, taxfromdate date NOT NULL, state text, productcode integer, categorycode integer, orgcode integer NOT NULL, primary key (taxid),foreign key (productcode) references product(productcode) ON DELETE CASCADE,foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, foreign key (categorycode) references categorysubcategories(categorycode) ON DELETE CASCADE, unique(taxname, state, taxrate, taxfromdate, productcode, orgcode))")
-                orgs = self.con.execute("select orgcode, yearstart, yearend from organisation").fetchall()
+                    "create table if not exists tax2( taxid serial, taxname text NOT NULL, taxrate numeric(5,2) NOT NULL, taxfromdate date NOT NULL, state text, productcode integer, categorycode integer, orgcode integer NOT NULL, primary key (taxid),foreign key (productcode) references product(productcode) ON DELETE CASCADE,foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, foreign key (categorycode) references categorysubcategories(categorycode) ON DELETE CASCADE, unique(taxname, state, taxrate, taxfromdate, productcode, orgcode))"
+                )
+                orgs = self.con.execute(
+                    "select orgcode, yearstart, yearend from organisation"
+                ).fetchall()
                 dates = {}
                 for org in orgs:
-                    dates[org["orgcode"]] = {"from": org["yearstart"], "to": org["yearend"]}
-                
+                    dates[org["orgcode"]] = {
+                        "from": org["yearstart"],
+                        "to": org["yearend"],
+                    }
+
                 taxes = self.con.execute("select * from tax").fetchall()
                 for tax in taxes:
                     from_date = dates[tax["orgcode"]]["from"]
                     to_date = dates[tax["orgcode"]]["to"]
                     self.con.execute(
-                        "insert into tax2(taxname, taxrate, taxfromdate, state, productcode, categorycode, orgcode)values('%s', %0.2f, '%s', '%s', %s, %s, %s)" 
+                        "insert into tax2(taxname, taxrate, taxfromdate, state, productcode, categorycode, orgcode)values('%s', %0.2f, '%s', '%s', %s, %s, %s)"
                         % (
                             str(tax["taxname"]),
                             float(tax["taxrate"]),
@@ -1589,33 +1602,45 @@ class api_organisation(object):
                             str(tax["state"] or ""),
                             str(tax["productcode"] or "null"),
                             str(tax["categorycode"] or "null"),
-                            str(tax["orgcode"])
-                        ) 
+                            str(tax["orgcode"]),
+                        )
                     )
             else:
                 if not columnTypeMatches("tax2", "taxfromdate", DATE):
-                    self.con.execute("alter table tax2 alter column taxfromdate type date")
+                    self.con.execute(
+                        "alter table tax2 alter column taxfromdate type date"
+                    )
             if not columnExists("invoice", "supinvno"):
                 self.con.execute("alter table invoice add supinvno text")
             if not columnExists("invoice", "supinvdate"):
                 self.con.execute("alter table invoice add supinvdate date")
 
-            if uniqueConstraintExists("invoice", ["orgcode","invoiceno","custid","icflag"]):
+            if uniqueConstraintExists(
+                "invoice", ["orgcode", "invoiceno", "custid", "icflag"]
+            ):
                 print("Invoice Unique Constraint Update")
                 # rename invoice numbers that will violate the new constraint
-                orgs = self.con.execute(select([gkdb.organisation.c.orgcode])).fetchall()
+                orgs = self.con.execute(
+                    select([gkdb.organisation.c.orgcode])
+                ).fetchall()
                 rename_success = True
                 for org in orgs:
                     if not rename_inv_no_uniquely(self.con, org["orgcode"]):
                         rename_success = False
                 # drop the old constraint
-                if(rename_success):
-                    self.con.execute("ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_custid_icflag_key")
-                    self.con.execute("ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_key")
-                    self.con.execute("ALTER TABLE invoice ADD CONSTRAINT invoice_orgcode_invoiceno_key UNIQUE(orgcode, invoiceno)")
+                if rename_success:
+                    self.con.execute(
+                        "ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_custid_icflag_key"
+                    )
+                    self.con.execute(
+                        "ALTER TABLE invoice DROP CONSTRAINT IF EXISTS invoice_orgcode_invoiceno_key"
+                    )
+                    self.con.execute(
+                        "ALTER TABLE invoice ADD CONSTRAINT invoice_orgcode_invoiceno_key UNIQUE(orgcode, invoiceno)"
+                    )
             else:
                 print("Unique constraint failure")
-                
+
         except:
             print(traceback.format_exc())
             # print(e)

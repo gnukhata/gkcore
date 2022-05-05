@@ -210,7 +210,10 @@ categoryspecs = Table(
 """
 This table is for unit of measurement for products.
 The unit of measurement has units, conversion rates and its resulting unit.
-sysunit state that unit is system generated or not. for system generated units sysunit is 1 and user created units sysunit is 0.  
+sysunit state that unit is system generated or not. for system generated units sysunit is 1 and user created units sysunit is 0. 
+subunitof - to create parent-child relationship
+uqc - to map appropriate GST valid uqc
+
 """
 unitofmeasurement = Table(
     "unitofmeasurement",
@@ -220,6 +223,7 @@ unitofmeasurement = Table(
     Column("description", UnicodeText),
     Column("conversionrate", Numeric(13, 2), default=0.00),
     Column("subunitof", Integer),
+    Column("uqc", Integer),
     Column("frequency", Integer),
     Column("sysunit", Integer, default=0),
     UniqueConstraint("unitname"),

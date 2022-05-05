@@ -99,6 +99,7 @@ class api_unitOfMeasurement(object):
                     "subunitof": row["subunitof"],
                     "description": row["description"],
                     "sysunit": row["sysunit"],
+                    "uqc": row["uqc"],
                 }
                 countresult = self.con.execute(
                     select([func.count(gkdb.product.c.uomid).label("subcount")]).where(
@@ -165,6 +166,7 @@ class api_unitOfMeasurement(object):
                             gkdb.unitofmeasurement.c.description,
                             gkdb.unitofmeasurement.c.subunitof,
                             gkdb.unitofmeasurement.c.sysunit,
+                            gkdb.unitofmeasurement.c.uqc,
                         ]
                     ).order_by(gkdb.unitofmeasurement.c.unitname)
                 )
@@ -177,6 +179,7 @@ class api_unitOfMeasurement(object):
                             "description": row["description"],
                             "subunitof": row["subunitof"],
                             "sysunit": row["sysunit"],
+                            "uqc": row["uqc"],
                         }
                     )
                 return {
