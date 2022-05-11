@@ -928,6 +928,9 @@ def getInvoiceData(con, orgcode, params):
                 "statecode"
             ]
             sourceStateCode = getStateCode(invrow["sourcestate"], con)["statecode"]
+        else:
+            inv["sourcestate"] = None
+            inv["sourcestatecode"] = None
         if invrow["address"] == None:
             inv["address"] = ""
         else:
@@ -980,6 +983,8 @@ def getInvoiceData(con, orgcode, params):
                         customerandsupplier.c.csflag,
                         customerandsupplier.c.custphone,
                         customerandsupplier.c.pincode,
+                        customerandsupplier.c.gst_reg_type,
+                        customerandsupplier.c.gst_party_type,
                     ]
                 ).where(customerandsupplier.c.custid == invrow["custid"])
             )
@@ -1029,6 +1034,8 @@ def getInvoiceData(con, orgcode, params):
                 "custsupstatecode": custsupstatecode,
                 "custgstinlist": custData["gstin"],
                 "statelist": statelist,
+                "gst_reg_type": custData["gst_reg_type"],
+                "gst_party_type": custData["gst_party_type"],
             }
 
             if custData["custtan"] != None:
@@ -1401,11 +1408,20 @@ def getInvoiceList(con, orgcode, reqParams):
             if int(row["taxflag"]) == 7:
                 if int(customerdetails["csflag"]) == 3:
                     try:
+                        if destinationStateCode not in customerdetails["gstin"]:
+                            if (
+                                "0" + str(destinationStateCode)
+                                in customerdetails["gstin"]
+                            ):
+                                destinationStateCode = "0" + str(destinationStateCode)
                         custtin = customerdetails["gstin"][str(destinationStateCode)]
                     except:
                         custtin = None
                 else:
                     try:
+                        if sourceStateCode not in customerdetails["gstin"]:
+                            if "0" + str(sourceStateCode) in customerdetails["gstin"]:
+                                sourceStateCode = "0" + str(sourceStateCode)
                         custtin = customerdetails["gstin"][str(sourceStateCode)]
                     except:
                         custtin = None
@@ -1523,7 +1539,9 @@ Updates the Duplicate invoice numbers to be unique by prefixing them with a coun
 def rename_inv_no_uniquely(con, orgcode):
     try:
         invoice_list = con.execute(
-            select([invoice.c.invid, invoice.c.invoiceno]).where(invoice.c.orgcode == orgcode)
+            select([invoice.c.invid, invoice.c.invoiceno]).where(
+                invoice.c.orgcode == orgcode
+            )
         ).fetchall()
         if len(invoice_list) > 1:
             invoice_map = {}

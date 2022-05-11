@@ -48,6 +48,7 @@ from ast import literal_eval
 import requests
 from base64 import b64decode, b64encode
 from json import dumps, loads
+from gkcore.enum import GST_REG_TYPE, GST_PARTY_TYPE
 
 import traceback  # for printing detailed exception logs
 
@@ -434,7 +435,6 @@ def cdnur_r1(drcr_all, con):
                 return False
             return True
 
-
         drcrs = list(filter(cdnur_filter, drcr_all))
 
         # print("drcr notes = %d" % (len(drcrs)))
@@ -679,11 +679,28 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
             "inward_zero_gst": [],
             "non_gst": [],
             "interest": [],
-            "pos_unreg_comp_uin_igst": {
-                "unreg": {},
-                "compos": {},
-                "uin": {}
-            },
+            "pos_unreg_comp_uin_igst": {"unreg": {}, "compos": {}, "uin": {}},
+        }
+
+        g3b_inv_map = {
+            "outward_taxable_supplies": {},
+            "outward_taxable_zero_rated": {},
+            "outward_taxable_exempted": {},
+            "outward_non_gst": {},
+            "inward_reverse_charge": {},
+            "import_goods": {},
+            "import_service": {},
+            "inward_isd": {},
+            "all_itc": {},
+            "net_itc": {},
+            "itc_reversed_1": {},
+            "itc_reversed_2": {},
+            "ineligible_1": {},
+            "ineligible_2": {},
+            "inward_zero_gst": {},
+            "non_gst": {},
+            "interest": {},
+            "pos_unreg_comp_uin_igst": {"unreg": {}, "compos": {}, "uin": {}},
         }
 
         pos_unreg_comp_uin_igst = (
@@ -702,6 +719,17 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                 con, orgcode, {"inv": "single", "invid": invoice["invid"]}
             )
             if len(inv_data):
+                # print(inv_data.keys())
+                gst_reg_type = (
+                    inv_data["custSupDetails"]["gst_reg_type"]
+                    if "gst_reg_type" in inv_data["custSupDetails"]
+                    else -1
+                )
+                gst_party_type = (
+                    inv_data["custSupDetails"]["gst_party_type"]
+                    if "gst_party_type" in inv_data["custSupDetails"]
+                    else -1
+                )
                 for prod_id in inv_data["invcontents"]:
                     prod = inv_data["invcontents"][prod_id]
                     line_uom = prod["uom"]
@@ -744,22 +772,42 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             outward_taxable_supplies["cgst"] += cgst_amount
                             outward_taxable_supplies["sgst"] += sgst_amount
                             outward_taxable_supplies["cess"] += cess_amount
-                            g3b_invs["outward_taxable_supplies"].append(invoice)
-                            
+                            if (
+                                invoice["invid"]
+                                not in g3b_inv_map["outward_taxable_supplies"]
+                            ):
+                                g3b_invs["outward_taxable_supplies"].append(invoice)
+                                g3b_inv_map["outward_taxable_supplies"][
+                                    invoice["invid"]
+                                ] = 1
+
                             # 3.2 Of the supplies shown in 3.1 (a) above, details of inter-State supplies made to unregisterd persons, composition taxable persons and UIN holders
                             if inv_data["taxstatecode"] != inv_data["sourcestatecode"]:
-                                if pos_unreg_comp_uin_igst.get(inv_data["taxstatecode"]):
+                                if pos_unreg_comp_uin_igst.get(
+                                    inv_data["taxstatecode"]
+                                ):
                                     pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
                                         "unreg_taxable_amt"
                                     ] += line_amount
                                     pos_unreg_comp_uin_igst[inv_data["taxstatecode"]][
                                         "unreg_igst"
                                     ] += igst_amount
-                                    g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
-                                        inv_data["taxstatecode"]
-                                    ].append(invoice)
+                                    if (
+                                        invoice["invid"]
+                                        not in g3b_inv_map["pos_unreg_comp_uin_igst"][
+                                            "unreg"
+                                        ][inv_data["taxstatecode"]]
+                                    ):
+                                        g3b_invs["pos_unreg_comp_uin_igst"]["unreg"][
+                                            inv_data["taxstatecode"]
+                                        ].append(invoice)
+                                        g3b_inv_map["pos_unreg_comp_uin_igst"]["unreg"][
+                                            inv_data["taxstatecode"]
+                                        ][invoice["invid"]] = 1
                                 else:
-                                    pos_unreg_comp_uin_igst[inv_data["taxstatecode"]] = {
+                                    pos_unreg_comp_uin_igst[
+                                        inv_data["taxstatecode"]
+                                    ] = {
                                         "unreg_taxable_amt": line_amount,
                                         "unreg_igst": igst_amount,
                                         "comp_taxable_amt": 0,
@@ -774,13 +822,27 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                         inv_data["taxstatecode"]
                                     ].append(invoice)
 
+                                    g3b_inv_map["pos_unreg_comp_uin_igst"]["unreg"][
+                                        inv_data["taxstatecode"]
+                                    ] = {}
+                                    g3b_inv_map["pos_unreg_comp_uin_igst"]["unreg"][
+                                        inv_data["taxstatecode"]
+                                    ][invoice["invid"]] = 1
+
                         else:  # Tream them all as zero rated for now
                             outward_taxable_zero_rated["taxable_value"] += line_amount
                             outward_taxable_zero_rated["igst"] += igst_amount
                             outward_taxable_zero_rated["cgst"] += cgst_amount
                             outward_taxable_zero_rated["sgst"] += sgst_amount
                             outward_taxable_zero_rated["cess"] += cess_amount
-                            g3b_invs["outward_taxable_zero_rated"].append(invoice)
+                            if (
+                                invoice["invid"]
+                                not in g3b_inv_map["outward_taxable_zero_rated"]
+                            ):
+                                g3b_invs["outward_taxable_zero_rated"].append(invoice)
+                                g3b_inv_map["outward_taxable_zero_rated"][
+                                    invoice["invid"]
+                                ] = 1
 
                     # TODO: Vendor Bills with reverse charge doesn't have tax lines filled, so it must be calculated
                     elif (
@@ -792,22 +854,38 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                             inward_reverse_charge["cgst"] += cgst_amount
                             inward_reverse_charge["sgst"] += sgst_amount
                             inward_reverse_charge["cess"] += cess_amount
-                            g3b_invs["inward_reverse_charge"].append(invoice)
+                            if (
+                                invoice["invid"]
+                                not in g3b_inv_map["inward_reverse_charge"]
+                            ):
+                                g3b_invs["inward_reverse_charge"].append(invoice)
+                                g3b_inv_map["inward_reverse_charge"][
+                                    invoice["invid"]
+                                ] = 1
                         else:
                             if line_total_amount == line_amount:  # Zero GST taxes
-                                if (
-                                    inv_data["taxstatecode"]
-                                    != inv_data["sourcestatecode"]
-                                ):
-                                    inward_zero_gst["inter"] += line_amount
-                                else:
-                                    inward_zero_gst["intra"] += line_amount
-                                g3b_invs["inward_zero_gst"].append(invoice)
+                                
+                                # 5. From a supplier under composition scheme, Exempt and Nil rated 
+                                if gst_reg_type == GST_REG_TYPE["composition"]:
+                                    if (
+                                        inv_data["taxstatecode"]
+                                        != inv_data["sourcestatecode"]
+                                    ):
+                                        inward_zero_gst["inter"] += line_amount
+                                    else:
+                                        inward_zero_gst["intra"] += line_amount
+                                    if (
+                                        invoice["invid"]
+                                        not in g3b_inv_map["inward_zero_gst"]
+                                    ):
+                                        g3b_invs["inward_zero_gst"].append(invoice)
                             else:  # Taxable purchase, eligible for ITC
                                 all_itc["igst"] += igst_amount
                                 all_itc["cgst"] += cgst_amount
                                 all_itc["sgst"] += sgst_amount
-                                g3b_invs["all_itc"].append(invoice)
+                                if invoice["invid"] not in g3b_inv_map["all_itc"]:
+                                    g3b_invs["all_itc"].append(invoice)
+                                    g3b_inv_map["all_itc"][invoice["invid"]] = 1
         for tax_type in net_itc:
             net_itc[tax_type] = (
                 import_goods[tax_type]
@@ -840,7 +918,7 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
             },
         }
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {}
 
 
@@ -884,9 +962,7 @@ class GstReturn(object):
             orgcode = authDetails["orgcode"]
 
             # All Sale Invoices
-            inv_all_query = select(
-                [invoice]
-            ).where(
+            inv_all_query = select([invoice]).where(
                 and_(
                     invoice.c.invoicedate.between(
                         start_period.strftime("%Y-%m-%d"),
@@ -908,7 +984,7 @@ class GstReturn(object):
                 invoices[counter]["custname"] = ""
                 inv_map[inv["invid"]] = counter
                 counter += 1
-            
+
             # All sale invoices that have customers
             cust_inv_query = select(
                 [invoice, customerandsupplier.c.gstin, customerandsupplier.c.custname]
@@ -925,13 +1001,12 @@ class GstReturn(object):
                 )
             )
             cust_invoices = self.con.execute(cust_inv_query).fetchall()
-            
+
             for inv in cust_invoices:
                 id = inv["invid"]
                 index = inv_map[id]
                 invoices[index]["gstin"] = inv["gstin"]
                 invoices[index]["custname"] = inv["custname"]
-
 
             # debit/credit notes
             query1 = (
@@ -1097,18 +1172,18 @@ class GstReturn(object):
             gst_json["itc_elg"] = {
                 "itc_avl": [
                     {
-                        "ty": "IMPS",
-                        "samt": round(gst_data["import_service"]["sgst"], 2),
-                        "csamt": round(gst_data["import_service"]["cess"], 2),
-                        "camt": round(gst_data["import_service"]["cgst"], 2),
-                        "iamt": round(gst_data["import_service"]["igst"], 2),
-                    },
-                    {
                         "ty": "IMPG",
                         "samt": round(gst_data["import_goods"]["sgst"], 2),
                         "csamt": round(gst_data["import_goods"]["cess"], 2),
                         "camt": round(gst_data["import_goods"]["cgst"], 2),
                         "iamt": round(gst_data["import_goods"]["igst"], 2),
+                    },
+                    {
+                        "ty": "IMPS",
+                        "samt": round(gst_data["import_service"]["sgst"], 2),
+                        "csamt": round(gst_data["import_service"]["cess"], 2),
+                        "camt": round(gst_data["import_service"]["cgst"], 2),
+                        "iamt": round(gst_data["import_service"]["igst"], 2),
                     },
                     {
                         "ty": "ISRC",
@@ -1215,11 +1290,11 @@ class GstReturn(object):
         if req1.status_code == 200:
             cookie1 = {}
             for cookie in req1.cookies:
-                    cookie1[cookie.name] = cookie.value
+                cookie1[cookie.name] = cookie.value
             URL = "https://services.gst.gov.in/services/captcha"
             # print(req1.cookies)
             headers = {
-                'User-Agent': 'GNUKhata_devel_0', # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
+                "User-Agent": "GNUKhata_devel_0",  # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
             }
             req = requests.get(url=URL, cookies=cookie1, headers=headers)
             if req.status_code == 200:
@@ -1253,7 +1328,7 @@ class GstReturn(object):
             "Referer": "https://services.gst.gov.in/services/searchtp",
             "Cookie": dataset["cookie"],
             "Content-Type": "application/json",
-            'User-Agent': 'GNUKhata_devel_0',  # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
+            "User-Agent": "GNUKhata_devel_0",  # The GST API maintainers have blocked the default python user agent. In the future they may add more restrictions, so must move to a better API
         }
         req = requests.post(url=URL, data=dumps(dataset["payload"]), headers=headers)
         if req.status_code == 200:
