@@ -275,15 +275,16 @@ def b2cl_r1(invoices, con):
         return {"status": 3}
 
 
-def b2cs_r1(invoices, con):
+def b2cs_r1(invoices, con, drcr):
     """
     Collects and formats data about supplies made to consumers
     of the following nature:
         a)Intra-State: Any value
         b)Inter-State: Invoice value Rs 2.5 lakhs or less
 
-    Note: Here entries are not made invoice wise instead entries with same
-    place_of_supply and taxrate are consolidated
+    Note1: Here entries are not made invoice wise instead entries with same
+    place_of_supply and taxrate are consolidated.
+    Debit Credit Notes that match the above conditions are also listed under B2CS, with negative value
     """
 
     try:
@@ -315,18 +316,18 @@ def b2cs_r1(invoices, con):
             row = {}
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
-            row["icflag"] = inv["icflag"]
+            # icflag = 9 -> invoice, 3 -> cash memo
+            row["icflag"] = inv["icflag"] if "icflag" in inv else 9
             row["type"] = "OE"
             row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["ecommerce_gstin"] = ""
-
             for prod in inv["contents"]:
                 prod_row = deepcopy(row)
-                prod_row["taxable_value"] = taxable_value(inv, prod, con)
+                prod_row["taxable_value"] = taxable_value(inv, prod, con, drcr)
                 prod_row["rate"] = "%.2f" % float(inv["tax"][prod])
-                cess = cess_amount(inv, prod, con)
-                prod_row["cess"] = cess_amount(inv, prod, con) if cess != "" else 0
+                cess = cess_amount(inv, prod, con, drcr)
+                prod_row["cess"] = cess_amount(inv, prod, con, drcr) if cess != "" else 0
 
                 # for existing in b2cs:
                 #     if (
@@ -341,16 +342,18 @@ def b2cs_r1(invoices, con):
                 b2cs.append(prod_row)
 
         for row in b2cs:
+            row["drcr_flag"] = 1 if drcr else 0
+            if drcr:
+                row["taxable_value"] *= -1
             row["taxable_value"] = "%.2f" % row["taxable_value"]
             if row["cess"] == 0:
                 row["cess"] = "0.00"
             else:
                 row["cess"] = "%.2f" % row["cess"]
-
         return {"status": 0, "data": b2cs}
     except:
         print(traceback.format_exc())
-        return {"status": 3}
+        return {"status": 3, "data": []}
 
 
 def cdnr_r1(drcr_all, con):
@@ -1044,7 +1047,9 @@ class GstReturn(object):
             gkdata = {}
             gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
             gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
-            gkdata["b2cs"] = b2cs_r1(invoices, self.con).get("data", [])
+            gkdata["b2cs"] = b2cs_r1(invoices, self.con, False).get("data", [])
+            neg_b2cs = b2cs_r1(drcrs_all, self.con, True).get("data", [])
+            gkdata["b2cs"] += neg_b2cs
             gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
             gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
             gkdata["hsn1"] = hsn_r1(
