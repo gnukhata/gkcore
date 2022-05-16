@@ -316,6 +316,14 @@ def b2cs_r1(invoices, con, drcr):
             row = {}
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
+            if drcr:
+                row["drcrid"] = inv["drcrid"]
+                row["voucher_number"] = inv["drcrno"]
+                row["voucher_date"] = inv["drcrdate"].strftime("%d-%b-%y")
+            else:
+                row["drcrid"] = ''
+                row["voucher_number"] = ''
+                row["voucher_date"] = ''
             # icflag = 9 -> invoice, 3 -> cash memo
             row["icflag"] = inv["icflag"] if "icflag" in inv else 9
             row["type"] = "OE"
@@ -342,7 +350,7 @@ def b2cs_r1(invoices, con, drcr):
                 b2cs.append(prod_row)
 
         for row in b2cs:
-            row["drcr_flag"] = 1 if drcr else 0
+            # row["drcr_flag"] = 1 if drcr else 0
             if drcr:
                 row["taxable_value"] *= -1
             row["taxable_value"] = "%.2f" % row["taxable_value"]
