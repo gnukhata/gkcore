@@ -1487,10 +1487,10 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
+                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
 
             except Exception as E:
-                print(E)
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 

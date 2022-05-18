@@ -96,7 +96,6 @@ Depending on the request_param, different methods will be called on the route gi
 
 
 def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
-    con = eng.connect()
     financialstart = con.execute(
         "select yearstart, orgtype from organisation where orgcode = %d" % int(orgcode)
     )
@@ -1586,7 +1585,6 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     },
                 )
 
-    con.close()
     return {"leftlist": sbalanceSheet, "rightlist": abalanceSheet}
 
 
@@ -1794,7 +1792,6 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
 
 def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
     try:
-        con = eng.connect()
         dcinfo = ""
         if invid == None:
             billdetl = con.execute(
@@ -1848,9 +1845,7 @@ def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
             else:
                 dcinfo = "Dedit note no.:" + str(drcrinfo["drcrno"])
         return dcinfo
-        con.close()
     except:
-        con.close()
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
@@ -2183,7 +2178,120 @@ def stockonhandfun(orgcode, productCode, endDate):
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
-def godownwisestockonhandfun(con, orgcode, startDate, endDate, stocktype, productCode, godownCode):
+def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
+    """
+    Note: Preform the below steps for a product in a godown
+
+    Algorithm
+    step1: Get all the stock table entries for the product in a godown
+    step2: stockInHand = []
+    step3: if trn == invoice/ cash memo/ delivery note:
+             stockInHand.append({qty: trn.qty, rate: trn.rate})
+    """
+    # Must handle opening stock
+    # goopeningStockResult = con.execute(
+    #     select([goprod.c.goopeningstock]).where(
+    #         and_(
+    #             goprod.c.productcode == productCode,
+    #             goprod.c.goid == godownCode,
+    #             goprod.c.orgcode == orgcode,
+    #         )
+    #     )
+    # )
+    # gosRow = goopeningStockResult.fetchone()
+    # if gosRow != None:
+    #     gopeningStock = gosRow["goopeningstock"]
+    # else:
+    #     gopeningStock = 0.00
+    try:
+        stockList = con.execute(
+            select([stock])
+            .where(
+                and_(
+                    stock.c.orgcode == orgcode,
+                    stock.c.productcode == productCode,
+                    stock.c.goid == godownCode,
+                    stock.c.stockdate <= endDate,
+                )
+            )
+            .order_by(stock.c.stockdate, stock.c.stockid)
+        ).fetchall()
+
+        stockOnHand = []
+
+        for item in stockList:
+            trnId = item["dcinvtnid"]
+            trnFlag = item["dcinvtnflag"]
+
+            proceed = True
+            stockIn = item["inout"] == 9
+
+            if trnFlag == 4:  # avoid unlinked delchal
+                linkCount = con.execute(
+                    select([func.count(dcinv.c.invid)]).where(
+                        and_(dcinv.c.dcid == trnId, dcinv.c.orgcode == orgcode)
+                    )
+                ).scalar()
+                if linkCount <= 0:
+                    proceed = False
+            if proceed:
+                # update stockOnHand based on FIFO
+                if stockIn:  # purchase or stock in
+                    stockLen = len(stockOnHand)
+                    if (
+                        stockLen > 0 and float(stockOnHand[stockLen-1]["qty"]) < 0
+                    ):  # case where sale or stock out has happened before any purchase ot stock in
+                        stockOnHand[stockLen-1]["qty"] = float(stockOnHand[stockLen-1]["qty"]) - float(
+                            item["qty"]
+                        )
+                    else:
+                        stockOnHand.append({"rate": item["rate"], "qty": item["qty"]})
+                else:  # sale or stock out
+                    stockOnHand[0]["qty"] = float(stockOnHand[0]["qty"]) - float(
+                        item["qty"]
+                    )
+
+                    extraQty = stockOnHand[0]["qty"]
+
+                    if extraQty <= 0:
+                        extraQty *= -1
+                        while extraQty:
+                            stockOnHand.pop(0)
+                            if extraQty == 0:
+                                break
+                            if len(stockOnHand) > 0:
+                                if float(stockOnHand[0]["qty"]) > 0:
+                                    stockOnHand[0]["qty"] = (
+                                        float(stockOnHand[0]["qty"]) - extraQty
+                                    )
+                                    extraQty = stockOnHand[0]["qty"]
+                                    if extraQty >= 0:
+                                        break
+                                    else:
+                                        extraQty *= -1
+                                else:
+                                    # if the qty is negative (stock out happened before stock in), then the remaining negative will also be added to it
+                                    stockOnHand[0]["qty"] = (
+                                        float(stockOnHand[0]["qty"]) - extraQty
+                                    )
+                                    break
+                            else:
+                                stockOnHand.append(
+                                    {"rate": item["rate"], "qty": -1 * extraQty}
+                                )
+                                break
+
+        valueOnHand = 0
+        for item in stockOnHand:
+            valueOnHand += float(item["qty"]) * float(item["rate"])
+        return valueOnHand
+    except:
+        print(traceback.format_exc())
+
+
+def godownwisestockonhandfun(
+    con, orgcode, startDate, endDate, stocktype, productCode, godownCode
+):
     try:
         con = eng.connect()
         stockReport = []
@@ -2347,7 +2455,6 @@ def godownwisestockonhandfun(con, orgcode, startDate, endDate, stocktype, produc
                 }
             )
             return stockReport
-            con.close
         if stocktype == "pag":
             productCode = productCode
             products = con.execute(
@@ -2534,10 +2641,8 @@ def godownwisestockonhandfun(con, orgcode, startDate, endDate, stocktype, produc
                 )
                 srno = srno + 1
             return stockReport
-            con.close()
     except:
         # print(traceback.format_exc())
-        con.close()
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
@@ -4319,6 +4424,7 @@ class api_reports(object):
                     self.request.params["calculatefrom"],
                     int(self.request.params["baltype"]),
                 )
+                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": balanceSheet,
@@ -7510,13 +7616,49 @@ class api_reports(object):
                                 "proddesc": proddesclist["proddesc"],
                             }
                         )
-
+                    self.con.close()
                     return {
                         "gkstatus": enumdict["Success"],
                         "gkresult": allprodstocklist,
                         "proddesclist": prodcodedesclist,
                     }
             except:
+                self.con.close()
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_param="godownwise_stock_value", renderer="json")
+    def godownwise_stock_value(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+
+                orgcode = authDetails["orgcode"]
+
+                endDate = datetime.strptime(
+                    str(self.request.params["enddate"]), "%Y-%m-%d"
+                )
+                godownCode = int(self.request.params["goid"])
+                productCode = int(self.request.params["productcode"])
+
+                valueOnHand = calculateStockValue(
+                    self.con, orgcode, endDate, productCode, godownCode
+                )
+                self.con.close()
+
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": valueOnHand,
+                }
+            except:
+                print(traceback.format_exc())
+                self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="godownwisestockonhand", renderer="json")
@@ -7619,12 +7761,20 @@ class api_reports(object):
                             result.append(temp[0])
                 else:
                     result = godownwisestockonhandfun(
-                        self.con, orgcode, startDate, endDate, stocktype, productCode, godownCode
+                        self.con,
+                        orgcode,
+                        startDate,
+                        endDate,
+                        stocktype,
+                        productCode,
+                        godownCode,
                     )
+                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
             except Exception as e:
                 # print(traceback.format_exc())
                 # print(e)
+                self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="type=categorywisestockonhand", renderer="json")
@@ -8955,10 +9105,10 @@ class api_reports(object):
                         rowcust = custdata.fetchone()
                         if not rowcust:
                             rowcust = {
-                                "custname": '',
-                                "custtan": '',
+                                "custname": "",
+                                "custtan": "",
                                 "gstin": None,
-                                "csflag": '',
+                                "csflag": "",
                             }
                         invoicedata = {
                             "srno": srno,
@@ -8973,7 +9123,7 @@ class api_reports(object):
                             "taxfree": "0.00",
                             "tax": "",
                             "taxamount": "",
-                            "icflag": row["icflag"]
+                            "icflag": row["icflag"],
                         }
 
                         taxname = ""
