@@ -6705,7 +6705,7 @@ class api_reports(object):
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
                                 invresult = self.con.execute(
-                                    select([invoice.c.invoiceno]).where(
+                                    select([invoice.c.invoiceno, invoice.c.icflag]).where(
                                         invoice.c.invid == dcinvrow["invid"]
                                     )
                                 )
@@ -6714,7 +6714,7 @@ class api_reports(object):
                                 trntype = "delchal&invoice"
                             else:
                                 dcinvrow = {"invid": ""}
-                                invrow = {"invoiceno": ""}
+                                invrow = {"invoiceno": "", "icflag": ""}
                                 trntype = "delchal"
 
                             if finalRow["inout"] == 9:
@@ -6744,6 +6744,7 @@ class api_reports(object):
                                         "rnno": "",
                                         "invid": dcinvrow["invid"],
                                         "invno": invrow["invoiceno"],
+                                        "icflag": invrow["icflag"],
                                         "inwardqty": "%.2f" % float(finalRow["qty"]),
                                         "outwardqty": "",
                                         "balance": "%.2f" % float(openingStock),
@@ -6774,6 +6775,7 @@ class api_reports(object):
                                         "drcrid": "",
                                         "invid": dcinvrow["invid"],
                                         "invno": invrow["invoiceno"],
+                                        "icflag": invrow["icflag"],
                                         "rnid": "",
                                         "rnno": "",
                                         "inwardqty": "",
@@ -7214,7 +7216,7 @@ class api_reports(object):
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
                                 invresult = self.con.execute(
-                                    select([invoice.c.invoiceno]).where(
+                                    select([invoice.c.invoiceno, invoice.c.icflag]).where(
                                         invoice.c.invid == dcinvrow["invid"]
                                     )
                                 )
@@ -7223,7 +7225,7 @@ class api_reports(object):
                                 trntype = "delchal&invoice"
                             else:
                                 dcinvrow = {"invid": ""}
-                                invrow = {"invoiceno": ""}
+                                invrow = {"invoiceno": "", "icflag": ""}
                                 trntype = "delchal"
 
                             if finalRow["inout"] == 9:
@@ -7251,6 +7253,7 @@ class api_reports(object):
                                         "rnno": "",
                                         "invid": dcinvrow["invid"],
                                         "invno": invrow["invoiceno"],
+                                        "icflag": invrow["icflag"],
                                         "tnid": "",
                                         "tnno": "",
                                         "inwardqty": "%.2f" % float(finalRow["qty"]),
@@ -7283,6 +7286,7 @@ class api_reports(object):
                                         "rnno": "",
                                         "invid": dcinvrow["invid"],
                                         "invno": invrow["invoiceno"],
+                                        "icflag": invrow["icflag"],
                                         "tnid": "",
                                         "tnno": "",
                                         "inwardqty": "",
