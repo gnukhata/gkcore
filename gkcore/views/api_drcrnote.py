@@ -112,10 +112,13 @@ class api_drcr(object):
                         stockdataset["goid"] = vdataset["goid"]
 
                     for item in dataset["reductionval"]["quantities"]:
-                        stockdataset["productcode"] = item
-                        stockdataset["qty"] = dataset["reductionval"]["quantities"][
+                        itemQty = dataset["reductionval"]["quantities"][
                             item
                         ]
+                        itemRate = dataset["reductionval"][item]
+                        stockdataset["rate"] = itemRate
+                        stockdataset["productcode"] = item
+                        stockdataset["qty"] = itemQty
                         self.con.execute(stock.insert(), [stockdataset])
 
                 # check automatic voucher flag  if it is 1 get maflag

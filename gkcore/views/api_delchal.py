@@ -117,10 +117,11 @@ create method for delchal resource.
                     stockdata["stockdate"] = dcidrow["dcdate"]
                     try:
                         for key in list(items.keys()):
+                            itemQty = float(list(items[key].values())[0])
+                            itemRate = float(list(items[key].keys())[0])
+                            stockdata["rate"] = itemRate
                             stockdata["productcode"] = key
-                            stockdata["qty"] = float(
-                                list(items[key].values())[0]
-                            ) + float(freeqty[key])
+                            stockdata["qty"] = itemQty + float(freeqty[key])
                             result = self.con.execute(stock.insert(), [stockdata])
                             if "goid" in stockdata:
                                 resultgoprod = self.con.execute(
@@ -208,10 +209,11 @@ create method for delchal resource.
                     )
                     items = delchaldata["contents"]
                     for key in list(items.keys()):
+                        itemQty = float(list(items[key].values())[0])
+                        itemRate = float(list(items[key].keys())[0])
+                        stockdata["rate"] = itemRate
                         stockdata["productcode"] = key
-                        stockdata["qty"] = float(list(items[key].values())[0]) + float(
-                            freeqty[key]
-                        )
+                        stockdata["qty"] = itemQty + float(freeqty[key])
                         result = self.con.execute(stock.insert(), [stockdata])
                     return {"gkstatus": enumdict["Success"]}
                 else:
@@ -1392,8 +1394,7 @@ create method for delchal resource.
                 # )
                 dcstatus = int(self.request.params["status"])
                 dc_count = self.con.execute(
-                    select([func.count(delchal.c.dcid)])
-                    .where(
+                    select([func.count(delchal.c.dcid)]).where(
                         and_(
                             delchal.c.inoutflag == dcstatus,
                             delchal.c.orgcode == authDetails["orgcode"],

@@ -103,8 +103,11 @@ class api_rejectionnote(object):
                     stockdata["stockdate"] = rnidrow["rndate"]
                     try:
                         for key in list(items.keys()):
+                            itemQty = float(list(items[key].values())[0])
+                            itemRate = float(list(items[key].keys())[0])
+                            stockdata["rate"] = itemRate
                             stockdata["productcode"] = key
-                            stockdata["qty"] = float(list(items[key].values())[0])
+                            stockdata["qty"] = itemQty
                             result = self.con.execute(stock.insert(), [stockdata])
                             if "goid" in stockdata:
                                 resultgoprod = self.con.execute(

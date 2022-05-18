@@ -1735,10 +1735,11 @@ class api_invoice(object):
                             for item in list(items.keys()):
                                 gstResult = gst(item, self.con)
                                 if int(gstResult["gsflag"]) == 7:
+                                    itemQty = float(list(items[item].values())[0])
+                                    itemRate = float(list(items[item].keys())[0])
+                                    stockdataset["rate"] = itemRate
                                     stockdataset["productcode"] = item
-                                    stockdataset["qty"] = float(
-                                        list(items[item].values())[0]
-                                    ) + float(freeqty[item])
+                                    stockdataset["qty"] = itemQty + float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "3"
                                     stockdataset["stockdate"] = invdataset[
                                         "invoicedate"
@@ -1827,10 +1828,11 @@ class api_invoice(object):
                                 self.con = eng.connect()
                                 gstResult = gst(item, self.con)
                                 if int(gstResult["gsflag"]) == 7:
+                                    itemQty = float(list(items[item].values())[0])
+                                    itemRate = float(list(items[item].keys())[0])
+                                    stockdataset["rate"] = itemRate
                                     stockdataset["productcode"] = item
-                                    stockdataset["qty"] = float(
-                                        list(items[item].values())[0]
-                                    ) + float(freeqty[item])
+                                    stockdataset["qty"] = itemQty + float(freeqty[item])
                                     stockdataset["dcinvtnflag"] = "9"
                                     result = self.con.execute(
                                         stock.insert(), [stockdataset]
@@ -2148,8 +2150,11 @@ class api_invoice(object):
                         stockdataset["stockdate"] = invdataset["invoicedate"]
                         stockdataset["dcinvtnflag"] = "9"
                         for item in list(items.keys()):
+                            itemQty = float(list(items[item].values())[0])
+                            itemRate = float(list(items[item].keys())[0])
+                            stockdataset["rate"] = itemRate
                             stockdataset["productcode"] = item
-                            stockdataset["qty"] = list(items[item].values())[0]
+                            stockdataset["qty"] = itemQty
                             result = self.con.execute(stock.insert(), [stockdataset])
                         avfl = self.con.execute(
                             select([organisation.c.avflag]).where(

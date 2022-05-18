@@ -112,6 +112,7 @@ class api_transfernote(object):
                     items = stockdata.pop("items")
                     try:
                         for key in list(items.keys()):
+                            stockdata["rate"] = 0
                             stockdata["productcode"] = key
                             stockdata["qty"] = items[key]
                             result = self.con.execute(stock.insert(), [stockdata])
@@ -608,6 +609,7 @@ class api_transfernote(object):
                             )
                         stockdata["productcode"] = key["productcode"]
                         stockdata["qty"] = key["qty"]
+                        stockdata["rate"] = 0
                         result = self.con.execute(stock.insert(), [stockdata])
 
                     result = self.con.execute(
