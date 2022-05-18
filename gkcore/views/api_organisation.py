@@ -1638,8 +1638,9 @@ class api_organisation(object):
                     self.con.execute(
                         "ALTER TABLE invoice ADD CONSTRAINT invoice_orgcode_invoiceno_key UNIQUE(orgcode, invoiceno)"
                     )
-            else:
-                print("Unique constraint failure")
+            
+            if not columnExists("stock", "rate"):
+                self.con.execute("alter table stock add rate numeric(13,2) default 0.00")
 
         except:
             print(traceback.format_exc())

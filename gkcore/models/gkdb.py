@@ -718,12 +718,15 @@ This table records movement of goods and can give details either on basis of pro
 invoice or dc (which ever is responsible for the movement ),
 or by godown using the goid.
 It has a field for product quantity.
-it also has a field called dcinvtnflag which can tell if this movement was due to dc or inv or transfernote, rejection note(flag = 18), quantity adjustments using Debit/Credit Note(flag = 7) or rejection of goods of bad quality(flag = 2).
+it also has a field called dcinvtnflag which can tell if this movement was due to delivery chalan (flag = 4) or invoice (flag = 9 ) or cash memo (flag = 3) or transfernote (flag = 20), rejection note(flag = 18), quantity adjustments using Debit/Credit Note(flag = 7) or rejection of goods of bad quality(flag = 2).
+
 This flag is necessary because,
 Some times no dc is issued and a direct invoice is made (eg. cash memo at POS ).
 So movements will be directly on invoice.
 This is always the case when we purchase goods.
 The inout field for in = 9 is stored and out = 15.
+
+rate field denotes the rate at which the product was sold or transacted at
 """
 stock = Table(
     "stock",
@@ -732,6 +735,7 @@ stock = Table(
     Column("productcode", Integer, ForeignKey("product.productcode"), nullable=False),
     Column("stockdate", DateTime),
     Column("qty", Numeric(13, 2), nullable=False),
+    Column("rate", Numeric(13, 2), nullable=False, default = 0.00),
     Column("dcinvtnid", Integer, nullable=False),
     Column("dcinvtnflag", Integer, nullable=False),
     Column("inout", Integer, nullable=False),
@@ -1164,6 +1168,7 @@ Debit/Credit Note reference if any is stored in reference field.
 Documents attached is stored in attachment and its count stored in attachmentcount.
 Storing userid helps access username and userrole.
 check enum.py for all possible values of "drcrmode"
+drcrmode = 4 (discounts), 18 (returns)
 """
 drcr = Table(
     "drcr",
