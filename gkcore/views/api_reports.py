@@ -9152,18 +9152,29 @@ class api_reports(object):
                                 taxname = "% SGST"
                             # Get GSTIN on the basis of Customer / Supplier role.
                             if rowcust["gstin"] != None:
+                                invoicedata["custgstin"] = ""
                                 if int(rowcust["csflag"]) == 3:
                                     try:
-                                        invoicedata["custgstin"] = rowcust["gstin"][
-                                            str(destinationStateCode)
-                                        ]
+                                        if str(destinationStateCode) not in rowcust["gstin"]:
+                                            stcode = "0" + str(destinationStateCode)
+                                            if stcode in rowcust["gstin"]:
+                                                invoicedata["custgstin"] = rowcust["gstin"][stcode]
+                                        else:
+                                            invoicedata["custgstin"] = rowcust["gstin"][
+                                                str(destinationStateCode)
+                                            ]
                                     except:
                                         invoicedata["custgstin"] = ""
                                 else:
                                     try:
-                                        invoicedata["custgstin"] = rowcust["gstin"][
-                                            str(sourceStateCode)
-                                        ]
+                                        if str(sourceStateCode) not in rowcust["gstin"]:
+                                            stcode = "0" + str(sourceStateCode)
+                                            if stcode in rowcust["gstin"]:
+                                                invoicedata["custgstin"] = rowcust["gstin"][stcode]
+                                        else:
+                                            invoicedata["custgstin"] = rowcust["gstin"][
+                                                str(sourceStateCode)
+                                            ]
                                     except:
                                         invoicedata["custgstin"] = ""
 
