@@ -4417,6 +4417,7 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
+                self.con = eng.connect()
                 balanceSheet = getBalanceSheet(
                     self.con,
                     authDetails["orgcode"],
