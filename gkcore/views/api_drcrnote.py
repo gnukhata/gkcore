@@ -53,7 +53,7 @@ import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
 from gkcore.views.api_user import getUserRole
-from gkcore.views.api_invoice import getStateCode
+from gkcore.views.api_invoice import getStateCode, createAccount
 import traceback  # for printing detailed exception logs
 
 @view_defaults(route_name="drcrnote")
@@ -706,7 +706,7 @@ class api_drcr(object):
                     .where(
                         and_(
                             invoice.c.orgcode == authDetails["orgcode"],
-                            invoice.c.icflag == 9,
+                            # invoice.c.icflag == 9, # commenting this line to include Cash Memos
                         )
                     )
                     .order_by(invoice.c.invoicedate)
@@ -816,7 +816,19 @@ def drcrVoucher(queryParams, orgcode):
     """
     try:
         con = eng.connect()
-        taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
+        # taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
+        taxRateDict = {
+            1: 0.5,
+            3: 1.5,
+            5: 2.5,
+            12: 6,
+            18: 9,
+            28: 14,
+            0.1: 0.05,
+            0.25: 0.125,
+            1.5: 0.75,
+            7.5: 3.75,
+        }
         voucherDict = {}
         vouchersList = []
         vchCodes = []
@@ -1004,7 +1016,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -1037,7 +1049,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -1201,7 +1213,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -1234,7 +1246,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -1400,7 +1412,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -1433,7 +1445,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -1597,7 +1609,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -1630,7 +1642,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -1822,7 +1834,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -1853,7 +1865,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -2041,7 +2053,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -2074,7 +2086,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -2266,7 +2278,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -2300,7 +2312,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -2489,7 +2501,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Paid", orgcode)
+                            a = createAccount(con, 18, "Round Off Paid", orgcode)
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(queryParams["roundoffamt"])
@@ -2523,7 +2535,7 @@ def drcrVoucher(queryParams, orgcode):
                         try:
                             accCode = roundRow["accountcode"]
                         except:
-                            a = createAccount(18, "Round Off Received", orgcode)
+                            a = createAccount(con, 18, "Round Off Received", orgcode)
                             accCode = a["accountcode"]
 
                         rdcrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
@@ -2581,5 +2593,5 @@ def drcrVoucher(queryParams, orgcode):
             vchCodes.append(initialType)
         return vchCodes
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         raise Exception('Issue with voucher creation') 
