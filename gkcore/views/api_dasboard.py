@@ -255,7 +255,11 @@ def topfivecustsup(inoutflag, orgcode):
             )
             csDetails = csd.fetchone()
             topfivecustdetails.append(
-                {"custname": csDetails["custname"], "data": float(inv["data"])}
+                {
+                    "custname": csDetails["custname"],
+                    "custid": inv["custid"],
+                    "data": float(inv["data"]),
+                }
             )
         con.close()
         return {
@@ -465,14 +469,11 @@ def cashbankbalance(orgcode):
                     cashbalance = float(cashbalance) + float(calbaldata["curbal"])
             cashbalancedata.append(cashbalance)
 
-            startMonthDate = (
-                date(
-                    financialStartresult["financialstart"].year,
-                    financialStartresult["financialstart"].month,
-                    financialStartresult["financialstart"].day,
-                )
-                + monthdelta(monthCounter)
-            )
+            startMonthDate = date(
+                financialStartresult["financialstart"].year,
+                financialStartresult["financialstart"].month,
+                financialStartresult["financialstart"].day,
+            ) + monthdelta(monthCounter)
             endMonthDate = date(
                 startMonthDate.year,
                 startMonthDate.month,
