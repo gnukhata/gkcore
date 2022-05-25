@@ -43,6 +43,7 @@ from gkcore.models.gkdb import (
     product,
     drcr,
     unitofmeasurement,
+    organisation,
 )
 from ast import literal_eval
 import requests
@@ -184,6 +185,7 @@ def b2b_r1(invoices, con):
 
         invs = list(filter(b2b_filter, invoices))
         b2b = []
+        b2b_json = {}
         for inv in invs:
             ts_code = normalise_state_code(
                 state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
@@ -205,6 +207,15 @@ def b2b_r1(invoices, con):
             else:
                 row["reverse_charge"] = "Y"
 
+            b2b_json_inv = {
+                "inum": inv["invoiceno"],
+                "idt": inv["invoicedate"].strftime("%d-%m-%Y"),
+                "val": "%.2f" % float(inv["invoicetotal"]),
+                "pos": "%02d" % int(ts_code),
+                "rchrg": row["reverse_charge"],
+                "inv_type": "R",  # Need to handle other gst types
+                "itms": [],
+            }
             for rate, tax_cess in list(product_level(inv, con).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
@@ -212,7 +223,49 @@ def b2b_r1(invoices, con):
                 prod_row["cess"] = "%.2f" % tax_cess["cess"]
                 b2b.append(prod_row)
 
-        return {"status": 0, "data": b2b}
+                b2b_json_item = {
+                    "num": 1
+                    if not prod_row["rate"]
+                    else "%d%02d"
+                    % (
+                        int(float(prod_row["rate"])),
+                        1,
+                    ),  # need to check how floating vales are handled
+                    "itm_det": {
+                        "txval": prod_row["taxable_value"],
+                        "rt": prod_row["rate"],
+                        "csamt": prod_row["cess"],
+                    },
+                }
+                tax_amt = "%.2f" % (
+                    (float(prod_row["taxable_value"]) * float(rate)) / 100.0
+                )
+                if inv["taxstate"] == inv["sourcestate"]:
+                    b2b_json_item["itm_det"].update(
+                        {
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                        }
+                    )
+                else:
+                    b2b_json_item["itm_det"].update(
+                        {
+                            "iamt": tax_amt,
+                        }
+                    )
+
+                b2b_json_inv["itms"].append(b2b_json_item)
+
+            if row["gstin"] not in b2b_json:
+                b2b_json[row["gstin"]] = []
+
+            b2b_json[row["gstin"]].append(b2b_json_inv)
+
+        b2b_json_arr = []
+        for gstin in b2b_json:
+            b2b_json_arr.append({"ctin": gstin, "inv": b2b_json[gstin]})
+
+        return {"status": 0, "data": b2b, "json": b2b_json_arr}
     except:
         print(traceback.format_exc())
         return {"status": 3}
@@ -248,6 +301,7 @@ def b2cl_r1(invoices, con):
         invs = list(filter(b2cl_filter, invoices))
 
         b2cl = []
+        b2cl_json = {}
         for inv in invs:
 
             ts_code = state_name_code(con, statename=inv["taxstate"])
@@ -257,10 +311,17 @@ def b2cl_r1(invoices, con):
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
             row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
-            row["place_of_supply"] = "%d-%s" % (ts_code, inv["taxstate"])
+            row["place_of_supply"] = "%02d-%s" % (ts_code, inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["ecommerce_gstin"] = ""
             row["sale_from_bonded_wh"] = "N"
+
+            b2cl_json_inv = {
+                "inum": inv["invoiceno"],
+                "idt": inv["invoicedate"].strftime("%d-%m-%Y"),
+                "val": "%.2f" % float(inv["invoicetotal"]),
+                "itms": [],
+            }
 
             for rate, tax_cess in list(product_level(inv, con).items()):
                 prod_row = deepcopy(row)
@@ -269,7 +330,47 @@ def b2cl_r1(invoices, con):
                 prod_row["cess"] = "%.2f" % tax_cess["cess"]
                 b2cl.append(prod_row)
 
-        return {"status": 0, "data": b2cl}
+                b2cl_json_item = {
+                    "num": 1
+                    if not prod_row["rate"]
+                    else "%d%02d" % (prod_row["rate"], 1),
+                    "itm_det": {
+                        "txval": prod_row["taxable_value"],
+                        "rt": prod_row["rate"],
+                        "csamt": prod_row["cess"],
+                    },
+                }
+                tax_amt = "%.2f" % (
+                    float(prod_row["taxable_value"] * float(rate)) / 100.0
+                )
+                if inv["taxstate"] == inv["sourcestate"]:
+                    b2cl_json_item["itm_det"].update(
+                        {
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                        }
+                    )
+                else:
+                    b2cl_json_item["itm_det"].update(
+                        {
+                            "iamt": tax_amt,
+                        }
+                    )
+
+                b2cl_json_inv["itms"].append(b2cl_json_item)
+
+            if ts_code not in b2cl_json:
+                b2cl_json[ts_code] = []
+
+            b2cl_json[ts_code].append(b2cl_json_inv)
+
+        b2cl_json_arr = []
+        for b2cl_pos in b2cl_json:
+            b2cl_json_arr.append(
+                {"pos": "%02d" % (b2cl_pos), "inv": b2cl_json[b2cl_pos]}
+            )
+
+        return {"status": 0, "data": b2cl, "json": b2cl_json_arr}
     except:
         print(traceback.format_exc())
         return {"status": 3}
@@ -308,6 +409,7 @@ def b2cs_r1(invoices, con, drcr):
         invs = list(filter(b2cs_filter, invoices))
         print("inv count = %d" % (len(invoices)))
         b2cs = []
+        b2cs_json_arr = []
         for inv in invs:
 
             ts_code = state_name_code(con, statename=inv["taxstate"])
@@ -321,9 +423,9 @@ def b2cs_r1(invoices, con, drcr):
                 row["voucher_number"] = inv["drcrno"]
                 row["voucher_date"] = inv["drcrdate"].strftime("%d-%b-%y")
             else:
-                row["drcrid"] = ''
-                row["voucher_number"] = ''
-                row["voucher_date"] = ''
+                row["drcrid"] = ""
+                row["voucher_number"] = ""
+                row["voucher_date"] = ""
             # icflag = 9 -> invoice, 3 -> cash memo
             row["icflag"] = inv["icflag"] if "icflag" in inv else 9
             row["type"] = "OE"
@@ -335,7 +437,9 @@ def b2cs_r1(invoices, con, drcr):
                 prod_row["taxable_value"] = taxable_value(inv, prod, con, drcr)
                 prod_row["rate"] = "%.2f" % float(inv["tax"][prod])
                 cess = cess_amount(inv, prod, con, drcr)
-                prod_row["cess"] = cess_amount(inv, prod, con, drcr) if cess != "" else 0
+                prod_row["cess"] = (
+                    cess_amount(inv, prod, con, drcr) if cess != "" else 0
+                )
 
                 # for existing in b2cs:
                 #     if (
@@ -349,6 +453,36 @@ def b2cs_r1(invoices, con, drcr):
 
                 b2cs.append(prod_row)
 
+                b2cs_json_inv = {
+                    "sply_ty": "INTRA"
+                    if inv["taxstate"] == inv["sourcestate"]
+                    else "INTER",
+                    "pos": "%02d" % (int(ts_code)),
+                    "typ": "OE",
+                    "txval": prod_row["taxable_value"],
+                    "rt": prod_row["rate"],
+                    "csamt": prod_row["cess"],
+                }
+
+                tax_amt = "%.2f" % (
+                    (float(prod_row["taxable_value"]) * float(inv["tax"][prod])) / 100.0
+                )
+
+                if inv["taxstate"] == inv["sourcestate"]:
+                    b2cs_json_inv.update(
+                        {
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                        }
+                    )
+                else:
+                    b2cs_json_inv.update(
+                        {
+                            "iamt": tax_amt,
+                        }
+                    )
+                b2cs_json_arr.append(b2cs_json_inv)
+
         for row in b2cs:
             # row["drcr_flag"] = 1 if drcr else 0
             if drcr:
@@ -358,7 +492,7 @@ def b2cs_r1(invoices, con, drcr):
                 row["cess"] = "0.00"
             else:
                 row["cess"] = "%.2f" % row["cess"]
-        return {"status": 0, "data": b2cs}
+        return {"status": 0, "data": b2cs, "json": b2cs_json_arr}
     except:
         print(traceback.format_exc())
         return {"status": 3, "data": []}
@@ -386,6 +520,7 @@ def cdnr_r1(drcr_all, con):
         drcrs = list(filter(cdnr_filter, drcr_all))
 
         cdnr = []
+        cdnr_json = {}
         for note in drcrs:
 
             ts_code = normalise_state_code(
@@ -413,6 +548,17 @@ def cdnr_r1(drcr_all, con):
                 row["pregst"] = "N"
             else:
                 row["pregst"] = "Y"
+
+            cdnr_json_inv = {
+                "nt_num": note["invoiceno"],
+                "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
+                "val": "%.2f" % float(note["totreduct"]),
+                "ntty": "D" if note["dctypeflag"] == 4 else "C",
+                "pos": "%02d" % (ts_code),
+                "rchrg": "N",
+                "inv_typ": "R",  # Need to handle other gst types
+                "itms": [],
+            }
             for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
@@ -420,7 +566,49 @@ def cdnr_r1(drcr_all, con):
                 prod_row["cess"] = "%.2f" % tax_cess["cess"]
                 cdnr.append(prod_row)
 
-        return {"status": 0, "data": cdnr}
+                cdnr_json_item = {
+                    "num": 1
+                    if not prod_row["rate"]
+                    else "%d%02d"
+                    % (
+                        int(float(prod_row["rate"])),
+                        1,
+                    ),  # need to check how floating values are handled
+                    "itm_det": {
+                        "txval": prod_row["taxable_value"],
+                        "rt": prod_row["rate"],
+                        "csamt": prod_row["cess"],
+                    },
+                }
+                tax_amt = "%.2f" % (
+                    (float(prod_row["taxable_value"]) * float(rate)) / 100.0
+                )
+                if note["taxstate"] == note["sourcestate"]:
+                    cdnr_json_item["itm_det"].update(
+                        {
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                        }
+                    )
+                else:
+                    cdnr_json_item["itm_det"].update(
+                        {
+                            "iamt": tax_amt,
+                        }
+                    )
+
+                cdnr_json_inv["itms"].append(cdnr_json_item)
+
+            if row["gstin"] not in cdnr_json:
+                cdnr_json[row["gstin"]] = []
+
+            cdnr_json[row["gstin"]].append(cdnr_json_inv)
+
+        cdnr_json_arr = []
+        for cdnr_gstin in cdnr_json:
+            cdnr_json_arr.append({"ctin": cdnr_gstin, "inv": cdnr_json[cdnr_gstin]})
+
+        return {"status": 0, "data": cdnr, "json": cdnr_json_arr}
     except:
         print(traceback.format_exc())
         return {"status": 3}
@@ -447,7 +635,7 @@ def cdnur_r1(drcr_all, con):
             return True
 
         drcrs = list(filter(cdnur_filter, drcr_all))
-
+        cdnur_json_arr = []
         # print("drcr notes = %d" % (len(drcrs)))
         for note in drcrs:
 
@@ -474,6 +662,16 @@ def cdnur_r1(drcr_all, con):
                 row["pregst"] = "N"
             else:
                 row["pregst"] = "Y"
+
+            cdnur_json_inv = {
+                "nt_num": note["invoiceno"],
+                "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
+                "val": "%.2f" % float(note["totreduct"]),
+                "ntty": "D" if note["dctypeflag"] == 4 else "C",
+                "pos": "%02d" % (ts_code),
+                "typ": "R",
+                "itms": [],
+            }
             for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
@@ -481,7 +679,34 @@ def cdnur_r1(drcr_all, con):
                 prod_row["cess"] = "%.2f" % tax_cess["cess"]
                 cdnur.append(prod_row)
 
-        return {"status": 0, "data": cdnur}
+                cdnur_json_item = {
+                    "num": 1
+                    if not prod_row["rate"]
+                    else "%d%02d" % (prod_row["rate"], 1),
+                    "itm_det": {
+                        "txval": prod_row["taxable_value"],
+                        "rt": prod_row["rate"],
+                        "csamt": prod_row["cess"],
+                    },
+                }
+                tax_amt = "%.2f" % (float(prod_row["taxable_value"] * rate) / 100.0)
+                if note["taxstate"] == note["sourcestate"]:
+                    cdnur_json_item["itm_det"].update(
+                        {
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                        }
+                    )
+                else:
+                    cdnur_json_item["itm_det"].update(
+                        {
+                            "iamt": tax_amt,
+                        }
+                    )
+
+                cdnur_json_inv["itms"].append(cdnur_json_item)
+
+        return {"status": 0, "data": cdnur, "json": cdnur_json_arr}
     except:
         print(traceback.format_exc())
         return {"status": 3}
@@ -500,6 +725,8 @@ def hsn_r1(orgcode, start, end, con):
         start = start
         end = end
         Final = []
+        hsn_json = {"data": []}
+        prod_counter = 0
 
         prodData = con.execute(
             select(
@@ -550,12 +777,13 @@ def hsn_r1(orgcode, start, end, con):
             ttl_qty = 0.00
 
             if invoice_Data != None and len(invoice_Data) > 0:
+                taxRate = 0
                 for inv in invoice_Data:
                     taxable_Value = 0.00
                     cn = literal_eval(inv["content"])
                     ds = float(literal_eval(inv["disc"]))
                     ppu = float(list(cn.keys())[0])
-                    tx = float(literal_eval(inv["tax"]))
+                    tx = taxRate = float(literal_eval(inv["tax"]))
                     cs = float(literal_eval(inv["cess"]))
                     # check condition for product and service
                     if products["gsflag"] == 7:
@@ -607,7 +835,24 @@ def hsn_r1(orgcode, start, end, con):
                 prodHSN["CESSamt"] = "%.2f" % float(ttl_CESSval)
                 Final.append(prodHSN)
 
-        return {"status": 0, "data": Final}
+                prod_counter += 1
+                hsn_json["data"].append(
+                    {
+                        "num": prod_counter,
+                        "hsn_sc": prodHSN["hsnsac"],
+                        "desc": prodHSN["prodctname"],
+                        "uqc": prodHSN["uqc"],
+                        "qty": prodHSN["qty"],
+                        "rt": taxRate,
+                        "txval": prodHSN["taxableamt"],
+                        "iamt": prodHSN["IGSTamt"],
+                        "samt": prodHSN["SGSTamt"],
+                        "camt": prodHSN["SGSTamt"],
+                        "csamt": prodHSN["CESSamt"],
+                    }
+                )
+
+        return {"status": 0, "data": Final, "json": hsn_json}
     except:
         # print(traceback.format_exc())
         return {"status": 3}
@@ -875,8 +1120,8 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                 ] = 1
                         else:
                             if line_total_amount == line_amount:  # Zero GST taxes
-                                
-                                # 5. From a supplier under composition scheme, Exempt and Nil rated 
+
+                                # 5. From a supplier under composition scheme, Exempt and Nil rated
                                 if gst_reg_type == GST_REG_TYPE["composition"]:
                                     if (
                                         inv_data["taxstatecode"]
@@ -998,7 +1243,13 @@ class GstReturn(object):
 
             # All sale invoices that have customers
             cust_inv_query = select(
-                [invoice, customerandsupplier.c.gstin, customerandsupplier.c.custname]
+                [
+                    invoice,
+                    customerandsupplier.c.gstin,
+                    customerandsupplier.c.custname,
+                    customerandsupplier.c.gst_reg_type,
+                    customerandsupplier.c.gst_party_type,
+                ]
             ).where(
                 and_(
                     invoice.c.invoicedate.between(
@@ -1018,6 +1269,8 @@ class GstReturn(object):
                 index = inv_map[id]
                 invoices[index]["gstin"] = inv["gstin"]
                 invoices[index]["custname"] = inv["custname"]
+                invoices[index]["gst_reg_type"] = inv["gst_reg_type"]
+                invoices[index]["gst_party_type"] = inv["gst_party_type"]
 
             # debit/credit notes
             query1 = (
@@ -1035,6 +1288,8 @@ class GstReturn(object):
                         invoice.c.contents,
                         customerandsupplier.c.gstin,
                         customerandsupplier.c.custname,
+                        customerandsupplier.c.gst_reg_type,
+                        customerandsupplier.c.gst_party_type,
                     ]
                 )
                 .select_from(drcr.join(invoice).join(customerandsupplier))
@@ -1053,19 +1308,92 @@ class GstReturn(object):
             drcrs_all = self.con.execute(query1).fetchall()
 
             gkdata = {}
-            gkdata["b2b"] = b2b_r1(invoices, self.con).get("data", [])
-            gkdata["b2cl"] = b2cl_r1(invoices, self.con).get("data", [])
-            gkdata["b2cs"] = b2cs_r1(invoices, self.con, False).get("data", [])
-            neg_b2cs = b2cs_r1(drcrs_all, self.con, True).get("data", [])
-            gkdata["b2cs"] += neg_b2cs
-            gkdata["cdnr"] = cdnr_r1(drcrs_all, self.con).get("data", [])
-            gkdata["cdnur"] = cdnur_r1(drcrs_all, self.con).get("data", [])
-            gkdata["hsn1"] = hsn_r1(
-                orgcode, dataset["start"], dataset["end"], self.con
-            ).get("data", [])
+            b2b = b2b_r1(invoices, self.con)
+            b2cl = b2cl_r1(invoices, self.con)
+            b2cs = b2cs_r1(invoices, self.con, False)
+            neg_b2cs = b2cs_r1(drcrs_all, self.con, True)
+            cdnr = cdnr_r1(drcrs_all, self.con)
+            cdnur = cdnur_r1(drcrs_all, self.con)
+            hsn = hsn_r1(orgcode, dataset["start"], dataset["end"], self.con)
+            gkdata["b2b"] = b2b.get("data", [])
+            gkdata["b2cl"] = b2cl.get("data", [])
+            gkdata["b2cs"] = b2cs.get("data", [])
+            neg_b2cs_data = neg_b2cs.get("data", [])
+            gkdata["b2cs"] += neg_b2cs_data
+            gkdata["cdnr"] = cdnr.get("data", [])
+            gkdata["cdnur"] = cdnur.get("data", [])
+            gkdata["hsn1"] = hsn.get("data", [])
+
+            # JSON prep
+            gstin_data = self.con.execute(
+                select([organisation.c.gstin, organisation.c.orgstate]).where(
+                    organisation.c.orgcode == orgcode
+                )
+            ).fetchone()
+            gstin = ""
+            print(gstin_data)
+            if gstin_data["orgstate"]:
+                state_code = self.con.execute(
+                    select([state.c.statecode]).where(
+                        state.c.statename == gstin_data["orgstate"]
+                    )
+                ).fetchone()
+                state_code = state_code["statecode"]
+                print(state_code)
+                if str(state_code) in gstin_data["gstin"]:
+                    gstin = gstin_data["gstin"][str(state_code)]
+                elif "0" + str(state_code) in gstin_data["gstin"]:
+                    gstin = gstin_data["gstin"]["0" + str(state_code)]
+
+            fp = "%s%s" % (end_period.strftime("%m"), end_period.strftime("%Y"))
+
+            gstr1_json = {
+                "version": "GST3.1.4",
+                "hash": "hash",
+                "gstin": gstin,
+                "fp": fp,
+                "b2b": b2b["json"],
+                "b2cs": b2cs["json"],
+                "b2cl": b2cl["json"],
+                "cdnr": cdnr["json"],
+                "cdnur": cdnur["json"],
+                "hsn": hsn["json"],
+                "nil": {
+                    "inv": [
+                        {
+                            "sply_ty": "INTRB2B",
+                            "expt_amt": 0.0,
+                            "nil_amt": 0.0,
+                            "ngsup_amt": 0,
+                        },
+                        {
+                            "sply_ty": "INTRAB2B",
+                            "expt_amt": 0.0,
+                            "nil_amt": 0.0,
+                            "ngsup_amt": 0,
+                        },
+                        {
+                            "sply_ty": "INTRB2C",
+                            "expt_amt": 0.0,
+                            "nil_amt": 0.0,
+                            "ngsup_amt": 0,
+                        },
+                        {
+                            "sply_ty": "INTRAB2C",
+                            "expt_amt": 0.0,
+                            "nil_amt": 0.0,
+                            "ngsup_amt": 0,
+                        },
+                    ]
+                },
+            }
 
             self.con.close()
-            return {"gkstatus": enumdict["Success"], "gkdata": gkdata}
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkdata": gkdata,
+                "json": gstr1_json,
+            }
 
         except:
             print(traceback.format_exc())
