@@ -27,8 +27,8 @@ gkcore_setup:
     # run tests
     - python3 gkcore/tests/public_apis.py
 
-generate_api_docs:
-  stage: build
+# generate api docs
+pages:
   script:
     - apt update && apt install -y build-essential libpq-dev
     - pip install -r requirements.txt
