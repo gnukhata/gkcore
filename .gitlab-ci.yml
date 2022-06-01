@@ -27,6 +27,20 @@ gkcore_setup:
     # run tests
     - python3 gkcore/tests/public_apis.py
 
+generate_api_docs:
+  stage: build
+  script:
+    - apt update && apt install -y build-essential libpq-dev
+    - pip install -r requirements.txt
+    - pip install pdoc
+    - pdoc -o .pub/api-docs/ gkcore/
+    - mv .pub public
+    - ls public
+    # - gzip -k -9 $(find public -type f)
+  artifacts:
+    paths:
+      - public
+
 # run unit tests
 # unit-tests:
 #   stage: build
