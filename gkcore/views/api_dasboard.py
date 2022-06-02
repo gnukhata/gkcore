@@ -36,7 +36,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
-from gkcore.models.meta import dbconnect
+from gkcore.models.meta import dbconnect, gk_api
 from gkcore.models.gkdb import (
     billwise,
     invoice,
@@ -258,7 +258,7 @@ def topfivecustsup(inoutflag, orgcode):
                 {
                     "custname": csDetails["custname"],
                     "custid": inv["custid"],
-                    "data": float(inv["data"]),
+                    "data": "%.2f" % inv["data"],
                 }
             )
         con.close()
@@ -376,11 +376,13 @@ def stockonhanddashboard(orgcode):
         prodname = []
         stockresultlist = []
         for i in prodcodedesclist:
+            print(i)
             prodname.append({"prodname": i["proddesc"]})
             orgcode = orgcode
             productCode = i["prodcode"]
             endDate = datetime.strptime(str(calculateto), "%Y-%m-%d")
             stockresult = stockonhandfun(orgcode, productCode, endDate)
+            print(stockresult)
             stockresultlist.append(stockresult)
 
         con.close()
@@ -389,7 +391,8 @@ def stockonhanddashboard(orgcode):
             "stockresultlist": stockresultlist,
             "productname": prodname,
         }
-    except:
+    except Exception as e:
+        print(e)
         con.close()
         return {"gkstatus": enumdict["ConnectionFailed"]}
     finally:
@@ -682,10 +685,9 @@ class api_dashboard(object):
                     "outnotecount": outnotecount,
                 }
                 self.con.close()
-            except:
+            except Exception as e:
+                print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-                self.con.close()
-            finally:
                 self.con.close()
 
     # this function use to godwn name assign to godown incharge
@@ -808,3 +810,79 @@ class api_dashboard(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(
+        request_method="GET", renderer="json", request_param="type=profit-loss"
+    )
+    def profit_loss_report(self):
+        """Profit Loss Report Chat data for given date range
+
+        `params`
+
+        calculatefrom: string
+        calculateto: string
+        """
+        try:
+            calculatefrom = self.request.params["calculatefrom"]
+            calculateto = self.request.params["calculateto"]
+            header = {"gktoken": self.request.headers["gktoken"]}
+            result = gk_api(
+                url="/report?type=profitloss&calculatefrom=%s&calculateto=%s"
+                % (calculatefrom, calculateto),
+                header=header,
+                request=self.request,
+            )
+            DirectIncome = result["gkresult"]["Direct Income"]["Sales"]["balance"]
+            InDirectIncome = result["gkresult"]["Indirect Income"]["indirincmbal"]
+            DirectExpense = result["gkresult"]["Direct Expense"]["direxpbal"]
+            InDirectExpense = result["gkresult"]["Indirect Expense"]["indirexpbal"]
+            return {
+                "gkstatus": result["gkstatus"],
+                "gkresult": {
+                    "direct_income": DirectIncome,
+                    "indirect_income": InDirectIncome,
+                    "direct_expense": DirectExpense,
+                    "indirect_expense": InDirectExpense,
+                },
+            }
+        except Exception as e:
+            print(e)
+            return {"gkstatus: 3"}
+
+    @view_config(
+        route_name="dashboard",
+        request_param="type=balancesheet",
+        renderer="json",
+    )
+    def balance_sheet_report(self):
+        """Profit Loss Report Chat data for given date range
+
+        `params`
+
+        calculatefrom: string
+        calculateto: string
+        """
+        calculateto = self.request.params["calculateto"]
+        calculatefrom = self.request.params["calculatefrom"]
+        header = {"gktoken": self.request.headers["gktoken"]}
+        result = gk_api(
+            url="/report?type=balancesheet&calculateto=%s&baltype=1&calculatefrom=%s"
+            % (calculateto, calculatefrom),
+            header=header,
+            request=self.request,
+        )
+        data1 = []
+        data2 = []
+        for content in result["gkresult"]["rightlist"]:
+            if content["groupAccname"] == "Total":
+                data1.append(content["amount"])
+        for content in result["gkresult"]["leftlist"]:
+            count = 0
+            if content["groupAccname"] == "Total":
+                count = count + 1
+                data2.append(content["amount"])
+                if count == 2:
+                    data1.append(data2[1])
+                else:
+                    data1.append(data2[0])
+        return {"gkstatus": result["gkstatus"], "gkresult": data1}
