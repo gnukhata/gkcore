@@ -27,30 +27,20 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, alias, or_, func, desc
+from sqlalchemy import and_, desc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.sql.expression import null
-from gkcore.models.meta import dbconnect, gk_api
+from gkcore.models.meta import gk_api
 from gkcore.models.gkdb import (
-    billwise,
     invoice,
     customerandsupplier,
-    vouchers,
-    accounts,
     organisation,
 )
 from datetime import datetime, date
 from monthdelta import monthdelta
-from operator import itemgetter
-from natsort import natsorted
 import calendar
-import math
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import stockonhandfun
 from gkcore.views.api_reports import calculateBalance
@@ -261,6 +251,7 @@ def topfivecustsup(inoutflag, orgcode):
                     "data": "%.2f" % inv["data"],
                 }
             )
+
         con.close()
         return {
             "gkstatus": enumdict["Success"],
@@ -300,11 +291,9 @@ def topfiveprodsev(orgcode):
             )
         con.close()
         return {"gkstatus": enumdict["Success"], "prodinfolist": prodinfolist}
-    except:
-        con.close()
+    except Exception as e:
+        print(e)
         return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 # this function use to show delchal count by month at dashbord in bar chart
@@ -376,27 +365,34 @@ def stockonhanddashboard(orgcode):
         prodname = []
         stockresultlist = []
         for i in prodcodedesclist:
-            print(i)
             prodname.append({"prodname": i["proddesc"]})
             orgcode = orgcode
             productCode = i["prodcode"]
             endDate = datetime.strptime(str(calculateto), "%Y-%m-%d")
             stockresult = stockonhandfun(orgcode, productCode, endDate)
-            print(stockresult)
-            stockresultlist.append(stockresult)
-
+            # product
+            if stockresult["gkstatus"] == 0:
+                stockresultlist.append(stockresult["gkresult"][0])
+            # handle service type
+            if stockresult["gkstatus"] == 3:
+                print(productCode)
+                stockresultlist.append(
+                    {
+                        "productname": i["proddesc"],
+                        "productcode": productCode,
+                        "balance": "N/A",
+                    }
+                )
         con.close()
-        return {
-            "gkstatus": enumdict["Success"],
-            "stockresultlist": stockresultlist,
-            "productname": prodname,
-        }
+        # return {
+        #     "gkstatus": enumdict["Success"],
+        #     "stockresultlist": stockresultlist,
+        #     "productname": prodname,
+        # }
+        return stockresultlist
     except Exception as e:
         print(e)
-        con.close()
         return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 # this fuction returns month wise bank and cash sub account  balance on daashboard
@@ -519,8 +515,9 @@ class api_dashboard(object):
         else:
             try:
                 userinfo = getUserRole(authDetails["userid"])
-                userrole = userinfo["gkresult"]["userrole"]
+                userrole: int = userinfo["gkresult"]["userrole"]
                 orgcode = authDetails["orgcode"]
+                # for admin & manager
                 if userrole == -1 or userrole == 0:
                     amountwiise_purchaseinv = amountwiseinvoice(9, orgcode)
                     datewise_purchaseinv = datewiseinvoice(9, orgcode)
@@ -781,7 +778,7 @@ class api_dashboard(object):
                         str(financialStart),
                         str(financialEnd),
                     )
-                    bankbalancedata["bankbalance"] = calbaldata["curbal"]
+                    bankbalancedata["bankbalance"] = "%.2f" % calbaldata["curbal"]
                     bankbalancedata["bankaccname"] = bankbal["accountname"]
                     bankbalancedata["baltype"] = calbaldata["baltype"]
                     bankaccdata.append(bankbalancedata)
@@ -795,7 +792,7 @@ class api_dashboard(object):
                         str(financialStart),
                         str(financialEnd),
                     )
-                    cashbalancedata["cashbalance"] = calbaldata["curbal"]
+                    cashbalancedata["cashbalance"] = "%.2f" % calbaldata["curbal"]
                     cashbalancedata["cashaccname"] = cashbal["accountname"]
                     cashbalancedata["baltype"] = calbaldata["baltype"]
                     cashaccdata.append(cashbalancedata)
