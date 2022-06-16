@@ -706,7 +706,7 @@ class api_drcr(object):
                     .where(
                         and_(
                             invoice.c.orgcode == authDetails["orgcode"],
-                            # invoice.c.icflag == 9, # commenting this line to include Cash Memos
+                            invoice.c.icflag == 9, # commenting this line to include Cash Memos
                         )
                     )
                     .order_by(invoice.c.invoicedate)
@@ -1160,6 +1160,7 @@ def drcrVoucher(queryParams, orgcode):
                             )
                         )
                         taxRow = taxAcc.fetchone()
+                        print(Tax)
                         drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                 else:
                     vatoutaccount = con.execute(
@@ -1991,6 +1992,7 @@ def drcrVoucher(queryParams, orgcode):
                                 val = float(taxDict[taxNameCESS])
                                 taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                     for Tax in taxDict:
+                        print(Tax)
                         taxAcc = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
