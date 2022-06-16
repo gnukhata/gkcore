@@ -1025,6 +1025,7 @@ def getInvoiceData(con, orgcode, params):
 
             custsupstatecode = getStateCode(custData["state"], con)["statecode"]
             custSupDetails = {
+                "custid": invrow["custid"],
                 "custname": custData["custname"],
                 "custsupstate": custData["state"],
                 "custaddr": custData["custaddr"],
