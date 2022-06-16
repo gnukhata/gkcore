@@ -1779,6 +1779,8 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
     if ttlCrBalance > ttlDrBalance:
         currentBalance = ttlCrBalance - ttlDrBalance
         balType = "Cr"
+    print(ttlCrBalance)
+    print(ttlDrBalance)
     return {
         "balbrought": float(balanceBrought),
         "curbal": float(currentBalance),
@@ -2344,6 +2346,7 @@ def godownwisestockonhandfun(
             totalinward = totalinward + float(gopeningStock)
             for finalRow in stockData:
                 if finalRow["dcinvtnflag"] == 4:
+                    # Delivery note
                     countresult = con.execute(
                         select(
                             [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
@@ -2392,6 +2395,7 @@ def godownwisestockonhandfun(
                             )
                             totaloutward = float(totaloutward) + float(finalRow["qty"])
                 if finalRow["dcinvtnflag"] == 20:
+                    # Transfer Note
                     countresult = con.execute(
                         select(
                             [
@@ -2418,6 +2422,7 @@ def godownwisestockonhandfun(
                             )
                             totaloutward = float(totaloutward) + float(finalRow["qty"])
                 if finalRow["dcinvtnflag"] == 18:
+                    # Rejection Note
                     if finalRow["inout"] == 9:
                         gopeningStock = float(gopeningStock) + float(finalRow["qty"])
                         totalinward = float(totalinward) + float(finalRow["qty"])
@@ -2425,11 +2430,12 @@ def godownwisestockonhandfun(
                         gopeningStock = float(gopeningStock) - float(finalRow["qty"])
                         totaloutward = float(totaloutward) + float(finalRow["qty"])
                 if finalRow["dcinvtnflag"] == 7:
+                    # Debite Credit Note
                     countresult = con.execute(
                         select([func.count(drcr.c.drcrid).label("dc")]).where(
                             and_(
                                 drcr.c.drcrdate >= yearStart,
-                                drcr.c.drcrdate < startDate,
+                                drcr.c.drcrdate <= endDate,
                                 drcr.c.drcrid == finalRow["dcinvtnid"],
                             )
                         )
@@ -2440,7 +2446,7 @@ def godownwisestockonhandfun(
                             gopeningStock = float(gopeningStock) + float(
                                 finalRow["qty"]
                             )
-                            totaloutward = float(totalinward) + float(finalRow["qty"])
+                            totalinward = float(totalinward) + float(finalRow["qty"])
                         if finalRow["inout"] == 15:
                             gopeningStock = float(gopeningStock) - float(
                                 finalRow["qty"]
@@ -2603,28 +2609,28 @@ def godownwisestockonhandfun(
                                 finalRow["qty"]
                             )
                             totaloutward = float(totaloutward) + float(finalRow["qty"])
-                    if stockRow["dcinvtnflag"] == 7:
+                    if finalRow["dcinvtnflag"] == 7:
                         countresult = con.execute(
                             select([func.count(drcr.c.drcrid).label("dc")]).where(
                                 and_(
                                     drcr.c.drcrdate >= yearStart,
                                     drcr.c.drcrdate < startDate,
-                                    drcr.c.drcrid == stockRow["dcinvtnid"],
+                                    drcr.c.drcrid == finalRow["dcinvtnid"],
                                 )
                             )
                         )
                         countrow = countresult.fetchone()
                         if countrow["dc"] == 1:
-                            if stockRow["inout"] == 9:
+                            if finalRow["inout"] == 9:
                                 gopeningStock = float(gopeningStock) + float(
-                                    stockRow["qty"]
+                                    finalRow["qty"]
                                 )
                                 totalinward = float(totalinward) + float(
                                     finalRow["qty"]
                                 )
-                            if stockRow["inout"] == 15:
+                            if finalRow["inout"] == 15:
                                 gopeningStock = float(gopeningStock) - float(
-                                    stockRow["qty"]
+                                    finalRow["qty"]
                                 )
                                 totaloutward = float(totaloutward) + float(
                                     finalRow["qty"]
@@ -5962,6 +5968,8 @@ class api_reports(object):
                     % (orgcode, orgcode)
                 )
                 DESubGroups = DESubGroupsData.fetchall()
+                print("Direct Expense sub groups")
+                print(DESubGroups)
                 # now we have list of subgroups under Direct Expense.
                 # We will loop through each and get list of their accounts.
                 for DESub in DESubGroups:
@@ -6015,6 +6023,8 @@ class api_reports(object):
                 )
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
+                    print("Direct Expense Account data")
+                    print(deAccData)
                     for deAcc in deAccData:
                         calbalData = calculateBalance(
                             self.con,
@@ -6064,7 +6074,8 @@ class api_reports(object):
                         DISubAccs = DISubAccsData.fetchall()
                         DISUBDict = {}
                         DISubBal = 0.00
-
+                        # print("Direct Income Sub Acc")
+                        # print(DISubAccs)
                         for disubacc in DISubAccs:
                             calbalData = calculateBalance(
                                 self.con,
@@ -6073,6 +6084,7 @@ class api_reports(object):
                                 calculateFrom,
                                 calculateTo,
                             )
+                            # print(calbalData["curbal"])
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -7108,6 +7120,7 @@ class api_reports(object):
                     for stockRow in stockData:
 
                         if stockRow["dcinvtnflag"] == 4:
+                            # delivery note
                             countresult = self.con.execute(
                                 select([func.count(delchal.c.dcid).label("dc")]).where(
                                     and_(
@@ -7128,6 +7141,7 @@ class api_reports(object):
                                         stockRow["qty"]
                                     )
                         if stockRow["dcinvtnflag"] == 20:
+                            # transfer note
                             countresult = self.con.execute(
                                 select(
                                     [
@@ -7155,20 +7169,42 @@ class api_reports(object):
                                         stockRow["qty"]
                                     )
                         if stockRow["dcinvtnflag"] == 18:
+                            # Rejection Note
                             if stockRow["inout"] == 9:
-                                goopeningstock = float(goopeningstock) + float(
+                                gopeningstock = float(gopeningstock) + float(
                                     stockRow["qty"]
                                 )
                                 totalinward = float(totalinward) + float(
                                     stockRow["qty"]
                                 )
                             if stockRow["inout"] == 15:
-                                goopeningstock = float(goopeningstock) - float(
+                                gopeningstock = float(gopeningstock) - float(
                                     stockRow["qty"]
                                 )
                                 totaloutward = float(totaloutward) + float(
                                     stockRow["qty"]
                                 )
+                        if stockRow["dcinvtnflag"] == 7:
+                            # Debit Credit Note
+                            countresult = self.con.execute(
+                                select([func.count(drcr.c.drcrid).label("dc")]).where(
+                                    and_(
+                                        drcr.c.drcrdate >= yearStart,
+                                        drcr.c.drcrdate < startDate,
+                                        drcr.c.drcrid == stockRow["dcinvtnid"],
+                                    )
+                                )
+                            )
+                            countrow = countresult.fetchone()
+                            if countrow["dc"] == 1:
+                                if stockRow["inout"] == 9:
+                                    gopeningStock = float(gopeningStock) + float(
+                                        stockRow["qty"]
+                                    )
+                                if stockRow["inout"] == 15:
+                                    gopeningStock = float(gopeningStock) - float(
+                                        stockRow["qty"]
+                                    )
                 stockReport.append(
                     {
                         "date": "",
@@ -7482,6 +7518,106 @@ class api_reports(object):
                                         "balance": "%.2f" % float(gopeningStock),
                                     }
                                 )
+                    if finalRow["dcinvtnflag"] == 7:
+                        countresult = self.con.execute(
+                            select(
+                                [
+                                    drcr.c.drcrdate,
+                                    drcr.c.drcrno,
+                                    drcr.c.invid,
+                                    drcr.c.dctypeflag,
+                                ]
+                            ).where(
+                                and_(
+                                    drcr.c.drcrdate >= startDate,
+                                    drcr.c.drcrdate <= endDate,
+                                    drcr.c.drcrid == finalRow["dcinvtnid"],
+                                )
+                            )
+                        )
+                        if countresult.rowcount == 1:
+                            countrow = countresult.fetchone()
+                            drcrinvdata = self.con.execute(
+                                select([invoice.c.custid]).where(
+                                    invoice.c.invid == countrow["invid"]
+                                )
+                            )
+                            drcrinv = drcrinvdata.fetchone()
+                            custdata = self.con.execute(
+                                select([customerandsupplier.c.custname]).where(
+                                    customerandsupplier.c.custid == drcrinv["custid"]
+                                )
+                            )
+                            custrow = custdata.fetchone()
+                            if int(countrow["dctypeflag"] == 3):
+                                trntype = "Credit Note"
+                            else:
+                                trntype = "Debit Note"
+                            if finalRow["inout"] == 9:
+                                gopeningStock = float(gopeningStock) + float(
+                                    finalRow["qty"]
+                                )
+                                totalinward = float(totalinward) + float(
+                                    finalRow["qty"]
+                                )
+
+                                stockReport.append(
+                                    {
+                                        "date": datetime.strftime(
+                                            datetime.strptime(
+                                                str(countrow["drcrdate"].date()),
+                                                "%Y-%m-%d",
+                                            ).date(),
+                                            "%d-%m-%Y",
+                                        ),
+                                        "particulars": custrow["custname"],
+                                        "trntype": trntype,
+                                        "drcrid": finalRow["dcinvtnid"],
+                                        "drcrno": countrow["drcrno"],
+                                        "dcno": "",
+                                        "dcid": "",
+                                        "rnid": "",
+                                        "rnno": "",
+                                        "invid": "",
+                                        "invno": "",
+                                        "inwardqty": "%.2f" % float(finalRow["qty"]),
+                                        "outwardqty": "",
+                                        "balance": "%.2f" % float(gopeningStock),
+                                    }
+                                )
+                            if finalRow["inout"] == 15:
+                                gopeningStock = float(gopeningStock) - float(
+                                    finalRow["qty"]
+                                )
+                                totaloutward = float(totaloutward) + float(
+                                    finalRow["qty"]
+                                )
+
+                                stockReport.append(
+                                    {
+                                        "date": datetime.strftime(
+                                            datetime.strptime(
+                                                str(countrow["drcrdate"].date()),
+                                                "%Y-%m-%d",
+                                            ).date(),
+                                            "%d-%m-%Y",
+                                        ),
+                                        "particulars": custrow["custname"],
+                                        "trntype": trntype,
+                                        "drcrid": finalRow["dcinvtnid"],
+                                        "drcrno": countrow["drcrno"],
+                                        "dcid": "",
+                                        "dcno": "",
+                                        "invid": "",
+                                        "invno": "",
+                                        "rnid": "",
+                                        "rnno": "",
+                                        "inwardqty": "",
+                                        "outwardqty": "%.2f" % float(finalRow["qty"]),
+                                        "balance": "%.2f" % float(gopeningStock),
+                                    }
+                                )
+
 
                 stockReport.append(
                     {
@@ -7504,6 +7640,7 @@ class api_reports(object):
 
                 self.con.close()
             except:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
