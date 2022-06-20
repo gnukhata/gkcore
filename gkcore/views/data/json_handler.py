@@ -1,9 +1,9 @@
 import json, io
 from pyramid.response import Response
-from gkcore.models.meta import dbconnect, gk_api
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_user import getUserRole
+from gkcore.models.gkdb import customerandsupplier, godown
 
 
 def get_table_array(name: str, orgcode: int):
@@ -110,17 +110,18 @@ def import_json(self):
     try:
         token = self.request.headers["gktoken"]
         user = authCheck(token)
+        print(user)
         user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
 
-        # only admin can export data
+        # only admin can import data
         print(user_role)
         if user_role != -1:
             return {"gkstatus": enumdict["BadPrivilege"]}
     except:
         return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
+    # Proceed to importing
     try:
-        header = {"gktoken": self.request.headers["gktoken"]}
         f = self.request.POST["gkfile"].file
         org = json.load(f)
 
@@ -129,28 +130,27 @@ def import_json(self):
         for i in org["customerandsupplier"]:
             # remove foreign key
             i.pop("custid")
-
-            response = gk_api(
-                method="POST",
-                url="/customersupplier",
-                body=i,
-                header=header,
-                request=self.request,
-            )
-            print(i["custname"], response)
+            # add current orgcode as key
+            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
+            # insert user entries to respective table
+            try:
+                response = eng.connect().execute(customerandsupplier.insert(), i)
+                print(response)
+            except Exception as e:
+                print(e)
         # Godowns
         print("\n 📦 Importing Godowns ...")
         for i in org["godown"]:
-
+            # remove foreign key
             i.pop("goid")
-            response = gk_api(
-                method="POST",
-                url="/godown",
-                body=i,
-                header=header,
-                request=self.request,
-            )
-            print(i["goname"], response)
+            # add current orgcode as key
+            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
+            # insert user entries to respective table
+            try:
+                response = eng.connect().execute(godown.insert(), i)
+                print(response)
+            except Exception as e:
+                print(e)
     except Exception as e:
         print(e)
         return {"gkstatus": 3}
