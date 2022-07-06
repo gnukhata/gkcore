@@ -31,7 +31,7 @@ def check_flags():
     if "serve" in args:
 
         cmd.run(["docker-compose", "up", "-d"])
-        cmd.run(["pserve", "development.ini"])
+        cmd.run(["pserve", "development.ini", "--reload"])
 
     if "deploy" in args:
 
