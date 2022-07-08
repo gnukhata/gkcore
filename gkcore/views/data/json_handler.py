@@ -1,4 +1,5 @@
 import json, io
+from gkcore.models.meta import dbconnect
 from pyramid.response import Response
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
@@ -68,24 +69,32 @@ def export_json(self):
     except:
         return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
+    # get tables list from the db
     db_tables = dbconnect().table_names()
 
     data = {}
 
+    # These tables are excluded during the export
     ignored_tables = [
-        "log",
         "state",
-        "users",
         "organisation",
         "signature",
         "unitofmeasurement",
     ]
-
+    # add gnukhata key to the exported json
+    # This helps to validate the file during import operations
+    data["gnukhata"] = {
+        "export_version": 1.0,
+    }
+    # loop through the tables and assign table data to their respective keys
     for n in db_tables:
         if n not in ignored_tables:
             data[n] = get_table_array(name=n, orgcode=org_code)
 
+    # create a file object
     file_obj = io.StringIO()
+    # convert the tables object to human readable json format and
+    # return a file
     json.dump(data, file_obj, default=type_cast, indent=1)
     export_file = file_obj.getvalue()
     file_obj.close()
