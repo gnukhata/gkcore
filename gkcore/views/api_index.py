@@ -7,5 +7,5 @@ class api_state(object):
         self.request = request
 
     @view_config(request_method="GET", renderer="json")
-    def getAllStates(self):
+    def main(self):
         return {"gkstatus": 0, "msg": "gkcore is running!"}
