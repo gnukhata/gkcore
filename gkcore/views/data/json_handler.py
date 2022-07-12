@@ -1,10 +1,10 @@
-import json, io
+import json, io, logging
 from gkcore.models.meta import dbconnect
 from pyramid.response import Response
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_user import getUserRole
-from gkcore.models.gkdb import customerandsupplier, godown
+from gkcore.models.gkdb import customerandsupplier, godown, accounts
 
 
 def get_table_array(name: str, orgcode: int):
@@ -58,12 +58,10 @@ def export_json(self):
     try:
         token = self.request.headers["gktoken"]
         user = authCheck(token)
-        print(user)
         org_code = user["orgcode"]
         user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
 
         # only admin can export data
-        print(user_role)
         if user_role != -1:
             return {"gkstatus": enumdict["BadPrivilege"]}
     except:
@@ -72,7 +70,9 @@ def export_json(self):
     # get tables list from the db
     db_tables = dbconnect().table_names()
 
-    data = {}
+    # add gnukhata key to the exported json
+    # This helps to validate the file during import operations
+    data = {"gnukhata": {"export_version": 1}}
 
     # These tables are excluded during the export
     ignored_tables = [
@@ -81,11 +81,6 @@ def export_json(self):
         "signature",
         "unitofmeasurement",
     ]
-    # add gnukhata key to the exported json
-    # This helps to validate the file during import operations
-    data["gnukhata"] = {
-        "export_version": 1.0,
-    }
     # loop through the tables and assign table data to their respective keys
     for n in db_tables:
         if n not in ignored_tables:
@@ -113,17 +108,15 @@ def export_json(self):
 
 
 def import_json(self):
-    """Import org data from GNUKhata's json format"""
+    """Import org data from GNUKhata's json export file"""
 
     # Check & validate user access
     try:
         token = self.request.headers["gktoken"]
         user = authCheck(token)
-        print(user)
         user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
 
         # only admin can import data
-        print(user_role)
         if user_role != -1:
             return {"gkstatus": enumdict["BadPrivilege"]}
     except:
@@ -133,6 +126,11 @@ def import_json(self):
     try:
         f = self.request.POST["gkfile"].file
         org = json.load(f)
+        # check if it's a valid gnukhata json file
+        # else return err response
+        if "gnukhata" not in org:
+            logging.info("Not a valid gnukhata export format")
+            return {"gkstatus": 3}
 
         # customers / suppliers
         print("\n 🤝 importing customers/suppliers ...")
@@ -143,10 +141,9 @@ def import_json(self):
             i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
             # insert user entries to respective table
             try:
-                response = eng.connect().execute(customerandsupplier.insert(), i)
-                print(response)
+                eng.connect().execute(customerandsupplier.insert(), i)
             except Exception as e:
-                print(e)
+                logging.warning(e)
         # Godowns
         print("\n 📦 Importing Godowns ...")
         for i in org["godown"]:
@@ -156,11 +153,23 @@ def import_json(self):
             i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
             # insert user entries to respective table
             try:
-                response = eng.connect().execute(godown.insert(), i)
-                print(response)
+                eng.connect().execute(godown.insert(), i)
             except Exception as e:
-                print(e)
+                logging.warning(e)
+
+        # Accounts
+        print("\n Importing Accounts ...")
+        for i in org["accounts"]:
+            # remove foreign key
+            i.pop("accountcode")
+            # add current orgcode as key
+            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
+            # insert user entries to respective table
+            try:
+                eng.connect().execute(accounts.insert(), i)
+            except Exception as e:
+                logging.warning(e)
     except Exception as e:
-        print(e)
+        logging.warning(e)
         return {"gkstatus": 3}
     return {"gkstatus": 0}
