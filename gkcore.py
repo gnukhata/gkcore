@@ -25,7 +25,7 @@ def check_flags():
 
     if "init" in args:
 
-        print("initializing the db ...")
+        cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["python3", "initdb.py"])
 
     if "serve" in args:
