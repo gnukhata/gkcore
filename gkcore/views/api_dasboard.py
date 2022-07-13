@@ -27,30 +27,20 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.views.api_login import authCheck
-from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, alias, or_, func, desc
+from sqlalchemy import and_, desc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.sql.expression import null
-from gkcore.models.meta import dbconnect
+from gkcore.models.meta import gk_api
 from gkcore.models.gkdb import (
-    billwise,
     invoice,
     customerandsupplier,
-    vouchers,
-    accounts,
     organisation,
 )
 from datetime import datetime, date
 from monthdelta import monthdelta
-from operator import itemgetter
-from natsort import natsorted
 import calendar
-import math
 from gkcore.views.api_user import getUserRole
 from gkcore.views.api_reports import stockonhandfun
 from gkcore.views.api_reports import calculateBalance
@@ -258,9 +248,10 @@ def topfivecustsup(inoutflag, orgcode):
                 {
                     "custname": csDetails["custname"],
                     "custid": inv["custid"],
-                    "data": float(inv["data"]),
+                    "data": "%.2f" % inv["data"],
                 }
             )
+
         con.close()
         return {
             "gkstatus": enumdict["Success"],
@@ -300,11 +291,9 @@ def topfiveprodsev(orgcode):
             )
         con.close()
         return {"gkstatus": enumdict["Success"], "prodinfolist": prodinfolist}
-    except:
-        con.close()
+    except Exception as e:
+        print(e)
         return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 # this function use to show delchal count by month at dashbord in bar chart
@@ -381,19 +370,29 @@ def stockonhanddashboard(orgcode):
             productCode = i["prodcode"]
             endDate = datetime.strptime(str(calculateto), "%Y-%m-%d")
             stockresult = stockonhandfun(orgcode, productCode, endDate)
-            stockresultlist.append(stockresult)
-
+            # product
+            if stockresult["gkstatus"] == 0:
+                stockresultlist.append(stockresult["gkresult"][0])
+            # handle service type
+            if stockresult["gkstatus"] == 3:
+                print(productCode)
+                stockresultlist.append(
+                    {
+                        "productname": i["proddesc"],
+                        "productcode": productCode,
+                        "balance": "N/A",
+                    }
+                )
         con.close()
-        return {
-            "gkstatus": enumdict["Success"],
-            "stockresultlist": stockresultlist,
-            "productname": prodname,
-        }
-    except:
-        con.close()
+        # return {
+        #     "gkstatus": enumdict["Success"],
+        #     "stockresultlist": stockresultlist,
+        #     "productname": prodname,
+        # }
+        return stockresultlist
+    except Exception as e:
+        print(e)
         return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 # this fuction returns month wise bank and cash sub account  balance on daashboard
@@ -516,8 +515,9 @@ class api_dashboard(object):
         else:
             try:
                 userinfo = getUserRole(authDetails["userid"])
-                userrole = userinfo["gkresult"]["userrole"]
+                userrole: int = userinfo["gkresult"]["userrole"]
                 orgcode = authDetails["orgcode"]
+                # for admin & manager
                 if userrole == -1 or userrole == 0:
                     amountwiise_purchaseinv = amountwiseinvoice(9, orgcode)
                     datewise_purchaseinv = datewiseinvoice(9, orgcode)
@@ -682,10 +682,9 @@ class api_dashboard(object):
                     "outnotecount": outnotecount,
                 }
                 self.con.close()
-            except:
+            except Exception as e:
+                print(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-                self.con.close()
-            finally:
                 self.con.close()
 
     # this function use to godwn name assign to godown incharge
@@ -779,7 +778,7 @@ class api_dashboard(object):
                         str(financialStart),
                         str(financialEnd),
                     )
-                    bankbalancedata["bankbalance"] = calbaldata["curbal"]
+                    bankbalancedata["bankbalance"] = "%.2f" % calbaldata["curbal"]
                     bankbalancedata["bankaccname"] = bankbal["accountname"]
                     bankbalancedata["baltype"] = calbaldata["baltype"]
                     bankaccdata.append(bankbalancedata)
@@ -793,7 +792,7 @@ class api_dashboard(object):
                         str(financialStart),
                         str(financialEnd),
                     )
-                    cashbalancedata["cashbalance"] = calbaldata["curbal"]
+                    cashbalancedata["cashbalance"] = "%.2f" % calbaldata["curbal"]
                     cashbalancedata["cashaccname"] = cashbal["accountname"]
                     cashbalancedata["baltype"] = calbaldata["baltype"]
                     cashaccdata.append(cashbalancedata)
@@ -808,3 +807,79 @@ class api_dashboard(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(
+        request_method="GET", renderer="json", request_param="type=profit-loss"
+    )
+    def profit_loss_report(self):
+        """Profit Loss Report Chat data for given date range
+
+        `params`
+
+        calculatefrom: string
+        calculateto: string
+        """
+        try:
+            calculatefrom = self.request.params["calculatefrom"]
+            calculateto = self.request.params["calculateto"]
+            header = {"gktoken": self.request.headers["gktoken"]}
+            result = gk_api(
+                url="/report?type=profitloss&calculatefrom=%s&calculateto=%s"
+                % (calculatefrom, calculateto),
+                header=header,
+                request=self.request,
+            )
+            DirectIncome = result["gkresult"]["Direct Income"]["Sales"]["balance"]
+            InDirectIncome = result["gkresult"]["Indirect Income"]["indirincmbal"]
+            DirectExpense = result["gkresult"]["Direct Expense"]["direxpbal"]
+            InDirectExpense = result["gkresult"]["Indirect Expense"]["indirexpbal"]
+            return {
+                "gkstatus": result["gkstatus"],
+                "gkresult": {
+                    "direct_income": DirectIncome,
+                    "indirect_income": InDirectIncome,
+                    "direct_expense": DirectExpense,
+                    "indirect_expense": InDirectExpense,
+                },
+            }
+        except Exception as e:
+            print(e)
+            return {"gkstatus: 3"}
+
+    @view_config(
+        route_name="dashboard",
+        request_param="type=balancesheet",
+        renderer="json",
+    )
+    def balance_sheet_report(self):
+        """Profit Loss Report Chat data for given date range
+
+        `params`
+
+        calculatefrom: string
+        calculateto: string
+        """
+        calculateto = self.request.params["calculateto"]
+        calculatefrom = self.request.params["calculatefrom"]
+        header = {"gktoken": self.request.headers["gktoken"]}
+        result = gk_api(
+            url="/report?type=balancesheet&calculateto=%s&baltype=1&calculatefrom=%s"
+            % (calculateto, calculatefrom),
+            header=header,
+            request=self.request,
+        )
+        data1 = []
+        data2 = []
+        for content in result["gkresult"]["rightlist"]:
+            if content["groupAccname"] == "Total":
+                data1.append(content["amount"])
+        for content in result["gkresult"]["leftlist"]:
+            count = 0
+            if content["groupAccname"] == "Total":
+                count = count + 1
+                data2.append(content["amount"])
+                if count == 2:
+                    data1.append(data2[1])
+                else:
+                    data1.append(data2[0])
+        return {"gkstatus": result["gkstatus"], "gkresult": data1}

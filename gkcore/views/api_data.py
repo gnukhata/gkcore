@@ -65,7 +65,7 @@ class api_data(object):
 
     @view_config(request_param="import-tally", request_method="POST", renderer="json")
     def imt(self):
-        return self.spreadsheet_handler.import_tally(self)
+        return data.spreadsheet_handler.import_tally(self)
 
     @view_config(request_param="import-json", request_method="POST", renderer="json")
     def ij(self):

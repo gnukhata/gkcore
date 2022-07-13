@@ -444,10 +444,7 @@ class api_account(object):
 
                 return {"gkstatus": enumdict["Success"], "gkresult": accList}
             except:
-                self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="find=exists", renderer="json")
     def accountExists(self):
@@ -791,12 +788,13 @@ defaultflag '16' or '19' set to the '0'.
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-
     """
     This function resets the defaultflag of all acounts to system default
     """
 
-    @view_config(request_method="GET", renderer="json", request_param="type=reset_default_flags")
+    @view_config(
+        request_method="GET", renderer="json", request_param="type=reset_default_flags"
+    )
     def reset_default_flags(self):
         try:
             token = self.request.headers["gktoken"]

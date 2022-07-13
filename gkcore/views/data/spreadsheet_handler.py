@@ -8,10 +8,13 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 import io
 from gkcore.models.meta import gk_api
+from gkcore import eng
+from gkcore.models.gkdb import groupsubgroups
+from gkcore.models.gkdb import accounts as accounts_table
 
 # from sqlalchemy.engine.base import Connection
 # from gkcore import eng, enumdict
-# from gkcore.views.api_user import authCheck, getUserRole
+from gkcore.views.api_user import authCheck, getUserRole
 
 
 def export_ledger(self):
@@ -203,6 +206,16 @@ def import_tally(self):
         parentgroupid = None
         parentgroup = ""
         openingBl = 0.00
+        self.con = eng.connect()
+
+        # gather user info
+        user = authCheck(header["gktoken"])
+        user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
+
+        # only admin can import data
+        if user_role != -1:
+            return {"gkstatus": 4}
+
         for accRow in accountList:
             if accRow[0].value == None:
                 continue
@@ -215,33 +228,35 @@ def import_tally(self):
                 if accRow[0].value in groups:
                     curgrpid = groups[accRow[0].value.strip()]
                 else:
-                    newsub = gk_api(
-                        method="POST",
-                        url="/groupsubgroups",
-                        body={
-                            "groupname": accRow[0].value,
-                            "subgroupof": parentgroupid,
-                        },
-                        header=header,
-                        request=self.request,
-                    )
-                    curgrpid = newsub["gkresult"]
+                    try:
+                        newsub = eng.connect().execute(
+                            groupsubgroups.insert(),
+                            {
+                                "groupname": accRow[0].value,
+                                "subgroupof": parentgroupid,
+                                "orgcode": user["orgcode"],
+                            },
+                        )
+                        # TODO check
+                        curgrpid = newsub["gkresult"]
+                    except Exception as e:
+                        print("exception: ", e)
                     print(1, curgrpid)
             if accRow[0].font.i:
                 if len(accRow) > 2:
                     if accRow[1].value == None and accRow[2].value == None:
-                        newacc = gk_api(
-                            method="POST",
-                            url="/accounts",
-                            body={
-                                "accountname": accRow[0].value,
-                                "groupcode": curgrpid,
-                                "openingbal": 0.00,
-                            },
-                            header=header,
-                            request=self.request,
-                        )
-                        print(2, newacc)
+                        try:
+                            newacc = eng.connect.execute(
+                                accounts_table.insert(),
+                                {
+                                    "accountname": accRow[0].value,
+                                    "groupcode": curgrpid,
+                                    "openingbal": 0.00,
+                                },
+                            )
+
+                        except Exception as e:
+                            print("exception: ", e)
                         continue
                     # checking if opening Balance is not in Debit column. i.e. column no. 2 (B).
                     # It means value is in credit column
@@ -256,18 +271,19 @@ def import_tally(self):
                             or parentgroup == "Miscellaneous Expenses(Asset)"
                         ):
                             openingBl = float(-openingBl)
-                            newacc = gk_api(
-                                method="POST",
-                                url="/accounts",
-                                body={
-                                    "accountname": accRow[0].value,
-                                    "groupcode": curgrpid,
-                                    "openingbal": openingBl,
-                                },
-                                header=header,
-                                request=self.request,
-                            )
-                            print(3, newacc)
+                            try:
+                                newacc = self.con.execute(
+                                    accounts_table.insert(),
+                                    {
+                                        "accountname": accRow[0].value,
+                                        "groupcode": curgrpid,
+                                        "openingbal": openingBl,
+                                        "orgcode": user["orgcode"],
+                                    },
+                                )
+                            except Exception as e:
+                                print(e)
+
                         continue
                     # checking if opening Balance is not in Credit column. i.e. column no. 2 (A).
                     # It means value is in debit column
@@ -281,39 +297,38 @@ def import_tally(self):
                             or parentgroup == "Reserves"
                         ):
                             openingBl = float(-openingBl)
-                            newacc = gk_api(
-                                method="POST",
-                                url="/accounts",
-                                body={
-                                    "accountname": accRow[0].value,
-                                    "groupcode": curgrpid,
-                                    "openingbal": openingBl,
-                                },
-                                header=header,
-                                request=self.request,
-                            )
-                            print(4, newacc)
-                        continue
+                            try:
+                                newacc = self.con.execute(
+                                    accounts_table.insert(),
+                                    {
+                                        "accountname": accRow[0].value,
+                                        "groupcode": curgrpid,
+                                        "openingbal": openingBl,
+                                        "orgcode": user["orgcode"],
+                                    },
+                                )
+                            except Exception as e:
+                                print(e)
+                            continue
 
                 if len(accRow) == 2:
-
-                    newsub = gk_api(
-                        method="POST",
-                        url="/accounts",
-                        body={
-                            "accountname": accRow[0].value,
-                            "groupcode": curgrpid,
-                            "openingbal": accRow[1].value,
-                        },
-                        header=header,
-                        request=self.request,
-                    )
-                    print(5, newsub)
+                    try:
+                        newsub = self.con.execute(
+                            accounts_table.insert(),
+                            {
+                                "accountname": accRow[0].value,
+                                "groupcode": curgrpid,
+                                "openingbal": accRow[1].value,
+                                "orgcode": user["orgcode"],
+                            },
+                        )
+                    except Exception as e:
+                        print(e)
 
         # the dictionary thus returned will have
         # accountname as key and accountcode as value.
-        acclist = gk_api("/accounts?acclist", header, self.request)
-        print("l ", acclist)
+        acclist = gk_api(url="/accounts?acclist", header=header, request=self.request)
+        print("account list: ", acclist["gkresult"])
         accounts = acclist["gkresult"]
         Wsheets = wbTally.worksheets
         # When data is imported from GNUKhata exported file

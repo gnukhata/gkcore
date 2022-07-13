@@ -1859,7 +1859,13 @@ def stockonhandfun(orgcode, productCode, endDate):
         totaloutward = 0.00
         if productCode != "all":
             openingStockResult = con.execute(
-                select([product.c.openingstock, product.c.productdesc]).where(
+                select(
+                    [
+                        product.c.openingstock,
+                        product.c.productdesc,
+                        product.c.productcode,
+                    ]
+                ).where(
                     and_(
                         product.c.productcode == productCode,
                         product.c.gsflag == 7,
@@ -1870,6 +1876,7 @@ def stockonhandfun(orgcode, productCode, endDate):
             osRow = openingStockResult.fetchone()
             openingStock = osRow["openingstock"]
             prodName = osRow["productdesc"]
+            prodCode = osRow["productcode"]
             stockRecords = con.execute(
                 select([stock])
                 .where(
@@ -1994,6 +2001,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                 {
                     "srno": 1,
                     "productname": prodName,
+                    "productcode": prodCode,
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(openingStock),
@@ -2165,10 +2173,10 @@ def stockonhandfun(orgcode, productCode, endDate):
                     {
                         "srno": srno,
                         "productname": prodName,
+                        "productcode": prodCode,
                         "totalinwardqty": "%.2f" % float(totalinward),
                         "totaloutwardqty": "%.2f" % float(totaloutward),
                         "balance": "%.2f" % float(openingStock),
-                        "productcode": productCd,
                     }
                 )
                 srno = srno + 1
@@ -2241,11 +2249,11 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                 if stockIn:  # purchase or stock in
                     stockLen = len(stockOnHand)
                     if (
-                        stockLen > 0 and float(stockOnHand[stockLen-1]["qty"]) < 0
+                        stockLen > 0 and float(stockOnHand[stockLen - 1]["qty"]) < 0
                     ):  # case where sale or stock out has happened before any purchase ot stock in
-                        stockOnHand[stockLen-1]["qty"] = float(stockOnHand[stockLen-1]["qty"]) - float(
-                            item["qty"]
-                        )
+                        stockOnHand[stockLen - 1]["qty"] = float(
+                            stockOnHand[stockLen - 1]["qty"]
+                        ) - float(item["qty"])
                     else:
                         stockOnHand.append({"rate": item["rate"], "qty": item["qty"]})
                 else:  # sale or stock out
@@ -6718,9 +6726,9 @@ class api_reports(object):
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
                                 invresult = self.con.execute(
-                                    select([invoice.c.invoiceno, invoice.c.icflag]).where(
-                                        invoice.c.invid == dcinvrow["invid"]
-                                    )
+                                    select(
+                                        [invoice.c.invoiceno, invoice.c.icflag]
+                                    ).where(invoice.c.invid == dcinvrow["invid"])
                                 )
                                 """ No need to check if invresult has rowcount 1 since it must be 1 """
                                 invrow = invresult.fetchone()
@@ -7253,9 +7261,9 @@ class api_reports(object):
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
                                 invresult = self.con.execute(
-                                    select([invoice.c.invoiceno, invoice.c.icflag]).where(
-                                        invoice.c.invid == dcinvrow["invid"]
-                                    )
+                                    select(
+                                        [invoice.c.invoiceno, invoice.c.icflag]
+                                    ).where(invoice.c.invid == dcinvrow["invid"])
                                 )
                                 """ No need to check if invresult has rowcount 1 since it must be 1 """
                                 invrow = invresult.fetchone()
@@ -9293,10 +9301,15 @@ class api_reports(object):
                                 invoicedata["custgstin"] = ""
                                 if int(rowcust["csflag"]) == 3:
                                     try:
-                                        if str(destinationStateCode) not in rowcust["gstin"]:
+                                        if (
+                                            str(destinationStateCode)
+                                            not in rowcust["gstin"]
+                                        ):
                                             stcode = "0" + str(destinationStateCode)
                                             if stcode in rowcust["gstin"]:
-                                                invoicedata["custgstin"] = rowcust["gstin"][stcode]
+                                                invoicedata["custgstin"] = rowcust[
+                                                    "gstin"
+                                                ][stcode]
                                         else:
                                             invoicedata["custgstin"] = rowcust["gstin"][
                                                 str(destinationStateCode)
@@ -9308,7 +9321,9 @@ class api_reports(object):
                                         if str(sourceStateCode) not in rowcust["gstin"]:
                                             stcode = "0" + str(sourceStateCode)
                                             if stcode in rowcust["gstin"]:
-                                                invoicedata["custgstin"] = rowcust["gstin"][stcode]
+                                                invoicedata["custgstin"] = rowcust[
+                                                    "gstin"
+                                                ][stcode]
                                         else:
                                             invoicedata["custgstin"] = rowcust["gstin"][
                                                 str(sourceStateCode)
