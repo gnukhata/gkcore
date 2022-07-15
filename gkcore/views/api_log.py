@@ -26,20 +26,18 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, users
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from datetime import datetime, date
-import jwt
+from datetime import datetime
 import gkcore
 from gkcore.views.api_login import authCheck
 
 """
 This class basically does Log maintenance about an organisations
 whenever any activity is performed by user it is recorded in log table
+Only admin role can access logs
 """
 
 
@@ -72,8 +70,6 @@ class api_log(object):
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="PUT", renderer="json")
     def editLog(self):
@@ -84,6 +80,10 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # only admin can edit logs
+        if authDetails["userrole"] != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+
         else:
             try:
                 self.con = eng.connect()
@@ -96,8 +96,6 @@ class api_log(object):
                 return {"gkstatus": enumdict["Success"]}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", renderer="json")
     def getFullLog(self):
@@ -108,6 +106,10 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        # only admin can full logs
+        if authDetails["userrole"] != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+
         else:
             try:
                 self.con = eng.connect()
@@ -136,8 +138,6 @@ class api_log(object):
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": logdata}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_param="qty=single", request_method="GET", renderer="json")
     def getLog(self):
@@ -170,8 +170,6 @@ class api_log(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": logdata}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_param="type=byuser", request_method="GET", renderer="json")
     def getLogbyUser(self):
@@ -180,6 +178,7 @@ class api_log(object):
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
+
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
@@ -205,8 +204,6 @@ class api_log(object):
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": logdata}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteLog(self):
@@ -217,6 +214,10 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # only admin can delete logs
+        if authDetails["userrole"] != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+
         else:
             try:
                 self.con = eng.connect()
@@ -225,6 +226,63 @@ class api_log(object):
                     log.delete().where(log.c.logid == dataset["logid"])
                 )
                 return {"gkstatus": enumdict["Success"]}
+            except exc.IntegrityError:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", request_param="range", renderer="json")
+    def logs_in_date_range(self):
+        """Get logs in given date range, Only admin can access logs
+
+        *params:*\
+        `from`= "yyyy-mm-dd"\
+        `to` = "yyyy-mm-dd"
+        """
+        # check auth part
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        authDetails = authCheck(token)
+
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        # only admin can access logs
+        if authDetails["userrole"] != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+        else:
+            # get columns in the given date range
+            self.con = eng.connect()
+            try:
+                dataset = self.request.params
+                result = self.con.execute(
+                    log.select()
+                    .where(log.c.time >= dataset["from"])
+                    .where(log.c.time <= dataset["to"])
+                )
+                log_data = []
+                # loop through the columns
+                for row in result:
+                    # derive username from userid
+                    user = self.con.execute(
+                        select([users.c.username]).where(
+                            users.c.userid == row["userid"]
+                        )
+                    ).fetchone()
+                    # append them to log_data array
+                    log_data.append(
+                        {
+                            "logid": row["logid"],
+                            "time": datetime.strftime(row["time"], "%d-%m-%Y %H:%M:%S"),
+                            "activity": row["activity"],
+                            "userid": row["userid"],
+                            "username": user["username"],
+                        }
+                    )
+                return {"gkstatus": enumdict["Success"], "gkresult": log_data}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
