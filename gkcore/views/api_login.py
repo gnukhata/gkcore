@@ -160,6 +160,13 @@ def authCheck(token):
         tokendict["auth"] = True
         tokendict["orgcode"] = int(tokendict["orgcode"])
         tokendict["userid"] = int(tokendict["userid"])
+        tokendict["userrole"] = (
+            eng.connect()
+            .execute(
+                select([gkdb.users]).where(gkdb.users.c.userid == tokendict["userid"])
+            )
+            .fetchone()["userrole"]
+        )
         return tokendict
     except:
         tokendict = {"auth": False}
