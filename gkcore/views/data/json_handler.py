@@ -5,6 +5,7 @@ from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_user import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts
+import psycopg2
 
 
 def get_table_array(name: str, orgcode: int):
@@ -72,10 +73,10 @@ def export_json(self):
 
     # add gnukhata key to the exported json
     # This helps to validate the file during import operations
-    data = {"gnukhata": {"export_version": 1}}
+    data: dict = {"gnukhata": {"export_version": 1}}
 
     # These tables are excluded during the export
-    ignored_tables = [
+    ignored_tables: list[str] = [
         "state",
         "organisation",
         "signature",
@@ -131,7 +132,10 @@ def import_json(self):
         if "gnukhata" not in org:
             logging.info("Not a valid gnukhata export format")
             return {"gkstatus": 3}
-
+        # imported entries info
+        import_info: dict = {
+            "duplicate": {"contacts": [], "godowns": [], "accounts": []}
+        }
         # customers / suppliers
         print("\n 🤝 importing customers/suppliers ...")
         for i in org["customerandsupplier"]:
@@ -143,7 +147,10 @@ def import_json(self):
             try:
                 eng.connect().execute(customerandsupplier.insert(), i)
             except Exception as e:
+                # add failed entry name to import log
+                import_info["duplicate"]["contacts"].append(i["custname"])
                 logging.warning(e)
+
         # Godowns
         print("\n 📦 Importing Godowns ...")
         for i in org["godown"]:
@@ -151,10 +158,12 @@ def import_json(self):
             i.pop("goid")
             # add current orgcode as key
             i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
-            # insert user entries to respective table
+            # insert contact entries to respective table
             try:
                 eng.connect().execute(godown.insert(), i)
             except Exception as e:
+                # add failed entry name to import log
+                import_info["duplicate"]["godowns"].append(i["goname"])
                 logging.warning(e)
 
         # Accounts
@@ -168,8 +177,10 @@ def import_json(self):
             try:
                 eng.connect().execute(accounts.insert(), i)
             except Exception as e:
+                # add failed entry name to import log
+                import_info["duplicate"]["accounts"].append(i["accountname"])
                 logging.warning(e)
     except Exception as e:
         logging.warning(e)
         return {"gkstatus": 3}
-    return {"gkstatus": 0}
+    return {"gkstatus": 0, "gkresult": import_info}
