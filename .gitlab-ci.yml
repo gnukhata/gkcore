@@ -36,7 +36,8 @@ pages:
     - pip install pdoc
     - pdoc -o .pub/api-docs/ gkcore/
     - mv .pub public
-    # - gzip -k -9 $(find public -type f)
+    # gzip the public dir
+    - gzip -k -9 $(find public -type f)
   artifacts:
     paths:
       - public
