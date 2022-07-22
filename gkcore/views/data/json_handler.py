@@ -127,15 +127,18 @@ def import_json(self):
     try:
         f = self.request.POST["gkfile"].file
         org = json.load(f)
+
         # check if it's a valid gnukhata json file
         # else return err response
         if "gnukhata" not in org:
             logging.info("Not a valid gnukhata export format")
             return {"gkstatus": 3}
+
         # imported entries info
         import_info: dict = {
             "duplicate": {"contacts": [], "godowns": [], "accounts": []}
         }
+
         # customers / suppliers
         print("\n 🤝 importing customers/suppliers ...")
         for i in org["customerandsupplier"]:
