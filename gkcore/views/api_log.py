@@ -262,6 +262,7 @@ class api_log(object):
                     log.select()
                     .where(log.c.time >= dataset["from"])
                     .where(log.c.time <= dataset["to"])
+                    .where(log.c.orgcode == authDetails["orgcode"])
                 )
                 log_data = []
                 # loop through the columns
