@@ -88,6 +88,10 @@ Activate your virtualenv and then run initdb.py
 
 gkcore is now accessible at `http://localhost:6543`🎉
 
+# After Installation
+
+- When gkcore is installed on VPS, make sure to change the timezone to India with is command `timedatectl set-timezone Asia/Kolkata` as organization logs pickup the default timezone.
+
 # Credits
 
 - Razorpay: IFSC validation server is used as a docker service [source](https://github.com/razorpay/ifsc)
