@@ -41,17 +41,19 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
-import json
 from gkcore.views.api_user import getUserRole
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, between, exc
+from sqlalchemy import and_, between
 from pyramid.request import Request
-from pyramid.response import Response
+
+# from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
+
+# from sqlalchemy.ext.baked import Result
 from datetime import datetime
-import base64
-from PIL import Image
+
+# import base64
+# from PIL import Image
 
 # This function deletes a voucher and inserts an entry into voucherbin table.
 def voucherBinInsert(con, vcode, orgcode):
@@ -180,6 +182,7 @@ def deleteVoucherFun(vcode, orgcode):
         return {"gkstatus": enumdict["Success"]}
     except:
         return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
 def getInvVouchers(con, orgcode, invid):
     try:
@@ -900,7 +903,9 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                voucherRecords = getInvVouchers(self.con, authDetails["orgcode"], self.request.params["invid"])
+                voucherRecords = getInvVouchers(
+                    self.con, authDetails["orgcode"], self.request.params["invid"]
+                )
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
             except:
