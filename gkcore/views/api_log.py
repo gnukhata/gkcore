@@ -23,6 +23,7 @@ Contributors:
 "Bhavesh Bawadhane" <bbhavesh07@gmail.com>
 """
 
+import logging
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, users
 from sqlalchemy.sql import select
@@ -239,6 +240,7 @@ class api_log(object):
         `from`= "yyyy-mm-dd"\
         `to` = "yyyy-mm-dd"
         """
+        logging.info("getting logs by date range")
         # check auth part
         try:
             token = self.request.headers["gktoken"]
@@ -246,6 +248,7 @@ class api_log(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         authDetails = authCheck(token)
+        dataset = self.request.params
 
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -257,11 +260,10 @@ class api_log(object):
             # get columns in the given date range
             self.con = eng.connect()
             try:
-                dataset = self.request.params
                 result = self.con.execute(
                     log.select()
-                    .where(log.c.time >= dataset["from"])
-                    .where(log.c.time <= dataset["to"])
+                    .where(log.c.time >= dataset["from"] + " 00:00:00")
+                    .where(log.c.time <= dataset["to"] + " 23:59:59")
                     .where(log.c.orgcode == authDetails["orgcode"])
                 )
                 log_data = []
