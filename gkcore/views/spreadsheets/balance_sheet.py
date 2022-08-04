@@ -34,7 +34,9 @@ from gkcore.views.api_reports import getBalanceSheet
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-from openpyxl.styles.colors import RED
+from openpyxl.styles.colors import Color
+
+RED = Color(rgb="FF0000")
 
 
 def print_bal_sheet(self):
