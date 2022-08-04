@@ -5,7 +5,6 @@ from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_user import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts
-import psycopg2
 
 
 def get_table_array(name: str, orgcode: int):
@@ -136,8 +135,10 @@ def import_json(self):
 
         # imported entries info
         import_info: dict = {
-            "duplicate": {"contacts": [], "godowns": [], "accounts": []}
+            "success": 0,
+            "duplicate": {"contacts": [], "godowns": [], "accounts": []},
         }
+        success_entries = 0
 
         # customers / suppliers
         print("\n 🤝 importing customers/suppliers ...")
@@ -149,6 +150,7 @@ def import_json(self):
             # insert user entries to respective table
             try:
                 eng.connect().execute(customerandsupplier.insert(), i)
+                success_entries += 1
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["contacts"].append(i["custname"])
@@ -164,6 +166,7 @@ def import_json(self):
             # insert contact entries to respective table
             try:
                 eng.connect().execute(godown.insert(), i)
+                success_entries += 1
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["godowns"].append(i["goname"])
@@ -179,10 +182,13 @@ def import_json(self):
             # insert user entries to respective table
             try:
                 eng.connect().execute(accounts.insert(), i)
+                success_entries += 1
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["accounts"].append(i["accountname"])
                 logging.warning(e)
+        # append successful import count to the response
+        import_info["success"] = success_entries
     except Exception as e:
         logging.warning(e)
         return {"gkstatus": 3}
