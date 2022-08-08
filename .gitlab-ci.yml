@@ -16,7 +16,7 @@ stages:
   - deploy
 
 # build gkcore
-gkcore_setup:
+gkcore:
   stage: build
   script:
     - apt update && apt install -y build-essential libpq-dev
