@@ -39,7 +39,7 @@ from openpyxl.styles.colors import Color
 RED = Color(rgb="FF0000")
 
 
-def print_bal_sheet(self):
+def print_balance_sheet(self):
 
     """
     Returns the spreadsheet for Conventional Balancesheet
