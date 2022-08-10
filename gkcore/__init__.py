@@ -101,6 +101,7 @@ def main(global_config, **settings):
     config.add_route("hsn", "/hsn")
     config.add_route("data", "/data")
     config.add_route("index", "/")
+    config.add_route("gstnews", "/gst-news")
 
     config.scan("gkcore.views")
 
