@@ -34,7 +34,7 @@ from gkcore.models.gkdb import (
     product,
     customerandsupplier,
     drcr,
-    rejectionnote
+    rejectionnote,
 )
 from sqlalchemy.sql import select
 import json
@@ -260,22 +260,25 @@ def updateStockRate(con, orgcode):
             productCode = str(stockItem["productcode"])
             trnId = stockItem["dcinvtnid"]
             prodRate = prodQty = prodValue = 0
-            if stockItem.dcinvtnflag in [3, 4, 9, 18]: # if invoice/ cash memo/ delivery chalan / rejection note
+            if stockItem.dcinvtnflag in [
+                3,
+                4,
+                9,
+                18,
+            ]:  # if invoice/ cash memo/ delivery chalan / rejection note
                 transaction = {}
-                if stockItem.dcinvtnflag == 4: # Delivery chalan
+                if stockItem.dcinvtnflag == 4:  # Delivery chalan
                     transaction = con.execute(
-                        select([delchal.c.contents])
-                        .where(  # , delchal.c.freeqty
+                        select([delchal.c.contents]).where(  # , delchal.c.freeqty
                             and_(
                                 delchal.c.orgcode == orgcode,
                                 delchal.c.dcid == trnId,
                             )
                         )
                     ).fetchone()
-                elif stockItem.dcinvtnflag == 18: # Rejection note
+                elif stockItem.dcinvtnflag == 18:  # Rejection note
                     transaction = con.execute(
-                        select([rejectionnote.c.rejprods])
-                        .where(  # , delchal.c.freeqty
+                        select([rejectionnote.c.rejprods]).where(  # , delchal.c.freeqty
                             and_(
                                 rejectionnote.c.orgcode == orgcode,
                                 rejectionnote.c.rnid == trnId,
@@ -284,10 +287,9 @@ def updateStockRate(con, orgcode):
                     ).fetchone()
                     print(stockItem.dcinvtnflag)
                     print(transaction["rejprods"])
-                else: # invoice / cash memo
+                else:  # invoice / cash memo
                     transaction = con.execute(
-                        select([invoice.c.contents])
-                        .where(  # , invoice.c.freeqty
+                        select([invoice.c.contents]).where(  # , invoice.c.freeqty
                             and_(
                                 invoice.c.orgcode == orgcode,
                                 invoice.c.invid == trnId,
@@ -299,12 +301,15 @@ def updateStockRate(con, orgcode):
                     productData = list(transaction["contents"][productCode].items())[0]
                 elif "rejprods" in transaction:
                     productData = list(transaction["rejprods"][productCode].items())[0]
-                
+
                 if len(productData) > 0:
                     prodRate = float(productData[0]) or 0
                     prodQty = float(productData[1]) or 0
                     # prodFreeQty = float(transaction.freeqty[productCode])
-            elif stockItem.dcinvtnflag in [7, 2]: # if debit credit note, bad quality rejection
+            elif stockItem.dcinvtnflag in [
+                7,
+                2,
+            ]:  # if debit credit note, bad quality rejection
                 transaction = con.execute(
                     select([drcr.c.reductionval]).where(
                         and_(
@@ -317,8 +322,8 @@ def updateStockRate(con, orgcode):
                     prodQty = float(transaction["quantities"][productCode]) or 0
                     prodRate = float(transaction[productCode]) or 0
             # elif stockItem.dcinvtnflag == 20: # transfer note
-                # must use the stock on hand's value
-                    
+            # must use the stock on hand's value
+
             con.execute(
                 stock.update()
                 .where(stock.c.stockid == stockItem["stockid"])
@@ -481,11 +486,11 @@ class api_dev(object):
         request_method="GET", request_param="task=update_stock_rate", renderer="json"
     )
     def updateAllStockRate(self):
-        '''
+        """
         This methods checks the corresponding transaction table and updates the rate of stock in the stock table
-        
-        Note: Used for DB migration, after adding the column "rate" in stock table 
-        '''
+
+        Note: Used for DB migration, after adding the column "rate" in stock table
+        """
         try:
             self.con = eng.connect()
             orgs = self.con.execute(select([organisation.c.orgcode])).fetchall()
@@ -498,6 +503,25 @@ class api_dev(object):
                 return {"gkstatus": enumdict["Success"]}
             else:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+        except:
+            print(traceback.format_exc())
+            self.con.close()
+            return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(request_method="GET", request_param="task=test", renderer="json")
+    def test(self):
+        """
+        This methods is for testing out syntax and code
+        """
+        try:
+            self.con = eng.connect()
+            allUserData = list(self.con.execute("select * from users").fetchall())
+            print(allUserData)
+            for udata in allUserData:
+                print(udata["userid"])
+            allUserData.pop(0)
+            print(allUserData)
+            return {"gkstatus": enumdict["Success"]}
         except:
             print(traceback.format_exc())
             self.con.close()

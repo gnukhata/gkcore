@@ -80,8 +80,9 @@ ivflag = inventory flag , billflag = billwise accounting , invsflag = invoicing,
 maflag = multiple accounts for products and avflag = automatic vouchers for invoices.
 modeflag=0 old interface for payment and receipt voucher is used.
 modeflag=1 new user friendly interface for payment and receipt voucher is used.
+users -> a list of users that are part of that org. Stored as JSONB so that we can quickly check if a userid is within that column
 
-userconf Format:
+orgconf Format:
 {
     page_id: {
         config_id: {
@@ -91,6 +92,11 @@ userconf Format:
 }
 
 page_id and config_id will be stored in client side as enums.
+
+users Format:
+{
+    userid: invitestatus (true/false)
+}
 """
 organisation = Table(
     "organisation",
@@ -129,6 +135,7 @@ organisation = Table(
     Column("ainvnoflag", Integer, default=0),
     Column("logo", JSON),
     Column("gstin", JSONB),
+    Column("users", JSONB),
     Column("bankdetails", JSON),
     UniqueConstraint("orgname", "orgtype", "yearstart"),
     UniqueConstraint("orgname", "orgtype", "yearend"),
@@ -283,7 +290,7 @@ customerandsupplier = Table(
     Column("custid", Integer, primary_key=True),
     Column("custname", UnicodeText, nullable=False),
     Column("gstin", JSONB),
-    Column("gst_reg_type", Integer), 
+    Column("gst_reg_type", Integer),
     Column("gst_party_type", Integer),
     Column("custaddr", UnicodeText),
     Column("pincode", UnicodeText),
@@ -735,7 +742,7 @@ stock = Table(
     Column("productcode", Integer, ForeignKey("product.productcode"), nullable=False),
     Column("stockdate", DateTime),
     Column("qty", Numeric(13, 2), nullable=False),
-    Column("rate", Numeric(13, 2), nullable=False, default = 0.00),
+    Column("rate", Numeric(13, 2), nullable=False, default=0.00),
     Column("dcinvtnid", Integer, nullable=False),
     Column("dcinvtnflag", Integer, nullable=False),
     Column("inout", Integer, nullable=False),
@@ -767,6 +774,8 @@ userconf Format:
 }
 
 page_id and config_id will be stored in client side as enums.
+
+Note: Users has been migrated to gkusers table
 """
 users = Table(
     "users",
@@ -787,6 +796,35 @@ users = Table(
     ),
     UniqueConstraint("orgcode", "username"),
     Index("userindex", "orgcode", "username"),
+)
+
+"""
+Table for storing users of GNUKhata. Each user can be part of many organisations in GNUKhata.
+
+orgs -> stores the list of orgs a user is part of. Also contains some org related data like invitestatus, orgspecific userconf and user's role.
+
+orgs Format:
+{
+    orgcode: {
+        invitestatus
+        userconf
+        userrole
+    }
+}
+
+"""
+
+gkusers = Table(
+    "gkusers",
+    metadata,
+    Column("userid", Integer, primary_key=True),
+    Column("username", Text, nullable=False),
+    Column("userpassword", Text, nullable=False),
+    Column("userquestion", Text, nullable=False),
+    Column("useranswer", Text, nullable=False),
+    Column("orgs", JSONB, default="{}"),
+    UniqueConstraint("username"),
+    Index("gkuserindex", "username"),
 )
 
 """ the table for storing bank reconciliation data.
@@ -995,7 +1033,7 @@ usergodown = Table(
     metadata,
     Column("ugid", Integer, primary_key=True),
     Column("goid", Integer, ForeignKey("godown.goid", ondelete="CASCADE")),
-    Column("userid", Integer, ForeignKey("users.userid", ondelete="CASCADE")),
+    Column("userid", Integer, ForeignKey("gkusers.userid", ondelete="CASCADE")),
     Column(
         "orgcode",
         Integer,
@@ -1105,7 +1143,9 @@ tax2 = Table(
         ForeignKey("organisation.orgcode", ondelete="CASCADE"),
         nullable=False,
     ),
-    UniqueConstraint("taxname", "state" ,"taxrate", "taxfromdate", "productcode", "orgcode"),
+    UniqueConstraint(
+        "taxname", "state", "taxrate", "taxfromdate", "productcode", "orgcode"
+    ),
     Index("taxindex2", "productcode", "taxname"),
     Index("tax_taxindex2", "categorycode", "taxname"),
 )
@@ -1118,7 +1158,7 @@ log = Table(
     Column("logid", Integer, primary_key=True),
     Column("time", DateTime),
     Column("activity", UnicodeText),
-    Column("userid", Integer, ForeignKey("users.userid", ondelete="CASCADE")),
+    Column("userid", Integer, ForeignKey("gkusers.userid")),
     Column(
         "orgcode",
         Integer,
@@ -1143,7 +1183,7 @@ rejectionnote = Table(
     Column("rejprods", JSONB, nullable=False),
     Column("dcid", Integer, ForeignKey("delchal.dcid", ondelete="CASCADE")),
     Column("invid", Integer, ForeignKey("invoice.invid", ondelete="CASCADE")),
-    Column("issuerid", Integer, ForeignKey("users.userid", ondelete="CASCADE")),
+    Column("issuerid", Integer, ForeignKey("gkusers.userid")),
     Column("rejectedtotal", Numeric(13, 2), nullable=False),
     Column("rejnarration", UnicodeText),
     Column(
@@ -1192,7 +1232,7 @@ drcr = Table(
     Column("reference", JSONB),
     Column("attachment", JSON),
     Column("attachmentcount", Integer, default=0),
-    Column("userid", Integer, ForeignKey("users.userid")),
+    Column("userid", Integer, ForeignKey("gkusers.userid")),
     Column("roundoffflag", Integer, default=0),
     UniqueConstraint("orgcode", "drcrno", "dctypeflag"),
     UniqueConstraint("orgcode", "invid", "dctypeflag"),

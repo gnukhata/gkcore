@@ -38,11 +38,49 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 from Crypto.PublicKey import RSA
-from gkcore.models.meta import inventoryMigration, addFields
+from gkcore.models.meta import inventoryMigration, addFields, tableExists
 import jwt
 import gkcore
+import traceback
+from datetime import datetime
 
 con = Connection
+
+
+def generateAuthToken(con, tokenItems, tokenType="userorg"):
+    try:
+        result = con.execute(select([gkdb.signature]))
+        sign = result.fetchone()
+        if sign == None:
+            key = RSA.generate(2560)
+            privatekey = key.exportKey("PEM")
+            sig = {"secretcode": privatekey}
+            gkcore.secret = privatekey
+            result = con.execute(gkdb.signature.insert(), [sig])
+        elif len(sign["secretcode"]) <= 20:
+            result = con.execute(gkdb.signature.delete())
+            if result.rowcount == 1:
+                key = RSA.generate(2560)
+                privatekey = key.exportKey("PEM")
+                sig = {"secretcode": privatekey}
+                gkcore.secret = privatekey
+                result = con.execute(gkdb.signature.insert(), [sig])
+        if tokenType == "user":
+            token = jwt.encode(
+                {"username": tokenItems["username"], "userid": tokenItems["userid"]},
+                gkcore.secret,
+                algorithm="HS256",
+            )
+        else:  # if userorg
+            token = jwt.encode(
+                {"orgcode": tokenItems["orgcode"], "userid": tokenItems["userid"]},
+                gkcore.secret,
+                algorithm="HS256",
+            )
+        token = token.decode("ascii")
+        return token
+    except:
+        return -1
 
 
 @view_config(route_name="login", request_method="POST", renderer="json")
@@ -82,32 +120,287 @@ def gkLogin(request):
         )
         if result.rowcount == 1:
             record = result.fetchone()
-            result = con.execute(select([gkdb.signature]))
-            sign = result.fetchone()
-            if sign == None:
-                key = RSA.generate(2560)
-                privatekey = key.exportKey("PEM")
-                sig = {"secretcode": privatekey}
-                gkcore.secret = privatekey
-                result = con.execute(gkdb.signature.insert(), [sig])
-            elif len(sign["secretcode"]) <= 20:
-                result = con.execute(gkdb.signature.delete())
-                if result.rowcount == 1:
-                    key = RSA.generate(2560)
-                    privatekey = key.exportKey("PEM")
-                    sig = {"secretcode": privatekey}
-                    gkcore.secret = privatekey
-                    result = con.execute(gkdb.signature.insert(), [sig])
-            token = jwt.encode(
-                {"orgcode": dataset["orgcode"], "userid": record["userid"]},
-                gkcore.secret,
-                algorithm="HS256",
+            token = generateAuthToken(
+                con, {"userid": record["userid"], "orgcode": dataset["orgcode"]}
             )
-            token = token.decode("ascii")
-            return {"gkstatus": enumdict["Success"], "token": token}
+            if token == -1:
+                raise Exception("Issue with generating Auth Token")
+            return {
+                "gkstatus": enumdict["Success"],
+                "token": token,
+                "userid": record["userid"],
+            }
         else:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
     except:
+        print(traceback.format_exc())
+        return {"gkstatus": enumdict["ConnectionFailed"]}
+    finally:
+        con.close()
+
+
+@view_config(
+    route_name="login",
+    request_method="POST",
+    request_param="type=user",
+    renderer="json",
+)
+def userLogin(request):
+
+    """
+    purpose: Checks if username and password match a row in gkusers table.
+             If they match a row, org data related to that user are fetched from the orgs column in gkusers table.
+             If not the username and password are checked in the old users table. If the username is mapped only to one
+             org, then that org's details are returned. If the username is mapped to more than one org,
+             then ActionDisallowed status is sent with a message asking to contact the admin for login details.
+    """
+    try:
+        con = eng.connect()
+        dataset = request.json_body
+        result = con.execute(
+            select([gkdb.gkusers.c.userid]).where(
+                and_(
+                    gkdb.gkusers.c.username == dataset["username"],
+                    gkdb.gkusers.c.userpassword == dataset["userpassword"],
+                )
+            )
+        )
+        # if username and password exist in users2 table
+        if result.rowcount == 1:
+            record = result.fetchone()
+            # check if any orgs are mapped to the userid
+
+            userData = con.execute(
+                select([gkdb.gkusers.c.orgs]).where(
+                    gkdb.gkusers.c.userid == record["userid"]
+                )
+            ).fetchone()
+
+            payload = {}
+            if userData["orgs"]:
+                for orgCode in userData["orgs"]:
+                    orgData = con.execute(
+                        select(
+                            [
+                                gkdb.organisation.c.orgname,
+                                gkdb.organisation.c.orgtype,
+                                gkdb.organisation.c.yearstart,
+                                gkdb.organisation.c.yearend,
+                            ]
+                        ).where(gkdb.organisation.c.orgcode == orgCode)
+                    ).fetchone()
+                    if orgData["orgname"] not in payload:
+                        payload[orgData["orgname"]] = []
+                    payload[orgData["orgname"]].append(
+                        {
+                            "orgname": orgData["orgname"],
+                            "yearstart": datetime.strftime(
+                                (orgData["yearstart"]), "%d-%m-%Y"
+                            ),
+                            "yearend": datetime.strftime((orgData["yearend"]), "%d-%m-%Y"),
+                            "orgcode": orgCode,
+                            "invitestatus": userData["orgs"][orgCode]["invitestatus"],
+                            "userrole": userData["orgs"][orgCode]["userrole"],
+                        }
+                    )
+            token = generateAuthToken(
+                con,
+                {"userid": record["userid"], "username": dataset["username"]},
+                "user",
+            )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": payload,
+                "token": token,
+            }
+        # else check if its available in users table
+        elif tableExists("users"):
+            result2 = con.execute(
+                select(
+                    [gkdb.users.c.userid, gkdb.users.c.orgcode, gkdb.users.c.userrole]
+                ).where(
+                    and_(
+                        gkdb.users.c.username == dataset["username"],
+                        gkdb.users.c.userpassword == dataset["userpassword"],
+                    )
+                )
+            )
+
+            if result2.rowcount > 0:
+                #  return if only one org is available else return message contact admin for login details
+                records2 = result2.fetchall()
+                payload = {}
+
+                for udata in result2:
+                    orgData = con.execute(
+                        select(
+                            gkdb.organisation.c.orgname,
+                            gkdb.organisation.c.orgtype,
+                            gkdb.organisation.c.yearstart,
+                            gkdb.organisation.c.yearend,
+                        ).where(gkdb.organisation.c.orgcode == udata["orgcode"])
+                    ).fetchone()
+                    if orgData["orgname"] not in payload:
+                        payload[orgData["orgname"]] = []
+                    payload[orgData["orgname"]].append(
+                        {
+                            "orgname": orgData["orgname"],
+                            "orgtype": orgData["orgtype"],
+                            "orgcode": orgData["orgcode"],
+                            "yearstart": datetime.strftime(
+                                (orgData["yearstart"]), "%d-%m-%Y"
+                            ),
+                            "yearend": datetime.strftime(
+                                (orgData["yearend"]), "%d-%m-%Y"
+                            ),
+                            "invitestatus": True,
+                            "userrole": udata["userrole"],
+                        }
+                    )
+
+                if len(payload) == 1:
+                    token = generateAuthToken(
+                        con,
+                        {"userid": record["userid"], "username": dataset["username"]},
+                        "user",
+                    )
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": payload,
+                        "token": token,
+                    }
+                else:
+                    return {
+                        "gkstatus": enumdict["ActionDisallowed"],
+                        "gkresult": "Contact Admin for login credentials.",
+                    }
+            else:
+                return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    except:
+        print(traceback.format_exc())
+        return {"gkstatus": enumdict["ConnectionFailed"]}
+    finally:
+        con.close()
+
+
+@view_config(
+    route_name="login", request_method="POST", request_param="type=org", renderer="json"
+)
+def orgLogin(request):
+
+    """
+    purpose:
+    """
+    try:
+        con = eng.connect()
+        dataset = request.json_body
+
+        userId = ""
+        oldUserId = ""
+        proceed = True
+        renameUser = False
+
+        if "username" in dataset and "userpassword" in dataset:
+            # legacy login support
+            # check if user creds are matched in gkusers table
+            userIdQuery = con.execute(
+                select([gkdb.gkusers.c.userid]).where(
+                    and_(
+                        gkdb.gkusers.c.username == dataset["username"],
+                        gkdb.gkusers.c.userpassword == dataset["userpassword"],
+                    )
+                )
+            )
+
+            if userIdQuery.rowcount != 1:
+                # recreate the migrate username and check if it exists in gkusers table
+                orgData = con.execute(
+                    select(
+                        [gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]
+                    ).where(gkdb.organisation.c.orgcode == dataset["orgcode"])
+                ).fetchone()
+                orgname = "_".join(orgData["orgname"].split(" "))
+                orgtype = "p" if orgData["orgtype"] == "Profit Making" else "np"
+                uname = orgname + "_" + orgtype + "_" + dataset["username"]
+
+                userIdQuery = con.execute(
+                    select([gkdb.gkusers.c.userid]).where(
+                        and_(
+                            gkdb.gkusers.c.username == uname,
+                            gkdb.gkusers.c.userpassword == dataset["userpassword"],
+                        )
+                    )
+                )
+                if userIdQuery.rowcount == 1:
+                    # userId = userIdQuery.fetchone()
+                    renameUser = True
+                    oldUserId = con.execute(
+                        select([gkdb.users.c.userid]).where(
+                            and_(
+                                gkdb.users.c.username == dataset["username"],
+                                gkdb.users.c.orgcode == dataset["orgcode"],
+                            )
+                        )
+                    ).fetchone()
+                else:
+                    proceed = False
+
+            if userIdQuery.rowcount == 1:
+                # if user creds are in gkusers fetch userid and check if there is a mapping with the specified orgcode
+                userId = userIdQuery.fetchone()
+                userId = userId["userid"]
+                userOrgQuery = con.execute(
+                    "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
+                    % (str(dataset["orgcode"]), userId)
+                )
+                # print("UserOrgQuery check")
+                # print(userOrgQuery["orgs"])
+                # if no user org mapping found dont proceed
+                if userOrgQuery.rowcount != 1:
+                    proceed = False
+            else:
+                proceed = False
+        else:
+            # New login support
+            try:
+                token = request.headers["gktoken"]
+            except:
+                print(traceback.format_exc())
+                return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+            authDetails = userAuthCheck(token)
+            if authDetails["auth"] == False:
+                print(traceback.format_exc())
+                return {"gkstatus": enumdict["UnauthorisedAccess"]}
+            else:
+                userId = authDetails["userid"]
+                userOrgQuery = con.execute(
+                    "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
+                    % (str(dataset["orgcode"]), userId)
+                )
+                # print("UserOrgQuery check")
+                # print(userOrgQuery["orgs"])
+                # if no user org mapping found dont proceed
+                if userOrgQuery.rowcount != 1:
+                    proceed = False
+
+        if proceed:
+            token = generateAuthToken(
+                con, {"userid": userId, "orgcode": dataset["orgcode"]}
+            )
+            if token == -1:
+                raise Exception("Issue with generating Auth Token")
+            payload = {"gkstatus": enumdict["Success"], "token": token}
+            if renameUser:
+                payload["userid"] = userId
+                payload["olduserid"] = oldUserId["userid"]
+            return payload
+        else:
+            print(traceback.format_exc())
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    except:
+        print(traceback.format_exc())
         return {"gkstatus": enumdict["ConnectionFailed"]}
     finally:
         con.close()
@@ -149,6 +442,22 @@ def getuserorgdetails(request):
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
         finally:
             con.close()
+
+
+def userAuthCheck(token):
+    """
+    Purpose: on every request check if userid and username are valid combinations
+    """
+    try:
+        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
+        tokendict["auth"] = True
+        tokendict["username"] = tokendict["username"]
+        tokendict["userid"] = int(tokendict["userid"])
+        return tokendict
+    except:
+        print(traceback.format_exc())
+        tokendict = {"auth": False}
+        return tokendict
 
 
 def authCheck(token):
