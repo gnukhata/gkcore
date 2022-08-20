@@ -32,6 +32,7 @@ Contributors:
 """
 
 
+import logging
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.api_login import authCheck
@@ -2001,7 +2002,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                 {
                     "srno": 1,
                     "productname": prodName,
-                    "productcode": prodCode,
+                    # "productcode": prodCode,
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(openingStock),
@@ -2173,7 +2174,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                     {
                         "srno": srno,
                         "productname": prodName,
-                        "productcode": prodCode,
+                        "productcode": productCd,
                         "totalinwardqty": "%.2f" % float(totalinward),
                         "totaloutwardqty": "%.2f" % float(totaloutward),
                         "balance": "%.2f" % float(openingStock),
@@ -2183,8 +2184,8 @@ def stockonhandfun(orgcode, productCode, endDate):
         con.close()
         return {"gkresult": stockReport}
 
-    except:
-        con.close()
+    except Exception as e:
+        logging.warn(e)
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
@@ -7772,8 +7773,8 @@ class api_reports(object):
                         "gkresult": allprodstocklist,
                         "proddesclist": prodcodedesclist,
                     }
-            except:
-                self.con.close()
+            except Exception as e:
+                logging.warn(e) 
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="godownwise_stock_value", renderer="json")
