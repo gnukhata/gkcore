@@ -1794,12 +1794,10 @@ class api_organisation(object):
                     ).fetchone()
 
                     # ToDo: Update orgs table with userid
-                    payload = {}
-                    payload[newUserId["userid"]] = True
                     self.con.execute(
-                        "update organisation set users = jsonb_set(users, '{users,0}', (users->'users'->0)||'%s') where orgcode = %d;"
+                        "update organisation set users = jsonb_set(users, '{%s}', 'true') where orgcode = %d;"
                         % (
-                            json.dumps(payload),
+                            str(newUserId["userid"]),
                             udata["orgcode"],
                         )
                     )
@@ -1816,12 +1814,10 @@ class api_organisation(object):
                         """
                         allUserData.pop(udata3["index"])
                         # Update orgs table with userid
-                        payload = {}
-                        payload[newUserId["userid"]] = True
                         self.con.execute(
-                            "update organisation set users = jsonb_set(users, '{users,0}', (users->'users'->0)||'%s') where orgcode = %d;"
+                            "update organisation set users = jsonb_set(users, '{%s}', 'true') where orgcode = %d;"
                             % (
-                                json.dumps(payload),
+                                str(newUserId["userid"]),
                                 udata3["orgcode"],
                             )
                         )
@@ -2698,6 +2694,9 @@ class api_organisation(object):
                         # Update organisation table about its admin user
                         users = {}
                         users[authDetails["userid"]] = True
+                        print(
+                            "=============== Adding the relation code now ==============="
+                        )
                         print(users)
                         print(authDetails["userid"])
                         self.con.execute(
@@ -2706,16 +2705,17 @@ class api_organisation(object):
                             .values(users=json.dumps(users))
                         )
                         # Update gkusers table about newly added org
-                        orgs = {}
-                        orgs[orgcode["orgcode"]] = {
+                        orgs = {
                             "invitestatus": True,
                             "userconf": {},
                             "userrole": -1,
                         }
+                        # orgs[str(orgcode["orgcode"])] = {}
                         print(orgs)
                         self.con.execute(
-                            "update gkusers set orgs = jsonb_set(orgs, '{orgs,0}', (orgs->'orgs'->0)||'%s') where userid = %d;"
+                            "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                             % (
+                                str(orgcode["orgcode"]),
                                 json.dumps(orgs),
                                 authDetails["userid"],
                             )
@@ -2744,17 +2744,16 @@ class api_organisation(object):
                                 gkdb.organisation.c.orgcode == orgcode["orgcode"]
                             )
                         )
+                        # check if orgcode is in orgs column in gkusers
                         userOrgs = self.con.execute(
-                            select([gkdb.gkusers.c.orgs]).where(
-                                gkdb.gkusers.c.userid == authDetails["userid"]
-                            )
-                        ).fetchone()
-                        if orgcode["orgcode"] in userOrgs["orgs"]:
-                            del userOrgs["orgs"][orgcode["orgcode"]]
+                            "select orgs->'%s' from gkusers where userid = %d;"
+                            % (str(orgcode["orgcode"]), authDetails["userid"])
+                        )
+                        if userOrgs.rowcount > 0:
+                            # if yes, remove that key value pair from orgs in gkusers
                             self.con.execute(
-                                gkdb.gkusers.update()
-                                .where(gkdb.gkusers.c.userid == authDetails["userid"])
-                                .values(orgs=json.dumps(userOrgs))
+                                "UPDATE gkusers SET orgs = orgs - '%s' WHERE userid = %d;"
+                                % (str(orgcode["orgcode"]), authDetails["userid"])
                             )
                         return {"gkstatus": enumdict["ConnectionFailed"]}
                 else:

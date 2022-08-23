@@ -809,6 +809,7 @@ orgs Format:
         invitestatus
         userconf
         userrole
+        godowns // if invite status is false, if the user has godown permissions, they will be stored here before being transfered to usergodowns table
     }
 }
 
