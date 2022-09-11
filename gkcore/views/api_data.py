@@ -37,7 +37,6 @@ import json, io
 from gkcore.models.meta import gk_api, dbconnect
 from sqlalchemy.engine.base import Connection
 from gkcore import eng, enumdict
-from gkcore.views.api_user import authCheck, getUserRole
 import gkcore.views.data as data
 
 # import datetime

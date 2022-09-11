@@ -26,7 +26,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.models.gkdb import (
     tax2,
     users,
@@ -47,7 +47,7 @@ from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
-
+from gkcore.views.api_gkuser import getUserRole
 
 def gstAccName(con, taxname, taxrate, orgcode):
     """
@@ -344,18 +344,14 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
-                    or userRole["userrole"] == 3
+                    userRole == -1
+                    or userRole == 1
+                    or userRole == 0
+                    or userRole == 3
                 ):
                     dataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(tax2.insert(), [dataset])
@@ -602,17 +598,13 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
+                    userRole == -1
+                    or userRole == 1
+                    or userRole == 0
                 ):
 
                     result = self.con.execute(
@@ -641,18 +633,14 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
-                    or userRole["userrole"] == 3
+                    userRole == -1
+                    or userRole == 1
+                    or userRole == 0
+                    or userRole == 3
                 ):
                     result = self.con.execute(
                         tax2.delete().where(tax2.c.taxid == dataset["taxid"])

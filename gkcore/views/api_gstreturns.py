@@ -33,7 +33,7 @@ from collections import defaultdict
 from sqlalchemy.sql import select, and_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.views.api_invoice import getInvoiceList, getInvoiceData
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (

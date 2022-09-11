@@ -29,8 +29,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
+from gkcore.utils import authCheck
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
@@ -41,7 +40,7 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, between
 from pyramid.request import Request
@@ -674,7 +673,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherCode = self.request.params["code"]
                 result = self.con.execute(
@@ -780,7 +779,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherType = self.request.params["vouchertype"]
                 vouchersData = self.con.execute(
@@ -924,7 +923,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherNo = self.request.params["voucherno"]
                 vouchersData = self.con.execute(
@@ -1043,7 +1042,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherAmount = self.request.params["total"]
                 vouchersData = self.con.execute(
@@ -1177,7 +1176,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
@@ -1297,7 +1296,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherNarration = self.request.params["nartext"]
                 vouchersData = self.con.execute(
@@ -1416,7 +1415,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherCode = self.request.params["vouchercode"]
                 vouchersData = self.con.execute(
@@ -1571,7 +1570,7 @@ class api_transaction(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]

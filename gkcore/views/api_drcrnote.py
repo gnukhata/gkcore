@@ -51,10 +51,11 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
+from gkcore.utils import authCheck
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_invoice import getStateCode, createAccount
 import traceback  # for printing detailed exception logs
+
 
 @view_defaults(route_name="drcrnote")
 class api_drcr(object):
@@ -107,14 +108,12 @@ class api_drcr(object):
                     else:
                         stockdataset["inout"] = 15
                         stockdataset["dcinvtnflag"] = 7
-                    
+
                     if "goid" in vdataset:
                         stockdataset["goid"] = vdataset["goid"]
 
                     for item in dataset["reductionval"]["quantities"]:
-                        itemQty = dataset["reductionval"]["quantities"][
-                            item
-                        ]
+                        itemQty = dataset["reductionval"]["quantities"][item]
                         itemRate = dataset["reductionval"][item]
                         stockdataset["rate"] = itemRate
                         stockdataset["productcode"] = item
@@ -308,14 +307,12 @@ class api_drcr(object):
                 elif int(invrow["inoutflag"]) == 9:
                     # if inoutflag=9 then issuername and designation is taken from login details.
                     # user deatils
-                    userresult = self.con.execute(
-                        select(
-                            [users.c.userid, users.c.username, users.c.userrole]
-                        ).where(users.c.userid == drcrrow["userid"])
-                    )
-                    userrow = userresult.fetchone()
+                    userrow = self.con.execute(
+                        "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                        % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
+                    ).fetchone()
                     userdata = {
-                        "userid": userrow["userid"],
+                        "userid": drcrrow["userid"],
                         "username": userrow["username"],
                         "userrole": userrow["userrole"],
                     }
@@ -342,7 +339,11 @@ class api_drcr(object):
                     if str(pc) != "quantities":
                         pcquantity = 0.00
                         if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                            pcquantity = idrateData["quantities"][pc] if "quantities" in idrateData else 0
+                            pcquantity = (
+                                idrateData["quantities"][pc]
+                                if "quantities" in idrateData
+                                else 0
+                            )
                         else:
                             pcquantity = float(
                                 contentsData[pc][list(contentsData[pc].keys())[0]]
@@ -620,7 +621,7 @@ class api_drcr(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 drcrid = self.request.params["drcrid"]
                 drcrData = self.con.execute(
@@ -706,7 +707,8 @@ class api_drcr(object):
                     .where(
                         and_(
                             invoice.c.orgcode == authDetails["orgcode"],
-                            invoice.c.icflag == 9, # commenting this line to include Cash Memos
+                            invoice.c.icflag
+                            == 9,  # commenting this line to include Cash Memos
                         )
                     )
                     .order_by(invoice.c.invoicedate)
@@ -871,7 +873,10 @@ def drcrVoucher(queryParams, orgcode):
                 )
             )
             discountreceivedaccountcode = discountreceivedaccount.fetchone()
-            if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
+            if (
+                int(queryParams["dctypeflag"]) == 3
+                and int(queryParams["inoutflag"]) == 15
+            ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
                 if int(queryParams["taxflag"]) == 7:
@@ -1068,7 +1073,10 @@ def drcrVoucher(queryParams, orgcode):
                         }
                         vouchersList.append(rd_VoucherDict)
 
-            elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
+            elif (
+                int(queryParams["dctypeflag"]) == 3
+                and int(queryParams["inoutflag"]) == 9
+            ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
                 if int(queryParams["taxflag"]) == 7:
@@ -1267,7 +1275,8 @@ def drcrVoucher(queryParams, orgcode):
                         vouchersList.append(rd_VoucherDict)
 
             elif (
-                int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15
+                int(queryParams["dctypeflag"]) == 4
+                and int(queryParams["inoutflag"]) == 15
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
@@ -1465,7 +1474,10 @@ def drcrVoucher(queryParams, orgcode):
                         }
                         vouchersList.append(rd_VoucherDict)
 
-            elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
+            elif (
+                int(queryParams["dctypeflag"]) == 4
+                and int(queryParams["inoutflag"]) == 9
+            ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
                 if int(queryParams["taxflag"]) == 7:
@@ -1664,7 +1676,10 @@ def drcrVoucher(queryParams, orgcode):
 
         elif int(queryParams["drcrmode"]) == 18:
             vchProdAcc = ""
-            if int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 15:
+            if (
+                int(queryParams["dctypeflag"]) == 3
+                and int(queryParams["inoutflag"]) == 15
+            ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 if int(queryParams["maflag"]) == 1:
                     prodDataP = queryParams["product"]
@@ -1679,14 +1694,17 @@ def drcrVoucher(queryParams, orgcode):
                             )
                         )
                         prodAccount = prodAcc.fetchone()
-                        drs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
+                        drs[prodAccount["accountcode"]] = "%.2f" % float(
+                            prodDataP[prod]
+                        )
                         vchProdAcc = prodAccount["accountcode"]
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                                accounts.c.defaultflag == 19,
+                                accounts.c.orgcode == orgcode,
                             )
                         )
                     )
@@ -1839,7 +1857,9 @@ def drcrVoucher(queryParams, orgcode):
                             accCode = a["accountcode"]
 
                         rddrs[accCode] = "%.2f" % float(abs(queryParams["roundoffamt"]))
-                        rdcrs[vchProdAcc] = "%.2f" % float(abs(queryParams["roundoffamt"]))
+                        rdcrs[vchProdAcc] = "%.2f" % float(
+                            abs(queryParams["roundoffamt"])
+                        )
                         rd_VoucherDict = {
                             "drs": rddrs,
                             "crs": rdcrs,
@@ -1883,7 +1903,10 @@ def drcrVoucher(queryParams, orgcode):
                         }
                         vouchersList.append(rd_VoucherDict)
 
-            elif int(queryParams["dctypeflag"]) == 3 and int(queryParams["inoutflag"]) == 9:
+            elif (
+                int(queryParams["dctypeflag"]) == 3
+                and int(queryParams["inoutflag"]) == 9
+            ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 if int(queryParams["maflag"]) == 1:
                     prodDataP = queryParams["product"]
@@ -1898,14 +1921,17 @@ def drcrVoucher(queryParams, orgcode):
                             )
                         )
                         prodAccount = prodAcc.fetchone()
-                        drs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
+                        drs[prodAccount["accountcode"]] = "%.2f" % float(
+                            prodDataP[prod]
+                        )
                         vchProdAcc = prodAccount["accountcode"]
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                                accounts.c.defaultflag == 19,
+                                accounts.c.orgcode == orgcode,
                             )
                         )
                     )
@@ -2108,7 +2134,8 @@ def drcrVoucher(queryParams, orgcode):
                         vouchersList.append(rd_VoucherDict)
 
             elif (
-                int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 15
+                int(queryParams["dctypeflag"]) == 4
+                and int(queryParams["inoutflag"]) == 15
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 if int(queryParams["maflag"]) == 1:
@@ -2124,14 +2151,17 @@ def drcrVoucher(queryParams, orgcode):
                             )
                         )
                         prodAccount = prodAcc.fetchone()
-                        crs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
+                        crs[prodAccount["accountcode"]] = "%.2f" % float(
+                            prodDataP[prod]
+                        )
                         vchProdAcc = prodAccount["accountcode"]
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                                accounts.c.defaultflag == 19,
+                                accounts.c.orgcode == orgcode,
                             )
                         )
                     )
@@ -2332,7 +2362,10 @@ def drcrVoucher(queryParams, orgcode):
                         }
                         vouchersList.append(rd_VoucherDict)
 
-            elif int(queryParams["dctypeflag"]) == 4 and int(queryParams["inoutflag"]) == 9:
+            elif (
+                int(queryParams["dctypeflag"]) == 4
+                and int(queryParams["inoutflag"]) == 9
+            ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 if int(queryParams["maflag"]) == 1:
                     prodDataP = queryParams["product"]
@@ -2347,14 +2380,17 @@ def drcrVoucher(queryParams, orgcode):
                             )
                         )
                         prodAccount = prodAcc.fetchone()
-                        crs[prodAccount["accountcode"]] = "%.2f" % float(prodDataP[prod])
+                        crs[prodAccount["accountcode"]] = "%.2f" % float(
+                            prodDataP[prod]
+                        )
                         vchProdAcc = prodAccount["accountcode"]
                 else:
                     # if multiple acc is 0 , then select default sale account
                     salesAccount = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
-                                accounts.c.defaultflag == 19, accounts.c.orgcode == orgcode
+                                accounts.c.defaultflag == 19,
+                                accounts.c.orgcode == orgcode,
                             )
                         )
                     )
@@ -2596,4 +2632,4 @@ def drcrVoucher(queryParams, orgcode):
         return vchCodes
     except:
         print(traceback.format_exc())
-        raise Exception('Issue with voucher creation') 
+        raise Exception("Issue with voucher creation")

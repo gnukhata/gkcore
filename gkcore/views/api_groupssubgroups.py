@@ -38,9 +38,10 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import groupsubgroups
+from gkcore.views.api_gkuser import getUserRole
 
 
 @view_defaults(route_name="groupsubgroups")
@@ -386,14 +387,10 @@ class api_user(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if userRole[0] == -1:
+                if userRole == -1:
                     result = self.con.execute(
                         gkdb.groupsubgroups.delete().where(
                             gkdb.groupsubgroups.c.groupcode == dataset["groupcode"]

@@ -54,8 +54,8 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
+from gkcore.utils import authCheck
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from gkcore.views.api_invoice import getStateCode
 
@@ -1422,7 +1422,7 @@ create method for delchal resource.
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 dcid = self.request.params["dcid"]
                 delchalData = self.con.execute(

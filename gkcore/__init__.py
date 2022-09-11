@@ -61,6 +61,7 @@ def main(global_config, **settings):
     config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")
     config.add_route("transaction", "/transaction")
     config.add_route("users", "/users")
+    config.add_route("gkusers", "/gkusers")
     config.add_route("user", "/user")
     config.add_route("bankrecon", "/bankrecon")
     config.add_route("accounts", "/accounts")
@@ -100,6 +101,7 @@ def main(global_config, **settings):
     config.add_route("dev", "/dev")  # Comment in production
     config.add_route("hsn", "/hsn")
     config.add_route("data", "/data")
+    config.add_route("userorg", "/userorg")
     config.add_route("index", "/")
     config.add_route("gstnews", "/gst-news")
 

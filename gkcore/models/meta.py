@@ -109,7 +109,7 @@ def columnExists(tableName, columnName):
     gkInspect = PGInspector(dbconnect())
     cols = gkInspect.get_columns(tableName)
     for col in cols:
-        if col["name"] in columnName:
+        if col["name"] == columnName:
             return True
     return False
 

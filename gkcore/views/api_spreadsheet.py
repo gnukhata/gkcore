@@ -25,7 +25,7 @@ Survesh VRL <123survesh@gmail.com>
 Sai Karthik <kskarthik@disroot.org>
 
 """
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from sqlalchemy.engine.base import Connection
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config

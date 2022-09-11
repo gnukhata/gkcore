@@ -26,7 +26,7 @@ Contributors:
 "Abhijith Balan" <abhijithb21@openmailbox.org>
 """
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc
@@ -41,7 +41,7 @@ from gkcore.models.gkdb import (
 from datetime import datetime, date
 from monthdelta import monthdelta
 import calendar
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_reports import stockonhandfun
 from gkcore.views.api_reports import calculateBalance
 
@@ -375,7 +375,7 @@ def stockonhanddashboard(orgcode):
                 stockresultlist.append(stockresult["gkresult"][0])
             # handle service type
             if stockresult["gkstatus"] == 3:
-                print(productCode)
+                # print(productCode)
                 stockresultlist.append(
                     {
                         "productname": i["proddesc"],
@@ -514,7 +514,7 @@ class api_dashboard(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
-                userinfo = getUserRole(authDetails["userid"])
+                userinfo = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 userrole: int = userinfo["gkresult"]["userrole"]
                 orgcode = authDetails["orgcode"]
                 # for admin & manager

@@ -25,7 +25,7 @@ Contributors:
 
 import logging
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import log, users
+from gkcore.models.gkdb import log, gkusers
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
@@ -33,7 +33,7 @@ from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
 import gkcore
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 
 """
 This class basically does Log maintenance about an organisations
@@ -53,6 +53,8 @@ class api_log(object):
     def addLog(self):
         try:
             token = self.request.headers["gktoken"]
+            if "usertoken" in self.request.headers:
+                token = self.request.headers["usertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
@@ -122,8 +124,8 @@ class api_log(object):
                 logdata = []
                 for row in result:
                     username = self.con.execute(
-                        select([users.c.username]).where(
-                            users.c.userid == row["userid"]
+                        select([gkusers.c.username]).where(
+                            gkusers.c.userid == row["userid"]
                         )
                     )
                     username = username.fetchone()
@@ -157,7 +159,9 @@ class api_log(object):
                 )
                 row = result.fetchone()
                 username = self.con.execute(
-                    select([users.c.username]).where(users.c.userid == row["userid"])
+                    select([gkusers.c.username]).where(
+                        gkusers.c.userid == row["userid"]
+                    )
                 )
                 username = username.fetchone()
                 logdata = {
