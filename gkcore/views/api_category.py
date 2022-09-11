@@ -32,7 +32,7 @@ Contributors:
 # view_default for setting default route
 # view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, distinct, join
 import json

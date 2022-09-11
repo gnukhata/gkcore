@@ -29,7 +29,7 @@ Contributors:
 
 
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from pyramid.request import Request

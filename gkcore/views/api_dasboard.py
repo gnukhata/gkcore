@@ -26,7 +26,7 @@ Contributors:
 "Abhijith Balan" <abhijithb21@openmailbox.org>
 """
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc

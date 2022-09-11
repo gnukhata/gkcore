@@ -26,7 +26,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.models.gkdb import (
     tax2,
     users,

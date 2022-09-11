@@ -38,7 +38,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import groupsubgroups
 from gkcore.views.api_gkuser import getUserRole

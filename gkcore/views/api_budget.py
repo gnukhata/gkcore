@@ -41,7 +41,7 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date, timedelta
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.models import gkdb
 from gkcore.views.api_reports import calculateBalance
 from gkcore.views.api_gkuser import getUserRole

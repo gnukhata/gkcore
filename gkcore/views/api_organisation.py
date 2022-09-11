@@ -32,7 +32,7 @@ Contributors:
 """
 
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_login import authCheck, userAuthCheck
+from gkcore.utils import authCheck, userAuthCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb

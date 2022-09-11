@@ -1,7 +1,7 @@
 import json, io, logging
 from gkcore.models.meta import dbconnect
 from pyramid.response import Response
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts

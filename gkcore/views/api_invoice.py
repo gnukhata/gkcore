@@ -70,7 +70,7 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
 import traceback  # for printing detailed exception logs

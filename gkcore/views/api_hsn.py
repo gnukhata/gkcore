@@ -26,7 +26,7 @@ Contributors:
 
 
 from gkcore.models.meta import gk_hsn
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import re

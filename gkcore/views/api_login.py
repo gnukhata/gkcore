@@ -37,51 +37,14 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
-from Crypto.PublicKey import RSA
 from gkcore.models.meta import inventoryMigration, addFields, tableExists
-import jwt
 import gkcore
 import traceback
 from datetime import datetime
 from gkcore.views.api_gkuser import getUserRole
+from gkcore.utils import generateAuthToken, userAuthCheck, authCheck
 
 con = Connection
-
-
-def generateAuthToken(con, tokenItems, tokenType="userorg"):
-    try:
-        result = con.execute(select([gkdb.signature]))
-        sign = result.fetchone()
-        if sign == None:
-            key = RSA.generate(2560)
-            privatekey = key.exportKey("PEM")
-            sig = {"secretcode": privatekey}
-            gkcore.secret = privatekey
-            result = con.execute(gkdb.signature.insert(), [sig])
-        elif len(sign["secretcode"]) <= 20:
-            result = con.execute(gkdb.signature.delete())
-            if result.rowcount == 1:
-                key = RSA.generate(2560)
-                privatekey = key.exportKey("PEM")
-                sig = {"secretcode": privatekey}
-                gkcore.secret = privatekey
-                result = con.execute(gkdb.signature.insert(), [sig])
-        if tokenType == "user":
-            token = jwt.encode(
-                {"username": tokenItems["username"], "userid": tokenItems["userid"]},
-                gkcore.secret,
-                algorithm="HS256",
-            )
-        else:  # if userorg
-            token = jwt.encode(
-                {"orgcode": tokenItems["orgcode"], "userid": tokenItems["userid"]},
-                gkcore.secret,
-                algorithm="HS256",
-            )
-        token = token.decode("ascii")
-        return token
-    except:
-        return -1
 
 
 @view_config(route_name="login", request_method="POST", renderer="json")
@@ -92,7 +55,7 @@ def gkLogin(request):
     Return true if username and password matches or false otherwise.
     description:
     The function takes the orgcode and matches the username and password.
-    if it is correct then the user is authorised and a jwt object is created.
+    if it is correct then the user is authorised and a  object is created.
     The object will have the userid and orgcode and this will be sent back as a response.
     Else the function will not issue any token.
     """
@@ -440,34 +403,3 @@ def getuserorgdetails(request):
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
         finally:
             con.close()
-
-
-def userAuthCheck(token):
-    """
-    Purpose: on every request check if userid and username are valid combinations
-    """
-    try:
-        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
-        tokendict["auth"] = True
-        tokendict["username"] = tokendict["username"]
-        tokendict["userid"] = int(tokendict["userid"])
-        return tokendict
-    except:
-        print(traceback.format_exc())
-        tokendict = {"auth": False}
-        return tokendict
-
-
-def authCheck(token):
-    """
-    Purpose: on every request check if userid and orgcode are valid combinations
-    """
-    try:
-        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
-        tokendict["auth"] = True
-        tokendict["orgcode"] = int(tokendict["orgcode"])
-        tokendict["userid"] = int(tokendict["userid"])
-        return tokendict
-    except:
-        tokendict = {"auth": False}
-        return tokendict

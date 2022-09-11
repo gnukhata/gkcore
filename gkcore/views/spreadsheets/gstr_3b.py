@@ -28,7 +28,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from pyramid.response import Response
 import traceback  # for printing detailed exception logs
 

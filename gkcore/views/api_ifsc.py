@@ -1,7 +1,7 @@
 from pyramid.request import Request
 from gkcore import enumdict
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 import requests, os
 
 @view_defaults(route_name="ifsc")

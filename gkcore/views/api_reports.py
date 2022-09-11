@@ -34,7 +34,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from gkcore.views.api_invoice import getStateCode
 from gkcore.models.gkdb import (
     accounts,

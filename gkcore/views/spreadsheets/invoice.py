@@ -27,7 +27,7 @@ Sai Karthik <kskarthik@disroot.org>
 """
 from gkcore import eng, enumdict
 from gkcore.models.meta import gk_api
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from pyramid.response import Response
 
 

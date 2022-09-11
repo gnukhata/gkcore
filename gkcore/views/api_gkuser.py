@@ -12,7 +12,7 @@ import gkcore
 from gkcore.models.meta import (
     tableExists,
 )
-from gkcore.views.api_login import authCheck, userAuthCheck, generateAuthToken
+from gkcore.utils import authCheck, userAuthCheck, generateAuthToken
 from datetime import datetime
 import traceback
 
