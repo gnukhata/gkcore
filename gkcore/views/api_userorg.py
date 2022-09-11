@@ -24,7 +24,9 @@ class api_userorg(object):
         self.request = request
         self.con = Connection
 
-    @view_config(request_method="POST", request_param="type=create_invite", renderer="json")
+    @view_config(
+        request_method="POST", request_param="type=create_invite", renderer="json"
+    )
     def inviteUser(self):
         try:
             token = self.request.headers["gktoken"]
@@ -36,45 +38,66 @@ class api_userorg(object):
         else:
             try:
                 self.con = eng.connect()
+                # check if the user adding the invite is part of the requested org
                 userOrgQuery = self.con.execute(
                     "select orgs->'%s' from gkusers where userid = %d;"
                     % (str(authDetails["orgcode"]), authDetails["userid"])
                 )
-                if userOrgQuery.rowcount != 1:
+                if userOrgQuery.rowcount < 1:
                     return {"gkstatus": enumdict["ActionDisallowed"]}
                 userOrgData = userOrgQuery.fetchone()
-                userRole = userOrgData["userrole"]
+                userRole = userOrgData[0]["userrole"]
 
                 dataset = self.request.json_body
-
+                # check if the user adding the invite has admin or manager role in the requested org
+                # (Note: manager can only add operator)
                 if userRole == -1 or (userRole == 0 and dataset["userrole"] == 1):
+                    userid = self.con.execute(
+                        select([gkdb.gkusers.c.userid]).where(
+                            gkdb.gkusers.c.username == dataset["username"]
+                        )
+                    ).fetchone()
+                    # Check and proceed if user is not part of the org yet
+                    userInOrgQuery = self.con.execute(
+                        "select orgs->'%s' from gkusers where userid = %d;"
+                        % (str(authDetails["orgcode"]), userid["userid"])
+                    )
+
+                    if userInOrgQuery.rowcount:
+                        userInOrg = userInOrgQuery.fetchone()
+                        if type(userInOrg[0]) == dict and len(userInOrg[0].keys()):
+                            return {"gkstatus": enumdict["DuplicateEntry"]}
+
                     # Add entry in gkusers and organisation table, with invite status false
                     userOrgPayload = {
                         "invitestatus": False,
                         "userconf": {},
                         "userrole": dataset["userrole"],
                     }
+                    # When the user accepts the invite, this golist will be added to the usergodowns table
                     if "golist" in dataset:
                         userOrgPayload["golist"] = dataset["golist"]
                     # data in the gkusers table will be used by the user to determine invite status
                     self.con.execute(
                         "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                         % (
-                            str(dataset["orgcode"]),
+                            str(authDetails["orgcode"]),
                             json.dumps(userOrgPayload),
-                            dataset["userid"],
+                            userid["userid"],
                         )
                     )
                     # data in the organisation table will be used by the organisation to determine invited users
                     self.con.execute(
                         "update organisation set users = jsonb_set(users, '{%s}', 'false') where orgcode = %d;"
                         % (
-                            str(dataset["userid"]),
-                            dataset["orgcode"],
+                            str(userid["userid"]),
+                            authDetails["orgcode"],
                         )
                     )
                     return {"gkstatus": enumdict["Success"]}
+                return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
+                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -84,7 +107,7 @@ class api_userorg(object):
     )
     def acceptInvite(self):
         try:
-            token = self.request.headers["gktoken"]
+            token = self.request.headers["gkusertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = userAuthCheck(token)
@@ -96,19 +119,24 @@ class api_userorg(object):
                 dataset = self.request.json_body
 
                 # check if the user has a valid invite in the requested org
-                userQuery = self.con.execute(
+                userData = self.con.execute(
                     "select orgs->'%s' from gkusers where userid = %d;"
                     % (str(dataset["orgcode"]), authDetails["userid"])
-                )
+                ).fetchone()
 
-                orgQuery = self.con.execute(
+                orgData = self.con.execute(
                     "select users->'%s' from organisation where orgcode = %d;"
                     % (str(authDetails["userid"]), dataset["orgcode"])
-                )
+                ).fetchone()
 
-                if userQuery.rowcount == 1 and orgQuery.rowcount == 1:
+                if (
+                    type(userData[0]) == dict
+                    and userData[0]["invitestatus"] == False
+                    and type(orgData[0]) == bool
+                ):
+
                     # Update the gkusers and organisation tables
-                    userData = userQuery.fetchone()
+                    
                     # update invite status to true
                     self.con.execute(
                         "update gkusers set orgs = jsonb_set(orgs, '{%s,invitestatus}', 'true') where userid = %d;"
@@ -152,6 +180,7 @@ class api_userorg(object):
                     "gkmessage": "Invalid invite, please contact admin",
                 }
             except:
+                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -161,7 +190,7 @@ class api_userorg(object):
     )
     def rejectInvite(self):
         try:
-            token = self.request.headers["gktoken"]
+            token = self.request.headers["gkusertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = userAuthCheck(token)
@@ -173,40 +202,44 @@ class api_userorg(object):
                 dataset = self.request.json_body
 
                 # check if the user has a valid invite in the requested org
-                userQuery = self.con.execute(
+                userData = self.con.execute(
                     "select orgs->'%s' from gkusers where userid = %d;"
                     % (str(dataset["orgcode"]), authDetails["userid"])
-                )
+                ).fetchone()
 
-                orgQuery = self.con.execute(
+                orgData = self.con.execute(
                     "select users->'%s' from organisation where orgcode = %d;"
                     % (str(authDetails["userid"]), dataset["orgcode"])
-                )
+                ).fetchone()
 
-                if userQuery.rowcount == 1 and orgQuery.rowcount == 1:
+                if userData[0]["invitestatus"] == False and orgData[0] == False:
+                    # if userQuery.rowcount == 1 and orgQuery.rowcount == 1:
                     # remove the entry from users table but leave it in organisation table
-                    userData = userQuery.fetchone()
-                    if not userData["invitestatus"]:
-                        self.con.execute(
-                            "update gkusers set orgs = orgs - '{%s}' WHERE userid = %d;"
-                            % (str(orgcode["orgcode"]), authDetails["userid"])
-                        )
-                        return {"gkstatus": enumdict["Success"]}
-                    return {
-                        "gkstatus": enumdict[
-                            "ActionDisallowed"
-                        ],  # disallowed because invitation has been accepted
-                    }
+                    # userData = userQuery.fetchone()
+                    # if not userData["invitestatus"]:
+                    self.con.execute(
+                        "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
+                        % (str(dataset["orgcode"]), authDetails["userid"])
+                    )
+                    return {"gkstatus": enumdict["Success"]}
                 return {
-                    "gkstatus": enumdict["UnauthorisedAccess"],
-                    "gkmessage": "Invalid invite, please contact admin",
+                    "gkstatus": enumdict[
+                        "ActionDisallowed"
+                    ],  # disallowed because invitation has been accepted
                 }
+                # return {
+                #     "gkstatus": enumdict["UnauthorisedAccess"],
+                #     "gkmessage": "Invalid invite, please contact admin",
+                # }
             except:
+                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    @view_config(request_method="DELETE", request_param="type=delete_invite", renderer="json")
+    @view_config(
+        request_method="DELETE", request_param="type=delete_invite", renderer="json"
+    )
     def deleteInvite(self):
         try:
             token = self.request.headers["gktoken"]
@@ -218,43 +251,39 @@ class api_userorg(object):
         else:
             try:
                 self.con = eng.connect()
-                userOrgQuery = self.con.execute(
+                userOrgs = self.con.execute(
                     "select orgs->'%s' from gkusers where userid = %d;"
                     % (str(authDetails["orgcode"]), authDetails["userid"])
-                )
-                if userOrgQuery.rowcount != 1:
+                ).fetchone()
+                if not (len(userOrgs) and type(userOrgs[0]) == dict):
                     return {"gkstatus": enumdict["ActionDisallowed"]}
-                userOrgData = userOrgQuery.fetchone()
-                userRole = userOrgData["userrole"]
+                userRole = userOrgs[0]["userrole"]
 
-                dataset = self.request.json_body
-
+                # Allow delete only if requesting user is an admin
                 if userRole == -1:
-
                     dataset = self.request.json_body
                     # check if the user has a valid invite in the requested org
-                    userQuery = self.con.execute(
+                    userData = self.con.execute(
                         "select orgs->'%s' from gkusers where userid = %d;"
-                        % (str(dataset["orgcode"]), dataset["userid"])
-                    )
+                        % (str(authDetails["orgcode"]), dataset["userid"])
+                    ).fetchone()
 
-                    orgQuery = self.con.execute(
+                    orgData = self.con.execute(
                         "select users->'%s' from organisation where orgcode = %d;"
-                        % (str(dataset["userid"]), dataset["orgcode"])
-                    )
+                        % (str(dataset["userid"]), authDetails["orgcode"])
+                    ).fetchone()
 
-                    if userQuery.rowcount == 1 and orgQuery.rowcount == 1:
-                        userData = userQuery.fetchone()
-                        if not userData["invitestatus"]:
+                    if type(userData[0]) == dict and type(orgData[0]) == bool:
+                        if not userData[0]["invitestatus"]:
                             # delete the invites
                             # remove the entry from gkusers and organisation table
                             self.con.execute(
-                                "update gkusers set orgs = orgs - '{%s}' WHERE userid = %d;"
-                                % (str(dataset["orgcode"]), dataset["userid"])
+                                "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
+                                % (str(authDetails["orgcode"]), dataset["userid"])
                             )
                             self.con.execute(
-                                "update organisation set users = users - '{%s}' WHERE orgcode = %d;"
-                                % (str(dataset["userid"]), dataset["orgcode"])
+                                "update organisation set users = users - '%s' WHERE orgcode = %d;"
+                                % (str(dataset["userid"]), authDetails["orgcode"])
                             )
                             return {"gkstatus": enumdict["Success"]}
                         return {
@@ -262,23 +291,19 @@ class api_userorg(object):
                                 "ActionDisallowed"
                             ],  # disallowed because invitation has been accepted
                         }
-                    elif orgQuery.rowcount == 1:
+                    elif type(orgData[0]) == bool:
                         self.con.execute(
-                            "update organisation set users = users - '{%s}' WHERE orgcode = %d;"
-                            % (str(dataset["userid"]), dataset["orgcode"])
+                            "update organisation set users = users - '%s' WHERE orgcode = %d;"
+                            % (str(dataset["userid"]), authDetails["orgcode"])
                         )
                         return {"gkstatus": enumdict["Success"]}
-                    return {
-                        "gkstatus": enumdict[
-                            "ActionDisallowed"
-                        ],  # disallowed because invitation has been accepted
-                    }
 
+                # disallowed because invitation has been accepted
                 return {
-                    "gkstatus": enumdict["UnauthorisedAccess"],
-                    "gkmessage": "Invalid invite, please contact admin",
+                    "gkstatus": enumdict["ActionDisallowed"],
                 }
             except:
+                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
