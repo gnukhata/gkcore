@@ -14,7 +14,7 @@ from gkcore.models.gkdb import accounts as accounts_table
 
 # from sqlalchemy.engine.base import Connection
 # from gkcore import eng, enumdict
-from gkcore.views.api_user import authCheck, getUserRole
+from gkcore.views.api_gkuser import authCheck, getUserRole
 
 
 def export_ledger(self):
@@ -210,7 +210,7 @@ def import_tally(self):
 
         # gather user info
         user = authCheck(header["gktoken"])
-        user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
+        user_role = getUserRole(user["userid"], user["orgcode"])["gkresult"]["userrole"]
 
         # only admin can import data
         if user_role != -1:

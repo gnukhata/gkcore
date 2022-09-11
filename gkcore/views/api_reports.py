@@ -66,7 +66,7 @@ from sqlalchemy import and_, alias, or_, exc, distinct, desc
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime, date
 import calendar
 from monthdelta import monthdelta
@@ -2926,7 +2926,7 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 orgcode = authDetails["orgcode"]
                 accountCode = self.request.params["accountcode"]
@@ -3261,7 +3261,7 @@ class api_reports(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 orgcode = authDetails["orgcode"]
                 accountCode = self.request.params["accountcode"]
@@ -6377,14 +6377,10 @@ class api_reports(object):
             self.con = eng.connect()
             orgcode = authDetails["orgcode"]
             orgcode = int(orgcode)
-            user = self.con.execute(
-                select([users.c.userrole]).where(
-                    users.c.userid == authDetails["userid"]
-                )
-            )
-            userrole = user.fetchone()
+            userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            userrole = userRoleData["gkresult"]["userrole"]
             vouchers = []
-            if userrole[0] == -1 or userrole[0] == 0:
+            if userrole == -1 or userrole == 0:
                 if "orderflag" in self.request.params:
                     voucherRow = self.con.execute(
                         select([voucherbin])
@@ -7626,7 +7622,6 @@ class api_reports(object):
                                     }
                                 )
 
-
                 stockReport.append(
                     {
                         "date": "",
@@ -8617,23 +8612,19 @@ class api_reports(object):
                         .order_by(log.c.time)
                     )
                 logdata = []
+                ROLES = {
+                    -1: "Admin",
+                    0: "Manager",
+                    1: "Operator",
+                    2: "Internal Auditor",
+                    3: "Godown In Charge",
+                }
                 for row in result:
-                    userdata = self.con.execute(
-                        select([users.c.username, users.c.userrole]).where(
-                            users.c.userid == row["userid"]
-                        )
-                    )
-                    rowuser = userdata.fetchone()
-                    if rowuser["userrole"] == -1:
-                        userrole = "Admin"
-                    elif rowuser["userrole"] == 0:
-                        userrole = "Manager"
-                    elif rowuser["userrole"] == 1:
-                        userrole = "Operator"
-                    elif rowuser["userrole"] == 2:
-                        userrole = "Internal Auditor"
-                    else:
-                        userrole = "Godown In Charge"
+                    rowuser = self.con.execute(
+                        "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                        % (str(authDetails["orgcode"]), int(row["userid"]))
+                    ).fetchone()
+                    userrole = ROLES[rowuser["userrole"]]
                     logdata.append(
                         {
                             "logid": row["logid"],

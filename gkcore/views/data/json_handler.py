@@ -3,7 +3,7 @@ from gkcore.models.meta import dbconnect
 from pyramid.response import Response
 from gkcore.views.api_login import authCheck
 from gkcore import eng, enumdict
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts
 
 
@@ -59,7 +59,7 @@ def export_json(self):
         token = self.request.headers["gktoken"]
         user = authCheck(token)
         org_code = user["orgcode"]
-        user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
+        user_role = getUserRole(user["userid"], org_code)["gkresult"]["userrole"]
 
         # only admin can export data
         if user_role != -1:
@@ -114,7 +114,7 @@ def import_json(self):
     try:
         token = self.request.headers["gktoken"]
         user = authCheck(token)
-        user_role = getUserRole(user["userid"])["gkresult"]["userrole"]
+        user_role = getUserRole(user["userid"], user["orgcode"])["gkresult"]["userrole"]
 
         # only admin can import data
         if user_role != -1:

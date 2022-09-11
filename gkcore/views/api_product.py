@@ -44,7 +44,7 @@ import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import goprod, product, accounts, organisation
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from datetime import datetime, date
 from time import strftime, strptime
@@ -68,7 +68,7 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
-                userrole = getUserRole(authDetails["userid"])
+                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
                 if gorole["userrole"] == 3:
                     uId = getusergodowns(authDetails["userid"])
@@ -329,7 +329,7 @@ class api_product(object):
                     productDetails["gsflag"] = row["gsflag"]
                     productDetails["unitname"] = unitrow["unitname"]
                     productDetails["openingstock"] = "%.2f" % float(row["openingstock"])
-                    userrole = getUserRole(authDetails["userid"])
+                    userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                     if int(userrole["gkresult"]["userrole"]) != 3:
                         godownswithstock = self.con.execute(
                             select(
@@ -468,7 +468,7 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 productcode = self.request.params["productcode"]
-                userrole = getUserRole(authDetails["userid"])
+                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 if int(userrole["gkresult"]["userrole"]) != 3:
                     result = self.con.execute(
                         select([goprod]).where(goprod.c.productcode == productcode)
@@ -887,7 +887,7 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 currentgoid = int(self.request.params["goid"])
-                userrole = getUserRole(authDetails["userid"])
+                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
                 if gorole["userrole"] == 3:
                     uId = getusergodowns(authDetails["userid"])

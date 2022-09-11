@@ -41,7 +41,7 @@ from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 
 
 def getusergodowns(userid):
@@ -186,7 +186,7 @@ class api_godown(object):
         else:
             try:
                 self.con = eng.connect()
-                userrole = getUserRole(authDetails["userid"])
+                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
                 if gorole["userrole"] == 3:
                     try:

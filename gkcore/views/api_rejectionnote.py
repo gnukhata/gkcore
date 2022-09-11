@@ -48,7 +48,6 @@ from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
 from gkcore.views.api_invoice import getStateCode
 
 
@@ -180,7 +179,10 @@ class api_rejectionnote(object):
                 for row in result:
                     invno = {}
                     if row["invid"]:
-                        invno = self.con.execute("select invoiceno from invoice where invid = %d" %(row["invid"])).fetchone()
+                        invno = self.con.execute(
+                            "select invoiceno from invoice where invid = %d"
+                            % (row["invid"])
+                        ).fetchone()
                     rnotes.append(
                         {
                             "rnid": row["rnid"],
@@ -245,11 +247,9 @@ class api_rejectionnote(object):
                 )
                 rndata = result.fetchone()
                 issuerdata = self.con.execute(
-                    select([users.c.username, users.c.userrole]).where(
-                        users.c.userid == rndata["issuerid"]
-                    )
-                )
-                issuerdata = issuerdata.fetchone()
+                    "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                    % (str(authDetails["orgcode"]), int(rndata["issuerid"]))
+                ).fetchone()
                 rejectionnotedata = {
                     "rnid": rndata["rnid"],
                     "rndate": datetime.strftime(rndata["rndate"], "%d-%m-%Y"),

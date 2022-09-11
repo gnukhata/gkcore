@@ -43,6 +43,7 @@ from sqlalchemy.sql.expression import null
 from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import accounts
 from datetime import datetime, date
+from gkcore.views.api_gkuser import getUserRole
 
 """
 purpose:
@@ -651,14 +652,10 @@ defaultflag '16' or '19' set to the '0'.
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if userRole[0] == -1:
+                if userRole == -1:
                     vouchercountdata = self.con.execute(
                         select([gkdb.accounts.c.vouchercount]).where(
                             gkdb.accounts.c.accountcode == dataset["accountcode"]

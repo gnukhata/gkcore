@@ -71,7 +71,7 @@ from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
+from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_transaction import deleteVoucherFun
 import traceback  # for printing detailed exception logs
 
@@ -3225,7 +3225,7 @@ class api_invoice(object):
         else:
             try:
                 self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"])
+                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 invid = self.request.params["invid"]
                 invoiceData = self.con.execute(
@@ -3832,12 +3832,10 @@ class api_invoice(object):
                 invprodresult = []
                 orgcode = authDetails["orgcode"]
                 userId = authDetails["userid"]
-                userdetails = self.con.execute(
-                    select([users.c.userid, users.c.username, users.c.userrole]).where(
-                        users.c.userid == userId
-                    )
-                )
-                userDetails = userdetails.fetchone()
+                userDetails = self.con.execute(
+                    "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                    % (str(orgcode), int(userId))
+                ).fetchone()
                 temp = self.con.execute(
                     select([invoice]).where(
                         and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)

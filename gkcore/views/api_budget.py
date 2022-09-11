@@ -42,10 +42,9 @@ from datetime import datetime, date, timedelta
 import jwt
 import gkcore
 from gkcore.views.api_login import authCheck
-from gkcore.views.api_user import getUserRole
 from gkcore.models import gkdb
 from gkcore.views.api_reports import calculateBalance
-
+from gkcore.views.api_gkuser import getUserRole
 
 @view_defaults(route_name="budget")
 class api_budget(object):
@@ -66,13 +65,9 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                role = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userrole = role.fetchone()
-                if userrole[0] == -1 or userrole[0] == 0:
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userrole = userRoleData["gkresult"]["userrole"]
+                if userrole == -1 or userrole == 0:
                     budgetdataset = self.request.json_body
                     budgetdataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(budget.insert(), [budgetdataset])
@@ -405,13 +400,9 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                role = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userrole = role.fetchone()
-                if userrole[0] == -1 or userrole[0] == 0:
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userrole = userRoleData["gkresult"]["userrole"]
+                if userrole == -1 or userrole == 0:
                     dataset = self.request.json_body
                     result = self.con.execute(
                         budget.update()
@@ -439,13 +430,9 @@ class api_budget(object):
             try:
                 dataset = self.request.json_body
                 self.con = eng.connect()
-                role = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
-                )
-                userrole = role.fetchone()
-                if userrole[0] == -1 or userrole[0] == 0:
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userrole = userRoleData["gkresult"]["userrole"]
+                if userrole == -1 or userrole == 0:
                     result = self.con.execute(
                         budget.delete().where(budget.c.budid == dataset["budid"])
                     )

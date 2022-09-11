@@ -58,6 +58,7 @@ from gkcore.views.api_invoice import rename_inv_no_uniquely
 from datetime import datetime, timedelta
 import os
 import traceback
+from gkcore.views.api_gkuser import getUserRole
 
 con = Connection
 
@@ -2020,7 +2021,7 @@ class api_organisation(object):
             return {"gkstatus": enumdict["ActionDisallowed"]}
 
         try:
-            token = self.request.headers["gktoken"]
+            token = self.request.headers["gkusertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = userAuthCheck(token)
@@ -2702,7 +2703,7 @@ class api_organisation(object):
                         self.con.execute(
                             gkdb.organisation.update()
                             .where(gkdb.organisation.c.orgcode == orgcode["orgcode"])
-                            .values(users=json.dumps(users))
+                            .values(users=users)
                         )
                         # Update gkusers table about newly added org
                         orgs = {
@@ -3077,14 +3078,10 @@ class api_organisation(object):
             try:
                 self.con = eng.connect()
 
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if userRole[0] == -1 or userRole[0] == 0:
+                if userRole == -1 or userRole == 0:
                     result = self.con.execute(
                         gkdb.organisation.update()
                         .where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
@@ -3117,13 +3114,9 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
-                if userRole[0] == -1:
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
+                if userRole == -1:
                     orgdata = self.con.execute(
                         "select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"
                         % authDetails["orgcode"]
@@ -3249,14 +3242,10 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if userRole[0] == -1:
+                if userRole == -1:
                     result = self.con.execute(
                         gkdb.organisation.update()
                         .where(gkdb.organisation.c.orgcode == authDetails["orgcode"])

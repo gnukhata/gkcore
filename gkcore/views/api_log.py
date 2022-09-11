@@ -24,7 +24,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import log, users
+from gkcore.models.gkdb import log, gkusers
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -54,6 +54,8 @@ class api_log(object):
     def addLog(self):
         try:
             token = self.request.headers["gktoken"]
+            if "usertoken" in self.request.headers:
+                token = self.request.headers["usertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
@@ -119,8 +121,8 @@ class api_log(object):
                 logdata = []
                 for row in result:
                     username = self.con.execute(
-                        select([users.c.username]).where(
-                            users.c.userid == row["userid"]
+                        select([gkusers.c.username]).where(
+                            gkusers.c.userid == row["userid"]
                         )
                     )
                     username = username.fetchone()
@@ -156,7 +158,9 @@ class api_log(object):
                 )
                 row = result.fetchone()
                 username = self.con.execute(
-                    select([users.c.username]).where(users.c.userid == row["userid"])
+                    select([gkusers.c.username]).where(
+                        gkusers.c.userid == row["userid"]
+                    )
                 )
                 username = username.fetchone()
                 logdata = {

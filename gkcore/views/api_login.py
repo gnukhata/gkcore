@@ -43,6 +43,7 @@ import jwt
 import gkcore
 import traceback
 from datetime import datetime
+from gkcore.views.api_gkuser import getUserRole
 
 con = Connection
 
@@ -197,6 +198,7 @@ def userLogin(request):
                             "yearstart": datetime.strftime(
                                 (orgData["yearstart"]), "%d-%m-%Y"
                             ),
+                            "orgtype": orgData["orgtype"],
                             "yearend": datetime.strftime((orgData["yearend"]), "%d-%m-%Y"),
                             "orgcode": orgCode,
                             "invitestatus": userData["orgs"][orgCode]["invitestatus"],
@@ -365,7 +367,7 @@ def orgLogin(request):
         else:
             # New login support
             try:
-                token = request.headers["gktoken"]
+                token = request.headers["gkusertoken"]
             except:
                 print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
@@ -418,12 +420,8 @@ def getuserorgdetails(request):
     else:
         try:
             con = eng.connect()
-            user = con.execute(
-                select([gkdb.users.c.userrole]).where(
-                    gkdb.users.c.userid == authDetails["userid"]
-                )
-            )
-            row = user.fetchone()
+            userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            userRole = userRoleData["gkresult"]["userrole"]
             flagsdata = con.execute(
                 select(
                     [gkdb.organisation.c.booksclosedflag, gkdb.organisation.c.roflag]
@@ -433,7 +431,7 @@ def getuserorgdetails(request):
             return {
                 "gkstatus": gkcore.enumdict["Success"],
                 "gkresult": {
-                    "userrole": int(row["userrole"]),
+                    "userrole": int(userRole),
                     "booksclosedflag": int(flags["booksclosedflag"]),
                     "roflag": int(flags["roflag"]),
                 },

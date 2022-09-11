@@ -42,6 +42,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
+from gkcore.views.api_gkuser import getUserRole
 
 """
 purpose:
@@ -249,14 +250,10 @@ class api_project(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([gkdb.users.c.userrole]).where(
-                        gkdb.users.c.userid == authDetails["userid"]
-                    )
-                )
-                userRole = user.fetchone()
+                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if userRole[0] == -1:
+                if userRole == -1:
                     result = self.con.execute(
                         gkdb.projects.delete().where(
                             gkdb.projects.c.projectcode == dataset["projectcode"]
