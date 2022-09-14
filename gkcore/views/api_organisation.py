@@ -3196,6 +3196,32 @@ class api_organisation(object):
         finally:
             self.con.close()
 
+    @view_config(request_method="GET", request_param="type=name_exists", renderer="json")
+    def orgNameExists(self):
+        try:
+            self.con = eng.connect()
+            orgname = self.request.params["orgname"]
+            orgncount = self.con.execute(
+                select(
+                    [func.count(gkdb.organisation.c.orgcode).label("orgcode")]
+                ).where(
+                    and_(
+                        gkdb.organisation.c.orgname == orgname,
+                    )
+                )
+            )
+            org = orgncount.fetchone()
+            print(org["orgcode"])
+            if org["orgcode"] != 0:
+                return {"gkstatus": enumdict["DuplicateEntry"]}
+            else:
+                return {"gkstatus": enumdict["Success"]}
+        except:
+            print(traceback.format_exc())
+            return {"gkstatus": enumdict["ConnectionFailed"]}
+        finally:
+            self.con.close()
+
     @view_config(request_param="orgcode", request_method="GET", renderer="json")
     def getOrgcode(self):
         try:
