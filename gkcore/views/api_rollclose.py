@@ -27,13 +27,18 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
-from gkcore.views.api_reports import calculateBalance, stockonhandfun, godownwisestockonhandfun
+from gkcore.views.api_reports import (
+    calculateBalance,
+    stockonhandfun,
+    godownwisestockonhandfun,
+)
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
     groupsubgroups,
     organisation,
-    users,
+    # users,
+    gkusers,
     customerandsupplier,
     product,
     categorysubcategories,
@@ -1088,8 +1093,10 @@ class api_rollclose(object):
                     "logo": startEndRow["logo"],
                     "gstin": startEndRow["gstin"],
                     "bankdetails": startEndRow["bankdetails"],
+                    "users": startEndRow["users"],
                 }
                 self.con.execute(organisation.insert(), newOrg)
+                # must move all the users data from old org to the new org
                 newOrgCodeData = self.con.execute(
                     select([organisation.c.orgcode]).where(
                         and_(
@@ -1102,6 +1109,23 @@ class api_rollclose(object):
                 )
                 newOrgRow = newOrgCodeData.fetchone()
                 newOrgCode = newOrgRow["orgcode"]
+                # need not create a new user here. But update the new orgcode in the gkusers table
+                # oldUsers = self.con.execute(
+                #     select([organisation.c.users]).where(
+                #         organisation.c.orgcode == orgcode
+                #     )
+                # ).fetchone()
+
+                # for oldUser in oldUsers["users"]:
+
+                #     self.con.execute(
+                #         "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
+                #         % (
+                #             str(newOrgCode),
+                #             json.dumps(orgs),
+                #             authDetails["userid"],
+                #         )
+                #     )
                 oldUsers = self.con.execute(
                     "select username,userpassword,userrole,userquestion,useranswer from users where orgcode = %d"
                     % (orgCode)
@@ -1353,14 +1377,14 @@ class api_rollclose(object):
                     ):
                         categoryCode = oldToNewCatCodes[prodRow["categorycode"]]
 
-                    stockData = stockonhandfun(orgCode, prodRow['productcode'], endDate)
+                    stockData = stockonhandfun(orgCode, prodRow["productcode"], endDate)
                     openingStock = float(0)
-                    if stockData['gkstatus'] == 0:
-                        openingStock = stockData['gkresult'][0]['balance']
-                        if(openingStock == 'nan'):
+                    if stockData["gkstatus"] == 0:
+                        openingStock = stockData["gkresult"][0]["balance"]
+                        if openingStock == "nan":
                             openingStock = 0
                         openingStock = float(openingStock)
-                                           
+
                     self.con.execute(
                         product.insert(),
                         {
@@ -1451,10 +1475,18 @@ class api_rollclose(object):
                     newProdCode = None
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
-                    stockData = godownwisestockonhandfun(self.con, orgCode, oldstartDate, endDate, 'pg', oldProdCode, row["goid"])
+                    stockData = godownwisestockonhandfun(
+                        self.con,
+                        orgCode,
+                        oldstartDate,
+                        endDate,
+                        "pg",
+                        oldProdCode,
+                        row["goid"],
+                    )
                     stockBalance = 0
-                    if len(stockData) and 'balance' in stockData[0] :
-                        stockBalance = float(stockData[0]['balance'])
+                    if len(stockData) and "balance" in stockData[0]:
+                        stockBalance = float(stockData[0]["balance"])
                     self.con.execute(
                         goprod.insert(),
                         {

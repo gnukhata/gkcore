@@ -129,7 +129,7 @@ def userLogin(request):
                 )
             )
         )
-        # if username and password exist in users2 table
+        # if username and password exist in gkusers table
         if result.rowcount == 1:
             record = result.fetchone()
             # check if any orgs are mapped to the userid
@@ -226,7 +226,7 @@ def userLogin(request):
                 if len(payload) == 1:
                     token = generateAuthToken(
                         con,
-                        {"userid": record["userid"], "username": dataset["username"]},
+                        {"userid": record["userid"], "username": dataset["username"]}, # TODO replace record["userid"] with a proper userid, this will throw error
                         "user",
                     )
                     return {
