@@ -18,14 +18,20 @@ def get_table_array(name: str, orgcode: int):
 
     """
     c = eng.connect()
-    table = c.execute(f"select * from {name} where orgcode = {orgcode}")
+    # handle case for gkusers table as it does not have orgcode column
+    if name == "gkusers":
+        table = c.execute(f"select * from {name}")
+    else:
+        table = c.execute(f"select * from {name} where orgcode = {orgcode}")
     a = []
     for row in table:
         d = {}
         for i in row.keys():
             d[i] = row[i]
-        # delete orgcode key as it's not required during import
-        d.pop("orgcode", None)
+            # delete orgcode column as it's not required during import, except for gkusers table
+            # as it does not have such
+            if name != "gkusers":
+                d.pop("orgcode", None)
         a.append(d)
     return a
 
@@ -90,7 +96,7 @@ def export_json(self):
     file_obj = io.StringIO()
     # convert the tables object to human readable json format and
     # return a file
-    json.dump(data, file_obj, default=type_cast, indent=1)
+    json.dump(data, file_obj, default=type_cast)
     export_file = file_obj.getvalue()
     file_obj.close()
     headerList = {
