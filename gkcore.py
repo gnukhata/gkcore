@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-from sys import argv
+from sys import argv as args
 import subprocess as cmd
 import os
 
-help = """\t
+help_text = """\t
+gkcore is gnukhata's REST API service
+
 USAGE: ./gkcore.py [OPTION]
 
 OPTIONS:
@@ -18,8 +20,6 @@ OPTIONS:
 def check_flags():
     """Validate script arguments & run appropriate action"""
 
-    args = argv
-
     # set env variable, used by gkcore to connect to db
     os.environ["GKCORE_DB_URL"] = "postgres://gkadmin:gkadmin@localhost:5432/gkdata"
 
@@ -27,20 +27,22 @@ def check_flags():
 
         cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["python3", "initdb.py"])
+        return
 
-    if "serve" in args:
+    elif "serve" in args:
 
         cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["pserve", "development.ini", "--reload"])
+        return
 
-    if "deploy" in args:
+    elif "deploy" in args:
 
         cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["pserve", "production.ini"])
-
+        return
     # if the user does not provide any flags
     else:
-        print(help)
+        print(help_text)
 
 
 check_flags()
