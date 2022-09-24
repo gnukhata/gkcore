@@ -39,7 +39,7 @@ pages:
     - pip install pdoc
     - pdoc -o .pub/gkcore-api-docs/ gkcore/
     # compress the docs & move to public dir
-    - tar -cfa gkcore-api-docs.tar.gz .pub/gkcore-api-docs
+    - tar -cf gkcore-api-docs.tar.gz .pub/gkcore-api-docs/
     - mv gkcore-api-docs.tar.gz .pub/
     # rename the dir to match gitlab ci's reserved "public" dir name
     - mv .pub public

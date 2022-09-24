@@ -24,6 +24,8 @@ Contributors:
 """
 
 import logging
+
+from requests import auth
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, gkusers
 from sqlalchemy.sql import select
@@ -34,6 +36,7 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime
 import gkcore
 from gkcore.utils import authCheck
+from gkcore.views.api_gkuser import getUserRole
 
 """
 This class basically does Log maintenance about an organisations
@@ -109,8 +112,13 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        # only admin can full logs
-        if authDetails["userrole"] != -1:
+        # only admin can access full logs
+        if (
+            getUserRole(authDetails["userid"], authDetails["orgcode"])["gkresult"][
+                "userrole"
+            ]
+            != -1
+        ):
             return {"gkstatus": enumdict["BadPrivilege"]}
 
         else:
