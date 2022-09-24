@@ -1,5 +1,4 @@
 image: python:3.8-slim-buster
-# include: "https://gitlab.com/gitlab-cd/ssh-template/raw/master/ssh.yml"
 
 variables:
   POSTGRES_USER: "gkadmin"
@@ -38,7 +37,9 @@ pages:
     # install & generate api docs with pdoc
     - pip install pdoc
     - pdoc -o .pub/gkcore-api-docs/ gkcore/
-    # compress the docs & move to public dir
+    # compress the docs & move to public dir. This compressed file
+    # will be pulled during gnukhata.org website build for
+    # displaying the api-docs
     - tar -cf gkcore-api-docs.tar.gz .pub/gkcore-api-docs/
     - mv gkcore-api-docs.tar.gz .pub/
     # rename the dir to match gitlab ci's reserved "public" dir name
@@ -60,6 +61,7 @@ pages:
 # deploy devel branch changes to gkcore test server
 update_test_server:
   stage: deploy
+  needs: ["setup"]
   script:
     - apt update && apt install -y curl
     - curl $TEST_SERVER_HOOK
