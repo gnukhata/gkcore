@@ -61,7 +61,7 @@ pages:
 # deploy devel branch changes to gkcore test server
 update_test_server:
   stage: deploy
-  needs: ["setup"]
+  needs: ["gkcore"]
   script:
     - apt update && apt install -y curl
     - curl $TEST_SERVER_HOOK
