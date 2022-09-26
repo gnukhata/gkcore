@@ -49,7 +49,7 @@ requires = [
 
 setup(
     name="gkcore",
-    version="0.1",
+    version="0.8.0-a1",
     description="gkcore",
     long_description=README,
     classifiers=[
@@ -61,7 +61,7 @@ setup(
     keywords="web services",
     author="GNUKhata Team",
     author_email="",
-    url="https://gnukhata.in",
+    url="https://gnukhata.org",
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
