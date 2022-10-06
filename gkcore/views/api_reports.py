@@ -2189,6 +2189,50 @@ def stockonhandfun(orgcode, productCode, endDate):
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
+def calculateClosingStockValue(con, orgcode, endDate):
+    try:
+        productList = con.execute(
+            select([product.c.productcode, product.c.productdesc]).where(
+                product.c.orgcode == orgcode
+            )
+        ).fetchall()
+
+        godownList = con.execute(
+            select([godown.c.goid, godown.c.goname]).where(godown.c.orgcode == orgcode)
+        ).fetchall()
+
+        closingStock = {"total": 0, "products": {}}
+
+        for productItem in productList:
+            prodClosingStock = {"total": 0, "godowns": {}}
+            if productItem["productcode"]:
+                for godownItem in godownList:
+                    if godownItem["goid"]:
+                        godownStockValue = calculateStockValue(
+                            con,
+                            orgcode,
+                            endDate,
+                            productItem["productcode"],
+                            godownItem["goid"],
+                        )
+                        prodClosingStock["total"] += godownStockValue
+                        if godownStockValue:
+                            prodClosingStock["godowns"][
+                                godownItem["goname"]
+                            ] = godownStockValue
+            closingStock["total"] += prodClosingStock["total"]
+            closingStock["products"][productItem["productdesc"]] = (
+                0 if not prodClosingStock["total"] else prodClosingStock
+            )
+
+        closingStock["total"] = round(closingStock["total"], 2)
+
+        return closingStock
+    except:
+        print(traceback.format_exc())
+        return {"total": 0, "products": {}}
+
+
 def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
     """
     Note: Preform the below steps for a product in a godown
@@ -2199,7 +2243,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
     step3: if trn == invoice/ cash memo/ delivery note:
              stockInHand.append({qty: trn.qty, rate: trn.rate})
     """
-    # Must handle opening stock
+    # TODO: handle opening stock
     # goopeningStockResult = con.execute(
     #     select([goprod.c.goopeningstock]).where(
     #         and_(
@@ -2214,9 +2258,42 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
     #     gopeningStock = gosRow["goopeningstock"]
     # else:
     #     gopeningStock = 0.00
+    # if there is a opening stock, make it the first entry in stockOnHand array. {qty: gosRow["goopeningstock"], rate: float(gosRow["openingstockvalue"] / gosRow["goopeningstock"])}
+
     try:
+        stockOnHand = []
+
+        # opening stock
+        openingStockQuery = con.execute(
+            select([goprod.c.goopeningstock, goprod.c.openingstockvalue]).where(
+                and_(
+                    goprod.c.productcode == productCode,
+                    goprod.c.goid == godownCode,
+                    goprod.c.orgcode == orgcode,
+                )
+            )
+        )
+
+        if openingStockQuery.rowcount:
+            openingStock = openingStockQuery.fetchone()
+            if openingStock["goopeningstock"] != 0:
+                rate = (
+                    openingStock["openingstockvalue"] / openingStock["goopeningstock"]
+                )
+                stockOnHand.append({"qty": float(openingStock["goopeningstock"]), "rate": float(rate)})
+                print(stockOnHand)
+
+        # stock sale and purchase data
         stockList = con.execute(
-            select([stock])
+            select(
+                [
+                    stock.c.inout,
+                    stock.c.rate,
+                    stock.c.qty,
+                    stock.c.dcinvtnid,
+                    stock.c.dcinvtnflag,
+                ]
+            )
             .where(
                 and_(
                     stock.c.orgcode == orgcode,
@@ -2227,8 +2304,6 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
             )
             .order_by(stock.c.stockdate, stock.c.stockid)
         ).fetchall()
-
-        stockOnHand = []
 
         for item in stockList:
             trnId = item["dcinvtnid"]
@@ -2243,61 +2318,75 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                         and_(dcinv.c.dcid == trnId, dcinv.c.orgcode == orgcode)
                     )
                 ).scalar()
+                # some delivery challans wont be linked to invoices, so avoid them here
                 if linkCount <= 0:
                     proceed = False
             if proceed:
                 # update stockOnHand based on FIFO
                 if stockIn:  # purchase or stock in
                     stockLen = len(stockOnHand)
-                    if (
-                        stockLen > 0 and float(stockOnHand[stockLen - 1]["qty"]) < 0
-                    ):  # case where sale or stock out has happened before any purchase ot stock in
-                        stockOnHand[stockLen - 1]["qty"] = float(
-                            stockOnHand[stockLen - 1]["qty"]
-                        ) - float(item["qty"])
-                    else:
-                        stockOnHand.append({"rate": item["rate"], "qty": item["qty"]})
+                    if stockLen:
+                        lastStock = stockOnHand[stockLen - 1]
+                        if float(lastStock["qty"]) < 0 and float(
+                            lastStock["rate"]
+                        ) == float(
+                            item["rate"]
+                        ):  # case where sale or stock out has happened before any purchase or stock in
+                            lastStock["qty"] = float(lastStock["qty"]) + float(
+                                item["qty"]
+                            )
+                        continue
+                    stockOnHand.append({"rate": item["rate"], "qty": item["qty"]})
                 else:  # sale or stock out
-                    stockOnHand[0]["qty"] = float(stockOnHand[0]["qty"]) - float(
-                        item["qty"]
-                    )
+                    # print("==============soh=============")
+                    # print(stockOnHand)
+                    stockLen = len(stockOnHand)
 
-                    extraQty = stockOnHand[0]["qty"]
+                    if stockLen:
+                        stockOnHand[0]["qty"] = float(stockOnHand[0]["qty"]) - float(
+                            item["qty"]
+                        )
 
-                    if extraQty <= 0:
-                        extraQty *= -1
-                        while extraQty:
-                            stockOnHand.pop(0)
-                            if extraQty == 0:
-                                break
-                            if len(stockOnHand) > 0:
-                                if float(stockOnHand[0]["qty"]) > 0:
-                                    stockOnHand[0]["qty"] = (
-                                        float(stockOnHand[0]["qty"]) - extraQty
-                                    )
-                                    extraQty = stockOnHand[0]["qty"]
-                                    if extraQty >= 0:
-                                        break
+                        extraQty = stockOnHand[0]["qty"]
+
+                        if extraQty <= 0:
+                            extraQty *= -1
+                            while extraQty:
+                                stockOnHand.pop(0)
+                                if extraQty == 0:
+                                    break
+                                if len(stockOnHand) > 0:
+                                    if float(stockOnHand[0]["qty"]) > 0:
+                                        stockOnHand[0]["qty"] = (
+                                            float(stockOnHand[0]["qty"]) - extraQty
+                                        )
+                                        extraQty = stockOnHand[0]["qty"]
+                                        if extraQty >= 0:
+                                            break
+                                        else:
+                                            extraQty *= -1
                                     else:
-                                        extraQty *= -1
+                                        # if the qty is negative (stock out happened before stock in), then the remaining negative will also be added to it
+                                        stockOnHand[0]["qty"] = (
+                                            float(stockOnHand[0]["qty"]) - extraQty
+                                        )
+                                        break
                                 else:
-                                    # if the qty is negative (stock out happened before stock in), then the remaining negative will also be added to it
-                                    stockOnHand[0]["qty"] = (
-                                        float(stockOnHand[0]["qty"]) - extraQty
+                                    stockOnHand.append(
+                                        {"rate": item["rate"], "qty": -1 * extraQty}
                                     )
                                     break
-                            else:
-                                stockOnHand.append(
-                                    {"rate": item["rate"], "qty": -1 * extraQty}
-                                )
-                                break
-
+                    else:
+                        stockOnHand.append(
+                            {"rate": item["rate"], "qty": -1 * item["qty"]}
+                        )
         valueOnHand = 0
         for item in stockOnHand:
             valueOnHand += float(item["qty"]) * float(item["rate"])
-        return valueOnHand
+        return round(valueOnHand, 2)
     except:
         print(traceback.format_exc())
+        return -1
 
 
 def godownwisestockonhandfun(
@@ -6119,7 +6208,9 @@ class api_reports(object):
                 )
                 if getDIAccData.rowcount > 0:
                     diAccData = getDIAccData.fetchall()
+                    print("Accounts~~~~~~~~~~~")
                     for diAcc in diAccData:
+                        print(diAcc["accountname"])
                         if diAcc["accountname"] != pnlAccountname:
                             calbalData = calculateBalance(
                                 self.con,
@@ -6144,23 +6235,23 @@ class api_reports(object):
                                 grpDIbalance = grpDIbalance - float(
                                     calbalData["curbal"]
                                 )
-                        else:
-                            csAccountcode = self.con.execute(
-                                "select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"
-                                % (orgcode)
-                            )
-                            csAccountcodeRow = csAccountcode.fetchone()
-                            calbalData = calculateBalance(
-                                self.con,
-                                csAccountcodeRow["accountcode"],
-                                calculateFrom,
-                                calculateFrom,
-                                calculateTo,
-                            )
-                            result["Closing Stock"] = "%.2f" % (
-                                float(calbalData["curbal"])
-                            )
-                            closingStockBal = float(calbalData["curbal"])
+                        # else:
+                        #     csAccountcode = self.con.execute(
+                        #         "select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"
+                        #         % (orgcode)
+                        #     )
+                        #     csAccountcodeRow = csAccountcode.fetchone()
+                        #     calbalData = calculateBalance(
+                        #         self.con,
+                        #         csAccountcodeRow["accountcode"],
+                        #         calculateFrom,
+                        #         calculateFrom,
+                        #         calculateTo,
+                        #     )
+                        #     result["Closing Stock"] = "%.2f" % (
+                        #         float(calbalData["curbal"])
+                        #     )
+                        #     closingStockBal = float(calbalData["curbal"])
 
                 directIncome["dirincmbal"] = "%.2f" % (float(grpDIbalance))
                 result["Direct Income"] = directIncome
@@ -6352,10 +6443,16 @@ class api_reports(object):
                     result["netloss"] = "%.2f" % (float(netLoss))
                     result["Total"] = "%.2f" % (float(expense))
 
+                # Calculate closing stock
+                result["Closing Stock"] = calculateClosingStockValue(
+                    self.con, orgcode, calculateTo
+                )
+
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
 
             except:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
@@ -7769,7 +7866,7 @@ class api_reports(object):
                         "proddesclist": prodcodedesclist,
                     }
             except Exception as e:
-                logging.warn(e) 
+                logging.warn(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="godownwise_stock_value", renderer="json")
@@ -9345,13 +9442,14 @@ class api_reports(object):
                         The other JSONB field in each invoice is row["tax"]. Its format is {"22": "2.00", "61": "2.00"}. Here, 22 and 61 are products and 2.00 is tax applied on those products, similarly for CESS {"22":"0.05"} where 22 is productcode snd 0.05 is cess rate"""
 
                         for pc in row["contents"].keys():
+                            if not pc:
+                                continue
                             discamt = 0.00
                             taxrate = float(row["tax"][pc])
                             if disc != None:
                                 discamt = float(disc[pc])
                             else:
                                 discamt = 0.00
-
                             for pcprice in row["contents"][pc].keys():
                                 ppu = pcprice
 
