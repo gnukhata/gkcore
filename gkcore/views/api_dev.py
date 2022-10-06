@@ -26,16 +26,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import (
-    stock,
-    invoice,
-    delchal,
-    organisation,
-    product,
-    customerandsupplier,
-    drcr,
-    rejectionnote,
-)
+from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -86,17 +77,17 @@ def recalculateStock(con, data, data_type, flag):
 
                     prod_qty = p_qty + p_fqty
                     stock_row = con.execute(
-                        select([stock.c.stockid, stock.c.qty]).where(
+                        select([gkdb.stock.c.stockid, gkdb.stock.c.qty]).where(
                             and_(
-                                stock.c.orgcode == orgcode,
-                                stock.c.dcinvtnid == id,
-                                stock.c.productcode == prod_code,
-                                stock.c.dcinvtnflag == flag,
+                                gkdb.stock.c.orgcode == orgcode,
+                                gkdb.stock.c.dcinvtnid == id,
+                                gkdb.stock.c.productcode == prod_code,
+                                gkdb.stock.c.dcinvtnflag == flag,
                             )
                         )
                     )
                     # print(
-                    #     "stock.c.orgcode == %s; stock.c.dcinvtnid == %s; stock.c.productcode == %s; stock.c.dcinvtnflag == 3"
+                    #     "gkdb.stock.c.orgcode == %s; gkdb.stock.c.dcinvtnid == %s; gkdb.stock.c.productcode == %s; gkdb.stock.c.dcinvtnflag == 3"
                     #     % (orgcode, invid, prod_code)
                     # )
                     if stock_row.rowcount > 0:
@@ -105,7 +96,7 @@ def recalculateStock(con, data, data_type, flag):
                         if float(stock_data["qty"]) != prod_qty:
                             con.execute(
                                 stock.update()
-                                .where(stock.c.stockid == stock_data["stockid"])
+                                .where(gkdb.stock.c.stockid == stock_data["stockid"])
                                 .values(qty=prod_qty)
                             )
                             # print(
@@ -120,13 +111,13 @@ def recalculateStock(con, data, data_type, flag):
                 if data_type == "inv":
                     con.execute(
                         invoice.update()
-                        .where(invoice.c.invid == item[id_key])
+                        .where(gkdb.invoice.c.invid == item[id_key])
                         .values(freeqty=new_fqty)
                     )
                 elif data_type == "dc":
                     con.execute(
                         delchal.update()
-                        .where(delchal.c.dcid == item[id_key])
+                        .where(gkdb.delchal.c.dcid == item[id_key])
                         .values(freeqty=new_fqty)
                     )
     except:
@@ -137,7 +128,7 @@ def recalculateVoucher(con, orgcode, invid, maflag):
     try:
         inv_data = con.execute(
             select([invoice]).where(
-                and_(invoice.c.orgcode == orgcode, invoice.c.invid == invid)
+                and_(gkdb.invoice.c.orgcode == orgcode, gkdb.invoice.c.invid == invid)
             )
         ).fetchone()
         vouchers = getInvVouchers(con, orgcode, invid)
@@ -161,8 +152,11 @@ def recalculateVoucher(con, orgcode, invid, maflag):
             }
             for pid in inv_data["contents"]:
                 prod_row = con.execute(
-                    select([product.c.productdesc]).where(
-                        and_(product.c.productcode == pid, product.c.orgcode == orgcode)
+                    select([gkdb.product.c.productdesc]).where(
+                        and_(
+                            gkdb.product.c.productcode == pid,
+                            gkdb.product.c.orgcode == orgcode,
+                        )
                     )
                 ).fetchone()
                 pname = prod_row["productdesc"]
@@ -196,10 +190,11 @@ def recalculateVoucher(con, orgcode, invid, maflag):
 
             if inv_data["custid"]:
                 csName = con.execute(
-                    select([customerandsupplier.c.custname]).where(
+                    select([gkdb.customerandsupplier.c.custname]).where(
                         and_(
-                            customerandsupplier.c.orgcode == orgcode,
-                            customerandsupplier.c.custid == int(inv_data["custid"]),
+                            gkdb.customerandsupplier.c.orgcode == orgcode,
+                            gkdb.customerandsupplier.c.custid
+                            == int(inv_data["custid"]),
                         )
                     )
                 ).fetchone()
@@ -254,7 +249,7 @@ def recalculateVoucher(con, orgcode, invid, maflag):
 def updateStockRate(con, orgcode):
     try:
         stocks = con.execute(
-            select([stock]).where(stock.c.orgcode == orgcode)
+            select([stock]).where(gkdb.stock.c.orgcode == orgcode)
         ).fetchall()
         for stockItem in stocks:
             productCode = str(stockItem["productcode"])
@@ -269,19 +264,23 @@ def updateStockRate(con, orgcode):
                 transaction = {}
                 if stockItem.dcinvtnflag == 4:  # Delivery chalan
                     transaction = con.execute(
-                        select([delchal.c.contents]).where(  # , delchal.c.freeqty
+                        select(
+                            [gkdb.delchal.c.contents]
+                        ).where(  # , gkdb.delchal.c.freeqty
                             and_(
-                                delchal.c.orgcode == orgcode,
-                                delchal.c.dcid == trnId,
+                                gkdb.delchal.c.orgcode == orgcode,
+                                gkdb.delchal.c.dcid == trnId,
                             )
                         )
                     ).fetchone()
                 elif stockItem.dcinvtnflag == 18:  # Rejection note
                     transaction = con.execute(
-                        select([rejectionnote.c.rejprods]).where(  # , delchal.c.freeqty
+                        select(
+                            [gkdb.rejectionnote.c.rejprods]
+                        ).where(  # , gkdb.delchal.c.freeqty
                             and_(
-                                rejectionnote.c.orgcode == orgcode,
-                                rejectionnote.c.rnid == trnId,
+                                gkdb.rejectionnote.c.orgcode == orgcode,
+                                gkdb.rejectionnote.c.rnid == trnId,
                             )
                         )
                     ).fetchone()
@@ -289,10 +288,12 @@ def updateStockRate(con, orgcode):
                     print(transaction["rejprods"])
                 else:  # invoice / cash memo
                     transaction = con.execute(
-                        select([invoice.c.contents]).where(  # , invoice.c.freeqty
+                        select(
+                            [gkdb.invoice.c.contents]
+                        ).where(  # , gkdb.invoice.c.freeqty
                             and_(
-                                invoice.c.orgcode == orgcode,
-                                invoice.c.invid == trnId,
+                                gkdb.invoice.c.orgcode == orgcode,
+                                gkdb.invoice.c.invid == trnId,
                             )
                         )
                     ).fetchone()
@@ -311,10 +312,10 @@ def updateStockRate(con, orgcode):
                 2,
             ]:  # if debit credit note, bad quality rejection
                 transaction = con.execute(
-                    select([drcr.c.reductionval]).where(
+                    select([gkdb.drcr.c.reductionval]).where(
                         and_(
-                            drcr.c.orgcode == orgcode,
-                            drcr.c.drcrid == trnId,
+                            gkdb.drcr.c.orgcode == orgcode,
+                            gkdb.drcr.c.drcrid == trnId,
                         )
                     )
                 ).fetchone()
@@ -326,7 +327,7 @@ def updateStockRate(con, orgcode):
 
             con.execute(
                 stock.update()
-                .where(stock.c.stockid == stockItem["stockid"])
+                .where(gkdb.stock.c.stockid == stockItem["stockid"])
                 .values(rate=prodRate)
             )
         return 1
@@ -357,12 +358,12 @@ class api_dev(object):
             invoices = self.con.execute(
                 select(
                     [
-                        invoice.c.invid,
-                        invoice.c.contents,
-                        invoice.c.freeqty,
-                        invoice.c.orgcode,
+                        gkdb.invoice.c.invid,
+                        gkdb.invoice.c.contents,
+                        gkdb.invoice.c.freeqty,
+                        gkdb.invoice.c.orgcode,
                     ]
-                ).where(invoice.c.icflag == 9)
+                ).where(gkdb.invoice.c.icflag == 9)
             ).fetchall()
             recalculateStock(self.con, invoices, "inv", 9)
 
@@ -370,12 +371,12 @@ class api_dev(object):
             invoices = self.con.execute(
                 select(
                     [
-                        invoice.c.invid,
-                        invoice.c.contents,
-                        invoice.c.freeqty,
-                        invoice.c.orgcode,
+                        gkdb.invoice.c.invid,
+                        gkdb.invoice.c.contents,
+                        gkdb.invoice.c.freeqty,
+                        gkdb.invoice.c.orgcode,
                     ]
-                ).where(invoice.c.icflag == 3)
+                ).where(gkdb.invoice.c.icflag == 3)
             ).fetchall()
             recalculateStock(self.con, invoices, "inv", 3)
 
@@ -383,10 +384,10 @@ class api_dev(object):
             delnotes = self.con.execute(
                 select(
                     [
-                        delchal.c.dcid,
-                        delchal.c.contents,
-                        delchal.c.freeqty,
-                        delchal.c.orgcode,
+                        gkdb.delchal.c.dcid,
+                        gkdb.delchal.c.contents,
+                        gkdb.delchal.c.freeqty,
+                        gkdb.delchal.c.orgcode,
                     ]
                 )
             ).fetchall()
@@ -394,8 +395,8 @@ class api_dev(object):
 
             # Rectify any remaining entries that are NaN
             # stocks = self.con.execute(
-            #     select([stock.c.dcinvtnid, stock.c.dcinvtnflag, stock.c.orgcode]).where(
-            #         stock.c.qty == "NaN"
+            #     select([gkdb.stock.c.dcinvtnid, gkdb.stock.c.dcinvtnflag, gkdb.stock.c.orgcode]).where(
+            #         gkdb.stock.c.qty == "NaN"
             #     )
             # ).fetchall()
             # stock_map = {}
@@ -406,15 +407,15 @@ class api_dev(object):
             #         delnote = self.con.execute(
             #             select(
             #                 [
-            #                     delchal.c.dcid,
-            #                     delchal.c.contents,
-            #                     delchal.c.freeqty,
-            #                     delchal.c.orgcode,
+            #                     gkdb.delchal.c.dcid,
+            #                     gkdb.delchal.c.contents,
+            #                     gkdb.delchal.c.freeqty,
+            #                     gkdb.delchal.c.orgcode,
             #                 ]
             #             ).where(
             #                 and_(
-            #                     delchal.c.dcid == item["dcinvtnid"],
-            #                     delchal.c.orgcode == item["orgcode"],
+            #                     gkdb.delchal.c.dcid == item["dcinvtnid"],
+            #                     gkdb.delchal.c.orgcode == item["orgcode"],
             #                 )
             #             )
             #         ).fetchone()
@@ -444,23 +445,27 @@ class api_dev(object):
         try:
             self.con = eng.connect()
 
-            orgcode = self.request.params["orgcode"]
+            orgcode = self.request.params["orgcode"]["orgcode"]
 
             # check automatic voucher flag  if it is 1 get maflag
             avfl = self.con.execute(
-                select([organisation.c.avflag]).where(organisation.c.orgcode == orgcode)
+                select([gkdb.organisation.c.avflag]).where(
+                    gkdb.organisation.c.orgcode == orgcode
+                )
             )
             av = avfl.fetchone()
             if av["avflag"] == 1:
                 mafl = self.con.execute(
-                    select([organisation.c.maflag]).where(
-                        organisation.c.orgcode == orgcode
+                    select([gkdb.organisation.c.maflag]).where(
+                        gkdb.organisation.c.orgcode == orgcode
                     )
                 ).fetchone()
                 maFlag = mafl["maflag"]
 
                 invlist = self.con.execute(
-                    select([invoice.c.invid]).where(invoice.c.orgcode == orgcode)
+                    select([gkdb.invoice.c.invid]).where(
+                        gkdb.invoice.c.orgcode == orgcode
+                    )
                 ).fetchall()
 
                 voucherData = {}
@@ -493,7 +498,7 @@ class api_dev(object):
         """
         try:
             self.con = eng.connect()
-            orgs = self.con.execute(select([organisation.c.orgcode])).fetchall()
+            orgs = self.con.execute(select([gkdb.organisation.c.orgcode])).fetchall()
             status = True
             for org in orgs:
                 result = updateStockRate(self.con, org["orgcode"])
@@ -515,12 +520,34 @@ class api_dev(object):
         """
         try:
             self.con = eng.connect()
-            allUserData = list(self.con.execute("select * from users").fetchall())
-            print(allUserData)
-            for udata in allUserData:
-                print(udata["userid"])
-            allUserData.pop(0)
-            print(allUserData)
+            orgcode = self.request.params["orgcode"]
+            userid = self.request.params["userid"]
+            # oldUsers = self.con.execute(
+            #     select([gkdb.organisation.c.users]).where(
+            #         gkdb.organisation.c.orgcode == orgcode
+            #     )
+            # ).fetchone()
+
+            # for oldUser in oldUsers["users"]:
+            #     orgDataQuery = self.con.execute(
+            #         "select u.orgs#>'{%s}' as data from gkusers u where userid = %d;"
+            #         % (str(orgcode), int(oldUser))
+            #     )
+            #     orgData = (
+            #         orgDataQuery.fetchone()
+            #         if orgDataQuery.rowcount > 0
+            #         else {"data": {}}
+            #     )
+            #     print("======%d======"%(int(oldUser)))
+            #     print(orgData["data"])
+            userOrgQuery = self.con.execute(
+                "select orgs->'%s' as data from gkusers where userid = %d;"
+                % (str(orgcode), int(userid))
+            )
+            if userOrgQuery.rowcount < 1:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            userOrgData = userOrgQuery.fetchone()
+            print(userOrgData["data"])
             return {"gkstatus": enumdict["Success"]}
         except:
             print(traceback.format_exc())
