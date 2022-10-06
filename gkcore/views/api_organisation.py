@@ -1650,7 +1650,26 @@ class api_organisation(object):
 
             # Migration for users -> gkusers
             # Decoupling users and organisations
-            if not tableExists("gkusers"):
+            gkusersExist = tableExists("gkusers")
+            usersExist = tableExists("users")
+            oldUsersLength = 0
+            gkusersLength = 0
+            if usersExist:
+                oldUsersLength = self.con.execute(
+                    "select COUNT(userid) as count from users"
+                ).fetchone()
+                # print("Old users length = %d"%(oldUsersLength["count"]))
+            if gkusersExist:
+                gkusersLength = self.con.execute(
+                    select([func.count(gkdb.gkusers.c.userid).label("count")])
+                ).fetchone()
+                # print("GK users length = %d"%(gkusersLength["count"]))
+            if (not gkusersExist and usersExist) or (
+                gkusersExist
+                and usersExist
+                and oldUsersLength["count"] > 0
+                and gkusersLength["count"] == 0
+            ):
                 self.con.execute(
                     "create table if not exists gkusers(userid serial, username text NOT NULL, userpassword text NOT NULL, userquestion text NOT NULL, useranswer text NOT NULL, orgs jsonb default '{}', primary key (userid), unique(username))"
                 )
@@ -1894,6 +1913,12 @@ class api_organisation(object):
                 self.con.execute(
                     "alter table usergodown add constraint usergodown_userid_fkey foreign key(userid) references gkusers(userid) on delete cascade"
                 )
+
+            # End of Migration for users -> gkusers
+
+            # Add opening stock value that corresponds to the product opening stock qty that has been entered
+            if not columnExists('goprod', 'openingstockvalue'):
+                self.con.execute("alter table goprod add openingstockvalue numeric(13,2) default 0.00")
 
         except:
             print(traceback.format_exc())
@@ -3078,7 +3103,9 @@ class api_organisation(object):
             try:
                 self.con = eng.connect()
 
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1 or userRole == 0:
@@ -3114,7 +3141,9 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userRole = userRoleData["gkresult"]["userrole"]
                 if userRole == -1:
                     orgdata = self.con.execute(
@@ -3196,7 +3225,9 @@ class api_organisation(object):
         finally:
             self.con.close()
 
-    @view_config(request_method="GET", request_param="type=name_exists", renderer="json")
+    @view_config(
+        request_method="GET", request_param="type=name_exists", renderer="json"
+    )
     def orgNameExists(self):
         try:
             self.con = eng.connect()
@@ -3268,7 +3299,9 @@ class api_organisation(object):
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1:

@@ -48,6 +48,7 @@ from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from datetime import datetime, date
 from time import strftime, strptime
+import traceback
 
 @view_defaults(route_name="products")
 class api_product(object):
@@ -478,6 +479,7 @@ class api_product(object):
                         goDownDetails = {
                             "goid": row["goid"],
                             "goopeningstock": "%.2f" % float(row["goopeningstock"]),
+                            "openingstockvalue": "%.2f" % float(row["openingstockvalue"]),
                             "productcode": row["productcode"],
                         }
                         godowns.append(goDownDetails)
@@ -506,6 +508,7 @@ class api_product(object):
                             continue
                 return {"gkstatus": enumdict["Success"], "gkresult": godowns}
             except:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
@@ -613,12 +616,16 @@ class api_product(object):
                 if godownFlag:
                     goDetails = dataset["godetails"]
                     ttlOpening = 0.00
-                    for g in list(goDetails.keys()):
-                        ttlOpening = ttlOpening + float(goDetails[g])
+                    for goId in list(goDetails.keys()):
+                        goDetail = goDetails[goId]
+                        if type(goDetail) != dict:
+                            goDetail = {"qty": goDetail, "rate": 0}
+                        ttlOpening = ttlOpening + float(goDetail["qty"])
                         goro = {
                             "productcode": productCode,
-                            "goid": g,
-                            "goopeningstock": goDetails[g],
+                            "goid": goId,
+                            "goopeningstock": goDetail["qty"],
+                            "openingstockvalue": goDetail["rate"],
                             "orgcode": authDetails["orgcode"],
                         }
                         self.con.execute(goprod.insert(), [goro])
@@ -715,12 +722,16 @@ class api_product(object):
                         )
                     )
                     ttlOpening = 0.0
-                    for g in list(goDetails.keys()):
-                        ttlOpening = ttlOpening + float(goDetails[g])
+                    for goId in list(goDetails.keys()):
+                        goDetail =  goDetails[goId]
+                        if type(goDetail) != dict:
+                            goDetail = {"qty": goDetail, "rate": 0}
+                        ttlOpening = ttlOpening + float(goDetail["qty"])
                         goro = {
                             "productcode": productCode,
-                            "goid": g,
-                            "goopeningstock": goDetails[g],
+                            "goid": goId,
+                            "goopeningstock": goDetail["qty"],
+                            "openingstockvalue": goDetail["rate"],
                             "orgcode": authDetails["orgcode"],
                         }
                         self.con.execute(gkdb.goprod.insert(), [goro])

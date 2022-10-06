@@ -1019,6 +1019,7 @@ goprod = Table(
         nullable=False,
     ),
     Column("goopeningstock", Numeric(13, 2), default=0.00, nullable=False),
+    Column("openingstockvalue", Numeric(13, 2), default=0.00, nullable=False),
     Column(
         "orgcode",
         Integer,
