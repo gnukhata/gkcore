@@ -1780,6 +1780,7 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
     if ttlCrBalance > ttlDrBalance:
         currentBalance = ttlCrBalance - ttlDrBalance
         balType = "Cr"
+    # print("=== calculate balance ===")
     print(ttlCrBalance)
     print(ttlDrBalance)
     return {
@@ -2189,6 +2190,67 @@ def stockonhandfun(orgcode, productCode, endDate):
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
+def calculateOpeningStockValue(con, orgcode):
+    try:
+        productList = con.execute(
+            select([product.c.productcode, product.c.productdesc]).where(
+                product.c.orgcode == orgcode
+            )
+        ).fetchall()
+
+        godownList = con.execute(
+            select([godown.c.goid, godown.c.goname]).where(godown.c.orgcode == orgcode)
+        ).fetchall()
+
+        opStock = {"total": 0, "products": {}}
+        for productItem in productList:
+            prodOpStock = {"total": 0, "godowns": {}}
+            if productItem["productcode"]:
+                for godownItem in godownList:
+                    if godownItem["goid"]:
+                        openingStockQuery = con.execute(
+                            select(
+                                [goprod.c.goopeningstock, goprod.c.openingstockvalue]
+                            ).where(
+                                and_(
+                                    goprod.c.productcode == productItem["productcode"],
+                                    goprod.c.goid == godownItem["goid"],
+                                    goprod.c.orgcode == orgcode,
+                                )
+                            )
+                        )
+                        if openingStockQuery.rowcount:
+                            openingStock = openingStockQuery.fetchone()
+                            if openingStock["goopeningstock"] != 0:
+                                rate = (
+                                    openingStock["openingstockvalue"]
+                                    / openingStock["goopeningstock"]
+                                )
+                                # stockOnHand.append(
+                                #     {
+                                #         "qty": float(openingStock["goopeningstock"]),
+                                #         "rate": float(rate),
+                                #     }
+                                # )
+                                # print(stockOnHand)
+                                prodOpStock["total"] += float(
+                                    openingStock["openingstockvalue"]
+                                )
+                                if float(openingStock["openingstockvalue"]):
+                                    prodOpStock["godowns"][
+                                        godownItem["goname"]
+                                    ] = float(openingStock["openingstockvalue"])
+            opStock["total"] += prodOpStock["total"]
+            opStock["products"][productItem["productdesc"]] = (
+                0 if not prodOpStock["total"] else prodOpStock
+            )
+        opStock["total"] = round(opStock["total"], 2)
+        return opStock
+    except:
+        print(traceback.format_exc())
+        return {"total": 0, "products": {}}
+
+
 def calculateClosingStockValue(con, orgcode, endDate):
     try:
         productList = con.execute(
@@ -2280,7 +2342,9 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                 rate = (
                     openingStock["openingstockvalue"] / openingStock["goopeningstock"]
                 )
-                stockOnHand.append({"qty": float(openingStock["goopeningstock"]), "rate": float(rate)})
+                stockOnHand.append(
+                    {"qty": float(openingStock["goopeningstock"]), "rate": float(rate)}
+                )
                 print(stockOnHand)
 
         # stock sale and purchase data
@@ -2304,8 +2368,10 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
             )
             .order_by(stock.c.stockdate, stock.c.stockid)
         ).fetchall()
+        # print(len(stockList))
 
         for item in stockList:
+            # print(item["qty"])
             trnId = item["dcinvtnid"]
             trnFlag = item["dcinvtnflag"]
 
@@ -2318,6 +2384,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                         and_(dcinv.c.dcid == trnId, dcinv.c.orgcode == orgcode)
                     )
                 ).scalar()
+                # print("linkcount = %d"%(linkCount))
                 # some delivery challans wont be linked to invoices, so avoid them here
                 if linkCount <= 0:
                     proceed = False
@@ -2335,7 +2402,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                             lastStock["qty"] = float(lastStock["qty"]) + float(
                                 item["qty"]
                             )
-                        continue
+                            continue
                     stockOnHand.append({"rate": item["rate"], "qty": item["qty"]})
                 else:  # sale or stock out
                     # print("==============soh=============")
@@ -2380,9 +2447,12 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                         stockOnHand.append(
                             {"rate": item["rate"], "qty": -1 * item["qty"]}
                         )
+                # print(stockOnHand)
         valueOnHand = 0
+        # print("Stock value calculation")
         for item in stockOnHand:
             valueOnHand += float(item["qty"]) * float(item["rate"])
+            # print(valueOnHand)
         return round(valueOnHand, 2)
     except:
         print(traceback.format_exc())
@@ -6051,6 +6121,13 @@ class api_reports(object):
                 grpIEbalance = 0.00
                 closingStockBal = 0.00
 
+                # Calculate closing stock value
+                result["Closing Stock"] = calculateClosingStockValue(
+                    self.con, orgcode, calculateTo
+                )
+                # Calculate opening stock value
+                result["Opening Stock"] = calculateOpeningStockValue(self.con, orgcode)
+
                 if orgtype == "Profit Making":
                     profit = "Profit"
                     loss = "Loss"
@@ -6256,14 +6333,24 @@ class api_reports(object):
                 directIncome["dirincmbal"] = "%.2f" % (float(grpDIbalance))
                 result["Direct Income"] = directIncome
 
-                if grpDIbalance > grpDEbalance:
-                    grsD = grpDIbalance - grpDEbalance
+                saleCost = result["Opening Stock"]["total"] + grpDEbalance - result["Closing Stock"]["total"]
+                
+                if saleCost < grpDIbalance:
+                    grsD = grpDIbalance - saleCost
                     result["grossprofitcf"] = "%.2f" % (float(grsD))
                     result["totalD"] = "%.2f" % (float(grpDIbalance))
                 else:
-                    grsD = grpDEbalance - grpDIbalance
+                    grsD = saleCost - grpDIbalance
                     result["grosslosscf"] = "%.2f" % (float(grsD))
-                    result["totalD"] = "%.2f" % (float(grpDEbalance))
+                    result["totalD"] = "%.2f" % (float(saleCost))
+                # if grpDIbalance > grpDEbalance:
+                #     grsD = grpDIbalance - grpDEbalance
+                #     result["grossprofitcf"] = "%.2f" % (float(grsD))
+                #     result["totalD"] = "%.2f" % (float(grpDIbalance))
+                # else:
+                #     grsD = grpDEbalance - grpDIbalance
+                #     result["grosslosscf"] = "%.2f" % (float(grsD))
+                #     result["totalD"] = "%.2f" % (float(grpDEbalance))
 
                 """ ################   Indirect Income & Indirect Expense  ################ """
                 # Get all subgroups with their group code and group name under Group Indirect Expense
@@ -6431,22 +6518,27 @@ class api_reports(object):
                 # Calculate difference between Indirect Income & Indirect Expense.
                 grsI = grpIIbalance - grpIEbalance
 
-                income = grpDIbalance + grpIIbalance + closingStockBal
-                expense = grpDEbalance + grpIEbalance
                 # Calculate Profit and Loss
-                if income > expense:
-                    netProfit = income - expense
-                    result["netprofit"] = "%.2f" % (float(netProfit))
-                    result["Total"] = "%.2f" % (float(income))
+                if "grossprofitcf" in result:
+                    result["netprofit"] = "%.2f" % (float(result["grossprofitcf"]) + float(grpIIbalance) - float(grpIEbalance))
+                    result["Total"] = "%.2f" % (float(result["netprofit"]) + float(grpIEbalance))
                 else:
-                    netLoss = expense - income
-                    result["netloss"] = "%.2f" % (float(netLoss))
-                    result["Total"] = "%.2f" % (float(expense))
+                    result["netloss"] = "%.2f" % (float(result["grosslosscf"]) + float(grpIIbalance) - float(grpIEbalance))
+                    result["Total"] = "%.2f" % (float(result["netloss"]) + float(grpIEbalance))
+                
+                # income = grpDIbalance + grpIIbalance + closingStockBal
+                # net profit = grossprofit + indirectincome - grpIEbalance
+                # income = grpDIbalance + grpIIbalance + result["Closing Stock"]["total"]
+                # expense = grpDEbalance + grpIEbalance
+                # if income > expense:
+                #     netProfit = income - expense
+                #     result["netprofit"] = "%.2f" % (float(netProfit))
+                #     result["Total"] = "%.2f" % (float(income))
+                # else:
+                #     netLoss = expense - income
+                #     result["netloss"] = "%.2f" % (float(netLoss))
+                #     result["Total"] = "%.2f" % (float(expense))
 
-                # Calculate closing stock
-                result["Closing Stock"] = calculateClosingStockValue(
-                    self.con, orgcode, calculateTo
-                )
 
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
