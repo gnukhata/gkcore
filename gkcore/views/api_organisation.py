@@ -3127,11 +3127,11 @@ class api_organisation(object):
                     self.con.close()
                     return {"gkstatus": enumdict["Success"]}
                 else:
-                    {"gkstatus": enumdict["BadPrivilege"]}
+                    return {"gkstatus": enumdict["BadPrivilege"]}
             except:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-
     @view_config(request_method="DELETE", renderer="json")
     def deleteOrg(self):
         token = self.request.headers["gktoken"]
@@ -3163,6 +3163,26 @@ class api_organisation(object):
                         )
                     )
                     checkorgcode = checkorg.fetchone()
+                    # remove the orgcode from all users who are part of it
+                    orgUsers = self.con.execute(
+                        select([gkdb.organisation.c.users]).where(
+                            gkdb.organisation.c.orgcode == authDetails["orgcode"]
+                        )
+                    ).fetchone()
+                    if type(orgUsers["users"]) == str:
+                        orgUsers = json.loads(orgUsers["users"])
+                    elif type(orgUsers["users"]) == dict:
+                        orgUsers = orgUsers["users"]
+                    else:
+                        orgUsers = {}
+                    for orgUser in orgUsers:
+                        print(orgUser)
+                        self.con.execute(
+                            "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
+                            % (str(authDetails["orgcode"]), int(orgUser))
+                        )
+                    
+                    # delete the org
                     result = self.con.execute(
                         gkdb.organisation.delete().where(
                             gkdb.organisation.c.orgcode == authDetails["orgcode"]
@@ -3192,6 +3212,7 @@ class api_organisation(object):
                 else:
                     {"gkstatus": enumdict["BadPrivilege"]}
             except:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
