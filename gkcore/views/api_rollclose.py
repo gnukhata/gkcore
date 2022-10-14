@@ -31,6 +31,7 @@ from gkcore.views.api_reports import (
     calculateBalance,
     stockonhandfun,
     godownwisestockonhandfun,
+    calculateStockValue,
 )
 from gkcore.models.gkdb import (
     vouchers,
@@ -54,8 +55,10 @@ from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
+import json
 
 from datetime import datetime, date, timedelta
+import traceback
 
 
 @view_defaults(route_name="rollclose", request_method="GET")
@@ -1110,37 +1113,37 @@ class api_rollclose(object):
                 newOrgRow = newOrgCodeData.fetchone()
                 newOrgCode = newOrgRow["orgcode"]
                 # need not create a new user here. But update the new orgcode in the gkusers table
-                # oldUsers = self.con.execute(
-                #     select([organisation.c.users]).where(
-                #         organisation.c.orgcode == orgcode
-                #     )
-                # ).fetchone()
-
-                # for oldUser in oldUsers["users"]:
-
-                #     self.con.execute(
-                #         "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
-                #         % (
-                #             str(newOrgCode),
-                #             json.dumps(orgs),
-                #             authDetails["userid"],
-                #         )
-                #     )
                 oldUsers = self.con.execute(
-                    "select username,userpassword,userrole,userquestion,useranswer from users where orgcode = %d"
-                    % (orgCode)
-                )
-                for olduser in oldUsers:
+                    select([organisation.c.users]).where(
+                        organisation.c.orgcode == orgCode
+                    )
+                ).fetchone()
+                
+                if type(oldUsers["users"]) == str:
+                    oldUsers = json.loads(oldUsers["users"])
+                elif type(oldUsers["users"]) == dict:
+                    oldUsers = oldUsers["users"]
+                else:
+                    oldUsers = {}
+
+                for oldUser in oldUsers:
+                    # print(oldUser)
+                    orgDataQuery = self.con.execute(
+                        "select u.orgs#>'{%s}' as data from gkusers u where userid = %d;"
+                        % (str(orgCode), int(oldUser))
+                    )
+                    orgData = (
+                        orgDataQuery.fetchone()
+                        if orgDataQuery.rowcount > 0
+                        else {"data": {}}
+                    )
                     self.con.execute(
-                        users.insert(),
-                        {
-                            "username": olduser["username"],
-                            "userpassword": olduser["userpassword"],
-                            "userrole": olduser["userrole"],
-                            "useranswer": olduser["useranswer"],
-                            "userquestion": olduser["userquestion"],
-                            "orgcode": newOrgCode,
-                        },
+                        "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
+                        % (
+                            str(newOrgCode),
+                            json.dumps(orgData["data"]),
+                            int(oldUser),
+                        )
                     )
                 oldGroups = self.con.execute(
                     "select groupname from groupsubgroups where subgroupof is null and orgcode = %d"
@@ -1484,6 +1487,9 @@ class api_rollclose(object):
                         oldProdCode,
                         row["goid"],
                     )
+                    stockValue = calculateStockValue(
+                        self.con, orgCode, endDate, oldProdCode, row["goid"]
+                    )
                     stockBalance = 0
                     if len(stockData) and "balance" in stockData[0]:
                         stockBalance = float(stockData[0]["balance"])
@@ -1493,6 +1499,7 @@ class api_rollclose(object):
                             "goid": godownMap[row["goid"]],
                             "productcode": newProdCode,
                             "goopeningstock": stockBalance,
+                            "openingstockvalue": stockValue,
                             "orgcode": newOrgCode,
                         },
                     )
@@ -1523,6 +1530,7 @@ class api_rollclose(object):
                 return {"gkstatus": enumdict["Success"]}
 
             except Exception as E:
+                print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 

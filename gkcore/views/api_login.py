@@ -153,6 +153,9 @@ def userLogin(request):
                             ]
                         ).where(gkdb.organisation.c.orgcode == orgCode)
                     ).fetchone()
+                    if not orgData:
+                        print("Log: %d org data is missing "%(int(orgCode)))
+                        continue
                     if orgData["orgname"] not in payload:
                         payload[orgData["orgname"]] = []
                     payload[orgData["orgname"]].append(
