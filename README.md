@@ -88,13 +88,19 @@ Activate your virtualenv and then run initdb.py
 
 gkcore is now accessible at `http://localhost:6543`🎉
 
+# Environment Variables:
+
+- `GKCORE_DB_URL`: Provide a custom database URL
+- `GKCORE_IFSC_SERVER`: Provide custom IFSC api endpoint.
+- `GKCORE_DISABLE_REGISTRATION`: set to "yes" to disable registrations.
+
 # After Installation
 
-- When gkcore is installed on VPS, make sure to change the timezone to India with is command `timedatectl set-timezone Asia/Kolkata` as organization logs pickup the default timezone.
+- When gkcore is installed on VPS, make sure to change the timezone to India with command `timedatectl set-timezone Asia/Kolkata` as organization logs pickup the default timezone.
 
 # Credits
 
-- Razorpay: IFSC validation server is used as a docker service [source](https://github.com/razorpay/ifsc)
+- [Razorpay IFSC](https://github.com/razorpay/ifsc): IFSC validation server is used as a docker service
 - pgadmin: Helps visualizing gnukhata's database locally
 - GST Portal: For providing HSN/SAC codes spreadsheet
 
