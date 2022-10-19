@@ -9,6 +9,7 @@ variables:
   # WARN: add razorpay:ifsc image when related tests are added
 services:
   - postgres:alpine
+  - docker:20.10.19-dind
 
 stages:
   - build
