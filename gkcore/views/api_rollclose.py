@@ -1527,7 +1527,12 @@ class api_rollclose(object):
                         },
                     )
                 self.con.close()
-                return {"gkstatus": enumdict["Success"]}
+                payload = {
+                    "neworgcode": newOrgCode,
+                    "yearstart":  newYearStart,
+                    "yearend": newYearEnd
+                }
+                return {"gkstatus": enumdict["Success"], "gkresult": payload}
 
             except Exception as E:
                 print(traceback.format_exc())
