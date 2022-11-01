@@ -1340,10 +1340,12 @@ class GstReturn(object):
                 ).fetchone()
                 state_code = state_code["statecode"]
                 print(state_code)
-                if str(state_code) in gstin_data["gstin"]:
-                    gstin = gstin_data["gstin"][str(state_code)]
-                elif "0" + str(state_code) in gstin_data["gstin"]:
-                    gstin = gstin_data["gstin"]["0" + str(state_code)]
+                gstin = ""
+                if gstin_data["gstin"]:
+                    if str(state_code) in gstin_data["gstin"]:
+                        gstin = gstin_data["gstin"][str(state_code)]
+                    elif "0" + str(state_code) in gstin_data["gstin"]:
+                        gstin = gstin_data["gstin"]["0" + str(state_code)]
 
             fp = "%s%s" % (end_period.strftime("%m"), end_period.strftime("%Y"))
 
