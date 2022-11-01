@@ -308,7 +308,7 @@ class api_drcr(object):
                     # if inoutflag=9 then issuername and designation is taken from login details.
                     # user deatils
                     userrow = self.con.execute(
-                        "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                        "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
                         % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
                     ).fetchone()
                     userdata = {

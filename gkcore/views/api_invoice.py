@@ -3833,7 +3833,7 @@ class api_invoice(object):
                 orgcode = authDetails["orgcode"]
                 userId = authDetails["userid"]
                 userDetails = self.con.execute(
-                    "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
                     % (str(orgcode), int(userId))
                 ).fetchone()
                 temp = self.con.execute(

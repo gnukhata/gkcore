@@ -247,7 +247,7 @@ class api_rejectionnote(object):
                 )
                 rndata = result.fetchone()
                 issuerdata = self.con.execute(
-                    "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
                     % (str(authDetails["orgcode"]), int(rndata["issuerid"]))
                 ).fetchone()
                 rejectionnotedata = {

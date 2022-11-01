@@ -8811,7 +8811,7 @@ class api_reports(object):
                 }
                 for row in result:
                     rowuser = self.con.execute(
-                        "select username, orgs->'%s'->'userrole' from gkusers where userid = %d"
+                        "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
                         % (str(authDetails["orgcode"]), int(row["userid"]))
                     ).fetchone()
                     userrole = ROLES[rowuser["userrole"]]
