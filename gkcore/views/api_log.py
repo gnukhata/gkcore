@@ -24,8 +24,6 @@ Contributors:
 """
 
 import logging
-
-from requests import auth
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, gkusers
 from sqlalchemy.sql import select
@@ -264,9 +262,13 @@ class api_log(object):
 
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-
         # only admin can access logs
-        if authDetails["userrole"] != -1:
+        if (
+            getUserRole(authDetails["userid"], authDetails["orgcode"])["gkresult"][
+                "userrole"
+            ]
+            != -1
+        ):
             return {"gkstatus": enumdict["BadPrivilege"]}
         else:
             # get columns in the given date range
@@ -278,13 +280,14 @@ class api_log(object):
                     .where(log.c.time <= dataset["to"] + " 23:59:59")
                     .where(log.c.orgcode == authDetails["orgcode"])
                 )
+                # this array will be returned in the response
                 log_data = []
                 # loop through the columns
                 for row in result:
-                    # derive username from userid
+                    # derive username from userid in gkusers table
                     user = self.con.execute(
-                        select([users.c.username]).where(
-                            users.c.userid == row["userid"]
+                        select([gkusers.c.username]).where(
+                            gkusers.c.userid == row["userid"]
                         )
                     ).fetchone()
                     # append them to log_data array
@@ -299,6 +302,7 @@ class api_log(object):
                     )
                 return {"gkstatus": enumdict["Success"], "gkresult": log_data}
             except exc.IntegrityError:
+                logging.warn(exc.IntegrityError)
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}

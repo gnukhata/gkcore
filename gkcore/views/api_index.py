@@ -1,4 +1,5 @@
 from pyramid.view import view_config, view_defaults
+import pkg_resources
 
 
 @view_defaults(route_name="index")
@@ -8,4 +9,8 @@ class api_state(object):
 
     @view_config(request_method="GET", renderer="json")
     def main(self):
-        return {"gkstatus": 0, "msg": "gkcore is running!"}
+        return {
+            "gkstatus": 0,
+            "msg": "gkcore is running!",
+            "version": pkg_resources.require("gkcore")[0].version,
+        }
