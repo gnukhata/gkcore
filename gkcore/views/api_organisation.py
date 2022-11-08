@@ -1917,8 +1917,10 @@ class api_organisation(object):
             # End of Migration for users -> gkusers
 
             # Add opening stock value that corresponds to the product opening stock qty that has been entered
-            if not columnExists('goprod', 'openingstockvalue'):
-                self.con.execute("alter table goprod add openingstockvalue numeric(13,2) default 0.00")
+            if not columnExists("goprod", "openingstockvalue"):
+                self.con.execute(
+                    "alter table goprod add openingstockvalue numeric(13,2) default 0.00"
+                )
 
         except:
             print(traceback.format_exc())
@@ -3132,6 +3134,7 @@ class api_organisation(object):
                 print(traceback.format_exc())
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
     @view_config(request_method="DELETE", renderer="json")
     def deleteOrg(self):
         token = self.request.headers["gktoken"]
@@ -3181,7 +3184,7 @@ class api_organisation(object):
                             "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
                             % (str(authDetails["orgcode"]), int(orgUser))
                         )
-                    
+
                     # delete the org
                     result = self.con.execute(
                         gkdb.organisation.delete().where(
@@ -3570,3 +3573,41 @@ class api_organisation(object):
                 self.con.close()
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="GET",
+        request_param="type=get_gstin",
+        renderer="json",
+        route_name="organisations",
+    )
+    def getGstin(self):
+        token = self.request.headers["gktoken"]
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                result = self.con.execute(
+                    select(
+                        [gkdb.organisation.c.gstin, gkdb.organisation.c.orgstate]
+                    ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
+                ).fetchone()
+
+                stateCode = self.con.execute(
+                    select([gkdb.state.c.statecode]).where(
+                        gkdb.state.c.statename == result["orgstate"]
+                    )
+                ).fetchone()
+
+                payload = {
+                    "gstin": result["gstin"],
+                    "stateCode": stateCode["statecode"]
+                }
+
+                return {"gkstatus": enumdict["Success"], "gkresult": payload}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
