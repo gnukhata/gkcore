@@ -108,11 +108,11 @@ def main(global_config, **settings):
     config.scan("gkcore.views")
     # include the pyramid pyramid-openapi3 plugin & it's config
     config.include("pyramid_openapi3")
+    config.add_static_view(name="spec", path="spec")
     config.pyramid_openapi3_spec_directory(
-        os.path.join(os.path.dirname(__file__), "openapi/main.yaml")
+        os.path.join(os.path.dirname(__file__), "spec/main.yaml")
     )
-    # config.pyramid_openapi3_add_explorer()
-    config.pyramid_openapi3_add_explorer(route="/api/")
+    config.pyramid_openapi3_add_explorer()
 
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
