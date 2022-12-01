@@ -32,7 +32,9 @@ def check_flags():
     elif "serve" in args:
 
         cmd.run(["docker-compose", "up", "-d"])
+
         cmd.run(["pserve", "development.ini", "--reload"])
+        # cmd.run(["gunicorn", "-b 127.0.0.1:6543", "--reload", "--paste", "development.ini"])
         return
 
     elif "deploy" in args:

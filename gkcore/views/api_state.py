@@ -26,6 +26,7 @@ Contributors:
 
 """
 
+from pyramid.config import logging
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models.gkdb import state
@@ -33,6 +34,8 @@ from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
+
+log = logging.getLogger(__name__)
 
 
 def getStates(con):
@@ -53,7 +56,6 @@ class api_state(object):
         self.request = Request
         self.request = request
         self.con = Connection
-        print("state initialized")
 
     @view_config(request_method="GET", renderer="json")
     def getAllStates(self):
@@ -123,11 +125,13 @@ class api_state(object):
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_method="GET", renderer="json", request_param="full")
+    @view_config(request_method="GET", renderer="json", request_param="type=all")
     def allStateInfo(self):
         """
         Return an array of state objects with name, abbr and code
         """
+        log.info("getting all states ...")
+
         self.con = eng.connect()
         try:
             state_data = self.con.execute("select * from state").fetchall()
@@ -141,5 +145,5 @@ class api_state(object):
                     }
                 )
             return {"gkstatus": enumdict["Success"], "gkresult": states}
-        except:
+        except Exception as e:
             return {"gkstatus": enumdict["ConnectionFailed"]}

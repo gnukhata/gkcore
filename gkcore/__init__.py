@@ -34,6 +34,7 @@ To trace the link of the routes we look at the name of a route and then see wher
 This module also scanns for the secret from the database which is then used for jwt authentication.
 """
 
+import os
 from pyramid.config import Configurator
 from gkcore.models.meta import dbconnect
 from wsgicors import CORS
@@ -42,8 +43,7 @@ from gkcore.enum import STATUS_CODES
 try:
     eng = dbconnect()
     resultset = eng.execute("select * from signature")
-    row = resultset.fetchone()
-    secret = row[0]
+    secret = resultset.fetchone()[0]
     # print secret
 except:
     secret = ""
@@ -106,6 +106,13 @@ def main(global_config, **settings):
     config.add_route("gstnews", "/gst-news")
 
     config.scan("gkcore.views")
+    # include the pyramid pyramid-openapi3 plugin & it's config
+    config.include("pyramid_openapi3")
+    config.pyramid_openapi3_spec_directory(
+        os.path.join(os.path.dirname(__file__), "openapi/main.yaml")
+    )
+    # config.pyramid_openapi3_add_explorer()
+    config.pyramid_openapi3_add_explorer(route="/api/")
 
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"

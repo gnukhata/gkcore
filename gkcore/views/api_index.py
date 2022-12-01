@@ -11,6 +11,5 @@ class api_state(object):
     def main(self):
         return {
             "gkstatus": 0,
-            "msg": "gkcore is running!",
             "version": pkg_resources.require("gkcore")[0].version,
         }

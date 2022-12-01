@@ -1,0 +1,57 @@
+openapi: "3.0.0"
+
+info:
+  version: "0.8.0a"
+  title: GKCORE API
+
+paths:
+  /:
+    get:
+      tags: ["public_api"]
+      summary: Check whether gkcore is running
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gkstatus:
+                    type: integer
+                    description: 0 - success, 1 - something else
+                  version:
+                    type: string
+
+  /state:
+    get:
+      tags: ["public_api", "state_information"]
+      summary: Get list of state codes
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [all]
+          required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gkstatus:
+                    type: integer
+                  gkresult:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        state_code:
+                          type: integer
+                        state_name:
+                          type: string
+                        state_abbr:
+                          type: string
