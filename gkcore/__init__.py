@@ -44,7 +44,6 @@ try:
     eng = dbconnect()
     resultset = eng.execute("select * from signature")
     secret = resultset.fetchone()[0]
-    # print secret
 except:
     secret = ""
 
@@ -89,6 +88,7 @@ def main(global_config, **settings):
     config.add_route("tax", "/tax")
     config.add_route("tax2", "/tax2")
     config.add_route("log", "/log")
+    config.add_route("logSort", "/log/dateRange")
     config.add_route("rejectionnote", "/rejectionnote")
     config.add_route("billwise", "/billwise")
     config.add_route("state", "/state")

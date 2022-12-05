@@ -242,7 +242,11 @@ class api_log(object):
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_method="GET", request_param="range", renderer="json")
+    @view_config(
+        route_name="logSort",
+        request_method="GET",
+        renderer="json",
+    )
     def logs_in_date_range(self):
         """Get logs in given date range, Only admin can access logs
 

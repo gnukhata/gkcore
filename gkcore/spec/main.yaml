@@ -2,12 +2,22 @@ openapi: "3.0.0"
 
 info:
   version: "0.8.0a"
-  title: GKCORE API
+  title: GKCORE
+  description: API documentation of gkcore - GNUKhata's REST API server.
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: gktoken
+
+security:
+  - ApiKeyAuth: []
 
 paths:
   /:
     get:
-      tags: ["public_api"]
+      tags: ["Public API's"]
       summary: Check whether gkcore is running
       responses:
         "200":
@@ -22,10 +32,9 @@ paths:
                     description: 0 - success, 1 - something else
                   version:
                     type: string
-
   /state:
     get:
-      tags: ["public_api", "state_information"]
+      tags: ["Public API's", "State"]
       summary: Get list of state codes
       parameters:
         - in: query
@@ -55,3 +64,7 @@ paths:
                           type: string
                         state_abbr:
                           type: string
+  /log:
+    $ref: "./logs/log.yaml"
+  /log/dateRange:
+    $ref: "./logs/dateRange.yaml"
