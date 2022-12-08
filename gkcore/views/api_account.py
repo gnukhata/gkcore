@@ -102,12 +102,19 @@ class api_account(object):
         """
                 purpose:
                 Adds an account under either a group or it's subgroup.
+
                 Request_method is post which means adding a resource.
+
                 returns a json object containing success result as true if account is created.
+
                 Alchemy expression language will be used for inserting into accounts table.
+
                 The data is fetched from request.json_body.
+
                 Expects accountname,groupsubgroupcode and opening balance.
+
                 Function will only proceed if auth check is successful, because orgcode needed as a common parameter can be procured only through the said method.
+
                 If new accounts are added under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with
         defaultflag '2' or '3' set to the '0'.
                 If new accounts are added under sub-group 'Purchase' or 'Sales' with defaultflag '16' or '19' respectively then existing account with defaultflag '16' or '19' set to the '0'.
@@ -652,7 +659,9 @@ defaultflag '16' or '19' set to the '0'.
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1:

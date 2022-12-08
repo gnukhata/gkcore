@@ -3,7 +3,22 @@ openapi: "3.0.0"
 info:
   version: "0.8.0a"
   title: GKCORE
-  description: API documentation of gkcore - GNUKhata's REST API server.
+  description: |
+    API documentation of gkcore - GNUKhata's REST API server.
+
+    The following is the meaning of the `gkstatus` codes, which are returned in `200` response:
+    ```json 
+      { 
+      "Success": 0, 
+      "DuplicateEntry": 1, 
+      "UnauthorisedAccess": 2, 
+      "ConnectionFailed": 3, 
+      "BadPrivilege": 4, 
+      "ActionDisallowed": 5, 
+      "ProxyServerError": 6, 
+      }
+    ```
+
 components:
   securitySchemes:
     ApiKeyAuth:
@@ -70,5 +85,11 @@ paths:
     $ref: "./logs/dateRange.yaml"
   /export/json:
     $ref: "./data/export-json.yaml"
+  /import/json:
+    $ref: "./data/import-json.yaml"
   /export/xlsx:
     $ref: "./data/export-xlsx.yaml"
+  /import/xlsx:
+    $ref: "./data/import-xlsx.yaml"
+  /accounts:
+    $ref: "./accounts/index.yaml"
