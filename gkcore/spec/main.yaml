@@ -68,3 +68,7 @@ paths:
     $ref: "./logs/log.yaml"
   /log/dateRange:
     $ref: "./logs/dateRange.yaml"
+  /export/json:
+    $ref: "./data/export-json.yaml"
+  /export/xlsx:
+    $ref: "./data/export-xlsx.yaml"

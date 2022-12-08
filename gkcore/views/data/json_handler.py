@@ -6,6 +6,8 @@ from gkcore import eng, enumdict
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts
 
+log = logging.getLogger(__name__)
+
 
 def get_table_array(name: str, orgcode: int):
     """Return given sql table contents as an array of dicts
@@ -51,7 +53,7 @@ def type_cast(key):
         return str(key)
 
     else:
-        print(key_type)
+        log.info(key_type)
         return str(key)
 
 
@@ -88,9 +90,9 @@ def export_json(self):
         "unitofmeasurement",
     ]
     # loop through the tables and assign table data to their respective keys
-    for n in db_tables:
-        if n not in ignored_tables:
-            data[n] = get_table_array(name=n, orgcode=org_code)
+    for table in db_tables:
+        if table not in ignored_tables:
+            data[table] = get_table_array(name=table, orgcode=org_code)
 
     # create a file object
     file_obj = io.StringIO()
@@ -106,7 +108,7 @@ def export_json(self):
         "X-Content-Type-Options": "nosniff",
         "Set-Cookie": "fileDownload=true; path=/ ;HttpOnly",
     }
-
+    log.info("exporting json file")
     return Response(
         export_file,
         headerlist=list(headerList.items()),
@@ -136,7 +138,7 @@ def import_json(self):
         # check if it's a valid gnukhata json file
         # else return err response
         if "gnukhata" not in org:
-            logging.info("Not a valid gnukhata export format")
+            log.info("Not a valid gnukhata export format")
             return {"gkstatus": 3}
 
         # imported entries info
@@ -147,7 +149,7 @@ def import_json(self):
         success_entries = 0
 
         # customers / suppliers
-        print("\n 🤝 importing customers/suppliers ...")
+        log.info("\n 🤝 importing customers/suppliers ...")
         for i in org["customerandsupplier"]:
             # remove foreign key
             i.pop("custid")
@@ -160,10 +162,10 @@ def import_json(self):
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["contacts"].append(i["custname"])
-                logging.warning(e)
+                log.warning(e)
 
         # Godowns
-        print("\n 📦 Importing Godowns ...")
+        log.info("\n 📦 Importing Godowns ...")
         for i in org["godown"]:
             # remove foreign key
             i.pop("goid")
@@ -176,10 +178,10 @@ def import_json(self):
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["godowns"].append(i["goname"])
-                logging.warning(e)
+                log.warning(e)
 
         # Accounts
-        print("\n Importing Accounts ...")
+        log.info("\n Importing Accounts ...")
         for i in org["accounts"]:
             # remove foreign key
             i.pop("accountcode")
@@ -192,10 +194,10 @@ def import_json(self):
             except Exception as e:
                 # add failed entry name to import log
                 import_info["duplicate"]["accounts"].append(i["accountname"])
-                logging.warning(e)
+                log.warning(e)
         # append successful import count to the response
         import_info["success"] = success_entries
     except Exception as e:
-        logging.warning(e)
+        log.warn(e)
         return {"gkstatus": 3}
     return {"gkstatus": 0, "gkresult": import_info}

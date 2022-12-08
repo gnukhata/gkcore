@@ -26,54 +26,48 @@ Contributors:
 "Prajkta Patkar" <prajakta@dff.org.in>
 "Sai Karthik" <kskarthik@disroot.org>
 """
-from pyramid.view import view_config, view_defaults
-from pyramid.response import Response
-from pyramid.request import Request
 
-from openpyxl import load_workbook
-from openpyxl import Workbook
-from openpyxl.styles import Font
-import json, io
-from gkcore.models.meta import gk_api, dbconnect
+from pyramid.request import Request
+from pyramid.view import view_config
 from sqlalchemy.engine.base import Connection
-from gkcore import eng, enumdict
+
 import gkcore.views.data as data
 
-# import datetime
 
-# def get_table_array(name):
-#     c = eng.connect()
-#     table = c.execute(f"select * from {name} where orgcode = 1")
-#     content = io.StringIO()
-#     writer = csv.writer(
-#         content, delimiter=";", quotechar="|", quoting=csv.QUOTE_MINIMAL
-#     )
-#     writer.writerow(table.keys())
-#     for row in table:
-#         writer.writerow(row)
-#     return content.getvalue()
-
-
-@view_defaults(route_name="data")
 class api_data(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
         self.conn = Connection
-        print("Data Module Loaded")
 
-    @view_config(request_param="import-tally", request_method="POST", renderer="json")
-    def imt(self):
-        return data.spreadsheet_handler.import_tally(self)
-
-    @view_config(request_param="import-json", request_method="POST", renderer="json")
-    def ij(self):
-        return data.json_handler.import_json(self)
-
-    @view_config(request_param="export", request_method="GET", renderer="json")
-    def exl(self):
+    @view_config(
+        route_name="export-xlsx",
+        request_method="GET",
+        renderer="json",
+    )
+    def export_spreadsheet(self):
         return data.spreadsheet_handler.export_ledger(self)
 
-    @view_config(request_param="export-json", request_method="GET", renderer="json")
-    def ej(self):
+    @view_config(
+        route_name="export-json",
+        request_method="GET",
+        renderer="json",
+    )
+    def export_json(self):
         return data.json_handler.export_json(self)
+
+    @view_config(
+        route_name="import-xlsx",
+        request_method="POST",
+        renderer="json",
+    )
+    def import_tally_spreadsheet(self):
+        return data.spreadsheet_handler.import_tally(self)
+
+    @view_config(
+        route_name="import-json",
+        request_method="POST",
+        renderer="json",
+    )
+    def import_json(self):
+        return data.json_handler.import_json(self)

@@ -1,29 +1,30 @@
 # from pyramid.view import view_config, view_defaults
-from pyramid.response import Response
-
-# from pyramid.request import Request
+import io
+import logging
 
 from openpyxl import load_workbook
 from openpyxl import Workbook
 from openpyxl.styles import Font
-import io
-from gkcore.models.meta import gk_api
+from pyramid.response import Response
+from sqlalchemy.engine import Connection
+from sqlalchemy.sql import select
+
 from gkcore import eng
 from gkcore.models.gkdb import groupsubgroups
 from gkcore.models.gkdb import accounts as accounts_table
-
-# from sqlalchemy.engine.base import Connection
-# from gkcore import eng, enumdict
+from gkcore.models.gkdb import organisation as org_table
+from gkcore.models.meta import gk_api
 from gkcore.views.api_gkuser import authCheck, getUserRole
 
 
 def export_ledger(self):
-    """Export Org data
+    """Export organisation's accounts & vouchers
 
     `params:`
     *yearstart* = mm-dd-yyyy
     yearend= yyyy-mm-dd
     """
+    self.con = Connection
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
         gkwb = Workbook()

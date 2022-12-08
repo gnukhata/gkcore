@@ -100,7 +100,13 @@ def main(global_config, **settings):
     config.add_route("ifsc", "/ifsc")
     config.add_route("dev", "/dev")  # Comment in production
     config.add_route("hsn", "/hsn")
-    config.add_route("data", "/data")
+    # import / export
+    config.add_route("export-json", "/export/json")
+    config.add_route("export-xlsx", "/export/xlsx")
+
+    config.add_route("import-json", "/import/json")
+    config.add_route("import-xlsx", "/import/xlsx")
+
     config.add_route("userorg", "/userorg")
     config.add_route("index", "/")
     config.add_route("gstnews", "/gst-news")
