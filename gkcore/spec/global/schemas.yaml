@@ -1,0 +1,52 @@
+gkstatus:
+  type: integer
+  enum: [0, 1, 2, 3, 4, 5, 6]
+  description: 0 - Success, 1 - DuplicateEntry, 2 - UnauthorisedAccess, 3 - ConnectionFailed, 4 - BadPrivilege, 5 - ActionDisallowed, 6 - ProxyServerError
+stateCode:
+  oneOf:
+    - type: integer
+      minimum: 1
+      maximum: 38
+    - type: string
+      enum:
+        [
+          "01",
+          "02",
+          "03",
+          "04",
+          "05",
+          "06",
+          "07",
+          "08",
+          "09",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+        ]
+      description: 01 - Jammu and Kashmir, 02 - Himachal Pradesh, 03 - Punjab, 04 - Chandigarh, 05 - Uttranchal, 06 - Haryana, 07 - Delhi, 08 - Rajasthan, 09 - Uttar Pradesh, 10 - Bihar, 11 - Sikkim, 12 - Arunachal Pradesh, 13 - Nagaland, 14 - Manipur, 15 - Mizoram, 16 - Tripura, 17 - Meghalaya, 18 - Assam, 19 - West Bengal, 20 - Jharkhand, 21 - Odisha, 22 - Chhattisgarh, 23 - Madhya Pradesh, 24 - Gujarat, 25 - Daman and Diu (Old), 26 - Daman and Diu & Dadra and Nagar Haveli (New), 27 - Maharashtra, 28 - Andhra Pradesh, 29 - Karnataka, 30 - Goa, 31 - Lakshdweep, 32 - Kerala, 33 - Tamil Nadu, 34 - Pondicherry, 35 - Andaman and Nicobar Islands, 36 - Telangana, 37 - Andhra Pradesh (New), 38 - Ladakh,

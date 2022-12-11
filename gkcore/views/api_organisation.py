@@ -63,7 +63,7 @@ from gkcore.views.api_gkuser import getUserRole
 con = Connection
 
 
-@view_defaults(route_name="organisations")
+@view_defaults(route_name="organisation")
 class api_organisation(object):
     def __init__(self, request):
         self.request = Request
@@ -1930,7 +1930,7 @@ class api_organisation(object):
             self.con.close()
             return 0
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(route_name="organisation_all", request_method="GET", renderer="json")
     def getOrgs(self):
         try:
             self.gkUpgrade()
@@ -1955,7 +1955,6 @@ class api_organisation(object):
         request_method="GET",
         request_param="type=orgcodelist",
         renderer="json",
-        route_name="organisations",
     )
     def getsubOrgs(self):
         try:
@@ -2027,7 +2026,9 @@ class api_organisation(object):
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(
-        request_method="GET", request_param="registration-status", renderer="json"
+        request_method="GET",
+        renderer="json",
+        route_name="organisation_registration",
     )
     def checkRegistrationStatus(self):
         """
@@ -2038,7 +2039,10 @@ class api_organisation(object):
         else:
             return {"gkstatus": enumdict["Success"]}
 
-    @view_config(request_method="POST", renderer="json")
+    @view_config(
+        request_method="POST",
+        renderer="json",
+    )
     def postOrg(self):
         """
         This function checks if registrations are disabled by server admin & return corresponding gkstatus code
@@ -2793,7 +2797,7 @@ class api_organisation(object):
             finally:
                 self.con.close()
 
-    @view_config(route_name="organisation", request_method="GET", renderer="json")
+    @view_config(request_method="GET", renderer="json")
     def getOrg(self):
         try:
             token = self.request.headers["gktoken"]
@@ -3067,34 +3071,13 @@ class api_organisation(object):
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_method="GET", renderer="json", request_param="osg=true")
-    def getOrgStateGstin(self):
-        token = self.request.headers["gktoken"]
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                gstinResult = self.con.execute(
-                    "select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "
-                    % (
-                        int(self.request.params["statecode"]),
-                        int(self.request.params["statecode"]),
-                        int(authDetails["orgcode"]),
-                    )
-                )
-                gstinval = ""
-                if gstinResult.rowcount > 0:
-                    gstinrow = gstinResult.fetchone()
-                    gstinval = str(gstinrow["stgstin"])
-                return {"gkstatus": enumdict["Success"], "gkresult": gstinval}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-
     # code for saving null values of bankdetails and updation in database
     # variable created for orgcode so that query will work easily
-    @view_config(request_method="PUT", renderer="json")
+    # TODO: duplicate of editOrg(), must merge both
+    @view_config(
+        request_method="PUT",
+        renderer="json",
+    )
     def putOrg(self):
         token = self.request.headers["gktoken"]
         authDetails = authCheck(token)
@@ -3132,6 +3115,29 @@ class api_organisation(object):
                     return {"gkstatus": enumdict["BadPrivilege"]}
             except:
                 print(traceback.format_exc())
+                self.con.close()
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="PUT", request_param="type=editorganisation", renderer="json"
+    )
+    def editOrg(self):
+        token = self.request.headers["gktoken"]
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                result = self.con.execute(
+                    gkdb.organisation.update()
+                    .where(gkdb.organisation.c.orgcode == dataset["orgcode"])
+                    .values(dataset)
+                )
+                self.con.close()
+                return {"gkstatus": enumdict["Success"]}
+            except:
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
@@ -3213,7 +3219,7 @@ class api_organisation(object):
                     self.con.close()
                     return {"gkstatus": enumdict["Success"]}
                 else:
-                    {"gkstatus": enumdict["BadPrivilege"]}
+                    return {"gkstatus": enumdict["BadPrivilege"]}
             except:
                 print(traceback.format_exc())
                 self.con.close()
@@ -3250,12 +3256,12 @@ class api_organisation(object):
             self.con.close()
 
     @view_config(
-        request_method="GET", request_param="type=name_exists", renderer="json"
+        request_method="GET", route_name="organisation_orgname", renderer="json"
     )
     def orgNameExists(self):
         try:
             self.con = eng.connect()
-            orgname = self.request.params["orgname"]
+            orgname = self.request.matchdict["orgname"]
             orgncount = self.con.execute(
                 select(
                     [func.count(gkdb.organisation.c.orgcode).label("orgcode")]
@@ -3290,29 +3296,6 @@ class api_organisation(object):
             return {"gkstatus": enumdict["Success"], "gkdata": authDetails["orgcode"]}
 
     @view_config(
-        request_method="PUT", request_param="type=editorganisation", renderer="json"
-    )
-    def editOrg(self):
-        token = self.request.headers["gktoken"]
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(
-                    gkdb.organisation.update()
-                    .where(gkdb.organisation.c.orgcode == dataset["orgcode"])
-                    .values(dataset)
-                )
-                self.con.close()
-                return {"gkstatus": enumdict["Success"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-
-    @view_config(
         request_method="PUT", request_param="type=getinventory", renderer="json"
     )
     def getinventory(self):
@@ -3343,9 +3326,8 @@ class api_organisation(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(
-        route_name="organisation",
+        route_name="organisation_attachment",
         request_method="GET",
-        request_param="attach=image",
         renderer="json",
     )
     def getattachment(self):
@@ -3365,7 +3347,7 @@ class api_organisation(object):
                     )
                 )
                 row = result.fetchone()
-                return {"logo": row["logo"]}
+                return {"gkstatus": enumdict["Success"], "logo": row["logo"]}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
@@ -3373,7 +3355,6 @@ class api_organisation(object):
 
     # Code for fetching organisations bankdetails depending on organisation code.
     @view_config(
-        route_name="organisation",
         request_method="GET",
         request_param="orgbankdetails",
         renderer="json",
@@ -3411,10 +3392,9 @@ class api_organisation(object):
     """
 
     @view_config(
-        route_name="organisation",
         request_method="GET",
-        request_param="getgstgroupcode",
         renderer="json",
+        route_name="organisation_gst_accounts_codes",
     )
     def getGSTGroupCode(self):
         token = self.request.headers["gktoken"]
@@ -3466,10 +3446,9 @@ class api_organisation(object):
     """
 
     @view_config(
-        route_name="organisation",
         request_method="GET",
-        request_param="getgstaccounts",
         renderer="json",
+        route_name="organisation_gst_accounts",
     )
     def getGSTGaccounts(self):
         token = self.request.headers["gktoken"]
@@ -3535,7 +3514,6 @@ class api_organisation(object):
         request_method="GET",
         request_param="type=sameyear",
         renderer="json",
-        route_name="organisations",
     )
     def sameYear(self):
         token = self.request.headers["gktoken"]
@@ -3574,11 +3552,11 @@ class api_organisation(object):
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
+    # TODO: does the same as getOrgStateGstin, must merge the two methods
     @view_config(
         request_method="GET",
-        request_param="type=get_gstin",
         renderer="json",
-        route_name="organisations",
+        route_name="organisation_gstin",
     )
     def getGstin(self):
         token = self.request.headers["gktoken"]
@@ -3602,7 +3580,7 @@ class api_organisation(object):
 
                 payload = {
                     "gstin": result["gstin"],
-                    "stateCode": stateCode["statecode"]
+                    "stateCode": stateCode["statecode"],
                 }
 
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
@@ -3611,3 +3589,31 @@ class api_organisation(object):
             finally:
                 self.con.close()
 
+    @view_config(
+        request_method="GET",
+        renderer="json",
+        request_param="type=gstin_by_state",
+    )
+    def getOrgStateGstin(self):
+        token = self.request.headers["gktoken"]
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                gstinResult = self.con.execute(
+                    "select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "
+                    % (
+                        int(self.request.params["statecode"]),
+                        int(self.request.params["statecode"]),
+                        int(authDetails["orgcode"]),
+                    )
+                )
+                gstinval = ""
+                if gstinResult.rowcount > 0:
+                    gstinrow = gstinResult.fetchone()
+                    gstinval = str(gstinrow["stgstin"])
+                return {"gkstatus": enumdict["Success"], "gkresult": gstinval}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}

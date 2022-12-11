@@ -93,3 +93,19 @@ paths:
     $ref: "./data/import-xlsx.yaml"
   /accounts:
     $ref: "./accounts/index.yaml"
+  /organisation:
+    $ref: "./paths_organisation.yaml#/organisation"
+  /organisation/all:
+    $ref: "./paths_organisation.yaml#/organisation_all"
+  /organisation/gstin:
+    $ref: "./paths_organisation.yaml#/organisation_gstin"
+  /organisation/attachment:
+    $ref: "./paths_organisation.yaml#/organisation_attachment"
+  /organisation/gst_accounts:
+    $ref: "./paths_organisation.yaml#/organisation_gst_accounts"
+  /organisation/gst_accounts/codes:
+    $ref: "./paths_organisation.yaml#/organisation_gst_accounts_codes"
+  /organisation/check_registration:
+    $ref: "./paths_organisation.yaml#/organisation_registration"
+  /organisation/check/{orgname}:
+    $ref: "./paths_organisation.yaml#/organisation_orgname"

@@ -1,0 +1,67 @@
+orgDetails:
+  type: object
+  properties:
+    orgname:
+      type: string
+    orgtype:
+      type: string
+    yearstart:
+      type: string
+      format: date
+    yearend:
+      type: string
+      format: date
+    orgstate:
+      type: string
+    orgcity:
+      type: string
+    orgaddr:
+      type: string
+    orgpincode:
+      type: number
+    orgcountry:
+      type: string
+    orgtelno:
+      type: string
+    orgfax:
+      type: string
+    orgwebsite:
+      type: string
+    orgemail:
+      type: string
+    orgpan:
+      type: string
+    orgmvat:
+      type: string
+    orgstax:
+      type: string
+    orgregno:
+      type: string
+    orgregdate:
+      type: string
+    orgfcrano:
+      type: string
+    orgfcradate:
+      type: string
+    invflag:
+      type: integer
+    invsflag:
+      type: integer
+    billflag:
+      type: integer
+    avflag:
+      type: integer
+    maflag:
+      type: integer
+    avnoflag:
+      type: integer
+    ainvnoflag:
+      type: integer
+    modeflag:
+      type: integer
+    orgconf:
+      type: object
+    roflag:
+      type: integer
+    booksclosedflag:
+      type: integer
