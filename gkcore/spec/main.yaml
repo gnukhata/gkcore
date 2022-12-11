@@ -34,6 +34,7 @@ paths:
     get:
       tags: ["Public API's"]
       summary: Check whether gkcore is running
+      security: [{}]
       responses:
         "200":
           description: OK
@@ -58,6 +59,7 @@ paths:
             type: string
             enum: [all]
           required: true
+      security: [{}]
       responses:
         "200":
           description: OK
