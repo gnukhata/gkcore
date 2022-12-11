@@ -1,10 +1,11 @@
 orgDetails:
   type: object
+  additionalProperties: false
   properties:
     orgname:
       type: string
     orgtype:
-      type: string
+      $ref: "#/orgType"
     yearstart:
       type: string
       format: date
@@ -65,3 +66,10 @@ orgDetails:
       type: integer
     booksclosedflag:
       type: integer
+    logo:
+      type: string
+      format: byte
+
+orgType:
+  type: string
+  enum: [For Profit, Not For Profit]
