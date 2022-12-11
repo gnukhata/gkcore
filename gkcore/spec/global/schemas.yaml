@@ -1,3 +1,7 @@
+token:
+  type: string
+  format: byte
+  description: Base64 JWT token used for authentication
 gkstatus:
   type: integer
   enum: [0, 1, 2, 3, 4, 5, 6]

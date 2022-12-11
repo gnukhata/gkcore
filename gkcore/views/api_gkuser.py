@@ -44,7 +44,7 @@ def getUserRole(userid, orgcode):
         con.close()
 
 
-@view_defaults(route_name="gkusers")
+@view_defaults(route_name="gkuser")
 class api_gkuser(object):
     def __init__(self, request):
         self.request = Request
@@ -95,10 +95,8 @@ class api_gkuser(object):
     updateDefaultUserName() method is used to update the username in gkusers table that was created during migration 
     to satisfy the uniqueness constraint, with a user given username.
     """
-
-    @view_config(
-        request_method="PUT", request_param="type=default_user_name", renderer="json"
-    )
+    # TODO: Must update this method to update either all columns or just a column that is required
+    @view_config(request_method="PUT", renderer="json", request_param="type=default_user_name")
     def updateDefaultUserName(self):
         try:
             token = self.request.headers["gktoken"]
@@ -147,8 +145,11 @@ class api_gkuser(object):
                 self.con.close()
 
     # TODO: Update with new schema
+    # request_param="type=all_user_data",
     @view_config(
-        request_method="GET", request_param="type=all_user_data", renderer="json"
+        request_method="GET",
+        renderer="json",
+        route_name="organisation_gkusers",
     )
     def getAllUserData(self):
         try:
@@ -207,10 +208,11 @@ class api_gkuser(object):
             finally:
                 self.con.close()
 
+    # request_param="type=get_user_orgs",
     @view_config(
         request_method="GET",
-        request_param="type=get_user_orgs",
         renderer="json",
+        route_name="gkuser_orgs",
     )
     def getAllUserOrgs(self):
         try:
@@ -272,22 +274,24 @@ class api_gkuser(object):
 
     """This function checks if the username sent is unique"""
 
+    # request_param="type=unique_check",
     @view_config(
         request_method="GET",
-        request_param="type=unique_check",
         renderer="json",
+        route_name="gkuser_uname",
     )
     def checkUserNameUnique(self):
         try:
             self.con = eng.connect()
             # there is only one possibility for a catch which is failed connection to db.
             # Retrieve data of that user whose userid is sent
+            uname = self.request.matchdict["username"]
             query = self.con.execute(
                 select(
                     [
                         gkdb.gkusers.c.userid,
                     ]
-                ).where(gkdb.gkusers.c.username == self.request.params["username"])
+                ).where(gkdb.gkusers.c.username == uname)
             )
             result = query.rowcount == 0
 
@@ -295,9 +299,11 @@ class api_gkuser(object):
                 query2 = {"rowcount": 0}
                 if tableExists("users"):
                     query2 = self.con.execute(
-                        select([gkdb.users.c.userid,]).where(
-                            gkdb.users.c.username == self.request.params["username"]
-                        )
+                        select(
+                            [
+                                gkdb.users.c.userid,
+                            ]
+                        ).where(gkdb.users.c.username == uname)
                     )
 
                 result = result and query2.rowcount == 0
@@ -308,8 +314,11 @@ class api_gkuser(object):
         finally:
             self.con.close()
 
+    # request_param="type=recovery_question",
     @view_config(
-        request_method="GET", request_param="type=recovery_question", renderer="json"
+        request_method="GET",
+        renderer="json",
+        route_name="gkuser_pwd_question",
     )
     def getquestion(self):
         try:
@@ -387,10 +396,11 @@ class api_gkuser(object):
         finally:
             self.con.close()
 
+    # request_param="type=verify_answer",
     @view_config(
         request_method="GET",
-        request_param="type=verify_answer",
         renderer="json",
+        route_name="gkuser_pwd_answer",
     )
     def verifyanswer(self):
         try:
@@ -412,8 +422,11 @@ class api_gkuser(object):
         finally:
             self.con.close()
 
+    # request_param="type=reset_password",
     @view_config(
-        request_method="PUT", request_param="type=reset_password", renderer="json"
+        request_method="PUT",
+        renderer="json",
+        route_name="gkuser_pwd_reset",
     )
     def resetpassword(self):
         try:

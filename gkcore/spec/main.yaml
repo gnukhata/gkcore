@@ -111,3 +111,17 @@ paths:
     $ref: "./paths_organisation.yaml#/organisation_registration"
   /organisation/check/{orgname}:
     $ref: "./paths_organisation.yaml#/organisation_orgname"
+  /gkuser:
+    $ref: "./paths_gkuser.yaml#/gkuser"
+  /organisation/gkusers:
+    $ref: "./paths_gkuser.yaml#/organisation_gkusers"
+  /gkuser/orgs:
+    $ref: "./paths_gkuser.yaml#/gkuser_orgs"
+  /gkuser/pwd/question:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_question"
+  /gkuser/pwd/answer:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_answer"
+  /gkuser/pwd/reset:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_reset"
+  /gkuser/check/{username}:
+    $ref: "./paths_gkuser.yaml#/gkuser_username"

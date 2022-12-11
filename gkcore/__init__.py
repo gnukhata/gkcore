@@ -54,7 +54,6 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
     config.add_route("organisation", "/organisation")
     config.add_route("organisation_all", "/organisation/all")
-    # config.add_route("organisation_gkusers", "/organisation/gkusers")
     config.add_route("organisation_gstin", "/organisation/gstin")
     config.add_route("organisation_attachment", "/organisation/attachment")
     config.add_route("organisation_gst_accounts", "/organisation/gst_accounts")
@@ -63,13 +62,16 @@ def main(global_config, **settings):
     config.add_route("organisation_orgname", "/organisation/check/{orgname}")
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")
-    config.add_route("organisations", "/organisations")
     config.add_route("categoryspecs", "/categoryspecs")
     config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")
     config.add_route("transaction", "/transaction")
-    config.add_route("users", "/users")
-    config.add_route("gkusers", "/gkusers")
-    config.add_route("user", "/user")
+    config.add_route("gkuser", "/gkuser")
+    config.add_route("organisation_gkusers", "/organisation/gkusers")
+    config.add_route("gkuser_orgs", "/gkuser/orgs")
+    config.add_route("gkuser_pwd_question", "/gkuser/pwd/question")
+    config.add_route("gkuser_pwd_answer", "/gkuser/pwd/answer")
+    config.add_route("gkuser_pwd_reset", "/gkuser/pwd/reset")
+    config.add_route("gkuser_uname", "/gkuser/check/{username}")
     config.add_route("bankrecon", "/bankrecon")
     config.add_route("accounts", "/accounts")
     config.add_route("account", "/account/{accountcode}")
@@ -118,6 +120,9 @@ def main(global_config, **settings):
     config.add_route("userorg", "/userorg")
     config.add_route("index", "/")
     config.add_route("gstnews", "/gst-news")
+    # config.add_route("organisations", "/organisations") # legacy
+    # config.add_route("users", "/users") # legacy
+    # config.add_route("user", "/user") # legacy
 
     config.scan("gkcore.views")
     # include the pyramid pyramid-openapi3 plugin & it's config
