@@ -47,9 +47,9 @@ class TestPublicApis(unittest.TestCase):
         # check if all states are returned
         self.assertGreater(len(result["gkresult"]), 1)
 
-    def test_org_list(self):
-        result = r.get("http://localhost:6543/organisations").json()
-        self.assertFalse(result["gkstatus"], 0)
+    # def test_org_list(self):
+    #     result = r.get("http://localhost:6543/organisations").json()
+    #     self.assertFalse(result["gkstatus"], 0)
 
     # def test_split(self):
     #     s = "hello world"
