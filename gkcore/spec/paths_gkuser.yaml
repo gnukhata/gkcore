@@ -22,7 +22,7 @@ gkuser:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 token:
                   $ref: "./global/schemas.yaml#/token"
-                  description: JWT token used to authenticate a user in an organisation
+                  description: JWT token used to authenticate a user in GNUKhata
 
   put:
     tags: ["Gkuser"] # "User",

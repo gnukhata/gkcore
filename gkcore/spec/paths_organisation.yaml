@@ -39,8 +39,8 @@ organisation:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 token:
-                  type: string
-                  description: JWT token used to authenticate a user in an organisation
+                  $ref: "./global/schemas.yaml#/token"
+                  description: JWT token used to authenticate a user in GNUKhata
                 orgcode:
                   type: integer
                   description: An integer denoting the id of the organisation
