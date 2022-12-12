@@ -1,6 +1,6 @@
 gkuser:
   post:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Create a new user
     operationId: addUser
     security: [{}]
@@ -25,7 +25,7 @@ gkuser:
                   description: JWT token used to authenticate a user in an organisation
 
   put:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Edit a user's data
     # operationId: putUser
     parameters:
@@ -53,7 +53,7 @@ gkuser:
 
 organisation_gkusers:
   get:
-    tags: ["User", "Gkuser", "Users of an Organisation"]
+    tags: ["Gkuser"] # "User", , "Users of an Organisation"
     summary: Fetch all users belonging to an organisation
     operationId: getAllUserData
     responses:
@@ -72,7 +72,7 @@ organisation_gkusers:
 
 gkuser_orgs:
   get:
-    tags: ["User", "Gkuser", "Organisations of an user"]
+    tags: ["Gkuser"] # "User", , "Organisations of an user"
     summary: Fetch all organisations that a user is part of
     operationId: getAllUserOrgs
     security:
@@ -93,7 +93,7 @@ gkuser_orgs:
 
 gkuser_pwd_question:
   get:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Fetch password recovery question
     operationId: getquestion
     responses:
@@ -112,7 +112,7 @@ gkuser_pwd_question:
 
 gkuser_pwd_answer:
   get:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Verify password recovery question's answer
     operationId: verifyanswer
     responses:
@@ -131,7 +131,7 @@ gkuser_pwd_answer:
 
 gkuser_pwd_reset:
   put:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Reset the password of a user
     operationId: resetpassword
     requestBody:
@@ -162,7 +162,7 @@ gkuser_pwd_reset:
 
 gkuser_username:
   get:
-    tags: ["User", "Gkuser"]
+    tags: ["Gkuser"] # "User",
     summary: Check if an user's name is unique
     operationId: checkUserNameUnique
     security: [{}]

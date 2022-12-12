@@ -110,7 +110,7 @@ organisation_all:
 
 organisation_gstin:
   get:
-    tags: ["Organisation", "gstin"]
+    tags: ["Organisation"] # , "gstin"
     summary: Fetch an organisation's Gstin
     operationId: gstGstin
     responses:
@@ -157,7 +157,7 @@ organisation_attachment:
 
 organisation_gst_accounts:
   get:
-    tags: ["Organisation", "GST", "Accounts", "Current Liabilities"]
+    tags: ["Organisation"] # , "GST", "Accounts", "Current Liabilities"
     summary: Get all accounts of group 'Current Liabilities' and subgroup 'Duties & Taxes' created for GST.
     operationId: getGSTGaccounts
     responses:
@@ -178,14 +178,7 @@ organisation_gst_accounts:
 
 organisation_gst_accounts_codes:
   get:
-    tags:
-      [
-        "Organisation",
-        "GST",
-        "Account Codes",
-        "Duties & Taxes",
-        "Current Liabilities",
-      ]
+    tags: ["Organisation"] # "GST", "Account Codes", "Duties & Taxes", "Current Liabilities",    
     summary: Get groupcode of group 'Current Liabilities' and subgroup 'Duties & Taxes'
     operationId: getGSTGroupCode
     responses:
