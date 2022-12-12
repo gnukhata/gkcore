@@ -13,21 +13,22 @@ import traceback
 
 
 """
-api_userorg is used to handle user org relation related functionalities like invitations, role updates, etc.
+api_invite is used to handle user org relation related functionalities like invitations, role updates, etc.
 """
 
 
-@view_defaults(route_name="userorg")
-class api_userorg(object):
+@view_defaults(route_name="invite")
+class api_invite(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
 
+    # request_param="type=create_invite",
     @view_config(
-        request_method="POST", request_param="type=create_invite", renderer="json"
+        request_method="POST", renderer="json"
     )
-    def inviteUser(self):
+    def createInvite(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -103,7 +104,7 @@ class api_userorg(object):
                 self.con.close()
 
     @view_config(
-        request_method="PUT", request_param="type=accept_invite", renderer="json"
+        request_method="POST", route_name="invite_accept", renderer="json"
     )
     def acceptInvite(self):
         try:
@@ -186,7 +187,7 @@ class api_userorg(object):
                 self.con.close()
 
     @view_config(
-        request_method="PUT", request_param="type=reject_invite", renderer="json"
+        request_method="POST", route_name="invite_reject", renderer="json"
     )
     def rejectInvite(self):
         try:
@@ -238,7 +239,7 @@ class api_userorg(object):
                 self.con.close()
 
     @view_config(
-        request_method="DELETE", request_param="type=delete_invite", renderer="json"
+        request_method="DELETE", renderer="json"
     )
     def deleteInvite(self):
         try:

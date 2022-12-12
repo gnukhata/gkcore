@@ -95,6 +95,8 @@ paths:
     $ref: "./data/import-xlsx.yaml"
   /accounts:
     $ref: "./accounts/index.yaml"
+  
+  # organisation api routes
   /organisation:
     $ref: "./paths_organisation.yaml#/organisation"
   /organisation/all:
@@ -111,6 +113,8 @@ paths:
     $ref: "./paths_organisation.yaml#/organisation_registration"
   /organisation/check/{orgname}:
     $ref: "./paths_organisation.yaml#/organisation_orgname"
+  
+  # gkuser api routes
   /gkuser:
     $ref: "./paths_gkuser.yaml#/gkuser"
   /organisation/gkusers:
@@ -125,3 +129,11 @@ paths:
     $ref: "./paths_gkuser.yaml#/gkuser_pwd_reset"
   /gkuser/check/{username}:
     $ref: "./paths_gkuser.yaml#/gkuser_username"
+
+  # invite api routes
+  /invite:
+    $ref: "./paths_invite.yaml#/invite"
+  /invite/accept:
+    $ref: "./paths_invite.yaml#/invite_accept"
+  /invite/reject:
+    $ref: "./paths_invite.yaml#/invite_reject"

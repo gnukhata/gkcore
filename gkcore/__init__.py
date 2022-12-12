@@ -52,6 +52,8 @@ enumdict = STATUS_CODES
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
+   
+    # organisation api routes
     config.add_route("organisation", "/organisation")
     config.add_route("organisation_all", "/organisation/all")
     config.add_route("organisation_gstin", "/organisation/gstin")
@@ -60,11 +62,8 @@ def main(global_config, **settings):
     config.add_route("organisation_gst_accounts_codes", "/organisation/gst_accounts/codes")
     config.add_route("organisation_registration", "/organisation/check_registration")
     config.add_route("organisation_orgname", "/organisation/check/{orgname}")
-    config.add_route("invoice", "/invoice")
-    config.add_route("budget", "/budget")
-    config.add_route("categoryspecs", "/categoryspecs")
-    config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")
-    config.add_route("transaction", "/transaction")
+    
+    # gkuser api routes
     config.add_route("gkuser", "/gkuser")
     config.add_route("organisation_gkusers", "/organisation/gkusers")
     config.add_route("gkuser_orgs", "/gkuser/orgs")
@@ -72,6 +71,17 @@ def main(global_config, **settings):
     config.add_route("gkuser_pwd_answer", "/gkuser/pwd/answer")
     config.add_route("gkuser_pwd_reset", "/gkuser/pwd/reset")
     config.add_route("gkuser_uname", "/gkuser/check/{username}")
+
+    # invite api routes
+    config.add_route("invite", "/invite")
+    config.add_route("invite_accept", "/invite/accept")
+    config.add_route("invite_reject", "/invite/reject")
+
+    config.add_route("invoice", "/invoice")
+    config.add_route("budget", "/budget")
+    config.add_route("categoryspecs", "/categoryspecs")
+    config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")
+    config.add_route("transaction", "/transaction")
     config.add_route("bankrecon", "/bankrecon")
     config.add_route("accounts", "/accounts")
     config.add_route("account", "/account/{accountcode}")
@@ -117,7 +127,6 @@ def main(global_config, **settings):
     config.add_route("import-json", "/import/json")
     config.add_route("import-xlsx", "/import/xlsx")
 
-    config.add_route("userorg", "/userorg")
     config.add_route("index", "/")
     config.add_route("gstnews", "/gst-news")
     # config.add_route("organisations", "/organisations") # legacy
