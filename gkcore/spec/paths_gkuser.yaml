@@ -186,10 +186,3 @@ gkuser_username:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 gkresult:
                   type: boolean
-
-components:
-  securitySchemes:
-    UserAuth:
-      type: apiKey
-      in: header
-      name: gkusertoken

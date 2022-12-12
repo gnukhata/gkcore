@@ -25,6 +25,10 @@ components:
       type: apiKey
       in: header
       name: gktoken
+    UserAuth:
+      type: apiKey
+      in: header
+      name: gkusertoken
 
 security:
   - ApiKeyAuth: []

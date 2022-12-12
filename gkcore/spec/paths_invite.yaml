@@ -115,10 +115,3 @@ invite_reject:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
-
-components:
-  securitySchemes:
-    UserAuth:
-      type: apiKey
-      in: header
-      name: gkusertoken

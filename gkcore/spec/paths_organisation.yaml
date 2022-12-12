@@ -178,7 +178,7 @@ organisation_gst_accounts:
 
 organisation_gst_accounts_codes:
   get:
-    tags: ["Organisation"] # "GST", "Account Codes", "Duties & Taxes", "Current Liabilities",    
+    tags: ["Organisation"] # "GST", "Account Codes", "Duties & Taxes", "Current Liabilities",
     summary: Get groupcode of group 'Current Liabilities' and subgroup 'Duties & Taxes'
     operationId: getGSTGroupCode
     responses:
@@ -239,28 +239,3 @@ organisation_orgname:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
-
-# organisation_gkusers:
-#   get:
-#     tags: ["Organisation"]
-#     summary: Fetch an organisation's data
-#     operationId: getOrg
-#     responses:
-#       "200":
-#         description: ok
-#         content:
-#           application/json:
-#             schema:
-#               type: object
-#               properties:
-#                 gkstatus:
-#                   $ref: "./global/schemas.yaml#/gkstatus"
-#                 gkdata:
-#                   $ref: "./organisation/schemas_org.yaml#/orgDetails"
-
-components:
-  securitySchemes:
-    UserAuth:
-      type: apiKey
-      in: header
-      name: gkusertoken
