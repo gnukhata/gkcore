@@ -6,6 +6,7 @@ info:
   description: |
     API documentation of gkcore - GNUKhata's REST API server.
 
+    **gkstatus codes:**
     The following is the meaning of the `gkstatus` codes, which are returned in `200` response:
     ```json 
       { 
@@ -17,6 +18,17 @@ info:
       "ActionDisallowed": 5, 
       "ProxyServerError": 6, 
       }
+    ```
+    **User roles:** These are the following user roles in an organisation with various access levels
+
+    ```json
+    {
+      -1: "Admin",
+      0: "Manager",
+      1: "Operator",
+      2: "Internal Auditor",
+      3: "Godown In Charge",
+    }
     ```
 
 components:
@@ -99,51 +111,9 @@ paths:
     $ref: "./data/import-xlsx.yaml"
   /accounts:
     $ref: "./accounts/index.yaml"
-
-  # organisation api routes
-  /organisation:
-    $ref: "./paths_organisation.yaml#/organisation"
-  /organisation/all:
-    $ref: "./paths_organisation.yaml#/organisation_all"
-  /organisation/gstin:
-    $ref: "./paths_organisation.yaml#/organisation_gstin"
-  /organisation/attachment:
-    $ref: "./paths_organisation.yaml#/organisation_attachment"
-  /organisation/gst_accounts:
-    $ref: "./paths_organisation.yaml#/organisation_gst_accounts"
-  /organisation/gst_accounts/codes:
-    $ref: "./paths_organisation.yaml#/organisation_gst_accounts_codes"
-  /organisation/check_registration:
-    $ref: "./paths_organisation.yaml#/organisation_registration"
-  /organisation/check/{orgname}:
-    $ref: "./paths_organisation.yaml#/organisation_orgname"
-
-  # gkuser api routes
-  /gkuser:
-    $ref: "./paths_gkuser.yaml#/gkuser"
-  /organisation/gkusers:
-    $ref: "./paths_gkuser.yaml#/organisation_gkusers"
-  /gkuser/orgs:
-    $ref: "./paths_gkuser.yaml#/gkuser_orgs"
-  /gkuser/pwd/question:
-    $ref: "./paths_gkuser.yaml#/gkuser_pwd_question"
-  /gkuser/pwd/answer:
-    $ref: "./paths_gkuser.yaml#/gkuser_pwd_answer"
-  /gkuser/pwd/reset:
-    $ref: "./paths_gkuser.yaml#/gkuser_pwd_reset"
-  /gkuser/check/{username}:
-    $ref: "./paths_gkuser.yaml#/gkuser_username"
-
-  # invite api routes
-  /invite:
-    $ref: "./paths_invite.yaml#/invite"
-  /invite/accept:
-    $ref: "./paths_invite.yaml#/invite_accept"
-  /invite/reject:
-    $ref: "./paths_invite.yaml#/invite_reject"
-
-  # login api routes
-  /login/user:
-    $ref: "./paths_login.yaml#/login_user"
-  /login/org:
-    $ref: "./paths_login.yaml#/login_org"
+  /accounts/spreadsheet:
+    $ref: "./accounts/spreadsheet.yaml"
+  /closebooks:
+    $ref: "./rollclose/closebooks.yaml"
+  /rollover:
+    $ref: "./rollclose/rollover.yaml"

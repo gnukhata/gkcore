@@ -39,7 +39,6 @@ from gkcore.models.gkdb import (
     groupsubgroups,
     organisation,
     # users,
-    gkusers,
     customerandsupplier,
     product,
     categorysubcategories,
@@ -77,7 +76,7 @@ class api_rollclose(object):
         self.request = request
         self.con = Connection
 
-    @view_config(request_param="task=closebooks", renderer="json")
+    @view_config(route_name="close-books", renderer="json")
     def closeBooks(self):
         """
         Purpose:
@@ -1028,7 +1027,7 @@ class api_rollclose(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="task=rollover", renderer="json")
+    @view_config(route_name="roll-over", renderer="json")
     def rollOver(self):
         """
         Purpose:
