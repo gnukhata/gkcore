@@ -131,10 +131,10 @@ class api_spreadsheet(object):
         return sheets.cash_flow.print_cash_flow(self)
 
     # accounts
-    # @view_config(request_method="GET", request_param="accounts", renderer="json")
-    # def acc(self):
-    #     self.check_auth
-    #     return sheets.accounts.print_account_list(self)
+    @view_config(route_name="accounts-xlsx", request_method="GET", renderer="json")
+    def acc(self):
+        self.check_auth
+        return sheets.accounts.generate_spreadsheet(self)
 
     @view_config(request_method="GET", request_param="all-godowns", renderer="json")
     def ag(self):
