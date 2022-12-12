@@ -1,0 +1,85 @@
+login_user:
+  post:
+    tags: ["Login"]
+    summary: User Login
+    operationId: userLogin
+    security: [{}]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              username:
+                type: string
+              password:
+                type: string
+    responses:
+      200:
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                token:
+                  $ref: "./global/schemas.yaml#/token"
+                  description: JWT token used to authenticate a user in GNUKhata
+                gkresult:
+                  type: object
+                  description: An object with keys as org codes and values as that corresponding org's meta data. Used to display orgs after user login
+                  example:
+                    {
+                      1:
+                        {
+                          "orgname": "Sample Org",
+                          "orgtype": "For Profit",
+                          "orgcode": 1,
+                          "yearstart": "2021-04-01",
+                          "yearend": "2022-03-31",
+                          "invitestatus": true,
+                          "userrole": -1,
+                        },
+                      12:
+                        {
+                          "orgname": "Sample Org 12",
+                          "orgtype": "For Profit",
+                          "orgcode": 12,
+                          "yearstart": "2021-04-01",
+                          "yearend": "2022-03-31",
+                          "invitestatus": true,
+                          "userrole": -1,
+                        },
+                    }
+login_org:
+  post:
+    tags: ["Login"]
+    summary: Organisation Login
+    operationId: orgLogin
+    security:
+      - UserAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              orgcode:
+                type: integer
+    responses:
+      200:
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                token:
+                  $ref: "./global/schemas.yaml#/token"
+                  description: JWT token used to authenticate a user in an organisation

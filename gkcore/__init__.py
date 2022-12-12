@@ -77,6 +77,10 @@ def main(global_config, **settings):
     config.add_route("invite_accept", "/invite/accept")
     config.add_route("invite_reject", "/invite/reject")
 
+    # login api routes
+    config.add_route("login_user", "/login/user")
+    config.add_route("login_org", "/login/org")
+
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")
     config.add_route("categoryspecs", "/categoryspecs")
@@ -90,7 +94,6 @@ def main(global_config, **settings):
     config.add_route("customersupplier", "/customersupplier")
     config.add_route("unitofmeasurement", "/unitofmeasurement")
     config.add_route("accountsbyrule", "/accountsbyrule")
-    config.add_route("login", "/login")
     config.add_route("groupallsubgroup", "/groupallsubgroup/{groupcode}")
     config.add_route("groupsubgroup", "/groupsubgroup/{groupcode}")
     config.add_route("groupsubgroups", "/groupsubgroups")

@@ -47,66 +47,10 @@ from gkcore.utils import generateAuthToken, userAuthCheck, authCheck
 con = Connection
 
 
-@view_config(route_name="login", request_method="POST", renderer="json")
-def gkLogin(request):
-
-    """
-    purpose: take org code, username and password and authenticate the user.
-    Return true if username and password matches or false otherwise.
-    description:
-    The function takes the orgcode and matches the username and password.
-    if it is correct then the user is authorised and a  object is created.
-    The object will have the userid and orgcode and this will be sent back as a response.
-    Else the function will not issue any token.
-    """
-    try:
-        con = eng.connect()
-        try:
-            con.execute(select([gkdb.organisation.c.invflag]))
-        except:
-            inventoryMigration(con, eng)
-        try:
-            con.execute(
-                select([gkdb.delchal.c.modeoftransport, gkdb.delchal.c.noofpackages])
-            )
-            con.execute(select([gkdb.transfernote.c.recieveddate]))
-        except:
-            addFields(con, eng)
-        dataset = request.json_body
-        result = con.execute(
-            select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(
-                and_(
-                    gkdb.users.c.username == dataset["username"],
-                    gkdb.users.c.userpassword == dataset["userpassword"],
-                    gkdb.users.c.orgcode == dataset["orgcode"],
-                )
-            )
-        )
-        if result.rowcount == 1:
-            record = result.fetchone()
-            token = generateAuthToken(
-                con, {"userid": record["userid"], "orgcode": dataset["orgcode"]}
-            )
-            if token == -1:
-                raise Exception("Issue with generating Auth Token")
-            return {
-                "gkstatus": enumdict["Success"],
-                "token": token,
-                "userid": record["userid"],
-            }
-        else:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-    except:
-        print(traceback.format_exc())
-        return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
-
-
+# request_param="type=user",
 @view_config(
-    route_name="login",
+    route_name="login_user",
     request_method="POST",
-    request_param="type=user",
     renderer="json",
 )
 def userLogin(request):
@@ -154,7 +98,7 @@ def userLogin(request):
                         ).where(gkdb.organisation.c.orgcode == orgCode)
                     ).fetchone()
                     if not orgData:
-                        print("Log: %d org data is missing "%(int(orgCode)))
+                        print("Log: %d org data is missing " % (int(orgCode)))
                         continue
                     if orgData["orgname"] not in payload:
                         payload[orgData["orgname"]] = []
@@ -165,7 +109,9 @@ def userLogin(request):
                                 (orgData["yearstart"]), "%d-%m-%Y"
                             ),
                             "orgtype": orgData["orgtype"],
-                            "yearend": datetime.strftime((orgData["yearend"]), "%d-%m-%Y"),
+                            "yearend": datetime.strftime(
+                                (orgData["yearend"]), "%d-%m-%Y"
+                            ),
                             "orgcode": orgCode,
                             "invitestatus": userData["orgs"][orgCode]["invitestatus"],
                             "userrole": userData["orgs"][orgCode]["userrole"],
@@ -229,7 +175,10 @@ def userLogin(request):
                 if len(payload) == 1:
                     token = generateAuthToken(
                         con,
-                        {"userid": record["userid"], "username": dataset["username"]}, # TODO replace record["userid"] with a proper userid, this will throw error
+                        {
+                            "userid": record["userid"],
+                            "username": dataset["username"],
+                        },  # TODO replace record["userid"] with a proper userid, this will throw error
                         "user",
                     )
                     return {
@@ -253,9 +202,8 @@ def userLogin(request):
         con.close()
 
 
-@view_config(
-    route_name="login", request_method="POST", request_param="type=org", renderer="json"
-)
+# request_param="type=org"
+@view_config(route_name="login_org", request_method="POST", renderer="json")
 def orgLogin(request):
 
     """
@@ -361,6 +309,7 @@ def orgLogin(request):
                 raise Exception("Issue with generating Auth Token")
             payload = {"gkstatus": enumdict["Success"], "token": token}
             if renameUser:
+                # legacy login to new login change support
                 payload["userid"] = userId
                 payload["olduserid"] = oldUserId["userid"]
             return payload
@@ -374,35 +323,91 @@ def orgLogin(request):
         con.close()
 
 
-@view_config(route_name="login", request_method="GET", renderer="json")
-def getuserorgdetails(request):
-    try:
-        token = request.headers["gktoken"]
-    except:
-        return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-    authDetails = authCheck(token)
-    if authDetails["auth"] == False:
-        return {"gkstatus": enumdict["UnauthorisedAccess"]}
-    else:
-        try:
-            con = eng.connect()
-            userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
-            userRole = userRoleData["gkresult"]["userrole"]
-            flagsdata = con.execute(
-                select(
-                    [gkdb.organisation.c.booksclosedflag, gkdb.organisation.c.roflag]
-                ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
-            )
-            flags = flagsdata.fetchone()
-            return {
-                "gkstatus": gkcore.enumdict["Success"],
-                "gkresult": {
-                    "userrole": int(userRole),
-                    "booksclosedflag": int(flags["booksclosedflag"]),
-                    "roflag": int(flags["roflag"]),
-                },
-            }
-        except:
-            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-        finally:
-            con.close()
+# @view_config(route_name="login", request_method="GET", renderer="json")
+# def getuserorgdetails(request):
+#     try:
+#         token = request.headers["gktoken"]
+#     except:
+#         return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+#     authDetails = authCheck(token)
+#     if authDetails["auth"] == False:
+#         return {"gkstatus": enumdict["UnauthorisedAccess"]}
+#     else:
+#         try:
+#             con = eng.connect()
+#             userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+#             userRole = userRoleData["gkresult"]["userrole"]
+#             flagsdata = con.execute(
+#                 select(
+#                     [gkdb.organisation.c.booksclosedflag, gkdb.organisation.c.roflag]
+#                 ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
+#             )
+#             flags = flagsdata.fetchone()
+#             return {
+#                 "gkstatus": gkcore.enumdict["Success"],
+#                 "gkresult": {
+#                     "userrole": int(userRole),
+#                     "booksclosedflag": int(flags["booksclosedflag"]),
+#                     "roflag": int(flags["roflag"]),
+#                 },
+#             }
+#         except:
+#             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+#         finally:
+#             con.close()
+
+
+# @view_config(route_name="login", request_method="POST", renderer="json")
+# def gkLogin(request):
+
+#     """
+#     purpose: take org code, username and password and authenticate the user.
+#     Return true if username and password matches or false otherwise.
+#     description:
+#     The function takes the orgcode and matches the username and password.
+#     if it is correct then the user is authorised and a  object is created.
+#     The object will have the userid and orgcode and this will be sent back as a response.
+#     Else the function will not issue any token.
+#     """
+#     try:
+#         con = eng.connect()
+#         try:
+#             con.execute(select([gkdb.organisation.c.invflag]))
+#         except:
+#             inventoryMigration(con, eng)
+#         try:
+#             con.execute(
+#                 select([gkdb.delchal.c.modeoftransport, gkdb.delchal.c.noofpackages])
+#             )
+#             con.execute(select([gkdb.transfernote.c.recieveddate]))
+#         except:
+#             addFields(con, eng)
+#         dataset = request.json_body
+#         result = con.execute(
+#             select([gkdb.users.c.userid, gkdb.users.c.userrole]).where(
+#                 and_(
+#                     gkdb.users.c.username == dataset["username"],
+#                     gkdb.users.c.userpassword == dataset["userpassword"],
+#                     gkdb.users.c.orgcode == dataset["orgcode"],
+#                 )
+#             )
+#         )
+#         if result.rowcount == 1:
+#             record = result.fetchone()
+#             token = generateAuthToken(
+#                 con, {"userid": record["userid"], "orgcode": dataset["orgcode"]}
+#             )
+#             if token == -1:
+#                 raise Exception("Issue with generating Auth Token")
+#             return {
+#                 "gkstatus": enumdict["Success"],
+#                 "token": token,
+#                 "userid": record["userid"],
+#             }
+#         else:
+#             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+#     except:
+#         print(traceback.format_exc())
+#         return {"gkstatus": enumdict["ConnectionFailed"]}
+#     finally:
+#         con.close()
