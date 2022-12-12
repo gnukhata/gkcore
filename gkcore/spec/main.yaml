@@ -97,10 +97,59 @@ paths:
                           type: string
                         state_abbr:
                           type: string
+  # organisation api routes
+  /organisation:
+    $ref: "./paths_organisation.yaml#/organisation"
+  /organisation/all:
+    $ref: "./paths_organisation.yaml#/organisation_all"
+  /organisation/gstin:
+    $ref: "./paths_organisation.yaml#/organisation_gstin"
+  /organisation/attachment:
+    $ref: "./paths_organisation.yaml#/organisation_attachment"
+  /organisation/gst_accounts:
+    $ref: "./paths_organisation.yaml#/organisation_gst_accounts"
+  /organisation/gst_accounts/codes:
+    $ref: "./paths_organisation.yaml#/organisation_gst_accounts_codes"
+  /organisation/check_registration:
+    $ref: "./paths_organisation.yaml#/organisation_registration"
+  /organisation/check/{orgname}:
+    $ref: "./paths_organisation.yaml#/organisation_orgname"
+
+  # gkuser api routes
+  /gkuser:
+    $ref: "./paths_gkuser.yaml#/gkuser"
+  /organisation/gkusers:
+    $ref: "./paths_gkuser.yaml#/organisation_gkusers"
+  /gkuser/orgs:
+    $ref: "./paths_gkuser.yaml#/gkuser_orgs"
+  /gkuser/pwd/question:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_question"
+  /gkuser/pwd/answer:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_answer"
+  /gkuser/pwd/reset:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_reset"
+  /gkuser/check/{username}:
+    $ref: "./paths_gkuser.yaml#/gkuser_username"
+
+  # invite api routes
+  /invite:
+    $ref: "./paths_invite.yaml#/invite"
+  /invite/accept:
+    $ref: "./paths_invite.yaml#/invite_accept"
+  /invite/reject:
+    $ref: "./paths_invite.yaml#/invite_reject"
+
+  # login api routes
+  /login/user:
+    $ref: "./paths_login.yaml#/login_user"
+  /login/org:
+    $ref: "./paths_login.yaml#/login_org"
+  # logs
   /log:
     $ref: "./logs/log.yaml"
   /log/dateRange:
     $ref: "./logs/dateRange.yaml"
+  # import / export
   /export/json:
     $ref: "./data/export-json.yaml"
   /import/json:
@@ -109,10 +158,12 @@ paths:
     $ref: "./data/export-xlsx.yaml"
   /import/xlsx:
     $ref: "./data/import-xlsx.yaml"
+  # accounts
   /accounts:
     $ref: "./accounts/index.yaml"
   /accounts/spreadsheet:
     $ref: "./accounts/spreadsheet.yaml"
+  # close books / roll over
   /closebooks:
     $ref: "./rollclose/closebooks.yaml"
   /rollover:
