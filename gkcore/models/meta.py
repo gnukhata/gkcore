@@ -37,6 +37,7 @@ from pyramid.request import Request
 
 # from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import metadata
+from gkcore.utils import gk_log
 
 
 def dbconnect():
@@ -113,9 +114,10 @@ def columnExists(tableName, columnName):
             return True
     return False
 
+
 def uniqueConstraintExists(tableName, constraints):
     gkInspect = PGInspector(dbconnect())
-    cols = map(lambda x: x['column_names'], gkInspect.get_unique_constraints(tableName))
+    cols = map(lambda x: x["column_names"], gkInspect.get_unique_constraints(tableName))
     exists = True
     col_names = list(cols)
     for constraint in constraints:
@@ -125,8 +127,7 @@ def uniqueConstraintExists(tableName, constraints):
         else:
             print(constraint)
     return exists
-            
-        
+
 
 def columnTypeMatches(tableName, columnName, columnType):
     gkInspect = PGInspector(dbconnect())
@@ -195,7 +196,7 @@ def gk_api(
         result = json.loads(request.invoke_subrequest(subreq).text)
         return result
     except Exception as e:
-        print(e)
+        gk_log(__name__).warn(f"gk_api(): {e}")
         raise
 
 

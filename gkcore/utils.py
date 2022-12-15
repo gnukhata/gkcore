@@ -1,9 +1,19 @@
+import logging
 import gkcore
 import jwt
 import traceback
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from Crypto.PublicKey import RSA
+
+
+def gk_log(name: str = __name__):
+    """
+    A wrapper around python's logging library, created for easy use across gkcore to log events
+    Supports all `logging` module's methods. First argument must be `__name__`
+    """
+    return logging.getLogger(name)
+
 
 def generateAuthToken(con, tokenItems, tokenType="userorg"):
     try:
@@ -40,6 +50,7 @@ def generateAuthToken(con, tokenItems, tokenType="userorg"):
     except:
         print(traceback.format_exc())
         return -1
+
 
 def userAuthCheck(token):
     """
