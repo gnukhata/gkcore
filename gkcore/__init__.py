@@ -52,17 +52,19 @@ enumdict = STATUS_CODES
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
-   
+
     # organisation api routes
     config.add_route("organisation", "/organisation")
     config.add_route("organisation_all", "/organisation/all")
     config.add_route("organisation_gstin", "/organisation/gstin")
     config.add_route("organisation_attachment", "/organisation/attachment")
     config.add_route("organisation_gst_accounts", "/organisation/gst_accounts")
-    config.add_route("organisation_gst_accounts_codes", "/organisation/gst_accounts/codes")
+    config.add_route(
+        "organisation_gst_accounts_codes", "/organisation/gst_accounts/codes"
+    )
     config.add_route("organisation_registration", "/organisation/check_registration")
     config.add_route("organisation_orgname", "/organisation/check/{orgname}")
-    
+
     # gkuser api routes
     config.add_route("gkuser", "/gkuser")
     config.add_route("organisation_gkusers", "/organisation/gkusers")
@@ -139,8 +141,16 @@ def main(global_config, **settings):
     # config.add_route("users", "/users") # legacy
     # config.add_route("user", "/user") # legacy
 
+    # reports
+    config.add_route("product-register", "/reports/product-register")
+    config.add_route("registers", "/reports/registers")
+
+    # spreadsheets
+    config.add_route("product-register-xlsx", "/spreadsheet/product-register")
+    config.add_route("registers-xlsx", "/spreadsheet/registers")
+
     config.scan("gkcore.views")
-    # include the pyramid pyramid-openapi3 plugin & it's config
+    # include the pyramid-openapi3 plugin & it's config
     config.include("pyramid_openapi3")
     config.add_static_view(name="spec", path="spec")
     config.pyramid_openapi3_spec_directory(

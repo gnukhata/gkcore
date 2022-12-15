@@ -168,3 +168,12 @@ paths:
     $ref: "./rollclose/closebooks.yaml"
   /rollover:
     $ref: "./rollclose/rollover.yaml"
+  # reports
+  /reports/product-register:
+    $ref: "./paths_reports.yaml#/product_register"
+
+  /reports/registers:
+    $ref: "./paths_reports.yaml#/view_registers"
+  # spreadsheets
+  /spreadsheet/product-register:
+    $ref: "./paths_spreadsheets.yaml#/product_register"

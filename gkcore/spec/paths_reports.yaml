@@ -1,0 +1,145 @@
+view_registers:
+  get:
+    tags: ["Reports"]
+    parameters:
+      - in: query
+        name: flag
+        required: true
+        schema:
+          type: integer
+        description: "`0`: Sale, `1`: Purchase"
+
+      - in: query
+        name: calculatefrom
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "DD-MM-YYYY"
+
+      - in: query
+        name: calculateto
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "DD-MM-YYYY"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      srno:
+                        type: integer
+                      invid:
+                        type: integer
+                      invoiceno:
+                        type: string
+                      invoicedate:
+                        type: string
+                      customername:
+                        type: string
+                      customertin:
+                        type: string
+                      grossamount:
+                        type: string
+                      taxfree:
+                        type: string
+                      tax:
+                        type: object
+                      taxamount:
+                        type: object
+                      icflag:
+                        type: integer
+                      custgstin:
+                        type: string
+                totalrow:
+                  type: object
+                taxcolumns:
+                  type: array
+                  items:
+                    type: string
+
+product_register:
+  get:
+    tags: ["Reports"]
+    summary: Product Register
+    parameters:
+      - in: query
+        name: goid
+        required: true
+        schema:
+          type: integer
+        description: "Godown ID"
+
+      - in: query
+        name: productcode
+        required: true
+        schema:
+          type: integer
+        description: "Product Code"
+
+      - in: query
+        name: startdate
+        required: true
+        schema:
+          type: integer
+          format: date
+        description: "YYYY-MM-DD"
+
+      - in: query
+        name: enddate
+        required: true
+        schema:
+          type: integer
+          format: date
+        description: "YYYY-MM-DD"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                      particulars:
+                        type: string
+                      trntype:
+                        type: string
+                      dcid:
+                        type: string
+                      dcno:
+                        type: string
+                      invid:
+                        type: string
+                      invno:
+                        type: string
+                      tnid:
+                        type: string
+                      tnno:
+                        type: string
+                      rnid:
+                        type: string
+                      rnno:
+                        type: string
+                      inward:
+                        type: string

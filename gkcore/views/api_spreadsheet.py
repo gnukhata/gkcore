@@ -63,7 +63,11 @@ class api_spreadsheet(object):
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
 
     # Reports
-    @view_config(request_method="GET", request_param="stock-report", renderer="json")
+    @view_config(
+        route_name="product-register-xlsx",
+        request_method="GET",
+        renderer="json",
+    )
     def psr(self):
         self.check_auth
         return sheets.stock_report.print_stock_report(self)

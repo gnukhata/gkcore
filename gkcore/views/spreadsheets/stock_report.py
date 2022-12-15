@@ -62,6 +62,8 @@ from openpyxl.styles import Font, Alignment
 # from io import BytesIO
 import io
 
+from gkcore.utils import gk_log
+
 
 def print_stock_report(self):
     try:
@@ -79,25 +81,22 @@ def print_stock_report(self):
         )
         scalculateto = datetime.strptime(calculateto, "%d-%m-%Y").strftime("%Y-%m-%d")
         productdesc = self.request.params["productdesc"]
-        if godownflag > 0:
+        if godownflag == 1:
             subreq = Request.blank(
-                "/report?type=godownstockreport&productcode=%d&startdate=%s&enddate=%s&goid=%d&godownflag=%d"
+                "/reports/product-register?productcode=%d&startdate=%s&enddate=%s&goid=%d&godownflag=%d"
                 % (productcode, scalculatefrom, scalculateto, goid, godownflag),
                 headers=header,
             )
             result = self.request.invoke_subrequest(subreq)
         else:
             subr = Request.blank(
-                "/report?type=stockreport&productcode=%d&startdate=%s&enddate=%s"
+                "/reports/product-register?productcode=%d&startdate=%s&enddate=%s"
                 % (productcode, scalculatefrom, scalculateto),
                 headers=header,
             )
             result = self.request.invoke_subrequest(subr)
         result = json.loads(result.text)["gkresult"]
         fystart = self.request.params["fystart"]
-        # fystart = datetime.strptime(
-        #     self.request.params["fystart"], "%Y-%m-%d"
-        # ).strftime("%d-%m-%Y")
         fyend = str(self.request.params["fyend"])
         orgname = str(self.request.params["orgname"])
         # A workbook is opened.

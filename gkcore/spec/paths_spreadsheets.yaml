@@ -1,0 +1,72 @@
+product_register:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export product register data into Spreadsheet(.xlsx) format
+    parameters:
+      - in: query
+        name: calculatefrom
+        required: true
+        description: Start date (DD-MM-YYYY)
+        schema:
+          type: string
+      - in: query
+        name: calculateto
+        description: End date (DD-MM-YYYY)
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: productcode
+        description: Product Code
+        required: true
+        schema:
+          type: integer
+      - in: query
+        name: productdesc
+        description: Product description
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: godownflag
+        description: godown flag
+        required: true
+        schema:
+          type: integer
+      - in: query
+        name: goid
+        description: godown id
+        required: true
+        schema:
+          type: integer
+      - in: query
+        name: goname
+        description: godown name
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: goaddr
+        description: godown address
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: fystart
+        description: financial year start (DD-MM-YYYY)
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: fyend
+        description: financial year end (DD-MM-YYYY)
+        required: true
+        schema:
+          type: string
+    responses:
+      "200":
+        description: Response with .xlsx file payload
+        content:
+          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+            schema:
+              format: binary

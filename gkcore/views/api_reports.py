@@ -7218,7 +7218,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=godownstockreport", renderer="json")
+    @view_config(route_name="product-register", renderer="json")
     def godownStockReport(self):
         """
         Purpose:
@@ -9318,7 +9318,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=register", renderer="json")
+    @view_config(route_name="registers", renderer="json")
     def register(self):
         """
         purpose: Takes input: i.e. either sales/purchase register and time period.
