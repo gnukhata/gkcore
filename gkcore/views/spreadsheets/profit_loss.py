@@ -56,11 +56,9 @@ def print_profit_loss(self):
 
     from
     to
-    orgtype
     fystart
     orgname
     orgtype
-
     """
     calculatefrom = self.request.params["from"]
     calculateto = self.request.params["to"]
@@ -70,7 +68,7 @@ def print_profit_loss(self):
     fyend = str(self.request.params["fyend"])
     orgname = str(self.request.params["orgname"])
     req = Request.blank(
-        "/report?type=profitloss&calculatefrom=%s&calculateto=%s"
+        "/reports/profit-loss?&calculatefrom=%s&calculateto=%s"
         % (calculatefrom, calculateto),
         headers=header,
     )
@@ -391,7 +389,9 @@ def print_profit_loss(self):
         row = row + 1
     sheet["C" + str(row)] = "Closing Stock"
     sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, italic=True)
-    sheet["D" + str(row)] = float("%.2f" % float(result["gkresult"]["Closing Stock"]))
+    sheet["D" + str(row)] = float(
+        "%.2f" % float(result["gkresult"]["Closing Stock"]["total"])
+    )
     sheet["D" + str(row)].number_format = "0.00"
     sheet["D" + str(row)].alignment = Alignment(horizontal="right")
     row = row + 1

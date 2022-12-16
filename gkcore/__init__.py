@@ -144,12 +144,14 @@ def main(global_config, **settings):
     # reports
     config.add_route("product-register", "/reports/product-register")
     config.add_route("registers", "/reports/registers")
+    config.add_route("profit-loss", "/reports/profit-loss")
 
     # spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
-    config.add_route("registers-xlsx", "/spreadsheet/registers")
+    config.add_route("profitloss-xlsx", "/spreadsheet/profit-loss")
 
     config.scan("gkcore.views")
+
     # include the pyramid-openapi3 plugin & it's config
     config.include("pyramid_openapi3")
     config.add_static_view(name="spec", path="spec")

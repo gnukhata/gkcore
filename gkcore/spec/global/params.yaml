@@ -1,0 +1,49 @@
+fystart:
+  in: query
+  name: fystart
+  required: true
+  description: "Financial Year Start (DD-MM-YYYY)"
+  schema:
+    type: string
+
+fyend:
+  in: query
+  name: fyend
+  required: true
+  description: "Financial Year End (DD-MM-YYYY)"
+  schema:
+    type: string
+
+orgname:
+  in: query
+  name: orgname
+  required: true
+  description: "name of the organisation"
+  schema:
+    type: string
+
+orgtype:
+  in: query
+  name: orgtype
+  required: true
+  description: "Type of organisation"
+  schema:
+    type: string
+
+from:
+  in: query
+  name: from
+  required: true
+  description: "YYYY-MM-DD"
+  schema:
+    type: string
+    format: date
+
+to:
+  in: query
+  name: to
+  required: true
+  description: "YYYY-MM-DD"
+  schema:
+    type: string
+    format: date

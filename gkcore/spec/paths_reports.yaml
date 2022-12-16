@@ -1,6 +1,61 @@
+profit_loss:
+  get:
+    tags: ["Reports"]
+    description: Profit loss report
+    parameters:
+      - in: query
+        name: calculatefrom
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "YYYY-MM-DD"
+
+      - in: query
+        name: calculateto
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "YYYY-MM-DD"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: object
+                  properties:
+                    Closing Stock:
+                      type: object
+                    Opening Stock:
+                      type: object
+                    Direct Expense:
+                      type: object
+                    Direct Income:
+                      type: object
+                    grossprofitcf:
+                      type: string
+                    totalD:
+                      type: string
+                    Indirect Expense:
+                      type: object
+                    Indirect Income:
+                      type: object
+                    netprofit:
+                      type: string
+                    Total:
+                      type: string
+
 view_registers:
   get:
     tags: ["Reports"]
+    description: Registers
     parameters:
       - in: query
         name: flag

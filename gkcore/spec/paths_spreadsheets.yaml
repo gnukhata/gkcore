@@ -1,3 +1,17 @@
+profit_loss:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export profit/loss data into Spreadsheet(.xlsx) format
+    parameters:
+      - $ref: "./global/params.yaml#/from"
+      - $ref: "./global/params.yaml#/to"
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
+    responses:
+      "200":
+        $ref: "./global/responses.yaml#/reports_xlsx"
 product_register:
   get:
     tags: ["Spreadsheets"]
@@ -51,22 +65,10 @@ product_register:
         required: true
         schema:
           type: string
-      - in: query
-        name: fystart
-        description: financial year start (DD-MM-YYYY)
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: fyend
-        description: financial year end (DD-MM-YYYY)
-        required: true
-        schema:
-          type: string
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
     responses:
       "200":
-        description: Response with .xlsx file payload
-        content:
-          application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-            schema:
-              format: binary
+        $ref: "./global/responses.yaml#/reports_xlsx"

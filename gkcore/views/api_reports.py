@@ -6066,7 +6066,7 @@ class api_reports(object):
         # self.con.close()
         # return {"gkstatus":enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=profitloss", renderer="json")
+    @view_config(route_name="profit-loss", renderer="json")
     def profitLoss(self):
         """
         This method returns a grid containing the profit and loss statement of the organisation.

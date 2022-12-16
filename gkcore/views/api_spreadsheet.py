@@ -70,6 +70,7 @@ class api_spreadsheet(object):
     )
     def psr(self):
         self.check_auth
+        print("generating spreadsheet")
         return sheets.stock_report.print_stock_report(self)
 
     @view_config(request_method="GET", request_param="trial-balance", renderer="json")
@@ -82,9 +83,10 @@ class api_spreadsheet(object):
         self.check_auth
         return sheets.product_service.product_service_list(self)
 
-    @view_config(request_method="GET", request_param="profit-loss", renderer="json")
+    @view_config(route_name="profitloss-xlsx", request_method="GET", renderer="json")
     def ppl(self):
         self.check_auth
+        print("p/l")
         return sheets.profit_loss.print_profit_loss(self)
 
     @view_config(request_method="GET", request_param="ledger", renderer="json")
