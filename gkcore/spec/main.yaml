@@ -177,6 +177,12 @@ paths:
     $ref: "./paths_reports.yaml#/profit_loss"
   /reports/balance-sheet:
     $ref: "./paths_reports.yaml#/balance_sheet"
+  /reports/trial-balance/gross:
+    $ref: "./paths_reports.yaml#/gross_trial_balance"
+  /reports/trial-balance/net:
+    $ref: "./paths_reports.yaml#/net_trial_balance"
+  /reports/trial-balance/extended:
+    $ref: "./paths_reports.yaml#/ext_trial_balance"
   # spreadsheets
   /spreadsheet/product-register:
     $ref: "./paths_spreadsheets.yaml#/product_register"
@@ -184,3 +190,5 @@ paths:
     $ref: "./paths_spreadsheets.yaml#/profit_loss"
   /spreadsheet/balance-sheet:
     $ref: "./paths_spreadsheets.yaml#/balance_sheet"
+  /spreadsheet/trial-balance:
+    $ref: "./paths_spreadsheets.yaml#/trial_balance"

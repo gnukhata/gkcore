@@ -73,7 +73,7 @@ class api_spreadsheet(object):
         print("generating spreadsheet")
         return sheets.stock_report.print_stock_report(self)
 
-    @view_config(request_method="GET", request_param="trial-balance", renderer="json")
+    @view_config(route_name="trial-balance-xlsx", request_method="GET", renderer="json")
     def ptb(self):
         self.check_auth
         return sheets.trial_balance.print_trial_balance(self)

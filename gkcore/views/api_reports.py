@@ -3636,7 +3636,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=nettrialbalance", renderer="json")
+    @view_config(route_name="net-trial-balance", renderer="json")
     def netTrialBalance(self):
         """
         Purpose:
@@ -3789,7 +3789,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=grosstrialbalance", renderer="json")
+    @view_config(route_name="gross-trial-balance", renderer="json")
     def grossTrialBalance(self):
         """
         Purpose:
@@ -3945,7 +3945,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=extendedtrialbalance", renderer="json")
+    @view_config(route_name="extended-trial-balance",renderer="json")
     def extendedTrialBalance(self):
         """
         Purpose:

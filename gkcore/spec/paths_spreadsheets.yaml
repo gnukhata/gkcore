@@ -1,3 +1,23 @@
+trial_balance:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export trial balance data into Spreadsheet(.xlsx) format
+    parameters:
+      - in: query
+        name: trialbalancetype
+        schema:
+          type: integer
+          enum: [1, 2, 3]
+        required: true
+        description: "Type: `1` - Net | `2` - Gross | `3` - Extended"
+      - $ref: "./global/params.yaml#/calculateto"
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
+    responses:
+      "200":
+        $ref: "./global/responses.yaml#/reports_xlsx"
 balance_sheet:
   get:
     tags: ["Spreadsheets"]

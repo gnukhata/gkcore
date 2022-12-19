@@ -29,6 +29,7 @@ orgtype:
   description: "Type of organisation"
   schema:
     type: string
+    enum: [Profit Making, Non Profit]
 
 from:
   in: query

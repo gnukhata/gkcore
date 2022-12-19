@@ -1,3 +1,132 @@
+ext_trial_balance:
+  get:
+    tags: ["Reports"]
+    summary: Extended Trial Balance
+    parameters:
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      accountcode:
+                        type: integer
+                      accountname:
+                        type: string
+                      groupname:
+                        type: string
+                      totaldr:
+                        type: string
+                      totalcr:
+                        type: string
+                      srno:
+                        type: integer
+                      openingbalance:
+                        type: string
+                      curbaldr:
+                        type: string
+                      curbalcr:
+                        type: string
+                      ttlRunDr:
+                        type: string
+                      ttlRunCr:
+                        type: string
+                      advflag:
+                        type: integer
+
+net_trial_balance:
+  get:
+    tags: ["Reports"]
+    summary: Net Trial Balance
+    parameters:
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      accountcode:
+                        type: integer
+                      accountname:
+                        type: string
+                      groupname:
+                        type: string
+                      srno:
+                        type: integer
+                      Dr:
+                        type: string
+                      Cr:
+                        type: string
+                      advflag:
+                        type: integer
+                      ttlRunDr:
+                        type: string
+                      ttlRunCr:
+                        type: string
+
+gross_trial_balance:
+  get:
+    tags: ["Reports"]
+    summary: Gross Trial Balance
+    parameters:
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      accountcode:
+                        type: integer
+                      accountname:
+                        type: string
+                      groupname:
+                        type: string
+                      Dr balance:
+                        type: string
+                      Cr balance:
+                        type: string
+                      srno:
+                        type: integer
+                      advflag:
+                        type: integer
+                      ttlRunDr:
+                        type: string
+                      ttlRunCr:
+                        type: string
+
 balance_sheet:
   get:
     tags: ["Reports"]
@@ -75,26 +204,14 @@ balance_sheet:
                             type: string
                           advflag:
                             type: string
+
 profit_loss:
   get:
     tags: ["Reports"]
     summary: Profit loss report
     parameters:
-      - in: query
-        name: calculatefrom
-        required: true
-        schema:
-          type: string
-          format: date
-        description: "YYYY-MM-DD"
-
-      - in: query
-        name: calculateto
-        required: true
-        schema:
-          type: string
-          format: date
-        description: "YYYY-MM-DD"
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
     responses:
       "200":
         description: ok

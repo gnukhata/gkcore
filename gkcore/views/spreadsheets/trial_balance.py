@@ -88,21 +88,21 @@ def print_trial_balance(self):
         result = {}
         if trialbalancetype == 1:
             subreq = Request.blank(
-                "/report?type=nettrialbalance&calculateto=%s&financialstart=%s"
+                "/reports/trial-balance/net?&calculateto=%s&financialstart=%s"
                 % (calculateto, financialstart),
                 headers=header,
             )
             result = self.request.invoke_subrequest(subreq)
         elif trialbalancetype == 2:
             subreq = Request.blank(
-                "/report?type=grosstrialbalance&calculateto=%s&financialstart=%s"
+                "/reports/trial-balance/gross?calculateto=%s&financialstart=%s"
                 % (calculateto, financialstart),
                 headers=header,
             )
             result = self.request.invoke_subrequest(subreq)
         elif trialbalancetype == 3:
             subreq = Request.blank(
-                "/report?type=extendedtrialbalance&calculateto=%s&financialstart=%s"
+                "/reports/trial-balance/extended?calculateto=%s&financialstart=%s"
                 % (calculateto, financialstart),
                 headers=header,
             )
@@ -263,54 +263,56 @@ def print_trial_balance(self):
                 sheet["B" + str(row)].font = Font(
                     name="Liberation Serif", size="12", bold=False
                 )
-                if record["totaldr"] != "":
-                    sheet["C" + str(row)] = float("%.2f" % float(record["totaldr"]))
-                    sheet["C" + str(row)].number_format = "0.00"
-                sheet["C" + str(row)].alignment = Alignment(horizontal="right")
-                sheet["C" + str(row)].font = Font(name="Liberation Serif", bold=False)
-                if record["totalcr"] != "":
-                    sheet["D" + str(row)] = float("%.2f" % float(record["totalcr"]))
-                    sheet["D" + str(row)].number_format = "0.00"
-                sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-                sheet["D" + str(row)].font = Font(name="Liberation Serif", bold=False)
-                if record["advflag"] == 1:
-                    if record["curbaldr"] != "":
-                        sheet["E" + str(row)] = float(
-                            "%.2f" % float(record["curbaldr"])
-                        )
-                        sheet["E" + str(row)].number_format = "0.00"
-                    sheet["E" + str(row)].alignment = Alignment(horizontal="right")
-                    sheet["E" + str(row)].font = Font(
-                        name="Liberation Serif", size="12", bold=True, color=RED
-                    )
-                    if record["curbalcr"] != "":
-                        sheet["F" + str(row)] = float(
-                            "%.2f" % float(record["curbalcr"])
-                        )
-                        sheet["F" + str(row)].number_format = "0.00"
-                    sheet["F" + str(row)].alignment = Alignment(horizontal="right")
-                    sheet["F" + str(row)].font = Font(
-                        name="Liberation Serif", size="12", bold=True, color=RED
-                    )
-                else:
-                    if record["curbaldr"] != "":
-                        sheet["E" + str(row)] = float(
-                            "%.2f" % float(record["curbaldr"])
-                        )
-                        sheet["E" + str(row)].number_format = "0.00"
-                    sheet["E" + str(row)].alignment = Alignment(horizontal="right")
-                    sheet["E" + str(row)].font = Font(
-                        name="Liberation Serif", size="12", bold=False
-                    )
-                    if record["curbalcr"] != "":
-                        sheet["F" + str(row)] = float(
-                            "%.2f" % float(record["curbalcr"])
-                        )
-                        sheet["F" + str(row)].number_format = "0.00"
-                    sheet["F" + str(row)].alignment = Alignment(horizontal="right")
-                    sheet["F" + str(row)].font = Font(
-                        name="Liberation Serif", size="12", bold=False
-                    )
+                # if record["totaldr"] != "":
+                #     sheet["C" + str(row)] = float("%.2f" % float(record["totaldr"]))
+                #     sheet["C" + str(row)].number_format = "0.00"
+                # sheet["C" + str(row)].alignment = Alignment(horizontal="right")
+                # sheet["C" + str(row)].font = Font(name="Liberation Serif", bold=False)
+                # if record["totalcr"] != "":
+                #     sheet["D" + str(row)] = float("%.2f" % float(record["totalcr"]))
+                #     sheet["D" + str(row)].number_format = "0.00"
+                # sheet["D" + str(row)].alignment = Alignment(horizontal="right")
+                # sheet["D" + str(row)].font = Font(name="Liberation Serif", bold=False)
+
+                # if record["advflag"] == 1:
+                #     if record["curbaldr"] != "":
+                #         sheet["E" + str(row)] = float(
+                #             "%.2f" % float(record["curbaldr"])
+                #         )
+                #         sheet["E" + str(row)].number_format = "0.00"
+                #     sheet["E" + str(row)].alignment = Alignment(horizontal="right")
+                #     sheet["E" + str(row)].font = Font(
+                #         name="Liberation Serif", size="12", bold=True, color=RED
+                #     )
+                #     if record["curbalcr"] != "":
+                #         sheet["F" + str(row)] = float(
+                #             "%.2f" % float(record["curbalcr"])
+                #         )
+                #         sheet["F" + str(row)].number_format = "0.00"
+                #     sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                #     sheet["F" + str(row)].font = Font(
+                #         name="Liberation Serif", size="12", bold=True, color=RED
+                #     )
+
+                # else:
+                #     if record["curbaldr"] != "":
+                #         sheet["E" + str(row)] = float(
+                #             "%.2f" % float(record["curbaldr"])
+                #         )
+                #         sheet["E" + str(row)].number_format = "0.00"
+                #     sheet["E" + str(row)].alignment = Alignment(horizontal="right")
+                #     sheet["E" + str(row)].font = Font(
+                #         name="Liberation Serif", size="12", bold=False
+                #     )
+                #     if record["curbalcr"] != "":
+                #         sheet["F" + str(row)] = float(
+                #             "%.2f" % float(record["curbalcr"])
+                #         )
+                #         sheet["F" + str(row)].number_format = "0.00"
+                #     sheet["F" + str(row)].alignment = Alignment(horizontal="right")
+                #     sheet["F" + str(row)].font = Font(
+                #         name="Liberation Serif", size="12", bold=False
+                #     )
                 sheet["G" + str(row)] = record["groupname"]
                 sheet["G" + str(row)].alignment = Alignment(horizontal="center")
                 sheet["G" + str(row)].font = Font(
