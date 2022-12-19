@@ -175,8 +175,12 @@ paths:
     $ref: "./paths_reports.yaml#/view_registers"
   /reports/profit-loss:
     $ref: "./paths_reports.yaml#/profit_loss"
+  /reports/balance-sheet:
+    $ref: "./paths_reports.yaml#/balance_sheet"
   # spreadsheets
   /spreadsheet/product-register:
     $ref: "./paths_spreadsheets.yaml#/product_register"
   /spreadsheet/profit-loss:
     $ref: "./paths_spreadsheets.yaml#/profit_loss"
+  /spreadsheet/balance-sheet:
+    $ref: "./paths_spreadsheets.yaml#/balance_sheet"

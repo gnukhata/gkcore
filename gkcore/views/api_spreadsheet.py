@@ -99,9 +99,7 @@ class api_spreadsheet(object):
         self.check_auth
         return sheets.ledger.monthly_ledger(self)
 
-    @view_config(
-        request_method="GET", request_param="type=conv_bal_sheet", renderer="json"
-    )
+    @view_config(request_method="GET", route_name="balance-sheet-xlsx", renderer="json")
     def bals(self):
         self.check_auth
         return sheets.balance_sheet.print_balance_sheet(self)

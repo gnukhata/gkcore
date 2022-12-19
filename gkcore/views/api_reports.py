@@ -4556,7 +4556,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=balancesheet", renderer="json")
+    @view_config(route_name="balance-sheet", renderer="json")
     def balanceSheet(self):
         """
         Purpose:

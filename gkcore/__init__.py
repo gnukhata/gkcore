@@ -145,10 +145,12 @@ def main(global_config, **settings):
     config.add_route("product-register", "/reports/product-register")
     config.add_route("registers", "/reports/registers")
     config.add_route("profit-loss", "/reports/profit-loss")
+    config.add_route("balance-sheet", "/reports/balance-sheet")
 
     # spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
     config.add_route("profitloss-xlsx", "/spreadsheet/profit-loss")
+    config.add_route("balance-sheet-xlsx", "/spreadsheet/balance-sheet")
 
     config.scan("gkcore.views")
 

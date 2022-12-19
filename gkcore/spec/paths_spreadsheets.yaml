@@ -1,3 +1,24 @@
+balance_sheet:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export profit/loss data into Spreadsheet(.xlsx) format
+    parameters:
+      - in: query
+        name: baltype
+        schema:
+          type: integer
+          enum: [1]
+        required: true
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
+    responses:
+      "200":
+        $ref: "./global/responses.yaml#/reports_xlsx"
+
 profit_loss:
   get:
     tags: ["Spreadsheets"]
@@ -12,6 +33,7 @@ profit_loss:
     responses:
       "200":
         $ref: "./global/responses.yaml#/reports_xlsx"
+
 product_register:
   get:
     tags: ["Spreadsheets"]

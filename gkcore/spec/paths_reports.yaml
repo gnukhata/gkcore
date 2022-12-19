@@ -1,7 +1,84 @@
+balance_sheet:
+  get:
+    tags: ["Reports"]
+    summary: Balance sheet
+    parameters:
+      - in: query
+        name: calculatefrom
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "YYYY-MM-DD"
+      - in: query
+        name: calculateto
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "YYYY-MM-DD"
+      - in: query
+        name: baltype
+        required: true
+        schema:
+          type: integer
+          enum: [1]
+        description: balance type
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: object
+                  properties:
+                    leftlist:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          groupAccname:
+                            type: string
+                          amount:
+                            type: string
+                          groupAcccode:
+                            type: string
+                          subgroupof:
+                            type: string
+                          accountof:
+                            type: string
+                          groupAccflag:
+                            type: string
+                          advflag:
+                            type: string
+                    rightlist:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          groupAccname:
+                            type: string
+                          amount:
+                            type: string
+                          groupAcccode:
+                            type: string
+                          subgroupof:
+                            type: string
+                          accountof:
+                            type: string
+                          groupAccflag:
+                            type: string
+                          advflag:
+                            type: string
 profit_loss:
   get:
     tags: ["Reports"]
-    description: Profit loss report
+    summary: Profit loss report
     parameters:
       - in: query
         name: calculatefrom
@@ -55,7 +132,7 @@ profit_loss:
 view_registers:
   get:
     tags: ["Reports"]
-    description: Registers
+    summary: Registers
     parameters:
       - in: query
         name: flag

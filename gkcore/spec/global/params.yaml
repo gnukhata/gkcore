@@ -47,3 +47,21 @@ to:
   schema:
     type: string
     format: date
+
+calculatefrom:
+  in: query
+  name: calculatefrom
+  required: true
+  description: "YYYY-MM-DD"
+  schema:
+    type: string
+    format: date
+
+calculateto:
+  in: query
+  name: calculateto
+  required: true
+  description: "YYYY-MM-DD"
+  schema:
+    type: string
+    format: date
