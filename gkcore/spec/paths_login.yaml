@@ -12,7 +12,7 @@ login_user:
             properties:
               username:
                 type: string
-              password:
+              userpassword:
                 type: string
     responses:
       200:
