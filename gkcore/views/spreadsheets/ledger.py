@@ -73,7 +73,7 @@ def ledger_report(self):
         result = None
         if projectcode == "":
             result = gk_api(
-                "/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode="
+                "/reports/ledger?accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode="
                 % (accountcode, calculatefrom, calculateto, fystart),
                 header,
                 self.request,
@@ -81,7 +81,7 @@ def ledger_report(self):
             # result = self.request.invoke_subrequest(subreq)
         else:
             result = gk_api(
-                "/report?type=ledger&accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"
+                "/reports/ledger?accountcode=%d&calculatefrom=%s&calculateto=%s&financialstart=%s&projectcode=%d"
                 % (accountcode, calculatefrom, calculateto, fystart, int(projectcode)),
                 header,
                 self.request,
@@ -329,7 +329,7 @@ def monthly_ledger(self):
         orgname = str(self.request.params["orgname"])
         header = {"gktoken": self.request.headers["gktoken"]}
         subreq = Request.blank(
-            "/report?type=monthlyledger&accountcode=%d" % (accountcode),
+            "/reports/ledger/monthly?&accountcode=%d" % (accountcode),
             headers=header,
         )
         # result = result.json()["gkresult"]
@@ -461,6 +461,6 @@ def monthly_ledger(self):
         }
         # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx', 'Set-Cookie':'fileDownload=true; path=/'}
         return Response(contents, headerlist=list(headerList.items()))
-    except:
-        print("File not found")
+    except Exception as e:
+        print(e)
         return {"gkstatus": 3}

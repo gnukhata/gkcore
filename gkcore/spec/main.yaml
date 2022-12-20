@@ -183,6 +183,12 @@ paths:
     $ref: "./paths_reports.yaml#/net_trial_balance"
   /reports/trial-balance/extended:
     $ref: "./paths_reports.yaml#/ext_trial_balance"
+  /reports/ledger:
+    $ref: "./paths_reports.yaml#/ledger"
+  /reports/ledger/monthly:
+    $ref: "./paths_reports.yaml#/ledger_monthly"
+  /reports/ledger/crdr:
+    $ref: "./paths_reports.yaml#/ledger_drcr"
   # spreadsheets
   /spreadsheet/product-register:
     $ref: "./paths_spreadsheets.yaml#/product_register"
@@ -192,3 +198,7 @@ paths:
     $ref: "./paths_spreadsheets.yaml#/balance_sheet"
   /spreadsheet/trial-balance:
     $ref: "./paths_spreadsheets.yaml#/trial_balance"
+  /spreadsheet/ledger:
+    $ref: "./paths_spreadsheets.yaml#/ledger"
+  /spreadsheet/ledger/monthly:
+    $ref: "./paths_spreadsheets.yaml#/ledger_monthly"

@@ -2827,7 +2827,7 @@ class api_reports(object):
         self.request = request
         self.con = Connection
 
-    @view_config(request_param="type=monthlyledger", renderer="json")
+    @view_config(route_name="ledger-monthly", renderer="json")
     def monthlyLedger(self):
         """
         Purpose:
@@ -3053,7 +3053,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=ledger", renderer="json")
+    @view_config(route_name="ledger", renderer="json")
     def ledger(self):
         """
         Purpose:
@@ -3409,7 +3409,7 @@ class api_reports(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_param="type=crdrledger", renderer="json")
+    @view_config(route_name="ledger-crdr", renderer="json")
     def crdrledger(self):
         try:
             token = self.request.headers["gktoken"]

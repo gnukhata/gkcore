@@ -149,12 +149,17 @@ def main(global_config, **settings):
     config.add_route("gross-trial-balance", "/reports/trial-balance/gross")
     config.add_route("net-trial-balance", "/reports/trial-balance/net")
     config.add_route("extended-trial-balance", "/reports/trial-balance/extended")
+    config.add_route("ledger-monthly", "/reports/ledger/monthly")
+    config.add_route("ledger", "/reports/ledger")
+    config.add_route("ledger-crdr", "/reports/ledger/crdr")
 
     # spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
     config.add_route("profitloss-xlsx", "/spreadsheet/profit-loss")
     config.add_route("balance-sheet-xlsx", "/spreadsheet/balance-sheet")
     config.add_route("trial-balance-xlsx", "/spreadsheet/trial-balance")
+    config.add_route("ledger-monthly-xlsx", "/spreadsheet/ledger/monthly")
+    config.add_route("ledger-xlsx", "/spreadsheet/ledger")
 
     config.scan("gkcore.views")
 

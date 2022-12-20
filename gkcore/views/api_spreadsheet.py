@@ -89,12 +89,14 @@ class api_spreadsheet(object):
         print("p/l")
         return sheets.profit_loss.print_profit_loss(self)
 
-    @view_config(request_method="GET", request_param="ledger", renderer="json")
+    @view_config(request_method="GET", route_name="ledger-xlsx", renderer="json")
     def led(self):
         self.check_auth
         return sheets.ledger.ledger_report(self)
 
-    @view_config(request_method="GET", request_param="ledger-monthly", renderer="json")
+    @view_config(
+        request_method="GET", route_name="ledger-monthly-xlsx", renderer="json"
+    )
     def ledm(self):
         self.check_auth
         return sheets.ledger.monthly_ledger(self)

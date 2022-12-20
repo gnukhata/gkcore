@@ -1,3 +1,133 @@
+ledger_drcr:
+  get:
+    tags: ["Reports"]
+    summary: Filter ledger by Debit/Credit Entries
+    parameters:
+      - $ref: "./global/params.yaml#/accountcode"
+      - $ref: "./global/params.yaml#/projectcode"
+      - in: query
+        name: financialstart
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "Financial year starting date (YYYY-MM-DD)"
+
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  $ref: "./global/schemas.yaml#/ledger_gkresult"
+                userrole:
+                  type: integer
+                ledgerheader:
+                  type: object
+                  properties:
+                    accountname:
+                      type: string
+                    projectname:
+                      type: string
+                    calculateto:
+                      type: string
+                    calculatefrom:
+                      type: string
+
+ledger:
+  get:
+    tags: ["Reports"]
+    summary: Ledger
+    parameters:
+      - $ref: "./global/params.yaml#/accountcode"
+      - $ref: "./global/params.yaml#/projectcode"
+      - in: query
+        name: financialstart
+        required: true
+        schema:
+          type: string
+          format: date
+        description: "Financial year starting date (YYYY-MM-DD)"
+
+      - $ref: "./global/params.yaml#/calculatefrom"
+      - $ref: "./global/params.yaml#/calculateto"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  $ref: "./global/schemas.yaml#/ledger_gkresult"
+                userrole:
+                  type: integer
+                ledgerheader:
+                  type: object
+                  properties:
+                    accountname:
+                      type: string
+                    projectname:
+                      type: string
+                    calculateto:
+                      type: string
+                    calculatefrom:
+                      type: string
+
+ledger_monthly:
+  get:
+    tags: ["Reports"]
+    summary: Monthly Ledger
+    parameters:
+      - $ref: "./global/params.yaml#/accountcode"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      month:
+                        type: string
+                      Dr:
+                        type: string
+                      Cr:
+                        type: string
+                      period:
+                        type: string
+                      vcount:
+                        type: integer
+                      vcountDr:
+                        type: integer
+                      vcountCr:
+                        type: integer
+                      vcountLock:
+                        type: integer
+                      advflag:
+                        type: integer
+                accountcode:
+                  type: string
+                accountname:
+                  type: string
+
 ext_trial_balance:
   get:
     tags: ["Reports"]

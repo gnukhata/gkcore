@@ -66,3 +66,26 @@ calculateto:
   schema:
     type: string
     format: date
+
+accountcode:
+  in: query
+  name: accountcode
+  required: true
+  schema:
+    type: integer
+  description: "Account Code"
+
+accname:
+  in: query
+  name: accname
+  required: true
+  schema:
+    type: string
+  description: "Account name"
+
+projectcode:
+  in: query
+  name: projectcode
+  description: "project code (optional)"
+  schema:
+    type: integer

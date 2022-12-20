@@ -1,3 +1,41 @@
+ledger_gkresult:
+  type: array
+  items:
+    type: object
+    properties:
+      vouchercode:
+        type: integer
+      vouchernumber:
+        type: string
+      voucherdate:
+        type: string
+      narration:
+        type: string
+      status:
+        type: boolean
+      vouchertype:
+        type: string
+      advflag:
+        type: string
+      Dr:
+        type: string
+      Cr:
+        type: string
+      particulars:
+        type: array
+        items:
+          type: object
+          properties:
+            accountname:
+              type: string
+            balance:
+              type: string
+            ttlRunDr:
+              type: string
+            ttlRunCr:
+              type: string
+            dcinfo:
+              type: string
 token:
   type: string
   format: byte

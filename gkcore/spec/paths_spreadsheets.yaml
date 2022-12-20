@@ -1,3 +1,35 @@
+ledger_monthly:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export Monthly Ledger data into Spreadsheet(.xlsx) format
+    parameters:
+      - $ref: "./global/params.yaml#/accountcode"
+      - $ref: "./global/params.yaml#/accname"
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
+    responses:
+      "200":
+        $ref: "./global/responses.yaml#/reports_xlsx"
+ledger:
+  get:
+    tags: ["Spreadsheets"]
+    summary: Export Ledger data into Spreadsheet(.xlsx) format
+    parameters:
+      - $ref: "./global/params.yaml#/accountcode"
+      - $ref: "./global/params.yaml#/projectcode"
+      - $ref: "./global/params.yaml#/calculateto"
+      - $ref: "./global/params.yaml#/orgname"
+      - $ref: "./global/params.yaml#/orgtype"
+      - $ref: "./global/params.yaml#/fystart"
+      - $ref: "./global/params.yaml#/fyend"
+      - $ref: "./global/params.yaml#/from"
+      - $ref: "./global/params.yaml#/to"
+    responses:
+      "200":
+        $ref: "./global/responses.yaml#/reports_xlsx"
+
 trial_balance:
   get:
     tags: ["Spreadsheets"]
@@ -18,6 +50,7 @@ trial_balance:
     responses:
       "200":
         $ref: "./global/responses.yaml#/reports_xlsx"
+
 balance_sheet:
   get:
     tags: ["Spreadsheets"]
