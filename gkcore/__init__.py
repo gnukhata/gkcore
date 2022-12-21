@@ -86,6 +86,18 @@ def main(global_config, **settings):
     config.add_route("login_user", "/login/user")
     config.add_route("login_org", "/login/org")
 
+    # product api routes
+    config.add_route("product", "/product")
+    config.add_route("product_tax", "/product/tax")
+    config.add_route("product_check_gst", "/product/check/gst")
+    config.add_route("product_hsn", "/product/hsn")
+    config.add_route("product_stock", "/product/stock")
+    config.add_route("product_lastprice", "/product/lastprice")
+    config.add_route("godown_product", "/godown/product/{productcode}")
+    config.add_route("product_godown", "/product/godown/{godownid}")
+    config.add_route("product_category", "/product/category/{categorycode}")
+    config.add_route("product_productcode", "/product/{productcode}")
+
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")
     config.add_route("categoryspecs", "/categoryspecs")
@@ -110,7 +122,6 @@ def main(global_config, **settings):
     config.add_route("rollclose", "/rollclose")
     config.add_route("forgotpassword", "/forgotpassword")
     config.add_route("categories", "/categories")
-    config.add_route("products", "/products")
     config.add_route("godown", "/godown")
     config.add_route("delchal", "/delchal")
     config.add_route("purchaseorder", "/purchaseorder")

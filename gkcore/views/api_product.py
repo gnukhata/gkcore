@@ -50,7 +50,8 @@ from datetime import datetime, date
 from time import strftime, strptime
 import traceback
 
-@view_defaults(route_name="products")
+
+@view_defaults(route_name="product")
 class api_product(object):
     def __init__(self, request):
         self.request = Request
@@ -233,7 +234,10 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_param="qty=single", request_method="GET", renderer="json")
+    # request_param="qty=single",
+    @view_config(
+        route_name="product_productcode", request_method="GET", renderer="json"
+    )
     def getProduct(self):
         try:
             token = self.request.headers["gktoken"]
@@ -245,9 +249,10 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
+                productCode = self.request.matchdict["productcode"]
                 result = self.con.execute(
                     select([gkdb.product]).where(
-                        gkdb.product.c.productcode == self.request.params["productcode"]
+                        gkdb.product.c.productcode == productCode
                     )
                 )
                 row = result.fetchone()
@@ -267,7 +272,7 @@ class api_product(object):
                     prod_countinv = self.con.execute(
                         "SELECT (contents ::json)->'%s' is NULL FROM invoice where orgcode ='%d'"
                         % (
-                            (str(self.request.params["productcode"])),
+                            (str(productCode)),
                             (int(authDetails["orgcode"])),
                         )
                     ).fetchall()
@@ -277,7 +282,7 @@ class api_product(object):
                         prod_purch = self.con.execute(
                             "SELECT (schedule ::json)->'%s' is NULL FROM purchaseorder where orgcode ='%d'"
                             % (
-                                (str(self.request.params["productcode"])),
+                                (str(productCode)),
                                 (int(authDetails["orgcode"])),
                             )
                         ).fetchall()
@@ -296,7 +301,7 @@ class api_product(object):
                     prod_countinstock = self.con.execute(
                         "select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"
                         % (
-                            (str(self.request.params["productcode"])),
+                            (str(productCode)),
                             (int(authDetails["orgcode"])),
                         )
                     )
@@ -309,7 +314,7 @@ class api_product(object):
                         prod_countinpuchaseorder = self.con.execute(
                             "select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"
                             % (
-                                (str(self.request.params["productcode"])),
+                                (str(productCode)),
                                 (int(authDetails["orgcode"])),
                             )
                         )
@@ -330,7 +335,9 @@ class api_product(object):
                     productDetails["gsflag"] = row["gsflag"]
                     productDetails["unitname"] = unitrow["unitname"]
                     productDetails["openingstock"] = "%.2f" % float(row["openingstock"])
-                    userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                    userrole = getUserRole(
+                        authDetails["userid"], authDetails["orgcode"]
+                    )
                     if int(userrole["gkresult"]["userrole"]) != 3:
                         godownswithstock = self.con.execute(
                             select(
@@ -339,10 +346,7 @@ class api_product(object):
                                         "numberofgodowns"
                                     )
                                 ]
-                            ).where(
-                                gkdb.goprod.c.productcode
-                                == self.request.params["productcode"]
-                            )
+                            ).where(gkdb.goprod.c.productcode == productCode)
                         )
                         godowns = godownswithstock.fetchone()
                         numberofgodowns = godowns["numberofgodowns"]
@@ -353,8 +357,7 @@ class api_product(object):
                             godownswithstock = self.con.execute(
                                 select([gkdb.goprod.c.goid]).where(
                                     and_(
-                                        gkdb.goprod.c.productcode
-                                        == self.request.params["productcode"],
+                                        gkdb.goprod.c.productcode == productCode,
                                         gkdb.goprod.c.goid == usergodown["goid"],
                                     )
                                 )
@@ -379,7 +382,8 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="type=pt", renderer="json")
+    # request_param="type=pt",
+    @view_config(request_method="GET", route_name="product_tax", renderer="json")
     def getTaxForProduct(self):
         """
         Purpose: returns either VAT or GST for a selected product based on product code and state.
@@ -415,7 +419,8 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="by=category", renderer="json")
+    # request_param="by=category",
+    @view_config(request_method="GET", route_name="product_category", renderer="json")
     def getProductbyCategory(self):
         try:
             token = self.request.headers["gktoken"]
@@ -427,7 +432,8 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
-                if self.request.params["categorycode"] == "":
+                categoryCode = self.request.matchdict["categorycode"]
+                if categoryCode == "":
                     result = self.con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
@@ -437,10 +443,7 @@ class api_product(object):
                     result = self.con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
-                        ).where(
-                            gkdb.product.c.categorycode
-                            == self.request.params["categorycode"]
-                        )
+                        ).where(gkdb.product.c.categorycode == categoryCode)
                     )
                 prodlist = []
                 for row in result:
@@ -456,7 +459,8 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="by=godown", renderer="json")
+    # , request_param="by=godown"
+    @view_config(request_method="GET", route_name="godown_product", renderer="json")
     def getProductbyGodown(self):
         try:
             token = self.request.headers["gktoken"]
@@ -468,7 +472,7 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
-                productcode = self.request.params["productcode"]
+                productcode = self.request.matchdict["productcode"]
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 if int(userrole["gkresult"]["userrole"]) != 3:
                     result = self.con.execute(
@@ -479,7 +483,8 @@ class api_product(object):
                         goDownDetails = {
                             "goid": row["goid"],
                             "goopeningstock": "%.2f" % float(row["goopeningstock"]),
-                            "openingstockvalue": "%.2f" % float(row["openingstockvalue"]),
+                            "openingstockvalue": "%.2f"
+                            % float(row["openingstockvalue"]),
                             "productcode": row["productcode"],
                         }
                         godowns.append(goDownDetails)
@@ -514,7 +519,7 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="from=godown", renderer="json")
+    @view_config(request_method="GET", route_name="product_godown", renderer="json")
     def getProductfromGodown(self):
         try:
             token = self.request.headers["gktoken"]
@@ -526,7 +531,7 @@ class api_product(object):
         else:
             try:
                 self.con = eng.connect()
-                goid = self.request.params["godownid"]
+                goid = self.request.matchdict["godownid"]
                 result = self.con.execute(
                     select(
                         [
@@ -683,7 +688,7 @@ class api_product(object):
     In this case a new record is created in "goprod" table.
     """
 
-    @view_config(request_method="PUT", renderer="json")
+    @view_config(request_method="PUT", route_name="product_productcode", renderer="json")
     def editProduct(self):
         try:
             token = self.request.headers["gktoken"]
@@ -696,10 +701,10 @@ class api_product(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                productCode = self.request.matchdict["productcode"]
                 productDetails = dataset["productdetails"]
 
                 godownFlag = dataset["godownflag"]
-                productCode = productDetails["productcode"]
                 pn = self.con.execute(
                     select([gkdb.product.c.productdesc]).where(
                         gkdb.product.c.productcode == productCode
@@ -708,7 +713,7 @@ class api_product(object):
                 prodName = pn.fetchone()
                 result = self.con.execute(
                     gkdb.product.update()
-                    .where(gkdb.product.c.productcode == productDetails["productcode"])
+                    .where(gkdb.product.c.productcode == productCode)
                     .values(productDetails)
                 )
                 if godownFlag:
@@ -723,7 +728,7 @@ class api_product(object):
                     )
                     ttlOpening = 0.0
                     for goId in list(goDetails.keys()):
-                        goDetail =  goDetails[goId]
+                        goDetail = goDetails[goId]
                         if type(goDetail) != dict:
                             goDetail = {"qty": goDetail, "rate": 0}
                         ttlOpening = ttlOpening + float(goDetail["qty"])
@@ -778,7 +783,7 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(request_method="DELETE", route_name="product_productcode", renderer="json")
     def deleteProduct(self):
         try:
             token = self.request.headers["gktoken"]
@@ -829,7 +834,8 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="tax=vatorgst", renderer="json")
+    # request_param="tax=vatorgst",
+    @view_config(request_method="GET", route_name="product_check_gst", renderer="json")
     def getvatorgst(self):
         """
         Purpose:
@@ -946,8 +952,8 @@ class api_product(object):
     """
     This function is written for fetching the HSN code, UOM automatically when product is selected.
     """
-
-    @view_config(request_method="GET", request_param="type=hsnuom", renderer="json")
+    # request_param="type=hsnuom",
+    @view_config(request_method="GET", route_name="product_hsn", renderer="json")
     def gethsnuom(self):
         try:
             token = self.request.headers["gktoken"]
@@ -990,7 +996,8 @@ class api_product(object):
     This is a function for saving opening stock for the selected product
     """
 
-    @view_config(request_method="POST", request_param="type=addstock", renderer="json")
+    # request_param="type=addstock",
+    @view_config(request_method="POST", route_name="product_stock", renderer="json")
     def addstock(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1029,8 +1036,8 @@ class api_product(object):
     Another query retrives the contents of the invoice whose invid is same as the result of the above query.
     Price is found out from the contents using productcode as key and sent as response.
     """
-
-    @view_config(request_param="type=lastprice", request_method="GET", renderer="json")
+    # request_param="type=lastprice",
+    @view_config(route_name="product_lastprice", request_method="GET", renderer="json")
     def lastPrice(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1064,4 +1071,3 @@ class api_product(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
-
