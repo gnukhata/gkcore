@@ -53,7 +53,7 @@ enumdict = STATUS_CODES
 def main(global_config, **settings):
     config = Configurator(settings=settings)
 
-    # organisation api routes
+    # organisation
     config.add_route("organisation", "/organisation")
     config.add_route("organisation_all", "/organisation/all")
     config.add_route("organisation_gstin", "/organisation/gstin")
@@ -65,7 +65,7 @@ def main(global_config, **settings):
     config.add_route("organisation_registration", "/organisation/check_registration")
     config.add_route("organisation_orgname", "/organisation/check/{orgname}")
 
-    # gkuser api routes
+    # gkuser
     config.add_route("gkuser", "/gkuser")
     config.add_route("organisation_gkusers", "/organisation/gkusers")
     config.add_route("gkuser_orgs", "/gkuser/orgs")
@@ -77,16 +77,16 @@ def main(global_config, **settings):
     config.add_route("gkuser_users_of_role", "/gkuser/all/role/{userrole}")
     config.add_route("gkuser_uname", "/gkuser/check/{username}")
 
-    # invite api routes
+    # invite
     config.add_route("invite", "/invite")
     config.add_route("invite_accept", "/invite/accept")
     config.add_route("invite_reject", "/invite/reject")
 
-    # login api routes
+    # login
     config.add_route("login_user", "/login/user")
     config.add_route("login_org", "/login/org")
 
-    # product api routes
+    # product
     config.add_route("product", "/product")
     config.add_route("product_tax", "/product/tax")
     config.add_route("product_check_gst", "/product/check/gst")
@@ -97,6 +97,10 @@ def main(global_config, **settings):
     config.add_route("product_godown", "/product/godown/{godownid}")
     config.add_route("product_category", "/product/category/{categorycode}")
     config.add_route("product_productcode", "/product/{productcode}")
+
+    # tax
+    config.add_route("tax", "/tax")
+    config.add_route("tax2", "/tax2")
 
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")
@@ -127,8 +131,6 @@ def main(global_config, **settings):
     config.add_route("purchaseorder", "/purchaseorder")
     config.add_route("transfernote", "/transfernote")
     config.add_route("discrepancynote", "/discrepancynote")
-    config.add_route("tax", "/tax")
-    config.add_route("tax2", "/tax2")
     config.add_route("log", "/log")
     config.add_route("logSort", "/log/dateRange")
     config.add_route("rejectionnote", "/rejectionnote")

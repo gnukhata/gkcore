@@ -97,7 +97,7 @@ paths:
                           type: string
                         state_abbr:
                           type: string
-  # organisation api routes
+  # organisation
   /organisation:
     $ref: "./paths_organisation.yaml#/organisation"
   /organisation/all:
@@ -115,7 +115,7 @@ paths:
   /organisation/check/{orgname}:
     $ref: "./paths_organisation.yaml#/organisation_orgname"
 
-  # gkuser api routes
+  # gkuser
   /gkuser:
     $ref: "./paths_gkuser.yaml#/gkuser"
   /organisation/gkusers:
@@ -131,7 +131,7 @@ paths:
   /gkuser/check/{username}:
     $ref: "./paths_gkuser.yaml#/gkuser_username"
 
-  # invite api routes
+  # invite
   /invite:
     $ref: "./paths_invite.yaml#/invite"
   /invite/accept:
@@ -139,11 +139,34 @@ paths:
   /invite/reject:
     $ref: "./paths_invite.yaml#/invite_reject"
 
-  # login api routes
+  # login
   /login/user:
     $ref: "./paths_login.yaml#/login_user"
   /login/org:
     $ref: "./paths_login.yaml#/login_org"
+
+# product
+  /product:
+    $ref: "./paths_product.yaml#/product"
+  /product/tax:
+    $ref: "./paths_product.yaml#/product_tax"
+  /product/{productcode}:
+    $ref: "./paths_product.yaml#/product_productcode"
+  /product/check/gst:
+    $ref: "./paths_product.yaml#/product_check_gst"
+  /product/hsn:
+    $ref: "./paths_product.yaml#/product_hsn"
+  /product/stock:
+    $ref: "./paths_product.yaml#/product_stock"
+  /product/lastprice:
+    $ref: "./paths_product.yaml#/product_lastprice"
+  /godown/product/{productcode}:
+    $ref: "./paths_product.yaml#/godown_product"
+  /product/godown/{godownid}:
+    $ref: "./paths_product.yaml#/product_godown"
+  /product/category/{categorycode}:
+    $ref: "./paths_product.yaml#/product_category"
+  
   # logs
   /log:
     $ref: "./logs/log.yaml"

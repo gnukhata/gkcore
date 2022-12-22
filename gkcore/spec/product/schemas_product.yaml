@@ -1,0 +1,105 @@
+# used when sending a list of products from the server
+productListDetails:
+  type: object
+  additionalProperties: false
+  properties:
+    srno:
+      type: integer
+    unitname:
+      type: string
+    categoryname:
+      type: string
+    productcode:
+      type: integer
+    productdesc:
+      type: string
+    categorycode:
+      type: integer
+    productquantity:
+      type: integer
+    gsflag:
+      type: integer
+
+productDetails:
+  type: object
+  additionalProperties: false
+  properties:
+    discountpercent:
+      type: number
+    discountamount:
+      type: number
+    productcode:
+      type: integer
+    productdesc:
+      type: string
+    gsflag:
+      type: integer
+    gscode:
+      type: integer
+    deletable:
+      type: string
+    prodsp:
+      type: number
+    prodmrp:
+      type: number
+    specs:
+      type: string
+    categorycode:
+      type: integer
+    uomid:
+      type: integer
+    unitname:
+      type: string
+    openingstock:
+      type: number
+
+# used for creating and editing a product
+productInDetails:
+  type: object
+  properties:
+    productdesc:
+      type: string
+    prodmrp:
+      type: number
+    prodsp:
+      type: number
+    amountdiscount:
+      type: number
+    percentdiscount:
+      type: number
+    gscode:
+      type: string
+    gsflag:
+      type: integer
+    specs:
+      type: string
+    openingstock:
+      type: number
+      description: legacy property, use godowndetails to store opening stock godownwise
+    uomid:
+      type: integer
+    categorycode:
+      type: integer
+
+godownDetails:
+  type: object
+  additionalProperties:
+    type: object
+    description: Keys are godown ids
+    properties:
+      qty:
+        type: number
+      rate:
+        type: number
+  example: { 1: { qty: 1, rate: 5 }, 2: { qty: 2.5, rate: 6.12 } }
+
+# used for creating and editing a product
+productPayload:
+  type: object
+  properties:
+    productdetails:
+      $ref: "#/productInDetails"
+    godetails:
+      $ref: "#/godownDetails"
+    godownflag:
+      type: boolean  
