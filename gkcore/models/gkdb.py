@@ -1088,41 +1088,12 @@ transfernote = Table(
 )
 
 
-"""table to store tax
-This taxex would be vat , gst etc. For particular product and category (mutually exelusive)"""
-tax = Table(
-    "tax",
-    metadata,
-    Column("taxid", Integer, primary_key=True),
-    Column("taxname", UnicodeText, nullable=False),
-    Column("taxrate", Numeric(5, 2)),
-    Column("state", UnicodeText),
-    Column(
-        "productcode", Integer, ForeignKey("product.productcode", ondelete="CASCADE")
-    ),
-    Column(
-        "categorycode",
-        Integer,
-        ForeignKey("categorysubcategories.categorycode", ondelete="CASCADE"),
-    ),
-    Column(
-        "orgcode",
-        Integer,
-        ForeignKey("organisation.orgcode", ondelete="CASCADE"),
-        nullable=False,
-    ),
-    UniqueConstraint("state", "taxname", "productcode", "orgcode"),
-    UniqueConstraint("state", "taxname", "categorycode", "orgcode"),
-    Index("taxindex", "productcode", "taxname"),
-    Index("tax_taxindex", "categorycode", "taxname"),
-)
-
 """
 table to store tax for products along with the time they are valid for
 This taxex would be vat , gst etc. For particular product and category (mutually exelusive)
 """
-tax2 = Table(
-    "tax2",
+tax = Table(
+    "tax",
     metadata,
     Column("taxid", Integer, primary_key=True),
     Column("taxname", UnicodeText, nullable=False),
@@ -1148,8 +1119,8 @@ tax2 = Table(
     UniqueConstraint(
         "taxname", "state", "taxrate", "taxfromdate", "productcode", "orgcode"
     ),
-    Index("taxindex2", "productcode", "taxname"),
-    Index("tax_taxindex2", "categorycode", "taxname"),
+    Index("taxindex", "productcode", "taxname"),
+    Index("tax_taxindex", "categorycode", "taxname"),
 )
 
 """Table to store Log of users

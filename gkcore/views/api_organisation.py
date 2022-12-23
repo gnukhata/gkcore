@@ -1577,10 +1577,52 @@ class api_organisation(object):
                 self.con.execute(
                     "alter table organisation add orgconf jsonb default '{}'"
                 )
-            if not tableExists("tax2"):
+
+            if tableExists("tax2"):
+                # A table called tax2 was created for dev purpose and was in use for a while, so rename this table if it exists
+                if tableExists("tax"):
+                    oldTaxLength = self.con.execute(
+                        "select COUNT(taxid) as count from tax"
+                    ).fetchone()
+                    newTaxLength = self.con.execute(
+                        "select COUNT(taxid) as count from tax2"
+                    ).fetchone()
+                    if oldTaxLength["count"] > 0 and newTaxLength["count"] == 0:
+                        # If tax2 table was created but the data in tax was not migrated to tax2
+                        # delete tax2 table and just add the column taxfromdate to table tax and add org yearstart dates in that column
+                        self.con.execute("drop table if exists tax2")
+                        self.con.execute("alter table tax add taxfromdate date")
+
+                        orgs = self.con.execute(
+                            "select orgcode, yearstart, yearend from organisation"
+                        ).fetchall()
+                        dates = {}
+                        for org in orgs:
+                            dates[org["orgcode"]] = {
+                                "from": org["yearstart"],
+                                "to": org["yearend"],
+                            }
+
+                        taxes = self.con.execute("select orgcode from tax").fetchall()
+                        for tax in taxes:
+                            from_date = dates[tax["orgcode"]]["from"]
+                            to_date = dates[tax["orgcode"]]["to"]
+                            self.con.execute(
+                                "insert into tax(taxfromdate)values('%s')"
+                                % (str(from_date),)
+                            )
+                    else:
+                        self.con.execute("drop table if exists tax")
+                # If the table tax didn't exists rename tax2 to tax and rename the indexes
+                self.con.execute("alter table if exists tax2 rename to tax")
+                self.con.execute("alter index if exists taxindex2 rename to taxindex")
                 self.con.execute(
-                    "create table if not exists tax2( taxid serial, taxname text NOT NULL, taxrate numeric(5,2) NOT NULL, taxfromdate date NOT NULL, state text, productcode integer, categorycode integer, orgcode integer NOT NULL, primary key (taxid),foreign key (productcode) references product(productcode) ON DELETE CASCADE,foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, foreign key (categorycode) references categorysubcategories(categorycode) ON DELETE CASCADE, unique(taxname, state, taxrate, taxfromdate, productcode, orgcode))"
+                    "alter index if exists tax_taxindex2 rename to tax_taxindex"
                 )
+            elif tableExists("tax") and (not columnExists("tax", "taxfromdate")):
+                # If the old tax table did not have taxfromdate column, add the column and fill it with org yearstart dates
+                self.con.execute("alter table tax add taxfromdate date")
+
                 orgs = self.con.execute(
                     "select orgcode, yearstart, yearend from organisation"
                 ).fetchall()
@@ -1591,27 +1633,14 @@ class api_organisation(object):
                         "to": org["yearend"],
                     }
 
-                taxes = self.con.execute("select * from tax").fetchall()
+                taxes = self.con.execute("select orgcode from tax").fetchall()
                 for tax in taxes:
                     from_date = dates[tax["orgcode"]]["from"]
                     to_date = dates[tax["orgcode"]]["to"]
                     self.con.execute(
-                        "insert into tax2(taxname, taxrate, taxfromdate, state, productcode, categorycode, orgcode)values('%s', %0.2f, '%s', '%s', %s, %s, %s)"
-                        % (
-                            str(tax["taxname"]),
-                            float(tax["taxrate"]),
-                            str(from_date),
-                            str(tax["state"] or ""),
-                            str(tax["productcode"] or "null"),
-                            str(tax["categorycode"] or "null"),
-                            str(tax["orgcode"]),
-                        )
+                        "insert into tax(taxfromdate)values('%s')" % (str(from_date),)
                     )
-            else:
-                if not columnTypeMatches("tax2", "taxfromdate", DATE):
-                    self.con.execute(
-                        "alter table tax2 alter column taxfromdate type date"
-                    )
+
             if not columnExists("invoice", "supinvno"):
                 self.con.execute("alter table invoice add supinvno text")
             if not columnExists("invoice", "supinvdate"):

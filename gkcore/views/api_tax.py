@@ -47,6 +47,7 @@ from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
+from gkcore.views.api_gkuser import getUserRole
 
 
 def gstAccName(con, taxname, taxrate, orgcode):
@@ -344,19 +345,12 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
                 )
-                userRole = user.fetchone()
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
-                    or userRole["userrole"] == 3
-                ):
+                if userRole == -1 or userRole == 1 or userRole == 0 or userRole == 3:
                     dataset["orgcode"] = authDetails["orgcode"]
                     result = self.con.execute(tax.insert(), [dataset])
                     # In case of gst and cess create tax accounts
@@ -401,7 +395,13 @@ class api_tax(object):
                 if self.request.params["pscflag"] == "p":
                     result = self.con.execute(
                         select(
-                            [tax.c.taxid, tax.c.taxname, tax.c.taxrate, tax.c.state]
+                            [
+                                tax.c.taxid,
+                                tax.c.taxname,
+                                tax.c.taxrate,
+                                tax.c.taxfromdate,
+                                tax.c.state,
+                            ]
                         ).where(tax.c.productcode == self.request.params["productcode"])
                     )
                     tx = []
@@ -412,13 +412,21 @@ class api_tax(object):
                                 "taxname": row["taxname"],
                                 "taxrate": "%.2f" % float(row["taxrate"]),
                                 "state": row["state"],
+                                "taxfromdate": str(row["taxfromdate"]),
                             }
                         )
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
 
                 if self.request.params["pscflag"] == "s":
                     result = self.con.execute(
-                        select([tax.c.taxid, tax.c.taxname, tax.c.taxrate]).where(
+                        select(
+                            [
+                                tax.c.taxid,
+                                tax.c.taxname,
+                                tax.c.taxrate,
+                                tax.c.taxfromdate,
+                            ]
+                        ).where(
                             and_(
                                 tax.c.productcode == self.request.params["productcode"],
                                 tax.c.state == self.request.params["state"],
@@ -432,6 +440,7 @@ class api_tax(object):
                                 "taxid": row["taxid"],
                                 "taxname": row["taxname"],
                                 "taxrate": "%.2f" % float(row["taxrate"]),
+                                "taxfromdate": str(row["taxfromdate"]),
                             }
                         )
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
@@ -440,7 +449,13 @@ class api_tax(object):
                 if self.request.params["pscflag"] == "c":
                     result = self.con.execute(
                         select(
-                            [tax.c.taxid, tax.c.taxname, tax.c.taxrate, tax.c.state]
+                            [
+                                tax.c.taxid,
+                                tax.c.taxname,
+                                tax.c.taxrate,
+                                tax.c.state,
+                                tax.c.taxfromdate,
+                            ]
                         ).where(
                             tax.c.categorycode == self.request.params["categorycode"]
                         )
@@ -453,6 +468,7 @@ class api_tax(object):
                                 "taxname": row["taxname"],
                                 "taxrate": "%.2f" % float(row["taxrate"]),
                                 "state": row["state"],
+                                "taxfromdate": str(row["taxfromdate"]),
                             }
                         )
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
@@ -467,7 +483,7 @@ class api_tax(object):
                     if catcoderow["categorycode"] != None:
                         if "state" in self.request.params:
                             result = self.con.execute(
-                                select([tax.c.taxrate]).where(
+                                select([tax.c.taxrate, tax.c.taxfromdate]).where(
                                     and_(
                                         tax.c.categorycode
                                         == catcoderow["categorycode"],
@@ -477,10 +493,14 @@ class api_tax(object):
                             )
                             if result.rowcount > 0:
                                 taxrow = result.fetchone()
-                                tx = taxrow["taxrate"]
+                                # tx = taxrow["taxrate"]
+                                tx = {
+                                    "taxrate": taxrow["taxrate"],
+                                    "taxfromdate": str(taxrow["taxfromdate"]),
+                                }
                         else:
                             result = self.con.execute(
-                                select([tax.c.taxrate]).where(
+                                select([tax.c.taxrate, tax.c.taxfromdate]).where(
                                     and_(
                                         tax.c.categorycode
                                         == catcoderow["categorycode"],
@@ -490,11 +510,15 @@ class api_tax(object):
                             )
                             if result.rowcount > 0:
                                 taxrow = result.fetchone()
-                                tx = taxrow["taxrate"]
+                                # tx = taxrow["taxrate"]
+                                tx = {
+                                    "taxrate": taxrow["taxrate"],
+                                    "taxfromdate": str(taxrow["taxfromdate"]),
+                                }
                     else:
                         if "state" in self.request.params:
                             result = self.con.execute(
-                                select([tax.c.taxrate]).where(
+                                select([tax.c.taxrate, tax.c.taxfromdate]).where(
                                     and_(
                                         tax.c.productcode
                                         == self.request.params["productcode"],
@@ -504,10 +528,14 @@ class api_tax(object):
                             )
                             if result.rowcount > 0:
                                 taxrow = result.fetchone()
-                                tx = taxrow["taxrate"]
+                                # tx = taxrow["taxrate"]
+                                tx = {
+                                    "taxrate": taxrow["taxrate"],
+                                    "taxfromdate": str(taxrow["taxfromdate"]),
+                                }
                         else:
                             result = self.con.execute(
-                                select([tax.c.taxrate]).where(
+                                select([tax.c.taxrate, tax.c.taxfromdate]).where(
                                     and_(
                                         tax.c.productcode
                                         == self.request.params["productcode"],
@@ -517,7 +545,11 @@ class api_tax(object):
                             )
                             if result.rowcount > 0:
                                 taxrow = result.fetchone()
-                                tx = taxrow["taxrate"]
+                                # tx = taxrow["taxrate"]
+                                tx = {
+                                    "taxrate": taxrow["taxrate"],
+                                    "taxfromdate": str(taxrow["taxfromdate"]),
+                                }
                     return {
                         "gkstatus": enumdict["Success"],
                         "gkresult": "%.2f" % float(tx),
@@ -553,6 +585,7 @@ class api_tax(object):
                             "taxid": row["taxid"],
                             "taxname": row["taxname"],
                             "taxrate": "%.2f" % float(row["taxrate"]),
+                            "taxfromdate": row["taxfromdate"],
                             "state": row["state"],
                             "categorycode": row["categorycode"],
                             "productcode": row["productcode"],
@@ -582,19 +615,12 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
                 )
-                userRole = user.fetchone()
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
-                ):
-
+                if userRole == -1 or userRole == 1 or userRole == 0:
                     result = self.con.execute(
                         tax.update()
                         .where(tax.c.taxid == dataset["taxid"])
@@ -621,19 +647,12 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                user = self.con.execute(
-                    select([users.c.userrole]).where(
-                        users.c.userid == authDetails["userid"]
-                    )
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
                 )
-                userRole = user.fetchone()
+                userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
-                if (
-                    userRole["userrole"] == -1
-                    or userRole["userrole"] == 1
-                    or userRole["userrole"] == 0
-                    or userRole["userrole"] == 3
-                ):
+                if userRole == -1 or userRole == 1 or userRole == 0 or userRole == 3:
                     result = self.con.execute(
                         tax.delete().where(tax.c.taxid == dataset["taxid"])
                     )
