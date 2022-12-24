@@ -100,7 +100,9 @@ def main(global_config, **settings):
 
     # tax
     config.add_route("tax", "/tax")
-    config.add_route("tax2", "/tax2")
+    config.add_route("tax_search", "/tax/search/{pscflag}")
+    config.add_route("tax_taxid", "/tax/{taxid}")
+
 
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")

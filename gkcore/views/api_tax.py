@@ -352,6 +352,13 @@ class api_tax(object):
                 dataset = self.request.json_body
                 if userRole == -1 or userRole == 1 or userRole == 0 or userRole == 3:
                     dataset["orgcode"] = authDetails["orgcode"]
+                    if "taxfromdate" not in dataset:
+                        orgData = self.con.execute(
+                            select([organisation.c.yearstart]).where(
+                                organisation.c.orgcode == authDetails["orgcode"]
+                            )
+                        ).fetchone()
+                        dataset["taxfromdate"] = orgData["yearstart"]
                     result = self.con.execute(tax.insert(), [dataset])
                     # In case of gst and cess create tax accounts
                     if dataset["taxname"] != "VAT":
@@ -371,7 +378,7 @@ class api_tax(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="pscflag", renderer="json")
+    @view_config(route_name="tax_search", request_method="GET", renderer="json")
     def getprodtax(self):
         """
         This method will return the list of taxes for a product or a category.
@@ -392,7 +399,8 @@ class api_tax(object):
         else:
             try:
                 self.con = eng.connect()
-                if self.request.params["pscflag"] == "p":
+                pscFlag = self.request.matchdict["pscflag"]
+                if pscFlag == "p":
                     result = self.con.execute(
                         select(
                             [
@@ -417,7 +425,7 @@ class api_tax(object):
                         )
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
 
-                if self.request.params["pscflag"] == "s":
+                if pscFlag == "s":
                     result = self.con.execute(
                         select(
                             [
@@ -446,7 +454,7 @@ class api_tax(object):
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
                     self.con.close()
 
-                if self.request.params["pscflag"] == "c":
+                if pscFlag == "c":
                     result = self.con.execute(
                         select(
                             [
@@ -472,7 +480,7 @@ class api_tax(object):
                             }
                         )
                     return {"gkstatus": enumdict["Success"], "gkresult": tx}
-                if self.request.params["pscflag"] == "i":
+                if pscFlag == "i":
                     result = self.con.execute(
                         select([product.c.categorycode]).where(
                             product.c.productcode == self.request.params["productcode"]
@@ -651,11 +659,9 @@ class api_tax(object):
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
-                dataset = self.request.json_body
+                taxid = self.request.matchdict["taxid"]
                 if userRole == -1 or userRole == 1 or userRole == 0 or userRole == 3:
-                    result = self.con.execute(
-                        tax.delete().where(tax.c.taxid == dataset["taxid"])
-                    )
+                    result = self.con.execute(tax.delete().where(tax.c.taxid == taxid))
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     {"gkstatus": enumdict["BadPrivilege"]}

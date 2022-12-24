@@ -167,6 +167,14 @@ paths:
   /product/category/{categorycode}:
     $ref: "./paths_product.yaml#/product_category"
   
+# tax
+  /tax:
+    $ref: "./paths_tax.yaml#/tax"
+  /tax/search/{pscflag}:
+    $ref: "./paths_tax.yaml#/tax_search"
+  /tax/{taxid}:
+    $ref: "./paths_tax.yaml#/tax_taxid"
+
   # logs
   /log:
     $ref: "./logs/log.yaml"
