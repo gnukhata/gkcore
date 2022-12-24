@@ -1,7 +1,7 @@
 product:
   get:
-    tags: ["Product"]
-    summary: Fetch all products belonging to an organisation
+    tags: ["Product & Service"]
+    summary: Fetch all products/services belonging to an organisation
     operationId: getAllProducts
     responses:
       "200":
@@ -20,7 +20,7 @@ product:
                     $ref: "./product/schemas_product.yaml#/productListDetails"
 
   post:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Create a new product
     operationId: addProduct
     requestBody:
@@ -45,8 +45,8 @@ product:
 
 product_productcode:
   get:
-    tags: ["Product"]
-    summary: Get a product's data
+    tags: ["Product & Service"]
+    summary: Get a product's/service's data
     operationId: getProduct
     parameters:
       - $ref: "./product/params_product.yaml#/productcode"
@@ -66,8 +66,8 @@ product_productcode:
                 numberofgodowns:
                   type: integer
   put:
-    tags: ["Product"]
-    summary: Edit a product's data
+    tags: ["Product & Service"]
+    summary: Edit a product's/service's data
     operationId: editProduct
     parameters:
       - $ref: "./product/params_product.yaml#/productcode"
@@ -88,8 +88,8 @@ product_productcode:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
   delete:
-    tags: ["Product"]
-    summary: Delete a product
+    tags: ["Product & Service"]
+    summary: Delete a product/service
     operationId: deleteProduct
     parameters:
       - $ref: "./product/params_product.yaml#/productcode"
@@ -115,8 +115,8 @@ product_productcode:
 
 product_tax:
   get:
-    tags: ["Product"]
-    summary: Returns either VAT or GST for a selected product based on product code and state.
+    tags: ["Product & Service"]
+    summary: Returns either VAT or GST for a selected product/service based on product code and state.
     operationId: getTaxForProduct
     parameters:
       - in: query
@@ -172,7 +172,7 @@ product_tax:
                           type: number
 product_check_gst:
   get:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Determine what kind of tax will be applible to the goods of corresponding organisation
     operationId: getvatorgst
     responses:
@@ -190,8 +190,8 @@ product_check_gst:
                   type: integer
 product_hsn:
   get:
-    tags: ["Product"]
-    summary: Fetches the HSN code, UOM automatically when a product is selected
+    tags: ["Product & Service"]
+    summary: Fetches the HSN code, UOM automatically when a product/service is selected
     operationId: gethsnuom
     parameters:
       - in: query
@@ -219,7 +219,7 @@ product_hsn:
                       type: integer
 product_stock:
   post:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Saves the opening stock for a selected product
     operationId: addstock
     requestBody:
@@ -251,7 +251,7 @@ product_stock:
 
 product_lastprice:
   get:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Fetches the last price for which a product was sold/purchased to/from a party
     operationId: lastPrice
     parameters:
@@ -286,7 +286,7 @@ product_lastprice:
 
 godown_product:
   get:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Fetches the opening stock of a product from godowns its a part of
     operationId: getProductbyGodown
     parameters:
@@ -324,7 +324,7 @@ godown_product:
                         type: integer
 product_godown:
   get:
-    tags: ["Product"]
+    tags: ["Product & Service"]
     summary: Fetches the opening stock of products from a specified godown
     operationId: getProductfromGodown
     parameters:
@@ -360,8 +360,8 @@ product_godown:
 
 product_category:
   get:
-    tags: ["Product"]
-    summary: Fetch the products belonging to a given category
+    tags: ["Product & Service"]
+    summary: Fetch the products/services belonging to a given category
     operationId: getProductbyCategory
     parameters:
       - in: path
