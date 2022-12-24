@@ -50,7 +50,7 @@ def getStateCode(StateName, con):
     return {"statecode": staterow["statecode"]}
 
 
-@view_defaults(route_name="customersupplier")
+@view_defaults(route_name="customer")
 class api_customer(object):
     def __init__(self, request):
         self.request = Request
@@ -58,7 +58,7 @@ class api_customer(object):
         self.con = Connection
 
     @view_config(request_method="POST", renderer="json")
-    def addCustomer(self):
+    def addCustomerSupplier(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -75,7 +75,8 @@ class api_customer(object):
                 custid = self.con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
                         and_(
-                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
+                            gkdb.customerandsupplier.c.orgcode
+                            == authDetails["orgcode"],
                             gkdb.customerandsupplier.c.custname == dataset["custname"],
                         )
                     )
@@ -122,7 +123,8 @@ class api_customer(object):
             finally:
                 self.con.close()
 
-    @view_config(request_param="qty=single", request_method="GET", renderer="json")
+    # route_name="customer_custid",
+    @view_config(route_name="customer_custid", request_method="GET", renderer="json")
     def getCustomerSupplier(self):
         """
         this function returns details on one customer or supplier.
@@ -138,10 +140,10 @@ class api_customer(object):
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.params
+                custid = self.request.matchdict["custid"]
                 result = self.con.execute(
                     select([gkdb.customerandsupplier]).where(
-                        gkdb.customerandsupplier.c.custid == dataset["custid"]
+                        gkdb.customerandsupplier.c.custid == custid
                     )
                 )
                 row = result.fetchone()
@@ -202,84 +204,7 @@ class api_customer(object):
             finally:
                 self.con.close()
 
-    @view_config(request_param="acc=single", request_method="GET", renderer="json")
-    def getCustSupacc(self):
-        """
-        this function returns details on one customer or supplier.
-        the request parameter determines that there is only single entity to be returned.
-        """
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.params
-                result = self.con.execute(
-                    select([gkdb.customerandsupplier]).where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode
-                            == authDetails["orgcode"],
-                            gkdb.customerandsupplier.c.custname == dataset["custname"],
-                        )
-                    )
-                )
-                row = result.fetchone()
-                Customer = {}
-                if row != None:
-                    if row["bankdetails"] == None:
-                        bankdetails = ""
-                    else:
-                        bankdetails = row["bankdetails"]
-
-                    statelist = []
-                    if row["gstin"] != None and bool(row["gstin"]):
-                        for statecd in row["gstin"]:
-                            statedata = self.con.execute(
-                                select(
-                                    [gkdb.state.c.statename, gkdb.state.c.statecode]
-                                ).where(gkdb.state.c.statecode == statecd)
-                            )
-                            statename = statedata.fetchone()
-                            statelist.append(
-                                {statename["statecode"]: statename["statename"]}
-                            )
-                    else:
-                        custsupstatecode = getStateCode(row["state"], self.con)[
-                            "statecode"
-                        ]
-                        statelist.append({custsupstatecode: row["state"]})
-
-                    Customer = {
-                        "custid": row["custid"],
-                        "custname": row["custname"],
-                        "custaddr": row["custaddr"],
-                        "custphone": row["custphone"],
-                        "custemail": row["custemail"],
-                        "custfax": row["custfax"],
-                        "custpan": row["custpan"],
-                        "custtan": row["custtan"],
-                        "state": row["state"],
-                        "custdoc": row["custdoc"],
-                        "csflag": row["csflag"],
-                        "gstin": row["gstin"],
-                        "pincode": row["pincode"],
-                        "bankdetails": bankdetails,
-                        "statelist": statelist,
-                        "gst_reg_type": row["gst_reg_type"],
-                        "gst_party_type": row["gst_party_type"],
-                    }
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-    @view_config(request_method="PUT", renderer="json")
+    @view_config(route_name="customer_custid", request_method="PUT", renderer="json")
     def editCustomerSupplier(self):
         try:
             token = self.request.headers["gktoken"]
@@ -399,7 +324,7 @@ class api_customer(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(route_name="customer_custid", request_method="DELETE", renderer="json")
     def deleteCustomer(self):
         try:
             token = self.request.headers["gktoken"]
@@ -411,10 +336,10 @@ class api_customer(object):
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.json_body
                 result = self.con.execute(
                     gkdb.customerandsupplier.delete().where(
-                        gkdb.customerandsupplier.c.custid == dataset["custid"]
+                        gkdb.customerandsupplier.c.custid
+                        == self.request.matchdict["custid"]
                     )
                 )
                 return {"gkstatus": enumdict["Success"]}
@@ -425,8 +350,89 @@ class api_customer(object):
             finally:
                 self.con.close()
 
-    @view_config(request_param="by=account", request_method="GET", renderer="json")
-    def getCustomerSupplieraccount(self):
+    @view_config(
+        route_name="customer_search_by_name", request_method="GET", renderer="json"
+    )
+    def getCustSupByName(self):
+        """
+        this function returns details on one customer or supplier.
+        the request parameter determines that there is only single entity to be returned.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                custname = self.request.matchdict["custname"]
+                result = self.con.execute(
+                    select([gkdb.customerandsupplier]).where(
+                        and_(
+                            gkdb.customerandsupplier.c.orgcode
+                            == authDetails["orgcode"],
+                            gkdb.customerandsupplier.c.custname == custname,
+                        )
+                    )
+                )
+                row = result.fetchone()
+                Customer = {}
+                if row != None:
+                    if row["bankdetails"] == None:
+                        bankdetails = ""
+                    else:
+                        bankdetails = row["bankdetails"]
+
+                    statelist = []
+                    if row["gstin"] != None and bool(row["gstin"]):
+                        for statecd in row["gstin"]:
+                            statedata = self.con.execute(
+                                select(
+                                    [gkdb.state.c.statename, gkdb.state.c.statecode]
+                                ).where(gkdb.state.c.statecode == statecd)
+                            )
+                            statename = statedata.fetchone()
+                            statelist.append(
+                                {statename["statecode"]: statename["statename"]}
+                            )
+                    else:
+                        custsupstatecode = getStateCode(row["state"], self.con)[
+                            "statecode"
+                        ]
+                        statelist.append({custsupstatecode: row["state"]})
+
+                    Customer = {
+                        "custid": row["custid"],
+                        "custname": row["custname"],
+                        "custaddr": row["custaddr"],
+                        "custphone": row["custphone"],
+                        "custemail": row["custemail"],
+                        "custfax": row["custfax"],
+                        "custpan": row["custpan"],
+                        "custtan": row["custtan"],
+                        "state": row["state"],
+                        "custdoc": row["custdoc"],
+                        "csflag": row["csflag"],
+                        "gstin": row["gstin"],
+                        "pincode": row["pincode"],
+                        "bankdetails": bankdetails,
+                        "statelist": statelist,
+                        "gst_reg_type": row["gst_reg_type"],
+                        "gst_party_type": row["gst_party_type"],
+                    }
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    @view_config(
+        route_name="customer_search_by_account", request_method="GET", renderer="json"
+    )
+    def getCustomerSupplierByAccount(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -437,13 +443,13 @@ class api_customer(object):
         else:
             try:
                 self.con = eng.connect()
+                accountcode = self.request.matchdict["accountcode"]
                 # there is only one possibility for a catch which is failed connection to db.
                 result = self.con.execute(
                     select([gkdb.accounts.c.accountname]).where(
                         and_(
                             gkdb.accounts.c.orgcode == authDetails["orgcode"],
-                            gkdb.accounts.c.accountcode
-                            == self.request.params["accountcode"],
+                            gkdb.accounts.c.accountcode == accountcode,
                         )
                     )
                 )

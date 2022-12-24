@@ -103,6 +103,11 @@ def main(global_config, **settings):
     config.add_route("tax_search", "/tax/search/{pscflag}")
     config.add_route("tax_taxid", "/tax/{taxid}")
 
+    # customer
+    config.add_route("customer", "/customer")
+    config.add_route("customer_search_by_account", "/customer/search/account/{accountcode}")
+    config.add_route("customer_search_by_name", "/customer/search/name/{custname}")
+    config.add_route("customer_custid", "/customer/{custid}")
 
     config.add_route("invoice", "/invoice")
     config.add_route("budget", "/budget")
@@ -115,7 +120,6 @@ def main(global_config, **settings):
     config.add_route("account", "/account/{accountcode}")
     config.add_route("projects", "/projects")
     config.add_route("project", "/project/{projectcode}")
-    config.add_route("customersupplier", "/customersupplier")
     config.add_route("unitofmeasurement", "/unitofmeasurement")
     config.add_route("accountsbyrule", "/accountsbyrule")
     config.add_route("groupallsubgroup", "/groupallsubgroup/{groupcode}")

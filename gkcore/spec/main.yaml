@@ -145,7 +145,7 @@ paths:
   /login/org:
     $ref: "./paths_login.yaml#/login_org"
 
-# product
+  # product (Product & Service)
   /product:
     $ref: "./paths_product.yaml#/product"
   /product/tax:
@@ -166,14 +166,24 @@ paths:
     $ref: "./paths_product.yaml#/product_godown"
   /product/category/{categorycode}:
     $ref: "./paths_product.yaml#/product_category"
-  
-# tax
+
+  # tax
   /tax:
     $ref: "./paths_tax.yaml#/tax"
   /tax/search/{pscflag}:
     $ref: "./paths_tax.yaml#/tax_search"
   /tax/{taxid}:
     $ref: "./paths_tax.yaml#/tax_taxid"
+
+  # customer (Customer & Supplier)
+  /customer: 
+    $ref: "./paths_customer.yaml#/customer"
+  /customer/search/account/{accountcode}:
+    $ref: "./paths_customer.yaml#/customer_search_by_account"
+  /customer/search/name/{custname}:
+    $ref: "./paths_customer.yaml#/customer_search_by_name"
+  /customer/{custid}:
+    $ref: "./paths_customer.yaml#/customer_custid"
 
   # logs
   /log:
