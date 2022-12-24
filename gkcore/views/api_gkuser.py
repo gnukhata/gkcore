@@ -167,10 +167,10 @@ class api_gkuser(object):
                 result = self.con.execute(
                     select(
                         [
-                            gkdb.users.c.username,
-                            gkdb.users.c.userid,
+                            gkdb.gkusers.c.username,
+                            gkdb.gkusers.c.userid,
                         ]
-                    ).where(gkdb.users.c.userid == userid)
+                    ).where(gkdb.gkusers.c.userid == userid)
                 )
                 row = result.fetchone()
                 userData = {
@@ -268,7 +268,7 @@ class api_gkuser(object):
                                     User["userroleName"] = "Godown In Charge"
                                     usgo = self.con.execute(
                                         select([gkdb.usergodown.c.goid]).where(
-                                            gkdb.users.c.userid == userId
+                                            gkdb.gkusers.c.userid == userId
                                         )
                                     )
                                     goids = usgo.fetchall()
@@ -650,8 +650,8 @@ class api_gkuser(object):
                 result = self.con.execute(
                     select([gkdb.gkusers.c.userid]).where(
                         and_(
-                            gkdb.users.c.username == dataset["username"],
-                            gkdb.users.c.userpassword == dataset["userpassword"],
+                            gkdb.gkusers.c.username == dataset["username"],
+                            gkdb.gkusers.c.userpassword == dataset["userpassword"],
                         )
                     )
                 )
