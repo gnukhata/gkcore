@@ -104,13 +104,13 @@ class api_hsn(object):
 
         # search result handling
         try:
-            search_term = self.request.params["search"].lower()
+            search_term: str = self.request.params["search"].lower()
             search_results = []
 
             for obj in self.codes:
 
                 desc_occurances = re.findall(search_term, obj["hsn_desc"].lower())
-                code_occurances = re.findall(search_term, obj["hsn_code"].lower())
+                code_occurances = re.findall(search_term, str(obj["hsn_code"]))
 
                 if len(desc_occurances) > 0:
                     search_results.append(obj)
