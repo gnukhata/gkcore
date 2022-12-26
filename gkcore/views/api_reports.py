@@ -2003,7 +2003,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                 {
                     "srno": 1,
                     "productname": prodName,
-                    # "productcode": prodCode,
+                    "productcode": prodCode,
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(openingStock),
@@ -2459,9 +2459,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
         return -1
 
 
-def godownwisestockonhandfun(
-    con, orgcode, startDate, endDate, stocktype, productCode, godownCode
-):
+def godownwisestockonhandfun(con, orgcode, startDate, endDate, stocktype, productCode, godownCode):
     try:
         con = eng.connect()
         stockReport = []
