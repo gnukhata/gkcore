@@ -68,7 +68,7 @@ class api_hsn(object):
         # eval the given hsn code
         try:
             for code in self.codes:
-                if self.request.params["validate"] == code["hsn_code"]:
+                if self.request.params["validate"] == str(code["hsn_code"]):
                     return {"gkstatus": 0, "gkresult": code}
             else:
                 return {"gkstatus": 3}
