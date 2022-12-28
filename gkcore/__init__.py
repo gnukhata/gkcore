@@ -109,7 +109,18 @@ def main(global_config, **settings):
     config.add_route("customer_search_by_name", "/customer/search/name/{custname}")
     config.add_route("customer_custid", "/customer/{custid}")
 
+    # invoice 
     config.add_route("invoice", "/invoice")
+    config.add_route("invoice_list", "/invoice/list")
+    config.add_route("invoice_list_rectify", "/invoice/list/rectify")
+    config.add_route("invoice_nonrejected", "/invoice/nonrejected")
+    config.add_route("invoice_id", "/invoice/id")
+    config.add_route("cashmemo", "/cashmemo")
+    config.add_route("delnote_unbilled", "/delnote/unbilled")
+    config.add_route("invoice_attachment", "/invoice/attachment/{invid}")
+    config.add_route("invoice_cancel", "/invoice/cancel/{invid}")
+    config.add_route("invoice_invid", "/invoice/{invid}")
+
     config.add_route("budget", "/budget")
     config.add_route("categoryspecs", "/categoryspecs")
     config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")

@@ -1,0 +1,429 @@
+basicInvoiceDetails:
+  type: object
+  properties:
+    invid:
+      type: integer
+    invoiceno:
+      type: string
+    invoicedate:
+      type: string
+      format: date
+
+allInvoiceDetails:
+  type: object
+  properties:
+    csflag:
+      type: integer
+      enum: [3, 19]
+      description: 3 = customer, 19 = supplier
+    custname:
+      type: string
+    invoicetotal:
+      type: number
+    attachmentcount:
+      type: integer
+
+invoiceListDetails:
+  type: object
+  properties:
+    srno:
+      type: string
+    dcno:
+      type: string
+    dcdate:
+      type: string
+      format: date
+    godown:
+      type: string
+    netamt:
+      type: number
+    taxamt:
+      type: number
+    custname:
+      type: string
+    csflag:
+      type: integer
+      enum: [3, 19]
+      description: 3 = customer, 19 = supplier
+    inoutflag:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+    custtin:
+      type: string
+    grossamt:
+      type: number
+    cancelflag:
+      type: integer
+    billentryflag:
+      type: integer
+
+invoiceRectifyListDetails:
+  type: object
+  properties:
+    custid:
+      type: integer
+    custname:
+      type: string
+    csflag:
+      type: integer
+      enum: [3, 19]
+      description: 3 = customer, 19 = supplier
+
+inoutflag:
+  type: integer
+  enum: [9, 15]
+  description: 9 = sale, 15 = purchase
+
+# invoicePayload:
+#   type: object
+#   properties:
+
+#     stock:
+#       type: object
+#       properties:
+#         items:
+#           type: object
+#         inout:
+#           type: object
+
+invoice:
+  type: object
+  properties:
+    invoiceno:
+      type: string
+    ewaybillno:
+      type: string
+    invoicedate:
+      type: string
+      format: date
+    orgstategstin:
+      type: string
+    issuername:
+      type: string
+    designation:
+      type: string
+    address:
+      type: string
+    pincode:
+      type: string
+    custid:
+      type: integer
+    roundoffflag:
+      type: integer
+      enum: [0, 1]
+      description: 0 = true, 1 = false
+    paymentmode:
+      type: integer
+      enum: [2, 3, 15]
+      description: 2 = cash, 3 = bank, 15 = credit
+    transportationmode:
+      type: string
+    reversecharge:
+      type: integer
+      enum: [0, 1]
+      description: 0 = true, 1 = false
+    discflag:
+      type: integer
+      enum: [1, 16]
+      description: discount flag, 1 - amount, 16 - percent
+    invnarration:
+      type: string
+    dcid:
+      type: integer
+    sourcestate:
+      type: string
+    inoutflag:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+    supinvno:
+      type: string
+    supinvdate:
+      type: string
+      format: date
+    taxstate:
+      type: string
+    taxflag:
+      type: integer
+      enum: [7, 22]
+      description: 7 = GST, 22 = VAT
+    invoicetotal:
+      type: number
+    invoicetotalword:
+      type: string
+    consignee:
+      type: object
+      properties:
+        consigneename:
+          type: string
+        tinconsignee:
+          type: string
+        gstinconsignee:
+          type: string
+        consigneeaddress:
+          type: string
+        consigneestate:
+          type: string
+        consigneestatecode:
+          anyOf:
+            - type: string
+            - type: integer
+        consigneepincode:
+          type: string
+    contents:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: number
+        description: Keys are product rates and values are qty
+      description: Keys are product id
+    pricedetails:
+      type: array
+      items:
+        type: object
+        properties:
+          custid:
+            type: integer
+          productcode:
+            type: integer
+          inoutflag:
+            type: integer
+            enum: [9, 15]
+            description: 9 = sale, 15 = purchase
+          lastprice:
+            type: number
+    tax:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product tax rate
+    cess:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product cess rate
+    freeqty:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product free qty
+    discount:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product discount rates
+    bankdetails:
+      type: object
+      properties:
+        accountno:
+          type: object
+        bankname:
+          type: object
+        ifsc:
+          type: object
+        branch:
+          type: object
+    vehicleno:
+      type: string
+    dateofsupply:
+      type: string
+      format: date
+    attachment:
+      type: string
+      format: byte
+      description: base 64 image
+    attachmentcount:
+      type: integer
+
+stock:
+  type: object
+  properties:
+    items:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product qty
+    inout:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+
+av:
+  type: object
+  properties:
+    product:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product names, values are product taxable rates
+    prodData:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product taxable rates
+    avtax:
+      type: object
+      properties:
+        GSTName:
+          type: string
+        CESSName:
+          type: string
+    totaltaxable:
+      type: number
+    taxpayment:
+      type: number
+# av:
+#   type: object
+#   properties:
+
+singleInvoiceDetails:
+  type: object
+  properties:
+    roundoffvalue:
+      type: number
+    invid:
+      type: integer
+    taxflag:
+      type: integer
+    invoiceno:
+      type: string
+    ewaybillno:
+      type: string
+    invoicedate:
+      type: string
+      format: date
+    icflag:
+      type: integer
+    invoicetotal:
+      type: number
+    invoicetotalword:
+      type: string
+    bankdetails:
+      type: object
+    orgstategstin:
+      type: string
+    paymentmode:
+      type: integer
+    inoutflag:
+      type: integer
+    roundoff:
+      type: integer
+    narration:
+      type: string
+    discflag:
+      type: integer
+    supinvno:
+      type: string
+    supinvdate:
+      type: string
+      format: date
+    deletable:
+      type: integer
+    sourcestate:
+      type: string
+    sourcestatecode:
+      type: integer
+    address:
+      type: string
+    pincode:
+      type: string
+    issuername:
+      type: string
+    designation:
+      type: string
+    consignee:
+      type: string
+    attachmentcount:
+      type: integer
+    dateofsupply:
+      type: string
+      format: date
+    transportationmode:
+      type: string
+    vehicleno:
+      type: string
+    reversecharge:
+      type: integer
+    destinationstate:
+      type: string
+    taxstatecode:
+      type: integer
+    dcid:
+      type: integer
+    dcno:
+      type: string
+    dcdate:
+      type: string
+      format: date
+    custSupDetails:
+      type: object
+      properties:
+        custid:
+          type: integer
+        custname:
+          type: string
+        custsupstate:
+          type: string
+        custaddr:
+          type: string
+        csflag:
+          type: integer
+        pincode:
+          type: string
+        custphone:
+          type: string
+        custsupstatecode:
+          type: integer
+        custgstinlist:
+          type: string
+        statelist:
+          type: string
+        gst_reg_type:
+          type: integer
+        gst_party_type:
+          type: integer
+        custtin:
+          type: string
+        custgstin:
+          type: string
+    billentrysingleflag:
+      type: integer
+    totaldiscount:
+      type: number
+    totaltaxablevalue:
+      type: number
+    totaltaxamt:
+      type: number
+    totalcessamt:
+      type: number
+    taxname:
+      type: string
+    invcontents:
+      type: object
+      properties:
+        proddesc:
+          type: string
+        gscode:
+          type: integer
+        uom:
+          type: string
+        qty:
+          type: number
+        freeqty:
+          type: number
+        priceperunit:
+          type: number
+        discount:
+          type: number
+        taxableamount:
+          type: number
+        totalAmount:
+          type: number
+        taxname:
+          type: string
+        taxrate:
+          type: number
+        taxamount:
+          type: number

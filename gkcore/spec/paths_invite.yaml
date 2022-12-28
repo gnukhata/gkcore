@@ -14,7 +14,7 @@ invite:
               username:
                 type: string
               userrole:
-                $ref: "./gkuser/schemas_gkuser.yaml#/userRole"
+                $ref: "./global/schemas.yaml#/userrole"
               golist:
                 type: array
                 description: A list of godown ids. Used for role - Godown In Charge (3)

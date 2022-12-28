@@ -28,7 +28,7 @@ ledger_drcr:
                 gkresult:
                   $ref: "./global/schemas.yaml#/ledger_gkresult"
                 userrole:
-                  type: integer
+                  $ref: "./global/schemas.yaml#/userrole"
                 ledgerheader:
                   type: object
                   properties:
@@ -71,7 +71,7 @@ ledger:
                 gkresult:
                   $ref: "./global/schemas.yaml#/ledger_gkresult"
                 userrole:
-                  type: integer
+                  $ref: "./global/schemas.yaml#/userrole"
                 ledgerheader:
                   type: object
                   properties:

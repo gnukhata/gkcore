@@ -185,6 +185,27 @@ paths:
   /customer/{custid}:
     $ref: "./paths_customer.yaml#/customer_custid"
 
+  # invoice
+  /invoice:
+    $ref: "./paths_invoice.yaml#/invoice"
+  /invoice/list:
+    $ref: "./paths_invoice.yaml#/invoice_list"
+  /invoice/list/rectify:
+    $ref: "./paths_invoice.yaml#/invoice_list_rectify"
+  /invoice/nonrejected:
+    $ref: "./paths_invoice.yaml#/invoice_nonrejected"
+  /invoice/{invid}:
+    $ref: "./paths_invoice.yaml#/invoice_invid"
+  /invoice/cancel/{invid}:
+    $ref: "./paths_invoice.yaml#/invoice_cancel"
+  /invoice/id:
+    $ref: "./paths_invoice.yaml#/invoice_id"
+  /cashmemo:
+    $ref: "./paths_invoice.yaml#/cashmemo"
+  /invoice/attachment/{invid}:
+    $ref: "./paths_invoice.yaml#/invoice_attachment"
+  /delnote/unbilled:
+    $ref: "./paths_invoice.yaml#/delnote_unbilled"
   # logs
   /log:
     $ref: "./logs/log.yaml"
