@@ -3682,7 +3682,11 @@ class api_invoice(object):
                     % (int(self.request.params["type"]), authDetails["orgcode"])
                 )
                 invoicecount = invcount.fetchone()
-                invid = int(invoicecount["icount"]) + 1
+                invoiceBinCount = invcount = self.con.execute(
+                    "select count(invid) as icount from invoicebin where inoutflag=%d and orgcode = %d"
+                    % (int(self.request.params["type"]), authDetails["orgcode"])
+                ).fetchone()
+                invid = int(invoicecount["icount"]) + int(invoiceBinCount["icount"]) + 1
                 return {"gkstatus": 0, "invoiceid": invid}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
