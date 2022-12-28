@@ -824,7 +824,7 @@ class api_dashboard(object):
             calculateto = self.request.params["calculateto"]
             header = {"gktoken": self.request.headers["gktoken"]}
             result = gk_api(
-                url="/report?type=profitloss&calculatefrom=%s&calculateto=%s"
+                url="/reports/profit-loss?calculatefrom=%s&calculateto=%s"
                 % (calculatefrom, calculateto),
                 header=header,
                 request=self.request,
@@ -863,7 +863,7 @@ class api_dashboard(object):
         calculatefrom = self.request.params["calculatefrom"]
         header = {"gktoken": self.request.headers["gktoken"]}
         result = gk_api(
-            url="/report?type=balancesheet&calculateto=%s&baltype=1&calculatefrom=%s"
+            url="/reports/balance-sheet?calculateto=%s&baltype=1&calculatefrom=%s"
             % (calculateto, calculatefrom),
             header=header,
             request=self.request,

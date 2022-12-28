@@ -68,7 +68,7 @@ class api_hsn(object):
         # eval the given hsn code
         try:
             for code in self.codes:
-                if self.request.params["validate"] == code["hsn_code"]:
+                if self.request.params["validate"] == str(code["hsn_code"]):
                     return {"gkstatus": 0, "gkresult": code}
             else:
                 return {"gkstatus": 3}
@@ -104,13 +104,13 @@ class api_hsn(object):
 
         # search result handling
         try:
-            search_term = self.request.params["search"].lower()
+            search_term: str = self.request.params["search"].lower()
             search_results = []
 
             for obj in self.codes:
 
                 desc_occurances = re.findall(search_term, obj["hsn_desc"].lower())
-                code_occurances = re.findall(search_term, obj["hsn_code"].lower())
+                code_occurances = re.findall(search_term, str(obj["hsn_code"]))
 
                 if len(desc_occurances) > 0:
                     search_results.append(obj)
