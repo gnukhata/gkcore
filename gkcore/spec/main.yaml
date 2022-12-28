@@ -198,14 +198,15 @@ paths:
     $ref: "./paths_invoice.yaml#/invoice_invid"
   /invoice/cancel/{invid}:
     $ref: "./paths_invoice.yaml#/invoice_cancel"
-  /invoice/id:
+  /invoice/next_id:
     $ref: "./paths_invoice.yaml#/invoice_id"
   /cashmemo:
     $ref: "./paths_invoice.yaml#/cashmemo"
   /invoice/attachment/{invid}:
     $ref: "./paths_invoice.yaml#/invoice_attachment"
-  /delnote/unbilled:
+  /delchal/unbilled:
     $ref: "./paths_invoice.yaml#/delnote_unbilled"
+
   # logs
   /log:
     $ref: "./logs/log.yaml"
