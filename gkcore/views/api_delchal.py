@@ -69,163 +69,8 @@ class api_delchal(object):
         self.request = request
         self.con = Connection
 
-    """
-create method for delchal resource.
-    stock table is also updated after delchal entry is made.
-        -delchal id goes in dcinvtnid column of stock table.
-        -dcinvtnflag column will be set to 4 for delivery challan entry.
-    If stock table insert fails then the delchal entry will be deleted.
-    It's return also 'dcid' to front end.
-    """
-    # added delchal dataset and stockdata dataset in post method.
-    @view_config(request_method="POST", renderer="json")
-    def adddelchal(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                delchaldata = dataset["delchaldata"]
-                stockdata = dataset["stockdata"]
-                freeqty = delchaldata["freeqty"]
-                inoutflag = stockdata["inout"]
-                items = delchaldata["contents"]
-                delchaldata["orgcode"] = authDetails["orgcode"]
-                stockdata["orgcode"] = authDetails["orgcode"]
-                if delchaldata["dcflag"] == 19:
-                    delchaldata["issuerid"] = authDetails["userid"]
-                result = self.con.execute(delchal.insert(), [delchaldata])
-                if result.rowcount == 1:
-                    dciddata = self.con.execute(
-                        select([delchal.c.dcid, delchal.c.dcdate]).where(
-                            and_(
-                                delchal.c.orgcode == authDetails["orgcode"],
-                                delchal.c.dcno == delchaldata["dcno"],
-                                delchal.c.custid == delchaldata["custid"],
-                            )
-                        )
-                    )
-                    dcidrow = dciddata.fetchone()
-                    stockdata["dcinvtnid"] = dcidrow["dcid"]
-                    stockdata["dcinvtnflag"] = 4
-                    stockdata["stockdate"] = dcidrow["dcdate"]
-                    try:
-                        for key in list(items.keys()):
-                            itemQty = float(list(items[key].values())[0])
-                            itemRate = float(list(items[key].keys())[0])
-                            stockdata["rate"] = itemRate
-                            stockdata["productcode"] = key
-                            stockdata["qty"] = itemQty + float(freeqty[key])
-                            result = self.con.execute(stock.insert(), [stockdata])
-                            if "goid" in stockdata:
-                                resultgoprod = self.con.execute(
-                                    select([goprod]).where(
-                                        and_(
-                                            goprod.c.goid == stockdata["goid"],
-                                            goprod.c.productcode == key,
-                                        )
-                                    )
-                                )
-                                if resultgoprod.rowcount == 0:
-                                    result = self.con.execute(
-                                        goprod.insert(),
-                                        [
-                                            {
-                                                "goid": stockdata["goid"],
-                                                "productcode": key,
-                                                "goopeningstock": 0.00,
-                                                "orgcode": authDetails["orgcode"],
-                                            }
-                                        ],
-                                    )
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": dcidrow["dcid"],
-                        }
-                    except:
-                        result = self.con.execute(
-                            stock.delete().where(
-                                and_(
-                                    stock.c.dcinvtnid == dcidrow["dcid"],
-                                    stock.c.dcinvtnflag == 4,
-                                )
-                            )
-                        )
-                        result = self.con.execute(
-                            delchal.delete().where(delchal.c.dcid == dcidrow["dcid"])
-                        )
-                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                    return {"gkstatus": enumdict["Success"]}
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                # print(traceback.format_exc())
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-    @view_config(request_method="PUT", renderer="json")
-    def editdelchal(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                delchaldata = dataset["delchaldata"]
-                stockdata = dataset["stockdata"]
-                delchaldata["orgcode"] = authDetails["orgcode"]
-                stockdata["orgcode"] = authDetails["orgcode"]
-                stockdata["dcinvtnid"] = delchaldata["dcid"]
-                stockdata["stockdate"] = delchaldata["dcdate"]
-                freeqty = delchaldata["freeqty"]
-                stockdata["dcinvtnflag"] = 4
-                result = self.con.execute(
-                    delchal.update()
-                    .where(delchal.c.dcid == delchaldata["dcid"])
-                    .values(delchaldata)
-                )
-                if result.rowcount == 1:
-                    result = self.con.execute(
-                        stock.delete().where(
-                            and_(
-                                stock.c.dcinvtnid == delchaldata["dcid"],
-                                stock.c.dcinvtnflag == 4,
-                            )
-                        )
-                    )
-                    items = delchaldata["contents"]
-                    for key in list(items.keys()):
-                        itemQty = float(list(items[key].values())[0])
-                        itemRate = float(list(items[key].keys())[0])
-                        stockdata["rate"] = itemRate
-                        stockdata["productcode"] = key
-                        stockdata["qty"] = itemQty + float(freeqty[key])
-                        result = self.con.execute(stock.insert(), [stockdata])
-                    return {"gkstatus": enumdict["Success"]}
-                else:
-                    # print(traceback.format_exc())
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except:
-                # print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-    @view_config(request_method="GET", request_param="delchal=all", renderer="json")
+    # request_param="delchal=all",
+    @view_config(request_method="GET", renderer="json")
     def getAlldelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -361,7 +206,273 @@ create method for delchal resource.
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="delchal=single", renderer="json")
+    """
+    create method for delchal resource.
+    stock table is also updated after delchal entry is made.
+        -delchal id goes in dcinvtnid column of stock table.
+        -dcinvtnflag column will be set to 4 for delivery challan entry.
+    If stock table insert fails then the delchal entry will be deleted.
+    It's return also 'dcid' to front end.
+    """
+    # added delchal dataset and stockdata dataset in post method.
+    @view_config(request_method="POST", renderer="json")
+    def adddelchal(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dataset = self.request.json_body
+                delchaldata = dataset["delchaldata"]
+                stockdata = dataset["stockdata"]
+                freeqty = delchaldata["freeqty"]
+                inoutflag = stockdata["inout"]
+                items = delchaldata["contents"]
+                delchaldata["orgcode"] = authDetails["orgcode"]
+                stockdata["orgcode"] = authDetails["orgcode"]
+                if delchaldata["dcflag"] == 19:
+                    delchaldata["issuerid"] = authDetails["userid"]
+                result = self.con.execute(delchal.insert(), [delchaldata])
+                if result.rowcount == 1:
+                    dciddata = self.con.execute(
+                        select([delchal.c.dcid, delchal.c.dcdate]).where(
+                            and_(
+                                delchal.c.orgcode == authDetails["orgcode"],
+                                delchal.c.dcno == delchaldata["dcno"],
+                                delchal.c.custid == delchaldata["custid"],
+                            )
+                        )
+                    )
+                    dcidrow = dciddata.fetchone()
+                    stockdata["dcinvtnid"] = dcidrow["dcid"]
+                    stockdata["dcinvtnflag"] = 4
+                    stockdata["stockdate"] = dcidrow["dcdate"]
+                    try:
+                        for key in list(items.keys()):
+                            itemQty = float(list(items[key].values())[0])
+                            itemRate = float(list(items[key].keys())[0])
+                            stockdata["rate"] = itemRate
+                            stockdata["productcode"] = key
+                            stockdata["qty"] = itemQty + float(freeqty[key])
+                            result = self.con.execute(stock.insert(), [stockdata])
+                            if "goid" in stockdata:
+                                resultgoprod = self.con.execute(
+                                    select([goprod]).where(
+                                        and_(
+                                            goprod.c.goid == stockdata["goid"],
+                                            goprod.c.productcode == key,
+                                        )
+                                    )
+                                )
+                                if resultgoprod.rowcount == 0:
+                                    result = self.con.execute(
+                                        goprod.insert(),
+                                        [
+                                            {
+                                                "goid": stockdata["goid"],
+                                                "productcode": key,
+                                                "goopeningstock": 0.00,
+                                                "orgcode": authDetails["orgcode"],
+                                            }
+                                        ],
+                                    )
+                        return {
+                            "gkstatus": enumdict["Success"],
+                            "gkresult": dcidrow["dcid"],
+                        }
+                    except:
+                        result = self.con.execute(
+                            stock.delete().where(
+                                and_(
+                                    stock.c.dcinvtnid == dcidrow["dcid"],
+                                    stock.c.dcinvtnflag == 4,
+                                )
+                            )
+                        )
+                        result = self.con.execute(
+                            delchal.delete().where(delchal.c.dcid == dcidrow["dcid"])
+                        )
+                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                    return {"gkstatus": enumdict["Success"]}
+                else:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            except exc.IntegrityError:
+                # print(traceback.format_exc())
+                return {"gkstatus": enumdict["DuplicateEntry"]}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    @view_config(route_name="delchal_dcid", request_method="PUT", renderer="json")
+    def editdelchal(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dcid = self.request.matchdict["dcid"]
+                dataset = self.request.json_body
+                delchaldata = dataset["delchaldata"]
+                stockdata = dataset["stockdata"]
+                delchaldata["orgcode"] = authDetails["orgcode"]
+                stockdata["orgcode"] = authDetails["orgcode"]
+                stockdata["dcinvtnid"] = dcid
+                stockdata["stockdate"] = delchaldata["dcdate"]
+                freeqty = delchaldata["freeqty"]
+                stockdata["dcinvtnflag"] = 4
+                result = self.con.execute(
+                    delchal.update().where(delchal.c.dcid == dcid).values(delchaldata)
+                )
+                if result.rowcount == 1:
+                    result = self.con.execute(
+                        stock.delete().where(
+                            and_(
+                                stock.c.dcinvtnid == dcid,
+                                stock.c.dcinvtnflag == 4,
+                            )
+                        )
+                    )
+                    items = delchaldata["contents"]
+                    for key in list(items.keys()):
+                        itemQty = float(list(items[key].values())[0])
+                        itemRate = float(list(items[key].keys())[0])
+                        stockdata["rate"] = itemRate
+                        stockdata["productcode"] = key
+                        stockdata["qty"] = itemQty + float(freeqty[key])
+                        result = self.con.execute(stock.insert(), [stockdata])
+                    return {"gkstatus": enumdict["Success"]}
+                else:
+                    # print(traceback.format_exc())
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            except:
+                # print(traceback.format_exc())
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    # Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
+    # request_param="type=canceldel",
+    @view_config(route_name="delchal_dcid", request_method="DELETE", renderer="json")
+    def cancelDelchal(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dcid = self.request.matchdict["dcid"]
+                # To fetch data of all data of cancel delivery note.
+                delchalData = self.con.execute(
+                    select([delchal]).where(delchal.c.dcid == dcid)
+                )
+                delchaldata = delchalData.fetchone()
+                # Add all data of cancel delivry note into delchalbin"
+                delchalbinData = {
+                    "dcid": delchaldata["dcid"],
+                    "dcno": delchaldata["dcno"],
+                    "dcdate": delchaldata["dcdate"],
+                    "dcflag": delchaldata["dcflag"],
+                    "taxflag": delchaldata["taxflag"],
+                    "contents": delchaldata["contents"],
+                    "tax": delchaldata["tax"],
+                    "cess": delchaldata["cess"],
+                    "issuername": delchaldata["issuername"],
+                    "designation": delchaldata["designation"],
+                    "noofpackages": delchaldata["noofpackages"],
+                    "modeoftransport": delchaldata["modeoftransport"],
+                    "consignee": delchaldata["consignee"],
+                    "taxstate": delchaldata["taxstate"],
+                    "sourcestate": delchaldata["sourcestate"],
+                    "orgstategstin": delchaldata["orgstategstin"],
+                    "freeqty": delchaldata["freeqty"],
+                    "discount": delchaldata["discount"],
+                    "vehicleno": delchaldata["vehicleno"],
+                    "dateofsupply": delchaldata["dateofsupply"],
+                    "delchaltotal": delchaldata["delchaltotal"],
+                    "attachmentcount": delchaldata["attachmentcount"],
+                    "orgcode": delchaldata["orgcode"],
+                    "custid": delchaldata["custid"],
+                    "orderid": delchaldata["orderid"],
+                    "inoutflag": delchaldata["inoutflag"],
+                    "roundoffflag": delchaldata["roundoffflag"],
+                    "discflag": delchaldata["discflag"],
+                    "dcnarration": delchaldata["dcnarration"],
+                    "totalinword": delchaldata["totalinword"],
+                }
+                if delchaldata["attachment"] != None:
+                    delchalbinData["attachment"] = delchaldata["attachment"]
+                try:
+                    # To add goid for cancelled delivery note in delchalbin table before delete stock entry.
+                    delgodown = self.con.execute(
+                        "select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"
+                        % (int(dcid), authDetails["orgcode"])
+                    )
+                    degodowninfo = delgodown.fetchone()
+                    if degodowninfo != None:
+                        delchalbinData["goid"] = degodowninfo["goid"]
+                except:
+                    pass
+                try:
+                    # To delete stock entry of cancel delivery note.
+                    self.con.execute(
+                        "delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"
+                        % (int(dcid), authDetails["orgcode"])
+                    )
+                except:
+                    pass
+                try:
+                    logdata = {}
+                    logdata["orgcode"] = authDetails["orgcode"]
+                    logdata["userid"] = authDetails["userid"]
+                    logdata["time"] = datetime.today().strftime("%Y-%m-%d")
+                    logdata["activity"] = (
+                        str(delchaldata["dcno"]) + " Delivery Note Cancelled"
+                    )
+                    result = self.con.execute(log.insert(), [logdata])
+                except:
+                    pass
+
+                dcbin = self.con.execute(delchalbin.insert(), [delchalbinData])
+
+                # To delete delivery note enrty from delchal table
+                self.con.execute(
+                    "delete from delchal  where dcid = %d and orgcode=%d"
+                    % (int(dcid), authDetails["orgcode"])
+                )
+                return {"gkstatus": enumdict["Success"]}
+
+            except:
+                try:
+                    dcid = self.request.matchdict["dcid"]
+                    # if delivery note entry is not deleted then delete that delivery note from bin table
+                    self.con.execute(
+                        "delete from delchalbin  where dcid = %d and orgcode=%d"
+                        % (int(dcid), authDetails["orgcode"])
+                    )
+                    return {"gkstatus": enumdict["ConnectionFailed"]}
+                except:
+                    self.con.close()
+                    return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    # request_param="delchal=single",
+    @view_config(route_name="delchal_dcid", request_method="GET", renderer="json")
     def getdelchal(self):
         """
         This function returns the single delivery challan data to frontend depends on 'dcid;.
@@ -379,12 +490,11 @@ create method for delchal resource.
         else:
             try:
                 self.con = eng.connect()
-                if not self.request.params["dcid"]:
+                if not self.request.matchdict["dcid"]:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                dcid = self.request.matchdict["dcid"]
                 result = self.con.execute(
-                    select([delchal]).where(
-                        delchal.c.dcid == self.request.params["dcid"]
-                    )
+                    select([delchal]).where(delchal.c.dcid == dcid)
                 )
                 delchaldata = result.fetchone()
                 items = {}
@@ -398,7 +508,7 @@ create method for delchal resource.
                     ).where(
                         and_(
                             stock.c.dcinvtnflag == flag,
-                            stock.c.dcinvtnid == self.request.params["dcid"],
+                            stock.c.dcinvtnid == dcid,
                         )
                     )
                 )
@@ -549,7 +659,7 @@ create method for delchal resource.
                         ).where(
                             and_(
                                 stock.c.dcinvtnflag == flag,
-                                stock.c.dcinvtnid == self.request.params["dcid"],
+                                stock.c.dcinvtnid == dcid,
                             )
                         )
                     )
@@ -757,8 +867,9 @@ create method for delchal resource.
             finally:
                 self.con.close()
 
+    # request_param="delchal=singlecancel",
     @view_config(
-        request_method="GET", request_param="delchal=singlecancel", renderer="json"
+        route_name="delchal_cancel_dcid", request_method="GET", renderer="json"
     )
     def getcanceldelchal(self):
         """
@@ -779,7 +890,7 @@ create method for delchal resource.
                 self.con = eng.connect()
                 result = self.con.execute(
                     select([delchalbin]).where(
-                        delchalbin.c.dcid == self.request.params["dcid"]
+                        delchalbin.c.dcid == self.request.matchdict["dcid"]
                     )
                 )
                 delchaldata = result.fetchone()
@@ -1072,121 +1183,9 @@ create method for delchal resource.
             finally:
                 self.con.close()
 
-    # Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
-    @view_config(
-        request_method="DELETE", request_param="type=canceldel", renderer="json"
-    )
-    def cancelDelchal(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dcid = self.request.json_body["dcid"]
-                # To fetch data of all data of cancel delivery note.
-                delchalData = self.con.execute(
-                    select([delchal]).where(delchal.c.dcid == dcid)
-                )
-                delchaldata = delchalData.fetchone()
-                # Add all data of cancel delivry note into delchalbin"
-                delchalbinData = {
-                    "dcid": delchaldata["dcid"],
-                    "dcno": delchaldata["dcno"],
-                    "dcdate": delchaldata["dcdate"],
-                    "dcflag": delchaldata["dcflag"],
-                    "taxflag": delchaldata["taxflag"],
-                    "contents": delchaldata["contents"],
-                    "tax": delchaldata["tax"],
-                    "cess": delchaldata["cess"],
-                    "issuername": delchaldata["issuername"],
-                    "designation": delchaldata["designation"],
-                    "noofpackages": delchaldata["noofpackages"],
-                    "modeoftransport": delchaldata["modeoftransport"],
-                    "consignee": delchaldata["consignee"],
-                    "taxstate": delchaldata["taxstate"],
-                    "sourcestate": delchaldata["sourcestate"],
-                    "orgstategstin": delchaldata["orgstategstin"],
-                    "freeqty": delchaldata["freeqty"],
-                    "discount": delchaldata["discount"],
-                    "vehicleno": delchaldata["vehicleno"],
-                    "dateofsupply": delchaldata["dateofsupply"],
-                    "delchaltotal": delchaldata["delchaltotal"],
-                    "attachmentcount": delchaldata["attachmentcount"],
-                    "orgcode": delchaldata["orgcode"],
-                    "custid": delchaldata["custid"],
-                    "orderid": delchaldata["orderid"],
-                    "inoutflag": delchaldata["inoutflag"],
-                    "roundoffflag": delchaldata["roundoffflag"],
-                    "discflag": delchaldata["discflag"],
-                    "dcnarration": delchaldata["dcnarration"],
-                    "totalinword": delchaldata["totalinword"],
-                }
-                if delchaldata["attachment"] != None:
-                    delchalbinData["attachment"] = delchaldata["attachment"]
-                try:
-                    # To add goid for cancelled delivery note in delchalbin table before delete stock entry.
-                    delgodown = self.con.execute(
-                        "select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"
-                        % (int(dcid), authDetails["orgcode"])
-                    )
-                    degodowninfo = delgodown.fetchone()
-                    if degodowninfo != None:
-                        delchalbinData["goid"] = degodowninfo["goid"]
-                except:
-                    pass
-                try:
-                    # To delete stock entry of cancel delivery note.
-                    self.con.execute(
-                        "delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"
-                        % (int(dcid), authDetails["orgcode"])
-                    )
-                except:
-                    pass
-                try:
-                    logdata = {}
-                    logdata["orgcode"] = authDetails["orgcode"]
-                    logdata["userid"] = authDetails["userid"]
-                    logdata["time"] = datetime.today().strftime("%Y-%m-%d")
-                    logdata["activity"] = (
-                        str(delchaldata["dcno"]) + " Delivery Note Cancelled"
-                    )
-                    result = self.con.execute(log.insert(), [logdata])
-                except:
-                    pass
-
-                dcbin = self.con.execute(delchalbin.insert(), [delchalbinData])
-
-                # To delete delivery note enrty from delchal table
-                self.con.execute(
-                    "delete from delchal  where dcid = %d and orgcode=%d"
-                    % (int(dcid), authDetails["orgcode"])
-                )
-                return {"gkstatus": enumdict["Success"]}
-
-            except:
-                try:
-                    dcid = self.request.json_body["dcid"]
-                    # if delivery note entry is not deleted then delete that delivery note from bin table
-                    self.con.execute(
-                        "delete from delchalbin  where dcid = %d and orgcode=%d"
-                        % (int(dcid), authDetails["orgcode"])
-                    )
-                    return {"gkstatus": enumdict["ConnectionFailed"]}
-                except:
-                    self.con.close()
-                    return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
     # This function return list of cancelled delivery notes.
-    @view_config(
-        request_method="GET", request_param="type=listofcancelleddel", renderer="json"
-    )
+    # request_param="type=listofcancelleddel",
+    @view_config(route_name="delchal_cancel", request_method="GET", renderer="json")
     def listofCancelDelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1206,12 +1205,14 @@ create method for delchal resource.
                     }
                 else:
                     dataset = self.request.json_body
+                print(dataset)
                 inout = self.request.params["inout"]
                 inputdate = dataset["inputdate"]
                 del_cancelled_type = dataset["del_cancelled_type"]
                 new_inputdate = dataset["inputdate"]
                 new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
                 dc_unbilled = []
+                alldcids = None
                 # Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
                 if inout == "i":  # in
                     if del_cancelled_type == "0":
@@ -1266,6 +1267,7 @@ create method for delchal resource.
                             .order_by(delchalbin.c.dcdate)
                         )
                 alldcids = alldcids.fetchall()
+                print(alldcids)
                 dcdata = []
                 srno = 1
                 for row in alldcids:
@@ -1328,7 +1330,8 @@ create method for delchal resource.
             finally:
                 self.con.close()
 
-    @view_config(request_param="delchal=last", request_method="GET", renderer="json")
+    # request_param="delchal=last",
+    @view_config(route_name="delchal_last", request_method="GET", renderer="json")
     def getLastDelChalDetails(self):
         try:
             """
@@ -1376,7 +1379,8 @@ create method for delchal resource.
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_method="GET", request_param="type=dcid", renderer="json")
+    # request_param="type=dcid",
+    @view_config(route_name="delchal_next_id", request_method="GET", renderer="json")
     def getdelchalid(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1401,17 +1405,26 @@ create method for delchal resource.
                         )
                     )
                 ).scalar()
+                dcbin_count = self.con.execute(
+                    select([func.count(delchalbin.c.dcid)]).where(
+                        and_(
+                            delchalbin.c.inoutflag == dcstatus,
+                            delchalbin.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                ).scalar()
                 print(dc_count)
                 # dcid = int(dc_count) + 1
-                dcid = int(dc_count) + 1
+                dcid = int(dc_count) + int(dcbin_count) + 1
                 return {"gkstatus": 0, "dcid": dcid}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", request_param="attach=image", renderer="json")
-    def getattachment(self):
+    # request_param="attach=image",
+    @view_config(route_name="delchal_attachment", request_method="GET", renderer="json")
+    def getdelchalattachment(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -1424,7 +1437,7 @@ create method for delchal resource.
                 self.con = eng.connect()
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
-                dcid = self.request.params["dcid"]
+                dcid = self.request.matchdict["dcid"]
                 delchalData = self.con.execute(
                     select(
                         [delchal.c.dcno, delchal.c.attachment, delchal.c.cancelflag]

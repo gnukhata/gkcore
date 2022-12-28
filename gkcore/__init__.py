@@ -105,11 +105,13 @@ def main(global_config, **settings):
 
     # customer
     config.add_route("customer", "/customer")
-    config.add_route("customer_search_by_account", "/customer/search/account/{accountcode}")
+    config.add_route(
+        "customer_search_by_account", "/customer/search/account/{accountcode}"
+    )
     config.add_route("customer_search_by_name", "/customer/search/name/{custname}")
     config.add_route("customer_custid", "/customer/{custid}")
 
-    # invoice 
+    # invoice
     config.add_route("invoice", "/invoice")
     config.add_route("invoice_list", "/invoice/list")
     config.add_route("invoice_list_rectify", "/invoice/list/rectify")
@@ -121,7 +123,15 @@ def main(global_config, **settings):
     config.add_route("invoice_cancel", "/invoice/cancel/{invid}")
     config.add_route("invoice_invid", "/invoice/{invid}")
 
+    # delchal
     config.add_route("delchal", "/delchal")
+    config.add_route("delchal_attachment", "/delchal/attachment/{dcid}")
+    config.add_route("delchal_cancel", "/delchal/cancel")
+    config.add_route("delchal_last", "/delchal/last")
+    config.add_route("delchal_next_id", "/delchal/next_id")
+    config.add_route("delchal_dcid", "/delchal/{dcid}")
+    config.add_route("delchal_cancel_dcid", "/delchal/cancel/{dcid}")
+
     config.add_route("budget", "/budget")
     config.add_route("categoryspecs", "/categoryspecs")
     config.add_route("orgyears", "/orgyears/{orgname}/{orgtype}")

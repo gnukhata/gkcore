@@ -1,0 +1,357 @@
+delchalListDetails:
+  type: object
+  properties:
+    dcid:
+      type: integer
+    dcno:
+      type: string
+    custname:
+      type: string
+    csflag:
+      type: integer
+    dcdate:
+      type: string
+      format: date
+    attachmentcount:
+      type: integer
+    goname:
+      type: string
+    canceldelchal:
+      type: string
+
+delchalCancelledListDetails:
+  type: object
+  properties:
+    dcid:
+      type: integer
+    dcno:
+      type: string
+    dcdate:
+      type: string
+      format: date
+    dcflag:
+      type: integer
+      enum: [4, 16]
+      description: 4 = sale, 16 = purchase
+    inoutflag:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+    custname:
+      type: string
+    goname:
+      type: string
+    srno:
+      type: string
+
+delchal:
+  type: object
+  properties:
+    dcno:
+      type: string
+    ewaybillno:
+      type: string
+    dcdate:
+      type: string
+      format: date
+    dcflag:
+      type: integer
+      enum: [4, 16]
+      description: 4 = sale, 16 = purchase
+    orgstategstin:
+      type: string
+    issuername:
+      type: string
+    designation:
+      type: string
+    address:
+      type: string
+    pincode:
+      type: string
+    custid:
+      type: integer
+    roundoffflag:
+      type: integer
+      enum: [0, 1]
+      description: 0 = true, 1 = false
+    paymentmode:
+      type: integer
+      enum: [2, 3, 15]
+      description: 2 = cash, 3 = bank, 15 = credit
+    transportationmode:
+      type: string
+    reversecharge:
+      type: integer
+      enum: [0, 1]
+      description: 0 = true, 1 = false
+    discflag:
+      type: integer
+      enum: [1, 16]
+      description: discount flag, 1 - amount, 16 - percent
+    dcnarration:
+      type: string
+    sourcestate:
+      type: string
+    inoutflag:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+    taxstate:
+      type: string
+    taxflag:
+      type: integer
+      enum: [7, 22]
+      description: 7 = GST, 22 = VAT
+    delchaltotal:
+      type: number
+    totalinword:
+      type: string
+    consignee:
+      type: object
+      properties:
+        consigneename:
+          type: string
+        tinconsignee:
+          type: string
+        gstinconsignee:
+          type: string
+        consigneeaddress:
+          type: string
+        consigneestate:
+          type: string
+        consigneestatecode:
+          anyOf:
+            - type: string
+            - type: integer
+        consigneepincode:
+          type: string
+    contents:
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: number
+        description: Keys are product rates and values are qty
+      description: Keys are product id
+    pricedetails:
+      type: array
+      items:
+        type: object
+        properties:
+          custid:
+            type: integer
+          productcode:
+            type: integer
+          inoutflag:
+            type: integer
+            enum: [9, 15]
+            description: 9 = sale, 15 = purchase
+          lastprice:
+            type: number
+    tax:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product tax rate
+    cess:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product cess rate
+    freeqty:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product free qty
+    discount:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product discount rates
+    bankdetails:
+      type: object
+      properties:
+        accountno:
+          type: object
+        bankname:
+          type: object
+        ifsc:
+          type: object
+        branch:
+          type: object
+    vehicleno:
+      type: string
+    dateofsupply:
+      type: string
+      format: date
+
+stock:
+  type: object
+  properties:
+    items:
+      type: object
+      additionalProperties:
+        type: number
+      description: Keys are product id, values are product qty
+    inout:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+
+delchalSingleDetails:
+  type: object
+  properties:
+    dcid:
+      type: integer
+    dcno:
+      type: string
+    dcflag:
+      type: integer
+      enum: [4, 16]
+      description: 4 = sale, 16 = purchase
+    issuername:
+      type: string
+    designation:
+      type: string
+    orggstin:
+      type: string
+    dcdate:
+      type: string
+      format: date
+    taxflag:
+      type: integer
+      enum: [7, 22]
+      description: 7 = GST, 22 = VAT
+    cancelflag:
+      type: integer
+    noofpackages:
+      type: string
+    modeoftransport:
+      type: string
+    vehicleno:
+      type: string
+    attachmentcount:
+      type: integer
+    inoutflag:
+      type: integer
+      enum: [9, 15]
+      description: 9 = sale, 15 = purchase
+    inout:
+      type: object
+    dcnarration:
+      type: string
+    roundoffflag:
+      type: integer
+      enum: [0, 1]
+      description: 0 = true, 1 = false
+    totalinword:
+      type: string
+    delchaldata:
+      type: object
+      properties:
+        consignee:
+          type: string
+        delchaltotal:
+          type: string
+        roundedoffvalue:
+          type: string
+        canceldate:
+          type: string
+        goid:
+          type: string
+        goname:
+          type: string
+        gostate:
+          type: string
+        goaddr:
+          type: string
+    destinationstate:
+      type: string
+    taxstatecode:
+      type: integer
+    sourcestate:
+      type: string
+    sourcestatecode:
+      type: integer
+    dateofsupply:
+      type: string
+      format: date
+    custSupDetails:
+      type: object
+      properties:
+        custname:
+          type: string
+        custsupstate:
+          type: string
+        custaddr:
+          type: string
+        csflag:
+          type: integer
+        pincode:
+          type: string
+        custsupstatecode:
+          type: integer
+    delchalflag:
+      type: integer
+      enum: [14, 15]
+      description: 14 - new delivery notes, 15 - old delivery notes
+    stockdata:
+      type: array
+      items:
+        type: object
+        additionalProperties:
+          type: object
+          properties:
+            qty:
+              type: number
+            productdesc:
+              type: string
+            unitname:
+              type: string
+    totaldiscount:
+      type: number
+    totaltaxablevalue:
+      type: number
+    totaltaxamt:
+      type: number
+    totalcessamt:
+      type: number
+    taxname:
+      type: string
+    delchalContents:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          proddesc:
+            type: string
+          gscode:
+            type: integer
+          uom:
+            type: string
+          qty:
+            type: number
+          freeqty:
+            type: number
+          priceperunit:
+            type: number
+          discount:
+            type: number
+          taxableamount:
+            type: number
+          totalAmount:
+            type: number
+          taxname:
+            type: string
+          taxrate:
+            type: number
+          taxamount:
+            type: number
+          cess:
+            type: number
+          cessrate:
+            type: number
+    discflag:
+      type: integer
+      enum: [1, 16]
+      description: discount flag, 1 - amount, 16 - percent

@@ -207,6 +207,23 @@ paths:
   /delchal/unbilled:
     $ref: "./paths_invoice.yaml#/delnote_unbilled"
 
+
+  # delchal
+  /delchal:
+    $ref: "./paths_delchal.yaml#/delchal"
+  /delchal/attachment/{dcid}:
+    $ref: "./paths_delchal.yaml#/delchal_attachment"
+  /delchal/cancel:
+    $ref: "./paths_delchal.yaml#/delchal_cancel"
+  /delchal/last:
+    $ref: "./paths_delchal.yaml#/delchal_last"
+  /delchal/next_id:
+    $ref: "./paths_delchal.yaml#/delchal_next_id"
+  /delchal/{dcid}:
+    $ref: "./paths_delchal.yaml#/delchal_dcid"
+  /delchal/cancel/{dcid}:
+    $ref: "./paths_delchal.yaml#/delchal_cancel_dcid"
+
   # logs
   /log:
     $ref: "./logs/log.yaml"
