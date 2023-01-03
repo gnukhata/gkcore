@@ -530,3 +530,33 @@ class api_accountsbyrule(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(request_param="type=all", renderer="json")
+    def allAcc(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                allAccs = self.con.execute(
+                    "select accountname , accountcode from accounts where orgcode = %d order by accountname"
+                    % (authDetails["orgcode"])
+                )
+                allList = []
+                for contraRow in allAccs:
+                    allList.append(
+                        {
+                            "accountname": contraRow["accountname"],
+                            "accountcode": contraRow["accountcode"],
+                        }
+                    )
+                return {"gkstatus": enumdict["Success"], "gkresult": allList}
+            except:
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
