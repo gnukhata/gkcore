@@ -1951,9 +1951,27 @@ class api_organisation(object):
                     "alter table goprod add openingstockvalue numeric(13,2) default 0.00"
                 )
             
-            self.con.execute("alter table organisation alter column orgstate set NOT NULL")
-            self.con.execute("alter table product alter column gsflag set NOT NULL, alter column productdesc NOT NULL")
-
+            try:
+                self.con.execute("alter table organisation alter column orgstate set NOT NULL")
+            except:
+                print(2)
+                orgDatum = self.con.execute("select orgcode, orgstate from organisation").fetchall()
+                for orgData in orgDatum:
+                    if not orgData["orgstate"]:
+                        self.con.execute("update organisation set orgstate = '0'  where orgcode = %d" %(orgData["orgcode"]))
+                self.con.execute("alter table organisation alter column orgstate set NOT NULL")
+            try:
+                self.con.execute("alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL")
+            except:
+                print(3)
+                counter = 0
+                self.con.execute("update product set gsflag = 7  where gsflag = NULL")
+                prodDatum = self.con.execute("select productcode, productdesc from product").fetchall()
+                for prodData in prodDatum:
+                    if not prodData["productdesc"]:
+                        self.con.execute("update product set productdesc = 'gk-product-%s'  where productcode = %d" %(str(counter) ,prodData["productcode"]))
+                        counter = counter + 1
+                self.con.execute("alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL")
 
         except:
             print(traceback.format_exc())
