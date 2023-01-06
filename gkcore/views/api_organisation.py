@@ -1950,6 +1950,10 @@ class api_organisation(object):
                 self.con.execute(
                     "alter table goprod add openingstockvalue numeric(13,2) default 0.00"
                 )
+            
+            self.con.execute("alter table organisation alter column orgstate set NOT NULL")
+            self.con.execute("alter table product alter column gsflag set NOT NULL, alter column productdesc NOT NULL")
+
 
         except:
             print(traceback.format_exc())
