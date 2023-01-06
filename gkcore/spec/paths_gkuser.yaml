@@ -34,6 +34,7 @@ gkuser:
         schema:
           type: string
         description: Specifies the type of edit required
+        required: true
     requestBody:
       content:
         application/json:
@@ -68,7 +69,9 @@ organisation_gkusers:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 gkresult:
-                  $ref: "./gkuser/schemas_gkuser.yaml#/userMetaData"
+                  type: array
+                  items:
+                    $ref: "./gkuser/schemas_gkuser.yaml#/userMetaData"
 
 gkuser_orgs:
   get:
@@ -89,7 +92,9 @@ gkuser_orgs:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 gkresult:
-                  $ref: "./gkuser/schemas_gkuser.yaml#/orgMetaData"
+                  type: array
+                  items:
+                    $ref: "./gkuser/schemas_gkuser.yaml#/orgMetaData"
 
 gkuser_pwd_question:
   get:

@@ -19,6 +19,8 @@ productListDetails:
       type: integer
     gsflag:
       type: integer
+      enum: [7, 19]
+      description: 7 = product, 19 = service
 
 productDetails:
   type: object
@@ -33,7 +35,7 @@ productDetails:
     productdesc:
       type: string
     gsflag:
-      type: integer
+      $ref: "#/gsflag"
     gscode:
       type: integer
     deletable:
@@ -56,6 +58,7 @@ productDetails:
 # used for creating and editing a product
 productInDetails:
   type: object
+  required: [productdesc, gsflag]
   properties:
     productdesc:
       type: string
@@ -70,7 +73,7 @@ productInDetails:
     gscode:
       type: string
     gsflag:
-      type: integer
+      $ref: "#/gsflag"
     specs:
       type: string
     openingstock:
@@ -96,10 +99,16 @@ godownDetails:
 # used for creating and editing a product
 productPayload:
   type: object
+  required: [productdetails, godownflag]
   properties:
     productdetails:
       $ref: "#/productInDetails"
     godetails:
       $ref: "#/godownDetails"
     godownflag:
-      type: boolean  
+      type: boolean
+
+gsflag:
+  type: integer
+  enum: [7, 19]
+  description: 7 = product, 19 = service

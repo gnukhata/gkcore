@@ -46,6 +46,11 @@ csflag:
   enum: [3, 19]
   description: 3 = customer, 19 = supplier
 
+gsflag:
+  type: integer
+  enum: [7, 19]
+  description: 7 = product, 19 = service
+  
 token:
   type: string
   format: byte

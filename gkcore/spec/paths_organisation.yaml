@@ -15,7 +15,12 @@ organisation:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 gkdata:
-                  $ref: "./organisation/schemas_org.yaml#/orgDetails"
+                  allOf:
+                    - type: object
+                      properties:
+                        orgcode:
+                          type: integer
+                    - $ref: "./organisation/schemas_org.yaml#/orgDetails"
   post:
     tags: ["Organisation"]
     summary: Create a new organisation
@@ -26,7 +31,11 @@ organisation:
       content:
         application/json:
           schema:
-            $ref: "./organisation/schemas_org.yaml#/orgDetails"
+            type: object
+            required: [orgdetails]
+            properties:
+              orgdetails:
+                $ref: "./organisation/schemas_org.yaml#/orgDetails"
     responses:
       200:
         description: ok
@@ -53,7 +62,13 @@ organisation:
       content:
         application/json:
           schema:
-            $ref: "./organisation/schemas_org.yaml#/orgDetails"
+            allOf:
+              - type: object
+                required: [orgcode]
+                properties:
+                  orgcode:
+                    type: integer
+              - $ref: "./organisation/schemas_org.yaml#/orgDetails"
     responses:
       200:
         description: ok

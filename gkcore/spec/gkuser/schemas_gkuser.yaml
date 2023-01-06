@@ -1,6 +1,7 @@
 userDetails:
   type: object
   additionalProperties: false
+  required: [username, userpassword, userquestion, useranswer]
   properties:
     username:
       type: string
@@ -19,33 +20,39 @@ userMetaData:
     username:
       type: string
     userrole:
-      $ref: "#/userRole"
+      type: integer
+      enum: [-1, 0, 1, 2, 3]
+      description: -1 - Admin, 0 - Manager, 1 - Operator, 2 - Internal Auditor, 3 - Godown In Charge
     userrolename:
       type: string
       enum: [Admin, Manager, Operator, Internal Auditor, Godown In Charge]
     invitestatus:
-      $ref: "#/inviteStatus"
+      type: string
+      enum: [true, false, Rejected]
 
 orgMetaData:
   type: object
   properties:
-    orgname: 
+    orgname:
       type: string
-    orgtype: 
+    orgtype:
       type: string
       enum: [For Profit, Not For Profit]
-    yearstart: 
+    yearstart:
       type: string
       format: date
-    yearend: 
+    yearend:
       type: string
       format: date
-    orgcode: 
+    orgcode:
       type: integer
-    invitestatus: 
-      $ref: "#/inviteStatus"
-    userrole: 
-      $ref: "#/userRole"
+    invitestatus:
+      type: string
+      enum: [true, false, Rejected]
+    userrole:
+      type: integer
+      enum: [-1, 0, 1, 2, 3]
+      description: -1 - Admin, 0 - Manager, 1 - Operator, 2 - Internal Auditor, 3 - Godown In Charge
 
 inviteStatus:
   type: string

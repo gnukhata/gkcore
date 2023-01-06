@@ -1,11 +1,13 @@
 orgDetails:
   type: object
   additionalProperties: false
+  required: [orgname, orgtype, yearstart, yearend, orgstate]
   properties:
     orgname:
       type: string
     orgtype:
-      $ref: "#/orgType"
+      type: string
+      enum: [For Profit, Not For Profit]
     yearstart:
       type: string
       format: date
@@ -46,24 +48,43 @@ orgDetails:
       type: string
     invflag:
       type: integer
+      default: 0
+      example: Note - use 1 for testing
     invsflag:
       type: integer
+      default: 1
+      example: Note - use 1 for testing
     billflag:
       type: integer
+      default: 1
+      example: Note - use 1 for testing
     avflag:
       type: integer
+      default: 1
+      example: Note - use 1 for testing
     maflag:
       type: integer
+      default: 1
+      example: Note - use 0 for testing
     avnoflag:
       type: integer
+      default: 0
+      example: Note - use 1 for testing
     ainvnoflag:
       type: integer
+      default: 0
+      example: Note - use 1 for testing
     modeflag:
       type: integer
+      default: 1
+      example: Note - use null for testing
     orgconf:
       type: object
+      default: {}
     roflag:
       type: integer
+      default: 0
+      example: Note - use null for testing
     booksclosedflag:
       type: integer
     logo:
