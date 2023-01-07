@@ -22,6 +22,8 @@ post:
           properties:
             activity:
               type: string
+          required:
+            - activity
   responses:
     200:
       description: Created
