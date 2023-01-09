@@ -11,6 +11,8 @@ post:
             gkfile:
               type: string
               format: binary
+          required:
+            - gkfile
   responses:
     200:
       description: ok

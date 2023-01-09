@@ -59,6 +59,10 @@ post:
                   type: integer
                 openingbal:
                   type: string
+              required:
+                - accountname
+                - openingbal
+                - groupcode
   responses:
     200:
       description: OK
