@@ -49,7 +49,7 @@ requires = [
 
 setup(
     name="gkcore",
-    version="0.8.0-a1",
+    version="0.8.0-a2",
     description="gkcore",
     long_description=README,
     classifiers=[
