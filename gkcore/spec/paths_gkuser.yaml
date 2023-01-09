@@ -101,6 +101,12 @@ gkuser_pwd_question:
     tags: ["Gkuser"] # "User",
     summary: Fetch password recovery question
     operationId: getquestion
+    parameters:
+      - in: query
+        name: username
+        schema:
+          type: string
+        required: true
     responses:
       "200":
         description: ok
@@ -112,14 +118,30 @@ gkuser_pwd_question:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
-                gkdata:
-                  $ref: "./organisation/schemas_org.yaml#/orgDetails"
+                gkresult:
+                  type: object
+                  properties:
+                    userquestion:
+                      type: string
+                    userid:
+                      type: integer
 
 gkuser_pwd_answer:
   get:
     tags: ["Gkuser"] # "User",
     summary: Verify password recovery question's answer
     operationId: verifyanswer
+    parameters:
+      - in: query
+        name: userid
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: useranswer
+        schema:
+          type: string
+        required: true
     responses:
       "200":
         description: ok
@@ -131,8 +153,6 @@ gkuser_pwd_answer:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
-                gkdata:
-                  $ref: "./organisation/schemas_org.yaml#/orgDetails"
 
 gkuser_pwd_reset:
   put:
@@ -144,12 +164,12 @@ gkuser_pwd_reset:
         application/json:
           schema:
             type: object
-            required: [userid, username, userpassword]
+            required: [userid, useranswer, userpassword]
             additionalProperties: false
             properties:
               userid:
                 type: string
-              username:
+              useranswer:
                 type: string
               userpassword:
                 type: string
