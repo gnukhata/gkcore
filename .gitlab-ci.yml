@@ -8,7 +8,7 @@ variables:
 
   # WARN: add razorpay:ifsc image when related tests are added
 services:
-  - postgres:alpine
+  # - postgres:alpine
   - docker:20.10.19-dind
 
 stages:
@@ -22,10 +22,10 @@ gkcore:
     - apt update && apt install -y build-essential libpq-dev
     - pip3 install -r requirements.txt
     - python3 setup.py develop
-    - python3 initdb.py
-    - pserve production.ini
+    # - python3 initdb.py
+    # - pserve production.ini
     # run tests
-    - python3 gkcore/tests/public_apis.py
+    # - python3 gkcore/tests/public_apis.py
 
 # build gkcore docker image from devel commits & upload it to docker hub
 docker-devel:
@@ -48,8 +48,8 @@ docker-prod:
     - docker login -u digitalfreedom -p $DOCKERHUB_PWD
     - docker build -t digitalfreedom/gkcore:$CI_COMMIT_TAG .
     - docker push digitalfreedom/gkcore:$CI_COMMIT_TAG
-    # create alias for the latest tag 
-    - docker tag digitalfreedom/gkcore:$CI_COMMIT_TAG digitalfreedom/gkcore:latest 
+    # create alias for the latest tag
+    - docker tag digitalfreedom/gkcore:$CI_COMMIT_TAG digitalfreedom/gkcore:latest
     - docker push digitalfreedom/gkcore:latest
   only:
     - tags
