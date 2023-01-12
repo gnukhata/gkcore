@@ -6,7 +6,6 @@ variables:
   POSTGRES_DB: "gkdata"
   GKCORE_DB_URL: "postgres://gkadmin:gkadmin@postgres:5432/gkdata"
 
-  # WARN: add razorpay:ifsc image when related tests are added
 services:
   # - postgres:alpine
   - docker:20.10.19-dind
@@ -55,36 +54,28 @@ docker-prod:
     - tags
 
 # generate api docs
-pages:
-  stage: build
-  script:
-    # install required gkcore dependencies for gkcore to make pdoc to work
-    - apt update && apt install -y build-essential libpq-dev
-    # install the gkcore pip dependencies
-    - pip install -r requirements.txt
-    # install & generate api docs with pdoc
-    - pip install pdoc
-    - pdoc -o .pub/gkcore-api-docs/ gkcore/
-    # compress the docs & move to public dir. This compressed file
-    # will be pulled during gnukhata.org website build for
-    # displaying the api-docs
-    - tar -cf gkcore-api-docs.tar.gz .pub/gkcore-api-docs/
-    - mv gkcore-api-docs.tar.gz .pub/
-    # rename the dir to match gitlab ci's reserved "public" dir name
-    - mv .pub public
-    # gzip the public dir
-    - gzip -k -9 $(find public -type f)
-  artifacts:
-    paths:
-      - public
-
-# run unit tests
-# unit-tests:
+# pages:
 #   stage: build
-#   needs: ["setup"]
 #   script:
-#     - pip3 install requests
-#     - python3 gkcore/tests/public_apis.py
+#     # install required gkcore dependencies for gkcore to make pdoc to work
+#     - apt update && apt install -y build-essential libpq-dev
+#     # install the gkcore pip dependencies
+#     - pip install -r requirements.txt
+#     # install & generate api docs with pdoc
+#     - pip install pdoc
+#     - pdoc -o .pub/gkcore-api-docs/ gkcore/
+#     # compress the docs & move to public dir. This compressed file
+#     # will be pulled during gnukhata.org website build for
+#     # displaying the api-docs
+#     - tar -cf gkcore-api-docs.tar.gz .pub/gkcore-api-docs/
+#     - mv gkcore-api-docs.tar.gz .pub/
+#     # rename the dir to match gitlab ci's reserved "public" dir name
+#     - mv .pub public
+#     # gzip the public dir
+#     - gzip -k -9 $(find public -type f)
+#   artifacts:
+#     paths:
+#       - public
 
 # deploy devel branch changes to gkcore test server
 update_test_server:
