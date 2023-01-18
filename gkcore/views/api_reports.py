@@ -1036,6 +1036,12 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     }
                 )
         groupWiseTotal += subgroupTotal
+        if subgroup["groupname"] == "Inventory":
+            closingStock = calculateClosingStockValue(con, orgcode, calculateTo)
+            # print("Balance Sheet")
+            # print(orgcode)
+            # print(calculateTo)
+            subgroupTotal = closingStock["total"]
         groupAccSubgroup.append(
             {
                 "groupAccname": subgroup["groupname"],
@@ -1047,7 +1053,9 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                 "advflag": "",
             }
         )
+        # TODO: check if accname is inventory and if it is, make the amount as closing stock value
         groupAccSubgroup += accounts
+        # print(subgroup["groupname"])
 
     applicationsTotal += groupWiseTotal
     abalanceSheet.append(
@@ -1781,8 +1789,8 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
         currentBalance = ttlCrBalance - ttlDrBalance
         balType = "Cr"
     # print("=== calculate balance ===")
-    print(ttlCrBalance)
-    print(ttlDrBalance)
+    # print(ttlCrBalance)
+    # print(ttlDrBalance)
     return {
         "balbrought": float(balanceBrought),
         "curbal": float(currentBalance),
@@ -6123,6 +6131,9 @@ class api_reports(object):
                 result["Closing Stock"] = calculateClosingStockValue(
                     self.con, orgcode, calculateTo
                 )
+                # print("Profit Loss")
+                # print(orgcode)
+                # print(calculateTo)
                 # Calculate opening stock value
                 result["Opening Stock"] = calculateOpeningStockValue(self.con, orgcode)
 
@@ -6141,8 +6152,8 @@ class api_reports(object):
                     % (orgcode, orgcode)
                 )
                 DESubGroups = DESubGroupsData.fetchall()
-                print("Direct Expense sub groups")
-                print(DESubGroups)
+                # print("Direct Expense sub groups")
+                # print(DESubGroups)
                 # now we have list of subgroups under Direct Expense.
                 # We will loop through each and get list of their accounts.
                 for DESub in DESubGroups:
@@ -6196,8 +6207,10 @@ class api_reports(object):
                 )
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
-                    print("Direct Expense Account data")
-                    print(deAccData)
+                    # print("Direct Expense Account data")
+                    # print(deAccData)print("Balance Sheet")
+            # print(orgcode)
+            # print(calculateTo)
                     for deAcc in deAccData:
                         calbalData = calculateBalance(
                             self.con,
