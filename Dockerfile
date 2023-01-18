@@ -1,7 +1,9 @@
 FROM python:slim
 LABEL Sai Karthik <kskarthik@disroot.org>
 # install the required dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y build-essential libpq-dev
+RUN apt-get update && apt-get upgrade -y \
+		&& apt-get install -y \
+		build-essential libpq-dev curl
 # copy the contents of the repo to the image
 COPY . /gkcore/
 #switch to workdir gkcore
@@ -21,3 +23,6 @@ USER gk
 CMD python3 /gkcore/initdb.py && pserve /gkcore/production.ini
 # expose the gkcore port
 EXPOSE 6543
+# check the health of the container at regular intervals
+HEALTHCHECK --start-period=60s \
+  CMD curl -f http://localhost:6543 || exit 1
