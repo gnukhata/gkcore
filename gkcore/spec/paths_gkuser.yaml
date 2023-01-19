@@ -101,6 +101,7 @@ gkuser_pwd_question:
     tags: ["Gkuser"] # "User",
     summary: Fetch password recovery question
     operationId: getquestion
+    security: [{}]
     parameters:
       - in: query
         name: username
@@ -131,6 +132,7 @@ gkuser_pwd_answer:
     tags: ["Gkuser"] # "User",
     summary: Verify password recovery question's answer
     operationId: verifyanswer
+    security: [{}]
     parameters:
       - in: query
         name: userid
@@ -159,6 +161,7 @@ gkuser_pwd_reset:
     tags: ["Gkuser"] # "User",
     summary: Reset the password of a user
     operationId: resetpassword
+    security: [{}]
     requestBody:
       content:
         application/json:

@@ -62,27 +62,33 @@ productInDetails:
   properties:
     productdesc:
       type: string
+      description: Product name 
     prodmrp:
       type: number
+      description: Product Maximum Retail Price
     prodsp:
       type: number
+      description: Product Selling Price
     amountdiscount:
       type: number
+      description: Discount in Rupees
     percentdiscount:
       type: number
+      description: Discount in percentage (% symbol not required, just floating number)
     gscode:
       type: string
+      description: HSN code
     gsflag:
       $ref: "#/gsflag"
-    specs:
-      type: string
     openingstock:
       type: number
       description: legacy property, use godowndetails to store opening stock godownwise
     uomid:
-      type: integer
+      type: integer    
+      description: unit of measurement id, please use /unitofmeasurement?qty=all to get a list of all UOMs and their ids
     categorycode:
       type: integer
+      description: please use GET /categories to get a list of all categories and their ids, if no categories present use null
 
 godownDetails:
   type: object
