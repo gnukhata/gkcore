@@ -316,9 +316,11 @@ class api_gkuser(object):
                 return getUserRole(authDetails["userid"], authDetails["orgcode"])
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-
-    # TODO: Update with new schema
+    
     # request_param="type=all_user_data",
+    '''
+        Fetches the users that are part of an organisation
+    '''
     @view_config(
         request_method="GET",
         renderer="json",
@@ -335,7 +337,8 @@ class api_gkuser(object):
         else:
             try:
                 self.con = eng.connect()
-                # there is only one possibility for a catch which is failed connection to db.
+                # Fetches the data of the users that are part of a particular organisation
+                # TODO: optimize the below query if possible
                 allUserData = self.con.execute(
                     "select gkusers.userid, orgs->'%s' as userconf, username from gkusers inner join (select jsonb_object_keys(users) as userid from organisation where orgcode = %d) orgs on cast(orgs.userid as integer) = gkusers.userid;"
                     % (str(authDetails["orgcode"]), authDetails["orgcode"])
@@ -382,6 +385,9 @@ class api_gkuser(object):
                 self.con.close()
 
     # request_param="type=get_user_orgs",
+    '''
+        Fetches the organisations that a user is part of
+    '''
     @view_config(
         request_method="GET",
         renderer="json",
@@ -405,6 +411,7 @@ class api_gkuser(object):
                 ).fetchone()
                 payload = {}
                 if userData["orgs"] and type(userData["orgs"]) == dict:
+                    # TODO: optimize the below code if possible
                     for orgCode in userData["orgs"]:
                         orgData = self.con.execute(
                             select(

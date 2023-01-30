@@ -63,7 +63,8 @@ class api_invite(object):
                         "select orgs->'%s' from gkusers where userid = %d;"
                         % (str(authDetails["orgcode"]), userid["userid"])
                     )
-
+                    
+                    # print(userInOrgQuery.rowcount)
                     if userInOrgQuery.rowcount:
                         userInOrg = userInOrgQuery.fetchone()
                         if type(userInOrg[0]) == dict and len(userInOrg[0].keys()):
@@ -75,6 +76,8 @@ class api_invite(object):
                         "userconf": {},
                         "userrole": dataset["userrole"],
                     }
+
+                    # TODO: unit test the below code for godown incharge invites
                     # When the user accepts the invite, this golist will be added to the usergodowns table
                     if "golist" in dataset:
                         userOrgPayload["golist"] = dataset["golist"]
@@ -153,6 +156,7 @@ class api_invite(object):
                             dataset["orgcode"],
                         )
                     )
+                    # TODO: unit test the below code
                     # add the godown permissions if any present
                     if "golist" in userData:
                         try:
