@@ -2773,15 +2773,14 @@ class api_organisation(object):
                             ],
                         )
 
-                        # TODO: Must add new code and delete the old one
                         # Update organisation table about its admin user
                         users = {}
                         users[authDetails["userid"]] = True
-                        print(
-                            "=============== Adding the relation code now ==============="
-                        )
-                        print(users)
-                        print(authDetails["userid"])
+                        # print(
+                        #     "=============== Adding the relation code now ==============="
+                        # )
+                        # print(users)
+                        # print(authDetails["userid"])
                         self.con.execute(
                             gkdb.organisation.update()
                             .where(gkdb.organisation.c.orgcode == orgcode["orgcode"])

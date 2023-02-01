@@ -89,69 +89,89 @@ inoutflag:
 
 invoice:
   type: object
+  required: [invoiceno, invoicedate, invoicetotal, orgcode, custid, dcid]
   properties:
     invoiceno:
       type: string
+      description: Invoice number, a string
+      example: 1/SL-22
     ewaybillno:
       type: string
+      description: Not used, for testing use empty string ""
     invoicedate:
       type: string
       format: date
+      description: Date in which Invoice was created
     orgstategstin:
       type: string
+      description: GSTIN of the organisation, e.g. 36AALCA1638A1Z2
     issuername:
       type: string
+      description: Name of the user creating the invoice
     designation:
       type: string
+      description: Role of the user creating the invoice
     address:
       type: string
+      description: Organisation address
     pincode:
       type: string
+      description: Organisation pincode
     custid:
       type: integer
+      description: id of the customer / supplier to whom the sale/ purchase is made to. Please use /customer api to get the proper customer ids.
     roundoffflag:
       type: integer
       enum: [0, 1]
-      description: 0 = true, 1 = false
+      description: 0 = true, 1 = false. Denotes if the delivery note total is rounded off or not.
     paymentmode:
       type: integer
       enum: [2, 3, 15]
       description: 2 = cash, 3 = bank, 15 = credit
     transportationmode:
       type: string
+      description: Mode of transportation. e.g. 'Road', 'Rail', 'Air', 'Ship', 'Other'
     reversecharge:
       type: integer
       enum: [0, 1]
-      description: 0 = true, 1 = false
+      description: 0 = true, 1 = false. Please use 1 for testing
     discflag:
       type: integer
       enum: [1, 16]
-      description: discount flag, 1 - amount, 16 - percent
+      description: discount flag, 1 - amount, 16 - percent. Please use 1 for testing
     invnarration:
       type: string
+      description: Comments for the Invoice created. Can be any string
     dcid:
       type: integer
+      description: Id of the delivery note created before invoice. Please use POST /delchal to create a delivery note and the dcid will be sent in server response.
     sourcestate:
       type: string
+      description: If sale, state of organisation. If Purchase state of the customer. e.g. Karnataka 
+    taxstate:
+      type: string
+      description: If sale, state of customer. If Purchase state of the organisation. e.g. Karnataka
     inoutflag:
       type: integer
       enum: [9, 15]
       description: 9 = sale, 15 = purchase
     supinvno:
       type: string
+      description: Invoice number from the supplier bill
     supinvdate:
       type: string
       format: date
-    taxstate:
-      type: string
+      description: Invoice date from the supplier bill
     taxflag:
       type: integer
       enum: [7, 22]
       description: 7 = GST, 22 = VAT
     invoicetotal:
       type: number
+      example: "750.65"
     invoicetotalword:
       type: string
+      example: Seven Hundred Fifty Rupees and Sixty Five Paise
     consignee:
       type: object
       properties:
@@ -231,14 +251,18 @@ invoice:
       type: string
       format: date
     attachment:
-      type: string
-      format: byte
-      description: base 64 image
+      type: array
+      items: 
+        type: string
+        format: byte
+      description: array of base 64 images
     attachmentcount:
       type: integer
+      description: number of attachments being sent
 
 stock:
   type: object
+  required: [items, inout]
   properties:
     items:
       type: object
@@ -252,6 +276,7 @@ stock:
 
 av:
   type: object
+  required: [product, prodData, avtax, totaltaxable, taxpayment]
   properties:
     product:
       type: object
