@@ -1039,10 +1039,8 @@ class api_rollclose(object):
         And transfering all accounts from the old organisation to the newly created one.
         Also updates organisation table and sets roflag to true for the old orgcode.
         Note that if Roll over is done before closing books,
-        The balances will still be carried forward and the current roflag will be set to True without setting the closebook flag to true.
+        The balances will still be carried forward and the current roflag will be set to 1 without setting the closebook flag to 1.
         Returns success status if true.
-        description:
-        This method is called when the /rollclose route is invoked with task=rollover as parameter.
         """
         try:
             token = self.request.headers["gktoken"]
