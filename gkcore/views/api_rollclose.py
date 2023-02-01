@@ -26,7 +26,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, gk_log
 from gkcore.views.api_reports import (
     calculateBalance,
     stockonhandfun,
@@ -949,8 +949,12 @@ class api_rollclose(object):
                             "vouchertype": "journal",
                             "orgcode": orgCode,
                         }
-                        result = self.con.execute(vouchers.insert(), [cljv])
-                result = self.con.execute(
+                        try:
+                            self.con.execute(vouchers.insert(), [cljv])
+                        except Exception as e:
+                            print(e)
+                 # set existing org's booksclosedflag to 1
+                self.con.execute(
                     organisation.update()
                     .where(organisation.c.orgcode == orgCode)
                     .values({"booksclosedflag": 1})
@@ -1525,6 +1529,13 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
+                 # set existing org's roflag to 1
+                gk_log(__name__).info("setting roflag to 1")
+                self.con.execute(
+                    organisation.update()
+                    .where(organisation.c.orgcode == orgCode)
+                    .values({"roflag": 1})
+                )
                 self.con.close()
                 payload = {
                     "neworgcode": newOrgCode,
@@ -1534,8 +1545,7 @@ class api_rollclose(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
 
             except Exception as E:
-                print(traceback.format_exc())
-                self.con.close()
+                print(traceback.format_exc(), E)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     def getNextOrgCode(self, prevOrgCode, con):
