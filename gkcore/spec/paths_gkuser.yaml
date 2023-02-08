@@ -52,6 +52,20 @@ gkuser:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
 
+  delete:
+    tags: ["Gkuser"] # "User",
+    summary: Delete user
+    responses:
+      200:
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
 organisation_gkusers:
   get:
     tags: ["Gkuser"] # "User", , "Users of an Organisation"
@@ -188,6 +202,33 @@ gkuser_pwd_reset:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
 
+gkuser_pwd_change:
+  put:
+    tags: ["Gkuser"] # "User",
+    summary: Change the password of a user
+    security:
+      - UserAuth: []
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [userpassword]
+            additionalProperties: false
+            properties:
+              userpassword:
+                type: string
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
 gkuser_username:
   get:
     tags: ["Gkuser"] # "User",

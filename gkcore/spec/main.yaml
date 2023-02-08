@@ -128,9 +128,10 @@ paths:
     $ref: "./paths_gkuser.yaml#/gkuser_pwd_answer"
   /gkuser/pwd/reset:
     $ref: "./paths_gkuser.yaml#/gkuser_pwd_reset"
+  /gkuser/pwd/change:
+    $ref: "./paths_gkuser.yaml#/gkuser_pwd_change"
   /gkuser/check/{username}:
     $ref: "./paths_gkuser.yaml#/gkuser_username"
-
   # invite
   /invite:
     $ref: "./paths_invite.yaml#/invite"
@@ -176,7 +177,7 @@ paths:
     $ref: "./paths_tax.yaml#/tax_taxid"
 
   # customer (Customer & Supplier)
-  /customer: 
+  /customer:
     $ref: "./paths_customer.yaml#/customer"
   /customer/search/account/{accountcode}:
     $ref: "./paths_customer.yaml#/customer_search_by_account"
@@ -206,7 +207,6 @@ paths:
     $ref: "./paths_invoice.yaml#/invoice_attachment"
   /delchal/unbilled:
     $ref: "./paths_invoice.yaml#/delnote_unbilled"
-
 
   # delchal
   /delchal:
