@@ -1,18 +1,15 @@
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
-from sqlalchemy.sql import select
-import json
+from sqlalchemy.sql import select, delete
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-import jwt
 import gkcore
 from gkcore.models.meta import (
     tableExists,
 )
-from gkcore.utils import authCheck, userAuthCheck, generateAuthToken
+from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken
 from datetime import datetime
 import traceback
 
@@ -72,7 +69,8 @@ class api_gkuser(object):
 
             if "orgs" not in dataset:
                 dataset["orgs"] = {}
-            result = self.con.execute(gkdb.gkusers.insert(), [dataset])
+            # insert the user info into gkusers table
+            self.con.execute(gkdb.gkusers.insert(), [dataset])
             userid = self.con.execute(
                 select([gkdb.gkusers.c.userid]).where(
                     gkdb.gkusers.c.username == dataset["username"]
@@ -86,10 +84,9 @@ class api_gkuser(object):
             return {"gkstatus": enumdict["Success"], "token": token}
         except exc.IntegrityError:
             return {"gkstatus": enumdict["DuplicateEntry"]}
-        except:
+        except Exception as e:
+            gk_log(__name__).debug(e)
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
 
     """
     updateDefaultUserName() method is used to update the username in gkusers table that was created during migration 
@@ -631,9 +628,6 @@ class api_gkuser(object):
                 return {"gkstatus": enumdict["BadPrivilege"]}
         except:
             print(traceback.format_exc())
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
 
     """
         Following function check status (i.e valid or not) of field current password in edituser.  
@@ -670,3 +664,88 @@ class api_gkuser(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(request_method="DELETE", renderer="json")
+    def deleteUser(self):
+        '''
+        Delete a user from the database
+
+        First, infer the user info from the gktoken, Check if the user is part of
+        an organisation(s). If the user is a part of atleast one org, do not delete
+        else, proceed with deletion
+        '''
+        # validate the gktoken
+        user = {}
+        try:
+            self.con = eng.connect()
+            token = self.request.headers["gkusertoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = userAuthCheck(token)
+        user = authDetails
+        gk_log(__name__).debug(user)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # get the user info from the database
+        else:
+            try:
+                result = self.con.execute(
+                    select([gkdb.gkusers]).where(
+                        and_(
+                            gkdb.gkusers.c.userid == user['userid'],
+                        )
+                    )
+                ).fetchone()
+                # loop over the orgs where the user is part of
+                admin_of_orgs: list[int] = []
+                for i in result.orgs:
+                    # check if the user has admin role and
+                    # also consider only if invitestatus is True
+                    # if so, append the orgcode to admin_of_orgs list
+                    if result.orgs[i]["userrole"] == -1 and result.orgs[i]["invitestatus"]:
+                        admin_of_orgs.append(int(i))
+                # if the user is admin of even one org, do not proceed for the deletion
+                # because those orgs may not contain additional users with admin role
+                if len(admin_of_orgs) > 0:
+                    gk_log(__name__).debug(f"The user is admin of {len(admin_of_orgs)} orgs with org ids {admin_of_orgs}")
+                    return {"gkstatus": enumdict["ActionDisallowed"]}
+                else:
+                    # delete the user from the database & return success status code
+                    self.con.execute(
+                        delete(gkdb.gkusers).where(
+                                gkdb.gkusers.c.userid == user['userid'],
+                        )
+                    )
+                    return {"gkstatus": enumdict["Success"]}
+            except Exception as e:
+                gk_log(__name__).error(e)
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+    @view_config(
+        request_method="PUT",
+        renderer="json",
+        route_name="gkuser_change_pwd",
+    )
+    def changeUserPassword(self):
+        """Change user's password"""
+        try:
+            self.con = eng.connect()
+            token = self.request.headers["gkusertoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = userAuthCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        try:
+            self.con = eng.connect()
+            dataset = self.request.json_body
+            self.con.execute(
+                gkdb.gkusers.update()
+                .where(gkdb.gkusers.c.userid == authDetails["userid"])
+                .values(userpassword=dataset["userpassword"])
+            )
+            return {"gkstatus": enumdict["Success"]}
+        except Exception as e:
+            gk_log(__name__).error(e)
+            return {"gkstatus": enumdict["ConnectionFailed"]}

@@ -73,6 +73,7 @@ def main(global_config, **settings):
     config.add_route("gkuser_pwd_question", "/gkuser/pwd/question")
     config.add_route("gkuser_pwd_answer", "/gkuser/pwd/answer")
     config.add_route("gkuser_pwd_reset", "/gkuser/pwd/reset")
+    config.add_route("gkuser_change_pwd", "/gkuser/pwd/change")
     config.add_route("gkuser_pwd_validate", "/gkuser/pwd/validate")
     config.add_route("gkuser_users_of_role", "/gkuser/all/role/{userrole}")
     config.add_route("gkuser_uname", "/gkuser/check/{username}")

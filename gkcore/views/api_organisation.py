@@ -3193,6 +3193,7 @@ class api_organisation(object):
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteOrg(self):
+        """Deletes an organisation. Only admin role can delete"""
         token = self.request.headers["gktoken"]
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
