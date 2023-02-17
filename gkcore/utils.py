@@ -3,7 +3,7 @@ import gkcore
 import jwt
 import traceback
 from gkcore.models import gkdb
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, and_
 from Crypto.PublicKey import RSA
 
 
@@ -77,6 +77,24 @@ def authCheck(token):
         tokendict["auth"] = True
         tokendict["orgcode"] = int(tokendict["orgcode"])
         tokendict["userid"] = int(tokendict["userid"])
+        # get the user role of current org
+        try:
+            user_info = (
+                gkcore.eng.connect()
+                .execute(
+                    select([gkdb.gkusers]).where(
+                        and_(
+                            gkdb.gkusers.c.userid == tokendict["userid"],
+                        )
+                    )
+                )
+                .fetchone()
+            )
+            tokendict["userrole"] = user_info["orgs"][str(tokendict["orgcode"])][
+                "userrole"
+            ]
+        except Exception as e:
+            print(e)
         return tokendict
     except:
         tokendict = {"auth": False}
