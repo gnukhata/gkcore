@@ -30,8 +30,6 @@ from gkcore.models.gkdb import metadata
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import func
-import datetime
-from time import strftime
 
 """
 This module is used only once per installation.
@@ -58,7 +56,6 @@ try:
     )
     numofuom = uomscount.fetchone()
     if int(numofuom["numofuom"]) == 0:
-        # dictofuqc = {'BAG':'BAG','BGS':'BAGS','BLS':'BAILS','BTL':'BOTTLES','BOU':'BOU','BOX':'BOXES','BKL':'BUCKLES','BLK':'BULK','BUN':'BUNCHES','BDL':'BUNDLES','CAN':'CANS','CTN':'CARTONS','CAS':'CASES','CMS':'CENTIMETER','CHI':'CHEST','CLS':'COILS','COL':'COLLIES','CRI':'CRATES','CCM':'CUBIC CENTIMETER','CIN':'CUBIC INCHES','CBM':'CUBIC METER','CQM':'CUBIC METERS','CYL':'CYLINDER','SDM':'DECAMETER SQUARE','DAY':'DAYS','DOZ':'DOZEN','DRM':'DRUMS','FTS':'FEET','FLK':'FLASKS','GMS':'GRAMS','TON':'GREAT BRITAIN TON','GGR':'GREAT GROSS','GRS':'GROSS','GYD':'GROSS YARDS','HBK':'HABBUCK','HKS':'HANKS','HRS':'HOURS','INC':'INCHES','JTA':'JOTTA','KGS':'KILOGRAMS','KLR':'KILOLITER','KME':'KILOMETERS','LTR':'LITERS','LOG':'LOGS','LOT':'LOTS','MTR':'METER','MTS':'METRIC TON','MGS':'MILLIGRAMS','MLT':'MILLILITER','MMT':'MILLIMETER','NONE':'NOT CHOSEN','NOS':'NUMBERS','ODD':'ODDS','PAC':'PACKS','PAI':'PAILS','PRS':'PAIRS','PLT':'PALLETS','PCS':'PIECES','LBS':'POUNDS','QTL':'QUINTAL','REL':'REELS','ROL':'ROLLS','SET':'SETS','SHT':'SHEETS','SLB':'SLABS','SQF':'SQUARE FEET','SQI':'SQUARE INCHES','SQC':'SQUARE CENTIMETERS','SQM':'SQUARE METER','SQY':'SQUARE YARDS','BLO':'STEEL BLOCKS','TBL':'TABLES','TBS':'TABLETS','TGM':'TEN GROSS','THD':'THOUSANDS','TIN':'TINS','TOL':'TOLA','TRK':'TRUNK','TUB':'TUBES','UNT':'UNITS','UGS':'US GALLONS','VLS':'VIALS','CSK':'WOODEN CASES','YDS':'YARDS'}
         # UQC list as per Indian GST law
         dictofuqc = {
             "BAG": "BAGS",
