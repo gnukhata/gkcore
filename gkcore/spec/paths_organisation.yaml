@@ -254,3 +254,31 @@ organisation_orgname:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
+
+organisation_rm_user:
+  delete:
+    tags: ["Organisation"]
+    summary: Remove an user from the organisation
+    description: Only a user with admin role can remove another user
+    security: [{}]
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [userid]
+            description: the user id which is to be removed
+            properties:
+              userid:
+                type: integer
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"

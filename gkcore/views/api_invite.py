@@ -3,12 +3,10 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 import gkcore
-from gkcore.utils import authCheck, userAuthCheck, generateAuthToken
+from gkcore.utils import authCheck, gk_log, userAuthCheck
 import traceback
 
 
@@ -239,8 +237,6 @@ class api_invite(object):
             except:
                 print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(
         request_method="DELETE", renderer="json"
@@ -310,8 +306,6 @@ class api_invite(object):
             except:
                 print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     # TODO: Add user role update method
     # use the updateuser method in api_user as base

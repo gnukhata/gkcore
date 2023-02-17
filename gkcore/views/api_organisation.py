@@ -32,12 +32,12 @@ Contributors:
 """
 
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck, userAuthCheck
+from requests import request
+from gkcore.utils import authCheck, gk_log, userAuthCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
-from sqlalchemy.sql import select, update
-from sqlalchemy.types import DATE
+from sqlalchemy.sql import select
 from sqlalchemy import func, desc
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -54,7 +54,6 @@ from gkcore.models.meta import (
     getOnDelete,
     uniqueConstraintExists,
 )
-from gkcore.views.api_invoice import rename_inv_no_uniquely
 from datetime import datetime, timedelta
 import os
 import traceback
@@ -3668,3 +3667,89 @@ class api_organisation(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": gstinval}
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="DELETE", route_name="organisation_rm_user", renderer="json"
+    )
+    def removeUserfromOrg(self):
+        '''Removes a user from the current organisation
+
+       Conditions:
+       1. Only admin can delete other users
+       2. If the user to delete has admin role, Make sure the org should have atleast 1 admin before deleting the user
+       '''
+        # auth checks
+        try:
+            token = self.request.headers["gktoken"]
+            user_token = self.request.headers["gkusertoken"]
+            request_body = self.request.json_body
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        userAuthDetails = userAuthCheck(user_token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        if userAuthDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        self.con = eng.connect()
+        # check if the user is admin of the current org
+        if authDetails["userrole"] != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+        # remove user keys in org table & org keys in user table
+        try:
+            admin_count = len(self.orgAdminList(org_code=authDetails["orgcode"]))
+            # check if user is trying to remove self
+            # do not allow self removal if org has one admin only
+            if authDetails["userid"] == request_body["userid"] and admin_count == 1:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            # delete user from organisation users jsonb list
+            try:
+                self.con.execute(
+                    f"update organisation set users = users - '{request_body['userid']}' WHERE orgcode = {authDetails['orgcode']}")
+            except Exception as e:
+                gk_log(__name__).error("remove user: ", e)
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            # delete org key in corresponding gkuser column
+            try:
+                self.con.execute(
+                    f"update gkusers set orgs = orgs - '{authDetails['orgcode']}' WHERE userid = {request_body['userid']}")
+            except Exception as e:
+                gk_log(__name__).error("remove org: ", e)
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+            return {"gkstatus": enumdict["Success"]}
+        except Exception as e:
+            gk_log(__name__).error(e)
+
+    def orgAdminList(self, org_code: int) -> list :
+        """
+        Get the list of all admins of an org
+        """
+        self.con = eng.connect()
+        # first, get the org users
+        try:
+            org_info = self.con.execute(
+                    select([gkdb.organisation]).where(
+                        and_(
+                            gkdb.organisation.c.orgcode == org_code,
+                        )
+                    )
+                ).fetchone()
+            # loop throught the users & look for users with
+            # admin roles & append them to admin_list array
+            admin_list: list = []
+            for usr_code in org_info["users"].keys():
+                try:
+                    user_info = self.con.execute(
+                            select([gkdb.gkusers]).where(
+                                and_(
+                                    gkdb.gkusers.c.userid == usr_code
+                                )
+                            )
+                        ).fetchone()
+                    if user_info["orgs"][str(org_code)]["userrole"] == -1:
+                        admin_list.append(usr_code)
+                except Exception as e:
+                    raise e
+            return admin_list
+        except Exception as e:
+            raise e

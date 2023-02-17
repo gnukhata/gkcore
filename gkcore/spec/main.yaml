@@ -114,6 +114,8 @@ paths:
     $ref: "./paths_organisation.yaml#/organisation_registration"
   /organisation/check/{orgname}:
     $ref: "./paths_organisation.yaml#/organisation_orgname"
+  /organisation/remove-user:
+    $ref: "./paths_organisation.yaml#/organisation_rm_user"
 
   # gkuser
   /gkuser:

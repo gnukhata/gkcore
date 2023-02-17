@@ -64,6 +64,7 @@ def main(global_config, **settings):
     )
     config.add_route("organisation_registration", "/organisation/check_registration")
     config.add_route("organisation_orgname", "/organisation/check/{orgname}")
+    config.add_route("organisation_rm_user", "/organisation/remove-user")
 
     # gkuser
     config.add_route("gkuser", "/gkuser")
