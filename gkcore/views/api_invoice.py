@@ -2713,7 +2713,7 @@ class api_invoice(object):
     It receives a dictionary with information regarding an invoice, changes to be made in stock if any and delivery notes linked if any.
     """
 
-    @view_config(request_method="PUT", renderer="json")
+    @view_config(route_name="invoice_invid", request_method="PUT", renderer="json")
     def editInvoice(self):
         try:
             token = self.request.headers["gktoken"]
