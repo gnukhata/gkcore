@@ -13,10 +13,12 @@ Requirements:
 
 - [docker-compose](https://docs.docker.com/compose/)
 - [virtualenv](https://pypi.org/project/virtualenv/)
+- [poetry](https://python-poetry.org/)
 
+- Install dependencies `libpq-dev` and `build-essential`. On debian/Ubuntu distro's `sudo apt install libpq-dev build-essential`
 - Create a virtal environment named `gkenv`: `virtualenv gkenv`
+- activate the gkcore virtual environment: `source gkenv/bin/activate`
 - `cd` into the cloned gkcore repository
-- activate the gkcore virtual environment
 - run `pip install -r requirements.txt` to install gkcore dependencies
 - set environment variable `export GKCORE_DB_URL="postgres://gkadmin:gkadmin@localhost:5432/gkdata"`
 - Run the command `docker-compose up -d` to start the containers on which gkcore depends
@@ -26,11 +28,7 @@ Requirements:
 
 gkcore now can be accessed via `localhost:6543` from your web browser or at `0.0.0.0:6543` incase of production
 
-> The gkcore's data is stored under `gkdir` folder in the user's home directory.
-
 ## Manual
-
-> Note: you have to press enter after completely typing every command.
 
 - On debian/Ubuntu distributions Install python-virtualenv postgresql and dependencies using following command
 
@@ -98,36 +96,14 @@ gkcore is now accessible at `http://localhost:6543`🎉
 
 - When gkcore is installed on VPS, make sure to change the timezone to India with command `timedatectl set-timezone Asia/Kolkata` as organization logs pickup the default timezone.
 
+# Public instances
+
+| API endpoint                 | Info                                                       |
+| ---------------------------- | ---------------------------------------------------------- |
+| https://api-dev.gnukhata.org | Hosted by GNUKhata team. this api is based on devel branch |
+
 # Credits
 
 - [Razorpay IFSC](https://github.com/razorpay/ifsc): IFSC validation server is used as a docker service
 - pgadmin: Helps visualizing gnukhata's database locally
 - GST Portal: For providing HSN/SAC codes spreadsheet
-
-<!--
-
-* Open another terminal and change directory to gkwebapp
-* Activate virtualenv and run setup.py using
-
-> `python setup.py develop`
-
-- To run gkwebapp server in development mode use:
-
-> `pserve development.ini`
-
-# Documentation
-
-gkcore is the core engine for GNUKhata <gnukhata.in> a free and open source accounting/ book keeping software.
-The core engine contains the database creation and management code along with the code for implementing the logic in form of RESTful API.
-To get the code running on your machine as developers, you need to create a virtual environment of Python and then create the databaes and it's dedicated users.
-
-NOTE: PLEASE ENTER ALL COMMANDS AS THEY HAVE BEEN GIVEN INCLUDING QUOTES ("")
-These are the steps to get the database initialised.
-WARNING: "perform these commands with the full knowledge of what you are doing "
-1, firstly we need a system user so issue the command sudo useradd gkadmin and press enter
-2, create a role with same name: type sudo -u postgres psql -c "create role gkadmin with login"
-3, grant all privileges for this do:
-a: sudo -u postgres psql -c "alter role gkadmin createdb;"
-b: sudo -u postgres psql -c "grant all privileges on database template1 to gkadmin;"
-4, create the database, issue command sudo -u postgres psql -c "create database gkdata"
--->
