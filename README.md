@@ -7,13 +7,13 @@ The REST API server of GNUKhata
 
 # Installation
 
-## Docker
+## Via Docker (Easier)
 
 Requirements:
 
+- [docker](https://www.docker.com/)
 - [docker-compose](https://docs.docker.com/compose/)
 - [virtualenv](https://pypi.org/project/virtualenv/)
-- [poetry](https://python-poetry.org/)
 
 - Install dependencies `libpq-dev` and `build-essential`. On debian/Ubuntu distro's `sudo apt install libpq-dev build-essential`
 - Create a virtal environment named `gkenv`: `virtualenv gkenv`
@@ -28,7 +28,7 @@ Requirements:
 
 gkcore now can be accessed via `localhost:6543` from your web browser or at `0.0.0.0:6543` incase of production
 
-## Manual
+## Manual Way
 
 - On debian/Ubuntu distributions Install python-virtualenv postgresql and dependencies using following command
 
