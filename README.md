@@ -16,17 +16,19 @@ Requirements:
 - [virtualenv](https://pypi.org/project/virtualenv/)
 
 - Install dependencies `libpq-dev` and `build-essential`. On debian/Ubuntu distro's `sudo apt install libpq-dev build-essential`
-- Create a virtal environment named `gkenv`: `virtualenv gkenv`
+- Create a virtal environment named gkenv: `virtualenv gkenv`
 - activate the gkcore virtual environment: `source gkenv/bin/activate`
 - `cd` into the cloned gkcore repository
 - run `pip install -r requirements.txt` to install gkcore dependencies
 - set environment variable `export GKCORE_DB_URL="postgres://gkadmin:gkadmin@localhost:5432/gkdata"`
 - Run the command `docker-compose up -d` to start the containers on which gkcore depends
-- If you are running gkcore for the first time, run `python3 initdb.py` which initializes the database schema
+- If you are running gkcore for the first time, run `python3 setup.py develop` to setup the app and `python3 initdb.py` which initializes the database schema
 - For development purpose, run `pserve development.ini --reload`
 - For production, run `pserve production.ini`
 
-gkcore now can be accessed via `localhost:6543` from your web browser or at `0.0.0.0:6543` incase of production
+gkcore can be accessed at `localhost:6543` from your web browser or `0.0.0.0:6543` incase of production
+
+> gkcore API docs (swagger UI) can be accessed via `localhost:6543/docs` from your web browser
 
 ## Manual Way
 
