@@ -5,9 +5,9 @@ import subprocess as cmd
 import os
 
 help_text = """\t
-gkcore is gnukhata's REST API service
+This script helps your setup / run gkcore - GNUKhata's REST API service
 
-USAGE: ./gkcore.py [OPTION]
+USAGE: ./gkcore_cli.py [OPTION]
 
 OPTIONS:
 
@@ -17,34 +17,31 @@ OPTIONS:
 """
 
 
-def check_flags():
+def check_flags(arg):
     """Validate script arguments & run appropriate action"""
 
     # set env variable, used by gkcore to connect to db
     os.environ["GKCORE_DB_URL"] = "postgres://gkadmin:gkadmin@localhost:5432/gkdata"
 
-    if "init" in args:
-
+    if arg == "init":
         cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["python3", "initdb.py"])
         return
 
-    elif "serve" in args:
-
+    elif arg == "serve":
         cmd.run(["docker-compose", "up", "-d"])
-
         cmd.run(["pserve", "development.ini", "--reload"])
-        # cmd.run(["gunicorn", "-b 127.0.0.1:6543", "--reload", "--paste", "development.ini"])
         return
 
-    elif "deploy" in args:
-
+    elif arg == "deploy":
         cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["pserve", "production.ini"])
         return
-    # if the user does not provide any flags
     else:
         print(help_text)
 
 
-check_flags()
+if len(args) > 1:
+    check_flags(args[1])
+else:
+    print(help_text)
