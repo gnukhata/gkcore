@@ -846,11 +846,15 @@ def gst(ProductCode, con):
 
 
 def getStateCode(StateName, con):
-    stateData = con.execute(
-        select([state.c.statecode]).where(state.c.statename == StateName)
-    )
-    staterow = stateData.fetchone()
-    return {"statecode": staterow["statecode"]}
+    try:
+        stateData = con.execute(
+            select([state.c.statecode]).where(state.c.statename == StateName)
+        )
+        staterow = stateData.fetchone()
+        return {"statecode": staterow["statecode"]}
+    except:
+        raise
+
 
 
 def getInvoiceData(con, orgcode, params):
