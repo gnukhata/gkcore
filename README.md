@@ -104,6 +104,12 @@ gkcore is now accessible at `http://localhost:6543`🎉
 | ---------------------------- | ---------------------------------------------------------- |
 | https://api-dev.gnukhata.org | Hosted by GNUKhata team. this api is based on devel branch |
 
+# Useful Links
+
+- [Pyramid Framework](https://trypyramid.com/)
+- [Open API Spec](https://swagger.io/docs/specification/about/)
+- [Pyramid openAPI3](https://github.com/Pylons/pyramid_openapi3)
+
 # Credits
 
 - [Razorpay IFSC](https://github.com/razorpay/ifsc): IFSC validation server is used as a docker service
