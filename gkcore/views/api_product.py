@@ -29,7 +29,7 @@ Contributors:
 
 
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, gk_log
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from pyramid.request import Request
@@ -453,7 +453,8 @@ class api_product(object):
                 return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
+            except Exception as e:
+                gk_log(__name__).warn(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -956,6 +957,7 @@ class api_product(object):
     """
     This function is written for fetching the HSN code, UOM automatically when product is selected.
     """
+
     # request_param="type=hsnuom",
     @view_config(request_method="GET", route_name="product_hsn", renderer="json")
     def gethsnuom(self):
@@ -1040,6 +1042,7 @@ class api_product(object):
     Another query retrives the contents of the invoice whose invid is same as the result of the above query.
     Price is found out from the contents using productcode as key and sent as response.
     """
+
     # request_param="type=lastprice",
     @view_config(route_name="product_lastprice", request_method="GET", renderer="json")
     def lastPrice(self):
