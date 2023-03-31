@@ -284,3 +284,9 @@ paths:
     $ref: "./paths_spreadsheets.yaml#/ledger"
   /spreadsheet/ledger/monthly:
     $ref: "./paths_spreadsheets.yaml#/ledger_monthly"
+
+  # unit of measurement
+  /unitofmeasurement:
+    $ref: "./paths_uom.yaml#/uom"
+  /unitofmeasurement/{uomid}:
+    $ref: "./paths_uom.yaml#/uom_single"

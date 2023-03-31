@@ -144,7 +144,6 @@ def main(global_config, **settings):
     config.add_route("account", "/account/{accountcode}")
     config.add_route("projects", "/projects")
     config.add_route("project", "/project/{projectcode}")
-    config.add_route("unitofmeasurement", "/unitofmeasurement")
     config.add_route("accountsbyrule", "/accountsbyrule")
     config.add_route("groupallsubgroup", "/groupallsubgroup/{groupcode}")
     config.add_route("groupsubgroup", "/groupsubgroup/{groupcode}")
@@ -205,6 +204,10 @@ def main(global_config, **settings):
     config.add_route("trial-balance-xlsx", "/spreadsheet/trial-balance")
     config.add_route("ledger-monthly-xlsx", "/spreadsheet/ledger/monthly")
     config.add_route("ledger-xlsx", "/spreadsheet/ledger")
+
+    # Unit of measurement
+    config.add_route("uom", "/unitofmeasurement")
+    config.add_route("uom-single", "/unitofmeasurement/{uomid}")
 
     config.scan("gkcore.views")
 

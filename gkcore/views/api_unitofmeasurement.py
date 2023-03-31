@@ -26,20 +26,20 @@ Contributors:
 """
 
 
+from requests import request
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc, func
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 import gkcore
+from gkcore.models.meta import gk_api
 from gkcore.utils import authCheck
 
 
-@view_defaults(route_name="unitofmeasurement")
+@view_defaults(route_name="uom")
 class api_unitOfMeasurement(object):
     def __init__(self, request):
         self.request = Request
@@ -73,7 +73,7 @@ class api_unitOfMeasurement(object):
     are associated with products can not be deleted.
     """
 
-    @view_config(request_param="qty=single", request_method="GET", renderer="json")
+    @view_config(route_name="uom-single", request_method="GET", renderer="json")
     def getUnitOfMeasurement(self):
         try:
             token = self.request.headers["gktoken"]
@@ -85,7 +85,7 @@ class api_unitOfMeasurement(object):
         else:
             try:
                 self.con = eng.connect()
-                dataset = self.request.params
+                dataset = self.request.matchdict
                 result = self.con.execute(
                     select([gkdb.unitofmeasurement]).where(
                         gkdb.unitofmeasurement.c.uomid == dataset["uomid"]
@@ -145,7 +145,7 @@ class api_unitOfMeasurement(object):
             finally:
                 self.con.close()
 
-    @view_config(request_param="qty=all", request_method="GET", renderer="json")
+    @view_config(request_method="GET", renderer="json")
     def getAllunitofmeasurements(self):
         try:
             token = self.request.headers["gktoken"]
@@ -193,6 +193,7 @@ class api_unitOfMeasurement(object):
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteunitofmeasurement(self):
+        """Delete a Unit of measurement. Do not delete UOM which is associated with a product"""
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -204,7 +205,18 @@ class api_unitOfMeasurement(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(
+                # check if uom is associated with any product/service
+                check_uom = gk_api(
+                    url=f"/unitofmeasurement/{dataset['uomid']}",
+                    request=self.request,
+                    header=self.request.headers,
+                )
+                print(check_uom)
+                # if it is used in a product/service, do not delete it
+                if check_uom["flag"] == "True":
+                    return {"gkstatus": enumdict["ActionDisallowed"]}
+                # proceed to deletion if not used
+                self.con.execute(
                     gkdb.unitofmeasurement.delete().where(
                         gkdb.unitofmeasurement.c.uomid == dataset["uomid"]
                     )
