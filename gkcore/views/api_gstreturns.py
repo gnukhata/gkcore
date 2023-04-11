@@ -303,7 +303,6 @@ def b2cl_r1(invoices, con):
         b2cl = []
         b2cl_json = {}
         for inv in invs:
-
             ts_code = state_name_code(con, statename=inv["taxstate"])
 
             row = {}
@@ -411,7 +410,6 @@ def b2cs_r1(invoices, con, drcr):
         b2cs = []
         b2cs_json_arr = []
         for inv in invs:
-
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if int(ts_code) < 10:
                 ts_code = "0" + str(ts_code)
@@ -522,7 +520,6 @@ def cdnr_r1(drcr_all, con):
         cdnr = []
         cdnr_json = {}
         for note in drcrs:
-
             ts_code = normalise_state_code(
                 state_name_code(con, statename=note["taxstate"]), note["gstin"]
             )
@@ -638,7 +635,6 @@ def cdnur_r1(drcr_all, con):
         cdnur_json_arr = []
         # print("drcr notes = %d" % (len(drcrs)))
         for note in drcrs:
-
             ts_code = state_name_code(con, statename=note["taxstate"])
 
             row = {}
@@ -713,13 +709,13 @@ def cdnur_r1(drcr_all, con):
 
 
 def hsn_r1(orgcode, start, end, con):
-
     """
     Retrieve all products data including product code,product description , hsn code, UOM.
     Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
 
     Store this data in following formats:
-    {'SGSTamt': '40.50', 'uqc': u'PCS', 'qty': '11.00', 'prodctname': u'Madhura Sugar', 'IGSTamt': '9.90', 'hsnsac': u'45678', 'taxableamt': '505.00', 'totalvalue': '541.10', 'CESSamt': '10.10'},................, {'grand_Value': '6089.20', 'grand_CESSValue': '68.20', 'grand_CGSTValue': '158.00', 'hsnNo': 2, 'grand_ttl_TaxableValue': '6260.00', 'grand_IGSTValue': '69.80'}]"""
+    {'SGSTamt': '40.50', 'uqc': u'PCS', 'qty': '11.00', 'prodctname': u'Madhura Sugar', 'IGSTamt': '9.90', 'hsnsac': u'45678', 'taxableamt': '505.00', 'totalvalue': '541.10', 'CESSamt': '10.10'},................, {'grand_Value': '6089.20', 'grand_CESSValue': '68.20', 'grand_CGSTValue': '158.00', 'hsnNo': 2, 'grand_ttl_TaxableValue': '6260.00', 'grand_IGSTValue': '69.80'}]
+    """
     try:
         orgcode = orgcode
         start = start
@@ -1120,7 +1116,6 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
                                 ] = 1
                         else:
                             if line_total_amount == line_amount:  # Zero GST taxes
-
                                 # 5. From a supplier under composition scheme, Exempt and Nil rated
                                 if gst_reg_type == GST_REG_TYPE["composition"]:
                                     if (
@@ -1178,16 +1173,15 @@ def generate_gstr_3b_data(con, orgcode, fromDate, toDate):
         return {}
 
 
-@view_defaults(route_name="gstreturns")
+# @view_defaults(route_name="gstreturns")
 class GstReturn(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
         self.con = Connection
 
-    @view_config(request_method="GET", request_param="type=r1", renderer="json")
+    @view_config(request_method="GET", route_name="gstr1", renderer="json")
     def r1(self):
-
         """
         Returns JSON with b2b, b2cl, b2cs, cdnr, cdnur data required
         to file GSTR1
@@ -1202,7 +1196,6 @@ class GstReturn(object):
         """
 
         token = self.request.headers.get("gktoken", None)
-        print("GST return")
         if token == None:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
@@ -1401,7 +1394,7 @@ class GstReturn(object):
             print(traceback.format_exc())
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(request_method="GET", request_param="type=r3b", renderer="json")
+    @view_config(request_method="GET", route_name="gstr3b", renderer="json")
     def r3b(self):
         token = self.request.headers.get("gktoken", None)
         print("GST return")
@@ -1625,9 +1618,7 @@ class GstReturn(object):
             # print(traceback.format_exc())
             return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(
-        request_method="GET", request_param="type=gstin_captcha", renderer="json"
-    )
+    @view_config(request_method="GET", route_name="gst-captcha", renderer="json")
     def getGstinCaptcha(self):
         req1 = requests.get("https://www.gst.gov.in/")
         if req1.status_code == 200:
@@ -1661,9 +1652,7 @@ class GstReturn(object):
             payload = {"gkstatus": enumdict["ConnectionFailed"]}
         return payload
 
-    @view_config(
-        request_method="POST", request_param="type=gstin_captcha", renderer="json"
-    )
+    @view_config(request_method="POST", route_name="gst-captcha", renderer="json")
     def validateGstinCaptcha(self):
         dataset = self.request.json_body
         URL = "https://services.gst.gov.in/services/api/search/taxpayerDetails"

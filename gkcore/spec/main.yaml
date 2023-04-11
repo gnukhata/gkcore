@@ -290,3 +290,9 @@ paths:
     $ref: "./paths_uom.yaml#/uom"
   /unitofmeasurement/{uomid}:
     $ref: "./paths_uom.yaml#/uom_single"
+
+  # GST
+  /gst/returns/3b:
+    $ref: "./paths_gst.yaml#/GSTR-3B"
+  /gst/returns/r1:
+    $ref: "./paths_gst.yaml#/GSTR-1"

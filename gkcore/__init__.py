@@ -165,25 +165,20 @@ def main(global_config, **settings):
     config.add_route("billwise", "/billwise")
     config.add_route("state", "/state")
     config.add_route("drcrnote", "/drcrnote")
-    config.add_route("gstreturns", "/gstreturns")
     config.add_route("dashboard", "/dashboard")
     config.add_route("config", "/config")
     config.add_route("spreadsheet", "/spreadsheet")
     config.add_route("ifsc", "/ifsc")
     config.add_route("dev", "/dev")  # Comment in production
     config.add_route("hsn", "/hsn")
-    # import / export
+    # export org data
     config.add_route("export-json", "/export/json")
     config.add_route("export-xlsx", "/export/xlsx")
-
+    # import org data
     config.add_route("import-json", "/import/json")
     config.add_route("import-xlsx", "/import/xlsx")
 
     config.add_route("index", "/")
-    config.add_route("gstnews", "/gst-news")
-    # config.add_route("organisations", "/organisations") # legacy
-    # config.add_route("users", "/users") # legacy
-    # config.add_route("user", "/user") # legacy
 
     # reports
     config.add_route("product-register", "/reports/product-register")
@@ -197,7 +192,7 @@ def main(global_config, **settings):
     config.add_route("ledger", "/reports/ledger")
     config.add_route("ledger-crdr", "/reports/ledger/crdr")
 
-    # spreadsheets
+    # reports spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
     config.add_route("profitloss-xlsx", "/spreadsheet/profit-loss")
     config.add_route("balance-sheet-xlsx", "/spreadsheet/balance-sheet")
@@ -209,9 +204,18 @@ def main(global_config, **settings):
     config.add_route("uom", "/unitofmeasurement")
     config.add_route("uom-single", "/unitofmeasurement/{uomid}")
 
+    # GST returns
+    config.add_route("gstr1", "/gst/returns/r1")
+    config.add_route("gstr3b", "/gst/returns/3b")
+    # GSTIN captcha validation
+    config.add_route("gst-captcha", "/gst/captcha")
+    # GST news
+    config.add_route("gstnews", "/gst-news")
+
     config.scan("gkcore.views")
 
-    # include the pyramid-openapi3 plugin & it's config
+    # include the pyramid-openapi3 plugin config
+    # link: https://github.com/Pylons/pyramid_openapi3
     config.include("pyramid_openapi3")
     config.add_static_view(name="spec", path="spec")
     config.pyramid_openapi3_spec_directory(

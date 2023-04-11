@@ -1,3 +1,16 @@
+3bprops:
+  type: object
+  properties:
+    txval:
+      type: integer
+    iamt:
+      type: integer
+    camt:
+      type: integer
+    samt:
+      type: integer
+    csamt:
+      type: integer
 ledger_gkresult:
   type: array
   items:
@@ -50,7 +63,7 @@ gsflag:
   type: integer
   enum: [7, 19]
   description: 7 = product, 19 = service
-  
+
 token:
   type: string
   format: byte
