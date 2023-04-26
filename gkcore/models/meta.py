@@ -49,18 +49,17 @@ def dbconnect():
     This function can be called to get a working interface to the database.
     It is as good as a database connection which can directly execute sql queries.
     """
-    if sys.platform.startswith("win"):
-        stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
-    else:
-        # if env variable GKCORE_DB_URL is set, Use it
-        if os.getenv("GKCORE_DB_URL") != None:
-            stmt = os.getenv("GKCORE_DB_URL")
+    # if env variable GKCORE_DB_URL is set, Use it
+    if os.getenv("GKCORE_DB_URL") != None:
+        stmt = os.getenv("GKCORE_DB_URL")
+    else: 
+        if sys.platform.startswith("win"):
+            stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
         else:
             stmt = "postgresql+psycopg2:///gkdata?host=/var/run/postgresql"
     # now we will create an engine instance to connect to the given database.
     # Note that the echo parameter set to False means sql queries will not be printed to the termina.
     # Pool size is important to balance between database holding capacity in ram and speed.
-
     engine = create_engine(stmt, echo=False, pool_size=15, max_overflow=100)
     return engine
 
