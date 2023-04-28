@@ -6,8 +6,8 @@ The REST API server of GNUKhata
 - License: `APGPLv3`
 
 # Installation
-
-## Via Docker (Easier)
+## Linux
+### Via Docker (Easier)
 
 Requirements:
 
@@ -30,7 +30,7 @@ gkcore can be accessed at `localhost:6543` from your web browser or `0.0.0.0:654
 
 > gkcore API docs (swagger UI) can be accessed via `localhost:6543/docs` from your web browser
 
-## Manual Way
+### Manual Way
 
 - On debian/Ubuntu distributions Install python-virtualenv postgresql and dependencies using following command
 
@@ -87,6 +87,24 @@ Activate your virtualenv and then run initdb.py
 > `pserve development.ini --reload`
 
 gkcore is now accessible at `http://localhost:6543`🎉
+## Windows 11
+
+Requirements:
+
+- [docker](https://www.docker.com/)
+- `wsl --install` (run this command in the cmd prompt in an administrator mode)
+- [Node.js 16.x.x](https://nodejs.org/download/release/v16.20.0/node-v16.20.0-x64.msi)
+- [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+    **Download v14 or higher versions. Download all the packages present**
+- [python](https://www.python.org/downloads/) **Add the path while installing**
+- [postgres 12.x](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+- [Git](https://git-scm.com/download/win) **Download the standalone installer for required bit**
+- `python gkcore_cli.py init` **Run this command to initialize the DB**
+- `python gkcore_cli.py serve` **Run this command to initialize the dev server (localhost:6543)**
+
+### Troubleshooting:
+- `docker inspect gkcore-db-1` **Run the command on cmd to check the IP address**
+- `docker ps` **Run this command on cmd to check the status of the containers**
 
 # Environment Variables:
 
