@@ -87,6 +87,7 @@ Activate your virtualenv and then run initdb.py
 > `pserve development.ini --reload`
 
 gkcore is now accessible at `http://localhost:6543`🎉
+
 ## Windows 11
 
 Requirements:
@@ -115,6 +116,10 @@ Requirements:
 # After Installation
 
 - When gkcore is installed on VPS, make sure to change the timezone to India with command `timedatectl set-timezone Asia/Kolkata` as organization logs pickup the default timezone.
+
+# Contributions
+
+Please refer [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 # Public instances
 
