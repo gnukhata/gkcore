@@ -48,6 +48,7 @@ from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
 from gkcore.views.api_gkuser import getUserRole
+from datetime import datetime
 
 
 def gstAccName(con, taxname, taxrate, orgcode):
@@ -294,7 +295,6 @@ def calTax(taxflag, source, destination, productcode, con):
                 taxDict["CESS"] = cessData
 
             if source == destination:
-
                 # this is SGST and CGST.
                 # IGST / 2 = SGST and CGST.
                 taxResult = con.execute(
@@ -333,7 +333,8 @@ class api_tax(object):
     @view_config(request_method="POST", renderer="json")
     def addtax(self):
         """This method creates tax
-        First it checks the user role if the user is admin then only user can add new tax"""
+        First it checks the user role if the user is admin then only user can add new tax
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -572,7 +573,6 @@ class api_tax(object):
     def getAllTax(self):
         """This method returns  all existing data about taxes for current organisation"""
         try:
-
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -593,7 +593,7 @@ class api_tax(object):
                             "taxid": row["taxid"],
                             "taxname": row["taxname"],
                             "taxrate": "%.2f" % float(row["taxrate"]),
-                            "taxfromdate": row["taxfromdate"],
+                            "taxfromdate": str(row["taxfromdate"]),
                             "state": row["state"],
                             "categorycode": row["categorycode"],
                             "productcode": row["productcode"],
