@@ -24,7 +24,15 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
       - "3000:80"
+  # gnukhata v7
+  gkwebapp:
+    image: digitalfreedom/gnukhata:v7.0update
+    volumes:
+      - gkdb_old:/var/lib/postgresql
+    ports:
+      - "6544:6544"
 
 volumes:
   pgadmin:
   gkdb:
+  gkdb_old:
