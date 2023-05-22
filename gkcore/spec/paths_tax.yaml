@@ -27,6 +27,7 @@ tax:
   post:
     tags: ["Tax"]
     summary: Create a new tax entry for a product
+    description: The tax must be created against a product, So create a product first if not already created & pass the `productcode` in this body
     operationId: addtax
     requestBody:
       content:
