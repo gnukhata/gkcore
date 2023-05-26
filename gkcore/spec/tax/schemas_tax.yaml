@@ -1,6 +1,7 @@
 taxDetails:
   type: object
   additionalProperties: false
+  required: [taxname, productcode]
   properties:
     taxname:
       type: string

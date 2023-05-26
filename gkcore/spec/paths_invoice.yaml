@@ -35,7 +35,8 @@ invoice:
                       - $ref: "./invoice/schemas_invoice.yaml#/allInvoiceDetails"
   post:
     tags: ["Invoice"]
-    summary: Create a new invoice
+    summary: Create a new invoices
+    description: Delivery note must be created first & the resulting `dcid` must be passed in the request body
     operationId: addInvoice
     requestBody:
       content:

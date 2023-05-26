@@ -1,7 +1,7 @@
 customerDetails:
   type: object
   additionalProperties: false
-  required: [csflag]
+  required: [csflag, state, custname]
   properties:
     custname:
       type: string
