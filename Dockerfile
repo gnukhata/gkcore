@@ -1,5 +1,9 @@
 FROM python:slim
+
 LABEL Sai Karthik <kskarthik@disroot.org>
+
+ARG VERSION="dev"
+ENV GKCORE_VERSION=${VERSION}
 # install the required dependencies
 RUN apt-get update && apt-get upgrade -y \
 		&& apt-get install -y \
