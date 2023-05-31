@@ -6,7 +6,9 @@ The REST API server of GNUKhata
 - License: `APGPLv3`
 
 # Installation
+
 ## Linux
+
 ### Via Docker (Easier)
 
 Requirements:
@@ -23,6 +25,7 @@ Requirements:
 - set environment variable `export GKCORE_DB_URL="postgres://gkadmin:gkadmin@localhost:5432/gkdata"`
 - Run the command `docker-compose up -d` to start the containers on which gkcore depends
 - If you are running gkcore for the first time, run `python3 setup.py develop` to setup the app and `python3 initdb.py` which initializes the database schema
+- to perform database migrations run `python3 db_migrate.py`
 - For development purpose, run `pserve development.ini --reload`
 - For production, run `pserve production.ini`
 
@@ -96,7 +99,7 @@ Requirements:
 - `wsl --install` (run this command in the cmd prompt in an administrator mode)
 - [Node.js 16.x.x](https://nodejs.org/download/release/v16.20.0/node-v16.20.0-x64.msi)
 - [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
-    **Download v14 or higher versions. Download all the packages present**
+  **Download v14 or higher versions. Download all the packages present**
 - [python](https://www.python.org/downloads/) **Add the path while installing**
 - [postgres 12.x](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
 - [Git](https://git-scm.com/download/win) **Download the standalone installer for required bit**
@@ -104,6 +107,7 @@ Requirements:
 - `python gkcore_cli.py serve` **Run this command to initialize the dev server (localhost:6543)**
 
 ### Troubleshooting:
+
 - `docker inspect gkcore-db-1` **Run the command on cmd to check the IP address**
 - `docker ps` **Run this command on cmd to check the status of the containers**
 
