@@ -856,7 +856,6 @@ def getStateCode(StateName, con):
         raise
 
 
-
 def getInvoiceData(con, orgcode, params):
     try:
         result = con.execute(
@@ -1015,7 +1014,6 @@ def getInvoiceData(con, orgcode, params):
 
                 custsupstatecode = getStateCode(custData["state"], con)["statecode"]
                 if str(custsupstatecode) not in list(custData["gstin"].keys()):
-
                     statelist.append({custsupstatecode: custData["state"]})
                 if custsc != custsupstatecode and str(custsc) not in list(
                     custData["gstin"].keys()
@@ -1577,7 +1575,6 @@ class api_invoice(object):
 
     @view_config(request_method="POST", renderer="json")
     def addInvoice(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -1761,7 +1758,6 @@ class api_invoice(object):
                             )
                             av = avfl.fetchone()
                             if av["avflag"] == 1:
-
                                 avData = invdataset["av"]
                                 mafl = self.con.execute(
                                     select([organisation.c.maflag]).where(
@@ -2140,6 +2136,7 @@ class api_invoice(object):
                 self.con.close()
 
     """This method gives all invoices which are not fully rejected yet. It is used in rejection note, to prepare rejection note against these invoices"""
+
     # request_param="type=nonrejected",
     @view_config(
         route_name="invoice_nonrejected", request_method="GET", renderer="json"
@@ -2200,7 +2197,6 @@ class api_invoice(object):
                             if rejectedResult.rowcount == 0:
                                 rejContents[content] = qty
                             else:
-
                                 # Now query each note to see if this product is partially or fully rejected.
 
                                 for rejrow in rejectedNotes:
@@ -3183,7 +3179,7 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(route_name="invoice_invid", request_method="DELETE", renderer="json")
     def deleteinvoice(self):
         try:
             token = self.request.headers["gktoken"]
@@ -4011,11 +4007,9 @@ class api_invoice(object):
                             for eachinvoice in invprodresult:
                                 # invprodresult is a list of dictionaries. eachinvoice is one such dictionary.
                                 for eachproductcode in list(eachinvoice.keys()):
-
                                     # eachitem[0] is unique. It's not repeated.
                                     dcprodcode = pc
                                     if int(dcprodcode) == int(eachproductcode):
-
                                         # this means that the product in delchal matches with the product in invoice
                                         # now we will check its quantity
                                         invqty = list(
