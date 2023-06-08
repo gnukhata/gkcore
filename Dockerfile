@@ -1,5 +1,9 @@
 FROM python:slim
+
 LABEL Sai Karthik <kskarthik@disroot.org>
+
+ARG VERSION="dev"
+ENV GKCORE_VERSION=${VERSION}
 # install the required dependencies
 RUN apt-get update && apt-get upgrade -y \
 		&& apt-get install -y \
@@ -20,7 +24,7 @@ RUN adduser --no-create-home --disabled-password gk
 # switch to non-root user named gk, which we created above
 USER gk
 # initialize db & start gkcore
-CMD python3 /gkcore/initdb.py && pserve /gkcore/production.ini
+CMD python3 /gkcore/initdb.py && python3 db_migrate.py && pserve /gkcore/production.ini
 # expose the gkcore port
 EXPOSE 6543
 # check the health of the container at regular intervals

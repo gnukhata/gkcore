@@ -1,3 +1,4 @@
+from pyramid.config import os
 from pyramid.view import view_config, view_defaults
 import pkg_resources
 
@@ -11,5 +12,6 @@ class api_state(object):
     def main(self):
         return {
             "gkstatus": 0,
-            "version": pkg_resources.require("gkcore")[0].version,
+            "version": os.getenv("GKCORE_VERSION")
+            or pkg_resources.require("gkcore")[0].version,
         }

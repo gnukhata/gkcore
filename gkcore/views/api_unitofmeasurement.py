@@ -36,7 +36,7 @@ from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import gkcore
 from gkcore.models.meta import gk_api
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, gk_log
 
 
 @view_defaults(route_name="uom")
@@ -211,9 +211,9 @@ class api_unitOfMeasurement(object):
                     request=self.request,
                     header=self.request.headers,
                 )
-                print(check_uom)
+                gk_log(__name__).warn(check_uom)
                 # if it is used in a product/service, do not delete it
-                if check_uom["flag"] == "True":
+                if check_uom["gkresult"]["flag"] == "True":
                     return {"gkstatus": enumdict["ActionDisallowed"]}
                 # proceed to deletion if not used
                 self.con.execute(
@@ -224,7 +224,8 @@ class api_unitOfMeasurement(object):
                 return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
+            except Exception as e:
+                gk_log(__name__).error(e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()

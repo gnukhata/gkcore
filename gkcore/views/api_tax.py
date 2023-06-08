@@ -609,7 +609,7 @@ class api_tax(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="PUT", renderer="json")
+    @view_config(request_method="PUT", route_name="tax_taxid", renderer="json")
     def edittaxdata(self):
         """This method updates the taxdata"""
         try:
@@ -642,7 +642,7 @@ class api_tax(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(request_method="DELETE", route_name="tax_taxid", renderer="json")
     def deletetaxdata(self):
         """This method delets the tax data by matching taxid"""
         try:
