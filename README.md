@@ -6,9 +6,7 @@ The REST API server of GNUKhata
 - License: `APGPLv3`
 
 # Installation
-
 ## Linux
-
 ### Via Docker (Easier)
 
 Requirements:
