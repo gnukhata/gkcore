@@ -191,6 +191,7 @@ def main(global_config, **settings):
     config.add_route("ledger-monthly", "/reports/ledger/monthly")
     config.add_route("ledger", "/reports/ledger")
     config.add_route("ledger-crdr", "/reports/ledger/crdr")
+    config.add_route("godown-register", "/reports/godown-register/{goid}")
 
     # reports spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
