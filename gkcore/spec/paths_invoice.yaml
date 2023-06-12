@@ -147,23 +147,25 @@ invoice_invid:
                       type: integer
                     vchno:
                       type: string
-  delete:
-    tags: ["Invoice"]
-    summary: Delete an invoice
-    operationId: deleteinvoice
-    parameters:
-      - $ref: "./invoice/params_invoice.yaml#/invid"
-    responses:
-      200:
-        description: ok
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [gkstatus]
-              properties:
-                gkstatus:
-                  $ref: "./global/schemas.yaml#/gkstatus"
+  # WARNING: this api is disabled as it causes inconsistencies in accounting logic
+  #
+  # delete:
+  #   tags: ["Invoice"]
+  #   summary: Delete an invoice
+  #   operationId: deleteinvoice
+  #   parameters:
+  #     - $ref: "./invoice/params_invoice.yaml#/invid"
+  #   responses:
+  #     200:
+  #       description: ok
+  #       content:
+  #         application/json:
+  #           schema:
+  #             type: object
+  #             required: [gkstatus]
+  #             properties:
+  #               gkstatus:
+  #                 $ref: "./global/schemas.yaml#/gkstatus"
 
 invoice_cancel:
   get:
