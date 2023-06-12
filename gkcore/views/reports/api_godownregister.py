@@ -72,7 +72,7 @@ class api_godownregister(object):
 
         except:
             return {"gkstatus": enumdict["ConnectionFailed"]}
-        
+
         # Connecting to the DB table product & filtering the data for the required productcode
 
         for productid in goproddetails:
@@ -85,15 +85,15 @@ class api_godownregister(object):
                 godownstock.append(result.fetchone())
             except Exception as e:
                 print(e)
-                return {"gkstatus": enumdict["ActionDisallowed"]}
+                return {"gkstatus": enumdict["ConnectionFailed"]}
 
         # Formatting the fetched data
 
         for p in godownstock:
             temp_dict = dict()
             for name, val in p.items():
-                a = str(type(val))
-                if a == "<class 'decimal.Decimal'>":
+                value_type = str(type(val))
+                if value_type == "<class 'decimal.Decimal'>":
                     temp_dict[name] = str(val)
                 else:
                     temp_dict[name] = val
