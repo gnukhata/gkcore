@@ -1,3 +1,5 @@
+# https://learnxinyminutes.com/docs/yaml/
+# Docker compose file for gkcore local development
 version: "3.3"
 services:
   # postgresql 12 image
@@ -11,6 +13,20 @@ services:
       - gkdb:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+  # gkcore loaded from current directory
+  gkcore:
+    build:
+      context: .
+    image: gkcore:local
+    environment:
+      - GKCORE_DB_URL=postgres://gkadmin:gkadmin@db:5432/gkdata
+    entrypoint: bash -c 'python3 initdb.py && python3 db_migrate.py && pserve development.ini --reload'
+    volumes:
+      - .:/gkcore
+    depends_on:
+      - db
+    ports:
+      - "6543:6543"
   # ifsc API server
   ifsc-server:
     image: razorpay/ifsc:latest
