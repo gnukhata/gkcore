@@ -9,20 +9,47 @@ The REST API server of GNUKhata
 
 ## Docker
 
+### Linux/Mac
+
 All the dev dependencies are bundled in a set of docker containers & the code changes are synced between host & the gkcore container.
 
 Requirements:
 
 - [docker](https://www.docker.com/)
 - [docker-compose](https://docs.docker.com/compose/)
-<!-- - [virtualenv](https://pypi.org/project/virtualenv/) -->
 
 ```sh
-# you need not prefix sudo on windows
-# bring up the containers
+# Install dependencies `libpq-dev` and `build-essential`.
+# On debian/Ubuntu distro's
+sudo apt install libpq-dev build-essential
+
+# after cloning this repo, cd to the folder
+cd gkcore/
+
+#================================
+# These steps are required, as your IDE may complain about missing modules when
+# working on the code. The docker image is already bundled with required dependencies and
+# does not depend on the host dependencies
+
+# create virtualenv
+python3 -m venv gkenv
+
+# activate the virtualenv
+source gkenv/bin/activate
+
+# install dependencies
+pip install -r requirements.txt
+#================================
+
+# start the containers
+# This command also builds the gkcore image locally, if not present
 sudo docker-compose up -d
 
-# logs
+# to force rebuild the gkcore docker image (optional step)
+# this step is usually required when adding/removing pip modules.
+sudo docker-compose build gkcore
+
+# view logs
 sudo docker-compose logs -f gkcore
 ```
 
@@ -38,9 +65,9 @@ sudo docker-compose logs -f gkcore
 - For development purpose, run `pserve development.ini --reload`
 - For production, run `pserve production.ini` -->
 
-> gkcore can be accessed at `localhost:6543`
+> gkcore can be accessed at `http://localhost:6543`
 
-> gkcore API docs (swagger UI) can be accessed via `localhost:6543/docs` from your web browser
+> gkcore API docs (swagger UI) can be accessed via `http://localhost:6543/docs` from your web browser
 
 ### Manual Way
 
