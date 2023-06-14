@@ -38,7 +38,7 @@ sudo docker-compose logs -f gkcore
 - For development purpose, run `pserve development.ini --reload`
 - For production, run `pserve production.ini` -->
 
-> gkcore can be accessed at `localhost:6543` from your web browser or `0.0.0.0:6543` incase of production
+> gkcore can be accessed at `localhost:6543`
 
 > gkcore API docs (swagger UI) can be accessed via `localhost:6543/docs` from your web browser
 
