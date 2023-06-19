@@ -223,7 +223,7 @@ def main(global_config, **settings):
         os.path.join(os.path.dirname(__file__), "spec/main.yaml")
     )
     # launch the swagger ui at /docs/
-    config.pyramid_openapi3_add_explorer(route="/docs/", ui_version="4.15.5")
+    config.pyramid_openapi3_add_explorer(route="/docs/", ui_version="5.1.0")
 
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
