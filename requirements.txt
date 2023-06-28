@@ -31,5 +31,5 @@ gunicorn==20.1.0
 openpyxl == 3.0.10
 
 #openapi spec validation libraries
-pyramid-openapi3 == 0.14.3
-openapi-spec-validator==0.4.0
+pyramid-openapi3 == 0.16.0
+openapi-core < 0.17.0
