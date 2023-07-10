@@ -108,7 +108,6 @@ class api_hsn(object):
             search_results = []
 
             for obj in self.codes:
-
                 desc_occurances = re.findall(search_term, obj["hsn_desc"].lower())
                 code_occurances = re.findall(search_term, str(obj["hsn_code"]))
 

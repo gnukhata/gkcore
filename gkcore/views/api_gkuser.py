@@ -92,6 +92,7 @@ class api_gkuser(object):
     updateDefaultUserName() method is used to update the username in gkusers table that was created during migration 
     to satisfy the uniqueness constraint, with a user given username.
     """
+
     # TODO: Must update this method to update either all columns or just a column that is required
     @view_config(
         request_method="PUT", renderer="json", request_param="type=default_user_name"
@@ -313,11 +314,12 @@ class api_gkuser(object):
                 return getUserRole(authDetails["userid"], authDetails["orgcode"])
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
-    
+
     # request_param="type=all_user_data",
-    '''
+    """
         Fetches the users that are part of an organisation
-    '''
+    """
+
     @view_config(
         request_method="GET",
         renderer="json",
@@ -382,9 +384,10 @@ class api_gkuser(object):
                 self.con.close()
 
     # request_param="type=get_user_orgs",
-    '''
+    """
         Fetches the organisations that a user is part of
-    '''
+    """
+
     @view_config(
         request_method="GET",
         renderer="json",
@@ -667,13 +670,13 @@ class api_gkuser(object):
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteUser(self):
-        '''
+        """
         Delete a user from the database
 
         First, infer the user info from the gktoken, Check if the user is part of
         an organisation(s). If the user is a part of atleast one org, do not delete
         else, proceed with deletion
-        '''
+        """
         # validate the gktoken
         user = {}
         try:
@@ -692,7 +695,7 @@ class api_gkuser(object):
                 result = self.con.execute(
                     select([gkdb.gkusers]).where(
                         and_(
-                            gkdb.gkusers.c.userid == user['userid'],
+                            gkdb.gkusers.c.userid == user["userid"],
                         )
                     )
                 ).fetchone()
@@ -702,18 +705,23 @@ class api_gkuser(object):
                     # check if the user has admin role and
                     # also consider only if invitestatus is True
                     # if so, append the orgcode to admin_of_orgs list
-                    if result.orgs[i]["userrole"] == -1 and result.orgs[i]["invitestatus"]:
+                    if (
+                        result.orgs[i]["userrole"] == -1
+                        and result.orgs[i]["invitestatus"]
+                    ):
                         admin_of_orgs.append(int(i))
                 # if the user is admin of even one org, do not proceed for the deletion
                 # because those orgs may not contain additional users with admin role
                 if len(admin_of_orgs) > 0:
-                    gk_log(__name__).debug(f"The user is admin of {len(admin_of_orgs)} orgs with org ids {admin_of_orgs}")
+                    gk_log(__name__).debug(
+                        f"The user is admin of {len(admin_of_orgs)} orgs with org ids {admin_of_orgs}"
+                    )
                     return {"gkstatus": enumdict["ActionDisallowed"]}
                 else:
                     # delete the user from the database & return success status code
                     self.con.execute(
                         delete(gkdb.gkusers).where(
-                                gkdb.gkusers.c.userid == user['userid'],
+                            gkdb.gkusers.c.userid == user["userid"],
                         )
                     )
                     return {"gkstatus": enumdict["Success"]}
@@ -722,6 +730,7 @@ class api_gkuser(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
     @view_config(
         request_method="PUT",
         renderer="json",

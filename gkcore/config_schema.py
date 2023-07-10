@@ -270,9 +270,9 @@ transactionBaseSchema = {
     "$id": "gkschema.transaction.base.json",
 }
 
-'''
+"""
  Schema for Global Config
-'''
+"""
 globalConfigSchema = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "gkschema.global.json",

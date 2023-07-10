@@ -52,7 +52,7 @@ def dbconnect():
     # if env variable GKCORE_DB_URL is set, Use it
     if os.getenv("GKCORE_DB_URL") != None:
         stmt = os.getenv("GKCORE_DB_URL")
-    else: 
+    else:
         if sys.platform.startswith("win"):
             stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
         else:

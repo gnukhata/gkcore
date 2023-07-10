@@ -40,7 +40,6 @@ RED = Color(rgb="FF0000")
 
 
 def print_balance_sheet(self):
-
     """
     Returns the spreadsheet for Conventional Balancesheet
     In the Conventional format, capital and liabilities are shown on left side and assets on the right side.

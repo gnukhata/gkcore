@@ -46,6 +46,7 @@ from gkcore.models import gkdb
 from gkcore.views.api_reports import calculateBalance
 from gkcore.views.api_gkuser import getUserRole
 
+
 @view_defaults(route_name="budget")
 class api_budget(object):
     def __init__(self, request):
@@ -65,7 +66,9 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userrole = userRoleData["gkresult"]["userrole"]
                 if userrole == -1 or userrole == 0:
                     budgetdataset = self.request.json_body
@@ -245,7 +248,6 @@ class api_budget(object):
                                 or groupRecord[0] == "Indirect Income"
                                 or groupRecord[0] == "Current Assets"
                             ):
-
                                 subgroupname = self.con.execute(
                                     "select groupname from groupsubgroups where groupcode = (select groupcode from accounts where accountcode = %d)"
                                     % int(bal["accountcode"])
@@ -400,7 +402,9 @@ class api_budget(object):
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userrole = userRoleData["gkresult"]["userrole"]
                 if userrole == -1 or userrole == 0:
                     dataset = self.request.json_body
@@ -430,7 +434,9 @@ class api_budget(object):
             try:
                 dataset = self.request.json_body
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userrole = userRoleData["gkresult"]["userrole"]
                 if userrole == -1 or userrole == 0:
                     result = self.con.execute(

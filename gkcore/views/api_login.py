@@ -54,7 +54,6 @@ con = Connection
     renderer="json",
 )
 def userLogin(request):
-
     """
     purpose: Checks if username and password match a row in gkusers table.
              If they match a row, org data related to that user are fetched from the orgs column in gkusers table.
@@ -205,7 +204,6 @@ def userLogin(request):
 # request_param="type=org"
 @view_config(route_name="login_org", request_method="POST", renderer="json")
 def orgLogin(request):
-
     """
     purpose:
     """

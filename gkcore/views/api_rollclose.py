@@ -953,7 +953,7 @@ class api_rollclose(object):
                             self.con.execute(vouchers.insert(), [cljv])
                         except Exception as e:
                             print(e)
-                 # set existing org's booksclosedflag to 1
+                # set existing org's booksclosedflag to 1
                 self.con.execute(
                     organisation.update()
                     .where(organisation.c.orgcode == orgCode)
@@ -1119,7 +1119,7 @@ class api_rollclose(object):
                         organisation.c.orgcode == orgCode
                     )
                 ).fetchone()
-                
+
                 if type(oldUsers["users"]) == str:
                     oldUsers = json.loads(oldUsers["users"])
                 elif type(oldUsers["users"]) == dict:
@@ -1527,7 +1527,7 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
-                 # set existing org's roflag to 1
+                # set existing org's roflag to 1
                 gk_log(__name__).info("setting roflag to 1")
                 self.con.execute(
                     organisation.update()
@@ -1537,8 +1537,8 @@ class api_rollclose(object):
                 self.con.close()
                 payload = {
                     "neworgcode": newOrgCode,
-                    "yearstart":  newYearStart,
-                    "yearend": newYearEnd
+                    "yearstart": newYearStart,
+                    "yearend": newYearEnd,
                 }
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
 

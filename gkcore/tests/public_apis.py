@@ -39,7 +39,6 @@ class TestPublicApis(unittest.TestCase):
         self.assertGreater(len(result["gkresult"]), 1)
 
     def test_state_full(self):
-
         result = r.get("http://localhost:6543/state?full").json()
 
         self.assertFalse(result["gkstatus"], 0)

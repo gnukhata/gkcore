@@ -396,7 +396,6 @@ def cancelled_invoices(self):
         return Response(contents, headerlist=list(headerList.items()))
 
     except Exception as e:
-
         print(e)
         return {"gkstatus": 3}
 

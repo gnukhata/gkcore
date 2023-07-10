@@ -23,9 +23,7 @@ class api_invite(object):
         self.con = Connection
 
     # request_param="type=create_invite",
-    @view_config(
-        request_method="POST", renderer="json"
-    )
+    @view_config(request_method="POST", renderer="json")
     def createInvite(self):
         try:
             token = self.request.headers["gktoken"]
@@ -61,7 +59,7 @@ class api_invite(object):
                         "select orgs->'%s' from gkusers where userid = %d;"
                         % (str(authDetails["orgcode"]), userid["userid"])
                     )
-                    
+
                     # print(userInOrgQuery.rowcount)
                     if userInOrgQuery.rowcount:
                         userInOrg = userInOrgQuery.fetchone()
@@ -104,9 +102,7 @@ class api_invite(object):
             finally:
                 self.con.close()
 
-    @view_config(
-        request_method="POST", route_name="invite_accept", renderer="json"
-    )
+    @view_config(request_method="POST", route_name="invite_accept", renderer="json")
     def acceptInvite(self):
         try:
             token = self.request.headers["gkusertoken"]
@@ -136,9 +132,8 @@ class api_invite(object):
                     and userData[0]["invitestatus"] == False
                     and type(orgData[0]) == bool
                 ):
-
                     # Update the gkusers and organisation tables
-                    
+
                     # update invite status to true
                     self.con.execute(
                         "update gkusers set orgs = jsonb_set(orgs, '{%s,invitestatus}', 'true') where userid = %d;"
@@ -188,9 +183,7 @@ class api_invite(object):
             finally:
                 self.con.close()
 
-    @view_config(
-        request_method="POST", route_name="invite_reject", renderer="json"
-    )
+    @view_config(request_method="POST", route_name="invite_reject", renderer="json")
     def rejectInvite(self):
         try:
             token = self.request.headers["gkusertoken"]
@@ -238,9 +231,7 @@ class api_invite(object):
                 print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
-    @view_config(
-        request_method="DELETE", renderer="json"
-    )
+    @view_config(request_method="DELETE", renderer="json")
     def deleteInvite(self):
         try:
             token = self.request.headers["gktoken"]

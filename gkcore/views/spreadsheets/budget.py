@@ -60,7 +60,7 @@ def cash_report(self):
             % (int(self.request.params["budid"]), str(financialstart)),
             header,
             self.request,
-        )['gkresult']
+        )["gkresult"]
         budgetwb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
         sheet = budgetwb.active

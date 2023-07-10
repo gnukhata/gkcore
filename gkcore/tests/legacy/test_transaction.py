@@ -29,7 +29,6 @@ import requests, json
 class TestTransaction:
     @classmethod
     def setup_class(self):
-
         """Organization Initialization Data"""
         orgdata = {
             "orgdetails": {
@@ -84,7 +83,6 @@ class TestTransaction:
         )
 
     def setup(self):
-
         """Initialization of a group-subgroup"""
         result = requests.get(
             "http://127.0.0.1:6543/groupsubgroups", headers=self.header

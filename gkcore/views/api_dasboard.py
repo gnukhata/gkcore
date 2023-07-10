@@ -45,6 +45,7 @@ from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_reports import stockonhandfun
 from gkcore.views.api_reports import calculateBalance
 
+
 # This function is use to show amount wise top five unpaid invoice list at dashboard
 def amountwiseinvoice(inoutflag, orgcode):
     try:

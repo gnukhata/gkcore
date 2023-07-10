@@ -153,7 +153,6 @@ def export_ledger(self):
         # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=AllLedger.xlsx','Set-Cookie':'fileDownload=true; path=/'}
         return Response(contents, headerlist=list(headerList.items()))
     except Exception as e:
-
         print(e)
         return {"gkstatus": 3}
 

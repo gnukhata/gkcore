@@ -54,6 +54,7 @@ from datetime import datetime
 # import base64
 # from PIL import Image
 
+
 # This function deletes a voucher and inserts an entry into voucherbin table.
 def voucherBinInsert(con, vcode, orgcode):
     voucherdata = con.execute(
@@ -831,7 +832,6 @@ class api_transaction(object):
                         drcount = account["accountname"] + " + " + str(len(rawDr) - 1)
 
                         for d in rawDr:
-
                             tdr = tdr + float(rawDr[d])
 
                         finalDR["%s" % (drcount)] = tdr
@@ -849,7 +849,6 @@ class api_transaction(object):
                         crcount = account["accountname"] + " + " + str(len(rawCr) - 1)
 
                         for d in rawCr:
-
                             tcr = tcr + float(rawCr[d])
                         finalCR["%s" % (crcount)] = tcr
                     else:
@@ -976,7 +975,6 @@ class api_transaction(object):
                         drcount = account["accountname"] + " + " + str(len(rawDr) - 1)
 
                         for d in rawDr:
-
                             tdr = tdr + float(rawDr[d])
 
                         finalDR["%s" % (drcount)] = tdr
@@ -994,7 +992,6 @@ class api_transaction(object):
                         crcount = account["accountname"] + " + " + str(len(rawCr) - 1)
 
                         for d in rawCr:
-
                             tcr = tcr + float(rawCr[d])
                         finalCR["%s" % (crcount)] = tcr
                     else:
@@ -1103,7 +1100,6 @@ class api_transaction(object):
                             )
 
                             for d in rawDr:
-
                                 tdr = tdr + float(rawDr[d])
 
                             finalDR["%s" % (drcount)] = tdr
@@ -1125,7 +1121,6 @@ class api_transaction(object):
                             )
 
                             for d in rawCr:
-
                                 tcr = tcr + float(rawCr[d])
                             finalCR["%s" % (crcount)] = tcr
                         else:
@@ -1228,7 +1223,6 @@ class api_transaction(object):
                         drcount = account["accountname"] + " + " + str(len(rawDr) - 1)
 
                         for d in rawDr:
-
                             tdr = tdr + float(rawDr[d])
 
                         finalDR["%s" % (drcount)] = tdr
@@ -1246,7 +1240,6 @@ class api_transaction(object):
                         crcount = account["accountname"] + " + " + str(len(rawCr) - 1)
 
                         for d in rawCr:
-
                             tcr = tcr + float(rawCr[d])
                         finalCR["%s" % (crcount)] = tcr
                     else:
@@ -1349,7 +1342,6 @@ class api_transaction(object):
                         drcount = account["accountname"] + " + " + str(len(rawDr) - 1)
 
                         for d in rawDr:
-
                             tdr = tdr + float(rawDr[d])
 
                         finalDR["%s" % (drcount)] = tdr
@@ -1367,7 +1359,6 @@ class api_transaction(object):
                         crcount = account["accountname"] + " + " + str(len(rawCr) - 1)
 
                         for d in rawCr:
-
                             tcr = tcr + float(rawCr[d])
                         finalCR["%s" % (crcount)] = tcr
                     else:

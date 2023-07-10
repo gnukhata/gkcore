@@ -2817,6 +2817,7 @@ def godownwisestockonhandfun(
         # print(traceback.format_exc())
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
+
 # TODO: methods calculateProfitLossValue and calculateProfitLossPerProduct perform the same activities as calculateStockValue and calculateClosingStockValue.
 # only the code to calculate profit and loss difference is extra. If possible merge the two to a generic method
 def calculateProfitLossValue(con, orgcode, endDate):
@@ -2970,7 +2971,8 @@ def calculateProfitLossPerProduct(con, orgcode, endDate, productCode, godownCode
 
                     if stockLen:
                         priceDiff += (float(item["qty"]) * float(item["rate"])) - (
-                            float(item["qty"]) * float(stockOnHand[0]["rate"]))
+                            float(item["qty"]) * float(stockOnHand[0]["rate"])
+                        )
                         # if float(stockOnHand[0]["qty"]) > float(item["qty"]):
                         #     )
                         # else:
@@ -4177,7 +4179,6 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
-
                 self.con = eng.connect()
                 accountData = self.con.execute(
                     select([accounts.c.accountcode, accounts.c.accountname])
@@ -4371,7 +4372,6 @@ class api_reports(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
-
                 self.con = eng.connect()
                 calculateFrom = self.request.params["calculatefrom"]
                 calculateTo = self.request.params["calculateto"]
@@ -4796,25 +4796,24 @@ class api_reports(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                balanceSheet = getBalanceSheet(
-                    self.con,
-                    authDetails["orgcode"],
-                    self.request.params["calculateto"],
-                    self.request.params["calculatefrom"],
-                    int(self.request.params["baltype"]),
-                )
-                self.con.close()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": balanceSheet,
-                }
+        try:
+            self.con = eng.connect()
+            balanceSheet = getBalanceSheet(
+                self.con,
+                authDetails["orgcode"],
+                self.request.params["calculateto"],
+                self.request.params["calculatefrom"],
+                int(self.request.params["baltype"]),
+            )
+            self.con.close()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": balanceSheet,
+            }
 
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+        except:
+            self.con.close()
+            return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="type=conventionalbalancesheet", renderer="json")
     def conventionalbalanceSheet(self):
@@ -6339,7 +6338,6 @@ class api_reports(object):
                 # print(calculateTo)
                 # Calculate opening stock value
                 result["Opening Stock"] = calculateOpeningStockValue(self.con, orgcode)
-
                 if orgtype == "Profit Making":
                     profit = "Profit"
                     loss = "Loss"
@@ -6463,7 +6461,6 @@ class api_reports(object):
                         )
                     )
                     if DISubAccsData.rowcount > 0:
-
                         DISubAccs = DISubAccsData.fetchall()
                         DISUBDict = {}
                         DISubBal = 0.00
@@ -6688,7 +6685,6 @@ class api_reports(object):
                         )
                     )
                     if IISubAccsData.rowcount > 0:
-
                         IISubAccs = IISubAccsData.fetchall()
                         IISUBDict = {}
                         IISubBal = 0.00
@@ -7558,7 +7554,6 @@ class api_reports(object):
                 yearend = datetime.strptime(str(enRow["yearend"]), "%Y-%m-%d")
                 if startDate > yearStart:
                     for stockRow in stockData:
-
                         if stockRow["dcinvtnflag"] == 4:
                             # delivery note
                             countresult = self.con.execute(
@@ -7664,7 +7659,6 @@ class api_reports(object):
                 totalinward = totalinward + float(gopeningStock)
 
                 for finalRow in stockData:
-
                     if finalRow["dcinvtnflag"] == 4:
                         countresult = self.con.execute(
                             select(

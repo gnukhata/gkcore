@@ -250,7 +250,9 @@ class api_project(object):
         else:
             try:
                 self.con = eng.connect()
-                userRoleData = getUserRole(authDetails["userid"], authDetails["orgcode"])
+                userRoleData = getUserRole(
+                    authDetails["userid"], authDetails["orgcode"]
+                )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1:

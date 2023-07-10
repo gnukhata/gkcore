@@ -293,7 +293,6 @@ def calTax(taxflag, source, destination, productcode, con):
                 taxDict["CESS"] = cessData
 
             if source == destination:
-
                 # this is SGST and CGST.
                 # IGST / 2 = SGST and CGST.
                 taxResult = con.execute(
@@ -332,7 +331,8 @@ class api_tax(object):
     @view_config(request_method="POST", renderer="json")
     def addtax(self):
         """This method creates tax
-        First it checks the user role if the user is admin then only user can add new tax"""
+        First it checks the user role if the user is admin then only user can add new tax
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -377,7 +377,12 @@ class api_tax(object):
             finally:
                 self.con.close()
 
-    @view_config(request_method="GET", route_name="tax_product", request_param="pscflag", renderer="json")
+    @view_config(
+        request_method="GET",
+        route_name="tax_product",
+        request_param="pscflag",
+        renderer="json",
+    )
     def getprodtax(self):
         """
         This method will return the list of taxes for a product or a category.
@@ -532,7 +537,6 @@ class api_tax(object):
     def getAllTax(self):
         """This method returns  all existing data about taxes for current organisation"""
         try:
-
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
@@ -595,11 +599,8 @@ class api_tax(object):
                     or userRole["userrole"] == 1
                     or userRole["userrole"] == 0
                 ):
-
                     result = self.con.execute(
-                        tax.update()
-                        .where(tax.c.taxid == taxid)
-                        .values(dataset)
+                        tax.update().where(tax.c.taxid == taxid).values(dataset)
                     )
                     return {"gkstatus": enumdict["Success"]}
                 else:
@@ -635,9 +636,7 @@ class api_tax(object):
                     or userRole["userrole"] == 0
                     or userRole["userrole"] == 3
                 ):
-                    result = self.con.execute(
-                        tax.delete().where(tax.c.taxid == taxid)
-                    )
+                    result = self.con.execute(tax.delete().where(tax.c.taxid == taxid))
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     {"gkstatus": enumdict["BadPrivilege"]}

@@ -1382,7 +1382,6 @@ def fill_data(result, wb):
         set_number_format(wb["b2b"], ["D5"], "dd-mmm-yy")
 
     for entry in result["b2cl"]:
-
         row = (
             entry["invoice_number"],
             to_datetime(entry["invoice_date"]),
@@ -1403,7 +1402,6 @@ def fill_data(result, wb):
     set_number_format(wb["b2cl"], ["B5"], "dd-mmm-yy")
 
     for entry in result["b2cs"]:
-
         row = (
             entry["type"],
             entry["place_of_supply"],
@@ -1420,7 +1418,6 @@ def fill_data(result, wb):
     set_number_format(wb["b2cs"], ["D5", "E5", "F5"], "0.00")
 
     for entry in result["cdnr"]:
-
         row = (
             entry["gstin"],
             entry["receiver"],
@@ -1445,7 +1442,6 @@ def fill_data(result, wb):
     set_number_format(wb["cdnr"], ["D5", "F5"], "dd-mmm-yy")
 
     for entry in result["cdnur"]:
-
         row = (
             entry["ur_type"],
             entry["voucher_number"],

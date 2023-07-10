@@ -214,6 +214,7 @@ class api_delchal(object):
     If stock table insert fails then the delchal entry will be deleted.
     It's return also 'dcid' to front end.
     """
+
     # added delchal dataset and stockdata dataset in post method.
     @view_config(request_method="POST", renderer="json")
     def adddelchal(self):
@@ -1028,7 +1029,6 @@ class api_delchal(object):
                     # now looping through the contents.
                     # pc will have the productcode which will be the key in delchalContents.
                     for pc in list(contentsData.keys()):
-
                         if discounts != None:
                             discount = discounts[pc]
                         else:

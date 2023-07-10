@@ -42,7 +42,6 @@ from gkcore.views.api_state import getStates
 
 
 def print_gstr_3b(self):
-
     try:
         token = self.request.headers["gktoken"]
     except:
@@ -472,9 +471,7 @@ def generate_3b_report(con, request, wb1, ws1, gst_data):
                 column=col + 2, row=row + 9, value=itc_reversed_2["igst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(
-                column=col + 2, row=row + 10, value=net_itc["igst"]
-            )
+            cellRef = ws1.cell(column=col + 2, row=row + 10, value=net_itc["igst"])
             cellRef.style = "line_content_style"
             cellRef = ws1.cell(column=col + 2, row=row + 12, value=ineligible_1["igst"])
             cellRef.style = "line_content_style"
@@ -503,9 +500,7 @@ def generate_3b_report(con, request, wb1, ws1, gst_data):
                 column=col + 3, row=row + 9, value=itc_reversed_2["cgst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(
-                column=col + 3, row=row + 10, value=net_itc["cgst"]
-            )
+            cellRef = ws1.cell(column=col + 3, row=row + 10, value=net_itc["cgst"])
             cellRef.style = "line_content_style"
             cellRef = ws1.cell(column=col + 3, row=row + 12, value=ineligible_1["cgst"])
             cellRef.style = "line_content_style"
@@ -534,9 +529,7 @@ def generate_3b_report(con, request, wb1, ws1, gst_data):
                 column=col + 4, row=row + 9, value=itc_reversed_2["sgst"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(
-                column=col + 4, row=row + 10, value=net_itc["sgst"]
-            )
+            cellRef = ws1.cell(column=col + 4, row=row + 10, value=net_itc["sgst"])
             cellRef.style = "line_content_style"
             cellRef = ws1.cell(column=col + 4, row=row + 12, value=ineligible_1["sgst"])
             cellRef.style = "line_content_style"
@@ -565,9 +558,7 @@ def generate_3b_report(con, request, wb1, ws1, gst_data):
                 column=col + 5, row=row + 9, value=itc_reversed_2["cess"]
             )
             cellRef.style = "line_content_style"
-            cellRef = ws1.cell(
-                column=col + 5, row=row + 10, value=net_itc["cess"]
-            )
+            cellRef = ws1.cell(column=col + 5, row=row + 10, value=net_itc["cess"])
             cellRef.style = "line_content_style"
             cellRef = ws1.cell(column=col + 5, row=row + 12, value=ineligible_1["cess"])
             cellRef.style = "line_content_style"

@@ -246,7 +246,6 @@ def print_stock_report(self):
                     )
                     and stock["date"] != ""
                 ):
-
                     sheet["A" + str(row)] = stock["date"]
                     sheet["A" + str(row)].font = Font(
                         name="Liberation Serif", size="12", bold=False
@@ -267,13 +266,10 @@ def print_stock_report(self):
                     )
                     sheet["D" + str(row)].alignment = Alignment(horizontal="center")
                     if stock["invno"] != "":
-
                         sheet["E" + str(row)] = stock["invno"]
                     elif "drcrno" in stock and stock["drcrno"] != "":
-
                         sheet["E" + str(row)] = stock["drcrno"]
                     else:
-
                         sheet["E" + str(row)] = ""
                     sheet["E" + str(row)].font = Font(
                         name="Liberation Serif", size="12", bold=False
@@ -290,7 +286,6 @@ def print_stock_report(self):
                     )
                     sheet["G" + str(row)].alignment = Alignment(horizontal="center")
                     if stock["inwardqty"] != "":
-
                         sheet["H" + str(row)] = float(
                             "%.2f" % float(stock["inwardqty"])
                         )
@@ -300,7 +295,6 @@ def print_stock_report(self):
                         )
                         sheet["H" + str(row)].alignment = Alignment(horizontal="right")
                     if stock["outwardqty"] != "":
-
                         sheet["I" + str(row)] = float(
                             "%.2f" % float(stock["outwardqty"])
                         )
@@ -321,7 +315,6 @@ def print_stock_report(self):
                     and stock["invno"] == ""
                     and stock["date"] == ""
                 ):
-
                     sheet["A" + str(row)] = ""
                     sheet["A" + str(row)].font = Font(
                         name="Liberation Serif", size="12", bold=False

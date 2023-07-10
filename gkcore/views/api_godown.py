@@ -110,7 +110,6 @@ class api_godown(object):
 
     @view_config(request_method="POST", renderer="json")
     def addGodown(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -132,7 +131,10 @@ class api_godown(object):
                         )
                     )
                 ).fetchone()
-                return {"gkstatus": enumdict["Success"], 'gkresult': godownCreated['goid']}
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": godownCreated["goid"],
+                }
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
@@ -146,7 +148,6 @@ class api_godown(object):
 
     @view_config(request_method="PUT", renderer="json")
     def editGodown(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -175,7 +176,6 @@ class api_godown(object):
 
     @view_config(request_method="GET", renderer="json")
     def getAllGodowns(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -241,7 +241,6 @@ class api_godown(object):
 
     @view_config(request_method="GET", request_param="type=togodown", renderer="json")
     def togodowns(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -272,7 +271,6 @@ class api_godown(object):
 
     @view_config(request_param="qty=single", request_method="GET", renderer="json")
     def getGodown(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -308,7 +306,6 @@ class api_godown(object):
 
     @view_config(request_method="GET", request_param="type=byuser", renderer="json")
     def getGodownsByUser(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -336,7 +333,6 @@ class api_godown(object):
 
     @view_config(request_method="GET", request_param="type=goproduct", renderer="json")
     def getNumberOfProductInGodown(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -367,7 +363,6 @@ class api_godown(object):
 
     @view_config(request_method="GET", request_param="value=1", renderer="json")
     def getGodownProd(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -409,7 +404,6 @@ class api_godown(object):
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteGodown(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -436,7 +430,6 @@ class api_godown(object):
         request_method="GET", request_param="type=lastfivegodown", renderer="json"
     )
     def lastfivegodata(self):
-
         try:
             token = self.request.headers["gktoken"]
         except:
