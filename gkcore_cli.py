@@ -15,6 +15,7 @@ OPTIONS:
 \tmigrate - Perform migrations on existing database
 \tserve - Start the development server
 \tdeploy - Start the production server
+\tdump - Export a snapshot of the db to a file
 """
 
 
@@ -34,7 +35,7 @@ def check_flags(arg):
             cmd.run(["python", "initdb.py"])
             return
         else:
-            cmd.run(["sudo", "docker-compose", "up", "-d"])
+            cmd.run(["docker-compose", "up", "-d"])
             cmd.run(["python3", "setup.py", "develop"])
             cmd.run(["python3", "initdb.py"])
         return
@@ -47,21 +48,38 @@ def check_flags(arg):
         return
 
     elif arg == "serve":
-        if sys.platform.startswith("win"):
-            cmd.run(["docker-compose", "up", "-d"])
-            cmd.run(["pserve", "development.ini", "--reload"])
-            return
-        cmd.run(["sudo", "docker-compose", "up", "-d"])
+        # if sys.platform.startswith("win"):
+        #     cmd.run(["docker-compose", "up", "-d"])
+        #     cmd.run(["pserve", "development.ini", "--reload"])
+        #     return
+        cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["pserve", "development.ini", "--reload"])
         return
 
     elif arg == "deploy":
-        if sys.platform.startswith("win"):
-            cmd.run(["docker-compose", "up", "-d"])
-            cmd.run(["pserve", "production.ini"])
-            return
-        cmd.run(["sudo", "docker-compose", "up", "-d"])
+        # if sys.platform.startswith("win"):
+        #     cmd.run(["docker-compose", "up", "-d"])
+        #     cmd.run(["pserve", "production.ini"])
+        #     return
+        cmd.run(["docker-compose", "up", "-d"])
         cmd.run(["pserve", "production.ini"])
+        return
+
+    elif arg == "dump":
+        cmd.run(
+            [
+                "docker-compose",
+                "exec",
+                "db",
+                "pg_dump",
+                "-U",
+                "gkadmin",
+                "-d",
+                "gkdata",
+                ">",
+                "gkdump.sql",
+            ]
+        )
         return
     else:
         print(help_text)
