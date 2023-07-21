@@ -58,11 +58,10 @@ productDetails:
 # used for creating and editing a product
 productInDetails:
   type: object
-  required: [productdesc, gsflag]
   properties:
     productdesc:
       type: string
-      description: Product name 
+      description: Product name
     prodmrp:
       type: number
       description: Product Maximum Retail Price
@@ -84,7 +83,7 @@ productInDetails:
       type: number
       description: legacy property, use godowndetails to store opening stock godownwise
     uomid:
-      type: integer    
+      type: integer
       description: unit of measurement id, please use /unitofmeasurement?qty=all to get a list of all UOMs and their ids
     categorycode:
       type: integer
