@@ -12,15 +12,15 @@ RUN apt-get update && apt-get upgrade -y \
 COPY . /gkcore/
 #switch to workdir gkcore
 WORKDIR /gkcore
-# install gkcore dependencies & run setup
-RUN pip install -r requirements.txt && python3 setup.py develop
-# clean the build environment
-RUN apt purge build-essential wget -y &&\
-	apt-get autoremove -y &&\
-	apt-get clean &&\
-	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # create a non-root user to run gkcore
-RUN adduser --no-create-home --disabled-password gk
+RUN adduser --no-create-home --disabled-password gk && \
+		# install gkcore dependencies & run setup
+		pip install -r requirements.txt && python3 setup.py develop &&\
+		# clean the build environment
+		apt purge build-essential libpq-dev wget -y &&\
+		apt-get autoremove -y &&\
+		apt-get clean && \
+		rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # switch to non-root user named gk, which we created above
 USER gk
 # initialize db & start gkcore
