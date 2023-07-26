@@ -17,7 +17,7 @@ RUN adduser --no-create-home --disabled-password gk && \
 		# install gkcore dependencies & run setup
 		pip install -r requirements.txt && python3 setup.py develop &&\
 		# clean the build environment
-		apt purge build-essential libpq-dev wget -y &&\
+		apt purge build-essential wget -y &&\
 		apt-get autoremove -y &&\
 		apt-get clean && \
 		rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
