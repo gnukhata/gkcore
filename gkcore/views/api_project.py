@@ -91,11 +91,11 @@ class api_project(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
-                self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(gkdb.projects.insert(), [dataset])
+                self.con.execute(gkdb.projects.insert(), [dataset])
                 return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
@@ -127,8 +127,8 @@ class api_project(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
-                self.con = eng.connect()
                 result = self.con.execute(
                     select([gkdb.projects]).where(
                         gkdb.projects.c.projectcode
