@@ -26,11 +26,6 @@ sudo apt install libpq-dev build-essential
 # after cloning this repo, cd to the folder
 cd gkcore/
 
-#================================
-# These steps are required, as your IDE may complain about missing modules when
-# working on the code. The docker image is already bundled with required dependencies and
-# does not depend on the host dependencies
-
 # create virtualenv
 python3 -m venv gkenv
 
@@ -39,18 +34,12 @@ source gkenv/bin/activate
 
 # install dependencies
 pip install -r requirements.txt
-#================================
 
-# start the containers
-# This command also builds the gkcore image locally, if not present
-sudo docker-compose up -d
+# install dependencies & initialize the application
+./gkcore_cli.py init
 
-# to force rebuild the gkcore docker image (optional step)
-# this step is usually required when adding/removing pip modules.
-sudo docker-compose build gkcore
-
-# view logs
-sudo docker-compose logs -f gkcore
+# start dev server
+./gkcore_cli.py serve
 ```
 
 <!-- - Install dependencies `libpq-dev` and `build-essential`. On debian/Ubuntu distro's `sudo apt install libpq-dev build-essential`
