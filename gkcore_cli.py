@@ -31,11 +31,13 @@ def check_flags(arg):
     if arg == "init":
         if sys.platform.startswith("win"):
             cmd.run(["docker-compose", "up", "-d"])
+            cmd.run(["pip", "install", "-r", "requirements.txt"])
             cmd.run(["python", "setup.py", "develop"])
             cmd.run(["python", "initdb.py"])
             return
         else:
             cmd.run(["docker-compose", "up", "-d"])
+            cmd.run(["pip", "install", "-r", "requirements.txt"])
             cmd.run(["python3", "setup.py", "develop"])
             cmd.run(["python3", "initdb.py"])
         return
