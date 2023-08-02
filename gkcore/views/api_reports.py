@@ -2200,9 +2200,10 @@ def stockonhandfun(orgcode, productCode, endDate):
 
 def calculateOpeningStockValue(con, orgcode):
     try:
+        # product table contains both product & service entries, filter only products
         productList = con.execute(
             select([product.c.productcode, product.c.productdesc]).where(
-                product.c.orgcode == orgcode
+                and_(product.c.orgcode == orgcode, product.c.gsflag == 7)
             )
         ).fetchall()
 
@@ -2261,9 +2262,11 @@ def calculateOpeningStockValue(con, orgcode):
 
 def calculateClosingStockValue(con, orgcode, endDate):
     try:
+        # product table contains both products & services, we fetch only products
         productList = con.execute(
             select([product.c.productcode, product.c.productdesc]).where(
-                product.c.orgcode == orgcode
+                and_(
+                product.c.orgcode == orgcode, product.c.gsflag == 7)
             )
         ).fetchall()
 
@@ -2272,7 +2275,7 @@ def calculateClosingStockValue(con, orgcode, endDate):
         ).fetchall()
 
         closingStock = {"total": 0, "products": {}}
-
+        # loop over all products
         for productItem in productList:
             prodClosingStock = {"total": 0, "godowns": {}}
             if productItem["productcode"]:
@@ -6301,8 +6304,8 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
-                self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 financialstart = self.con.execute(
                     "select orgtype from organisation where orgcode = %d" % int(orgcode)
@@ -6312,11 +6315,12 @@ class api_reports(object):
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 result = {}
-                grsD = 0.00
-                income = 0.00
-                expense = 0.00
-                profit = ""
-                loss = ""
+                # grsD = 0.00
+                # income = 0.00
+                # expense = 0.00
+                # profit = ""
+                # loss = ""
+                # closingStockBal = 0.00
                 directIncome = {}
                 grpDIbalance = 0.00
                 grpDI = 0.00  # Direct Income other than sales
@@ -6327,7 +6331,6 @@ class api_reports(object):
                 grpIIbalance = 0.00
                 indirectExpense = {}
                 grpIEbalance = 0.00
-                closingStockBal = 0.00
 
                 # Calculate closing stock value
                 result["Closing Stock"] = calculateClosingStockValue(
@@ -6502,7 +6505,6 @@ class api_reports(object):
                 )
                 if getDIAccData.rowcount > 0:
                     diAccData = getDIAccData.fetchall()
-                    print("Accounts~~~~~~~~~~~")
                     for diAcc in diAccData:
                         print(diAcc["accountname"])
                         if diAcc["accountname"] != pnlAccountname:
@@ -8269,9 +8271,9 @@ class api_reports(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
                 #
-                self.con = eng.connect()
                 orgcode = authDetails["orgcode"]
                 startDate = ""
 
