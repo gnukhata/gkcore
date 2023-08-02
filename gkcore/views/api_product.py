@@ -244,8 +244,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
-                self.con = eng.connect()
+                gk_log(__name__).warn("prod")
                 dataset = self.request.json_body
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
@@ -270,13 +271,21 @@ class api_product(object):
                     duplicateproductrow = duplicateproduct.fetchone()
                     if duplicateproductrow["productcount"] > 0:
                         return {"gkstatus": enumdict["DuplicateEntry"]}
-                result = self.con.execute(gkdb.product.insert(), [productDetails])
+
+                # handle exception if db insertion fails for product
+                try:
+                    result = self.con.execute(gkdb.product.insert(), [productDetails])
+                except Exception as e:
+                    gk_log(__name__).error(e)
+                    return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
+
                 spec = productDetails["specs"]
                 for sp in list(spec.keys()):
                     self.con.execute(
                         "update categoryspecs set productcount = productcount +1 where spcode = %d"
                         % (int(sp))
                     )
+
                 if ("categorycode" in productDetails) == False:
                     productDetails["categorycode"] = None
                 result = self.con.execute(
@@ -291,7 +300,8 @@ class api_product(object):
                 )
                 row = result.fetchone()
                 productCode = row["productcode"]
-                if godownFlag:
+                # create godown only if godown flag is true and is product
+                if godownFlag and productDetails["gsflag"] == "7":
                     goDetails = dataset["godetails"]
                     ttlOpening = 0.00
                     for goId in list(goDetails.keys()):
@@ -327,7 +337,7 @@ class api_product(object):
                 prodName = productDetails["productdesc"]
                 proSale = prodName + " Sale"
                 proPurch = prodName + " Purchase"
-                resultb = self.con.execute(
+                self.con.execute(
                     gkdb.accounts.insert(),
                     [
                         {
@@ -349,7 +359,8 @@ class api_product(object):
 
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
+            except Exception as e:
+                gk_log(__name__).error("prod err", e)
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
