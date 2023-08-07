@@ -11,6 +11,20 @@ services:
 stages:
   - build
   - deploy
+  # tests are run against the dev server, so deploy stage should complete first
+  - test
+
+# runs the api tests against the dev server
+api tests:
+  image: kskarthik/nexial-core:latest
+  stage: test
+  # this job runs with a delay to make sure the dev server
+  # is updated to latest commit
+  when: delayed
+  start_in: 3 minutes
+  script: |
+    cd tests/artifact
+    nexial.sh -plan plan/GNUKhata-plan.xlsx
 
 # build gkcore
 # gkcore:
@@ -37,7 +51,7 @@ docker-devel:
   only:
     - devel
 
-# build gkcore docker image on a release & push it to the docker hub
+# build gkcore docker image on a release/tags & push it to the docker hub
 docker-prod:
   image: docker:20.10.19
   stage: build
