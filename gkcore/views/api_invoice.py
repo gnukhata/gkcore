@@ -1605,9 +1605,9 @@ class api_invoice(object):
                     for price in pricedetails:
                         price["orgcode"] = authDetails["orgcode"]
                         try:
-                            lastprice = self.con.execute(cslastprice.insert(), [price])
+                            self.con.execute(cslastprice.insert(), [price])
                         except:
-                            updateprice = self.con.execute(
+                            self.con.execute(
                                 cslastprice.update()
                                 .where(
                                     and_(
@@ -1914,7 +1914,7 @@ class api_invoice(object):
                                 "vchData": voucherData,
                             }
                     except:
-                        result1 = self.con.execute(
+                        self.con.execute(
                             stock.delete().where(
                                 and_(
                                     stock.c.dcinvtnid == invoiceid["invid"],
@@ -1922,7 +1922,7 @@ class api_invoice(object):
                                 )
                             )
                         )
-                        result2 = self.con.execute(
+                        self.con.execute(
                             invoice.delete().where(
                                 invoice.c.invid == invoiceid["invid"]
                             )

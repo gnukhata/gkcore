@@ -3368,15 +3368,16 @@ class api_reports(object):
                         openingrow["Cr"] = "%.2f" % float(calbalDict["balbrought"])
                         bal = float(-calbalDict["balbrought"])
                     vouchergrid.append(openingrow)
+                transactionsRecords = ""
                 if projectCode == "":
                     if "orderflag" in self.request.params:
                         transactionsRecords = self.con.execute(
-                            "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"
+                            "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"
                             % (calculateFrom, calculateTo, accountCode, accountCode)
                         )
                     else:
                         transactionsRecords = self.con.execute(
-                            "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode ,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"
+                            "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"
                             % (calculateFrom, calculateTo, accountCode, accountCode)
                         )
                 else:

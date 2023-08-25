@@ -49,7 +49,7 @@ requires = [
 
 setup(
     name="gkcore",
-    version=os.getenv("GKCORE_VERSION") or "dev",
+    version=os.getenv("GKCORE_VERSION") or "8.0.0-a",
     description="gkcore",
     long_description=README,
     classifiers=[
