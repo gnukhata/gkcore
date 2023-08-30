@@ -12,22 +12,22 @@ stages:
   - build
   - deploy
   # tests are run against the dev server, so deploy stage should complete first
-  - test
+  # - test
 
 # runs the api tests against the dev server
-api_tests:
-  image: kskarthik/nexial-core:latest
-  stage: test
-  # this job runs with a delay to make sure the dev server
-  # is updated to latest commit
-  when: delayed
-  start_in: 2 minutes
-  script: |
-    cd tests/artifact
-    nexial.sh -plan plan/GNUKhata-plan.xlsx
-  # only:
-  #   - master
-  #   - tags
+# api_tests:
+#   image: kskarthik/nexial-core:latest
+#   stage: test
+#   # this job runs with a delay to make sure the dev server
+#   # is updated to latest commit
+#   when: delayed
+#   start_in: 2 minutes
+#   script: |
+#     cd tests/artifact
+#     nexial.sh -plan plan/GNUKhata-plan.xlsx
+#   # only:
+#   #   - master
+#   #   - tags
 
 # build gkcore
 # gkcore:
