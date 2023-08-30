@@ -29,6 +29,8 @@ login_user:
                 token:
                   $ref: "./global/schemas.yaml#/token"
                   description: JWT token used to authenticate a user in GNUKhata
+                userid:
+                  type: integer
                 gkresult:
                   type: object
                   description: An object with keys as org codes and values as that corresponding org's meta data. Used to display orgs after user login
