@@ -1,0 +1,351 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "title": "Root Schema",
+    "required": [
+        "gkstatus",
+        "gkresult"
+    ],
+    "properties": {
+        "gkstatus": {
+            "type": "integer",
+            "default": 0,
+            "title": "The gkstatus Schema",
+            "examples": [
+                0
+            ]
+        },
+        "gkresult": {
+            "type": "array",
+            "default": [],
+            "title": "The gkresult Schema",
+            "items": {
+                "type": "object",
+                "title": "A Schema",
+                "required": [
+                    "dcid",
+                    "srno",
+                    "dcno",
+                    "dcdate",
+                    "dcflag",
+                    "csflag",
+                    "inoutflag",
+                    "custname",
+                    "attachmentcount",
+                    "dateofsupply"
+                ],
+                "properties": {
+                    "dcid": {
+                        "type": "integer",
+                        "title": "The dcid Schema",
+                        "examples": [
+                            62,
+                            66,
+                            70,
+                            109,
+                            111,
+                            135
+                        ]
+                    },
+                    "srno": {
+                        "type": "integer",
+                        "title": "The srno Schema",
+                        "examples": [
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6
+                        ]
+                    },
+                    "dcno": {
+                        "type": "string",
+                        "title": "The dcno Schema",
+                        "examples": [
+                            "1/DOUT-24",
+                            "2/DOUT-24",
+                            "3/DOUT-24",
+                            "8/DOUT-24",
+                            "5/DOUT-24",
+                            "12/DOUT-24"
+                        ]
+                    },
+                    "dcdate": {
+                        "type": "string",
+                        "title": "The dcdate Schema",
+                        "examples": [
+                            "01-04-2024"
+                        ]
+                    },
+                    "dcflag": {
+                        "type": "integer",
+                        "title": "The dcflag Schema",
+                        "examples": [
+                            4,
+                            1
+                        ]
+                    },
+                    "csflag": {
+                        "type": "integer",
+                        "title": "The csflag Schema",
+                        "examples": [
+                            3
+                        ]
+                    },
+                    "inoutflag": {
+                        "type": "integer",
+                        "title": "The inoutflag Schema",
+                        "examples": [
+                            15
+                        ]
+                    },
+                    "custname": {
+                        "type": "string",
+                        "title": "The custname Schema",
+                        "examples": [
+                            "Retail Customer (Default)"
+                        ]
+                    },
+                    "attachmentcount": {
+                        "type": "integer",
+                        "title": "The attachmentcount Schema",
+                        "examples": [
+                            0
+                        ]
+                    },
+                    "dateofsupply": {
+                        "type": "string",
+                        "title": "The dateofsupply Schema",
+                        "examples": [
+                            "01-04-2024"
+                        ]
+                    }
+                },
+                "examples": [{
+                    "dcid": 62,
+                    "srno": 1,
+                    "dcno": "1/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 66,
+                    "srno": 2,
+                    "dcno": "2/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 1,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 70,
+                    "srno": 3,
+                    "dcno": "3/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 109,
+                    "srno": 4,
+                    "dcno": "8/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 1,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 111,
+                    "srno": 5,
+                    "dcno": "5/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 135,
+                    "srno": 6,
+                    "dcno": "12/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                }]
+            },
+            "examples": [
+                [{
+                    "dcid": 62,
+                    "srno": 1,
+                    "dcno": "1/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 66,
+                    "srno": 2,
+                    "dcno": "2/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 1,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 70,
+                    "srno": 3,
+                    "dcno": "3/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 109,
+                    "srno": 4,
+                    "dcno": "8/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 1,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 111,
+                    "srno": 5,
+                    "dcno": "5/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                },
+                {
+                    "dcid": 135,
+                    "srno": 6,
+                    "dcno": "12/DOUT-24",
+                    "dcdate": "01-04-2024",
+                    "dcflag": 4,
+                    "csflag": 3,
+                    "inoutflag": 15,
+                    "custname": "Retail Customer (Default)",
+                    "attachmentcount": 0,
+                    "dateofsupply": "01-04-2024"
+                }]
+            ]
+        }
+    },
+    "examples": [{
+        "gkstatus": 0,
+        "gkresult": [{
+            "dcid": 62,
+            "srno": 1,
+            "dcno": "1/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 4,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        },
+        {
+            "dcid": 66,
+            "srno": 2,
+            "dcno": "2/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 1,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        },
+        {
+            "dcid": 70,
+            "srno": 3,
+            "dcno": "3/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 4,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        },
+        {
+            "dcid": 109,
+            "srno": 4,
+            "dcno": "8/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 1,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        },
+        {
+            "dcid": 111,
+            "srno": 5,
+            "dcno": "5/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 4,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        },
+        {
+            "dcid": 135,
+            "srno": 6,
+            "dcno": "12/DOUT-24",
+            "dcdate": "01-04-2024",
+            "dcflag": 4,
+            "csflag": 3,
+            "inoutflag": 15,
+            "custname": "Retail Customer (Default)",
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024"
+        }]
+    }]
+}

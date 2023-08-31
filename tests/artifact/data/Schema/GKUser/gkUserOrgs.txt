@@ -1,0 +1,172 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "object",
+      "properties": {
+        "DailyMilk": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "orgname": {
+                  "type": "string"
+                },
+                "orgtype": {
+                  "type": "string"
+                },
+                "yearstart": {
+                  "type": "string"
+                },
+                "yearend": {
+                  "type": "string"
+                },
+                "orgcode": {
+                  "type": "string"
+                },
+                "invitestatus": {
+                  "type": "boolean"
+                },
+                "userrole": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "orgname",
+                "orgtype",
+                "yearstart",
+                "yearend",
+                "orgcode",
+                "invitestatus",
+                "userrole"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "orgname": {
+                  "type": "string"
+                },
+                "orgtype": {
+                  "type": "string"
+                },
+                "yearstart": {
+                  "type": "string"
+                },
+                "yearend": {
+                  "type": "string"
+                },
+                "orgcode": {
+                  "type": "string"
+                },
+                "invitestatus": {
+                  "type": "boolean"
+                },
+                "userrole": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "orgname",
+                "orgtype",
+                "yearstart",
+                "yearend",
+                "orgcode",
+                "invitestatus",
+                "userrole"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "orgname": {
+                  "type": "string"
+                },
+                "orgtype": {
+                  "type": "string"
+                },
+                "yearstart": {
+                  "type": "string"
+                },
+                "yearend": {
+                  "type": "string"
+                },
+                "orgcode": {
+                  "type": "string"
+                },
+                "invitestatus": {
+                  "type": "boolean"
+                },
+                "userrole": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "orgname",
+                "orgtype",
+                "yearstart",
+                "yearend",
+                "orgcode",
+                "invitestatus",
+                "userrole"
+              ]
+            }
+          ]
+        },
+        "IndianInstitute": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "orgname": {
+                  "type": "string"
+                },
+                "orgtype": {
+                  "type": "string"
+                },
+                "yearstart": {
+                  "type": "string"
+                },
+                "yearend": {
+                  "type": "string"
+                },
+                "orgcode": {
+                  "type": "string"
+                },
+                "invitestatus": {
+                  "type": "boolean"
+                },
+                "userrole": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "orgname",
+                "orgtype",
+                "yearstart",
+                "yearend",
+                "orgcode",
+                "invitestatus",
+                "userrole"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "DailyMilk",
+        "IndianInstitute"
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult"
+  ]
+}
