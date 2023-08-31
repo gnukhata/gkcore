@@ -2,6 +2,7 @@ login_user:
   post:
     tags: ["Login"]
     summary: User Login
+    description: "For user created via gkapp, you have to convert the password to `SHA512` hash. Use [https://emn178.github.io/online-tools/sha512.html](https://emn178.github.io/online-tools/sha512.html)"
     operationId: userLogin
     security: [{}]
     requestBody:

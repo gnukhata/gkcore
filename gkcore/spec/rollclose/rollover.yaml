@@ -1,6 +1,7 @@
 get:
   tags: ["Close Books / Roll Over"]
   summary: Roll over the org to new financial year
+  description: "Note that the `financialstart` & `financialend` should be different from the FY of the current org"
   parameters:
     - in: query
       name: financialstart
