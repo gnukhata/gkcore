@@ -1,0 +1,33 @@
+Test Step       : GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001|PUT|POST-/product|# 28|ws.put(url,body,var)     
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:08:38.691
+Request URL     : https://api-dev.gnukhata.org/product/436
+Request Method  : PUT
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 330 bytes. 
+{
+  "productdetails": {
+    "productcode": 436,
+    "productdesc": "test77064",
+    "prodmrp": 0,
+    "prodsp": 0,
+    "amountdiscount": 0,
+    "percentdiscount": 0,
+    "gscode": "",
+    "gsflag": 19,
+    "specs": {},
+    "openingstock": 0,
+    "uomid": 1,
+    "categorycode": null
+  },
+  "godetails": {},
+  "godownflag": false
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1054
+Elapsed Time    : 1055
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:38:38 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

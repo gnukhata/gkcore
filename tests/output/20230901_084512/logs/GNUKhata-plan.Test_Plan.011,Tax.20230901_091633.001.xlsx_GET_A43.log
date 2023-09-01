@@ -1,0 +1,7 @@
+Nexial Version:    nexial-core dev_1535
+Current Timestamp: 2023-09-01 09:18:44.954
+Test Step:         [GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx][GET][Create tax for service: POST- /tax][STEP  43][base][assertEqual(expected,actual)]
+--------------------------------------------------------------------------------
+
+expected=0
+actual  =3

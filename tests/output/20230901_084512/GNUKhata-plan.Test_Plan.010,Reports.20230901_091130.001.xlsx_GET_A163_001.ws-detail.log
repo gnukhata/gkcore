@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001|GET|Negative - /reports/ledger/crdr|#163|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:16:03.690
+Request URL     : https://api-dev.gnukhata.org/reports/ledger/crdr?accountcode=19593&projectcode=16&financialstart=2022-04-01&calculatefrom=2022-04-01&calculateto=2023-03-31&side=cr
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 787
+Elapsed Time    : 787
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:46:03 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 2}

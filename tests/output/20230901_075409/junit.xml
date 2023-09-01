@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="20230901_075409" timestamp="2023-09-01T07:54:16" time="743.941" tests="724" errors="32">
+  <testsuite id="1001" name="1 GKUser" package="1 GKUser" hostname="ALIPLR8316" timestamp="2023-09-01T07:54:18" time="168.464" tests="167" errors="11">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="GKUser.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="Data File" value="GKUser.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T07:54:20" time="165.955">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - organisation/gkUsers" name="Positive - organisation/gkUsers" classname="Get" timestamp="2023-09-01T07:54:38" time="147.773">
+      <failure type="failure found in test activity" message="1 of 37 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 37
+Passed: 36
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser/orgs" name="Positive - gkUser/orgs" classname="Get" timestamp="2023-09-01T07:55:06" time="119.977">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser" name="Positive - gkUser" classname="Get" timestamp="2023-09-01T07:55:17" time="109.053">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive/gkuser/pwd/question" name="Positive/gkuser/pwd/question" classname="Get" timestamp="2023-09-01T07:55:29" time="96.647">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser/pwd/answer" name="Positive - gkUser/pwd/answer" classname="Get" timestamp="2023-09-01T07:55:40" time="85.783">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="gkUser/check/{username}" name="gkUser/check/{username}" classname="Get" timestamp="2023-09-01T07:55:51" time="74.846">
+      <failure type="failure found in test activity" message="2 of 22 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 22
+Passed: 20
+Failed: 2
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Create User" name="Create User" classname="Post" timestamp="2023-09-01T07:56:16" time="49.925">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="gkUser/pwd/reset" name="gkUser/pwd/reset" classname="Put" timestamp="2023-09-01T07:56:28" time="37.913">
+      <failure type="failure found in test activity" message="3 of 37 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 37
+Passed: 34
+Failed: 3
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Clear the Token" name="Clear the Token" classname="Put" timestamp="2023-09-01T07:57:04" time="1.966">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="2001" name="2 GNUKhata" package="2 GNUKhata" hostname="ALIPLR8316" timestamp="2023-09-01T07:57:07" time="44.052" tests="41" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="GNUKhata.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+      <property name="Data File" value="GNUKhata.data.xlsx" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T07:57:09" time="42.292">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_075707.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T07:57:27" time="24.793">
+      <system-out>Total : 2
+Passed: 2
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_075707.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Create User" name="Create User" classname="Post" timestamp="2023-09-01T07:57:28" time="23.500">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_075707.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Create user with exisiting ID" name="Create user with exisiting ID" classname="Post" timestamp="2023-09-01T07:57:40" time="11.576">
+      <system-out>Total : 10
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_075707.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Read Organisation details" name="Read Organisation details" classname="Get" timestamp="2023-09-01T07:57:51" time="0.185">
+      <system-out>Total : 3
+Passed: 0
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_075707.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="3001" name="3 Account" package="3 Account" hostname="ALIPLR8316" timestamp="2023-09-01T07:57:53" time="57.416" tests="51" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Account.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Account.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T07:57:55" time="55.821">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.003,Account.20230901_075753.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - accounts (List of accounts)" name="Positive - accounts (List of accounts)" classname="Get" timestamp="2023-09-01T07:58:11" time="38.958">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.003,Account.20230901_075753.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - accounts/Spreadsheet" name="Positive - accounts/Spreadsheet" classname="Get" timestamp="2023-09-01T07:58:24" time="26.366">
+      <system-out>Total : 11
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.003,Account.20230901_075753.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T07:58:36" time="14.573">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.003,Account.20230901_075753.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive-Organisation" name="Positive-Organisation" classname="Post" timestamp="2023-09-01T07:58:36" time="13.923">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.003,Account.20230901_075753.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="4001" name="4 AuditLogs" package="4 AuditLogs" hostname="ALIPLR8316" timestamp="2023-09-01T07:58:51" time="78.017" tests="71" errors="2">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="AuditLogs.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="AuditLogs.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T07:58:53" time="76.375">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Get" timestamp="2023-09-01T07:59:11" time="58.277">
+      <failure type="failure found in test activity" message="1 of 10 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 10
+Passed: 9
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Get" timestamp="2023-09-01T07:59:22" time="47.888">
+      <system-out>Total : 10
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /logs/rangedate" name="Negative - /logs/rangedate" classname="Get" timestamp="2023-09-01T07:59:32" time="37.663">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive -  /logs/rangedate" name="Positive -  /logs/rangedate" classname="Get" timestamp="2023-09-01T07:59:43" time="26.488">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T07:59:56" time="13.034">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="5001" name="5 CustomerandSupplier" package="5 CustomerandSupplier" hostname="ALIPLR8316" timestamp="2023-09-01T08:00:10" time="145.170" tests="150" errors="1">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="CustomerandSupplier.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx_GET_A30.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="CustomerandSupplier.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:00:12" time="143.517">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="POST" timestamp="2023-09-01T08:00:30" time="125.731">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Create a new customer / supplier : POST- /customer" name="Create a new customer / supplier : POST- /customer" classname="POST" timestamp="2023-09-01T08:00:30" time="125.088">
+      <system-out>Total : 34
+Passed: 34
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="GET" timestamp="2023-09-01T08:01:00" time="95.243">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer" name="Get Customer and Supplier Details: GET- /customer" classname="GET" timestamp="2023-09-01T08:01:01" time="94.591">
+      <system-out>Total : 34
+Passed: 34
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Get accountcode: GET- /accounts" name="Get accountcode: GET- /accounts" classname="GET" timestamp="2023-09-01T08:01:30" time="65.324">
+      <system-out>Total : 6
+Passed: 6
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}" name="Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}" classname="GET" timestamp="2023-09-01T08:01:36" time="59.490">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/search/name/{custname}" name="Get Customer and Supplier Details: GET- /customer/search/name/{custname}" classname="GET" timestamp="2023-09-01T08:01:47" time="48.600">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/{custid}" name="Get Customer and Supplier Details: GET- /customer/{custid}" classname="GET" timestamp="2023-09-01T08:01:58" time="37.679">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="PUT" timestamp="2023-09-01T08:02:10" time="25.448">
+      <system-out>Total : 2
+Passed: 2
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Edit a customer's / supplier's data : POST- /customer/{custid}" name="Edit a customer's / supplier's data : POST- /customer/{custid}" classname="PUT" timestamp="2023-09-01T08:02:11" time="24.134">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="DELETE" timestamp="2023-09-01T08:02:23" time="11.992">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Delete a customer / supplier : DELETE- /customer/{custid}" name="Delete a customer / supplier : DELETE- /customer/{custid}" classname="DELETE" timestamp="2023-09-01T08:02:24" time="11.366">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="6001" name="6 DeliveryNote" package="6 DeliveryNote" hostname="ALIPLR8316" timestamp="2023-09-01T08:02:37" time="236.117" tests="244" errors="18">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="DeliveryNote.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_080010.001.xlsx_GET_A30.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Delete_A11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Delete_A11.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Delete_A18.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Delete_A18.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A11.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A18.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A18.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A25.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A25.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A32.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A32.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A41.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A41.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A50.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A50.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A59.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A59.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A67.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A67.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A75.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A75.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A82.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A82.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A91.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A91.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A98.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Get_A98.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_PUT_A11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_PUT_A11.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_PUT_A18.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_PUT_A18.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Post_A12.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Post_A12.log" />
+      <property name="GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Post_A20.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx_Post_A20.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-ws-20230901_075409.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="DeliveryNote.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:02:38" time="234.422">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Get" timestamp="2023-09-01T08:02:56" time="216.609">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Get" timestamp="2023-09-01T08:03:07" time="205.152">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/cancel" name="Negative - /delchal/cancel" classname="Get" timestamp="2023-09-01T08:03:20" time="193.016">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/cancel" name="Positive - /delchal/cancel" classname="Get" timestamp="2023-09-01T08:03:30" time="182.192">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/last" name="Negative - /delchal/last" classname="Get" timestamp="2023-09-01T08:03:42" time="170.159">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/last" name="Positive - /delchal/last" classname="Get" timestamp="2023-09-01T08:03:55" time="157.942">
+      <failure type="failure found in test activity" message="1 of 17 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 17
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/delchal/next_id?status=9" name="Negative - /delchal/delchal/next_id?status=9" classname="Get" timestamp="2023-09-01T08:04:07" time="145.853">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/delchal/next_id?status=9" name="Positive - /delchal/delchal/next_id?status=9" classname="Get" timestamp="2023-09-01T08:04:18" time="134.889">
+      <failure type="failure found in test activity" message="1 of 15 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 15
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/dcid" name="Negative - /delchal/dcid" classname="Get" timestamp="2023-09-01T08:04:30" time="122.675">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/dcid" name="Positive - /delchal/dcid" classname="Get" timestamp="2023-09-01T08:04:41" time="111.792">
+      <failure type="failure found in test activity" message="1 of 15 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 15
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/cancel/dcid" name="Negative - /delchal/cancel/dcid" classname="Get" timestamp="2023-09-01T08:04:53" time="99.622">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/cancel/dcid" name="Positive - /delchal/cancel/dcid" classname="Get" timestamp="2023-09-01T08:05:04" time="88.769">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - Create DeliveryNote" name="Negative - Create DeliveryNote" classname="Post" timestamp="2023-09-01T08:05:18" time="74.158">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - Create DeliveryNote" name="Positive - Create DeliveryNote" classname="Post" timestamp="2023-09-01T08:05:31" time="61.210">
+      <failure type="failure found in test activity" message="1 of 14 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 14
+Passed: 13
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Delete" timestamp="2023-09-01T08:05:45" time="47.715">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Delete" timestamp="2023-09-01T08:05:56" time="36.291">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="PUT" timestamp="2023-09-01T08:06:08" time="24.238">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="PUT" timestamp="2023-09-01T08:06:20" time="12.733">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_075409\GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_075409\logs\nexial-20230901_075409.log</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

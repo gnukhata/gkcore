@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001|Get|Positive -  /logs/rangedate|# 23|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:50:39.263
+Request URL     : https://api-dev.gnukhata.org/log/dateRange?from=2028-04-12&to=2028-04-30
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 779
+Elapsed Time    : 780
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 31, Date: Fri, 01 Sep 2023 03:20:38 GMT, Content-Type: application/json }
+Response Body   : 31 bytes. 
+{"gkstatus": 0, "gkresult": []}

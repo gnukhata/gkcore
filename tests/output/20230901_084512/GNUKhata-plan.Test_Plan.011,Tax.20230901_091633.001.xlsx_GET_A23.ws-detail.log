@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|GET|Get tax for product: GET- /tax/search/{pscflag}|# 23|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:18:10.891
+Request URL     : https://api-dev.gnukhata.org/tax/search/p?productcode=443
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 776
+Elapsed Time    : 777
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 134, Date: Fri, 01 Sep 2023 03:48:10 GMT, Content-Type: application/json }
+Response Body   : 134 bytes. 
+{"gkstatus": 0, "gkresult": [{"taxid": 112, "taxname": "IGST", "taxrate": "4.00", "state": "Karnataka", "taxfromdate": "2023-09-01"}]}

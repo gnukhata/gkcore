@@ -1,0 +1,7 @@
+Nexial Version:    nexial-core dev_1535
+Current Timestamp: 2023-09-01 08:06:08.248
+Test Step:         [GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001.xlsx][Delete][Positive - /log][STEP  18][base][assertEqual(expected,actual)]
+--------------------------------------------------------------------------------
+
+expected=0
+actual  =2

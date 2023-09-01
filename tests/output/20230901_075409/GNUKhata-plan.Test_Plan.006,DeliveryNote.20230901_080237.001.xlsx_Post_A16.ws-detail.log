@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001|Post|Positive - Create DeliveryNote|# 16|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:05:34.449
+Request URL     : https://api-dev.gnukhata.org/delchal?%7B%0A++%22orgname%22%3A+%22Mapusa15113%22%2C%0A++%22orgtype%22%3A+%22%7Borgtype%7D%22%2C%0A++%22yearstart%22%3A+%22%7Byearstart%7D%22%2C%0A++%22yearend%22%3A+%22%7Byearend%7D%22%2C%0A++%22orgstate%22%3A+%22%7Borgstate%7D%22%2C%0A++%22orgcity%22%3A+%22%7Borgcity%7D%22%2C%0A++%22orgaddr%22%3A+%22%7Borgaddr%7D%22%2C%0A++%22orgpincode%22%3A+%22%7Borgpincode%7D%22%2C%0A++%22orgcountry%22%3A+%22%7Borgcountry%7D%22%2C%0A++%22orgtelno%22%3A+%227664684309%22%2C%0A++%22orgfax%22%3A+%22231173%22%2C%0A++%22orgwebsite%22%3A+%22%7Borgwebsite%7D%22%2C%0A++%22orgemail%22%3A+%22%7Borgemail%7D%22%2C%0A++%22orgpan%22%3A+%22%5BAJNKK15113%22%2C%0A++%22orgmvat%22%3A+%222061794%22%2C%0A++%22orgstax%22%3A+%2215113%22%2C%0A++%22orgregno%22%3A+%22518%22%2C%0A++%22orgregdate%22%3A+%22%7Borgregdate%7D%22%2C%0A++%22orgfcrano%22%3A+%22%7Borgfcrano%7D%22%2C%0A++%22orgfcradate%22%3A+%22%7Borgfcradate%7D%22%2C%0A++%22invflag%22%3A+%22%7Binvflag%7D%22%2C%0A++%22invsflag%22%3A+%22%7Binvsflag%7D%22%2C%0A++%22billflag%22%3A+%22%7Bbillflag%7D%22%2C%0A++%22avflag%22%3A+%22%7Bavflag%7D%22%2C%0A++%22maflag%22%3A+%22%7Bmaflag%7D%22%2C%0A++%22avnoflag%22%3A+%22%7Bavnoflag%7D%22%2C%0A++%22ainvnoflag%22%3A+%22%7Bainvnoflag%7D%22%2C%0A++%22modeflag%22%3A+%22%7Bmodeflag%7D%22%2C%0A++%22orgconf%22%3A+%22%7Borgconf%7D%22%2C%0A++%22roflag%22%3A+%22%7Broflag%7D%22%2C%0A++%22booksclosedflag%22%3A+%22%7Bbooksclosedflag%7D%22%2C%0A++%22logo%22%3A+%22%7Blogo%7D%22%0A%7D
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, gktoken: gkToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg; eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 836
+Elapsed Time    : 838
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 02:35:33 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 2}

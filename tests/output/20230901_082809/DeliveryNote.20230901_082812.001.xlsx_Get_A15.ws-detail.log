@@ -1,0 +1,14 @@
+Test Step       : DeliveryNote.20230901_082812.001|Get|Positive - /log|# 15|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:28:47.410
+Request URL     : https://api-dev.gnukhata.org/delchal
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 770
+Elapsed Time    : 771
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 551, Date: Fri, 01 Sep 2023 02:58:46 GMT, Content-Type: application/json }
+Response Body   : 551 bytes. 
+{"gkstatus": 0, "gkresult": [{"dcid": 404, "dcno": "1/DIN-24", "custname": "Cust43242", "csflag": 19, "dcdate": "24-04-2024", "attachmentcount": 0, "goname": "Primary Godown", "canceldelchal": 1}, {"dcid": 403, "dcno": "1/DOUT-24", "custname": "Retail Customer (Default)", "csflag": 3, "dcdate": "24-04-2024", "attachmentcount": 0, "goname": "Primary Godown", "canceldelchal": 0}, {"dcid": 406, "dcno": "3/DIN-24", "custname": "Customer3214", "csflag": 3, "dcdate": "24-04-2024", "attachmentcount": 0, "goname": "Primary Godown", "canceldelchal": 0}]}

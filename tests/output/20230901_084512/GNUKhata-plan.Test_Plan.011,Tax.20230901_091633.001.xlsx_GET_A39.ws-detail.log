@@ -1,0 +1,23 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|GET|Create tax for service: POST- /tax|# 39|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:18:35.214
+Request URL     : https://api-dev.gnukhata.org/tax
+Request Method  : POST
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 118 bytes. 
+{
+  "taxname": "IGST",
+  "taxrate": 4,
+  "productcode": ,  
+  "taxfromdate": "2023-09-01",
+  "state": "Karnataka"
+  
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1000
+Elapsed Time    : 1001
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:48:34 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 3}

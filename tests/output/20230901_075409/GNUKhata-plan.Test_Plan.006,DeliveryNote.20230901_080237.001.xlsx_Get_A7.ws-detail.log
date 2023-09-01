@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001|Get|Negative - /log|#  7|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:02:58.387
+Request URL     : https://api-dev.gnukhata.org/delchal
+Request Method  : GET
+Request Headers : {gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 784
+Elapsed Time    : 785
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 31, Date: Fri, 01 Sep 2023 02:32:57 GMT, Content-Type: application/json }
+Response Body   : 31 bytes. 
+{"gkstatus": 0, "gkresult": []}

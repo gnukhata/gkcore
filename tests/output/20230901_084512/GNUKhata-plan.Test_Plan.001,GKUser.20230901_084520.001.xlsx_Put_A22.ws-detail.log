@@ -1,0 +1,21 @@
+Test Step       : GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001|Put|gkUser/pwd/reset|# 22|ws.put(url,body,var)     
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:47:54.563
+Request URL     : https://api-dev.gnukhata.org/gkuser/pwd/reset
+Request Method  : PUT
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 79 bytes. 
+{
+  "userid": "1368",
+  "useranswer": "admin",
+  "userpassword": "User12345"
+}
+
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1048
+Elapsed Time    : 1049
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:17:54 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

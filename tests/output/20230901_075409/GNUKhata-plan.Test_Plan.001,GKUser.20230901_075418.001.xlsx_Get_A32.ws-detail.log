@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.001,GKUser.20230901_075418.001|Get|Positive/gkuser/pwd/question|# 32|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 07:55:31.159
+Request URL     : https://api-dev.gnukhata.org//gkuser/pwd/question?username=test99101
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 769
+Elapsed Time    : 770
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 86, Date: Fri, 01 Sep 2023 02:25:30 GMT, Content-Type: application/json }
+Response Body   : 86 bytes. 
+{"gkstatus": 0, "gkresult": {"userquestion": "Your Favourite Place?", "userid": 1353}}

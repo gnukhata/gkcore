@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="20230901_082809" timestamp="2023-09-01T08:28:10" time="241.116" tests="250" errors="0">
+  <testsuite id="1" name="DeliveryNote" package="DeliveryNote" hostname="ALIPLR8316" timestamp="2023-09-01T08:28:12" time="237.896" tests="250" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="DeliveryNote.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-ws-20230901_082809.log" />
+      <property name="Data File" value="DeliveryNote.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+      <property name="runtime args" value="-script C:\projects\GKCore\gkcore\tests\artifact\script\DeliveryNote.xlsx" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:28:14" time="235.999">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Get" timestamp="2023-09-01T08:28:33" time="216.671">
+      <system-out>Total : 13
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Get" timestamp="2023-09-01T08:28:45" time="204.874">
+      <system-out>Total : 14
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/cancel" name="Negative - /delchal/cancel" classname="Get" timestamp="2023-09-01T08:28:57" time="192.658">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/cancel" name="Positive - /delchal/cancel" classname="Get" timestamp="2023-09-01T08:29:08" time="181.793">
+      <system-out>Total : 14
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/last" name="Negative - /delchal/last" classname="Get" timestamp="2023-09-01T08:29:20" time="169.617">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/last" name="Positive - /delchal/last" classname="Get" timestamp="2023-09-01T08:29:32" time="157.523">
+      <system-out>Total : 18
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/delchal/next_id?status=9" name="Negative - /delchal/delchal/next_id?status=9" classname="Get" timestamp="2023-09-01T08:29:45" time="145.361">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/delchal/next_id?status=9" name="Positive - /delchal/delchal/next_id?status=9" classname="Get" timestamp="2023-09-01T08:29:55" time="134.562">
+      <system-out>Total : 16
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/dcid" name="Negative - /delchal/dcid" classname="Get" timestamp="2023-09-01T08:30:08" time="122.372">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/dcid" name="Positive - /delchal/dcid" classname="Get" timestamp="2023-09-01T08:30:18" time="111.500">
+      <system-out>Total : 16
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /delchal/cancel/dcid" name="Negative - /delchal/cancel/dcid" classname="Get" timestamp="2023-09-01T08:30:30" time="99.415">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /delchal/cancel/dcid" name="Positive - /delchal/cancel/dcid" classname="Get" timestamp="2023-09-01T08:30:41" time="88.593">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - Create DeliveryNote" name="Negative - Create DeliveryNote" classname="Post" timestamp="2023-09-01T08:30:56" time="73.471">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - Create DeliveryNote" name="Positive - Create DeliveryNote" classname="Post" timestamp="2023-09-01T08:31:09" time="61.033">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Delete" timestamp="2023-09-01T08:31:22" time="47.607">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Delete" timestamp="2023-09-01T08:31:34" time="36.175">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="PUT" timestamp="2023-09-01T08:31:46" time="23.866">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="PUT" timestamp="2023-09-01T08:31:58" time="12.296">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_082809\DeliveryNote.20230901_082812.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_082809\logs\nexial-20230901_082809.log</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

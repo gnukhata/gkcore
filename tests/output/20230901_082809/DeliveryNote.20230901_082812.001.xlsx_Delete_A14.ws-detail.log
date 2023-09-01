@@ -1,0 +1,14 @@
+Test Step       : DeliveryNote.20230901_082812.001|Delete|Positive - /log|# 14|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:31:36.086
+Request URL     : https://api-dev.gnukhata.org/delchal/227
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 776
+Elapsed Time    : 777
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 1484, Date: Fri, 01 Sep 2023 03:01:35 GMT, Content-Type: application/json }
+Response Body   : 1484 bytes. 
+{"gkstatus": 0, "gkresult": {"delchaldata": {"dcid": 227, "dcno": "7062/DOUT-49", "dcflag": 1, "issuername": "AccionLabs", "designation": "Admin", "orggstin": "", "dcdate": "01-04-2049", "taxflag": 7, "cancelflag": 0, "noofpackages": 0, "modeoftransport": "Road", "vehicleno": null, "attachmentcount": 0, "inoutflag": 15, "inout": 15, "dcnarration": "", "roundoffflag": 0, "totalinword": "", "consignee": {"tinconsignee": "", "consigneename": "Retail Customer (Default)", "consigneestate": null, "gstinconsignee": "", "consigneeaddress": "", "consigneepincode": "", "consigneestatecode": null}, "delchaltotal": "25.00", "roundedoffvalue": "25.00", "goid": 24, "goname": "Primary Godown", "gostate": "Karnataka", "goaddr": "Primary Godown's address"}, "sourcestate": "Karnataka", "sourcestatecode": 29, "dateofsupply": "01-04-2049", "custSupDetails": {"custname": "Retail Customer (Default)", "custsupstate": "Karnataka", "custaddr": "", "csflag": 3, "pincode": "", "custsupstatecode": 29, "custid": 98}, "stockdata": {}, "delchalflag": 14, "totaldiscount": "0.00", "totaltaxablevalue": "25.00", "totaltaxamt": "0.00", "totalcessamt": "0.00", "taxname": "IGST", "delchalContents": {"48": {"proddesc": "Milk_Mart", "gscode": null, "uom": "PCS", "qty": "1.00", "freeqty": "0.00", "priceperunit": "25.00", "discount": "0.00", "taxableamount": "25.00", "totalAmount": "25.00", "taxname": "IGST", "taxrate": "0.00", "taxamount": "0.00", "cess": "0.00", "cessrate": "0.00"}}, "discflag": 1}}

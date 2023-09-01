@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001|GET|Positive - /reports/ledger/crdr|#172|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:16:16.919
+Request URL     : https://api-dev.gnukhata.org/reports/ledger/crdr?accountcode=5217&projectcode=&financialstart=2023-04-24&calculatefrom=2023-04-24&calculateto=2024-03-24&side=cr
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 777
+Elapsed Time    : 778
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 187, Date: Fri, 01 Sep 2023 03:46:16 GMT, Content-Type: application/json }
+Response Body   : 187 bytes. 
+{"gkstatus": 0, "gkresult": [], "userrole": -1, "ledgerheader": {"accountname": "Accumulated Depreciation", "projectname": "", "calculateto": "24-03-2024", "calculatefrom": "24-04-2023"}}

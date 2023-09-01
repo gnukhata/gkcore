@@ -1,0 +1,14 @@
+Test Step       : DeliveryNote.20230901_082812.001|Get|Positive - /delchal/cancel|# 30|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:29:10.477
+Request URL     : https://api-dev.gnukhata.org/delchal/cancel?inputdate=2023-05-09&del_cancelled_type=0&inout=o
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 805
+Elapsed Time    : 806
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 31, Date: Fri, 01 Sep 2023 02:59:09 GMT, Content-Type: application/json }
+Response Body   : 31 bytes. 
+{"gkstatus": 0, "gkresult": []}

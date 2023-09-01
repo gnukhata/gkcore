@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001|Get|Negative - /delchal/cancel/dcid|# 87|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:04:54.777
+Request URL     : https://api-dev.gnukhata.org/delchal/cancel/376
+Request Method  : GET
+Request Headers : {gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 757
+Elapsed Time    : 758
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 1507, Date: Fri, 01 Sep 2023 02:34:54 GMT, Content-Type: application/json }
+Response Body   : 1507 bytes. 
+{"gkstatus": 0, "gkresult": {"delchaldata": {"dcid": 376, "dcno": "1/DOUT-23", "dcflag": 1, "issuername": "Accion", "designation": "Admin", "orggstin": "", "dcdate": "30-08-2023", "taxflag": 7, "noofpackages": 0, "modeoftransport": "Road", "vehicleno": null, "attachmentcount": 0, "dcnarration": "", "inoutflag": 15, "roundoffflag": 0, "totalinword": "One Lakh Rupees", "consignee": {"tinconsignee": "", "consigneename": "Retail Customer (Default)", "consigneestate": "Kerala", "gstinconsignee": "", "consigneeaddress": "", "consigneepincode": "", "consigneestatecode": "32"}, "delchaltotal": "100000.00", "roundedoffvalue": "100000.00", "goid": 58, "goname": "Primary Godown", "gostate": "Kerala", "goaddr": "Primary Godown's address"}, "destinationstate": "Kerala", "taxstatecode": 32, "sourcestate": "Kerala", "sourcestatecode": 32, "dateofsupply": "30-08-2023", "custSupDetails": {"custname": "Retail Customer (Default)", "custsupstate": "Kerala", "custaddr": "", "csflag": 3, "pincode": "", "custsupstatecode": 32, "custid": 202}, "delchalflag": 14, "totaldiscount": "0.00", "totaltaxablevalue": "100000.00", "totaltaxamt": "0.00", "totalcessamt": "0.00", "taxname": "SGST", "delchalContents": {"106": {"proddesc": "BCA", "gscode": null, "uom": "", "qty": "1.00", "freeqty": "0.00", "priceperunit": "100000.00", "discount": "0.00", "taxableamount": "100000.00", "totalAmount": "100000.00", "taxname": "SGST", "taxrate": "0.00", "taxamount": "0.00", "cess": "0.00", "cessrate": "0.00"}}, "discflag": 1}}

@@ -1,0 +1,38 @@
+Test Step       : GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_083834.001|POST|Create a new customer / supplier : POST- /customer|# 13|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:39:13.512
+Request URL     : https://api-dev.gnukhata.org/customer
+Request Method  : POST
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 452 bytes. 
+{
+  "custname": "test229718",
+  "custaddr": "string",
+  "state": "Karnataka",
+  "pincode": "string",
+  "csflag": 19,
+  "custtan": "string",
+  "custphone": "string",
+  "custemail": "string",
+  "custfax": "string",
+  "custpan": "string",
+  "gst_reg_type": 0,
+  "gst_party_type": 0,
+  "gstin": {
+    "10": "10AABCU9603R1Z2"
+  },
+  "bankdetails": {
+    "accountno": "string",
+    "bankname": "string",
+    "ifsc": "string",
+    "branchname": "string"
+  }
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1063
+Elapsed Time    : 1065
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 44, Date: Fri, 01 Sep 2023 03:09:13 GMT, Content-Type: application/json }
+Response Body   : 44 bytes. 
+{"gkstatus": 0, "gkresult": {"custid": 745}}

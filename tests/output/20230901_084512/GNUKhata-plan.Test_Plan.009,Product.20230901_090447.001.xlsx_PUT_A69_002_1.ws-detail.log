@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001|PUT|POST Req when godownflag is false|# 69|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:10:13.761
+Request URL     : https://api-dev.gnukhata.org/product/438
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 770
+Elapsed Time    : 771
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 195, Date: Fri, 01 Sep 2023 03:40:13 GMT, Content-Type: application/json }
+Response Body   : 195 bytes. 
+{"gkstatus": 0, "gkresult": {"discountpercent": "0.00", "discountamount": "0.00", "productcode": 438, "productdesc": "test79492", "gsflag": 19, "gscode": "", "prodsp": "0.00", "prodmrp": "0.00"}}

@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_075851.001|Get|Negative - /logs/rangedate|# 17|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 07:59:34.202
+Request URL     : https://api-dev.gnukhata.org/log/dateRange?from=2028-04-12&to=2028-04-30
+Request Method  : GET
+Request Headers : {}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 803
+Elapsed Time    : 804
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 02:29:33 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 2}

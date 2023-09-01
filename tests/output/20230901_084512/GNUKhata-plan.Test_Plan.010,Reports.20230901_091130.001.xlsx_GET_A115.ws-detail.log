@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001|GET|Negative - /reports/trial-balance/extended|#115|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:14:50.801
+Request URL     : https://api-dev.gnukhata.org/reports/trial-balance/extended?financialstart=2022-04-01&calculateto=2023-03-31
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 774
+Elapsed Time    : 775
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:44:50 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 2}

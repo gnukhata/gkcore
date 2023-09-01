@@ -1,0 +1,14 @@
+Test Step       : DeliveryNote.20230901_082812.001|Get|Positive - /delchal/cancel/dcid|#100|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:30:43.661
+Request URL     : https://api-dev.gnukhata.org/delchal/cancel/405
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 768
+Elapsed Time    : 770
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 1624, Date: Fri, 01 Sep 2023 03:00:42 GMT, Content-Type: application/json }
+Response Body   : 1624 bytes. 
+{"gkstatus": 0, "gkresult": {"delchaldata": {"dcid": 405, "dcno": "2/DIN-24", "dcflag": 16, "issuername": "Accion", "designation": "Admin", "orggstin": "", "dcdate": "24-04-2024", "taxflag": 7, "noofpackages": 0, "modeoftransport": "Road", "vehicleno": null, "attachmentcount": 0, "dcnarration": "Bought goods worth Rupees 28 to test410794 by cash, ref invoice no. 2/PU-24", "inoutflag": 9, "roundoffflag": 0, "totalinword": "Twenty Eight Rupees", "consignee": {"tinconsignee": "", "consigneename": "DailyMilk", "consigneestate": "Maharashtra", "gstinconsignee": "", "consigneeaddress": "", "consigneepincode": "", "consigneestatecode": "27"}, "delchaltotal": "28.00", "roundedoffvalue": "28.00", "goid": 171, "goname": "Primary Godown", "gostate": "Maharashtra", "goaddr": "Primary Godown's address"}, "destinationstate": "Maharashtra", "taxstatecode": 27, "sourcestate": "Bihar", "sourcestatecode": 10, "dateofsupply": "24-04-2024", "custSupDetails": {"custname": "test410794", "custsupstate": "Karnataka", "custaddr": "string", "csflag": 3, "pincode": "string", "custsupstatecode": 29, "custid": 584, "custtin": "string", "custgstin": "10AABCU9603R1Z2"}, "delchalflag": 14, "totaldiscount": "2.00", "totaltaxablevalue": "28.00", "totaltaxamt": "0.00", "totalcessamt": "0.00", "taxname": "IGST", "delchalContents": {"339": {"proddesc": "TestProduct", "gscode": null, "uom": "PCS", "qty": "1.00", "freeqty": "0.00", "priceperunit": "30.00", "discount": "2.00", "taxableamount": "28.00", "totalAmount": "28.00", "taxname": "IGST", "taxrate": "0.00", "taxamount": "0.00", "cess": "0.00", "cessrate": "0.00"}}, "discflag": 1}}

@@ -1,0 +1,7 @@
+Nexial Version:    nexial-core dev_1535
+Current Timestamp: 2023-09-01 09:14:01.454
+Test Step:         [GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx][GET][Positive - /reports/balance-sheet][STEP  83][base][assertEqual(expected,actual)]
+--------------------------------------------------------------------------------
+
+expected=0
+actual  =3

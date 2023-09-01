@@ -1,0 +1,41 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|GET|Create a service: POST- /product|# 31|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:18:22.935
+Request URL     : https://api-dev.gnukhata.org/product
+Request Method  : POST
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 416 bytes. 
+{
+  "productdetails": {
+    "productdesc": "test52744",
+    "prodmrp": 0,
+    "prodsp": 0,
+    "amountdiscount": 0,
+    "percentdiscount": 0,
+    "gscode": "",
+    "gsflag": 19,
+    "specs": {},
+    "openingstock": 0,
+    "uomid": 1,
+    "categorycode": null
+  },
+  "godetails": {
+    "707": {
+      "qty": 1,
+      "rate": 5
+    },
+    "586": {
+      "qty": 2.5,
+      "rate": 6.12
+    }
+  },
+  "godownflag": true
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1027
+Elapsed Time    : 1028
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 878, Date: Fri, 01 Sep 2023 03:48:22 GMT, Content-Type: application/json }
+Response Body   : 878 bytes. 
+{"gkstatus": 3, "error": "(psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint \"product_productdesc_orgcode_key\"\nDETAIL:  Key (productdesc, orgcode)=(test52744, 185) already exists.\n\n[SQL: INSERT INTO product (gscode, gsflag, percentdiscount, amountdiscount, productdesc, openingstock, specs, categorycode, uomid, prodsp, prodmrp, orgcode) VALUES (%(gscode)s, %(gsflag)s, %(percentdiscount)s, %(amountdiscount)s, %(productdesc)s, %(openingstock)s, %(specs)s, %(categorycode)s, %(uomid)s, %(prodsp)s, %(prodmrp)s, %(orgcode)s) RETURNING product.productcode]\n[parameters: {'gscode': '', 'gsflag': 19, 'percentdiscount': 0, 'amountdiscount': 0, 'productdesc': 'test52744', 'openingstock': 0, 'specs': '{}', 'categorycode': None, 'uomid': 1, 'prodsp': 0, 'prodmrp': 0, 'orgcode': 185}]\n(Background on this error at: http://sqlalche.me/e/13/gkpj)"}

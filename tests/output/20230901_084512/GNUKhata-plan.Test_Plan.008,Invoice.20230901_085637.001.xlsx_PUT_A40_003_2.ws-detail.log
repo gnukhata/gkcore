@@ -1,0 +1,120 @@
+Test Step       : GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001|PUT|POST-/delchal|# 40|ws.put(url,body,var)     
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:02:06.464
+Request URL     : https://api-dev.gnukhata.org/invoice/
+Request Method  : PUT
+Request Headers : {Cookie: JSESSIONID=.value, Authorization: "", gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 2736 bytes. 
+{
+    "invoice": {
+        "invoiceno": "3/SL-24",
+        "ewaybillno": null,
+        "invoicedate": "2024-03-31",
+        "sourcestate": "Karnataka",
+        "orgstategstin": null,
+        "issuername": "WM_admin",
+        "designation": "Admin",
+        "address": "Bangalore",
+        "pincode": "",
+        "custid": 1557,
+        "consignee": {
+            "consigneename": "ACCION LABS INDIA PRIVATE LIMITED",
+            "tinconsignee": "",
+            "gstinconsignee": "36AALCA1638A1Z2",
+            "consigneeaddress": "Survey 11, 2nd Floor, Jyothi Pinnacle, Kondapur, Rangareddy, Rangareddy, Telangana, 500084",
+            "consigneestate": "Telangana",
+            "consigneestatecode": "36",
+            "consigneepincode": "500084"
+        },
+        "roundoffflag": ,
+        "taxflag": ,
+        "taxstate": "Karnataka",
+        "pricedetails": [
+            {
+                "custid": 1557,
+                "productcode": 909,
+                "inoutflag": ,
+                "lastprice": "10000.00"
+            },
+            {
+                "custid": 1557,
+                "productcode": 910,
+                "inoutflag": ,
+                "lastprice": "2000.00"
+            }
+        ],
+        "paymentmode": 15,
+        "transportationmode": "Road",
+        "reversecharge": ,
+        "discflag": ,
+        "invnarration": "Sold goods worth Rupees 11550 to ACCION LABS INDIA PRIVATE LIMITED by cash, ref invoice no. 1/SL-24",
+        "dcid": ,
+        "inoutflag": ,
+        "invoicetotal": "11550.00",
+        "invoicetotalword": "Eleven Thousand Five Hundred Fifty Rupees",
+        "contents": {
+            "909": {
+                "10000.00": "1.00"
+            },
+            "910": {
+                "2000.00": "1.00"
+            }
+        },
+        "tax": {
+            "909": "5.00",
+            "910": "5.00"
+        },
+        "cess": {
+            "909": "0.00",
+            "910": "0.00"
+        },
+        "av": {
+            "product": {
+                "Laptop": "10000.00",
+                "Mobile": "1000.00"
+            },
+            "prodData": {
+                "909": "10000.00",
+                "910": "1000.00"
+            },
+            "taxpayment": "0.00",
+            "totaltaxable": "11000.00",
+            "avtax": {
+                "GSTName": "CGST",
+                "CESSName": "CESS"
+            }
+        },
+        "freeqty": {
+            "909": "0.00",
+            "910": "0.00"
+        },
+        "discount": {
+            "909": "0.00",
+            "910": "1000.00"
+        },
+        "vehicleno": null,
+        "dateofsupply": "2024-03-31"
+    },
+    "stock": {
+        "items": {
+            "909": "1.00",
+            "910": "1.00"
+        },
+        "inout": 
+    }
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 404
+Status Text     : Not Found
+TTFB            : 999
+Elapsed Time    : 1000
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 61, Date: Fri, 01 Sep 2023 03:32:06 GMT, Content-Type: text/plain; charset=UTF-8 }
+Response Body   : 61 bytes. 
+404 Not Found
+
+The resource could not be found.
+
+
+/invoice/
+
+

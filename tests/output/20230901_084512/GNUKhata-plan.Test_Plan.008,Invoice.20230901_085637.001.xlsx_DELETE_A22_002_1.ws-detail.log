@@ -1,0 +1,76 @@
+Test Step       : GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001|DELETE|POST-/delchal|# 22|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:03:25.051
+Request URL     : https://api-dev.gnukhata.org/delchal
+Request Method  : POST
+Request Headers : {Cookie: JSESSIONID=.value, Authorization: "", gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 1757 bytes. 
+{
+    "delchaldata": {
+        "custid": 1557,
+        "dcno": "6/DOUT-24",
+        "dcdate": "2024-03-31",
+        "dcflag": 16,
+        "taxstate": "Karnataka",
+        "orgstategstin": "",
+        "discflag": 16,
+        "dcnarration": "Sold goods worth Rupees 11550 to ACCION LABS INDIA PRIVATE LIMITED by cash, ref invoice no. 1/SL-24",
+        "roundoffflag": 1,
+        "consignee": {
+            "consigneename": "ACCION LABS INDIA PRIVATE LIMITED",
+            "tinconsignee": "",
+            "gstinconsignee": "36AALCA1638A1Z2",
+            "consigneeaddress": "Survey 11, 2nd Floor, Jyothi Pinnacle, Kondapur, Rangareddy, Rangareddy, Telangana, 500084",
+            "consigneestate": "Telangana",
+            "consigneestatecode": "36",
+            "consigneepincode": "500084"
+        },
+        "issuername": "WM_admin",
+        "designation": "Admin",
+        "vehicleno": null,
+        "modeoftransport": "Road",
+        "noofpackages": "1",
+        "sourcestate": "Karnataka",
+        "inoutflag": 15,
+        "taxflag": 22,
+        "delchaltotal": "11550.00",
+        "totalinword": "Ten Thousand Five Hundred Rupees",
+        "contents": {
+            "909": {
+                "10000.00": "1.00"
+            },
+            "910": {
+                "2000.00": "1.00"
+            }
+        },
+        "tax": {
+            "909": "5.00",
+            "910": "5.00"
+        },
+        "cess": {
+            "909": "0.00",
+            "910": "0.00"
+        },
+        "freeqty": {
+            "909": "0.00",
+            "910": "0.00"
+        },
+        "discount": {
+            "909": "0.00",
+            "910": "1000.00"
+        },
+        "dateofsupply": "2024-03-31"
+    },
+    "stockdata": {
+        "inout": 15,
+        "goid": 724
+    }
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1055
+Elapsed Time    : 1056
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:33:24 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 1}

@@ -1,0 +1,22 @@
+Test Step       : GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001|Post|Set headers|# 24|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:55:52.287
+Request URL     : https://api-dev.gnukhata.org/invite
+Request Method  : POST
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 72 bytes. 
+{
+  "username": "test17126",
+  "userrole": 3,
+  "golist": [
+    -1
+  ]
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1041
+Elapsed Time    : 1042
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:25:51 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

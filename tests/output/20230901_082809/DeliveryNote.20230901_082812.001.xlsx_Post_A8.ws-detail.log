@@ -1,0 +1,49 @@
+Test Step       : DeliveryNote.20230901_082812.001|Post|Negative - Create DeliveryNote|#  8|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:30:59.448
+Request URL     : https://api-dev.gnukhata.org/delchal
+Request Method  : POST
+Request Headers : {Content-Type: application/json}
+Request Body    : 886 bytes. 
+{
+  "orgname": "Mapusa39928",
+  "orgtype": "{orgtype}",
+  "yearstart": "{yearstart}",
+  "yearend": "{yearend}",
+  "orgstate": "{orgstate}",
+  "orgcity": "{orgcity}",
+  "orgaddr": "{orgaddr}",
+  "orgpincode": "{orgpincode}",
+  "orgcountry": "{orgcountry}",
+  "orgtelno": "5600881954",
+  "orgfax": "182332",
+  "orgwebsite": "{orgwebsite}",
+  "orgemail": "{orgemail}",
+  "orgpan": "[AJNKK39928",
+  "orgmvat": "4795006",
+  "orgstax": "39928",
+  "orgregno": "609",
+  "orgregdate": "{orgregdate}",
+  "orgfcrano": "{orgfcrano}",
+  "orgfcradate": "{orgfcradate}",
+  "invflag": "{invflag}",
+  "invsflag": "{invsflag}",
+  "billflag": "{billflag}",
+  "avflag": "{avflag}",
+  "maflag": "{maflag}",
+  "avnoflag": "{avnoflag}",
+  "ainvnoflag": "{ainvnoflag}",
+  "modeflag": "{modeflag}",
+  "orgconf": "{orgconf}",
+  "roflag": "{roflag}",
+  "booksclosedflag": "{booksclosedflag}",
+  "logo": "{logo}"
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1057
+Elapsed Time    : 1058
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:00:59 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 2}

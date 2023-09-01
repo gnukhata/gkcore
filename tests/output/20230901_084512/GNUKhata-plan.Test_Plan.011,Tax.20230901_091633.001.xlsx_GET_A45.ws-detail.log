@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|GET|Get the tax for service: GET- /tax/search/{pscflag}|# 45|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:18:46.216
+Request URL     : https://api-dev.gnukhata.org/tax/search/p?productcode=
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 765
+Elapsed Time    : 766
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:48:45 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 3}

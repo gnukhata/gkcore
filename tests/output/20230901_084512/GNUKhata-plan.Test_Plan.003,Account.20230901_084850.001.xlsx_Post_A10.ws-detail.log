@@ -1,0 +1,23 @@
+Test Step       : GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001|Post|Positive-Organisation|# 10|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:49:36.107
+Request URL     : https://api-dev.gnukhata.org/accounts
+Request Method  : POST
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 143 bytes. 
+{
+    "origin":"createAccount2",
+    "gkdata":{
+        "accountname": "test198",
+        "groupcode": 18,
+        "openingbal": "0.00"
+    }
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1008
+Elapsed Time    : 1008
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:19:35 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

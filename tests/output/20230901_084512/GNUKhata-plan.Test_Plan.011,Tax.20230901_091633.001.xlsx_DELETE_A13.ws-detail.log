@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|DELETE|Delete a tax item: DELETE- /tax{taxid}|# 13|ws.delete(url,body,var)  
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:19:34.330
+Request URL     : https://api-dev.gnukhata.org/tax/106
+Request Method  : DELETE
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 744
+Elapsed Time    : 745
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:49:33 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

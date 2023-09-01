@@ -1,0 +1,33 @@
+Test Step       : GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001|PUT|POST Req when godownflag is false|# 52|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:09:48.982
+Request URL     : https://api-dev.gnukhata.org/product
+Request Method  : POST
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 309 bytes. 
+{
+  "productdetails": {
+    "productdesc": "test52299",
+    "prodmrp": 0,
+    "prodsp": 0,
+    "amountdiscount": 0,
+    "percentdiscount": 0,
+    "gscode": "",
+    "gsflag": 19,
+    "specs": {},
+    "openingstock": 0,
+    "uomid": 1,
+    "categorycode": null
+  },
+  "godetails": {
+  },
+  "godownflag": false
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1038
+Elapsed Time    : 1039
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 32, Date: Fri, 01 Sep 2023 03:39:48 GMT, Content-Type: application/json }
+Response Body   : 32 bytes. 
+{"gkstatus": 0, "gkresult": 438}

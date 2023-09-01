@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001|GET|Positive - /reports/balance-sheet|# 80|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:13:52.516
+Request URL     : https://api-dev.gnukhata.org/reports/balance-sheet?calculatefrom=2023-04-24&calculateto=2024-03-24&baltype=1
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 726
+Elapsed Time    : 727
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:43:51 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 3}

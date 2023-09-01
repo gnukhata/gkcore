@@ -1,0 +1,14 @@
+Test Step       : DeliveryNote.20230901_082812.001|Get|Positive - /delchal/last|# 47|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:29:34.735
+Request URL     : https://api-dev.gnukhata.org/delchal/last?status=9
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gkToken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 797
+Elapsed Time    : 799
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 73, Date: Fri, 01 Sep 2023 02:59:34 GMT, Content-Type: application/json }
+Response Body   : 73 bytes. 
+{"gkstatus": 0, "gkresult": {"dcdate": "24-04-2024", "dcno": "3/DIN-24"}}

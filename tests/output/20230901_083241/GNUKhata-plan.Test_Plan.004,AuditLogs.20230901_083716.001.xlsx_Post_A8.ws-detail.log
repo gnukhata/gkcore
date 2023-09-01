@@ -1,0 +1,18 @@
+Test Step       : GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_083716.001|Post|Set headers|#  8|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:38:23.182
+Request URL     : https://api-dev.gnukhata.org/log
+Request Method  : POST
+Request Headers : {gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 45 bytes. 
+{
+"activity": "3% Milk Fat product created"
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1057
+Elapsed Time    : 1058
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:08:22 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

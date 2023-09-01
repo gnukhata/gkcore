@@ -1,0 +1,22 @@
+Test Step       : GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001|Post|Create User|# 10|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:48:29.383
+Request URL     : https://api-dev.gnukhata.org/gkuser
+Request Method  : POST
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, Content-Type: application/json}
+Request Body    : 133 bytes. 
+{
+    "username": "test79411",
+    "userpassword": "test4",
+    "userquestion": "Your Favourite Place?",
+    "useranswer": "admin"
+}
+
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1033
+Elapsed Time    : 1034
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 160, Date: Fri, 01 Sep 2023 03:18:28 GMT, Content-Type: application/json }
+Response Body   : 160 bytes. 
+{"gkstatus": 0, "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3Q3OTQxMSIsInVzZXJpZCI6MTM2OX0.0okf9A25QqUHF2V0vFXj6Wz-dFYSzRMyKcBZ9MBE7pw"}

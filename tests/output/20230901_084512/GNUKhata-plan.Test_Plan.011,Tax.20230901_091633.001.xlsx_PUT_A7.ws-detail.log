@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|PUT|Get all existing data about taxes: GET- /tax|#  7|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:19:10.607
+Request URL     : https://api-dev.gnukhata.org/tax
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 759
+Elapsed Time    : 760
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 1172, Date: Fri, 01 Sep 2023 03:49:09 GMT, Content-Type: application/json }
+Response Body   : 1172 bytes. 
+{"gkstatus": 0, "gkdata": [{"taxid": 105, "taxname": "IGST", "taxrate": "4.00", "taxfromdate": "2023-08-30", "state": "Karnataka", "categorycode": null, "productcode": 343, "orgcode": 185}, {"taxid": 106, "taxname": "IGST", "taxrate": "4.00", "taxfromdate": "2023-08-30", "state": "Karnataka", "categorycode": null, "productcode": 344, "orgcode": 185}, {"taxid": 103, "taxname": "IGST", "taxrate": "2.00", "taxfromdate": "2023-08-30", "state": "Karnataka", "categorycode": null, "productcode": 341, "orgcode": 185}, {"taxid": 109, "taxname": "VAT", "taxrate": "5.00", "taxfromdate": "2024-04-24", "state": "Andhra Pradesh", "categorycode": null, "productcode": 391, "orgcode": 185}, {"taxid": 110, "taxname": "IGST", "taxrate": "4.00", "taxfromdate": "2023-09-01", "state": "Karnataka", "categorycode": null, "productcode": 441, "orgcode": 185}, {"taxid": 111, "taxname": "IGST", "taxrate": "4.00", "taxfromdate": "2023-09-01", "state": "Karnataka", "categorycode": null, "productcode": 442, "orgcode": 185}, {"taxid": 112, "taxname": "IGST", "taxrate": "4.00", "taxfromdate": "2023-09-01", "state": "Karnataka", "categorycode": null, "productcode": 443, "orgcode": 185}]}

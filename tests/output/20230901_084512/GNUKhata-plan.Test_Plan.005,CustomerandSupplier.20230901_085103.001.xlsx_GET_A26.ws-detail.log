@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001|GET|Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}|# 26|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:52:30.645
+Request URL     : https://api-dev.gnukhata.org/customer/search/account/8208
+Request Method  : GET
+Request Headers : {gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 788
+Elapsed Time    : 789
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:22:29 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 3}

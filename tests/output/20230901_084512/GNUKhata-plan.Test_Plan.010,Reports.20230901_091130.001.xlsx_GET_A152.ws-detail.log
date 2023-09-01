@@ -1,0 +1,14 @@
+Test Step       : GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001|GET|Positive - /reports/ledger/monthly|#152|ws.get(url,queryString,va
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:15:49.713
+Request URL     : https://api-dev.gnukhata.org/reports/ledger/monthly?accountcode=5217
+Request Method  : GET
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gkusertoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkFjY2lvbiIsInVzZXJpZCI6Mn0.v5sh31fw7GSrvnZORJjA0PFp_qU1IgXQelWA6fAGILA, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 771
+Elapsed Time    : 772
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 1748, Date: Fri, 01 Sep 2023 03:45:49 GMT, Content-Type: application/json }
+Response Body   : 1748 bytes. 
+{"gkstatus": 0, "gkresult": [{"month": "April", "Dr": "", "Cr": "", "period": "2024-04-24:2024-04-30", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "May", "Dr": "", "Cr": "", "period": "2024-05-24:2024-05-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "June", "Dr": "", "Cr": "", "period": "2024-06-24:2024-06-30", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "July", "Dr": "", "Cr": "", "period": "2024-07-24:2024-07-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "August", "Dr": "", "Cr": "", "period": "2024-08-24:2024-08-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "September", "Dr": "", "Cr": "", "period": "2024-09-24:2024-09-30", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "October", "Dr": "", "Cr": "", "period": "2024-10-24:2024-10-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "November", "Dr": "", "Cr": "", "period": "2024-11-24:2024-11-30", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "December", "Dr": "", "Cr": "", "period": "2024-12-24:2024-12-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "January", "Dr": "", "Cr": "", "period": "2025-01-24:2025-01-31", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}, {"month": "February", "Dr": "", "Cr": "", "period": "2025-02-24:2025-02-28", "vcount": 0, "vcountDr": 0, "vcountCr": 0, "vcountLock": 0, "advflag": 0}], "accountcode": "5217", "accountname": "Accumulated Depreciation"}

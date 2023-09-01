@@ -1,0 +1,1388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="20230901_084512" timestamp="2023-09-01T08:45:18" time="2067.411" tests="2215" errors="90">
+  <testsuite id="1001" name="1 GKUser" package="1 GKUser" hostname="ALIPLR8316" timestamp="2023-09-01T08:45:20" time="166.080" tests="167" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="GKUser.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="Data File" value="GKUser.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:45:22" time="163.628">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - organisation/gkUsers" name="Positive - organisation/gkUsers" classname="Get" timestamp="2023-09-01T08:45:40" time="145.860">
+      <system-out>Total : 37
+Passed: 37
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser/orgs" name="Positive - gkUser/orgs" classname="Get" timestamp="2023-09-01T08:46:08" time="118.103">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser" name="Positive - gkUser" classname="Get" timestamp="2023-09-01T08:46:18" time="107.169">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive/gkuser/pwd/question" name="Positive/gkuser/pwd/question" classname="Get" timestamp="2023-09-01T08:46:31" time="94.712">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser/pwd/answer" name="Positive - gkUser/pwd/answer" classname="Get" timestamp="2023-09-01T08:46:42" time="83.864">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="gkUser/check/{username}" name="gkUser/check/{username}" classname="Get" timestamp="2023-09-01T08:46:53" time="72.984">
+      <system-out>Total : 22
+Passed: 22
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create User" name="Create User" classname="Post" timestamp="2023-09-01T08:47:17" time="49.023">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="gkUser/pwd/reset" name="gkUser/pwd/reset" classname="Put" timestamp="2023-09-01T08:47:28" time="37.387">
+      <system-out>Total : 37
+Passed: 37
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Clear the Token" name="Clear the Token" classname="Put" timestamp="2023-09-01T08:48:04" time="1.678">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.001,GKUser.20230901_084520.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="2001" name="2 GNUKhata" package="2 GNUKhata" hostname="ALIPLR8316" timestamp="2023-09-01T08:48:06" time="42.716" tests="41" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="GNUKhata.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+      <property name="Data File" value="GNUKhata.data.xlsx" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:48:08" time="41.129">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T08:48:25" time="24.125">
+      <system-out>Total : 2
+Passed: 2
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create User" name="Create User" classname="Post" timestamp="2023-09-01T08:48:26" time="22.851">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create user with exisiting ID" name="Create user with exisiting ID" classname="Post" timestamp="2023-09-01T08:48:38" time="11.113">
+      <system-out>Total : 10
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Read Organisation details" name="Read Organisation details" classname="Get" timestamp="2023-09-01T08:48:49" time="0.116">
+      <system-out>Total : 3
+Passed: 0
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.002,GNUKhata.20230901_084806.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="3001" name="3 Account" package="3 Account" hostname="ALIPLR8316" timestamp="2023-09-01T08:48:50" time="55.897" tests="51" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Account.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Account.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:48:51" time="54.381">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - accounts (List of accounts)" name="Positive - accounts (List of accounts)" classname="Get" timestamp="2023-09-01T08:49:08" time="37.771">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - accounts/Spreadsheet" name="Positive - accounts/Spreadsheet" classname="Get" timestamp="2023-09-01T08:49:20" time="25.428">
+      <system-out>Total : 11
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T08:49:32" time="13.984">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive-Organisation" name="Positive-Organisation" classname="Post" timestamp="2023-09-01T08:49:32" time="13.367">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.003,Account.20230901_084850.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="4001" name="4 AuditLogs" package="4 AuditLogs" hostname="ALIPLR8316" timestamp="2023-09-01T08:49:47" time="75.696" tests="71" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="AuditLogs.xlsx" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="AuditLogs.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:49:48" time="74.230">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /log" name="Negative - /log" classname="Get" timestamp="2023-09-01T08:50:06" time="56.568">
+      <system-out>Total : 10
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /log" name="Positive - /log" classname="Get" timestamp="2023-09-01T08:50:16" time="46.385">
+      <system-out>Total : 10
+Passed: 10
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /logs/rangedate" name="Negative - /logs/rangedate" classname="Get" timestamp="2023-09-01T08:50:26" time="36.151">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive -  /logs/rangedate" name="Positive -  /logs/rangedate" classname="Get" timestamp="2023-09-01T08:50:37" time="25.303">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T08:50:49" time="12.728">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.004,AuditLogs.20230901_084947.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="5001" name="5 CustomerandSupplier" package="5 CustomerandSupplier" hostname="ALIPLR8316" timestamp="2023-09-01T08:51:03" time="144.075" tests="150" errors="1">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="CustomerandSupplier.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="CustomerandSupplier.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:51:05" time="142.528">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="POST" timestamp="2023-09-01T08:51:22" time="124.851">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create a new customer / supplier : POST- /customer" name="Create a new customer / supplier : POST- /customer" classname="POST" timestamp="2023-09-01T08:51:23" time="124.214">
+      <system-out>Total : 34
+Passed: 34
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="GET" timestamp="2023-09-01T08:51:53" time="94.294">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer" name="Get Customer and Supplier Details: GET- /customer" classname="GET" timestamp="2023-09-01T08:51:54" time="93.644">
+      <system-out>Total : 34
+Passed: 34
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get accountcode: GET- /accounts" name="Get accountcode: GET- /accounts" classname="GET" timestamp="2023-09-01T08:52:23" time="64.408">
+      <system-out>Total : 6
+Passed: 6
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}" name="Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}" classname="GET" timestamp="2023-09-01T08:52:29" time="58.411">
+      <failure type="failure found in test activity" message="1 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 11
+Passed: 10
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/search/name/{custname}" name="Get Customer and Supplier Details: GET- /customer/search/name/{custname}" classname="GET" timestamp="2023-09-01T08:52:40" time="47.570">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get Customer and Supplier Details: GET- /customer/{custid}" name="Get Customer and Supplier Details: GET- /customer/{custid}" classname="GET" timestamp="2023-09-01T08:52:51" time="36.756">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="PUT" timestamp="2023-09-01T08:53:02" time="25.090">
+      <system-out>Total : 2
+Passed: 2
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Edit a customer's / supplier's data : POST- /customer/{custid}" name="Edit a customer's / supplier's data : POST- /customer/{custid}" classname="PUT" timestamp="2023-09-01T08:53:03" time="23.827">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="DELETE" timestamp="2023-09-01T08:53:16" time="11.735">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Delete a customer / supplier : DELETE- /customer/{custid}" name="Delete a customer / supplier : DELETE- /customer/{custid}" classname="DELETE" timestamp="2023-09-01T08:53:16" time="11.107">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="7001" name="7 Invite" package="7 Invite" hostname="ALIPLR8316" timestamp="2023-09-01T08:53:28" time="187.732" tests="211" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Invite.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Invite.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:53:30" time="186.185">
+      <system-out>Total : 16
+Passed: 16
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Post" timestamp="2023-09-01T08:53:48" time="167.947">
+      <system-out>Total : 150
+Passed: 150
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="Delete" timestamp="2023-09-01T08:56:02" time="33.983">
+      <system-out>Total : 3
+Passed: 3
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /organisation/gkusers" name="Positive - /organisation/gkusers" classname="Delete" timestamp="2023-09-01T08:56:04" time="32.086">
+      <system-out>Total : 29
+Passed: 29
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /invite" name="Positive - /invite" classname="Delete" timestamp="2023-09-01T08:56:23" time="12.846">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Invite Module - Delete - /invite" name="Invite Module - Delete - /invite" classname="Delete" timestamp="2023-09-01T08:56:24" time="12.212">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.007,Invite.20230901_085328.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="8001" name="8 Invoice" package="8 Invoice" hostname="ALIPLR8316" timestamp="2023-09-01T08:56:37" time="489.352" tests="559" errors="84">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Invoice.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Invoice.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T08:56:39" time="487.872">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="GET" timestamp="2023-09-01T08:56:56" time="470.289">
+      <system-out>Total : 3
+Passed: 3
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="GET - /invoice" name="GET - /invoice" classname="GET" timestamp="2023-09-01T08:56:58" time="468.369">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="/invoice" name="/invoice" classname="GET" timestamp="2023-09-01T08:56:59" time="467.729">
+      <system-out>Total : 33
+Passed: 33
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="POST" timestamp="2023-09-01T08:57:27" time="438.983">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/delchal" name="POST-/delchal" classname="POST" timestamp="2023-09-01T08:57:30" time="436.447">
+      <failure type="failure found in test activity" message="24 of 150 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 150
+Passed: 126
+Failed: 24
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="PUT" timestamp="2023-09-01T08:59:39" time="307.334">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/delchal" name="POST-/delchal" classname="PUT" timestamp="2023-09-01T08:59:42" time="304.800">
+      <failure type="failure found in test activity" message="36 of 192 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 192
+Passed: 156
+Failed: 36
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="DELETE" timestamp="2023-09-01T09:02:30" time="136.648">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/delchal" name="POST-/delchal" classname="DELETE" timestamp="2023-09-01T09:02:32" time="134.149">
+      <failure type="failure found in test activity" message="24 of 153 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 153
+Passed: 129
+Failed: 24
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="9001" name="9 Product" package="9 Product" hostname="ALIPLR8316" timestamp="2023-09-01T09:04:47" time="401.158" tests="457" errors="0">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Product.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Product.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T09:04:49" time="399.383">
+      <system-out>Total : 15
+Passed: 15
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="GET" timestamp="2023-09-01T09:05:07" time="381.400">
+      <system-out>Total : 3
+Passed: 3
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="GET - /product" name="GET - /product" classname="GET" timestamp="2023-09-01T09:05:09" time="379.475">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="GET - /product/{productcode}" name="GET - /product/{productcode}" classname="GET" timestamp="2023-09-01T09:05:21" time="367.142">
+      <system-out>Total : 16
+Passed: 16
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-Product" name="POST-Product" classname="GET" timestamp="2023-09-01T09:05:36" time="352.958">
+      <system-out>Total : 63
+Passed: 63
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="POST" timestamp="2023-09-01T09:06:31" time="297.205">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/product" name="POST-/product" classname="POST" timestamp="2023-09-01T09:06:34" time="294.674">
+      <system-out>Total : 73
+Passed: 73
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="PUT" timestamp="2023-09-01T09:07:37" time="231.996">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/product" name="POST-/product" classname="PUT" timestamp="2023-09-01T09:07:39" time="229.473">
+      <system-out>Total : 96
+Passed: 94
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST Req when godownflag is false" name="POST Req when godownflag is false" classname="PUT" timestamp="2023-09-01T09:09:02" time="147.029">
+      <system-out>Total : 97
+Passed: 97
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="DELETE" timestamp="2023-09-01T09:10:26" time="62.425">
+      <system-out>Total : 4
+Passed: 4
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="POST-/product" name="POST-/product" classname="DELETE" timestamp="2023-09-01T09:10:29" time="59.891">
+      <system-out>Total : 69
+Passed: 69
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="10001" name="10 Reports" package="10 Reports" hostname="ALIPLR8316" timestamp="2023-09-01T09:11:30" time="301.848" tests="310" errors="1">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Reports.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" />
+      <property name="GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx_GET_A83.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx_GET_A83.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Reports.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T09:11:31" time="300.341">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - gkUser/orgs" name="Positive - gkUser/orgs" classname="GET" timestamp="2023-09-01T09:11:48" time="283.920">
+      <system-out>Total : 9
+Passed: 9
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - accounts (List of accounts)" name="Positive - accounts (List of accounts)" classname="GET" timestamp="2023-09-01T09:11:54" time="277.430">
+      <system-out>Total : 8
+Passed: 8
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/product-register" name="Negative - /reports/product-register" classname="GET" timestamp="2023-09-01T09:12:01" time="270.736">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/product-register" name="Positive - /reports/product-register" classname="GET" timestamp="2023-09-01T09:12:12" time="259.962">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/registers" name="Negative - /reports/registers" classname="GET" timestamp="2023-09-01T09:12:23" time="249.137">
+      <system-out>Total : 28
+Passed: 28
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/registers" name="Positive - /reports/registers" classname="GET" timestamp="2023-09-01T09:12:48" time="223.424">
+      <system-out>Total : 30
+Passed: 30
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/profit-loss" name="Negative - /reports/profit-loss" classname="GET" timestamp="2023-09-01T09:13:15" time="196.614">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/profit-loss" name="Positive - /reports/profit-loss" classname="GET" timestamp="2023-09-01T09:13:26" time="185.740">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/balance-sheet" name="Negative - /reports/balance-sheet" classname="GET" timestamp="2023-09-01T09:13:38" time="173.713">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/balance-sheet" name="Positive - /reports/balance-sheet" classname="GET" timestamp="2023-09-01T09:13:50" time="162.272">
+      <failure type="failure found in test activity" message="1 of 13 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 13
+Passed: 12
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/trial-balance/gross" name="Negative - /reports/trial-balance/gross" classname="GET" timestamp="2023-09-01T09:14:02" time="150.183">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/trial-balance/gross" name="Positive - /reports/trial-balance/gross" classname="GET" timestamp="2023-09-01T09:14:13" time="138.735">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/trial-balance/net" name="Negative - /reports/trial-balance/net" classname="GET" timestamp="2023-09-01T09:14:25" time="126.693">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/trial-balance/net" name="Positive - /reports/trial-balance/net" classname="GET" timestamp="2023-09-01T09:14:37" time="115.236">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/trial-balance/extended" name="Negative - /reports/trial-balance/extended" classname="GET" timestamp="2023-09-01T09:14:48" time="103.367">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/trial-balance/extended" name="Positive - /reports/trial-balance/extended" classname="GET" timestamp="2023-09-01T09:15:00" time="91.917">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/ledger" name="Negative - /reports/ledger" classname="GET" timestamp="2023-09-01T09:15:12" time="80.070">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/ledger" name="Positive - /reports/ledger" classname="GET" timestamp="2023-09-01T09:15:23" time="68.672">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/ledger/monthly" name="Negative - /reports/ledger/monthly" classname="GET" timestamp="2023-09-01T09:15:35" time="56.635">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/ledger/monthly" name="Positive - /reports/ledger/monthly" classname="GET" timestamp="2023-09-01T09:15:47" time="45.122">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Negative - /reports/ledger/crdr" name="Negative - /reports/ledger/crdr" classname="GET" timestamp="2023-09-01T09:15:59" time="32.934">
+      <system-out>Total : 17
+Passed: 17
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Positive - /reports/ledger/crdr" name="Positive - /reports/ledger/crdr" classname="GET" timestamp="2023-09-01T09:16:14" time="17.919">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite id="11001" name="11 Tax" package="11 Tax" hostname="ALIPLR8316" timestamp="2023-09-01T09:16:33" time="191.715" tests="198" errors="4">
+    <properties>
+      <property name="Run From" value="ALIPLR8316" />
+      <property name="Run OS" value="amd64 Windows 10 10.0" />
+      <property name="Run User" value="AL3063" />
+      <property name="Iteration" value="1 of 1" />
+      <property name="Script" value="Tax.xlsx" />
+      <property name="GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx_GET_A30.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A19_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A43.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_DELETE_A44_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A41_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A42.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_POST_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A19_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A24_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A42_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A43_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A44.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A45_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A47_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_1.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_002_11.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_2.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A48_003_21.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A49_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A50_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A11_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51.A13_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A51_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_001.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0011.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_002.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0021.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_003.log" />
+      <property name="GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.008,Invoice.20230901_085637.001.xlsx_PUT_A52_0031.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A12.log" />
+      <property name="GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.009,Product.20230901_090447.001.xlsx_GET_A121.log" />
+      <property name="GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx_GET_A83.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.010,Reports.20230901_091130.001.xlsx_GET_A83.log" />
+      <property name="GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx_GET_A43.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx_GET_A43.log" />
+      <property name="GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx_GET_A49.log" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx_GET_A49.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-3rdparty.log" />
+      <property name="Logs" value="C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-ws-20230901_084512.log" />
+      <property name="runtime args" value="-plan C:\projects\GKCore\gkcore\tests\artifact\plan\GNUKhata-plan.xlsx" />
+      <property name="Data File" value="Tax.data.xlsx" />
+      <property name="DataSheet(s)" value="#default" />
+    </properties>
+    <testcase id="Login Token" name="Login Token" classname="Token" timestamp="2023-09-01T09:16:34" time="190.177">
+      <system-out>Total : 16
+Passed: 16
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="POST" timestamp="2023-09-01T09:16:52" time="171.976">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create product: POST-/product" name="Create product: POST-/product" classname="POST" timestamp="2023-09-01T09:16:53" time="171.332">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create tax for product: POST- /tax" name="Create tax for product: POST- /tax" classname="POST" timestamp="2023-09-01T09:17:06" time="158.300">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create Service: POST-/product" name="Create Service: POST-/product" classname="POST" timestamp="2023-09-01T09:17:18" time="146.607">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create tax for service: POST- /tax" name="Create tax for service: POST- /tax" classname="POST" timestamp="2023-09-01T09:17:31" time="133.689">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="GET" timestamp="2023-09-01T09:17:44" time="120.462">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create a product: POST- /product" name="Create a product: POST- /product" classname="GET" timestamp="2023-09-01T09:17:45" time="119.834">
+      <system-out>Total : 14
+Passed: 14
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create tax for product: POST- /tax" name="Create tax for product: POST- /tax" classname="GET" timestamp="2023-09-01T09:17:58" time="106.880">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get tax for product: GET- /tax/search/{pscflag}" name="Get tax for product: GET- /tax/search/{pscflag}" classname="GET" timestamp="2023-09-01T09:18:09" time="95.233">
+      <system-out>Total : 11
+Passed: 11
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create a service: POST- /product" name="Create a service: POST- /product" classname="GET" timestamp="2023-09-01T09:18:20" time="84.454">
+      <failure type="failure found in test activity" message="1 of 14 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 14
+Passed: 13
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Create tax for service: POST- /tax" name="Create tax for service: POST- /tax" classname="GET" timestamp="2023-09-01T09:18:33" time="71.535">
+      <failure type="failure found in test activity" message="1 of 12 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 12
+Passed: 11
+Failed: 1
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get the tax for service: GET- /tax/search/{pscflag}" name="Get the tax for service: GET- /tax/search/{pscflag}" classname="GET" timestamp="2023-09-01T09:18:44" time="59.903">
+      <failure type="failure found in test activity" message="2 of 11 FAILED. Check C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx for execution result, C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log for execution logs" />
+      <system-out>Total : 11
+Passed: 9
+Failed: 2
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get all existing data about taxes: GET- /tax" name="Get all existing data about taxes: GET- /tax" classname="GET" timestamp="2023-09-01T09:18:55" time="49.091">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="PUT" timestamp="2023-09-01T09:19:08" time="36.135">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get all existing data about taxes: GET- /tax" name="Get all existing data about taxes: GET- /tax" classname="PUT" timestamp="2023-09-01T09:19:09" time="35.515">
+      <system-out>Total : 8
+Passed: 8
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Edit tax item's data: PUT- /tax/{taxid}" name="Edit tax item's data: PUT- /tax/{taxid}" classname="PUT" timestamp="2023-09-01T09:19:15" time="29.734">
+      <system-out>Total : 13
+Passed: 13
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Set headers" name="Set headers" classname="DELETE" timestamp="2023-09-01T09:19:27" time="16.995">
+      <system-out>Total : 1
+Passed: 1
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Get all existing data about taxes: GET- /tax" name="Get all existing data about taxes: GET- /tax" classname="DELETE" timestamp="2023-09-01T09:19:28" time="16.339">
+      <system-out>Total : 6
+Passed: 6
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+    <testcase id="Delete a tax item: DELETE- /tax{taxid}" name="Delete a tax item: DELETE- /tax{taxid}" classname="DELETE" timestamp="2023-09-01T09:19:33" time="11.799">
+      <system-out>Total : 12
+Passed: 12
+Failed: 0
+Output: C:\projects\GKCore\gkcore\tests\output\20230901_084512\GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001.xlsx
+Logs  : C:\projects\GKCore\gkcore\tests\output\20230901_084512\logs\nexial-20230901_084512.log</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

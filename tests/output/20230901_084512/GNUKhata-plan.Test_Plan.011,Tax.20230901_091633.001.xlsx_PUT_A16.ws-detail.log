@@ -1,0 +1,23 @@
+Test Step       : GNUKhata-plan.Test_Plan.011,Tax.20230901_091633.001|PUT|Edit tax item's data: PUT- /tax/{taxid}|# 16|ws.put(url,body,var)     
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 09:19:17.048
+Request URL     : https://api-dev.gnukhata.org/tax/105
+Request Method  : PUT
+Request Headers : {Authorization: "", Cookie: JSESSIONID=.value, gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 137 bytes. 
+{
+      "taxid": 105,
+      "taxname": "IGST",
+      "taxrate": "2",    
+      "productcode": 343,
+     "state": "Karnataka"
+      
+    }
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 997
+Elapsed Time    : 998
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 03:49:16 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 0}

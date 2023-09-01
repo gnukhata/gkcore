@@ -1,0 +1,7 @@
+Nexial Version:    nexial-core dev_1535
+Current Timestamp: 2023-09-01 08:52:40.233
+Test Step:         [GNUKhata-plan.Test_Plan.005,CustomerandSupplier.20230901_085103.001.xlsx][GET][Get Customer and Supplier Details: GET- /customer/search/account/{accountcode}][STEP  30][base][assertEqual(expected,actual)]
+--------------------------------------------------------------------------------
+
+expected=0
+actual  =3

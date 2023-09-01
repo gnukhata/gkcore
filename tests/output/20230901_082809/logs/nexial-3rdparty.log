@@ -1,0 +1,4 @@
+2023-09-01 08:28:43.596|W|Thread-1|com.networknt.schema.JsonMetaSchema| ||Unknown keyword gkstatus - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword
+2023-09-01 08:28:43.596|W|Thread-1|com.networknt.schema.JsonMetaSchema| ||Unknown keyword gkstatus - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword
+2023-09-01 08:28:55.168|W|Thread-1|com.networknt.schema.JsonMetaSchema| ||Unknown keyword gkresult - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword
+2023-09-01 08:28:55.168|W|Thread-1|com.networknt.schema.JsonMetaSchema| ||Unknown keyword gkresult - you should define your own Meta Schema. If the keyword is irrelevant for validation, just use a NonValidationKeyword

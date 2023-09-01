@@ -1,0 +1,49 @@
+Test Step       : GNUKhata-plan.Test_Plan.006,DeliveryNote.20230901_080237.001|Post|Negative - Create DeliveryNote|#  8|ws.post(url,body,var)    
+----------------------------------------------------------------------------------------------------
+Request Time    : 2023-09-01 08:05:21.490
+Request URL     : https://api-dev.gnukhata.org/delchal
+Request Method  : POST
+Request Headers : {gktoken: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJvcmdjb2RlIjoxODUsInVzZXJpZCI6Mn0.RIhhHLsoMjVh7dBopwHixqzdpj0vYfoqrRWZlnkfeWg, Content-Type: application/json}
+Request Body    : 886 bytes. 
+{
+  "orgname": "Mapusa89670",
+  "orgtype": "{orgtype}",
+  "yearstart": "{yearstart}",
+  "yearend": "{yearend}",
+  "orgstate": "{orgstate}",
+  "orgcity": "{orgcity}",
+  "orgaddr": "{orgaddr}",
+  "orgpincode": "{orgpincode}",
+  "orgcountry": "{orgcountry}",
+  "orgtelno": "8289544663",
+  "orgfax": "598638",
+  "orgwebsite": "{orgwebsite}",
+  "orgemail": "{orgemail}",
+  "orgpan": "[AJNKK89670",
+  "orgmvat": "1533622",
+  "orgstax": "89670",
+  "orgregno": "919",
+  "orgregdate": "{orgregdate}",
+  "orgfcrano": "{orgfcrano}",
+  "orgfcradate": "{orgfcradate}",
+  "invflag": "{invflag}",
+  "invsflag": "{invsflag}",
+  "billflag": "{billflag}",
+  "avflag": "{avflag}",
+  "maflag": "{maflag}",
+  "avnoflag": "{avnoflag}",
+  "ainvnoflag": "{ainvnoflag}",
+  "modeflag": "{modeflag}",
+  "orgconf": "{orgconf}",
+  "roflag": "{roflag}",
+  "booksclosedflag": "{booksclosedflag}",
+  "logo": "{logo}"
+}
+----------------------------------------------------------------------------------------------------
+Return Code     : 200
+Status Text     : OK
+TTFB            : 1568
+Elapsed Time    : 1569
+Response Headers: {Server: nginx/1.18.0 (Ubuntu), Connection: keep-alive, Content-Length: 15, Date: Fri, 01 Sep 2023 02:35:21 GMT, Content-Type: application/json }
+Response Body   : 15 bytes. 
+{"gkstatus": 3}
