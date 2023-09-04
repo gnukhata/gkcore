@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "null"
+    },
+    "invoiceno": {
+      "type": "string"
+    },
+    "userrole": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult",
+    "invoiceno",
+    "userrole"
+  ]
+}

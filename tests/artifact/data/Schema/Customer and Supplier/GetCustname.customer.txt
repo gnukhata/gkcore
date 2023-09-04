@@ -18,19 +18,19 @@
           "type": "string"
         },
         "custphone": {
-          "type": "null"
+          "type": "string"
         },
         "custemail": {
-          "type": "null"
+          "type": "string"
         },
         "custfax": {
-          "type": "null"
+          "type": "string"
         },
         "custpan": {
-          "type": "null"
+          "type": "string"
         },
         "custtan": {
-          "type": "null"
+          "type": "string"
         },
         "state": {
           "type": "string"
@@ -42,13 +42,41 @@
           "type": "integer"
         },
         "gstin": {
-          "type": "null"
+          "type": "object",
+          "properties": {
+            "10": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "10"
+          ]
         },
         "pincode": {
           "type": "string"
         },
         "bankdetails": {
-          "type": "string"
+          "type": "object",
+          "properties": {
+            "ifsc": {
+              "type": "string"
+            },
+            "bankname": {
+              "type": "string"
+            },
+            "accountno": {
+              "type": "string"
+            },
+            "branchname": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ifsc",
+            "bankname",
+            "accountno",
+            "branchname"
+          ]
         },
         "statelist": {
           "type": "array",
@@ -56,12 +84,12 @@
             {
               "type": "object",
               "properties": {
-                "28": {
+                "10": {
                   "type": "string"
                 }
               },
               "required": [
-                "28"
+                "10"
               ]
             }
           ]
@@ -70,7 +98,7 @@
           "type": "integer"
         },
         "gst_party_type": {
-          "type": "null"
+          "type": "integer"
         }
       },
       "required": [

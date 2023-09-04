@@ -1,0 +1,1103 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "invoices": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "invid": {
+              "type": "integer"
+            },
+            "invoiceno": {
+              "type": "string"
+            },
+            "invoicedate": {
+              "type": "string"
+            },
+            "custname": {
+              "type": "string"
+            },
+            "custid": {
+              "type": "integer"
+            },
+            "csflag": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "invid",
+            "invoiceno",
+            "invoicedate",
+            "custname",
+            "custid",
+            "csflag"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "invoices"
+  ]
+}
