@@ -12,22 +12,22 @@ stages:
   - build
   - deploy
   # tests are run against the dev server, so deploy stage should complete first
-  # - test
+  - test
 
 # runs the api tests against the dev server
-# api_tests:
-#   image: kskarthik/nexial-core:latest
-#   stage: test
-#   # this job runs with a delay to make sure the dev server
-#   # is updated to latest commit
-#   when: delayed
-#   start_in: 2 minutes
-#   script: |
-#     cd tests/artifact
-#     nexial.sh -plan plan/GNUKhata-plan.xlsx
-#   # only:
-#   #   - master
-#   #   - tags
+api_tests:
+  image: kskarthik/nexial-core:latest
+  stage: test
+  # this job runs with a delay to make sure the dev server
+  # is updated to latest commit
+  when: delayed
+  start_in: 2 minutes
+  script: |
+    cd tests/artifact
+    nexial.sh -plan plan/GNUKhata-plan.xlsx
+  # only:
+  #   - master
+  #   - tags
 
 # build gkcore
 # gkcore:
@@ -68,30 +68,6 @@ docker-prod:
     - docker push digitalfreedom/gkcore:latest
   only:
     - tags
-
-# generate api docs
-# pages:
-#   stage: build
-#   script:
-#     # install required gkcore dependencies for gkcore to make pdoc to work
-#     - apt update && apt install -y build-essential libpq-dev
-#     # install the gkcore pip dependencies
-#     - pip install -r requirements.txt
-#     # install & generate api docs with pdoc
-#     - pip install pdoc
-#     - pdoc -o .pub/gkcore-api-docs/ gkcore/
-#     # compress the docs & move to public dir. This compressed file
-#     # will be pulled during gnukhata.org website build for
-#     # displaying the api-docs
-#     - tar -cf gkcore-api-docs.tar.gz .pub/gkcore-api-docs/
-#     - mv gkcore-api-docs.tar.gz .pub/
-#     # rename the dir to match gitlab ci's reserved "public" dir name
-#     - mv .pub public
-#     # gzip the public dir
-#     - gzip -k -9 $(find public -type f)
-#   artifacts:
-#     paths:
-#       - public
 
 # deploy devel branch changes to gkcore test server
 update_test_server:
