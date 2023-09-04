@@ -18,16 +18,17 @@
             ]
         },
         "gkresult": {
-            "type": "integer",
-            "default": 0,
+            "type": "array",
+            "default": [],
             "title": "The gkresult Schema",
+            "items": {},
             "examples": [
-                390
+                []
             ]
         }
     },
     "examples": [{
         "gkstatus": 0,
-        "gkresult": 390
+        "gkresult": []
     }]
 }

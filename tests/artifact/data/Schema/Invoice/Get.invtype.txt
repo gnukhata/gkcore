@@ -1,0 +1,322 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "title": "Root Schema",
+    "required": [
+        "gkstatus",
+        "invoices"
+    ],
+    "properties": {
+        "gkstatus": {
+            "type": "integer",
+            "default": 0,
+            "title": "The gkstatus Schema",
+            "examples": [
+                0
+            ]
+        },
+        "invoices": {
+            "type": "array",
+            "default": [],
+            "title": "The invoices Schema",
+            "items": {
+                "type": "object",
+                "title": "A Schema",
+                "required": [
+                    "invid",
+                    "invoiceno",
+                    "invoicedate",
+                    "custname",
+                    "custid",
+                    "csflag"
+                ],
+                "properties": {
+                    "invid": {
+                        "type": "integer",
+                        "title": "The invid Schema",
+                        "examples": [
+                            89,
+                            114,
+                            91,
+                            81,
+                            94,
+                            97,
+                            178,
+                            188,
+                            233
+                        ]
+                    },
+                    "invoiceno": {
+                        "type": "string",
+                        "title": "The invoiceno Schema",
+                        "examples": [
+                            "7/SL-24",
+                            "7/PU-24",
+                            "4/SL-24",
+                            "2/SL-24",
+                            "93/SL-24",
+                            "50/SL-24",
+                            "95/SL-24",
+                            "55/SL-24",
+                            "81/SL-24"
+                        ]
+                    },
+                    "invoicedate": {
+                        "type": "string",
+                        "title": "The invoicedate Schema",
+                        "examples": [
+                            "01-04-2024"
+                        ]
+                    },
+                    "custname": {
+                        "type": "string",
+                        "title": "The custname Schema",
+                        "examples": [
+                            "Retail Customer (Default)",
+                            "Retail Supplier (Default)"
+                        ]
+                    },
+                    "custid": {
+                        "type": "integer",
+                        "title": "The custid Schema",
+                        "examples": [
+                            102,
+                            101
+                        ]
+                    },
+                    "csflag": {
+                        "type": "integer",
+                        "title": "The csflag Schema",
+                        "examples": [
+                            3,
+                            19
+                        ]
+                    }
+                },
+                "examples": [{
+                    "invid": 89,
+                    "invoiceno": "7/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 114,
+                    "invoiceno": "7/PU-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Supplier (Default)",
+                    "custid": 101,
+                    "csflag": 19
+                },
+                {
+                    "invid": 91,
+                    "invoiceno": "4/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 81,
+                    "invoiceno": "2/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 94,
+                    "invoiceno": "93/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 97,
+                    "invoiceno": "50/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 178,
+                    "invoiceno": "95/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 188,
+                    "invoiceno": "55/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 233,
+                    "invoiceno": "81/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                }]
+            },
+            "examples": [
+                [{
+                    "invid": 89,
+                    "invoiceno": "7/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 114,
+                    "invoiceno": "7/PU-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Supplier (Default)",
+                    "custid": 101,
+                    "csflag": 19
+                },
+                {
+                    "invid": 91,
+                    "invoiceno": "4/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 81,
+                    "invoiceno": "2/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 94,
+                    "invoiceno": "93/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 97,
+                    "invoiceno": "50/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 178,
+                    "invoiceno": "95/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 188,
+                    "invoiceno": "55/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                },
+                {
+                    "invid": 233,
+                    "invoiceno": "81/SL-24",
+                    "invoicedate": "01-04-2024",
+                    "custname": "Retail Customer (Default)",
+                    "custid": 102,
+                    "csflag": 3
+                }]
+            ]
+        }
+    },
+    "examples": [{
+        "gkstatus": 0,
+        "invoices": [{
+            "invid": 89,
+            "invoiceno": "7/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 114,
+            "invoiceno": "7/PU-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Supplier (Default)",
+            "custid": 101,
+            "csflag": 19
+        },
+        {
+            "invid": 91,
+            "invoiceno": "4/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 81,
+            "invoiceno": "2/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 94,
+            "invoiceno": "93/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 97,
+            "invoiceno": "50/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 178,
+            "invoiceno": "95/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 188,
+            "invoiceno": "55/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        },
+        {
+            "invid": 233,
+            "invoiceno": "81/SL-24",
+            "invoicedate": "01-04-2024",
+            "custname": "Retail Customer (Default)",
+            "custid": 102,
+            "csflag": 3
+        }]
+    }]
+}

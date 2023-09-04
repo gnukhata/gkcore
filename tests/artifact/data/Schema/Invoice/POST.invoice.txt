@@ -23,7 +23,7 @@
             "default": 0,
             "title": "The gkresult Schema",
             "examples": [
-                461
+                246
             ]
         },
         "vchData": {
@@ -31,9 +31,7 @@
             "default": {},
             "title": "The vchData Schema",
             "required": [
-                "status",
-                "vchno",
-                "vchid"
+                "status"
             ],
             "properties": {
                 "status": {
@@ -41,72 +39,20 @@
                     "default": 0,
                     "title": "The status Schema",
                     "examples": [
-                        0
-                    ]
-                },
-                "vchno": {
-                    "type": "array",
-                    "default": [],
-                    "title": "The vchno Schema",
-                    "items": {
-                        "type": "string",
-                        "title": "A Schema",
-                        "examples": [
-                            "sl2",
-                            "rt2"
-                        ]
-                    },
-                    "examples": [
-                        ["sl2",
-                            "rt2"
-                        ]
-                    ]
-                },
-                "vchid": {
-                    "type": "array",
-                    "default": [],
-                    "title": "The vchid Schema",
-                    "items": {
-                        "type": "integer",
-                        "title": "A Schema",
-                        "examples": [
-                            911,
-                            912
-                        ]
-                    },
-                    "examples": [
-                        [911,
-                            912
-                        ]
+                        1
                     ]
                 }
             },
             "examples": [{
-                "status": 0,
-                "vchno": [
-                    "sl2",
-                    "rt2"
-                ],
-                "vchid": [
-                    911,
-                    912
-                ]
+                "status": 1
             }]
         }
     },
     "examples": [{
         "gkstatus": 0,
-        "gkresult": 461,
+        "gkresult": 246,
         "vchData": {
-            "status": 0,
-            "vchno": [
-                "sl2",
-                "rt2"
-            ],
-            "vchid": [
-                911,
-                912
-            ]
+            "status": 1
         }
     }]
 }
