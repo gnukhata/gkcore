@@ -217,7 +217,8 @@ organisation_registration:
     tags: ["Organisation"]
     summary: Check if the user is free to create new users / organisations
     operationId: checkRegistrationStatus
-    security: [{}]
+    security:
+      - UserAuth: []
     responses:
       "200":
         description: ok
@@ -235,7 +236,8 @@ organisation_orgname:
     tags: ["Organisation"]
     summary: Check if an organisation's name is unique
     operationId: orgNameExists
-    security: [{}]
+    security:
+      - UserAuth: []
     parameters:
       - in: path
         name: orgname
@@ -260,7 +262,9 @@ organisation_rm_user:
     tags: ["Organisation"]
     summary: Remove an user from the organisation
     description: Only a user with admin role can remove another user
-    security: [{}]
+    security:
+      - ApiKeyAuth: []
+      - UserAuth: []
     requestBody:
       content:
         application/json:

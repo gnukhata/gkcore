@@ -70,26 +70,27 @@ class api_organisation(object):
         self.con = Connection
         self.disableRegistration = os.getenv("GKCORE_DISABLE_REGISTRATION")
 
-    @view_config(route_name="organisation_all", request_method="GET", renderer="json")
-    def getOrgs(self):
-        try:
-            # self.gkUpgrade()
-            self.con = eng.connect()
-            result = self.con.execute(
-                select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype])
-                .order_by(gkdb.organisation.c.orgname)
-                .distinct()
-            )
-            orgs = []
-            for row in result:
-                orgs.append({"orgname": row["orgname"], "orgtype": row["orgtype"]})
-            sorted(orgs, key=lambda orgList: orgList["orgname"])
-            self.con.close()
-            return {"gkstatus": enumdict["Success"], "gkdata": orgs}
-        except:
-            print(traceback.format_exc())
-            self.con.close()
-            return {"gkstatus": enumdict["ConnectionFailed"]}
+    # NOTE: this is legacy api
+    # @view_config(route_name="organisation_all", request_method="GET", renderer="json")
+    # def getOrgs(self):
+    #     try:
+    #         # self.gkUpgrade()
+    #         self.con = eng.connect()
+    #         result = self.con.execute(
+    #             select([gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype])
+    #             .order_by(gkdb.organisation.c.orgname)
+    #             .distinct()
+    #         )
+    #         orgs = []
+    #         for row in result:
+    #             orgs.append({"orgname": row["orgname"], "orgtype": row["orgtype"]})
+    #         sorted(orgs, key=lambda orgList: orgList["orgname"])
+    #         self.con.close()
+    #         return {"gkstatus": enumdict["Success"], "gkdata": orgs}
+    #     except:
+    #         print(traceback.format_exc())
+    #         self.con.close()
+    #         return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(
         request_method="GET",
@@ -1406,6 +1407,17 @@ class api_organisation(object):
         request_method="GET", route_name="organisation_orgname", renderer="json"
     )
     def orgNameExists(self):
+        # check if user is valid
+        try:
+            user_token = self.request.headers["gkusertoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+
+        userAuthDetails = userAuthCheck(user_token)
+
+        if userAuthDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        # proceed to check if org name is unique
         try:
             self.con = eng.connect()
             orgname = self.request.matchdict["orgname"]

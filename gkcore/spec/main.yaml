@@ -100,8 +100,8 @@ paths:
   # organisation
   /organisation:
     $ref: "./paths_organisation.yaml#/organisation"
-  /organisation/all:
-    $ref: "./paths_organisation.yaml#/organisation_all"
+  # /organisation/all:
+  #   $ref: "./paths_organisation.yaml#/organisation_all"
   /organisation/gstin:
     $ref: "./paths_organisation.yaml#/organisation_gstin"
   /organisation/attachment:
