@@ -11,12 +11,11 @@ The REST API server of GNUKhata
 
 ### Linux/Mac
 
-All the dev dependencies are bundled in a set of docker containers & the code changes are synced between host & the gkcore container.
-
 Requirements:
 
 - [docker](https://www.docker.com/)
 - [docker-compose](https://docs.docker.com/compose/)
+- [python](https://www.python.org/) (v3.8 & above)
 
 ```sh
 # Install dependencies `libpq-dev` and `build-essential`.
@@ -32,31 +31,16 @@ python3 -m venv gkenv
 # activate the virtualenv
 source gkenv/bin/activate
 
-# install dependencies
-pip install -r requirements.txt
-
-# install dependencies & initialize the application
+# install dependencies & initialize the application (optionally requires sudo)
 ./gkcore_cli.py init
 
-# start dev server
+# starts the dev server
 ./gkcore_cli.py serve
 ```
 
-<!-- - Install dependencies `libpq-dev` and `build-essential`. On debian/Ubuntu distro's `sudo apt install libpq-dev build-essential`
-- Create a virtal environment named gkenv: `virtualenv gkenv`
-- activate the gkcore virtual environment: `source gkenv/bin/activate`
-- `cd` into the cloned gkcore repository
-- run `pip install -r requirements.txt` to install gkcore dependencies
-- set environment variable `export GKCORE_DB_URL="postgres://gkadmin:gkadmin@localhost:5432/gkdata"`
-- Run the command `docker-compose up -d` to start the containers on which gkcore depends
-- If you are running gkcore for the first time, run `python3 setup.py develop` to setup the app and `python3 initdb.py` which initializes the database schema
-- to perform database migrations run `python3 db_migrate.py`
-- For development purpose, run `pserve development.ini --reload`
-- For production, run `pserve production.ini` -->
-
 > gkcore can be accessed at `http://localhost:6543`
 
-> gkcore API docs (swagger UI) can be accessed via `http://localhost:6543/docs` from your web browser
+> The API docs (swagger UI) can be accessed via `http://localhost:6543/docs/` from your web browser
 
 ### Manual Way
 

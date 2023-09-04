@@ -15,7 +15,7 @@ OPTIONS:
 \tmigrate - Perform migrations on existing database
 \tserve - Start the development server
 \tdeploy - Start the production server
-\tdump - Export a snapshot of the db to a file
+\tdump - Export a snapshot of the database to a file
 """
 
 
