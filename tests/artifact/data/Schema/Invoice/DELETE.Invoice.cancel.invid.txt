@@ -5,8 +5,7 @@
     "default": {},
     "title": "Root Schema",
     "required": [
-        "gkstatus",
-        "gkresult"
+        "gkstatus"
     ],
     "properties": {
         "gkstatus": {
@@ -16,18 +15,9 @@
             "examples": [
                 0
             ]
-        },
-        "gkresult": {
-            "type": "integer",
-            "default": 0,
-            "title": "The gkresult Schema",
-            "examples": [
-                390
-            ]
         }
     },
     "examples": [{
-        "gkstatus": 0,
-        "gkresult": 390
+        "gkstatus": 0
     }]
 }
