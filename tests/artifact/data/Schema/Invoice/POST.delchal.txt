@@ -22,12 +22,12 @@
             "default": 0,
             "title": "The gkresult Schema",
             "examples": [
-                404
+                390
             ]
         }
     },
     "examples": [{
         "gkstatus": 0,
-        "gkresult": 404
+        "gkresult": 390
     }]
 }

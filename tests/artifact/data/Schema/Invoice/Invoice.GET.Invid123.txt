@@ -1,0 +1,1018 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "title": "Root Schema",
+    "required": [
+        "gkstatus",
+        "gkresult"
+    ],
+    "properties": {
+        "gkstatus": {
+            "type": "integer",
+            "default": 0,
+            "title": "The gkstatus Schema",
+            "examples": [
+                0
+            ]
+        },
+        "gkresult": {
+            "type": "object",
+            "default": {},
+            "title": "The gkresult Schema",
+            "required": [
+                "roundoffvalue",
+                "invid",
+                "taxflag",
+                "invoiceno",
+                "ewaybillno",
+                "invoicedate",
+                "icflag",
+                "invoicetotal",
+                "invoicetotalword",
+                "bankdetails",
+                "orgstategstin",
+                "paymentmode",
+                "inoutflag",
+                "roundoff",
+                "narration",
+                "discflag",
+                "deletable",
+                "sourcestate",
+                "sourcestatecode",
+                "address",
+                "pincode",
+                "issuername",
+                "designation",
+                "consignee",
+                "attachmentcount",
+                "dateofsupply",
+                "transportationmode",
+                "vehicleno",
+                "reversecharge",
+                "destinationstate",
+                "taxstatecode",
+                "dcid",
+                "dcno",
+                "dcdate",
+                "custSupDetails",
+                "billentrysingleflag",
+                "totaldiscount",
+                "totaltaxablevalue",
+                "totaltaxamt",
+                "totalcessamt",
+                "taxname",
+                "invcontents",
+                "vouchercount"
+            ],
+            "properties": {
+                "roundoffvalue": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The roundoffvalue Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "invid": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The invid Schema",
+                    "examples": [
+                        72
+                    ]
+                },
+                "taxflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The taxflag Schema",
+                    "examples": [
+                        7
+                    ]
+                },
+                "invoiceno": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoiceno Schema",
+                    "examples": [
+                        "72/SL-24"
+                    ]
+                },
+                "ewaybillno": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The ewaybillno Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "invoicedate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicedate Schema",
+                    "examples": [
+                        "01-04-2024"
+                    ]
+                },
+                "icflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The icflag Schema",
+                    "examples": [
+                        9
+                    ]
+                },
+                "invoicetotal": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicetotal Schema",
+                    "examples": [
+                        "5.00"
+                    ]
+                },
+                "invoicetotalword": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicetotalword Schema",
+                    "examples": [
+                        "Five Rupees"
+                    ]
+                },
+                "bankdetails": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The bankdetails Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "orgstategstin": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The orgstategstin Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "paymentmode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The paymentmode Schema",
+                    "examples": [
+                        5
+                    ]
+                },
+                "inoutflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The inoutflag Schema",
+                    "examples": [
+                        15
+                    ]
+                },
+                "roundoff": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The roundoff Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "narration": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The narration Schema",
+                    "examples": [
+                        "Sold goods worth Rupees 5 to Retail Customer (Default) by cash, ref invoice no. 1/SL-24"
+                    ]
+                },
+                "discflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The discflag Schema",
+                    "examples": [
+                        1
+                    ]
+                },
+                "deletable": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The deletable Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "sourcestate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The sourcestate Schema",
+                    "examples": [
+                        "Tamil Nadu"
+                    ]
+                },
+                "sourcestatecode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The sourcestatecode Schema",
+                    "examples": [
+                        33
+                    ]
+                },
+                "address": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The address Schema",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "pincode": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The pincode Schema",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "issuername": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The issuername Schema",
+                    "examples": [
+                        "AccionLabs"
+                    ]
+                },
+                "designation": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The designation Schema",
+                    "examples": [
+                        "Admin"
+                    ]
+                },
+                "consignee": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The consignee Schema",
+                    "required": [
+                        "tinconsignee",
+                        "consigneename",
+                        "consigneestate",
+                        "gstinconsignee",
+                        "consigneeaddress",
+                        "consigneepincode",
+                        "consigneestatecode"
+                    ],
+                    "properties": {
+                        "tinconsignee": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The tinconsignee Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneename": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneename Schema",
+                            "examples": [
+                                "Retail Customer (Default)"
+                            ]
+                        },
+                        "consigneestate": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The consigneestate Schema",
+                            "examples": [
+                                null
+                            ]
+                        },
+                        "gstinconsignee": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The gstinconsignee Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneeaddress": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneeaddress Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneepincode": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneepincode Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneestatecode": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The consigneestatecode Schema",
+                            "examples": [
+                                null
+                            ]
+                        }
+                    },
+                    "examples": [{
+                        "tinconsignee": "",
+                        "consigneename": "Retail Customer (Default)",
+                        "consigneestate": null,
+                        "gstinconsignee": "",
+                        "consigneeaddress": "",
+                        "consigneepincode": "",
+                        "consigneestatecode": null
+                    }]
+                },
+                "attachmentcount": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The attachmentcount Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "dateofsupply": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dateofsupply Schema",
+                    "examples": [
+                        "01-04-2024"
+                    ]
+                },
+                "transportationmode": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The transportationmode Schema",
+                    "examples": [
+                        "Road"
+                    ]
+                },
+                "vehicleno": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The vehicleno Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "reversecharge": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The reversecharge Schema",
+                    "examples": [
+                        "0"
+                    ]
+                },
+                "destinationstate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The destinationstate Schema",
+                    "examples": [
+                        "Karnataka"
+                    ]
+                },
+                "taxstatecode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The taxstatecode Schema",
+                    "examples": [
+                        29
+                    ]
+                },
+                "dcid": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The dcid Schema",
+                    "examples": [
+                        189
+                    ]
+                },
+                "dcno": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dcno Schema",
+                    "examples": [
+                        "76/DOUT-49"
+                    ]
+                },
+                "dcdate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dcdate Schema",
+                    "examples": [
+                        "01-04-2049"
+                    ]
+                },
+                "custSupDetails": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The custSupDetails Schema",
+                    "required": [
+                        "custid",
+                        "custname",
+                        "custsupstate",
+                        "custaddr",
+                        "csflag",
+                        "pincode",
+                        "custphone",
+                        "custsupstatecode",
+                        "custgstinlist",
+                        "statelist",
+                        "gst_reg_type",
+                        "gst_party_type"
+                    ],
+                    "properties": {
+                        "custid": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The custid Schema",
+                            "examples": [
+                                102
+                            ]
+                        },
+                        "custname": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custname Schema",
+                            "examples": [
+                                "Retail Customer (Default)"
+                            ]
+                        },
+                        "custsupstate": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custsupstate Schema",
+                            "examples": [
+                                "Tamil Nadu"
+                            ]
+                        },
+                        "custaddr": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custaddr Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "csflag": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The csflag Schema",
+                            "examples": [
+                                3
+                            ]
+                        },
+                        "pincode": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The pincode Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "custphone": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The custphone Schema",
+                            "examples": [
+                                null
+                            ]
+                        },
+                        "custsupstatecode": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The custsupstatecode Schema",
+                            "examples": [
+                                33
+                            ]
+                        },
+                        "custgstinlist": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The custgstinlist Schema",
+                            "examples": [
+                                null
+                            ]
+                        },
+                        "statelist": {
+                            "type": "array",
+                            "default": [],
+                            "title": "The statelist Schema",
+                            "items": {
+                                "type": "object",
+                                "title": "A Schema",
+                                "required": [
+                                    "33",
+                                    "29"
+                                ],
+                                "properties": {
+                                    "33": {
+                                        "type": "string",
+                                        "default": "",
+                                        "title": "The 33 Schema",
+                                        "examples": [
+                                            "Tamil Nadu"
+                                        ]
+                                    },
+                                    "29": {
+                                        "type": "string",
+                                        "default": "",
+                                        "title": "The 29 Schema",
+                                        "examples": [
+                                            "Karnataka"
+                                        ]
+                                    }
+                                },
+                                "examples": [{
+                                    "33": "Tamil Nadu"
+                                },
+                                {
+                                    "29": "Karnataka"
+                                }]
+                            },
+                            "examples": [
+                                [{
+                                    "33": "Tamil Nadu"
+                                },
+                                {
+                                    "29": "Karnataka"
+                                }]
+                            ]
+                        },
+                        "gst_reg_type": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The gst_reg_type Schema",
+                            "examples": [
+                                0
+                            ]
+                        },
+                        "gst_party_type": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The gst_party_type Schema",
+                            "examples": [
+                                null
+                            ]
+                        }
+                    },
+                    "examples": [{
+                        "custid": 102,
+                        "custname": "Retail Customer (Default)",
+                        "custsupstate": "Tamil Nadu",
+                        "custaddr": "",
+                        "csflag": 3,
+                        "pincode": "",
+                        "custphone": null,
+                        "custsupstatecode": 33,
+                        "custgstinlist": null,
+                        "statelist": [{
+                            "33": "Tamil Nadu"
+                        },
+                        {
+                            "29": "Karnataka"
+                        }],
+                        "gst_reg_type": 0,
+                        "gst_party_type": null
+                    }]
+                },
+                "billentrysingleflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The billentrysingleflag Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "totaldiscount": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaldiscount Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "totaltaxablevalue": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaltaxablevalue Schema",
+                    "examples": [
+                        "5.00"
+                    ]
+                },
+                "totaltaxamt": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaltaxamt Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "totalcessamt": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totalcessamt Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "taxname": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The taxname Schema",
+                    "examples": [
+                        "IGST"
+                    ]
+                },
+                "invcontents": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The invcontents Schema",
+                    "required": [
+                        "49"
+                    ],
+                    "properties": {
+                        "49": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The 49 Schema",
+                            "required": [
+                                "proddesc",
+                                "gscode",
+                                "gsflag",
+                                "uom",
+                                "qty",
+                                "freeqty",
+                                "priceperunit",
+                                "discount",
+                                "taxableamount",
+                                "totalAmount",
+                                "taxname",
+                                "taxrate",
+                                "taxamount",
+                                "cess",
+                                "cessrate"
+                            ],
+                            "properties": {
+                                "proddesc": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The proddesc Schema",
+                                    "examples": [
+                                        "Milk_Mart123"
+                                    ]
+                                },
+                                "gscode": {
+                                    "type": "null",
+                                    "default": null,
+                                    "title": "The gscode Schema",
+                                    "examples": [
+                                        null
+                                    ]
+                                },
+                                "gsflag": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "title": "The gsflag Schema",
+                                    "examples": [
+                                        7
+                                    ]
+                                },
+                                "uom": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The uom Schema",
+                                    "examples": [
+                                        "PCS"
+                                    ]
+                                },
+                                "qty": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The qty Schema",
+                                    "examples": [
+                                        "1.00"
+                                    ]
+                                },
+                                "freeqty": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The freeqty Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "priceperunit": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The priceperunit Schema",
+                                    "examples": [
+                                        "5.00"
+                                    ]
+                                },
+                                "discount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The discount Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "taxableamount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxableamount Schema",
+                                    "examples": [
+                                        "5.00"
+                                    ]
+                                },
+                                "totalAmount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The totalAmount Schema",
+                                    "examples": [
+                                        "5.00"
+                                    ]
+                                },
+                                "taxname": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxname Schema",
+                                    "examples": [
+                                        "IGST"
+                                    ]
+                                },
+                                "taxrate": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxrate Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "taxamount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxamount Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "cess": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The cess Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "cessrate": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The cessrate Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                }
+                            },
+                            "examples": [{
+                                "proddesc": "Milk_Mart123",
+                                "gscode": null,
+                                "gsflag": 7,
+                                "uom": "PCS",
+                                "qty": "1.00",
+                                "freeqty": "0.00",
+                                "priceperunit": "5.00",
+                                "discount": "0.00",
+                                "taxableamount": "5.00",
+                                "totalAmount": "5.00",
+                                "taxname": "IGST",
+                                "taxrate": "0.00",
+                                "taxamount": "0.00",
+                                "cess": "0.00",
+                                "cessrate": "0.00"
+                            }]
+                        }
+                    },
+                    "examples": [{
+                        "49": {
+                            "proddesc": "Milk_Mart123",
+                            "gscode": null,
+                            "gsflag": 7,
+                            "uom": "PCS",
+                            "qty": "1.00",
+                            "freeqty": "0.00",
+                            "priceperunit": "5.00",
+                            "discount": "0.00",
+                            "taxableamount": "5.00",
+                            "totalAmount": "5.00",
+                            "taxname": "IGST",
+                            "taxrate": "0.00",
+                            "taxamount": "0.00",
+                            "cess": "0.00",
+                            "cessrate": "0.00"
+                        }
+                    }]
+                },
+                "vouchercount": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The vouchercount Schema",
+                    "examples": [
+                        0
+                    ]
+                }
+            },
+            "examples": [{
+                "roundoffvalue": "0.00",
+                "invid": 72,
+                "taxflag": 7,
+                "invoiceno": "72/SL-24",
+                "ewaybillno": null,
+                "invoicedate": "01-04-2024",
+                "icflag": 9,
+                "invoicetotal": "5.00",
+                "invoicetotalword": "Five Rupees",
+                "bankdetails": null,
+                "orgstategstin": null,
+                "paymentmode": 5,
+                "inoutflag": 15,
+                "roundoff": 0,
+                "narration": "Sold goods worth Rupees 5 to Retail Customer (Default) by cash, ref invoice no. 1/SL-24",
+                "discflag": 1,
+                "deletable": 0,
+                "sourcestate": "Tamil Nadu",
+                "sourcestatecode": 33,
+                "address": "",
+                "pincode": "",
+                "issuername": "AccionLabs",
+                "designation": "Admin",
+                "consignee": {
+                    "tinconsignee": "",
+                    "consigneename": "Retail Customer (Default)",
+                    "consigneestate": null,
+                    "gstinconsignee": "",
+                    "consigneeaddress": "",
+                    "consigneepincode": "",
+                    "consigneestatecode": null
+                },
+                "attachmentcount": 0,
+                "dateofsupply": "01-04-2024",
+                "transportationmode": "Road",
+                "vehicleno": null,
+                "reversecharge": "0",
+                "destinationstate": "Karnataka",
+                "taxstatecode": 29,
+                "dcid": 189,
+                "dcno": "76/DOUT-49",
+                "dcdate": "01-04-2049",
+                "custSupDetails": {
+                    "custid": 102,
+                    "custname": "Retail Customer (Default)",
+                    "custsupstate": "Tamil Nadu",
+                    "custaddr": "",
+                    "csflag": 3,
+                    "pincode": "",
+                    "custphone": null,
+                    "custsupstatecode": 33,
+                    "custgstinlist": null,
+                    "statelist": [{
+                        "33": "Tamil Nadu"
+                    },
+                    {
+                        "29": "Karnataka"
+                    }],
+                    "gst_reg_type": 0,
+                    "gst_party_type": null
+                },
+                "billentrysingleflag": 0,
+                "totaldiscount": "0.00",
+                "totaltaxablevalue": "5.00",
+                "totaltaxamt": "0.00",
+                "totalcessamt": "0.00",
+                "taxname": "IGST",
+                "invcontents": {
+                    "49": {
+                        "proddesc": "Milk_Mart123",
+                        "gscode": null,
+                        "gsflag": 7,
+                        "uom": "PCS",
+                        "qty": "1.00",
+                        "freeqty": "0.00",
+                        "priceperunit": "5.00",
+                        "discount": "0.00",
+                        "taxableamount": "5.00",
+                        "totalAmount": "5.00",
+                        "taxname": "IGST",
+                        "taxrate": "0.00",
+                        "taxamount": "0.00",
+                        "cess": "0.00",
+                        "cessrate": "0.00"
+                    }
+                },
+                "vouchercount": 0
+            }]
+        }
+    },
+    "examples": [{
+        "gkstatus": 0,
+        "gkresult": {
+            "roundoffvalue": "0.00",
+            "invid": 72,
+            "taxflag": 7,
+            "invoiceno": "72/SL-24",
+            "ewaybillno": null,
+            "invoicedate": "01-04-2024",
+            "icflag": 9,
+            "invoicetotal": "5.00",
+            "invoicetotalword": "Five Rupees",
+            "bankdetails": null,
+            "orgstategstin": null,
+            "paymentmode": 5,
+            "inoutflag": 15,
+            "roundoff": 0,
+            "narration": "Sold goods worth Rupees 5 to Retail Customer (Default) by cash, ref invoice no. 1/SL-24",
+            "discflag": 1,
+            "deletable": 0,
+            "sourcestate": "Tamil Nadu",
+            "sourcestatecode": 33,
+            "address": "",
+            "pincode": "",
+            "issuername": "AccionLabs",
+            "designation": "Admin",
+            "consignee": {
+                "tinconsignee": "",
+                "consigneename": "Retail Customer (Default)",
+                "consigneestate": null,
+                "gstinconsignee": "",
+                "consigneeaddress": "",
+                "consigneepincode": "",
+                "consigneestatecode": null
+            },
+            "attachmentcount": 0,
+            "dateofsupply": "01-04-2024",
+            "transportationmode": "Road",
+            "vehicleno": null,
+            "reversecharge": "0",
+            "destinationstate": "Karnataka",
+            "taxstatecode": 29,
+            "dcid": 189,
+            "dcno": "76/DOUT-49",
+            "dcdate": "01-04-2049",
+            "custSupDetails": {
+                "custid": 102,
+                "custname": "Retail Customer (Default)",
+                "custsupstate": "Tamil Nadu",
+                "custaddr": "",
+                "csflag": 3,
+                "pincode": "",
+                "custphone": null,
+                "custsupstatecode": 33,
+                "custgstinlist": null,
+                "statelist": [{
+                    "33": "Tamil Nadu"
+                },
+                {
+                    "29": "Karnataka"
+                }],
+                "gst_reg_type": 0,
+                "gst_party_type": null
+            },
+            "billentrysingleflag": 0,
+            "totaldiscount": "0.00",
+            "totaltaxablevalue": "5.00",
+            "totaltaxamt": "0.00",
+            "totalcessamt": "0.00",
+            "taxname": "IGST",
+            "invcontents": {
+                "49": {
+                    "proddesc": "Milk_Mart123",
+                    "gscode": null,
+                    "gsflag": 7,
+                    "uom": "PCS",
+                    "qty": "1.00",
+                    "freeqty": "0.00",
+                    "priceperunit": "5.00",
+                    "discount": "0.00",
+                    "taxableamount": "5.00",
+                    "totalAmount": "5.00",
+                    "taxname": "IGST",
+                    "taxrate": "0.00",
+                    "taxamount": "0.00",
+                    "cess": "0.00",
+                    "cessrate": "0.00"
+                }
+            },
+            "vouchercount": 0
+        }
+    }]
+}

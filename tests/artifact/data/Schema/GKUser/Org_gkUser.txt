@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "userid": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string"
+            },
+            "userrole": {
+              "type": "integer"
+            },
+            "userrolename": {
+              "type": "string"
+            },
+            "invitestatus": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "userid",
+            "username",
+            "userrole",
+            "userrolename",
+            "invitestatus"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult"
+  ]
+}

@@ -61,8 +61,8 @@ def userLogin(request):
              org, then that org's details are returned. If the username is mapped to more than one org,
              then ActionDisallowed status is sent with a message asking to contact the admin for login details.
     """
+    con = eng.connect()
     try:
-        con = eng.connect()
         dataset = request.json_body
         result = con.execute(
             select([gkdb.gkusers.c.userid]).where(
@@ -76,7 +76,6 @@ def userLogin(request):
         if result.rowcount == 1:
             record = result.fetchone()
             # check if any orgs are mapped to the userid
-
             userData = con.execute(
                 select([gkdb.gkusers.c.orgs]).where(
                     gkdb.gkusers.c.userid == record["userid"]
@@ -123,8 +122,9 @@ def userLogin(request):
             )
             return {
                 "gkstatus": enumdict["Success"],
-                "gkresult": payload,
+                "userid": record["userid"],
                 "token": token,
+                "gkresult": payload,
             }
         # else check if its available in users table
         elif tableExists("users"):

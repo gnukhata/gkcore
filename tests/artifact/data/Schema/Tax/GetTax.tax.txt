@@ -180,7 +180,1060 @@
               "type": "string"
             },
             "state": {
+              "type": "string"
+            },
+            "categorycode": {
               "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "categorycode": {
+              "type": "null"
+            },
+            "productcode": {
+              "type": "integer"
+            },
+            "orgcode": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "taxid",
+            "taxname",
+            "taxrate",
+            "taxfromdate",
+            "state",
+            "categorycode",
+            "productcode",
+            "orgcode"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "taxid": {
+              "type": "integer"
+            },
+            "taxname": {
+              "type": "string"
+            },
+            "taxrate": {
+              "type": "string"
+            },
+            "taxfromdate": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
             },
             "categorycode": {
               "type": "null"

@@ -55,7 +55,6 @@ def main(global_config, **settings):
 
     # organisation
     config.add_route("organisation", "/organisation")
-    config.add_route("organisation_all", "/organisation/all")
     config.add_route("organisation_gstin", "/organisation/gstin")
     config.add_route("organisation_attachment", "/organisation/attachment")
     config.add_route("organisation_gst_accounts", "/organisation/gst_accounts")
