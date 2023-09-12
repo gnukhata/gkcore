@@ -4,3 +4,4 @@
 .settings/
 gkcore.egg-info/
 gkenv/
+/tests/output
