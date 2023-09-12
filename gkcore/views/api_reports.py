@@ -604,10 +604,17 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
 
     # Calculate Profit/Loss for the year
     profit = 0
-    exp = float("%.2f" % (expenseTotal))
-    incm = float("%.2f" % (incomeTotal))
+    expenseOpeningStock = (calculateOpeningStockValue(con, orgcode))['total']
+    expenseClosingStock = (calculateClosingStockValue(con, orgcode, calculateTo))['total']
+
+    exp = float("%.2f" % (expenseTotal + expenseOpeningStock))
+    incm = float("%.2f" % (incomeTotal + expenseClosingStock))
+    
+    profit = incm - exp
+
+    # In case of loss
     if exp > incm:
-        profit = expenseTotal - incomeTotal
+         
         groupWiseTotal -= profit
         sbalanceSheet.append(
             {
@@ -645,8 +652,8 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                 }
             )
 
+    # In case of profit
     if exp < incm:
-        profit = incomeTotal - expenseTotal
         groupWiseTotal += profit
         sbalanceSheet.append(
             {
@@ -683,6 +690,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     "advflag": "",
                 }
             )
+    # In case of no loss/profit
     if expenseTotal == incomeTotal:
         sbalanceSheet.append(
             {
@@ -2348,6 +2356,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                 )
                 print(stockOnHand)
 
+
         # stock sale and purchase data
         stockList = con.execute(
             select(
@@ -2908,7 +2917,6 @@ def calculateProfitLossPerProduct(con, orgcode, endDate, productCode, godownCode
                 stockOnHand.append(
                     {"qty": float(openingStock["goopeningstock"]), "rate": float(rate)}
                 )
-                # print(stockOnHand)
 
         # stock sale and purchase data
         stockList = con.execute(
@@ -5199,6 +5207,7 @@ class api_reports(object):
                         "applicationamount": "",
                     }
                 )
+                return balanceSheet
                 self.con.close()
             except:
                 self.con.close()
@@ -6579,7 +6588,6 @@ class api_reports(object):
                 #     result["totalD"] = "%.2f" % (float(grpDEbalance))
 
                 priceDiff = calculateProfitLossValue(self.con, orgcode, calculateTo)
-                # print(priceDiff)
                 grossDiff = priceDiff["total"] + grpDI - grpDE
 
                 if grossDiff >= 0:
