@@ -108,6 +108,8 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
     sourcesTotal = 0.00
     applicationsTotal = 0.00
     difference = 0.00
+    openingStockVal = (calculateOpeningStockValue(con, orgcode))['total']
+    closingStockVal = (calculateClosingStockValue(con, orgcode, calculateTo))['total']
     sbalanceSheet.append(
         {
             "groupAccname": "Sources:",
@@ -604,11 +606,9 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
 
     # Calculate Profit/Loss for the year
     profit = 0
-    expenseOpeningStock = (calculateOpeningStockValue(con, orgcode))['total']
-    expenseClosingStock = (calculateClosingStockValue(con, orgcode, calculateTo))['total']
 
-    exp = float("%.2f" % (expenseTotal + expenseOpeningStock))
-    incm = float("%.2f" % (incomeTotal + expenseClosingStock))
+    exp = float("%.2f" % (expenseTotal + openingStockVal))
+    incm = float("%.2f" % (incomeTotal + closingStockVal))
     
     profit = incm - exp
 
@@ -1005,7 +1005,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                 "advflag": adverseflag,
             }
         )
-
+    # loop over the subgroups of current assets
     for subgroup in subgroupData:
         subgroupTotal = 0.00
         accounts = []
@@ -1044,12 +1044,9 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     }
                 )
         groupWiseTotal += subgroupTotal
+        # calculate the inventory
         if subgroup["groupname"] == "Inventory":
-            closingStock = calculateClosingStockValue(con, orgcode, calculateTo)
-            # print("Balance Sheet")
-            # print(orgcode)
-            # print(calculateTo)
-            subgroupTotal = closingStock["total"]
+            subgroupTotal = closingStockVal
         groupAccSubgroup.append(
             {
                 "groupAccname": subgroup["groupname"],
@@ -1069,7 +1066,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
     abalanceSheet.append(
         {
             "groupAccname": "Current Assets",
-            "amount": "%.2f" % (groupWiseTotal),
+            "amount": "%.2f" % (groupWiseTotal + closingStockVal),
             "groupAcccode": groupcode,
             "subgroupof": "",
             "accountof": "",
@@ -1317,7 +1314,8 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
             "advflag": "",
         }
     )
-    sourcesTotal = round(sourcesTotal, 2)
+    # append the closing stock value as well
+    sourcesTotal = round(sourcesTotal + closingStockVal, 2) 
     applicationsTotal = round(applicationsTotal, 2)
     difference = abs(sourcesTotal - applicationsTotal)
 
