@@ -25,9 +25,12 @@ Survesh VRL <123survesh@gmail.com>
 Sai Karthik <kskarthik@disroot.org>
 
 """
+from threading import ExceptHookArgs
+
+from sqlalchemy.util import raise_
 from gkcore.utils import authCheck
 from sqlalchemy.engine.base import Connection
-from pyramid.request import Request
+from pyramid.request import Request, Response
 from pyramid.view import view_defaults, view_config
 import gkcore
 
@@ -49,16 +52,19 @@ class api_spreadsheet(object):
         self.request = request
         self.con = Connection
         print("Spreadsheet API initialized")
+        self.check_auth()
 
     def check_auth(self):
         """Verify user's identity
         Check if the user has valid jwt token, else return appropriate status code
         """
-        print("checking auth")
-        token = self.request.headers["gktoken"] or None
-        if token == None:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            raise Exception("no gktoken provided")
+
         authDetails = authCheck(token)
+
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
 
@@ -69,109 +75,88 @@ class api_spreadsheet(object):
         renderer="json",
     )
     def psr(self):
-        self.check_auth
-        print("generating spreadsheet")
         return sheets.stock_report.print_stock_report(self)
 
     @view_config(route_name="trial-balance-xlsx", request_method="GET", renderer="json")
     def ptb(self):
-        self.check_auth
         return sheets.trial_balance.print_trial_balance(self)
 
     @view_config(request_method="GET", request_param="pslist", renderer="json")
     def psl(self):
-        self.check_auth
         return sheets.product_service.product_service_list(self)
 
     @view_config(route_name="profitloss-xlsx", request_method="GET", renderer="json")
     def ppl(self):
-        self.check_auth
-        print("p/l")
         return sheets.profit_loss.print_profit_loss(self)
 
     @view_config(request_method="GET", route_name="ledger-xlsx", renderer="json")
     def led(self):
-        self.check_auth
         return sheets.ledger.ledger_report(self)
 
     @view_config(
         request_method="GET", route_name="ledger-monthly-xlsx", renderer="json"
     )
     def ledm(self):
-        self.check_auth
         return sheets.ledger.monthly_ledger(self)
 
     @view_config(request_method="GET", route_name="balance-sheet-xlsx", renderer="json")
     def bals(self):
-        self.check_auth
         return sheets.balance_sheet.print_balance_sheet(self)
 
     @view_config(request_method="GET", request_param="transfer-notes", renderer="json")
     def tnl(self):
-        self.check_auth
         return sheets.transfer_note.all_transfer_notes(self)
 
     # Invoices
     @view_config(request_method="GET", request_param="invoice-list", renderer="json")
     def inv(self):
-        self.check_auth
         return sheets.invoice.invoice_list(self)
 
     @view_config(
         request_method="GET", request_param="invoice-outstanding", renderer="json"
     )
     def invo(self):
-        self.check_auth
         return sheets.invoice.outstanding_invoices(self)
 
     @view_config(
         request_method="GET", request_param="invoice-cancelled", renderer="json"
     )
     def invc(self):
-        self.check_auth
         return sheets.invoice.cancelled_invoices(self)
 
     @view_config(request_method="GET", request_param="cash-flow", renderer="json")
     def caf(self):
-        self.check_auth
         return sheets.cash_flow.print_cash_flow(self)
 
     # accounts
     @view_config(route_name="accounts-xlsx", request_method="GET", renderer="json")
     def acc(self):
-        self.check_auth
         return sheets.accounts.generate_spreadsheet(self)
 
     @view_config(request_method="GET", request_param="all-godowns", renderer="json")
     def ag(self):
-        self.check_auth
         return sheets.godown.godown_list(self)
 
     @view_config(request_method="GET", request_param="user-list", renderer="json")
     def uli(self):
-        self.check_auth
         return sheets.user.user_list(self)
 
     @view_config(request_method="GET", request_param="all-categories", renderer="json")
     def alc(self):
-        self.check_auth
         return sheets.category.all_categories(self)
 
     @view_config(request_method="GET", request_param="budget", renderer="json")
     def bud(self):
-        self.check_auth
         return sheets.budget.cash_report(self)
 
     @view_config(request_method="GET", request_param="budget-pnl", renderer="json")
     def bud_pnl(self):
-        self.check_auth
         return sheets.budget.pnl(self)
 
     @view_config(
         request_method="GET", request_param="delivery-challan-unbilled", renderer="json"
     )
     def delcu(self):
-        self.check_auth
         return sheets.delivery_challan.unbilled(self)
 
     @view_config(
@@ -180,7 +165,6 @@ class api_spreadsheet(object):
         renderer="json",
     )
     def delcc(self):
-        self.check_auth
         return sheets.delivery_challan.cancelled(self)
 
     @view_config(
@@ -189,7 +173,6 @@ class api_spreadsheet(object):
         renderer="json",
     )
     def gst_r1(self):
-        self.check_auth
         return sheets.gst.r1(self)
 
     @view_config(
@@ -198,7 +181,6 @@ class api_spreadsheet(object):
         renderer="json",
     )
     def gst_summ(self):
-        self.check_auth
         return sheets.gst.summary(self)
 
     @view_config(
@@ -207,7 +189,6 @@ class api_spreadsheet(object):
         renderer="json",
     )
     def cost_cen_st(self):
-        self.check_auth
         return sheets.cost_center.statement(self)
 
     @view_config(
