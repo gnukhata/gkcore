@@ -301,14 +301,18 @@ class api_product(object):
                 row = result.fetchone()
                 productCode = row["productcode"]
                 # create godown only if godown flag is true and is product
-                if godownFlag and productDetails["gsflag"] == "7":
+                if godownFlag and productDetails["gsflag"] == 7:
                     goDetails = dataset["godetails"]
+                    # insert godown stock into goprod table & calculate opening stock
                     ttlOpening = 0.00
+                    # loop over all godowns stock entries
                     for goId in list(goDetails.keys()):
                         goDetail = goDetails[goId]
                         if type(goDetail) != dict:
                             goDetail = {"qty": goDetail, "rate": 0}
-                        ttlOpening = ttlOpening + float(goDetail["qty"])
+                        # calculate the opening stock
+                        # ttlOpening = ttlOpening + float(goDetail["qty"])
+                        ttlOpening += float(goDetail["qty"])
                         goro = {
                             "productcode": productCode,
                             "goid": goId,
@@ -316,7 +320,14 @@ class api_product(object):
                             "openingstockvalue": goDetail["rate"],
                             "orgcode": authDetails["orgcode"],
                         }
-                        self.con.execute(goprod.insert(), [goro])
+                        try:
+                            self.con.execute(goprod.insert(), [goro])
+                        except Exception as e:
+                            return {
+                                "gkstatus": enumdict["ConnectionFailed"],
+                                "error": str(e),
+                            }
+                    # update opening stock value
                     self.con.execute(
                         product.update()
                         .where(
@@ -397,7 +408,7 @@ class api_product(object):
                     )
                 )
                 prodName = pn.fetchone()
-                result = self.con.execute(
+                self.con.execute(
                     gkdb.product.update()
                     .where(gkdb.product.c.productcode == productCode)
                     .values(productDetails)
@@ -505,7 +516,7 @@ class api_product(object):
                     )
                 )
                 try:
-                    resultA = self.con.execute(
+                    self.con.execute(
                         accounts.delete().where(
                             and_(
                                 accounts.c.accountname.like(pn + "%"),
