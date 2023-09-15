@@ -1,1611 +1,560 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
-    "gkresult": {
-      "type": "array",
-      "items": [
+    "gkstatus": 0,
+    "gkresult": [
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 107,
+            "invoiceno": "48/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 114,
+            "invoiceno": "7/PU-24",
+            "inoutflag": 9,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "83": 4.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Supplier (Default)",
+                "custaddr": "",
+                "csflag": 19,
+                "custstate": "Tamil Nadu"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 167,
+            "invoiceno": "49/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "83": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "83"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 49,
+            "invoiceno": "77/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 51,
+            "invoiceno": "82/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 52,
+            "invoiceno": "32/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 53,
+            "invoiceno": "30/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 64,
+            "invoiceno": "45/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 78,
+            "invoiceno": "/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 71,
+            "invoiceno": "70/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 72,
+            "invoiceno": "72/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 75,
+            "invoiceno": "87/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 77,
+            "invoiceno": "97/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 69,
+            "invoiceno": "46/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 177,
+            "invoiceno": "65/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 74,
+            "invoiceno": "91/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 169,
+            "invoiceno": "test85/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 179,
+            "invoiceno": "test36/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 84,
+            "invoiceno": "test38/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 86,
+            "invoiceno": "test68/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 90,
+            "invoiceno": "test78/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 95,
+            "invoiceno": "test21/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 232,
+            "invoiceno": "41/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 235,
+            "invoiceno": "39/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 240,
+            "invoiceno": "5/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 241,
+            "invoiceno": "11/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
         },
         {
-          "type": "object",
-          "properties": {
-            "invid": {
-              "type": "integer"
-            },
-            "invoiceno": {
-              "type": "string"
-            },
-            "inoutflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
+            "invid": 242,
+            "invoiceno": "80/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
             "rejcontent": {
-              "type": "object",
-              "properties": {
-                "49": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "49"
-              ]
+                "49": 1.0
             },
             "custsupdetail": {
-              "type": "object",
-              "properties": {
-                "custname": {
-                  "type": "string"
-                },
-                "custaddr": {
-                  "type": "string"
-                },
-                "csflag": {
-                  "type": "integer"
-                },
-                "custstate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "custname",
-                "custaddr",
-                "csflag",
-                "custstate"
-              ]
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
             }
-          },
-          "required": [
-            "invid",
-            "invoiceno",
-            "inoutflag",
-            "invoicedate",
-            "rejcontent",
-            "custsupdetail"
-          ]
+        },
+        {
+            "invid": 244,
+            "invoiceno": "47/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 246,
+            "invoiceno": "503/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 247,
+            "invoiceno": "96/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 248,
+            "invoiceno": "59/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 249,
+            "invoiceno": "73/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 250,
+            "invoiceno": "603/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 251,
+            "invoiceno": "1988/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 252,
+            "invoiceno": "42/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 253,
+            "invoiceno": "1878/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
+        },
+        {
+            "invid": 254,
+            "invoiceno": "test40/SL-24",
+            "inoutflag": 15,
+            "invoicedate": "01-04-2024",
+            "rejcontent": {
+                "49": 1.0
+            },
+            "custsupdetail": {
+                "custname": "Retail Customer (Default)",
+                "custaddr": "",
+                "csflag": 3,
+                "custstate": "Karnataka"
+            }
         }
-      ]
-    }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
+    ]
 }
