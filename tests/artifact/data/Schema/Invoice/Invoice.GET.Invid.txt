@@ -1,372 +1,94 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
+    "gkstatus": 0,
     "gkresult": {
-      "type": "object",
-      "properties": {
-        "roundoffvalue": {
-          "type": "string"
-        },
-        "invid": {
-          "type": "integer"
-        },
-        "taxflag": {
-          "type": "integer"
-        },
-        "invoiceno": {
-          "type": "string"
-        },
-        "ewaybillno": {
-          "type": "null"
-        },
-        "invoicedate": {
-          "type": "string"
-        },
-        "icflag": {
-          "type": "integer"
-        },
-        "invoicetotal": {
-          "type": "string"
-        },
-        "invoicetotalword": {
-          "type": "string"
-        },
-        "bankdetails": {
-          "type": "null"
-        },
-        "orgstategstin": {
-          "type": "null"
-        },
-        "paymentmode": {
-          "type": "integer"
-        },
-        "inoutflag": {
-          "type": "integer"
-        },
-        "roundoff": {
-          "type": "integer"
-        },
-        "narration": {
-          "type": "string"
-        },
-        "discflag": {
-          "type": "integer"
-        },
-        "deletable": {
-          "type": "integer"
-        },
-        "sourcestate": {
-          "type": "string"
-        },
-        "sourcestatecode": {
-          "type": "integer"
-        },
-        "address": {
-          "type": "string"
-        },
-        "pincode": {
-          "type": "string"
-        },
-        "issuername": {
-          "type": "string"
-        },
-        "designation": {
-          "type": "string"
-        },
+        "roundoffvalue": "0.00",
+        "invid": 328,
+        "taxflag": 7,
+        "invoiceno": "1972/SL-24",
+        "ewaybillno": null,
+        "invoicedate": "01-04-2024",
+        "icflag": 9,
+        "invoicetotal": "5.00",
+        "invoicetotalword": "Five Rupees",
+        "bankdetails": null,
+        "orgstategstin": null,
+        "paymentmode": 5,
+        "inoutflag": 15,
+        "roundoff": 0,
+        "narration": "Sold goods worth Rupees 5 to Retail Customer (Default) by cash, ref invoice no. 1/SL-24",
+        "discflag": 1,
+        "deletable": 0,
+        "sourcestate": "Tamil Nadu",
+        "sourcestatecode": 33,
+        "address": "",
+        "pincode": "",
+        "issuername": "AccionLabs",
+        "designation": "Admin",
         "consignee": {
-          "type": "object",
-          "properties": {
-            "tinconsignee": {
-              "type": "string"
-            },
-            "consigneename": {
-              "type": "string"
-            },
-            "consigneestate": {
-              "type": "null"
-            },
-            "gstinconsignee": {
-              "type": "string"
-            },
-            "consigneeaddress": {
-              "type": "string"
-            },
-            "consigneepincode": {
-              "type": "string"
-            },
-            "consigneestatecode": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "tinconsignee",
-            "consigneename",
-            "consigneestate",
-            "gstinconsignee",
-            "consigneeaddress",
-            "consigneepincode",
-            "consigneestatecode"
-          ]
+            "tinconsignee": "",
+            "consigneename": "Retail Customer (Default)",
+            "consigneestate": null,
+            "gstinconsignee": "",
+            "consigneeaddress": "",
+            "consigneepincode": "",
+            "consigneestatecode": null
         },
-        "attachmentcount": {
-          "type": "integer"
-        },
-        "dateofsupply": {
-          "type": "string"
-        },
-        "transportationmode": {
-          "type": "string"
-        },
-        "vehicleno": {
-          "type": "null"
-        },
-        "reversecharge": {
-          "type": "string"
-        },
-        "destinationstate": {
-          "type": "string"
-        },
-        "taxstatecode": {
-          "type": "integer"
-        },
-        "dcid": {
-          "type": "integer"
-        },
-        "dcno": {
-          "type": "string"
-        },
-        "dcdate": {
-          "type": "string"
-        },
+        "attachmentcount": 0,
+        "dateofsupply": "01-04-2024",
+        "transportationmode": "Road",
+        "vehicleno": null,
+        "reversecharge": "0",
+        "destinationstate": "Karnataka",
+        "taxstatecode": 29,
+        "dcid": 482,
+        "dcno": "0159/DOUT-49",
+        "dcdate": "01-04-2049",
         "custSupDetails": {
-          "type": "object",
-          "properties": {
-            "custid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "custsupstate": {
-              "type": "string"
-            },
-            "custaddr": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "pincode": {
-              "type": "string"
-            },
-            "custphone": {
-              "type": "null"
-            },
-            "custsupstatecode": {
-              "type": "integer"
-            },
-            "custgstinlist": {
-              "type": "null"
-            },
-            "statelist": {
-              "type": "array",
-              "items": [
+            "custid": 102,
+            "custname": "Retail Customer (Default)",
+            "custsupstate": "Tamil Nadu",
+            "custaddr": "",
+            "csflag": 3,
+            "pincode": "",
+            "custphone": null,
+            "custsupstatecode": 33,
+            "custgstinlist": null,
+            "statelist": [
                 {
-                  "type": "object",
-                  "properties": {
-                    "33": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "33"
-                  ]
+                    "33": "Tamil Nadu"
                 },
                 {
-                  "type": "object",
-                  "properties": {
-                    "29": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "29"
-                  ]
+                    "29": "Karnataka"
                 }
-              ]
-            },
-            "gst_reg_type": {
-              "type": "integer"
-            },
-            "gst_party_type": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "custid",
-            "custname",
-            "custsupstate",
-            "custaddr",
-            "csflag",
-            "pincode",
-            "custphone",
-            "custsupstatecode",
-            "custgstinlist",
-            "statelist",
-            "gst_reg_type",
-            "gst_party_type"
-          ]
+            ],
+            "gst_reg_type": 0,
+            "gst_party_type": null
         },
-        "billentrysingleflag": {
-          "type": "integer"
-        },
-        "totaldiscount": {
-          "type": "string"
-        },
-        "totaltaxablevalue": {
-          "type": "string"
-        },
-        "totaltaxamt": {
-          "type": "string"
-        },
-        "totalcessamt": {
-          "type": "string"
-        },
-        "taxname": {
-          "type": "string"
-        },
+        "billentrysingleflag": 0,
+        "totaldiscount": "0.00",
+        "totaltaxablevalue": "5.00",
+        "totaltaxamt": "0.00",
+        "totalcessamt": "0.00",
+        "taxname": "IGST",
         "invcontents": {
-          "type": "object",
-          "properties": {
             "49": {
-              "type": "object",
-              "properties": {
-                "proddesc": {
-                  "type": "string"
-                },
-                "gscode": {
-                  "type": "null"
-                },
-                "gsflag": {
-                  "type": "integer"
-                },
-                "uom": {
-                  "type": "string"
-                },
-                "qty": {
-                  "type": "string"
-                },
-                "freeqty": {
-                  "type": "string"
-                },
-                "priceperunit": {
-                  "type": "string"
-                },
-                "discount": {
-                  "type": "string"
-                },
-                "taxableamount": {
-                  "type": "string"
-                },
-                "totalAmount": {
-                  "type": "string"
-                },
-                "taxname": {
-                  "type": "string"
-                },
-                "taxrate": {
-                  "type": "string"
-                },
-                "taxamount": {
-                  "type": "string"
-                },
-                "cess": {
-                  "type": "string"
-                },
-                "cessrate": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "proddesc",
-                "gscode",
-                "gsflag",
-                "uom",
-                "qty",
-                "freeqty",
-                "priceperunit",
-                "discount",
-                "taxableamount",
-                "totalAmount",
-                "taxname",
-                "taxrate",
-                "taxamount",
-                "cess",
-                "cessrate"
-              ]
+                "proddesc": "Milk_Mart123",
+                "gscode": null,
+                "gsflag": 7,
+                "uom": "PCS",
+                "qty": "1.00",
+                "freeqty": "0.00",
+                "priceperunit": "5.00",
+                "discount": "0.00",
+                "taxableamount": "5.00",
+                "totalAmount": "5.00",
+                "taxname": "IGST",
+                "taxrate": "0.00",
+                "taxamount": "0.00",
+                "cess": "0.00",
+                "cessrate": "0.00"
             }
-          },
-          "required": [
-            "49"
-          ]
         },
-        "vouchercount": {
-          "type": "integer"
-        }
-      },
-      "required": [
-        "roundoffvalue",
-        "invid",
-        "taxflag",
-        "invoiceno",
-        "ewaybillno",
-        "invoicedate",
-        "icflag",
-        "invoicetotal",
-        "invoicetotalword",
-        "bankdetails",
-        "orgstategstin",
-        "paymentmode",
-        "inoutflag",
-        "roundoff",
-        "narration",
-        "discflag",
-        "deletable",
-        "sourcestate",
-        "sourcestatecode",
-        "address",
-        "pincode",
-        "issuername",
-        "designation",
-        "consignee",
-        "attachmentcount",
-        "dateofsupply",
-        "transportationmode",
-        "vehicleno",
-        "reversecharge",
-        "destinationstate",
-        "taxstatecode",
-        "dcid",
-        "dcno",
-        "dcdate",
-        "custSupDetails",
-        "billentrysingleflag",
-        "totaldiscount",
-        "totaltaxablevalue",
-        "totaltaxamt",
-        "totalcessamt",
-        "taxname",
-        "invcontents",
-        "vouchercount"
-      ]
+        "vouchercount": 0
     }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
 }
