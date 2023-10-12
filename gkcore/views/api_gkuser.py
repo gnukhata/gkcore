@@ -13,12 +13,29 @@ from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken
 from datetime import datetime
 import traceback
 
+from pydantic import BaseModel, Field, ValidationError
+
+
+# the user payload schema
+class UserSchema(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    userpassword: str = Field(min_length=3)
+    userquestion: str = Field(min_length=3, max_length=2000)
+    useranswer: str = Field(min_length=3, max_length=2000)
+    # godown in-charge will have orgs
+    orgs: dict = Field(default=dict())
+
+
+# uses password reset model
+class ResetPassword(BaseModel):
+    userid: int
+    userpassword: str = Field(min_length=3)
+
 
 def getUserRole(userid, orgcode):
+    con = Connection
+    con = eng.connect()
     try:
-        con = Connection
-        con = eng.connect()
-        uid = userid
         roleQuery = con.execute(
             "select u.orgs#>'{%s,userrole}' as userrole from gkusers u where userid = %d;"
             % (str(orgcode), userid)
@@ -63,19 +80,28 @@ class api_gkuser(object):
         purpose
         adds a user in the users table.
         """
+        dataset = self.request.json_body
+
+        # validate payload schema
+        try:
+            dataset = UserSchema(**dataset).model_dump()
+        except ValidationError as e:
+            return {"gkstatus": enumdict["ConnectionFailed"], "gkresult": e.errors()}
+
         try:
             self.con = eng.connect()
-            dataset = self.request.json_body
 
-            if "orgs" not in dataset:
-                dataset["orgs"] = {}
             # insert the user info into gkusers table
             self.con.execute(gkdb.gkusers.insert(), [dataset])
+
+            # get the userid of the newly created user
             userid = self.con.execute(
                 select([gkdb.gkusers.c.userid]).where(
                     gkdb.gkusers.c.username == dataset["username"]
                 )
             ).fetchone()
+
+            # generate the auth token
             token = generateAuthToken(
                 self.con,
                 {"userid": userid["userid"], "username": dataset["username"]},
@@ -94,6 +120,7 @@ class api_gkuser(object):
     """
 
     # TODO: Must update this method to update either all columns or just a column that is required
+    # NOTE: revisit this api again to eval if required validation
     @view_config(
         request_method="PUT", renderer="json", request_param="type=default_user_name"
     )
@@ -103,7 +130,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -117,7 +144,7 @@ class api_gkuser(object):
                 )
 
                 if roleQuery.rowcount == 1:
-                    result = self.con.execute(
+                    self.con.execute(
                         gkdb.gkusers.update()
                         .where(gkdb.gkusers.c.userid == dataset["userid"])
                         .values(username=dataset["username"])
@@ -153,7 +180,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -212,7 +239,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -307,7 +334,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -331,7 +358,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -348,7 +375,7 @@ class api_gkuser(object):
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
-                invf = checkFlag.fetchone()
+                checkFlag.fetchone()
 
                 users = []
                 ROLES = {
@@ -399,7 +426,7 @@ class api_gkuser(object):
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = userAuthCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             try:
@@ -602,16 +629,27 @@ class api_gkuser(object):
         finally:
             self.con.close()
 
-    # request_param="type=reset_password",
     @view_config(
         request_method="PUT",
         renderer="json",
         route_name="gkuser_pwd_reset",
     )
     def resetpassword(self):
+        gk_log(__name__).info("reset password")
         try:
             self.con = eng.connect()
-            dataset = self.request.json_body
+            # we now validate the incoming payload
+            # and throw an error when it fails
+            try:
+                dataset = self.request.json_body
+                dataset = UserSchema(**dataset).model_dump()
+            except ValidationError as e:
+                return {
+                    "gkstatus": enumdict["ConnectionFailed"],
+                    "gkresult": e.errors(),
+                }
+            # check whether the user is already existing
+            # in the database
             user = self.con.execute(
                 select([gkdb.gkusers]).where(
                     and_(
@@ -620,8 +658,9 @@ class api_gkuser(object):
                     )
                 )
             )
+            # if exists, update the relevant column with new password
             if user.rowcount > 0:
-                result = self.con.execute(
+                self.con.execute(
                     gkdb.gkusers.update()
                     .where(gkdb.gkusers.c.userid == dataset["userid"])
                     .values(userpassword=dataset["userpassword"])
@@ -632,21 +671,21 @@ class api_gkuser(object):
         except:
             print(traceback.format_exc())
 
-    """
-        Following function check status (i.e valid or not) of field current password in edituser.  
-    """
-
     @view_config(
         request_method="POST", route_name="gkuser_pwd_validate", renderer="json"
     )
     def validateUserPassword(self):
+        """
+        Following function check status (i.e valid or not) of field
+        current password in edituser.
+        """
         try:
             self.con = eng.connect()
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAcces"]}
         else:
             try:
@@ -687,7 +726,7 @@ class api_gkuser(object):
         authDetails = userAuthCheck(token)
         user = authDetails
         gk_log(__name__).debug(user)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         # get the user info from the database
         else:
@@ -741,17 +780,33 @@ class api_gkuser(object):
         try:
             self.con = eng.connect()
             token = self.request.headers["gkusertoken"]
-        except:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        except Exception as e:
+            return {
+                "gkstatus": gkcore.enumdict["UnauthorisedAccess"],
+                "gkresult": f"{e}",
+            }
         authDetails = userAuthCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         try:
             self.con = eng.connect()
             dataset = self.request.json_body
+
+            # we now validate the incoming payload
+            # and throw an error when it fails
+            try:
+                # we now append the userid key to dataset for validation
+                dataset["userid"] = authDetails["userid"]
+                dataset = ResetPassword(**dataset).model_dump()
+            except ValidationError as e:
+                return {
+                    "gkstatus": enumdict["ConnectionFailed"],
+                    "gkresult": e.errors(),
+                }
+            # insert the updated password to the db
             self.con.execute(
                 gkdb.gkusers.update()
-                .where(gkdb.gkusers.c.userid == authDetails["userid"])
+                .where(gkdb.gkusers.c.userid == dataset["userid"])
                 .values(userpassword=dataset["userpassword"])
             )
             return {"gkstatus": enumdict["Success"]}
