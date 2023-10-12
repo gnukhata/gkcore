@@ -26,7 +26,6 @@ Sai Karthik <kskarthik@disroot.org>
 
 """
 from gkcore.models.meta import gk_api
-from gkcore.models.meta import gk_api
 from pyramid.response import Response
 
 # Spreadsheet libraries
