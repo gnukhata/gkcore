@@ -34,5 +34,5 @@ openpyxl == 3.0.10
 pyramid-openapi3 == 0.16.0
 openapi-core < 0.17.0
 
-# sqlalchemy pagination support
-#sqlalchemy-filters==0.13.0
+# for api payload validation
+pydantic==2.4.0
