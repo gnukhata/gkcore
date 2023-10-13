@@ -1,3 +1,6 @@
+# This dockerfile builds the gkcore
+
+# WARNING: Observed that gkcore fails to start in v3.12
 FROM python:3.11-slim
 
 LABEL Sai Karthik <kskarthik@disroot.org>
