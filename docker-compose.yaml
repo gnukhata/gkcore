@@ -13,6 +13,7 @@ services:
       - gkdb:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
   # gkcore loaded from current directory
   # gkcore:
   #   build:
@@ -27,9 +28,11 @@ services:
   #     - db
   #   ports:
   #     - "6543:6543"
+
   # ifsc API server
-  ifsc-server:
-    image: razorpay/ifsc:latest
+  # ifsc-server:
+  #   image: razorpay/ifsc:latest
+
   # pgadmin to visualize postgres db
   pgadmin:
     image: dpage/pgadmin4:latest
