@@ -25,7 +25,7 @@ Contributors:
 """
 
 
-from gkcore.models.meta import gk_hsn
+from gkcore.fin_utils import hsn_codes
 from gkcore.utils import authCheck
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
@@ -38,8 +38,6 @@ class api_hsn(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
-        self.codes = gk_hsn() or []
-        print("HSN API initialized")
 
     @view_config(
         request_method="GET",
@@ -67,7 +65,7 @@ class api_hsn(object):
 
         # eval the given hsn code
         try:
-            for code in self.codes:
+            for code in hsn_codes():
                 if self.request.params["validate"] == str(code["hsn_code"]):
                     return {"gkstatus": 0, "gkresult": code}
             else:
@@ -99,7 +97,7 @@ class api_hsn(object):
 
         auth_details = authCheck(token)
 
-        if auth_details["auth"] == False:
+        if auth_details["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         # search result handling
@@ -107,7 +105,7 @@ class api_hsn(object):
             search_term: str = self.request.params["search"].lower()
             search_results = []
 
-            for obj in self.codes:
+            for obj in hsn_codes():
                 desc_occurances = re.findall(search_term, obj["hsn_desc"].lower())
                 code_occurances = re.findall(search_term, str(obj["hsn_code"]))
 

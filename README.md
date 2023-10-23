@@ -123,7 +123,6 @@ Requirements:
 # Environment Variables:
 
 - `GKCORE_DB_URL`: Provide a custom database URL
-- `GKCORE_IFSC_SERVER`: Provide custom IFSC api endpoint.
 - `GKCORE_DISABLE_REGISTRATION`: set to "yes" to disable registrations.
 
 # After Installation

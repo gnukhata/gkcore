@@ -197,16 +197,3 @@ def gk_api(
     except Exception as e:
         gk_log(__name__).warn(f"gk_api(): {e}")
         raise
-
-
-def gk_hsn():
-    """Read HSN Code file and return an array of hsn codes"""
-    try:
-        gkcore_root = pathlib.Path("././").resolve()
-        with open(f"{gkcore_root}/static/gst-hsn.json", "r") as f:
-            hsn_array = json.load(f)
-        return hsn_array
-
-    except Exception as e:
-        print(e)
-        raise e
