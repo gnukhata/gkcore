@@ -15,6 +15,13 @@ ledger_drcr:
 
       - $ref: "./global/params.yaml#/calculatefrom"
       - $ref: "./global/params.yaml#/calculateto"
+      - in: query
+        name: side
+        required: true
+        schema:
+          type: string
+          enum: ["cr", "dr"]
+        description: cr - Credit Only, dr - Debit Only
     responses:
       "200":
         description: ok

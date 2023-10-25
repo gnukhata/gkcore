@@ -86,6 +86,8 @@ accname:
 projectcode:
   in: query
   name: projectcode
-  description: "project code (optional)"
+  description: "project code (Select Below Checkbox For Empty Value)"
+  required: true
   schema:
     type: integer
+  allowEmptyValue: true 
