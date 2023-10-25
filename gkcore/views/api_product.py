@@ -976,57 +976,76 @@ class api_product(object):
             finally:
                 self.con.close()
 
-    """
-    This function is written for fetching the HSN code, UOM automatically when product is selected.
-    """
-
-    # request_param="type=hsnuom",
     @view_config(request_method="GET", route_name="product_hsn", renderer="json")
     def gethsnuom(self):
+        """
+        This function is written for fetching the HSN code, UOM automatically when product is selected.
+        Services do not have an UOM
+        """
         try:
             token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        except Exception as e:
+            return {"gkstatus": enumdict["UnauthorisedAccess"], "gkresult": str(e)}
+        try:
+            url_params = self.request.params
+        except Exception as e:
+            return {
+                "gkstatus": enumdict["ConnectionFailed"],
+                "gkresult": f"productcode is required: {e}",
+            }
         authDetails = authCheck(token)
-        if authDetails["auth"] == False:
+        if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            self.con = eng.connect()
             try:
-                self.con = eng.connect()
+                # fetch a product matching the given productcode
                 product = self.con.execute(
-                    select([gkdb.product.c.uomid, gkdb.product.c.gscode]).where(
+                    select(
+                        [
+                            gkdb.product.c.uomid,
+                            gkdb.product.c.gscode,
+                        ]
+                    ).where(
                         and_(
-                            gkdb.product.c.productcode
-                            == self.request.params["productcode"],
+                            gkdb.product.c.productcode == url_params["productcode"],
                             gkdb.product.c.orgcode == authDetails["orgcode"],
+                            gkdb.product.c.gsflag == 7,
                         )
                     )
-                )
-                productdetails = product.fetchone()
-                uom = self.con.execute(
-                    select([gkdb.unitofmeasurement.c.unitname]).where(
-                        gkdb.unitofmeasurement.c.uomid == productdetails["uomid"]
+                ).fetchone()
+                # only products have an uomid
+                if product is not None:
+                    uom = self.con.execute(
+                        select([gkdb.unitofmeasurement.c.unitname]).where(
+                            gkdb.unitofmeasurement.c.uomid == product["uomid"]
+                        )
                     )
-                )
-                unitname = uom.fetchone()
-                productDetails = {
-                    "unitname": unitname["unitname"],
-                    "gscode": productdetails["gscode"],
-                }
-                return {"gkstatus": enumdict["Success"], "gkresult": productDetails}
-            except:
+                    unitname = uom.fetchone()
+                    productDetails = {
+                        "unitname": unitname["unitname"],
+                        "gscode": product["gscode"],
+                    }
+                    return {"gkstatus": enumdict["Success"], "gkresult": productDetails}
+                else:
+                    # return error when the item is a service
+                    return {
+                        "gkstatus": enumdict["ActionDisallowed"],
+                        "gkresult": "Not a Product",
+                    }
+            except Exception as e:
+                gk_log(__name__).error(e)
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    """
-    This is a function for saving opening stock for the selected product
-    """
-
     # request_param="type=addstock",
     @view_config(request_method="POST", route_name="product_stock", renderer="json")
     def addstock(self):
+        """
+        This is a function for saving opening stock for the selected product
+        """
         try:
             token = self.request.headers["gktoken"]
         except:

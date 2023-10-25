@@ -191,7 +191,8 @@ product_check_gst:
 product_hsn:
   get:
     tags: ["Product & Service"]
-    summary: Fetches the HSN code, UOM automatically when a product/service is selected
+    summary: Fetches the HSN code, UOM automatically when a product is selected
+    description: services do not have UOM
     operationId: gethsnuom
     parameters:
       - in: query
@@ -391,4 +392,3 @@ product_category:
                       productdesc:
                         type: number
                         description: Product name
-
