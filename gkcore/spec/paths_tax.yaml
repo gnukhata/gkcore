@@ -63,10 +63,12 @@ tax_search:
         name: state
         schema:
           type: string
+        required: true
       - in: query
         name: productcode
         schema:
           type: integer
+        required: true
       - in: query
         name: categorycode
         schema:
