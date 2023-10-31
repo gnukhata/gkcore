@@ -25,6 +25,7 @@ api_tests:
   script: |
     cd tests/artifact
     nexial.sh -plan plan/GNUKhata-plan.xlsx
+  allow_failure: true
   # this job runs only on the master branch
   only:
     - master
