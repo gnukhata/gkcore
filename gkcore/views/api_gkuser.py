@@ -21,7 +21,7 @@ class UserSchema(BaseModel):
     username: str = Field(min_length=3, max_length=50)
     userpassword: str = Field(min_length=3)
     userquestion: str = Field(min_length=3, max_length=2000)
-    useranswer: str = Field(min_length=3, max_length=2000)
+    useranswer: str = Field(min_length=1, max_length=2000)
     # godown in-charge will have orgs
     orgs: dict = Field(default=dict())
 
