@@ -661,10 +661,15 @@ class api_tax(object):
                 userRole = userRoleData["gkresult"]["userrole"]
                 taxid = self.request.matchdict["taxid"]
                 if userRole == -1 or userRole == 1 or userRole == 0 or userRole == 3:
-                    result = self.con.execute(tax.delete().where(tax.c.taxid == taxid))
-                    return {"gkstatus": enumdict["Success"]}
+                    result = self.con.execute( select([tax]
+                        ).where(tax.c.taxid == int(taxid)))
+                    if result.rowcount > 0:
+                        self.con.execute(tax.delete().where(tax.c.taxid == taxid))
+                        return {"gkstatus": enumdict["Success"]}
+                    else:
+                        return {"gkstatus": enumdict["BadPrivilege"]}
                 else:
-                    {"gkstatus": enumdict["BadPrivilege"]}
+                    return {"gkstatus": enumdict["BadPrivilege"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
