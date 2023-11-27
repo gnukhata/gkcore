@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "object",
+      "properties": {
+        "userquestion": {
+          "type": "string"
+        },
+        "userid": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "userquestion",
+        "userid"
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult"
+  ]
+}
