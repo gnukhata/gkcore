@@ -251,26 +251,25 @@ class api_product(object):
                 productDetails = dataset["productdetails"]
                 godownFlag = dataset["godownflag"]
                 productDetails["orgcode"] = authDetails["orgcode"]
-                if ("categorycode" in productDetails) == False:
-                    duplicateproduct = self.con.execute(
-                        select(
-                            [
-                                func.count(gkdb.product.c.productcode).label(
-                                    "productcount"
-                                )
-                            ]
-                        ).where(
-                            and_(
-                                gkdb.product.c.productdesc
-                                == productDetails["productdesc"],
-                                gkdb.product.c.categorycode == None,
-                                gkdb.product.c.orgcode == productDetails["orgcode"],
+                duplicateproduct = self.con.execute(
+                    select(
+                        [
+                            func.count(gkdb.product.c.productcode).label(
+                                "productcount"
                             )
+                        ]
+                    ).where(
+                        and_(
+                            gkdb.product.c.productdesc
+                            == productDetails["productdesc"],
+                            gkdb.product.c.categorycode == None,
+                            gkdb.product.c.orgcode == productDetails["orgcode"],
                         )
                     )
-                    duplicateproductrow = duplicateproduct.fetchone()
-                    if duplicateproductrow["productcount"] > 0:
-                        return {"gkstatus": enumdict["DuplicateEntry"]}
+                )
+                duplicateproductrow = duplicateproduct.fetchone()
+                if duplicateproductrow["productcount"] > 0:
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
 
                 # handle exception if db insertion fails for product
                 try:

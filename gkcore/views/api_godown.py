@@ -122,6 +122,20 @@ class api_godown(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([godown.c.goid]).where(
+                        and_(
+                            godown.c.orgcode == authDetails["orgcode"],
+                            func.lower(godown.c.goname) == func.lower(dataset["goname"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 result = self.con.execute(godown.insert(), [dataset])
                 godownCreated = self.con.execute(
                     select([godown.c.goid]).where(

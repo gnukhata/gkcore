@@ -37,7 +37,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -95,6 +95,20 @@ class api_project(object):
             try:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([gkdb.projects.c.projectname])
+                    .where(
+                        and_(
+                            gkdb.projects.c.orgcode == authDetails["orgcode"],
+                            func.lower(gkdb.projects.c.projectname) == func.lower(dataset["projectname"]),
+                        )
+                    )
+                )
+
+                if result_duplicate_check.rowcount > 0:
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 self.con.execute(gkdb.projects.insert(), [dataset])
                 return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:

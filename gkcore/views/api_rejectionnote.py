@@ -85,6 +85,19 @@ class api_rejectionnote(object):
                 stockdata["orgcode"] = authDetails["orgcode"]
                 rejectionnotedata["issuerid"] = authDetails["userid"]
                 items = rejectionnotedata["rejprods"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([rejectionnote.c.rnno]).where(
+                        and_(
+                            rejectionnote.c.orgcode == authDetails["orgcode"],
+                            func.lower(rejectionnote.c.rnno) == func.lower(dataset["rnno"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
                 result = self.con.execute(rejectionnote.insert(), [rejectionnotedata])
                 if result.rowcount == 1:
                     rniddata = self.con.execute(

@@ -85,6 +85,21 @@ class category(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([gkdb.categorysubcategories.c.categoryname])
+                    .where(
+                        and_(
+                            gkdb.categorysubcategories.c.orgcode == authDetails["orgcode"],
+                            func.lower(gkdb.categorysubcategories.c.categoryname) == func.lower(dataset["categoryname"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+    
                 result = self.con.execute(
                     gkdb.categorysubcategories.insert(), [dataset]
                 )
