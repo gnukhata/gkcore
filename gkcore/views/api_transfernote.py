@@ -40,7 +40,7 @@ from gkcore.models.gkdb import (
     goprod,
 )
 from sqlalchemy.sql import select, distinct
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, func
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, or_
@@ -85,7 +85,19 @@ class api_transfernote(object):
                 stockdata = dataset["stockdata"]
                 transferdata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
-
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([drcr.c.transfernoteno]).where(
+                        and_(
+                            drcr.c.orgcode == authDetails["orgcode"],
+                            func.lower(drcr.c.transfernoteno) == func.lower(dataset["transfernoteno"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
                 result = self.con.execute(transfernote.insert(), [transferdata])
 
                 if result.rowcount == 1:

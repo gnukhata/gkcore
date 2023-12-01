@@ -63,7 +63,7 @@ from gkcore.views.api_tax import calTax
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, desc
+from sqlalchemy import and_, exc, desc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -1596,6 +1596,21 @@ class api_invoice(object):
                 queryParams = {}
                 voucherData = {}
                 pricedetails = []
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([invoice.c.invoiceno]).where(
+                        and_(
+                            invoice.c.orgcode == authDetails["orgcode"],
+                            func.lower(invoice.c.invoiceno) == func.lower(dataset["invoiceno"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+                result = self.con.execute(transfernote.insert(), [transferdata])
+
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
                     invdataset.pop("pricedetails", pricedetails)

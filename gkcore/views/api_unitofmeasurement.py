@@ -59,6 +59,20 @@ class api_unitOfMeasurement(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        and_(
+                            unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                            func.lower(unitofmeasurement.c.unitname) == func.lower(dataset["unitname"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 result = self.con.execute(gkdb.unitofmeasurement.insert(), [dataset])
                 return {"gkstatus": enumdict["Success"]}
             except exc.IntegrityError:

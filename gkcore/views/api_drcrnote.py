@@ -42,7 +42,7 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
@@ -76,6 +76,20 @@ class api_drcr(object):
                 dataset = wholedataset["dataset"]
                 vdataset = wholedataset["vdataset"]
                 dataset["orgcode"] = authDetails["orgcode"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([drcr.c.drcrno]).where(
+                        and_(
+                            drcr.c.orgcode == authDetails["orgcode"],
+                            func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 result = self.con.execute(drcr.insert(), [dataset])
                 lastdrcr = self.con.execute(
                     select([drcr.c.drcrid]).where(

@@ -31,7 +31,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_, exc, func
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -71,6 +71,20 @@ class api_customer(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([gkdb.customerandsupplier.c.custname])
+                    .where(
+                        and_(
+                            gkdb.customerandsupplier.c.orgcode == dataset["orgcode"],
+                            func.lower(gkdb.customerandsupplier.c.custname) == func.lower(dataset["custname"]),
+                        )
+                    )
+                )
+
+                if result_duplicate_check.rowcount > 0:
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 result = self.con.execute(gkdb.customerandsupplier.insert(), [dataset])
                 custid = self.con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
