@@ -234,23 +234,39 @@ class api_customer(object):
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
                 result = self.con.execute(
-                    gkdb.customerandsupplier.update()
-                    .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
-                    .values(dataset)
+                    select([gkdb.customerandsupplier.c.custname]).where(
+                        and_(
+                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
+                            gkdb.customerandsupplier.c.custid == custcode,
+                        )
+                    )
                 )
-                if "bankdetails" not in dataset:
-                    # if bankdetails are null, set bankdetails as null in database.
-                    self.con.execute(
-                        "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
-                        % int(custcode)
-                    )
-                if "gstin" not in dataset:
-                    # if gstin are null, set gstin as null in database.
-                    self.con.execute(
-                        "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
-                        % int(custcode)
-                    )
-                return {"gkstatus": enumdict["Success"]}
+                if result.rowcount == 1:
+                    if "bankdetails" not in dataset:
+                        # if bankdetails are null, set bankdetails as null in database.
+                        self.con.execute(
+                            "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
+                            % int(custcode)
+                        )
+                    if "gstin" not in dataset:
+                        # if gstin are null, set gstin as null in database.
+                        self.con.execute(
+                            "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
+                            % int(custcode)
+                        )
+                    try:
+                        self.con.execute(
+                        gkdb.customerandsupplier.update()
+                        .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
+                        .values(dataset))
+                        return {
+                            "gkstatus": enumdict["Success"],
+                            "gkresult": {"custid": custid},
+                        }
+                    except:
+                        return {"gkstatus": enumdict["Success"]}
+                else:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
@@ -351,12 +367,23 @@ class api_customer(object):
             try:
                 self.con = eng.connect()
                 result = self.con.execute(
-                    gkdb.customerandsupplier.delete().where(
-                        gkdb.customerandsupplier.c.custid
-                        == self.request.matchdict["custid"]
+                    select([gkdb.customerandsupplier.c.custname]).where(
+                        and_(
+                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
+                            gkdb.customerandsupplier.c.custid == self.request.matchdict["custid"],
+                        )
                     )
                 )
-                return {"gkstatus": enumdict["Success"]}
+                if result.rowcount == 1:
+                    self.con.execute(
+                        gkdb.customerandsupplier.delete().where(
+                            gkdb.customerandsupplier.c.custid
+                            == self.request.matchdict["custid"]
+                        )
+                    )
+                    return {"gkstatus": enumdict["Success"]}
+                else:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             except:
