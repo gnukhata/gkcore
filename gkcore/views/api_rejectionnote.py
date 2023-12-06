@@ -90,7 +90,7 @@ class api_rejectionnote(object):
                     select([rejectionnote.c.rnno]).where(
                         and_(
                             rejectionnote.c.orgcode == authDetails["orgcode"],
-                            func.lower(rejectionnote.c.rnno) == func.lower(dataset["rnno"]),
+                            func.lower(rejectionnote.c.rnno) == func.lower(rejectionnotedata["rnno"]),
                         )
                     )
                 )

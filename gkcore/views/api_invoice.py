@@ -1601,7 +1601,7 @@ class api_invoice(object):
                     select([invoice.c.invoiceno]).where(
                         and_(
                             invoice.c.orgcode == authDetails["orgcode"],
-                            func.lower(invoice.c.invoiceno) == func.lower(dataset["invoiceno"]),
+                            func.lower(invoice.c.invoiceno) == func.lower(invdataset["invoiceno"]),
                         )
                     )
                 )
@@ -1609,7 +1609,6 @@ class api_invoice(object):
                 if result_duplicate_check.rowcount > 0:
                     # Duplicate entry found, handle accordingly
                     return {"gkstatus": enumdict["DuplicateEntry"]}
-                result = self.con.execute(transfernote.insert(), [transferdata])
 
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
