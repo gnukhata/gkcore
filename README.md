@@ -18,9 +18,9 @@ Requirements:
 - [python](https://www.python.org/) (v3.8 & above)
 
 ```sh
-# Install dependencies `libpq-dev` and `build-essential`.
+# Install dependencies
 # On debian/Ubuntu distro's
-sudo apt install libpq-dev build-essential
+sudo apt install libpq-dev build-essential python3-dev
 
 # after cloning this repo, cd to the folder
 cd gkcore/
@@ -42,7 +42,7 @@ source gkenv/bin/activate
 
 > The API docs (swagger UI) can be accessed via `http://localhost:6543/docs/` from your web browser
 
-### Manual Way
+<!-- ### Manual Way
 
 - On debian/Ubuntu distributions Install python-virtualenv postgresql and dependencies using following command
 
@@ -98,7 +98,7 @@ Activate your virtualenv and then run initdb.py
 
 > `pserve development.ini --reload`
 
-gkcore is now accessible at `http://localhost:6543`🎉
+gkcore is now accessible at `http://localhost:6543`🎉 -->
 
 ## Windows 11
 
