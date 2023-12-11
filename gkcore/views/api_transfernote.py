@@ -87,10 +87,10 @@ class api_transfernote(object):
                 stockdata["orgcode"] = authDetails["orgcode"]
                 # Check for duplicate entry before insertion
                 result_duplicate_check = self.con.execute(
-                    select([drcr.c.transfernoteno]).where(
+                    select([transfernote.c.transfernoteno]).where(
                         and_(
-                            drcr.c.orgcode == authDetails["orgcode"],
-                            func.lower(drcr.c.transfernoteno) == func.lower(dataset["transfernoteno"]),
+                            transfernote.c.orgcode == authDetails["orgcode"],
+                            func.lower(transfernote.c.transfernoteno) == func.lower(transferdata["transfernoteno"]),
                         )
                     )
                 )
