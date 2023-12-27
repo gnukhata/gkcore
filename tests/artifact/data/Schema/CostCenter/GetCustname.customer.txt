@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "object",
+      "properties": {
+        "custid": {
+          "type": "integer"
+        },
+        "custname": {
+          "type": "string"
+        },
+        "custaddr": {
+          "type": "string"
+        },
+        "custphone": {
+          "type": "string"
+        },
+        "custemail": {
+          "type": "string"
+        },
+        "custfax": {
+          "type": "string"
+        },
+        "custpan": {
+          "type": "string"
+        },
+        "custtan": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "custdoc": {
+          "type": "null"
+        },
+        "csflag": {
+          "type": "integer"
+        },
+        "gstin": {
+          "type": "object",
+          "properties": {
+            "10": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "10"
+          ]
+        },
+        "pincode": {
+          "type": "string"
+        },
+        "bankdetails": {
+          "type": "object",
+          "properties": {
+            "ifsc": {
+              "type": "string"
+            },
+            "bankname": {
+              "type": "string"
+            },
+            "accountno": {
+              "type": "string"
+            },
+            "branchname": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ifsc",
+            "bankname",
+            "accountno",
+            "branchname"
+          ]
+        },
+        "statelist": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "10": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "10"
+              ]
+            }
+          ]
+        },
+        "gst_reg_type": {
+          "type": "integer"
+        },
+        "gst_party_type": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "custid",
+        "custname",
+        "custaddr",
+        "custphone",
+        "custemail",
+        "custfax",
+        "custpan",
+        "custtan",
+        "state",
+        "custdoc",
+        "csflag",
+        "gstin",
+        "pincode",
+        "bankdetails",
+        "statelist",
+        "gst_reg_type",
+        "gst_party_type"
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult"
+  ]
+}
