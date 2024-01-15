@@ -18,13 +18,16 @@ from pydantic import BaseModel, Field, ValidationError
 
 # the user payload schema
 class UserSchema(BaseModel):
-    username: str = Field(min_length=3, max_length=50)
+    username: str = Field(min_length=5, max_length=50, pattern="^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
     userpassword: str = Field(min_length=3)
     userquestion: str = Field(min_length=3, max_length=2000)
     useranswer: str = Field(min_length=1, max_length=2000)
     # godown in-charge will have orgs
     orgs: dict = Field(default=dict())
 
+# the username payload schema
+class UserNameSchema(BaseModel):
+    username: str = Field(min_length=5, max_length=50, pattern="^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
 
 # uses password reset model
 class ResetPassword(BaseModel):
@@ -490,6 +493,20 @@ class api_gkuser(object):
     def checkUserNameUnique(self):
         try:
             self.con = eng.connect()
+            # we now validate the incoming payload
+            # and throw an error when it fails
+            # Validate against the regex pattern
+            user_to_validate = {
+                "username": self.request.matchdict["username"]
+            }
+            try:
+                user_data = UserNameSchema(**user_to_validate)
+            except ValidationError as e:
+                return {
+                    "gkstatus": enumdict["ConnectionFailed"],
+                    "gkresult": e.errors(),
+                }
+
             # there is only one possibility for a catch which is failed connection to db.
             # Retrieve data of that user whose userid is sent
             uname = self.request.matchdict["username"]
