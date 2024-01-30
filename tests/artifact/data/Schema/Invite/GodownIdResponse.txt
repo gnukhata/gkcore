@@ -1,0 +1,491 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "gkstatus": {
+      "type": "integer"
+    },
+    "gkresult": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "null"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "godownstatus": {
+              "type": "string"
+            },
+            "srno": {
+              "type": "integer"
+            },
+            "goid": {
+              "type": "integer"
+            },
+            "goname": {
+              "type": "string"
+            },
+            "goaddr": {
+              "type": "string"
+            },
+            "gocontact": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "contactname": {
+              "type": "string"
+            },
+            "designation": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "godownstatus",
+            "srno",
+            "goid",
+            "goname",
+            "goaddr",
+            "gocontact",
+            "state",
+            "contactname",
+            "designation"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "gkstatus",
+    "gkresult"
+  ]
+}
