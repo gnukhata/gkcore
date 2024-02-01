@@ -61,10 +61,9 @@ class api_unitOfMeasurement(object):
                 dataset = self.request.json_body
                 # Check for duplicate entry before insertion
                 result_duplicate_check = self.con.execute(
-                    select([unitofmeasurement.c.unitname]).where(
+                    select([gkdb.unitofmeasurement.c.unitname]).where(
                         and_(
-                            unitofmeasurement.c.orgcode == authDetails["orgcode"],
-                            func.lower(unitofmeasurement.c.unitname) == func.lower(dataset["unitname"]),
+                            func.lower(gkdb.unitofmeasurement.c.unitname) == func.lower(dataset["unitname"]),
                         )
                     )
                 )
