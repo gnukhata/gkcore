@@ -101,8 +101,8 @@ class api_drcr(object):
                         )
                     )
                 )
-                drcrid = lastdrcr.fetchone()
-                if int(dataset["drcrmode"]) == 18:
+                drcrid = lastdrcr.fetchone()           
+                if int(dataset["drcrmode"]) == 4:
                     stockdataset = {
                         "dcinvtnid": drcrid["drcrid"],
                         "orgcode": dataset["orgcode"],
@@ -112,7 +112,7 @@ class api_drcr(object):
                         stockdataset["inout"] = 9
                         if int(vdataset["inoutflag"]) == 15:
                             # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
-                            stockdataset["dcinvtnflag"] = dataset["dcinvtnflag"]
+                            stockdataset["dcinvtnflag"] = int(dataset["dcinvtnflag"])
                         else:
                             stockdataset["dcinvtnflag"] = 7
                     else:
@@ -122,13 +122,18 @@ class api_drcr(object):
                     if "goid" in vdataset:
                         stockdataset["goid"] = vdataset["goid"]
 
-                    for item in dataset["reductionval"]["quantities"]:
-                        itemQty = dataset["reductionval"]["quantities"][item]
-                        itemRate = dataset["reductionval"][item]
-                        stockdataset["rate"] = itemRate
-                        stockdataset["productcode"] = item
-                        stockdataset["qty"] = itemQty
-                        self.con.execute(stock.insert(), [stockdataset])
+                    # Iterate through the keys and values using a for loop
+                    for key, value in dataset["reductionval"].items():
+                        stockdataset["qty"] = value
+                        stockdataset["productcode"] = key
+                        itemPrice = self.con.execute(
+                            select([product.c.prodmrp]).where(
+                                product.c.productcode == stockdataset["productcode"]
+                            )
+                        )
+                        itemP = itemPrice.fetchone()
+                        stockdataset["rate"] = itemP[0]
+                        self.con.execute(stock.insert(), stockdataset)
 
                 # check automatic voucher flag  if it is 1 get maflag
                 avfl = self.con.execute(

@@ -34,6 +34,10 @@ class ResetPassword(BaseModel):
     userid: int
     userpassword: str = Field(min_length=3)
 
+class ChangePassword(BaseModel):
+    userid: int
+    userpassword: str = Field(min_length=3)
+    useranswer: str = Field(min_length=1, max_length=2000)
 
 def getUserRole(userid, orgcode):
     con = Connection
@@ -659,7 +663,7 @@ class api_gkuser(object):
             # and throw an error when it fails
             try:
                 dataset = self.request.json_body
-                dataset = UserSchema(**dataset).model_dump()
+                dataset = ChangePassword(**dataset).model_dump()
             except ValidationError as e:
                 return {
                     "gkstatus": enumdict["ConnectionFailed"],

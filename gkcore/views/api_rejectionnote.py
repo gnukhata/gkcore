@@ -279,6 +279,7 @@ class api_rejectionnote(object):
                     5: "Free Replacement",
                     4: "Sales",
                     19: "Sample",
+                    16: "Purchase"
                 }
                 """
                 If rejection_note created against the delivery Note.
