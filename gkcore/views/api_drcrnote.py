@@ -40,7 +40,6 @@ from gkcore.models.gkdb import (
     vouchers,
     stock,
 )
-from decimal import Decimal
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
