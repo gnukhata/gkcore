@@ -1931,12 +1931,6 @@ class Migrate:
                 self.con.execute(
                     "alter table goprod add openingstockvalue numeric(13,2) default 0.00"
                 )
-            
-            # Add purchase value that corresponds to the product purchasevalue qty that has been entered
-            if not columnExists("goprod", "purchasestockvalue"):
-                self.con.execute(
-                    "alter table goprod add purchasestockvalue numeric(13,2) default 0.00"
-                )
 
             try:
                 self.con.execute(
