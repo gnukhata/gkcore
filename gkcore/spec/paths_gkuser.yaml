@@ -55,6 +55,8 @@ gkuser:
   delete:
     tags: ["Gkuser"] # "User",
     summary: Delete user
+    security:
+      - UserAuth: []
     responses:
       200:
         description: ok
