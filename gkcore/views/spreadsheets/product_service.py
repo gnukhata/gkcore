@@ -78,10 +78,10 @@ def product_service_list(self):
     """
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
-        subreq = Request.blank("/products", headers=header)
+        subreq = Request.blank("/product", headers=header)
         # result = requests.get("http://127.0.0.1:6543/products", headers=header)
         result = self.request.invoke_subrequest(subreq)
-        subreq2 = Request.blank("/products?tax=vatorgst", headers=header)
+        subreq2 = Request.blank("/product?tax=vatorgst", headers=header)
         result2 = self.request.invoke_subrequest(subreq2)
         # resultgstvat = resultgstvat.json()["gkresult"]
         resultgstvat = json.loads(result2.text)["gkresult"]
@@ -93,6 +93,8 @@ def product_service_list(self):
         productwb = openpyxl.Workbook()
         # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
         sheet = productwb.active
+        sheet.page_setup.orientation = sheet.ORIENTATION_LANDSCAPE
+        sheet.page_setup.paperSize = sheet.PAPERSIZE_A4
         # Title of the sheet and width of columns are set.
         sheet.title = "List of Products"
         sheet.column_dimensions["A"].width = 8
