@@ -38,6 +38,7 @@ from gkcore.models.gkdb import (
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
+from gkcore.models.meta import gk_api
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -78,14 +79,8 @@ def product_service_list(self):
     """
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
-        subreq = Request.blank("/product", headers=header)
-        # result = requests.get("http://127.0.0.1:6543/products", headers=header)
-        result = self.request.invoke_subrequest(subreq)
-        subreq2 = Request.blank("/product?tax=vatorgst", headers=header)
-        result2 = self.request.invoke_subrequest(subreq2)
-        # resultgstvat = resultgstvat.json()["gkresult"]
-        resultgstvat = json.loads(result2.text)["gkresult"]
-        result = json.loads(result.text)["gkresult"]
+        result = gk_api("/product", header, self.request)["gkresult"]
+        resultgstvat = gk_api("/product?tax=vatorgst", header, self.request)["gkresult"]
         fystart = str(self.request.params["fystart"])
         fyend = str(self.request.params["fyend"])
         orgname = str(self.request.params["orgname"])
