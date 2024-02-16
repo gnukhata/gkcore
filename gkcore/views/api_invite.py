@@ -151,9 +151,9 @@ class api_invite(object):
                     )
                     # TODO: unit test the below code
                     # add the godown permissions if any present
-                    if "golist" in userData:
+                    if "golist" in userData[0]:
                         try:
-                            for goid in userData["golist"]:
+                            for goid in userData[0]["golist"]:
                                 godata = {
                                     "userid": authDetails["userid"],
                                     "goid": goid,
@@ -165,7 +165,7 @@ class api_invite(object):
                             # remove the golist from gkusers
                             self.con.execute(
                                 "update gkusers set orgs = orgs #- '{%s,golist}' WHERE userid = %d;"
-                                % (str(orgcode["orgcode"]), authDetails["userid"])
+                                % (str(dataset["orgcode"]), authDetails["userid"])
                             )
                         except:
                             return {
