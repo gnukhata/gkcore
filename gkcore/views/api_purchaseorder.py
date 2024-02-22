@@ -159,7 +159,7 @@ class api_purchaseorder(object):
                 allposo = []
                 for row in result:
                     custdata = self.con.execute(
-                        select([customerandsupplier.c.custname]).where(
+                        select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(
                             customerandsupplier.c.custid == row["csid"]
                         )
                     )
@@ -174,6 +174,7 @@ class api_purchaseorder(object):
                             "attachmentcount": row["attachmentcount"],
                             "customer": custrow["custname"],
                             "ordertotal": float(row["purchaseordertotal"]),
+                            "csflag":  custrow["csflag"],
                         }
                     )
                 self.con.close()
