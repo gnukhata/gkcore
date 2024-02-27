@@ -1368,10 +1368,11 @@ class api_organisation(object):
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": enumdict["BadPrivilege"]}
-            except:
+            except Exception as e:
                 print(traceback.format_exc())
+                gk_log(__name__).error(e)
                 self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+                return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
 
     @view_config(request_method="GET", request_param="type=exists", renderer="json")
     def Orgexists(self):
