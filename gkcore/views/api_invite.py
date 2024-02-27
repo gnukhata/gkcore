@@ -6,6 +6,7 @@ from sqlalchemy.engine.base import Connection
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import gkcore
+from gkcore.models.meta import gk_api
 from gkcore.utils import authCheck, gk_log, userAuthCheck
 import traceback
 
@@ -35,6 +36,7 @@ class api_invite(object):
         else:
             try:
                 self.con = eng.connect()
+                header = {"gktoken": self.request.headers["gktoken"]}
                 # check if the user adding the invite is part of the requested org
                 userOrgQuery = self.con.execute(
                     "select orgs->'%s' from gkusers where userid = %d;"
@@ -46,6 +48,11 @@ class api_invite(object):
                 userRole = userOrgData[0]["userrole"]
 
                 dataset = self.request.json_body
+                result = gk_api("/godown", header, self.request)["gkresult"]
+                goid_list = [entry['goid'] for entry in result]
+                all_godown_present = all(item not in goid_list for item in dataset['golist'])
+                if all_godown_present:
+                    return {"gkstatus": enumdict["ActionDisallowed"]}
                 # check if the user adding the invite has admin or manager role in the requested org
                 # (Note: manager can only add operator)
                 if userRole == -1 or (userRole == 0 and dataset["userrole"] == 1):
