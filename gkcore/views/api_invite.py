@@ -50,9 +50,10 @@ class api_invite(object):
                 dataset = self.request.json_body
                 result = gk_api("/godown", header, self.request)["gkresult"]
                 goid_list = [entry['goid'] for entry in result]
-                all_godown_present = all(item not in goid_list for item in dataset['golist'])
-                if all_godown_present:
-                    return {"gkstatus": enumdict["ActionDisallowed"]}
+                if 'golist' in dataset:
+                    all_godown_present = all(item not in goid_list for item in dataset['golist'])
+                    if all_godown_present:
+                        return {"gkstatus": enumdict["ActionDisallowed"]}
                 # check if the user adding the invite has admin or manager role in the requested org
                 # (Note: manager can only add operator)
                 if userRole == -1 or (userRole == 0 and dataset["userrole"] == 1):
