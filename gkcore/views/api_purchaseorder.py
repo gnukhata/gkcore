@@ -92,6 +92,7 @@ class api_purchaseorder(object):
                         and_(
                             purchaseorder.c.orderno == dataset["orderno"],
                             purchaseorder.c.orderdate == dataset["orderdate"],
+                            purchaseorder.c.orgcode == dataset["orgcode"] ,
                         )
                     )
                 )
