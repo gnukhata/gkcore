@@ -47,7 +47,7 @@ def user_list(self):
     """
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
-        result = gk_api("/users?type=list", header, self.request)
+        result = gk_api("/organisation/gkusers", header, self.request)
         fystart = str(self.request.params["fystart"])
         fyend = str(self.request.params["fyend"])
         orgname = str(self.request.params["orgname"])
@@ -75,7 +75,7 @@ def user_list(self):
         sheet["A4"] = "Sr. No. "
         sheet["B4"] = "User Name"
         sheet["C4"] = "User Role"
-        sheet["D4"] = "Associated Godowns(s)"
+        sheet["D4"] = "Invite Status"
         titlerow = sheet.row_dimensions[4]
         titlerow.font = Font(name="Liberation Serif", size=12, bold=True)
         userList = result["gkresult"]
@@ -92,19 +92,11 @@ def user_list(self):
             sheet["B" + str(row)].font = Font(
                 name="Liberation Serif", size="12", bold=False
             )
-            sheet["C" + str(row)] = user["userrole"]
+            sheet["C" + str(row)] = user["userrolename"]
             sheet["C" + str(row)].font = Font(
                 name="Liberation Serif", size="12", bold=False
             )
-            gostring = ""
-            i = 1
-            for godown in user["godowns"]:
-                if i == user["noofgodowns"]:
-                    gostring += godown
-                else:
-                    gostring = gostring + godown + ","
-                i += 1
-            sheet["D" + str(row)] = gostring
+            sheet["D" + str(row)] = user["invitestatus"]
             sheet["D" + str(row)].font = Font(
                 name="Liberation Serif", size="12", bold=False
             )
