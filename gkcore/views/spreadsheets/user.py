@@ -96,7 +96,7 @@ def user_list(self):
             sheet["C" + str(row)].font = Font(
                 name="Liberation Serif", size="12", bold=False
             )
-            sheet["D" + str(row)] = user["invitestatus"]
+            sheet["D" + str(row)] = str(user["invitestatus"])
             sheet["D" + str(row)].font = Font(
                 name="Liberation Serif", size="12", bold=False
             )
