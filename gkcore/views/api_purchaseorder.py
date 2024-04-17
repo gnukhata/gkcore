@@ -299,7 +299,7 @@ class api_purchaseorder(object):
                     if int(custData["csflag"]) == 3:
                         try:
                             custSupDetails["custgstin"] = custData["gstin"][
-                                str(taxStateCode)
+                                str(custsupstatecode)
                             ]
                         except:
                             custSupDetails["custgstin"] = None
