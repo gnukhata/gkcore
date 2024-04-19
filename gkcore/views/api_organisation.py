@@ -1339,7 +1339,6 @@ class api_organisation(object):
                             gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
                     ).fetchone()
-                    print(orgUsers, '---orgUsers')
                     if type(orgUsers["users"]) == str:
                         orgUsers = json.loads(orgUsers["users"])
                     elif type(orgUsers["users"]) == dict:
