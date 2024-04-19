@@ -1233,6 +1233,19 @@ class api_organisation(object):
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
+                # Check for duplicate entry before insertion
+                result_duplicate_check = self.con.execute(
+                    select([gkdb.organisation.c.orgname]).where(
+                        and_(
+                            func.lower(gkdb.organisation.c.orgname) == func.lower(dataset["orgname"]),
+                        )
+                    )
+                )
+                
+                if result_duplicate_check.rowcount > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 if userRole == -1 or userRole == 0:
                     try:
                         self.con.execute(
@@ -1326,6 +1339,7 @@ class api_organisation(object):
                             gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
                     ).fetchone()
+                    print(orgUsers, '---orgUsers')
                     if type(orgUsers["users"]) == str:
                         orgUsers = json.loads(orgUsers["users"])
                     elif type(orgUsers["users"]) == dict:
