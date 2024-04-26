@@ -1422,6 +1422,32 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
+    # request_param="type=dcid",
+    @view_config(route_name="invid", request_method="GET", renderer="json")
+    def getinvid(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                dcid = self.request.matchdict["dcid"]
+                delchalresult = self.con.execute(
+                    select([dcinv.c.invid]).where(
+                        dcinv.c.dcid == dcid
+                    )
+                )
+                deliveryinfo = delchalresult.fetchone()
+                return {"gkstatus": 0, "data": deliveryinfo[0]}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
     # request_param="attach=image",
     @view_config(route_name="delchal_attachment", request_method="GET", renderer="json")
     def getdelchalattachment(self):
@@ -1472,7 +1498,7 @@ class api_delchal(object):
                 self.con = eng.connect()
                 dcid = self.request.params["dcid"]
                 items = {}
-
+                print(dcid, '!---------------------dciddciddciddcid')
                 delchalresult = self.con.execute(
                     select([delchal.c.contents, delchal.c.freeqty]).where(
                         delchal.c.dcid == dcid
