@@ -1498,7 +1498,6 @@ class api_delchal(object):
                 self.con = eng.connect()
                 dcid = self.request.params["dcid"]
                 items = {}
-                print(dcid, '!---------------------dciddciddciddcid')
                 delchalresult = self.con.execute(
                     select([delchal.c.contents, delchal.c.freeqty]).where(
                         delchal.c.dcid == dcid
