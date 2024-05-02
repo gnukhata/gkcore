@@ -1423,8 +1423,8 @@ class api_delchal(object):
                 self.con.close()
 
     # request_param="type=dcid",
-    @view_config(route_name="invid", request_method="GET", renderer="json")
-    def getinvid(self):
+    @view_config(route_name="delchal_invid", request_method="GET", renderer="json")
+    def getinviddetails(self):
         try:
             token = self.request.headers["gktoken"]
         except:
