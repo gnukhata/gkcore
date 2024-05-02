@@ -275,3 +275,25 @@ delchal_next_id:
                   $ref: "./global/schemas.yaml#/gkstatus"
                 dcid:
                   type: integer
+  
+delchal_invid:
+  get:
+    tags: ["Delivery Note"]
+    summary: Fetch Invoice id details
+    operationId: getinviddetails
+    parameters:
+      - $ref: "./delchal/params_delchal.yaml#/dcid"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
+                gkresult:
+                  $ref: "./delchal/schemas_delchal.yaml#/delchalInvidDetails"
+
