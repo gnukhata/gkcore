@@ -133,7 +133,7 @@ def main(global_config, **settings):
     config.add_route("delchal_next_id", "/delchal/next_id")
     config.add_route("delchal_dcid", "/delchal/{dcid}")
     config.add_route("delchal_cancel_dcid", "/delchal/cancel/{dcid}")
-    config.add_route("invid", "/delchal/invid/{dcid}")
+    config.add_route("delchal_invid", "/delchal/invid/{dcid}")
 
     config.add_route("budget", "/budget")
     config.add_route("categoryspecs", "/categoryspecs")
