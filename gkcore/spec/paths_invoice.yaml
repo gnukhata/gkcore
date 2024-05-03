@@ -487,3 +487,22 @@ delnote_unbilled:
                       dateofsupply:
                         type: string
                         format: date
+
+invoice_crdrid:
+  get:
+    tags: ["Invoice"]
+    summary: Fetch credit/debit note id details
+    operationId: getcrdrid
+    parameters:
+      - $ref: "./invoice/params_invoice.yaml#/invid"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"

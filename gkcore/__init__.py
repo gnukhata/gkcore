@@ -123,6 +123,7 @@ def main(global_config, **settings):
     config.add_route("invoice_attachment", "/invoice/attachment/{invid}")
     config.add_route("invoice_cancel", "/invoice/cancel/{invid}")
     config.add_route("invoice_invid", "/invoice/{invid}")
+    config.add_route("invoice_crdrid", "/invoice/drcr/{invid}")
 
     # delchal
     config.add_route("delchal", "/delchal")
