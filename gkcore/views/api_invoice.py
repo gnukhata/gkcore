@@ -45,6 +45,7 @@ from gkcore.models.gkdb import (
     unitofmeasurement,
     godown,
     rejectionnote,
+    drcr,
     tax,
     state,
     users,
@@ -4635,5 +4636,35 @@ class api_invoice(object):
                 }
             except:
                 return {"gkstatus": enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
+
+    # request_param="type=dcid",
+    @view_config(route_name="invoice_crdrid", request_method="GET", renderer="json")
+    def getcrdrid(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                invid = self.request.matchdict["invid"]
+                delchalresult = self.con.execute(
+                    select([drcr.c.drcrid, drcr.c.dctypeflag]).where(
+                        drcr.c.invid == invid
+                    )
+                )
+                data_dict = {}
+                for row in delchalresult:
+                    drcrid = row[drcr.c.drcrid]
+                    dctypeflag = row[drcr.c.dctypeflag]
+                    data_dict[drcrid] = dctypeflag
+                return {"gkstatus": 0, "data": data_dict}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
