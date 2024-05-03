@@ -227,6 +227,8 @@ paths:
     $ref: "./paths_delchal.yaml#/delchal_dcid"
   /delchal/cancel/{dcid}:
     $ref: "./paths_delchal.yaml#/delchal_cancel_dcid"
+  /delchal/invid/{dcid}:
+    $ref: "./paths_delchal.yaml#/delchal_invid"
 
   # logs
   /log:
