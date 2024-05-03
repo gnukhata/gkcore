@@ -294,6 +294,4 @@ delchal_invid:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
-                gkresult:
-                  $ref: "./delchal/schemas_delchal.yaml#/delchalInvidDetails"
 
