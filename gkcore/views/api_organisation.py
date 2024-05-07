@@ -1238,6 +1238,7 @@ class api_organisation(object):
                     select([gkdb.organisation.c.orgname]).where(
                         and_(
                             func.lower(gkdb.organisation.c.orgname) == func.lower(dataset["orgname"]),
+                            gkdb.organisation.c.orgcode != orgcode,
                         )
                     )
                 )

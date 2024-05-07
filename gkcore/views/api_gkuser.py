@@ -457,9 +457,10 @@ class api_gkuser(object):
                                 ]
                             ).where(gkdb.organisation.c.orgcode == orgCode)
                         ).fetchone()
-                        if orgData["orgname"] not in payload:
-                            payload[orgData["orgname"]] = []
-                        payload[orgData["orgname"]].append(
+                        if orgData is not None and "orgname" in orgData:
+                            if orgData["orgname"] not in payload:
+                                payload[orgData["orgname"]] = []
+                            payload[orgData["orgname"]].append(
                             {
                                 "orgname": orgData["orgname"],
                                 "orgtype": orgData["orgtype"],
