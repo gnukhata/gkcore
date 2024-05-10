@@ -31,7 +31,7 @@ Copyright (C) 2017, 2018, 2019, 2020, 2019 Digital Freedom Foundation & Accion L
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import invoice, budget, accounts, groupsubgroups, users
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, func
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc
@@ -73,6 +73,21 @@ class api_budget(object):
                 if userrole == -1 or userrole == 0:
                     budgetdataset = self.request.json_body
                     budgetdataset["orgcode"] = authDetails["orgcode"]
+                    # Check for duplicate entry before insertion
+                    result_duplicate_check = self.con.execute(
+                        select([budget.c.budname])
+                        .where(
+                            and_(
+                                budget.c.orgcode == authDetails["orgcode"],
+                                func.lower(budget.c.budname) == func.lower(budgetdataset["budname"]),
+                            )
+                        )
+                    )
+                    
+                    if result_duplicate_check.rowcount > 0:
+                        # Duplicate entry found, handle accordingly
+                        return {"gkstatus": enumdict["DuplicateEntry"]}
+            
                     result = self.con.execute(budget.insert(), [budgetdataset])
                     return {"gkstatus": enumdict["Success"]}
                 else:
