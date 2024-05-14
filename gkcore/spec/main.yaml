@@ -211,6 +211,9 @@ paths:
     $ref: "./paths_invoice.yaml#/delnote_unbilled"
   /invoice/drcr/{invid}:
     $ref: "./paths_invoice.yaml#/invoice_crdrid"
+  /invoice/rnid/{invid}:
+    $ref: "./paths_invoice.yaml#/invoice_rnid"
+
 
   # delchal
   /delchal:

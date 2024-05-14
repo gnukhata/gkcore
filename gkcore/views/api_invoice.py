@@ -4668,3 +4668,28 @@ class api_invoice(object):
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
+    @view_config(route_name="invoice_rnid", request_method="GET", renderer="json")
+    def getrnid(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                invid = self.request.matchdict["invid"]
+                rejectionresult = self.con.execute(
+                    select([rejectionnote.c.rnid]).where(
+                        rejectionnote.c.invid == invid
+                    )
+                )
+                rejectioninfo = rejectionresult.fetchone()
+                return {"gkstatus": 0, "data": rejectioninfo[0]}
+            except:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            finally:
+                self.con.close()
