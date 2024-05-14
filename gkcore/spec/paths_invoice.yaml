@@ -506,3 +506,22 @@ invoice_crdrid:
               properties:
                 gkstatus:
                   $ref: "./global/schemas.yaml#/gkstatus"
+
+invoice_rnid:
+  get:
+    tags: ["Invoice"]
+    summary: Fetch rejection note id details
+    operationId: getrnid
+    parameters:
+      - $ref: "./invoice/params_invoice.yaml#/invid"
+    responses:
+      "200":
+        description: ok
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gkstatus]
+              properties:
+                gkstatus:
+                  $ref: "./global/schemas.yaml#/gkstatus"
