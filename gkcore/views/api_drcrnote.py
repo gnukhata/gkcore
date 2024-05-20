@@ -450,7 +450,16 @@ class api_drcr(object):
                                 cessVal = float(invrow["cess"][pc])
                                 cessAmount = reductprice * (cessVal / 100)
                                 totalCessAmt = totalCessAmt + cessAmount
+                            goid_result = self.con.execute(
+                                    select([stock.c.goid]).where(
+                                        and_(
+                                            stock.c.productcode == pc,
+                                            stock.c.orgcode == authDetails["orgcode"],
+                                        )
+                                    )
+                                )
 
+                            goidrow = goid_result.fetchall()
                             if invrow["sourcestate"] != invrow["taxstate"]:
                                 taxname = "IGST"
                                 taxAmount = reductprice * (taxRate / 100)
@@ -477,6 +486,8 @@ class api_drcr(object):
                                 "cessrate": "%.2f" % (float(cessVal)),
                                 "newtaxableamnt": "%.2f" % (float(reductprice)),
                                 "reductionval": "%.2f" % float(idrateData[pc]),
+                                "gsflag": prodrow["gsflag"],
+                                "goid": goidrow[0][0],
                             }
                 drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
                 drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
