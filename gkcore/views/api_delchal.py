@@ -731,10 +731,20 @@ class api_delchal(object):
                                     product.c.uomid,
                                     product.c.gsflag,
                                     product.c.gscode,
+                                    product.c.productcode,
                                 ]
                             ).where(product.c.productcode == pc)
                         )
                         prodrow = prod.fetchone()
+                        goid_result = self.con.execute(
+                            select([stock.c.goid]).where(
+                                and_(
+                                    stock.c.productcode == pc,
+                                    stock.c.orgcode == authDetails["orgcode"],
+                                )
+                            )
+                        )
+                        goidrow = goid_result.fetchall()
                         # For 'Goods'
                         if int(prodrow["gsflag"]) == 7:
                             um = self.con.execute(
@@ -848,6 +858,9 @@ class api_delchal(object):
                                 "taxamount": "%.2f" % (float(taxAmount)),
                                 "cess": "%.2f" % (float(cessAmount)),
                                 "cessrate": "%.2f" % (float(cessVal)),
+                                "productCode": prodrow["productcode"],
+                                "gsflag": prodrow["gsflag"],
+                                "goid": goidrow[0][0],
                             }
                     singledelchal["totaldiscount"] = "%.2f" % (float(totalDisc))
                     singledelchal["totaltaxablevalue"] = "%.2f" % (
