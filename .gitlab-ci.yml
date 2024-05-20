@@ -29,6 +29,10 @@ api_tests:
   # this job runs only on the master branch
   only:
     - master
+  artifacts:
+    paths:
+      - /builds/gnukhata/gkcore/tests/output
+
 
 # build gkcore
 # gkcore:
