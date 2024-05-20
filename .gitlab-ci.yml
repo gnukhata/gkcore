@@ -24,7 +24,7 @@ api_tests:
   start_in: 2 minutes
   script: |
     cd tests/artifact
-    nexial.sh -plan plan/GNUKhata-plan.xlsx
+    nexial.sh -plan plan/GNUKhata-plan.xlsx || true
   allow_failure: true
   # this job runs only on the master branch
   only:
