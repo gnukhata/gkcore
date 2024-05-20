@@ -582,10 +582,21 @@ class api_rejectionnote(object):
                                     product.c.uomid,
                                     product.c.gsflag,
                                     product.c.gscode,
+                                    product.c.productcode,
+                                    product.c.gsflag,
                                 ]
                             ).where(product.c.productcode == pc)
                         )
                         prodrow = prod.fetchone()
+                        goid_result = self.con.execute(
+                            select([stock.c.goid]).where(
+                                and_(
+                                    stock.c.productcode == pc,
+                                    stock.c.orgcode == authDetails["orgcode"],
+                                )
+                            )
+                        )
+                        goidrow = goid_result.fetchall()
                         if int(prodrow["gsflag"]) == 7:
                             um = self.con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
@@ -664,6 +675,9 @@ class api_rejectionnote(object):
                                 "taxamount": "%.2f" % (float(taxAmount)),
                                 "cess": "%.2f" % (float(cessAmount)),
                                 "cessrate": "%.2f" % (float(cessVal)),
+                                "productCode": prodrow["productcode"],
+                                "gsflag": prodrow["gsflag"],
+                                "goid": goidrow[0][0],
                             }
                 rejectionnotedata["totaltaxablevalue"] = "%.2f" % (
                     float(totalTaxableVal)

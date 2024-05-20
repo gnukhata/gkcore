@@ -327,7 +327,7 @@ class api_transfernote(object):
                 )
                 for stockrow in stockdata:
                     productdata = self.con.execute(
-                        select([product.c.productdesc, product.c.uomid]).where(
+                        select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
                             product.c.productcode == stockrow["productcode"]
                         )
                     )
@@ -338,10 +338,22 @@ class api_transfernote(object):
                         )
                     )
                     unitnamrrow = uomresult.fetchone()
+                    goid_result = self.con.execute(
+                        select([stock.c.goid]).where(
+                            and_(
+                                stock.c.productcode == stockrow["productcode"],
+                                stock.c.orgcode == authDetails["orgcode"],
+                            )
+                        )
+                    )
+                    goidrow = goid_result.fetchall()
                     items[stockrow["productcode"]] = {
                         "qty": "%.2f" % float(stockrow["qty"]),
                         "productdesc": productdesc["productdesc"],
                         "unitname": unitnamrrow["unitname"],
+                        "goid": goidrow[0][0],
+                        "gsflag": productdesc["gsflag"],
+                        "productcode": productdesc["productcode"],
                     }
 
                 tn = {}

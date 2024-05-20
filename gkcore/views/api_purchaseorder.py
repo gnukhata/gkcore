@@ -337,10 +337,20 @@ class api_purchaseorder(object):
                                 product.c.uomid,
                                 product.c.gsflag,
                                 product.c.gscode,
+                                product.c.productcode,
                             ]
                         ).where(product.c.productcode == productCode)
                     )
                     prodrow = prod.fetchone()
+                    goid_result = self.con.execute(
+                            select([stock.c.goid]).where(
+                                and_(
+                                    stock.c.productcode == productCode,
+                                    stock.c.orgcode == authDetails["orgcode"],
+                                )
+                            )
+                        )
+                    goidrow = goid_result.fetchall()
                     if int(prodrow["gsflag"]) == 7:
                         um = self.con.execute(
                             select([unitofmeasurement.c.unitname]).where(
@@ -432,6 +442,9 @@ class api_purchaseorder(object):
                             "taxamount": "%.2f" % (float(taxAmount)),
                             "cess": "%.2f" % (float(cessAmount)),
                             "cessrate": "%.2f" % (float(cessVal)),
+                            "productCode": prodrow["productcode"],
+                            "gsflag": prodrow["gsflag"],
+                            "goid": goidrow[0][0],
                         }
                     if "staggered" in schedule[productCode]:
                         details[productCode]["staggered"] = schedule[productCode][
