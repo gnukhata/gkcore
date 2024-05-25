@@ -37,6 +37,7 @@ from gkcore.models.gkdb import (
     invoice,
     customerandsupplier,
     organisation,
+    stock,
 )
 from datetime import datetime, date
 from monthdelta import monthdelta
@@ -279,15 +280,26 @@ def topfiveprodsev(orgcode):
         prodinfolist = []
         for prodinfo in topfiveprodlist:
             proddesc = con.execute(
-                "select productdesc as proddesc from product where productcode=%d and orgcode=%d"
+                "select productdesc as proddesc, gsflag as gs from product where productcode=%d and orgcode=%d"
                 % (int(prodinfo["productcode"]), orgcode)
             )
             proddesclist = proddesc.fetchone()
+            goid_result = con.execute(
+                            select([stock.c.goid]).where(
+                                and_(
+                                    stock.c.productcode == int(prodinfo["productcode"]),
+                                    stock.c.orgcode == orgcode,
+                                )
+                            )
+                        )
+            goidrow = goid_result.fetchall()
             prodinfolist.append(
                 {
                     "prodcode": prodinfo["productcode"],
                     "count": prodinfo["numkeys"],
                     "proddesc": proddesclist["proddesc"],
+                    "goid": goidrow[0][0],
+                    "gsflag": proddesclist['gs'],
                 }
             )
         con.close()

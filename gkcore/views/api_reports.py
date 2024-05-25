@@ -1880,6 +1880,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                         product.c.openingstock,
                         product.c.productdesc,
                         product.c.productcode,
+                        product.c.gsflag,
                     ]
                 ).where(
                     and_(
@@ -1893,6 +1894,7 @@ def stockonhandfun(orgcode, productCode, endDate):
             openingStock = osRow["openingstock"]
             prodName = osRow["productdesc"]
             prodCode = osRow["productcode"]
+            gsflag = osRow["gsflag"]
             stockRecords = con.execute(
                 select([stock])
                 .where(
@@ -2021,6 +2023,9 @@ def stockonhandfun(orgcode, productCode, endDate):
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(openingStock),
+                    "goid": finalRow["goid"],
+                    "gsflag": gsflag,
+
                 }
             )
             con.close()
@@ -2193,6 +2198,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                         "totalinwardqty": "%.2f" % float(totalinward),
                         "totaloutwardqty": "%.2f" % float(totaloutward),
                         "balance": "%.2f" % float(openingStock),
+                        "goid": finalRow["goid"],
                     }
                 )
                 srno = srno + 1
@@ -2354,7 +2360,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                 )
                 print(stockOnHand)
 
-
+        print(endDate)
         # stock sale and purchase data
         stockList = con.execute(
             select(
@@ -2371,7 +2377,6 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
                     stock.c.orgcode == orgcode,
                     stock.c.productcode == productCode,
                     stock.c.goid == godownCode,
-                    stock.c.stockdate <= endDate,
                 )
             )
             .order_by(stock.c.stockdate, stock.c.stockid)
