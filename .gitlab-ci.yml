@@ -80,6 +80,6 @@ update_test_server:
   # needs: ["gkcore"]
   script:
     - apt update && apt install -y curl
-    - curl $TEST_SERVER_HOOK
+    - curl -f $TEST_SERVER_HOOK
   only:
     - devel
