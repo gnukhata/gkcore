@@ -37,6 +37,7 @@ from gkcore.models.gkdb import (
     bankrecon,
     voucherbin,
     projects,
+    invoice,
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
@@ -699,6 +700,7 @@ class api_transaction(object):
                             vouchers.c.bankname,
                             vouchers.c.branchname,
                             vouchers.c.instrumentdate,
+                            vouchers.c.drcrid,
                         ]
                     ).where(
                         and_(
@@ -708,27 +710,45 @@ class api_transaction(object):
                     )
                 )
                 row = result.fetchone()
+                icflagResult = self.con.execute(
+                        select([invoice.c.icflag]).where(
+                        invoice.c.invid == row["invid"]
+                    )
+                )
+                icflag = icflagResult.fetchone()
                 rawDr = dict(row["drs"])
                 rawCr = dict(row["crs"])
                 finalDR = {}
                 finalCR = {}
                 for d in list(rawDr.keys()):
+                    account_code = int(d)
                     accname = self.con.execute(
-                        select([accounts.c.accountname]).where(
+                        select([accounts.c.accountname, accounts.c.accountcode]).where(
                             accounts.c.accountcode == int(d)
                         )
                     )
                     account = accname.fetchone()
-                    finalDR[account["accountname"]] = rawDr[d]
+                    if account:  # Check if account exists
+                        finalDR[account_code] = {
+                            "accountname": account["accountname"],
+                            "amount": rawDr[d]
+                        }
 
                 for c in list(rawCr.keys()):
+                    account_code = int(c)
                     accname = self.con.execute(
-                        select([accounts.c.accountname]).where(
+                        select([accounts.c.accountname, accounts.c.accountcode]).where(
                             accounts.c.accountcode == int(c)
                         )
                     )
                     account = accname.fetchone()
-                    finalCR[account["accountname"]] = rawCr[c]
+                    if account:  # Check if account exists
+                        finalCR[account_code] = {
+                            "accountname": account["accountname"],
+                            "amount": rawCr[c]
+                        }
+
+
 
                 if row["narration"] == "null":
                     row["narration"] = ""
@@ -751,6 +771,8 @@ class api_transaction(object):
                     "instrumentno": row["instrumentno"],
                     "bankname": row["bankname"],
                     "branchname": row["branchname"],
+                    "drcrid": row['drcrid'],
+                    "icflag": icflag[0] if icflag else None,
                 }
                 if row["instrumentdate"]:
                     voucher["instrumentdate"] = datetime.strftime(
