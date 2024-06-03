@@ -430,7 +430,11 @@ class api_drcr(object):
                                     drcrrow["drcrmode"]
                                     and int(drcrrow["drcrmode"]) == 18
                                 ):
-                                    reductprice = float(idrateData[pc])
+                                    reductprice = (
+                                        float(
+                                           drcrdata["reduct"][pc]
+                                        )
+                                    ) * (float(idrateData["quantities"][pc]))
                                 else:
                                     reductprice = (
                                         float(
