@@ -942,8 +942,8 @@ class api_transaction(object):
         request_method="GET", request_param="searchby=drcr", renderer="json"
     )
     def searchByDrCr(self):
-        # Purpose: To get vouchers details by using invoice id (invid).
-        # Used in view invoice to get voucher of that invoice.
+        # Purpose: To get vouchers details by using drcr id (drcrid).
+        # Used in view drcr to get voucher of that drcr.
         try:
             token = self.request.headers["gktoken"]
         except:
