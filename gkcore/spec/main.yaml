@@ -207,8 +207,6 @@ paths:
     $ref: "./paths_invoice.yaml#/cashmemo"
   /invoice/attachment/{invid}:
     $ref: "./paths_invoice.yaml#/invoice_attachment"
-  /delchal/unbilled:
-    $ref: "./paths_invoice.yaml#/delnote_unbilled"
   /invoice/drcr/{invid}:
     $ref: "./paths_invoice.yaml#/invoice_crdrid"
   /invoice/rnid/{invid}:

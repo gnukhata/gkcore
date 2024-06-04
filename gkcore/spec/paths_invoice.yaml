@@ -407,8 +407,8 @@ cashmemo:
         name: inoutflag
         schema:
           type: integer
-          enum: [9, 15]
-          description: 9 = sale, 15 = purchase
+          enum: [15]
+          description: 15 = purchase
         required: true
     responses:
       "200":
@@ -430,63 +430,6 @@ cashmemo:
                         properties:
                           invoicetotal:
                             type: number
-
-delnote_unbilled:
-  get:
-    tags: ["Invoice"]
-    summary: Fetch all Delivery notes that are not billed (i.e. not connected to invoice)
-    operationId: unbilled_delnotes
-    parameters:
-      - in: query
-        name: inputdate
-        schema:
-          type: string
-          format: date
-        required: true
-      - in: query
-        name: type
-        schema:
-          type: string
-          enum: ["invoice", "rejectionnote"]
-        required: true
-    responses:
-      "200":
-        description: ok
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [gkstatus]
-              properties:
-                gkstatus:
-                  $ref: "./global/schemas.yaml#/gkstatus"
-                gkresult:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      dcid:
-                        type: integer
-                      srno:
-                        type: string
-                      dcno:
-                        type: string
-                      dcdate:
-                        type: string
-                        format: date
-                      dcflag:
-                        type: integer
-                      csflag:
-                        $ref: "./global/schemas.yaml#/csflag"
-                      inoutflag:
-                        $ref: "./global/schemas.yaml#/inoutflag"
-                      custname:
-                        type: string
-                      attachmentcount:
-                        type: integer
-                      dateofsupply:
-                        type: string
-                        format: date
 
 invoice_crdrid:
   get:
