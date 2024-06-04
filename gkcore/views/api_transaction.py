@@ -185,35 +185,42 @@ def deleteVoucherFun(vcode, orgcode):
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
-def getInvVouchers(con, orgcode, invid):
+def getInvVouchers(con, orgcode, invid, include_drcrid=False, include_invid=False):
     try:
-        vouchersData = con.execute(
-            select(
-                [
-                    vouchers.c.vouchercode,
-                    vouchers.c.attachmentcount,
-                    vouchers.c.vouchernumber,
-                    vouchers.c.voucherdate,
-                    vouchers.c.narration,
-                    vouchers.c.drs,
-                    vouchers.c.crs,
-                    vouchers.c.prjcrs,
-                    vouchers.c.prjdrs,
-                    vouchers.c.vouchertype,
-                    vouchers.c.lockflag,
-                    vouchers.c.delflag,
-                    vouchers.c.projectcode,
-                    vouchers.c.orgcode,
-                ]
-            )
-            .where(
+        columns = [
+            vouchers.c.vouchercode,
+            vouchers.c.attachmentcount,
+            vouchers.c.vouchernumber,
+            vouchers.c.voucherdate,
+            vouchers.c.narration,
+            vouchers.c.drs,
+            vouchers.c.crs,
+            vouchers.c.prjcrs,
+            vouchers.c.prjdrs,
+            vouchers.c.vouchertype,
+            vouchers.c.lockflag,
+            vouchers.c.delflag,
+            vouchers.c.projectcode,
+            vouchers.c.orgcode,
+        ]
+
+        # Construct the query based on the conditions
+        if include_drcrid:
+            vouchersData = con.execute(select(columns).where(
+                and_(
+                    vouchers.c.orgcode == orgcode,
+                    vouchers.c.drcrid == invid,
+                    vouchers.c.delflag == False,
+                )
+            ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode))
+        elif include_invid:
+            vouchersData = con.execute(select(columns).where(
                 and_(
                     vouchers.c.orgcode == orgcode,
                     vouchers.c.invid == invid,
                     vouchers.c.delflag == False,
                 )
-            )
-            .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+            ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
         )
         voucherRecords = []
 
@@ -268,7 +275,6 @@ def getInvVouchers(con, orgcode, invid):
         return voucherRecords
     except:
         return []
-
 
 @view_defaults(route_name="transaction")
 class api_transaction(object):
@@ -924,7 +930,32 @@ class api_transaction(object):
             try:
                 self.con = eng.connect()
                 voucherRecords = getInvVouchers(
-                    self.con, authDetails["orgcode"], self.request.params["invid"]
+                    self.con, authDetails["orgcode"], self.request.params["invid"], include_drcrid=False, include_invid=True
+                )
+                self.con.close()
+                return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
+            except:
+                self.con.close()
+                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+    @view_config(
+        request_method="GET", request_param="searchby=drcr", renderer="json"
+    )
+    def searchByDrCr(self):
+        # Purpose: To get vouchers details by using drcr id (drcrid).
+        # Used in view drcr to get voucher of that drcr.
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        else:
+            try:
+                self.con = eng.connect()
+                voucherRecords = getInvVouchers(
+                    self.con, authDetails["orgcode"], self.request.params["drcrid"], include_drcrid=True, include_invid=False
                 )
                 self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}

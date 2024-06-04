@@ -233,6 +233,12 @@ paths:
   /delchal/invid/{dcid}:
     $ref: "./paths_delchal.yaml#/delchal_invid"
 
+
+  # transaction
+  /transaction:
+    $ref: "./paths_transaction.yaml#/transaction"
+
+
   # logs
   /log:
     $ref: "./logs/log.yaml"
