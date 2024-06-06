@@ -387,20 +387,18 @@ def getDefaultAcc(con, queryParams, orgcode):
             else:
                 crs[custAccCode] = "%.2f" % float(amountPaid)
             csa = custAccCode
-            Narration = (
-                invType[1]
-                + " goods worth rupees "
-                + "%.2f" % float(amountPaid)
-                + " "
-                + invType[2]
-                + " "
-                + str(queryParams["csname"])
-                + " on credit "
-                + "ref "
-                + formType
-                + " no. "
-                + str(queryParams["invoiceno"])
-            )
+            payment_modes = {
+                15: "on credit",
+                5: "by cash",
+                4: "by cheque"
+            }
+
+            pmtmode = int(queryParams["pmtmode"])
+            if pmtmode in payment_modes:
+                Narration = (
+                    f'{invType[1]} goods worth rupees {float(amountPaid):.2f} {invType[2]} {queryParams["csname"]} '
+                    f'{payment_modes[pmtmode]} ref {formType} no. {queryParams["invoiceno"]}'
+                )
 
         if int(queryParams["pmtmode"]) == 4:
             bankAccount = con.execute(
