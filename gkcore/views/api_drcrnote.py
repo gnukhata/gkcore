@@ -436,13 +436,7 @@ class api_drcr(object):
                                         )
                                     ) * (float(idrateData["quantities"][pc]))
                                 else:
-                                    reductprice = (
-                                        float(
-                                            contentsData[pc][
-                                                list(contentsData[pc].keys())[0]
-                                            ]
-                                        )
-                                    ) * (float(idrateData[pc]))
+                                    reductprice = (float(idrateData[pc]))
                             else:
                                 unitofMeasurement = ""
                                 reductprice = float(idrateData[pc])
