@@ -102,7 +102,7 @@ class api_drcr(object):
                     )
                 )
                 drcrid = lastdrcr.fetchone()           
-                if int(dataset["drcrmode"]) == 4:
+                if int(dataset["drcrmode"]) == 18:
                     stockdataset = {
                         "dcinvtnid": drcrid["drcrid"],
                         "orgcode": dataset["orgcode"],
@@ -123,17 +123,18 @@ class api_drcr(object):
                         stockdataset["goid"] = vdataset["goid"]
 
                     # Iterate through the keys and values using a for loop
-                    for key, value in dataset["reductionval"].items():
-                        stockdataset["qty"] = value
-                        stockdataset["productcode"] = key
-                        itemPrice = self.con.execute(
-                            select([product.c.prodmrp]).where(
-                                product.c.productcode == stockdataset["productcode"]
+                    if "quantities" in dataset["reductionval"]:
+                        for key, value in dataset["reductionval"]["quantities"].items():
+                            stockdataset["qty"] = value
+                            stockdataset["productcode"] = key
+                            itemPrice = self.con.execute(
+                                select([product.c.prodmrp]).where(
+                                    product.c.productcode == stockdataset["productcode"]
+                                )
                             )
-                        )
-                        itemP = itemPrice.fetchone()
-                        stockdataset["rate"] = itemP[0]
-                        self.con.execute(stock.insert(), stockdataset)
+                            itemP = itemPrice.fetchone()
+                            stockdataset["rate"] = itemP[0]
+                            self.con.execute(stock.insert(), stockdataset)
 
                 # check automatic voucher flag  if it is 1 get maflag
                 avfl = self.con.execute(
@@ -436,7 +437,13 @@ class api_drcr(object):
                                         )
                                     ) * (float(idrateData["quantities"][pc]))
                                 else:
-                                    reductprice = (float(idrateData[pc]))
+                                    reductprice = (
+                                        float(
+                                            contentsData[pc][
+                                                list(contentsData[pc].keys())[0]
+                                            ]
+                                        )
+                                    ) * (float(idrateData[pc]))
                             else:
                                 unitofMeasurement = ""
                                 reductprice = float(idrateData[pc])
