@@ -628,7 +628,7 @@ def getDefaultAcc(con, queryParams, orgcode):
                 "crs": rctCrs,
                 "voucherdate": queryParams["invoicedate"],
                 "narration": rctNarration,
-                "vouchertype": "receipt",
+                "vouchertype": "receipt" if isSale else "payment",
                 "invid": queryParams["invid"],
             }
             vouchers_List.append(rctVoucherDict)
