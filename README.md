@@ -16,11 +16,12 @@ Requirements:
 - [docker](https://www.docker.com/)
 - [docker-compose](https://docs.docker.com/compose/)
 - [python](https://www.python.org/) (v3.8 & above)
+- [pip](https://pip.pypa.io)
 
 ```sh
 # Install dependencies
 # On debian/Ubuntu distro's
-sudo apt install libpq-dev build-essential python3-dev
+sudo apt install libpq-dev build-essential python3-dev python3-pip
 
 # after cloning this repo, cd to the folder
 cd gkcore/
