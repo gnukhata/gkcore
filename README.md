@@ -13,7 +13,7 @@ The REST API server of GNUKhata
 
 Requirements:
 
-- [docker](https://www.docker.com/)
+- [docker](https://www.docker.com/) [Configure system to run docker as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
 - [docker-compose](https://docs.docker.com/compose/)
 - [python](https://www.python.org/) (v3.8 & above)
 - [pip](https://pip.pypa.io)
@@ -32,7 +32,9 @@ python3 -m venv gkenv
 # activate the virtualenv
 source gkenv/bin/activate
 
-# install dependencies & initialize the application (optionally requires sudo)
+# install dependencies & initialize the application.
+# make sure to follow the instructions above to run docker as non-root user
+# otherwise you will get permission error
 ./gkcore_cli.py init
 
 # starts the dev server
