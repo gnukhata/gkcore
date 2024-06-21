@@ -26,7 +26,7 @@ Contributors:
 "Abhijith Balan" <abhijithb21@openmailbox.org>
 """
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, generate_month_start_end_dates
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc
@@ -38,6 +38,7 @@ from gkcore.models.gkdb import (
     customerandsupplier,
     organisation,
     stock,
+    accounts,
 )
 from datetime import datetime, date
 from monthdelta import monthdelta
@@ -178,41 +179,42 @@ def datewiseinvoice(inoutflag, orgcode):
         con.close()
 
 
-# this function use to show invoice count by month at dashbord in bar chart
-def getinvoicecountbymonth(inoutflag, orgcode):
-    try:
-        con = eng.connect()
-        # this is to fetch startdate and enddate
-        startenddate = con.execute(
+def get_invoice_monthly_balance(inoutflag, orgcode):
+    """Generates monthly consolidated balances for sales and purchase for the financial
+    year. Takes inoutflag (9 for sales, 15 for purchases) and org code as input.
+
+    Output format: `[{"month": "month string", "balance": 0}, ...]`
+    """
+    with eng.connect() as conn:
+        start_date, end_date = conn.execute(
             select([organisation.c.yearstart, organisation.c.yearend]).where(
                 organisation.c.orgcode == orgcode
             )
+        ).fetchone()
+        month_start_end_dates = generate_month_start_end_dates(
+            start_date,
+            end_date,
         )
-        startenddateprint = startenddate.fetchone()
+        if inoutflag not in [9,15]:
+            raise AttributeError("inoutflag should be either 9 or 15.")
 
-        # this is to fetch invoice totalamount month wise
-        monthlysortdata = con.execute(
-            "select extract(month from invoicedate) as month, sum(invoicetotal) as totalamount from invoice where invoicedate BETWEEN '%s' AND '%s' and inoutflag= %d and icflag=9 and  orgcode= %d group by month order by month"
-            % (
-                datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                inoutflag,
-                orgcode,
+        account_name = "Sale A/C" if inoutflag == 15 else "Purchase A/C"
+        account_code = conn.execute(
+            select([accounts.c.accountcode]).where(
+                and_(accounts.c.orgcode == orgcode, accounts.c.accountname == account_name)
             )
-        )
+        ).fetchone()[0]
 
-        monthlysortdataset = monthlysortdata.fetchall()
-        # this is use to send 0 if month have 0 invoice count
-        invamount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        for count in monthlysortdataset:
-            invamount[int(count["month"]) - 1] = float(count["totalamount"])
-        con.close()
-        return {"gkstatus": enumdict["Success"], "invamount": invamount}
-    except:
-        con.close()
-        return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
+        monthly_balance = []
+        for month in month_start_end_dates:
+            if month[1] > date.today():
+                monthly_balance.append({"month": month[0], "balance":0})
+            else:
+                balance = calculateBalance(
+                    conn, account_code, f"{month[1]}", f"{month[1]}", f"{month[2]}",
+                )
+                monthly_balance.append({"month": month[0], "balance": balance["curbal"]})
+        return monthly_balance
 
 
 # this function use to show top five customer/supplier at dashbord in most valued costomer and supplier div
@@ -530,14 +532,16 @@ class api_dashboard(object):
                 userinfo = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 userrole: int = userinfo["gkresult"]["userrole"]
                 orgcode = authDetails["orgcode"]
+                monthly_balance = {
+                    "purchase": get_invoice_monthly_balance(9, orgcode),
+                    "sale": get_invoice_monthly_balance(15, orgcode),
+                }
                 # for admin & manager
                 if userrole == -1 or userrole == 0:
                     amountwiise_purchaseinv = amountwiseinvoice(9, orgcode)
                     datewise_purchaseinv = datewiseinvoice(9, orgcode)
                     amountwiise_saleinv = amountwiseinvoice(15, orgcode)
                     datewise_saleinv = datewiseinvoice(15, orgcode)
-                    purchase_inv = getinvoicecountbymonth(9, orgcode)
-                    sale_inv = getinvoicecountbymonth(15, orgcode)
                     sup_data = topfivecustsup(9, orgcode)
                     cust_data = topfivecustsup(15, orgcode)
                     mostbought_prodsev = topfiveprodsev(orgcode)
@@ -557,8 +561,7 @@ class api_dashboard(object):
                                 "fiveInvoiceslistdata"
                             ],
                             "datewisesaleinv": datewise_saleinv["fiveInvoiceslistdata"],
-                            "puchaseinvcount": purchase_inv["invamount"],
-                            "saleinvcount": sale_inv["invamount"],
+                            "monthly_balance": monthly_balance,
                             "topfivecustlist": cust_data["topfivecustdetails"],
                             "topfivesuplist": sup_data["topfivecustdetails"],
                             "mostboughtprodsev": mostbought_prodsev["prodinfolist"],
@@ -571,8 +574,6 @@ class api_dashboard(object):
                     datewise_purchaseinv = datewiseinvoice(9, orgcode)
                     amountwiise_saleinv = amountwiseinvoice(15, orgcode)
                     datewise_saleinv = datewiseinvoice(15, orgcode)
-                    purchase_inv = getinvoicecountbymonth(9, orgcode)
-                    sale_inv = getinvoicecountbymonth(15, orgcode)
                     delchal_out = delchalcountbymonth(15, orgcode)
                     delchal_in = delchalcountbymonth(9, orgcode)
                     sup_data = topfivecustsup(9, orgcode)
@@ -594,8 +595,7 @@ class api_dashboard(object):
                                 "fiveInvoiceslistdata"
                             ],
                             "datewisesaleinv": datewise_saleinv["fiveInvoiceslistdata"],
-                            "puchaseinvcount": purchase_inv["invamount"],
-                            "saleinvcount": sale_inv["invamount"],
+                            "monthly_balance": monthly_balance,
                             "delchalout": delchal_out["totalamount"],
                             "delchalin": delchal_in["totalamount"],
                             "topfivesuplist": sup_data["topfivecustdetails"],
@@ -606,16 +606,13 @@ class api_dashboard(object):
                         },
                     }
                 if userrole == 2:
-                    purchase_inv = getinvoicecountbymonth(9, orgcode)
-                    sale_inv = getinvoicecountbymonth(15, orgcode)
                     delchal_out = delchalcountbymonth(15, orgcode)
                     delchal_in = delchalcountbymonth(9, orgcode)
                     return {
                         "gkstatus": enumdict["Success"],
                         "userrole": userrole,
                         "gkresult": {
-                            "puchaseinvcount": purchase_inv["invamount"],
-                            "saleinvcount": sale_inv["invamount"],
+                            "monthly_balance": monthly_balance,
                             "delchalout": delchal_out["totalamount"],
                             "delchalin": delchal_in["totalamount"],
                         },
