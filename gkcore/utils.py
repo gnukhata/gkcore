@@ -5,6 +5,8 @@ import traceback
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, and_
 from Crypto.PublicKey import RSA
+from datetime import date, timedelta
+import calendar
 
 
 def gk_log(name: str = __name__):
@@ -99,3 +101,24 @@ def authCheck(token):
     except:
         tokendict = {"auth": False}
         return tokendict
+
+
+def generate_month_start_end_dates(start_date, end_date):
+    """Returns a list of months between the start date and end date as tuples with
+    format, ("month name", "start date", "end date").
+    """
+    month_start_end_dates = []
+    while start_date < end_date:
+        end_day = calendar.monthrange(start_date.year, start_date.month)[1]
+        month_end_date = date(start_date.year, start_date.month, end_day)
+        next_month_start_date = month_end_date + timedelta(1)
+        if next_month_start_date < end_date:
+            month_start_end_dates.append(
+                (start_date.strftime('%B'), start_date, month_end_date)
+            )
+        else:
+            month_start_end_dates.append(
+                (start_date.strftime('%B'), start_date, end_date)
+            )
+        start_date = next_month_start_date
+    return month_start_end_dates
