@@ -1,172 +1,77 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
-    "gkresult": {
-      "type": "object",
-      "properties": {
-        "DailyMilk": {
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "properties": {
-                "orgname": {
-                  "type": "string"
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Welcome9",
+    "definitions": {
+        "Welcome9": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "gkstatus": {
+                    "type": "integer"
                 },
-                "orgtype": {
-                  "type": "string"
-                },
-                "yearstart": {
-                  "type": "string"
-                },
-                "yearend": {
-                  "type": "string"
-                },
-                "orgcode": {
-                  "type": "string"
-                },
-                "invitestatus": {
-                  "type": "boolean"
-                },
-                "userrole": {
-                  "type": "integer"
+                "gkresult": {
+                    "$ref": "#/definitions/Gkresult"
                 }
-              },
-              "required": [
-                "orgname",
-                "orgtype",
-                "yearstart",
-                "yearend",
-                "orgcode",
-                "invitestatus",
-                "userrole"
-              ]
             },
-            {
-              "type": "object",
-              "properties": {
-                "orgname": {
-                  "type": "string"
-                },
-                "orgtype": {
-                  "type": "string"
-                },
-                "yearstart": {
-                  "type": "string"
-                },
-                "yearend": {
-                  "type": "string"
-                },
-                "orgcode": {
-                  "type": "string"
-                },
-                "invitestatus": {
-                  "type": "boolean"
-                },
-                "userrole": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "orgname",
-                "orgtype",
-                "yearstart",
-                "yearend",
-                "orgcode",
-                "invitestatus",
-                "userrole"
-              ]
-            },
-            {
-              "type": "object",
-              "properties": {
-                "orgname": {
-                  "type": "string"
-                },
-                "orgtype": {
-                  "type": "string"
-                },
-                "yearstart": {
-                  "type": "string"
-                },
-                "yearend": {
-                  "type": "string"
-                },
-                "orgcode": {
-                  "type": "string"
-                },
-                "invitestatus": {
-                  "type": "boolean"
-                },
-                "userrole": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "orgname",
-                "orgtype",
-                "yearstart",
-                "yearend",
-                "orgcode",
-                "invitestatus",
-                "userrole"
-              ]
-            }
-          ]
+            "required": [
+                "gkresult",
+                "gkstatus"
+            ],
+            "title": "Welcome9"
         },
-        "IndianInstitute": {
-          "type": "array",
-          "items": [
-            {
-              "type": "object",
-              "properties": {
+        "Gkresult": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Shoppers Stop1": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ShoppersStop1"
+                    }
+                }
+            },
+            "required": [
+                "Shoppers Stop1"
+            ],
+            "title": "Gkresult"
+        },
+        "ShoppersStop1": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
                 "orgname": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "orgtype": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "yearstart": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "yearend": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "orgcode": {
-                  "type": "string"
+                    "type": "string",
+                    "format": "integer"
                 },
                 "invitestatus": {
-                  "type": "boolean"
+                    "type": "boolean"
                 },
                 "userrole": {
-                  "type": "integer"
+                    "type": "integer"
                 }
-              },
-              "required": [
+            },
+            "required": [
+                "invitestatus",
+                "orgcode",
                 "orgname",
                 "orgtype",
-                "yearstart",
+                "userrole",
                 "yearend",
-                "orgcode",
-                "invitestatus",
-                "userrole"
-              ]
-            }
-          ]
+                "yearstart"
+            ],
+            "title": "ShoppersStop1"
         }
-      },
-      "required": [
-        "DailyMilk",
-        "IndianInstitute"
-      ]
     }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
 }
