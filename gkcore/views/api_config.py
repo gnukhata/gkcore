@@ -177,8 +177,7 @@ class api_config(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as conn:
                 dataset = self.request.json_body
 
                 # Validate the payload structure
@@ -216,9 +215,7 @@ class api_config(object):
                     else:
                         validate(instance=confToValidate, schema=workflowConfigSchema)
                     print("Config Validated")
-                except Exception as e:
-                    # print(e)
-                    # print(confToValidate)
+                except Exception:
                     return {
                         "gkstatus": enumdict["ActionDisallowed"],
                         "gkmessage": "Invalid Config. Please check the config structure",
@@ -259,20 +256,12 @@ class api_config(object):
                     targetParent[path] = newConfig
                 if not len(targetPath):
                     if self.request.params["conftype"] == "user":
-                        # self.con.execute(
-                        #     gkdb.users.update()
-                        #     .where(
-                        #         and_(
-                        #             gkdb.users.c.orgcode == authDetails["orgcode"],
-                        #             gkdb.users.c.userid == authDetails["userid"],
-                        #         )
-                        #     )
-                        #     .values(userconf=payload)
-                        # )
-                        targetPath = [authDetails["orgcode"], "userconf"]
+                        targetPath = [str(authDetails["orgcode"]), "userconf"]
                         payload = "'" + json.dumps(payload) + "'"
                         path = "'{" + ",".join(targetPath) + "}'"
-                        self.con.execute(
+
+
+                        conn.execute(
                             "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
                             % (
                                 str(path),
@@ -281,7 +270,7 @@ class api_config(object):
                             )
                         )
                     elif self.request.params["conftype"] == "org":
-                        self.con.execute(
+                        conn.execute(
                             gkdb.organisation.update()
                             .where(
                                 gkdb.organisation.c.orgcode == authDetails["orgcode"]
@@ -289,11 +278,11 @@ class api_config(object):
                             .values(orgconf=payload)
                         )
                 else:
-                    targetPath = [authDetails["orgcode"], "userconf", *targetPath]
+                    targetPath = [str(authDetails["orgcode"]), "userconf", *targetPath]
                     payload = "'" + json.dumps(payload) + "'"
                     path = "'{" + ",".join(targetPath) + "}'"
                     if self.request.params["conftype"] == "user":
-                        self.con.execute(
+                        conn.execute(
                             "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
                             % (
                                 str(path),
@@ -302,16 +291,12 @@ class api_config(object):
                             )
                         )
                     elif self.request.params["conftype"] == "org":
-                        self.con.execute(
+                        conn.execute(
                             "update organisation set orgconf = jsonb_set(orgconf, %s, %s) where orgcode = %d;"
                             % (path, payload, authDetails["orgcode"])
                         )
                 return {"gkstatus": enumdict["Success"]}
-            except Exception as e:
-                # print(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     def getConf(self, confType, orgcode, userid, pageid, confid):
         try:
