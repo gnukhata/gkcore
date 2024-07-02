@@ -40,14 +40,16 @@ from gkcore.models.meta import eng
 from wsgicors import CORS
 from gkcore.enum import STATUS_CODES
 
-try:
-    resultset = eng.execute("select * from signature")
-    secret = resultset.fetchone()[0]
-except:
-    secret = ""
 
 enumdict = STATUS_CODES
+def get_secret():
+    with eng.connect() as connection:
+        resultset = connection.execute("select * from signature")
+        if resultset.rowcount == 1:
+            return resultset.fetchone()[0]
+    return None
 
+secret = get_secret() # for compatibility with old code
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
