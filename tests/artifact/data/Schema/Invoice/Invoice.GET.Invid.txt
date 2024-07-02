@@ -1,372 +1,1026 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
-    "gkresult": {
-      "type": "object",
-      "properties": {
-        "roundoffvalue": {
-          "type": "string"
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "title": "Root Schema",
+    "required": [
+        "gkstatus",
+        "gkresult"
+    ],
+    "properties": {
+        "gkstatus": {
+            "type": "integer",
+            "default": 0,
+            "title": "The gkstatus Schema",
+            "examples": [
+                0
+            ]
         },
-        "invid": {
-          "type": "integer"
-        },
-        "taxflag": {
-          "type": "integer"
-        },
-        "invoiceno": {
-          "type": "string"
-        },
-        "ewaybillno": {
-          "type": "null"
-        },
-        "invoicedate": {
-          "type": "string"
-        },
-        "icflag": {
-          "type": "integer"
-        },
-        "invoicetotal": {
-          "type": "string"
-        },
-        "invoicetotalword": {
-          "type": "string"
-        },
-        "bankdetails": {
-          "type": "null"
-        },
-        "orgstategstin": {
-          "type": "null"
-        },
-        "paymentmode": {
-          "type": "integer"
-        },
-        "inoutflag": {
-          "type": "integer"
-        },
-        "roundoff": {
-          "type": "integer"
-        },
-        "narration": {
-          "type": "string"
-        },
-        "discflag": {
-          "type": "integer"
-        },
-        "deletable": {
-          "type": "integer"
-        },
-        "sourcestate": {
-          "type": "string"
-        },
-        "sourcestatecode": {
-          "type": "integer"
-        },
-        "address": {
-          "type": "string"
-        },
-        "pincode": {
-          "type": "string"
-        },
-        "issuername": {
-          "type": "string"
-        },
-        "designation": {
-          "type": "string"
-        },
-        "consignee": {
-          "type": "object",
-          "properties": {
-            "tinconsignee": {
-              "type": "string"
-            },
-            "consigneename": {
-              "type": "string"
-            },
-            "consigneestate": {
-              "type": "null"
-            },
-            "gstinconsignee": {
-              "type": "string"
-            },
-            "consigneeaddress": {
-              "type": "string"
-            },
-            "consigneepincode": {
-              "type": "string"
-            },
-            "consigneestatecode": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "tinconsignee",
-            "consigneename",
-            "consigneestate",
-            "gstinconsignee",
-            "consigneeaddress",
-            "consigneepincode",
-            "consigneestatecode"
-          ]
-        },
-        "attachmentcount": {
-          "type": "integer"
-        },
-        "dateofsupply": {
-          "type": "string"
-        },
-        "transportationmode": {
-          "type": "string"
-        },
-        "vehicleno": {
-          "type": "null"
-        },
-        "reversecharge": {
-          "type": "string"
-        },
-        "destinationstate": {
-          "type": "string"
-        },
-        "taxstatecode": {
-          "type": "integer"
-        },
-        "dcid": {
-          "type": "integer"
-        },
-        "dcno": {
-          "type": "string"
-        },
-        "dcdate": {
-          "type": "string"
-        },
-        "custSupDetails": {
-          "type": "object",
-          "properties": {
-            "custid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "custsupstate": {
-              "type": "string"
-            },
-            "custaddr": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "pincode": {
-              "type": "string"
-            },
-            "custphone": {
-              "type": "null"
-            },
-            "custsupstatecode": {
-              "type": "integer"
-            },
-            "custgstinlist": {
-              "type": "null"
-            },
-            "statelist": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "33": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "33"
-                  ]
+        "gkresult": {
+            "type": "object",
+            "default": {},
+            "title": "The gkresult Schema",
+            "required": [
+                "roundoffvalue",
+                "invid",
+                "taxflag",
+                "invoiceno",
+                "ewaybillno",
+                "invoicedate",
+                "icflag",
+                "invoicetotal",
+                "invoicetotalword",
+                "bankdetails",
+                "orgstategstin",
+                "paymentmode",
+                "inoutflag",
+                "roundoff",
+                "narration",
+                "discflag",
+                "deletable",
+                "sourcestate",
+                "sourcestatecode",
+                "address",
+                "pincode",
+                "issuername",
+                "designation",
+                "consignee",
+                "attachmentcount",
+                "dateofsupply",
+                "transportationmode",
+                "vehicleno",
+                "reversecharge",
+                "destinationstate",
+                "taxstatecode",
+                "dcid",
+                "dcno",
+                "dcdate",
+                "custSupDetails",
+                "billentrysingleflag",
+                "totaldiscount",
+                "totaltaxablevalue",
+                "totaltaxamt",
+                "totalcessamt",
+                "taxname",
+                "invcontents",
+                "vouchercount"
+            ],
+            "properties": {
+                "roundoffvalue": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The roundoffvalue Schema",
+                    "examples": [
+                        "0.00"
+                    ]
                 },
-                {
-                  "type": "object",
-                  "properties": {
-                    "29": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "29"
-                  ]
-                }
-              ]
-            },
-            "gst_reg_type": {
-              "type": "integer"
-            },
-            "gst_party_type": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "custid",
-            "custname",
-            "custsupstate",
-            "custaddr",
-            "csflag",
-            "pincode",
-            "custphone",
-            "custsupstatecode",
-            "custgstinlist",
-            "statelist",
-            "gst_reg_type",
-            "gst_party_type"
-          ]
-        },
-        "billentrysingleflag": {
-          "type": "integer"
-        },
-        "totaldiscount": {
-          "type": "string"
-        },
-        "totaltaxablevalue": {
-          "type": "string"
-        },
-        "totaltaxamt": {
-          "type": "string"
-        },
-        "totalcessamt": {
-          "type": "string"
-        },
-        "taxname": {
-          "type": "string"
-        },
-        "invcontents": {
-          "type": "object",
-          "properties": {
-            "49": {
-              "type": "object",
-              "properties": {
-                "proddesc": {
-                  "type": "string"
+                "invid": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The invid Schema",
+                    "examples": [
+                        1302
+                    ]
                 },
-                "gscode": {
-                  "type": "null"
+                "taxflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The taxflag Schema",
+                    "examples": [
+                        7
+                    ]
                 },
-                "gsflag": {
-                  "type": "integer"
+                "invoiceno": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoiceno Schema",
+                    "examples": [
+                        "4/SL-24"
+                    ]
                 },
-                "uom": {
-                  "type": "string"
+                "ewaybillno": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The ewaybillno Schema",
+                    "examples": [
+                        ""
+                    ]
                 },
-                "qty": {
-                  "type": "string"
+                "invoicedate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicedate Schema",
+                    "examples": [
+                        "02-04-2024"
+                    ]
                 },
-                "freeqty": {
-                  "type": "string"
+                "icflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The icflag Schema",
+                    "examples": [
+                        9
+                    ]
                 },
-                "priceperunit": {
-                  "type": "string"
+                "invoicetotal": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicetotal Schema",
+                    "examples": [
+                        "1335.00"
+                    ]
                 },
-                "discount": {
-                  "type": "string"
+                "invoicetotalword": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The invoicetotalword Schema",
+                    "examples": [
+                        "Four Hundred Forty Five Rupees"
+                    ]
                 },
-                "taxableamount": {
-                  "type": "string"
+                "bankdetails": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The bankdetails Schema",
+                    "examples": [
+                        null
+                    ]
                 },
-                "totalAmount": {
-                  "type": "string"
+                "orgstategstin": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The orgstategstin Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "paymentmode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The paymentmode Schema",
+                    "examples": [
+                        15
+                    ]
+                },
+                "inoutflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The inoutflag Schema",
+                    "examples": [
+                        15
+                    ]
+                },
+                "roundoff": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The roundoff Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "narration": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The narration Schema",
+                    "examples": [
+                        "Sold goods worth Rupees 1335 to Sri Krishna Fancy Store on credit, ref invoice no. 4/SL-24"
+                    ]
+                },
+                "discflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The discflag Schema",
+                    "examples": [
+                        1
+                    ]
+                },
+                "deletable": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The deletable Schema",
+                    "examples": [
+                        1
+                    ]
+                },
+                "sourcestate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The sourcestate Schema",
+                    "examples": [
+                        "Karnataka"
+                    ]
+                },
+                "sourcestatecode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The sourcestatecode Schema",
+                    "examples": [
+                        29
+                    ]
+                },
+                "address": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The address Schema",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "pincode": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The pincode Schema",
+                    "examples": [
+                        ""
+                    ]
+                },
+                "issuername": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The issuername Schema",
+                    "examples": [
+                        "Accion"
+                    ]
+                },
+                "designation": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The designation Schema",
+                    "examples": [
+                        "Admin"
+                    ]
+                },
+                "consignee": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The consignee Schema",
+                    "required": [
+                        "tinconsignee",
+                        "consigneename",
+                        "consigneestate",
+                        "gstinconsignee",
+                        "consigneeaddress",
+                        "consigneepincode",
+                        "consigneestatecode"
+                    ],
+                    "properties": {
+                        "tinconsignee": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The tinconsignee Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneename": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneename Schema",
+                            "examples": [
+                                "Sri Krishna Fancy Store"
+                            ]
+                        },
+                        "consigneestate": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneestate Schema",
+                            "examples": [
+                                "Karnataka"
+                            ]
+                        },
+                        "gstinconsignee": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The gstinconsignee Schema",
+                            "examples": [
+                                ""
+                            ]
+                        },
+                        "consigneeaddress": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneeaddress Schema",
+                            "examples": [
+                                "Unnamed Road, Ramagondanahalli, Whitefield, Bengaluru, Karnataka 560066"
+                            ]
+                        },
+                        "consigneepincode": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneepincode Schema",
+                            "examples": [
+                                "560066"
+                            ]
+                        },
+                        "consigneestatecode": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The consigneestatecode Schema",
+                            "examples": [
+                                "29"
+                            ]
+                        }
+                    },
+                    "examples": [{
+                        "tinconsignee": "",
+                        "consigneename": "Sri Krishna Fancy Store",
+                        "consigneestate": "Karnataka",
+                        "gstinconsignee": "",
+                        "consigneeaddress": "Unnamed Road, Ramagondanahalli, Whitefield, Bengaluru, Karnataka 560066",
+                        "consigneepincode": "560066",
+                        "consigneestatecode": "29"
+                    }]
+                },
+                "attachmentcount": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The attachmentcount Schema",
+                    "examples": [
+                        0
+                    ]
+                },
+                "dateofsupply": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dateofsupply Schema",
+                    "examples": [
+                        "02-04-2024"
+                    ]
+                },
+                "transportationmode": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The transportationmode Schema",
+                    "examples": [
+                        "Road"
+                    ]
+                },
+                "vehicleno": {
+                    "type": "null",
+                    "default": null,
+                    "title": "The vehicleno Schema",
+                    "examples": [
+                        null
+                    ]
+                },
+                "reversecharge": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The reversecharge Schema",
+                    "examples": [
+                        "0"
+                    ]
+                },
+                "destinationstate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The destinationstate Schema",
+                    "examples": [
+                        "Karnataka"
+                    ]
+                },
+                "taxstatecode": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The taxstatecode Schema",
+                    "examples": [
+                        29
+                    ]
+                },
+                "dcid": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The dcid Schema",
+                    "examples": [
+                        1962
+                    ]
+                },
+                "dcno": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dcno Schema",
+                    "examples": [
+                        "4/DOUT-24"
+                    ]
+                },
+                "dcdate": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The dcdate Schema",
+                    "examples": [
+                        "02-04-2024"
+                    ]
+                },
+                "custSupDetails": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The custSupDetails Schema",
+                    "required": [
+                        "custid",
+                        "custname",
+                        "custsupstate",
+                        "custaddr",
+                        "csflag",
+                        "pincode",
+                        "custphone",
+                        "custsupstatecode",
+                        "custgstinlist",
+                        "statelist",
+                        "gst_reg_type",
+                        "gst_party_type",
+                        "custgstin"
+                    ],
+                    "properties": {
+                        "custid": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The custid Schema",
+                            "examples": [
+                                7218
+                            ]
+                        },
+                        "custname": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custname Schema",
+                            "examples": [
+                                "Sri Krishna Fancy Store"
+                            ]
+                        },
+                        "custsupstate": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custsupstate Schema",
+                            "examples": [
+                                "Karnataka"
+                            ]
+                        },
+                        "custaddr": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custaddr Schema",
+                            "examples": [
+                                "DOOR NO.7-35IJ, ROYAL COMPLEX, RAMANAGARA, SANTHEKATTE, BELTHANGADY TALUK, Dakshina Kannada, Karnataka,"
+                            ]
+                        },
+                        "csflag": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The csflag Schema",
+                            "examples": [
+                                3
+                            ]
+                        },
+                        "pincode": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The pincode Schema",
+                            "examples": [
+                                "574214"
+                            ]
+                        },
+                        "custphone": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The custphone Schema",
+                            "examples": [
+                                null
+                            ]
+                        },
+                        "custsupstatecode": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The custsupstatecode Schema",
+                            "examples": [
+                                29
+                            ]
+                        },
+                        "custgstinlist": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The custgstinlist Schema",
+                            "required": [
+                                "29"
+                            ],
+                            "properties": {
+                                "29": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The 29 Schema",
+                                    "examples": [
+                                        "29AVNPA9932H1Z6"
+                                    ]
+                                }
+                            },
+                            "examples": [{
+                                "29": "29AVNPA9932H1Z6"
+                            }]
+                        },
+                        "statelist": {
+                            "type": "array",
+                            "default": [],
+                            "title": "The statelist Schema",
+                            "items": {
+                                "type": "object",
+                                "default": {},
+                                "title": "A Schema",
+                                "required": [
+                                    "29"
+                                ],
+                                "properties": {
+                                    "29": {
+                                        "type": "string",
+                                        "default": "",
+                                        "title": "The 29 Schema",
+                                        "examples": [
+                                            "Karnataka"
+                                        ]
+                                    }
+                                },
+                                "examples": [{
+                                    "29": "Karnataka"
+                                }]
+                            },
+                            "examples": [
+                                [{
+                                    "29": "Karnataka"
+                                }]
+                            ]
+                        },
+                        "gst_reg_type": {
+                            "type": "integer",
+                            "default": 0,
+                            "title": "The gst_reg_type Schema",
+                            "examples": [
+                                0
+                            ]
+                        },
+                        "gst_party_type": {
+                            "type": "null",
+                            "default": null,
+                            "title": "The gst_party_type Schema",
+                            "examples": [
+                                null
+                            ]
+                        },
+                        "custgstin": {
+                            "type": "string",
+                            "default": "",
+                            "title": "The custgstin Schema",
+                            "examples": [
+                                "29AVNPA9932H1Z6"
+                            ]
+                        }
+                    },
+                    "examples": [{
+                        "custid": 7218,
+                        "custname": "Sri Krishna Fancy Store",
+                        "custsupstate": "Karnataka",
+                        "custaddr": "DOOR NO.7-35IJ, ROYAL COMPLEX, RAMANAGARA, SANTHEKATTE, BELTHANGADY TALUK, Dakshina Kannada, Karnataka,",
+                        "csflag": 3,
+                        "pincode": "574214",
+                        "custphone": null,
+                        "custsupstatecode": 29,
+                        "custgstinlist": {
+                            "29": "29AVNPA9932H1Z6"
+                        },
+                        "statelist": [{
+                            "29": "Karnataka"
+                        }],
+                        "gst_reg_type": 0,
+                        "gst_party_type": null,
+                        "custgstin": "29AVNPA9932H1Z6"
+                    }]
+                },
+                "billentrysingleflag": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The billentrysingleflag Schema",
+                    "examples": [
+                        1
+                    ]
+                },
+                "totaldiscount": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaldiscount Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "totaltaxablevalue": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaltaxablevalue Schema",
+                    "examples": [
+                        "1335.00"
+                    ]
+                },
+                "totaltaxamt": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totaltaxamt Schema",
+                    "examples": [
+                        "0.00"
+                    ]
+                },
+                "totalcessamt": {
+                    "type": "string",
+                    "default": "",
+                    "title": "The totalcessamt Schema",
+                    "examples": [
+                        "0.00"
+                    ]
                 },
                 "taxname": {
-                  "type": "string"
+                    "type": "string",
+                    "default": "",
+                    "title": "The taxname Schema",
+                    "examples": [
+                        "SGST"
+                    ]
                 },
-                "taxrate": {
-                  "type": "string"
+                "invcontents": {
+                    "type": "object",
+                    "default": {},
+                    "title": "The invcontents Schema",
+                    "required": [
+                        "1782"
+                    ],
+                    "properties": {
+                        "1782": {
+                            "type": "object",
+                            "default": {},
+                            "title": "The 1782 Schema",
+                            "required": [
+                                "proddesc",
+                                "gscode",
+                                "gsflag",
+                                "uom",
+                                "qty",
+                                "freeqty",
+                                "priceperunit",
+                                "discount",
+                                "taxableamount",
+                                "totalAmount",
+                                "taxname",
+                                "taxrate",
+                                "taxamount",
+                                "cess",
+                                "cessrate"
+                            ],
+                            "properties": {
+                                "proddesc": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The proddesc Schema",
+                                    "examples": [
+                                        "Diamine Ink Bottle"
+                                    ]
+                                },
+                                "gscode": {
+                                    "type": "null",
+                                    "default": null,
+                                    "title": "The gscode Schema",
+                                    "examples": [
+                                        null
+                                    ]
+                                },
+                                "gsflag": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "title": "The gsflag Schema",
+                                    "examples": [
+                                        7
+                                    ]
+                                },
+                                "uom": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The uom Schema",
+                                    "examples": [
+                                        "PCS"
+                                    ]
+                                },
+                                "qty": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The qty Schema",
+                                    "examples": [
+                                        "3.00"
+                                    ]
+                                },
+                                "freeqty": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The freeqty Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "priceperunit": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The priceperunit Schema",
+                                    "examples": [
+                                        "445.00"
+                                    ]
+                                },
+                                "discount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The discount Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "taxableamount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxableamount Schema",
+                                    "examples": [
+                                        "1335.00"
+                                    ]
+                                },
+                                "totalAmount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The totalAmount Schema",
+                                    "examples": [
+                                        "1335.00"
+                                    ]
+                                },
+                                "taxname": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxname Schema",
+                                    "examples": [
+                                        "SGST"
+                                    ]
+                                },
+                                "taxrate": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxrate Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "taxamount": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The taxamount Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "cess": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The cess Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                },
+                                "cessrate": {
+                                    "type": "string",
+                                    "default": "",
+                                    "title": "The cessrate Schema",
+                                    "examples": [
+                                        "0.00"
+                                    ]
+                                }
+                            },
+                            "examples": [{
+                                "proddesc": "Diamine Ink Bottle",
+                                "gscode": null,
+                                "gsflag": 7,
+                                "uom": "PCS",
+                                "qty": "3.00",
+                                "freeqty": "0.00",
+                                "priceperunit": "445.00",
+                                "discount": "0.00",
+                                "taxableamount": "1335.00",
+                                "totalAmount": "1335.00",
+                                "taxname": "SGST",
+                                "taxrate": "0.00",
+                                "taxamount": "0.00",
+                                "cess": "0.00",
+                                "cessrate": "0.00"
+                            }]
+                        }
+                    },
+                    "examples": [{
+                        "1782": {
+                            "proddesc": "Diamine Ink Bottle",
+                            "gscode": null,
+                            "gsflag": 7,
+                            "uom": "PCS",
+                            "qty": "3.00",
+                            "freeqty": "0.00",
+                            "priceperunit": "445.00",
+                            "discount": "0.00",
+                            "taxableamount": "1335.00",
+                            "totalAmount": "1335.00",
+                            "taxname": "SGST",
+                            "taxrate": "0.00",
+                            "taxamount": "0.00",
+                            "cess": "0.00",
+                            "cessrate": "0.00"
+                        }
+                    }]
                 },
-                "taxamount": {
-                  "type": "string"
-                },
-                "cess": {
-                  "type": "string"
-                },
-                "cessrate": {
-                  "type": "string"
+                "vouchercount": {
+                    "type": "integer",
+                    "default": 0,
+                    "title": "The vouchercount Schema",
+                    "examples": [
+                        2
+                    ]
                 }
-              },
-              "required": [
-                "proddesc",
-                "gscode",
-                "gsflag",
-                "uom",
-                "qty",
-                "freeqty",
-                "priceperunit",
-                "discount",
-                "taxableamount",
-                "totalAmount",
-                "taxname",
-                "taxrate",
-                "taxamount",
-                "cess",
-                "cessrate"
-              ]
-            }
-          },
-          "required": [
-            "49"
-          ]
-        },
-        "vouchercount": {
-          "type": "integer"
+            },
+            "examples": [{
+                "roundoffvalue": "0.00",
+                "invid": 1302,
+                "taxflag": 7,
+                "invoiceno": "4/SL-24",
+                "ewaybillno": "",
+                "invoicedate": "02-04-2024",
+                "icflag": 9,
+                "invoicetotal": "1335.00",
+                "invoicetotalword": "Four Hundred Forty Five Rupees",
+                "bankdetails": null,
+                "orgstategstin": null,
+                "paymentmode": 15,
+                "inoutflag": 15,
+                "roundoff": 0,
+                "narration": "Sold goods worth Rupees 1335 to Sri Krishna Fancy Store on credit, ref invoice no. 4/SL-24",
+                "discflag": 1,
+                "deletable": 1,
+                "sourcestate": "Karnataka",
+                "sourcestatecode": 29,
+                "address": "",
+                "pincode": "",
+                "issuername": "Accion",
+                "designation": "Admin",
+                "consignee": {
+                    "tinconsignee": "",
+                    "consigneename": "Sri Krishna Fancy Store",
+                    "consigneestate": "Karnataka",
+                    "gstinconsignee": "",
+                    "consigneeaddress": "Unnamed Road, Ramagondanahalli, Whitefield, Bengaluru, Karnataka 560066",
+                    "consigneepincode": "560066",
+                    "consigneestatecode": "29"
+                },
+                "attachmentcount": 0,
+                "dateofsupply": "02-04-2024",
+                "transportationmode": "Road",
+                "vehicleno": null,
+                "reversecharge": "0",
+                "destinationstate": "Karnataka",
+                "taxstatecode": 29,
+                "dcid": 1962,
+                "dcno": "4/DOUT-24",
+                "dcdate": "02-04-2024",
+                "custSupDetails": {
+                    "custid": 7218,
+                    "custname": "Sri Krishna Fancy Store",
+                    "custsupstate": "Karnataka",
+                    "custaddr": "DOOR NO.7-35IJ, ROYAL COMPLEX, RAMANAGARA, SANTHEKATTE, BELTHANGADY TALUK, Dakshina Kannada, Karnataka,",
+                    "csflag": 3,
+                    "pincode": "574214",
+                    "custphone": null,
+                    "custsupstatecode": 29,
+                    "custgstinlist": {
+                        "29": "29AVNPA9932H1Z6"
+                    },
+                    "statelist": [{
+                        "29": "Karnataka"
+                    }],
+                    "gst_reg_type": 0,
+                    "gst_party_type": null,
+                    "custgstin": "29AVNPA9932H1Z6"
+                },
+                "billentrysingleflag": 1,
+                "totaldiscount": "0.00",
+                "totaltaxablevalue": "1335.00",
+                "totaltaxamt": "0.00",
+                "totalcessamt": "0.00",
+                "taxname": "SGST",
+                "invcontents": {
+                    "1782": {
+                        "proddesc": "Diamine Ink Bottle",
+                        "gscode": null,
+                        "gsflag": 7,
+                        "uom": "PCS",
+                        "qty": "3.00",
+                        "freeqty": "0.00",
+                        "priceperunit": "445.00",
+                        "discount": "0.00",
+                        "taxableamount": "1335.00",
+                        "totalAmount": "1335.00",
+                        "taxname": "SGST",
+                        "taxrate": "0.00",
+                        "taxamount": "0.00",
+                        "cess": "0.00",
+                        "cessrate": "0.00"
+                    }
+                },
+                "vouchercount": 2
+            }]
         }
-      },
-      "required": [
-        "roundoffvalue",
-        "invid",
-        "taxflag",
-        "invoiceno",
-        "ewaybillno",
-        "invoicedate",
-        "icflag",
-        "invoicetotal",
-        "invoicetotalword",
-        "bankdetails",
-        "orgstategstin",
-        "paymentmode",
-        "inoutflag",
-        "roundoff",
-        "narration",
-        "discflag",
-        "deletable",
-        "sourcestate",
-        "sourcestatecode",
-        "address",
-        "pincode",
-        "issuername",
-        "designation",
-        "consignee",
-        "attachmentcount",
-        "dateofsupply",
-        "transportationmode",
-        "vehicleno",
-        "reversecharge",
-        "destinationstate",
-        "taxstatecode",
-        "dcid",
-        "dcno",
-        "dcdate",
-        "custSupDetails",
-        "billentrysingleflag",
-        "totaldiscount",
-        "totaltaxablevalue",
-        "totaltaxamt",
-        "totalcessamt",
-        "taxname",
-        "invcontents",
-        "vouchercount"
-      ]
-    }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
+    },
+    "examples": [{
+        "gkstatus": 0,
+        "gkresult": {
+            "roundoffvalue": "0.00",
+            "invid": 1302,
+            "taxflag": 7,
+            "invoiceno": "4/SL-24",
+            "ewaybillno": "",
+            "invoicedate": "02-04-2024",
+            "icflag": 9,
+            "invoicetotal": "1335.00",
+            "invoicetotalword": "Four Hundred Forty Five Rupees",
+            "bankdetails": null,
+            "orgstategstin": null,
+            "paymentmode": 15,
+            "inoutflag": 15,
+            "roundoff": 0,
+            "narration": "Sold goods worth Rupees 1335 to Sri Krishna Fancy Store on credit, ref invoice no. 4/SL-24",
+            "discflag": 1,
+            "deletable": 1,
+            "sourcestate": "Karnataka",
+            "sourcestatecode": 29,
+            "address": "",
+            "pincode": "",
+            "issuername": "Accion",
+            "designation": "Admin",
+            "consignee": {
+                "tinconsignee": "",
+                "consigneename": "Sri Krishna Fancy Store",
+                "consigneestate": "Karnataka",
+                "gstinconsignee": "",
+                "consigneeaddress": "Unnamed Road, Ramagondanahalli, Whitefield, Bengaluru, Karnataka 560066",
+                "consigneepincode": "560066",
+                "consigneestatecode": "29"
+            },
+            "attachmentcount": 0,
+            "dateofsupply": "02-04-2024",
+            "transportationmode": "Road",
+            "vehicleno": null,
+            "reversecharge": "0",
+            "destinationstate": "Karnataka",
+            "taxstatecode": 29,
+            "dcid": 1962,
+            "dcno": "4/DOUT-24",
+            "dcdate": "02-04-2024",
+            "custSupDetails": {
+                "custid": 7218,
+                "custname": "Sri Krishna Fancy Store",
+                "custsupstate": "Karnataka",
+                "custaddr": "DOOR NO.7-35IJ, ROYAL COMPLEX, RAMANAGARA, SANTHEKATTE, BELTHANGADY TALUK, Dakshina Kannada, Karnataka,",
+                "csflag": 3,
+                "pincode": "574214",
+                "custphone": null,
+                "custsupstatecode": 29,
+                "custgstinlist": {
+                    "29": "29AVNPA9932H1Z6"
+                },
+                "statelist": [{
+                    "29": "Karnataka"
+                }],
+                "gst_reg_type": 0,
+                "gst_party_type": null,
+                "custgstin": "29AVNPA9932H1Z6"
+            },
+            "billentrysingleflag": 1,
+            "totaldiscount": "0.00",
+            "totaltaxablevalue": "1335.00",
+            "totaltaxamt": "0.00",
+            "totalcessamt": "0.00",
+            "taxname": "SGST",
+            "invcontents": {
+                "1782": {
+                    "proddesc": "Diamine Ink Bottle",
+                    "gscode": null,
+                    "gsflag": 7,
+                    "uom": "PCS",
+                    "qty": "3.00",
+                    "freeqty": "0.00",
+                    "priceperunit": "445.00",
+                    "discount": "0.00",
+                    "taxableamount": "1335.00",
+                    "totalAmount": "1335.00",
+                    "taxname": "SGST",
+                    "taxrate": "0.00",
+                    "taxamount": "0.00",
+                    "cess": "0.00",
+                    "cessrate": "0.00"
+                }
+            },
+            "vouchercount": 2
+        }
+    }]
 }

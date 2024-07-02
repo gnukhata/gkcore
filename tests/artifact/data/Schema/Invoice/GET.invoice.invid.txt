@@ -1,372 +1,404 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
-    "gkresult": {
-      "type": "object",
-      "properties": {
-        "roundoffvalue": {
-          "type": "string"
-        },
-        "invid": {
-          "type": "integer"
-        },
-        "taxflag": {
-          "type": "integer"
-        },
-        "invoiceno": {
-          "type": "string"
-        },
-        "ewaybillno": {
-          "type": "null"
-        },
-        "invoicedate": {
-          "type": "string"
-        },
-        "icflag": {
-          "type": "integer"
-        },
-        "invoicetotal": {
-          "type": "string"
-        },
-        "invoicetotalword": {
-          "type": "string"
-        },
-        "bankdetails": {
-          "type": "null"
-        },
-        "orgstategstin": {
-          "type": "null"
-        },
-        "paymentmode": {
-          "type": "integer"
-        },
-        "inoutflag": {
-          "type": "integer"
-        },
-        "roundoff": {
-          "type": "integer"
-        },
-        "narration": {
-          "type": "string"
-        },
-        "discflag": {
-          "type": "integer"
-        },
-        "deletable": {
-          "type": "integer"
-        },
-        "sourcestate": {
-          "type": "string"
-        },
-        "sourcestatecode": {
-          "type": "integer"
-        },
-        "address": {
-          "type": "string"
-        },
-        "pincode": {
-          "type": "string"
-        },
-        "issuername": {
-          "type": "string"
-        },
-        "designation": {
-          "type": "string"
-        },
-        "consignee": {
-          "type": "object",
-          "properties": {
-            "tinconsignee": {
-              "type": "string"
-            },
-            "consigneename": {
-              "type": "string"
-            },
-            "consigneestate": {
-              "type": "null"
-            },
-            "gstinconsignee": {
-              "type": "string"
-            },
-            "consigneeaddress": {
-              "type": "string"
-            },
-            "consigneepincode": {
-              "type": "string"
-            },
-            "consigneestatecode": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "tinconsignee",
-            "consigneename",
-            "consigneestate",
-            "gstinconsignee",
-            "consigneeaddress",
-            "consigneepincode",
-            "consigneestatecode"
-          ]
-        },
-        "attachmentcount": {
-          "type": "integer"
-        },
-        "dateofsupply": {
-          "type": "string"
-        },
-        "transportationmode": {
-          "type": "string"
-        },
-        "vehicleno": {
-          "type": "null"
-        },
-        "reversecharge": {
-          "type": "string"
-        },
-        "destinationstate": {
-          "type": "string"
-        },
-        "taxstatecode": {
-          "type": "integer"
-        },
-        "dcid": {
-          "type": "integer"
-        },
-        "dcno": {
-          "type": "string"
-        },
-        "dcdate": {
-          "type": "string"
-        },
-        "custSupDetails": {
-          "type": "object",
-          "properties": {
-            "custid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "custsupstate": {
-              "type": "string"
-            },
-            "custaddr": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "pincode": {
-              "type": "string"
-            },
-            "custphone": {
-              "type": "null"
-            },
-            "custsupstatecode": {
-              "type": "integer"
-            },
-            "custgstinlist": {
-              "type": "null"
-            },
-            "statelist": {
-              "type": "array",
-              "items": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "33": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "33"
-                  ]
-                },
-                {
-                  "type": "object",
-                  "properties": {
-                    "29": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "29"
-                  ]
-                }
-              ]
-            },
-            "gst_reg_type": {
-              "type": "integer"
-            },
-            "gst_party_type": {
-              "type": "null"
-            }
-          },
-          "required": [
-            "custid",
-            "custname",
-            "custsupstate",
-            "custaddr",
-            "csflag",
-            "pincode",
-            "custphone",
-            "custsupstatecode",
-            "custgstinlist",
-            "statelist",
-            "gst_reg_type",
-            "gst_party_type"
-          ]
-        },
-        "billentrysingleflag": {
-          "type": "integer"
-        },
-        "totaldiscount": {
-          "type": "string"
-        },
-        "totaltaxablevalue": {
-          "type": "string"
-        },
-        "totaltaxamt": {
-          "type": "string"
-        },
-        "totalcessamt": {
-          "type": "string"
-        },
-        "taxname": {
-          "type": "string"
-        },
-        "invcontents": {
-          "type": "object",
-          "properties": {
-            "49": {
-              "type": "object",
-              "properties": {
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Welcome10",
+    "definitions": {
+        "1782": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
                 "proddesc": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "gscode": {
-                  "type": "null"
+                    "type": "null"
                 },
                 "gsflag": {
-                  "type": "integer"
+                    "type": "integer"
                 },
                 "uom": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "qty": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "freeqty": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "priceperunit": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "discount": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "taxableamount": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "totalAmount": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "taxname": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "taxrate": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "taxamount": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "cess": {
-                  "type": "string"
+                    "type": "string"
                 },
                 "cessrate": {
-                  "type": "string"
+                    "type": "string"
                 }
-              },
-              "required": [
-                "proddesc",
+            },
+            "required": [
+                "cess",
+                "cessrate",
+                "discount",
+                "freeqty",
                 "gscode",
                 "gsflag",
-                "uom",
-                "qty",
-                "freeqty",
                 "priceperunit",
-                "discount",
+                "proddesc",
+                "qty",
                 "taxableamount",
-                "totalAmount",
+                "taxamount",
                 "taxname",
                 "taxrate",
-                "taxamount",
-                "cess",
-                "cessrate"
-              ]
-            }
-          },
-          "required": [
-            "49"
-          ]
+                "totalAmount",
+                "uom"
+            ],
+            "title": "1782"
         },
-        "vouchercount": {
-          "type": "integer"
+        "Welcome10": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "gkstatus": {
+                    "type": "integer"
+                },
+                "gkresult": {
+                    "$ref": "#/definitions/Gkresult"
+                }
+            },
+            "required": [
+                "gkresult",
+                "gkstatus"
+            ],
+            "title": "Welcome10"
+        },
+        "Gkresult": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "roundoffvalue": {
+                    "type": "string"
+                },
+                "invid": {
+                    "type": "integer"
+                },
+                "taxflag": {
+                    "type": "integer"
+                },
+                "invoiceno": {
+                    "type": "string"
+                },
+                "ewaybillno": {
+                    "type": "string"
+                },
+                "invoicedate": {
+                    "type": "string"
+                },
+                "icflag": {
+                    "type": "integer"
+                },
+                "invoicetotal": {
+                    "type": "string"
+                },
+                "invoicetotalword": {
+                    "type": "string"
+                },
+                "bankdetails": {
+                    "type": "null"
+                },
+                "orgstategstin": {
+                    "type": "null"
+                },
+                "paymentmode": {
+                    "type": "integer"
+                },
+                "inoutflag": {
+                    "type": "integer"
+                },
+                "roundoff": {
+                    "type": "integer"
+                },
+                "narration": {
+                    "type": "string"
+                },
+                "discflag": {
+                    "type": "integer"
+                },
+                "deletable": {
+                    "type": "integer"
+                },
+                "sourcestate": {
+                    "type": "string"
+                },
+                "sourcestatecode": {
+                    "type": "integer"
+                },
+                "address": {
+                    "type": "string"
+                },
+                "pincode": {
+                    "type": "string"
+                },
+                "issuername": {
+                    "type": "string"
+                },
+                "designation": {
+                    "type": "string"
+                },
+                "consignee": {
+                    "$ref": "#/definitions/Consignee"
+                },
+                "attachmentcount": {
+                    "type": "integer"
+                },
+                "dateofsupply": {
+                    "type": "string"
+                },
+                "transportationmode": {
+                    "type": "string"
+                },
+                "vehicleno": {
+                    "type": "null"
+                },
+                "reversecharge": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "destinationstate": {
+                    "type": "string"
+                },
+                "taxstatecode": {
+                    "type": "integer"
+                },
+                "dcid": {
+                    "type": "integer"
+                },
+                "dcno": {
+                    "type": "string"
+                },
+                "dcdate": {
+                    "type": "string"
+                },
+                "custSupDetails": {
+                    "$ref": "#/definitions/CustSupDetails"
+                },
+                "billentrysingleflag": {
+                    "type": "integer"
+                },
+                "totaldiscount": {
+                    "type": "string"
+                },
+                "totaltaxablevalue": {
+                    "type": "string"
+                },
+                "totaltaxamt": {
+                    "type": "string"
+                },
+                "totalcessamt": {
+                    "type": "string"
+                },
+                "taxname": {
+                    "type": "string"
+                },
+                "invcontents": {
+                    "$ref": "#/definitions/Invcontents"
+                },
+                "vouchercount": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "address",
+                "attachmentcount",
+                "bankdetails",
+                "billentrysingleflag",
+                "consignee",
+                "custSupDetails",
+                "dateofsupply",
+                "dcdate",
+                "dcid",
+                "dcno",
+                "deletable",
+                "designation",
+                "destinationstate",
+                "discflag",
+                "ewaybillno",
+                "icflag",
+                "inoutflag",
+                "invcontents",
+                "invid",
+                "invoicedate",
+                "invoiceno",
+                "invoicetotal",
+                "invoicetotalword",
+                "issuername",
+                "narration",
+                "orgstategstin",
+                "paymentmode",
+                "pincode",
+                "reversecharge",
+                "roundoff",
+                "roundoffvalue",
+                "sourcestate",
+                "sourcestatecode",
+                "taxflag",
+                "taxname",
+                "taxstatecode",
+                "totalcessamt",
+                "totaldiscount",
+                "totaltaxablevalue",
+                "totaltaxamt",
+                "transportationmode",
+                "vehicleno",
+                "vouchercount"
+            ],
+            "title": "Gkresult"
+        },
+        "Consignee": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "tinconsignee": {
+                    "type": "string"
+                },
+                "consigneename": {
+                    "type": "string"
+                },
+                "consigneestate": {
+                    "type": "string"
+                },
+                "gstinconsignee": {
+                    "type": "string"
+                },
+                "consigneeaddress": {
+                    "type": "string"
+                },
+                "consigneepincode": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "consigneestatecode": {
+                    "type": "string",
+                    "format": "integer"
+                }
+            },
+            "required": [
+                "consigneeaddress",
+                "consigneename",
+                "consigneepincode",
+                "consigneestate",
+                "consigneestatecode",
+                "gstinconsignee",
+                "tinconsignee"
+            ],
+            "title": "Consignee"
+        },
+        "CustSupDetails": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "custid": {
+                    "type": "integer"
+                },
+                "custname": {
+                    "type": "string"
+                },
+                "custsupstate": {
+                    "type": "string"
+                },
+                "custaddr": {
+                    "type": "string"
+                },
+                "csflag": {
+                    "type": "integer"
+                },
+                "pincode": {
+                    "type": "string",
+                    "format": "integer"
+                },
+                "custphone": {
+                    "type": "null"
+                },
+                "custsupstatecode": {
+                    "type": "integer"
+                },
+                "custgstinlist": {
+                    "$ref": "#/definitions/List"
+                },
+                "statelist": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/List"
+                    }
+                },
+                "gst_reg_type": {
+                    "type": "integer"
+                },
+                "gst_party_type": {
+                    "type": "null"
+                },
+                "custgstin": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "csflag",
+                "custaddr",
+                "custgstin",
+                "custgstinlist",
+                "custid",
+                "custname",
+                "custphone",
+                "custsupstate",
+                "custsupstatecode",
+                "gst_party_type",
+                "gst_reg_type",
+                "pincode",
+                "statelist"
+            ],
+            "title": "CustSupDetails"
+        },
+        "List": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "29": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "29"
+            ],
+            "title": "List"
+        },
+        "Invcontents": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "1782": {
+                    "$ref": "#/definitions/1782"
+                }
+            },
+            "required": [
+                "1782"
+            ],
+            "title": "Invcontents"
         }
-      },
-      "required": [
-        "roundoffvalue",
-        "invid",
-        "taxflag",
-        "invoiceno",
-        "ewaybillno",
-        "invoicedate",
-        "icflag",
-        "invoicetotal",
-        "invoicetotalword",
-        "bankdetails",
-        "orgstategstin",
-        "paymentmode",
-        "inoutflag",
-        "roundoff",
-        "narration",
-        "discflag",
-        "deletable",
-        "sourcestate",
-        "sourcestatecode",
-        "address",
-        "pincode",
-        "issuername",
-        "designation",
-        "consignee",
-        "attachmentcount",
-        "dateofsupply",
-        "transportationmode",
-        "vehicleno",
-        "reversecharge",
-        "destinationstate",
-        "taxstatecode",
-        "dcid",
-        "dcno",
-        "dcdate",
-        "custSupDetails",
-        "billentrysingleflag",
-        "totaldiscount",
-        "totaltaxablevalue",
-        "totaltaxamt",
-        "totalcessamt",
-        "taxname",
-        "invcontents",
-        "vouchercount"
-      ]
     }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
 }

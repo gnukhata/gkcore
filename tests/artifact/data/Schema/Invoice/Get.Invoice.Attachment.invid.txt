@@ -1,1243 +1,721 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "gkstatus": {
-      "type": "integer"
-    },
-    "gkresult": {
-      "type": "array",
-      "items": [
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "default": {},
+    "title": "Root Schema",
+    "required": [
+        "gkstatus",
+        "gkresult"
+    ],
+    "properties": {
+        "gkstatus": {
+            "type": "integer",
+            "default": 0,
+            "title": "The gkstatus Schema",
+            "examples": [
+                0
+            ]
         },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "invoiceno": {
-              "type": "string"
-            },
-            "invid": {
-              "type": "integer"
-            },
-            "custname": {
-              "type": "string"
-            },
-            "csflag": {
-              "type": "integer"
-            },
-            "invoicedate": {
-              "type": "string"
-            },
-            "invoicetotal": {
-              "type": "string"
-            },
-            "attachmentcount": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "invoiceno",
-            "invid",
-            "custname",
-            "csflag",
-            "invoicedate",
-            "invoicetotal",
-            "attachmentcount"
-          ]
+        "gkresult": {
+            "type": "array",
+            "default": [],
+            "title": "The gkresult Schema",
+            "items": {
+                "type": "object",
+                "title": "A Schema",
+                "required": [
+                    "invoiceno",
+                    "invid",
+                    "custname",
+                    "csflag",
+                    "invoicedate",
+                    "invoicetotal",
+                    "attachmentcount"
+                ],
+                "properties": {
+                    "invoiceno": {
+                        "type": "string",
+                        "title": "The invoiceno Schema",
+                        "examples": [
+                            "4/SL-24",
+                            "3/SL-24",
+                            "1/SL-24",
+                            "2/SL-24",
+                            "5/SL-24",
+                            "7/SL-24",
+                            "6/SL-24",
+                            "11/SL-24",
+                            "8/SL-24",
+                            "13/SL-24",
+                            "9/SL-24",
+                            "10/SL-24",
+                            "12/SL-24",
+                            "14/SL-24",
+                            "15/SL-24",
+                            "16/SL-24",
+                            "17/SL-24",
+                            "18/SL-24",
+                            "19/SL-24",
+                            "20/SL-24",
+                            "21/SL-24"
+                        ]
+                    },
+                    "invid": {
+                        "type": "integer",
+                        "title": "The invid Schema",
+                        "examples": [
+                            1302,
+                            1300,
+                            1298,
+                            1299,
+                            1313,
+                            1333,
+                            1332,
+                            1347,
+                            1344,
+                            1349,
+                            1345,
+                            1346,
+                            1348,
+                            1369,
+                            1370,
+                            1371,
+                            1375,
+                            1504,
+                            1584,
+                            1710,
+                            1711
+                        ]
+                    },
+                    "custname": {
+                        "type": "string",
+                        "title": "The custname Schema",
+                        "examples": [
+                            "Sri Krishna Fancy Store",
+                            "Kishore Mc Books Factory",
+                            "Nandini Super Market",
+                            "SyedMusthafa MRF Tyres"
+                        ]
+                    },
+                    "csflag": {
+                        "type": "integer",
+                        "title": "The csflag Schema",
+                        "examples": [
+                            3,
+                            19
+                        ]
+                    },
+                    "invoicedate": {
+                        "type": "string",
+                        "title": "The invoicedate Schema",
+                        "examples": [
+                            "02-04-2024",
+                            "09-04-2024",
+                            "16-04-2024",
+                            "18-04-2024",
+                            "19-04-2024",
+                            "14-05-2024",
+                            "04-06-2024",
+                            "21-06-2024"
+                        ]
+                    },
+                    "invoicetotal": {
+                        "type": "string",
+                        "title": "The invoicetotal Schema",
+                        "examples": [
+                            "1335.00",
+                            "1300.00",
+                            "1950.00",
+                            "890.00",
+                            "650.00",
+                            "2225.00",
+                            "36900.00",
+                            "3250.00",
+                            "445.00"
+                        ]
+                    },
+                    "attachmentcount": {
+                        "type": "integer",
+                        "title": "The attachmentcount Schema",
+                        "examples": [
+                            0
+                        ]
+                    }
+                },
+                "examples": [{
+                    "invoiceno": "4/SL-24",
+                    "invid": 1302,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1335.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "3/SL-24",
+                    "invid": 1300,
+                    "custname": "Kishore Mc Books Factory",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1300.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "1/SL-24",
+                    "invid": 1298,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1950.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "2/SL-24",
+                    "invid": 1299,
+                    "custname": "Nandini Super Market",
+                    "csflag": 19,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1950.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "5/SL-24",
+                    "invid": 1313,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "890.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "7/SL-24",
+                    "invid": 1333,
+                    "custname": "Nandini Super Market",
+                    "csflag": 19,
+                    "invoicedate": "09-04-2024",
+                    "invoicetotal": "650.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "6/SL-24",
+                    "invid": 1332,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "09-04-2024",
+                    "invoicetotal": "1335.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "11/SL-24",
+                    "invid": 1347,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "8/SL-24",
+                    "invid": 1344,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "13/SL-24",
+                    "invid": 1349,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "9/SL-24",
+                    "invid": 1345,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "10/SL-24",
+                    "invid": 1346,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "12/SL-24",
+                    "invid": 1348,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "14/SL-24",
+                    "invid": 1369,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "15/SL-24",
+                    "invid": 1370,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "16/SL-24",
+                    "invid": 1371,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "17/SL-24",
+                    "invid": 1375,
+                    "custname": "SyedMusthafa MRF Tyres",
+                    "csflag": 3,
+                    "invoicedate": "19-04-2024",
+                    "invoicetotal": "36900.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "18/SL-24",
+                    "invid": 1504,
+                    "custname": "Kishore Mc Books Factory",
+                    "csflag": 3,
+                    "invoicedate": "14-05-2024",
+                    "invoicetotal": "3250.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "19/SL-24",
+                    "invid": 1584,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "04-06-2024",
+                    "invoicetotal": "445.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "20/SL-24",
+                    "invid": 1710,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "21-06-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "21/SL-24",
+                    "invid": 1711,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "21-06-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                }]
+            },
+            "examples": [
+                [{
+                    "invoiceno": "4/SL-24",
+                    "invid": 1302,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1335.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "3/SL-24",
+                    "invid": 1300,
+                    "custname": "Kishore Mc Books Factory",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1300.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "1/SL-24",
+                    "invid": 1298,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1950.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "2/SL-24",
+                    "invid": 1299,
+                    "custname": "Nandini Super Market",
+                    "csflag": 19,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "1950.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "5/SL-24",
+                    "invid": 1313,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "02-04-2024",
+                    "invoicetotal": "890.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "7/SL-24",
+                    "invid": 1333,
+                    "custname": "Nandini Super Market",
+                    "csflag": 19,
+                    "invoicedate": "09-04-2024",
+                    "invoicetotal": "650.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "6/SL-24",
+                    "invid": 1332,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "09-04-2024",
+                    "invoicetotal": "1335.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "11/SL-24",
+                    "invid": 1347,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "8/SL-24",
+                    "invid": 1344,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "13/SL-24",
+                    "invid": 1349,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "9/SL-24",
+                    "invid": 1345,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "10/SL-24",
+                    "invid": 1346,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "12/SL-24",
+                    "invid": 1348,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "16-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "14/SL-24",
+                    "invid": 1369,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "15/SL-24",
+                    "invid": 1370,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "16/SL-24",
+                    "invid": 1371,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "18-04-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "17/SL-24",
+                    "invid": 1375,
+                    "custname": "SyedMusthafa MRF Tyres",
+                    "csflag": 3,
+                    "invoicedate": "19-04-2024",
+                    "invoicetotal": "36900.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "18/SL-24",
+                    "invid": 1504,
+                    "custname": "Kishore Mc Books Factory",
+                    "csflag": 3,
+                    "invoicedate": "14-05-2024",
+                    "invoicetotal": "3250.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "19/SL-24",
+                    "invid": 1584,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "04-06-2024",
+                    "invoicetotal": "445.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "20/SL-24",
+                    "invid": 1710,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "21-06-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                },
+                {
+                    "invoiceno": "21/SL-24",
+                    "invid": 1711,
+                    "custname": "Sri Krishna Fancy Store",
+                    "csflag": 3,
+                    "invoicedate": "21-06-2024",
+                    "invoicetotal": "2225.00",
+                    "attachmentcount": 0
+                }]
+            ]
         }
-      ]
-    }
-  },
-  "required": [
-    "gkstatus",
-    "gkresult"
-  ]
+    },
+    "examples": [{
+        "gkstatus": 0,
+        "gkresult": [{
+            "invoiceno": "4/SL-24",
+            "invid": 1302,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "02-04-2024",
+            "invoicetotal": "1335.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "3/SL-24",
+            "invid": 1300,
+            "custname": "Kishore Mc Books Factory",
+            "csflag": 3,
+            "invoicedate": "02-04-2024",
+            "invoicetotal": "1300.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "1/SL-24",
+            "invid": 1298,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "02-04-2024",
+            "invoicetotal": "1950.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "2/SL-24",
+            "invid": 1299,
+            "custname": "Nandini Super Market",
+            "csflag": 19,
+            "invoicedate": "02-04-2024",
+            "invoicetotal": "1950.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "5/SL-24",
+            "invid": 1313,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "02-04-2024",
+            "invoicetotal": "890.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "7/SL-24",
+            "invid": 1333,
+            "custname": "Nandini Super Market",
+            "csflag": 19,
+            "invoicedate": "09-04-2024",
+            "invoicetotal": "650.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "6/SL-24",
+            "invid": 1332,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "09-04-2024",
+            "invoicetotal": "1335.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "11/SL-24",
+            "invid": 1347,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "8/SL-24",
+            "invid": 1344,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "13/SL-24",
+            "invid": 1349,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "9/SL-24",
+            "invid": 1345,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "10/SL-24",
+            "invid": 1346,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "12/SL-24",
+            "invid": 1348,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "16-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "14/SL-24",
+            "invid": 1369,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "18-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "15/SL-24",
+            "invid": 1370,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "18-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "16/SL-24",
+            "invid": 1371,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "18-04-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "17/SL-24",
+            "invid": 1375,
+            "custname": "SyedMusthafa MRF Tyres",
+            "csflag": 3,
+            "invoicedate": "19-04-2024",
+            "invoicetotal": "36900.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "18/SL-24",
+            "invid": 1504,
+            "custname": "Kishore Mc Books Factory",
+            "csflag": 3,
+            "invoicedate": "14-05-2024",
+            "invoicetotal": "3250.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "19/SL-24",
+            "invid": 1584,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "04-06-2024",
+            "invoicetotal": "445.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "20/SL-24",
+            "invid": 1710,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "21-06-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        },
+        {
+            "invoiceno": "21/SL-24",
+            "invid": 1711,
+            "custname": "Sri Krishna Fancy Store",
+            "csflag": 3,
+            "invoicedate": "21-06-2024",
+            "invoicetotal": "2225.00",
+            "attachmentcount": 0
+        }]
+    }]
 }
