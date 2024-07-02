@@ -36,12 +36,11 @@ This module also scanns for the secret from the database which is then used for 
 
 import os
 from pyramid.config import Configurator
-from gkcore.models.meta import dbconnect
+from gkcore.models.meta import eng
 from wsgicors import CORS
 from gkcore.enum import STATUS_CODES
 
 try:
-    eng = dbconnect()
     resultset = eng.execute("select * from signature")
     secret = resultset.fetchone()[0]
 except:

@@ -63,6 +63,8 @@ def dbconnect():
     engine = create_engine(stmt, echo=False, pool_size=15, max_overflow=100)
     return engine
 
+eng = dbconnect()
+
 
 def inventoryMigration(con, eng):
     metadata.create_all(eng)
