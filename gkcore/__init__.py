@@ -35,6 +35,7 @@ This module also scanns for the secret from the database which is then used for 
 """
 
 import os
+from gkcore.security import SecurityPolicy
 from pyramid.config import Configurator
 from gkcore.models.meta import eng
 from wsgicors import CORS
@@ -218,6 +219,10 @@ def main(global_config, **settings):
     config.add_route("gstnews", "/gst-news")
 
     config.scan("gkcore.views")
+    # Add security policy
+    config.set_security_policy(
+        SecurityPolicy(secret=get_secret())
+    )
 
     # include the pyramid-openapi3 plugin config
     # link: https://github.com/Pylons/pyramid_openapi3
