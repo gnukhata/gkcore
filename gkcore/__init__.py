@@ -38,10 +38,9 @@ import os
 from pyramid.config import Configurator
 from gkcore.models.meta import eng
 from wsgicors import CORS
-from gkcore.enum import STATUS_CODES
+from gkcore.enum import STATUS_CODES as enumdict
 
 
-enumdict = STATUS_CODES
 def get_secret():
     with eng.connect() as connection:
         resultset = connection.execute("select * from signature")
