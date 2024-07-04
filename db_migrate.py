@@ -1973,6 +1973,8 @@ class Migrate:
                 )
             print("Database migration successful")
 
+            with eng.begin() as conn:
+                conn.execute("alter table bankrecon drop constraint if exists bankrecon_vouchercode_accountcode_key")
         except:
             print("exception ", traceback.format_exc())
             # print(e)
