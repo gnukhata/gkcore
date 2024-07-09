@@ -241,7 +241,7 @@ def print_stock_report(self):
                     and (
                         stock["dcno"] != ""
                         or stock["invno"] != ""
-                        or stock["tnno"] != ""
+                        or ('tnno' in stock and stock["tnno"] != "")
                         or stock["rnno"] != ""
                     )
                     and stock["date"] != ""
@@ -280,7 +280,8 @@ def print_stock_report(self):
                         name="Liberation Serif", size="12", bold=False
                     )
                     sheet["F" + str(row)].alignment = Alignment(horizontal="center")
-                    sheet["G" + str(row)] = stock["tnno"]
+                    if 'tnno' in stock and stock['tnno']:
+                        sheet["G" + str(row)] = stock["tnno"]
                     sheet["G" + str(row)].font = Font(
                         name="Liberation Serif", size="12", bold=False
                     )
