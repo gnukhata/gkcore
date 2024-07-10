@@ -41,16 +41,75 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import null
-import json
 from gkcore.views.api_reports import calculateBalance
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, or_
-from pyramid.request import Request
-from pyramid.response import Response
+from sqlalchemy import and_
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
 from datetime import datetime
 
+def get_bank_transactions(
+        connection, accountCode, calculateFrom, calculateTo, is_cleared=False
+):
+    """Fetches bank reconciliation table data along with related voucher details.
+    This method also returns total Drs and Crs in the list.
+    """
+
+    result = connection.execute(
+        select(
+            [
+                bankrecon,
+                vouchers.c.voucherdate,
+                vouchers.c.narration,
+            ]
+        )
+        .where(
+            and_(
+                bankrecon.c.accountcode == accountCode,
+                (
+                    bankrecon.c.clearancedate != null()
+                    if is_cleared
+                    else bankrecon.c.clearancedate == null()
+                ),
+                vouchers.c.voucherdate >= calculateFrom,
+                vouchers.c.voucherdate <= calculateTo,
+            )
+        )
+        .order_by(vouchers.c.voucherdate)
+        .select_from(
+            bankrecon.join(
+                vouchers, bankrecon.c.vouchercode == vouchers.c.vouchercode
+            )
+        )
+    )
+    recongrid = []
+    uctotaldr = 0
+    uctotalcr = 0
+    for record in result:
+        account = connection.execute(
+            select([accounts.c.accountname]).where(
+                accounts.c.accountcode == record["accountcode"]
+            )
+        ).fetchone()
+        reconRow = {
+            "reconcode": record["reconcode"],
+            "date": datetime.strftime(record["voucherdate"], "%d-%m-%Y"),
+            "particulars": account["accountname"],
+            "vno": record["vouchercode"],
+            "narration": record["narration"],
+        }
+        if record["entry_type"] == "Dr":
+            reconRow.update({"dr": record["amount"]})
+            uctotaldr += record["amount"]
+        else:
+            reconRow.update({"cr": record["amount"]})
+            uctotalcr += record["amount"]
+
+        reconRow["clearancedate"] = datetime.strftime(
+            record["clearancedate"], "%d-%m-%Y"
+        ) if record["clearancedate"] else ""
+        reconRow["memo"] = record["memo"] or ""
+        recongrid.append(reconRow)
+    return {"recongrid": recongrid, "uctotaldr": uctotaldr, "uctotalcr": uctotalcr}
 
 """
 default route to be attached to this resource.
@@ -62,7 +121,6 @@ refer to the __init__.py of main gkcore package for details on routing url
 class bankreconciliation(object):
     # constructor will initialise request.
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
@@ -76,9 +134,8 @@ class bankreconciliation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.begin() as con:
+                result = con.execute(
                     select([accounts.c.accountname, accounts.c.accountcode])
                     .where(
                         and_(
@@ -106,10 +163,6 @@ class bankreconciliation(object):
                         }
                     )
                 return {"gkstatus": enumdict["Success"], "gkresult": accs}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="recon=uncleared", renderer="json")
     def getUnclearedTransactions(self):
@@ -121,8 +174,7 @@ class bankreconciliation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 accountCode = self.request.params["accountcode"]
                 calculateFrom = datetime.strptime(
                     str(self.request.params["calculatefrom"]), "%Y-%m-%d"
@@ -130,16 +182,17 @@ class bankreconciliation(object):
                 calculateTo = datetime.strptime(
                     str(self.request.params["calculateto"]), "%Y-%m-%d"
                 )
-                recongrid = self.showUnclearedTransactions(
-                    accountCode, calculateFrom, calculateTo
+                recongrid = get_bank_transactions(
+                    con, accountCode, calculateFrom, calculateTo
                 )
-                finStartData = self.con.execute(
+                finStartData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
                 finstartrow = finStartData.fetchone()
                 reconstmt = self.reconStatement(
+                    con,
                     accountCode,
                     str(self.request.params["calculatefrom"]),
                     str(self.request.params["calculateto"]),
@@ -155,102 +208,6 @@ class bankreconciliation(object):
                     },
                 }
 
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
-    def showUnclearedTransactions(self, accountCode, calculateFrom, calculateTo):
-        result = self.con.execute(
-            select([bankrecon, vouchers.c.voucherdate])
-            .where(
-                or_(
-                    and_(
-                        bankrecon.c.accountcode == accountCode,
-                        bankrecon.c.clearancedate != null(),
-                        bankrecon.c.clearancedate > calculateTo,
-                        bankrecon.c.vouchercode == vouchers.c.vouchercode,
-                    ),
-                    and_(
-                        bankrecon.c.accountcode == accountCode,
-                        bankrecon.c.clearancedate == null(),
-                        bankrecon.c.vouchercode == vouchers.c.vouchercode,
-                    ),
-                )
-            )
-            .order_by(vouchers.c.voucherdate)
-        )
-        recongrid = []
-        uctotaldr = 0.00
-        uctotalcr = 0.00
-        for record in result:
-            voucherdata = self.con.execute(
-                "select * from vouchers where vouchercode=%d and delflag=false and voucherdate<='%s'"
-                % (int(record["vouchercode"]), calculateTo)
-            )
-            voucher = voucherdata.fetchone()
-            if voucher == None:
-                continue
-            if str(record["accountcode"]) in voucher["drs"]:
-                for cr in list(voucher["crs"].keys()):
-                    accountnameRow = self.con.execute(
-                        select([accounts.c.accountname]).where(
-                            accounts.c.accountcode == int(cr)
-                        )
-                    )
-                    accountname = accountnameRow.fetchone()
-                    reconRow = {
-                        "reconcode": record["reconcode"],
-                        "date": datetime.strftime(voucher["voucherdate"], "%d-%m-%Y"),
-                        "particulars": str(accountname["accountname"]),
-                        "vno": voucher["vouchernumber"],
-                        "dr": "%.2f" % float(voucher["crs"][cr]),
-                        "cr": "",
-                        "narration": voucher["narration"],
-                    }
-                    uctotaldr += float(voucher["crs"][cr])
-                    if record["clearancedate"] == None:
-                        reconRow["clearancedate"] = ""
-                    else:
-                        reconRow["clearancedate"] = datetime.strftime(
-                            record["clearancedate"], "%d-%m-%Y"
-                        )
-                    if record["memo"] == None:
-                        reconRow["memo"] = ""
-                    else:
-                        reconRow["memo"] = record["memo"]
-                    recongrid.append(reconRow)
-
-            if str(record["accountcode"]) in voucher["crs"]:
-                for dr in list(voucher["drs"].keys()):
-                    accountnameRow = self.con.execute(
-                        select([accounts.c.accountname]).where(
-                            accounts.c.accountcode == int(dr)
-                        )
-                    )
-                    accountname = accountnameRow.fetchone()
-                    reconRow = {
-                        "reconcode": record["reconcode"],
-                        "date": datetime.strftime(voucher["voucherdate"], "%d-%m-%Y"),
-                        "particulars": str(accountname["accountname"]),
-                        "vno": voucher["vouchernumber"],
-                        "cr": "%.2f" % float(voucher["drs"][dr]),
-                        "dr": "",
-                        "narration": voucher["narration"],
-                    }
-                    uctotalcr += float(voucher["drs"][dr])
-                    if record["clearancedate"] == None:
-                        reconRow["clearancedate"] = ""
-                    else:
-                        reconRow["clearancedate"] = datetime.strftime(
-                            record["clearancedate"], "%d-%m-%Y"
-                        )
-                    if record["memo"] == None:
-                        reconRow["memo"] = ""
-                    else:
-                        reconRow["memo"] = record["memo"]
-                    recongrid.append(reconRow)
-        return {"recongrid": recongrid, "uctotaldr": uctotaldr, "uctotalcr": uctotalcr}
 
     @view_config(request_method="PUT", renderer="json")
     def updateRecon(self):
@@ -262,8 +219,7 @@ class bankreconciliation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 accountCode = dataset.pop("accountcode")
                 calculateFrom = datetime.strptime(
@@ -272,21 +228,22 @@ class bankreconciliation(object):
                 calculateTo = datetime.strptime(
                     str(dataset.pop("calculateto")), "%Y-%m-%d"
                 )
-                result = self.con.execute(
+                con.execute(
                     bankrecon.update()
                     .where(bankrecon.c.reconcode == dataset["reconcode"])
                     .values(dataset)
                 )
-                recongrid = self.showUnclearedTransactions(
-                    accountCode, calculateFrom, calculateTo
+                recongrid = get_bank_transactions(
+                    con, accountCode, calculateFrom, calculateTo
                 )
-                finStartData = self.con.execute(
+                finStartData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
                 finstartrow = finStartData.fetchone()
                 reconstmt = self.reconStatement(
+                    con,
                     accountCode,
                     str(self.request.json_body["calculatefrom"]),
                     str(self.request.json_body["calculateto"]),
@@ -298,10 +255,6 @@ class bankreconciliation(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": {"reconstatement": reconstmt},
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="recon=cleared", renderer="json")
     def getClearedTransactions(self):
@@ -313,8 +266,7 @@ class bankreconciliation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 accountCode = self.request.params["accountcode"]
                 calculateFrom = datetime.strptime(
                     str(self.request.params["calculatefrom"]), "%Y-%m-%d"
@@ -322,120 +274,32 @@ class bankreconciliation(object):
                 calculateTo = datetime.strptime(
                     str(self.request.params["calculateto"]), "%Y-%m-%d"
                 )
-                result = self.con.execute(
-                    select([bankrecon]).where(
-                        and_(
-                            bankrecon.c.accountcode == accountCode,
-                            bankrecon.c.clearancedate != null(),
-                            bankrecon.c.clearancedate <= calculateTo,
-                        )
-                    )
+                recongrid = get_bank_transactions(
+                    con, accountCode, calculateFrom, calculateTo, is_cleared=True
                 )
-                recongrid = []
-                for record in result:
-                    voucherdata = self.con.execute(
-                        select([vouchers])
-                        .where(
-                            and_(
-                                vouchers.c.vouchercode == int(record["vouchercode"]),
-                                vouchers.c.delflag == False,
-                                vouchers.c.voucherdate <= calculateTo,
-                            )
-                        )
-                        .order_by(vouchers.c.voucherdate)
-                    )
-                    voucher = voucherdata.fetchone()
-                    if voucher == None:
-                        continue
-                    if str(record["accountcode"]) in voucher["drs"]:
-                        for cr in list(voucher["crs"].keys()):
-                            accountnameRow = self.con.execute(
-                                select([accounts.c.accountname]).where(
-                                    accounts.c.accountcode == int(cr)
-                                )
-                            )
-                            accountname = accountnameRow.fetchone()
-                            reconRow = {
-                                "reconcode": record["reconcode"],
-                                "date": datetime.strftime(
-                                    voucher["voucherdate"], "%d-%m-%Y"
-                                ),
-                                "particulars": str(accountname["accountname"]),
-                                "vno": voucher["vouchernumber"],
-                                "dr": "%.2f" % float(voucher["crs"][cr]),
-                                "cr": "",
-                                "narration": voucher["narration"],
-                            }
-                            if record["clearancedate"] == None:
-                                reconRow["clearancedate"] = ""
-                            else:
-                                reconRow["clearancedate"] = datetime.strftime(
-                                    record["clearancedate"], "%d-%m-%Y"
-                                )
-                            if record["memo"] == None:
-                                reconRow["memo"] = ""
-                            else:
-                                reconRow["memo"] = record["memo"]
-                            recongrid.append(reconRow)
-
-                    if str(record["accountcode"]) in voucher["crs"]:
-                        for dr in list(voucher["drs"].keys()):
-                            accountnameRow = self.con.execute(
-                                select([accounts.c.accountname]).where(
-                                    accounts.c.accountcode == int(dr)
-                                )
-                            )
-                            accountname = accountnameRow.fetchone()
-                            reconRow = {
-                                "reconcode": record["reconcode"],
-                                "date": datetime.strftime(
-                                    voucher["voucherdate"], "%d-%m-%Y"
-                                ),
-                                "particulars": str(accountname["accountname"]),
-                                "vno": voucher["vouchernumber"],
-                                "cr": "%.2f" % float(voucher["drs"][dr]),
-                                "dr": "",
-                                "narration": voucher["narration"],
-                            }
-                            if record["clearancedate"] == None:
-                                reconRow["clearancedate"] = ""
-                            else:
-                                reconRow["clearancedate"] = datetime.strftime(
-                                    record["clearancedate"], "%d-%m-%Y"
-                                )
-                            if record["memo"] == None:
-                                reconRow["memo"] = ""
-                            else:
-                                reconRow["memo"] = record["memo"]
-                            recongrid.append(reconRow)
-                unclearedrecongrid = self.showUnclearedTransactions(
-                    accountCode, calculateFrom, calculateTo
-                )
-                finStartData = self.con.execute(
+                finStartData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
                 finstartrow = finStartData.fetchone()
                 reconstmt = self.reconStatement(
+                    con,
                     accountCode,
                     str(self.request.params["calculatefrom"]),
                     str(self.request.params["calculateto"]),
-                    unclearedrecongrid["uctotaldr"],
-                    unclearedrecongrid["uctotalcr"],
+                    recongrid["uctotaldr"],
+                    recongrid["uctotalcr"],
                     str(finstartrow["yearstart"]),
                 )
                 return {
                     "gkstatus": enumdict["Success"],
-                    "gkresult": {"recongrid": recongrid, "reconstatement": reconstmt},
+                    "gkresult": {**recongrid, "reconstatement": reconstmt},
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     def reconStatement(
         self,
+        connection,
         accountCode,
         calculateFrom,
         calculateTo,
@@ -444,7 +308,7 @@ class bankreconciliation(object):
         financialStart,
     ):
         calbaldata = calculateBalance(
-            self.con, accountCode, financialStart, calculateFrom, calculateTo
+            connection, accountCode, financialStart, calculateFrom, calculateTo
         )
         recostmt = [{"particulars": "RECONCILIATION STATEMENT", "amount": "AMOUNT"}]
         midTotal = 0.00
