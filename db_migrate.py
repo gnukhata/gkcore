@@ -1971,10 +1971,13 @@ class Migrate:
                 self.con.execute(
                     "alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL"
                 )
-            print("Database migration successful")
-
             with eng.begin() as conn:
                 conn.execute("alter table bankrecon drop constraint if exists bankrecon_vouchercode_accountcode_key")
+                conn.execute("alter table bankrecon add column if not exists entry_type text")
+                conn.execute("alter table bankrecon add column if not exists amount float")
+
+            print("Database migration successful")
+
         except:
             print("exception ", traceback.format_exc())
             # print(e)
