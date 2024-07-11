@@ -77,6 +77,7 @@ from time import strftime, strptime
 from natsort import natsorted
 from sqlalchemy.sql.expression import null
 import traceback  # for printing detailed exception logs
+from gkcore.views.reports.helpers.voucher import billwiseEntryLedger
 
 """
 purpose:
@@ -1806,65 +1807,6 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
         "openbaltype": openingBalanceType,
         "grpname": groupName,
     }
-
-
-def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
-    try:
-        dcinfo = ""
-        if invid == None:
-            billdetl = con.execute(
-                "select invid, adjamount from billwise where vouchercode = %d and orgcode =%d"
-                % (vouchercode, orgcode)
-            )
-            billDetails = billdetl.fetchall()
-            if len(billDetails) != 0:
-                inno = "Invoice Nos.:"
-                cmno = "Cash Memo Nos.:"
-                for inv in billDetails:
-                    invno = con.execute(
-                        "select invoiceno, icflag from invoice where invid = %d and orgcode = %d"
-                        % (inv["invid"], orgcode)
-                    )
-                    invinfo = invno.fetchone()
-                    if invinfo["icflag"] == 9:
-                        inno += (
-                            str(invinfo["invoiceno"])
-                            + ":"
-                            + str(inv["adjamount"])
-                            + ","
-                        )
-                        dcinfo = inno
-                    else:
-                        cmno += (
-                            str(invinfo["invoiceno"])
-                            + ":"
-                            + str(inv["adjamount"])
-                            + ","
-                        )
-                        dcinfo = cmno
-        else:
-            invno = con.execute(
-                "select  invoiceno, icflag from invoice where invid = %d and orgcode = %d"
-                % (invid, orgcode)
-            )
-            invinfo = invno.fetchone()
-            if invinfo["icflag"] == 9:
-                dcinfo = "Invoice No.:" + str(invinfo["invoiceno"])
-            else:
-                dcinfo = "Cash Memo No.:" + str(invinfo["invoiceno"])
-        if drcrid != None:
-            drcrno = con.execute(
-                "select drcrno, dctypeflag from drcr where drcrid = %d and orgcode = %d"
-                % (drcrid, orgcode)
-            )
-            drcrinfo = drcrno.fetchone()
-            if drcrinfo["dctypeflag"] == 3:
-                dcinfo = "Credit note no.:" + str(drcrinfo["drcrno"])
-            else:
-                dcinfo = "Dedit note no.:" + str(drcrinfo["drcrno"])
-        return dcinfo
-    except:
-        return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
 def stockonhandfun(orgcode, productCode, endDate):

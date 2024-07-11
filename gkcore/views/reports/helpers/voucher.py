@@ -1,5 +1,6 @@
 from sqlalchemy.sql import select
 from gkcore.models.gkdb import vouchers, accounts, voucherbin
+from gkcore import enumdict
 
 def get_account_details(account_code, connection):
     """Fetches the account details and returns a dict with keys, "name", "group" and
@@ -55,3 +56,61 @@ def get_transaction_details(voucher_code, connection, entry_type=None, is_cancel
         raise AttributeError("'entry_type' accepts only 'Dr' and 'Cr' as allowed values")
     return voucher
 
+
+def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
+    try:
+        dcinfo = ""
+        if invid == None:
+            billdetl = con.execute(
+                "select invid, adjamount from billwise where vouchercode = %d and orgcode =%d"
+                % (vouchercode, orgcode)
+            )
+            billDetails = billdetl.fetchall()
+            if len(billDetails) != 0:
+                inno = "Invoice Nos.:"
+                cmno = "Cash Memo Nos.:"
+                for inv in billDetails:
+                    invno = con.execute(
+                        "select invoiceno, icflag from invoice where invid = %d and orgcode = %d"
+                        % (inv["invid"], orgcode)
+                    )
+                    invinfo = invno.fetchone()
+                    if invinfo["icflag"] == 9:
+                        inno += (
+                            str(invinfo["invoiceno"])
+                            + ":"
+                            + str(inv["adjamount"])
+                            + ","
+                        )
+                        dcinfo = inno
+                    else:
+                        cmno += (
+                            str(invinfo["invoiceno"])
+                            + ":"
+                            + str(inv["adjamount"])
+                            + ","
+                        )
+                        dcinfo = cmno
+        else:
+            invno = con.execute(
+                "select  invoiceno, icflag from invoice where invid = %d and orgcode = %d"
+                % (invid, orgcode)
+            )
+            invinfo = invno.fetchone()
+            if invinfo["icflag"] == 9:
+                dcinfo = "Invoice No.:" + str(invinfo["invoiceno"])
+            else:
+                dcinfo = "Cash Memo No.:" + str(invinfo["invoiceno"])
+        if drcrid != None:
+            drcrno = con.execute(
+                "select drcrno, dctypeflag from drcr where drcrid = %d and orgcode = %d"
+                % (drcrid, orgcode)
+            )
+            drcrinfo = drcrno.fetchone()
+            if drcrinfo["dctypeflag"] == 3:
+                dcinfo = "Credit note no.:" + str(drcrinfo["drcrno"])
+            else:
+                dcinfo = "Dedit note no.:" + str(drcrinfo["drcrno"])
+        return dcinfo
+    except:
+        return {"gkstatus": enumdict["ConnectionFailed"]}
