@@ -143,6 +143,9 @@ def includeme(config):
     config.add_route("ledger-crdr", "/reports/ledger/crdr")
     config.add_route("godown-register", "/reports/godown-register/{goid}")
     config.add_route("cash-flow", "/reports/cash-flow")
+    config.add_route("stock-report", "/reports/stock-report")
+    config.add_route("stock-on-hand", "/reports/stock-on-hand")
+    config.add_route("category-wise-stock-on-hand", "/reports/category-wise-stock-on-hand")
     config.add_route("deleted-voucher", "/reports/deleted-voucher")
     config.add_route("project-statement", "/reports/project-statement")
 
