@@ -151,6 +151,7 @@ def includeme(config):
     config.add_route("category-wise-stock-on-hand", "/reports/category-wise-stock-on-hand")
     config.add_route("deleted-voucher", "/reports/deleted-voucher")
     config.add_route("project-statement", "/reports/project-statement")
+    config.add_route("closing-balance", "/reports/closing-balance")
 
     # WIP: v2 of profit loss report
     config.add_route("profit-loss-new", "/reports/v2/profit-loss")
