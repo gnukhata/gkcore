@@ -43,7 +43,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
-from gkcore.views.api_reports import calculateBalance
+from gkcore.views.reports.helpers.balance import calculateBalance
 from gkcore.views.api_gkuser import getUserRole
 
 

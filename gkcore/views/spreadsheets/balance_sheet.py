@@ -28,7 +28,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from pyramid.response import Response
-from gkcore.views.api_reports import getBalanceSheet
+from gkcore.views.reports.helpers.balance import getBalanceSheet
 
 # Spreadsheet libraries
 import io
