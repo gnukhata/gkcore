@@ -153,6 +153,7 @@ def includeme(config):
     config.add_route("project-statement", "/reports/project-statement")
     config.add_route("closing-balance", "/reports/closing-balance")
     config.add_route("log-statement", "/reports/log-statement")
+    config.add_route("del-unbilled", "/reports/del-unbilled")
 
     # WIP: v2 of profit loss report
     config.add_route("profit-loss-new", "/reports/v2/profit-loss")
