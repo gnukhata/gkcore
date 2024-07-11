@@ -44,7 +44,7 @@ from datetime import datetime, date
 from monthdelta import monthdelta
 import calendar
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_reports import stockonhandfun
+from gkcore.views.reports.helpers.stock import stockonhandfun
 from gkcore.views.api_reports import calculateBalance
 
 
