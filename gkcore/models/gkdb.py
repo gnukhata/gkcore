@@ -41,6 +41,7 @@ from sqlalchemy import (
     UnicodeText,  # <- will provide Unicode text field
     DateTime,
     Date,
+    Float
     # <- time abstraction field
 )
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
@@ -849,13 +850,14 @@ bankrecon = Table(
     ),
     Column("clearancedate", DateTime),
     Column("memo", Text),
+    Column("entry_type", Text),
+    Column("amount", Float),
     Column(
         "orgcode",
         Integer,
         ForeignKey("organisation.orgcode", ondelete="CASCADE"),
         nullable=False,
     ),
-    UniqueConstraint("vouchercode", "accountcode"),
     Index("bankrecoindex", "clearancedate"),
 )
 """

@@ -412,13 +412,15 @@ class api_transaction(object):
                             "select max(vouchercode) as vcode from vouchers"
                         )
                         vouchercode = vouchercodedata.fetchone()
-                        recoresult = self.con.execute(
+                        self.con.execute(
                             bankrecon.insert(),
                             [
                                 {
                                     "vouchercode": int(vouchercode["vcode"]),
                                     "accountcode": drkeys,
                                     "orgcode": authDetails["orgcode"],
+                                    "entry_type": "Dr",
+                                    "amount": drs[drkeys],
                                 }
                             ],
                         )
@@ -445,13 +447,15 @@ class api_transaction(object):
                             "select max(vouchercode) as vcode from vouchers"
                         )
                         vouchercode = vouchercodedata.fetchone()
-                        recoresult = self.con.execute(
+                        self.con.execute(
                             bankrecon.insert(),
                             [
                                 {
                                     "vouchercode": int(vouchercode["vcode"]),
                                     "accountcode": crkeys,
                                     "orgcode": authDetails["orgcode"],
+                                    "entry_type": "Cr",
+                                    "amount": crs[crkeys],
                                 }
                             ],
                         )
