@@ -41,7 +41,7 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import null
-from gkcore.views.api_reports import calculateBalance
+from gkcore.views.reports.helpers.balance import calculateBalance
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 from pyramid.view import view_defaults, view_config

@@ -99,7 +99,6 @@ def includeme(config):
     config.add_route("groupsubgroup", "/groupsubgroup/{groupcode}")
     config.add_route("groupsubgroups", "/groupsubgroups")
     config.add_route("groupDetails", "/groupDetails/{groupcode}")
-    config.add_route("report", "/report")
     config.add_route("close-books", "/closebooks")
     config.add_route("roll-over", "/rollover")
     config.add_route("rollclose", "/rollclose")
@@ -142,6 +141,20 @@ def includeme(config):
     config.add_route("ledger", "/reports/ledger")
     config.add_route("ledger-crdr", "/reports/ledger/crdr")
     config.add_route("godown-register", "/reports/godown-register/{goid}")
+    config.add_route("cash-flow", "/reports/cash-flow")
+    config.add_route("stock-report", "/reports/stock-report")
+    config.add_route("stock-on-hand", "/reports/stock-on-hand")
+    config.add_route("godown-stock-godownincharge", "/reports/godown-stock-godownincharge")
+    config.add_route("godownwise-stock-value", "/reports/godownwise-stock-value")
+    config.add_route("godownwise-stock-on-hand", "/reports/godownwise-stock-on-hand")
+    config.add_route("category-wise-stock-on-hand", "/reports/category-wise-stock-on-hand")
+    config.add_route("deleted-voucher", "/reports/deleted-voucher")
+    config.add_route("project-statement", "/reports/project-statement")
+    config.add_route("closing-balance", "/reports/closing-balance")
+    config.add_route("log-statement", "/reports/log-statement")
+    config.add_route("del-unbilled", "/reports/del-unbilled")
+    config.add_route("gst-calc", "/reports/gst-calc")
+
     # WIP: v2 of profit loss report
     config.add_route("profit-loss-new", "/reports/v2/profit-loss")
 

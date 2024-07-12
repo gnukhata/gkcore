@@ -27,12 +27,12 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
-from gkcore.views.api_reports import (
-    calculateBalance,
+from gkcore.views.reports.helpers.stock import (
     stockonhandfun,
     godownwisestockonhandfun,
     calculateStockValue,
 )
+from gkcore.views.reports.helpers.balance import calculateBalance
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
