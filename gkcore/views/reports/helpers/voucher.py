@@ -1,5 +1,5 @@
 from sqlalchemy.sql import select
-from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice
+from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
 from sqlalchemy import func
 
 
@@ -89,6 +89,35 @@ def get_business_item_invoice_data(
             if inout_flag == 15:
                 total_sale += float(amount)*float(quantity)
     return total_purchase, total_sale
+
+
+def get_org_invoice_data(
+        connection,
+        org_code,
+        from_date = None,
+        to_date = None,
+        gsflag = None,
+):
+    """Calculates total purchase and sales for a org. Organization code is required,
+    from date, to date and gsflag are optional. If gsflag is given it will give result
+    for the given gsflag (Service:19, Product:7). Returns tuple (Purchase Total,
+    Sales Total)
+    """
+    statement = select([product.c.productcode]).where(
+            product.c.orgcode == org_code
+        )
+    if gsflag:
+        statement = statement.where(product.c.gsflag == gsflag)
+    business_items = connection.execute(statement).fetchall()
+    org_total_purchase = 0
+    org_total_sale = 0
+    for product_code in business_items:
+        total_purchase, total_sale = get_business_item_invoice_data(
+            connection, product_code[0], from_date, to_date
+        )
+        org_total_purchase += total_purchase
+        org_total_sale += total_sale
+    return org_total_purchase, org_total_sale
 
 
 def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
