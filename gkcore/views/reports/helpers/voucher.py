@@ -69,7 +69,13 @@ def get_business_item_invoice_data(
     date and to dates are optional. Returns tuple (Purchase Total, Sales Total)
     """
     statement = (
-        select([invoice.c.contents[str(product_code)], invoice.c.inoutflag])
+        select(
+            [
+                invoice.c.contents[str(product_code)],
+                invoice.c.discount[str(product_code)],
+                 invoice.c.inoutflag,
+            ]
+        )
         .where(func.jsonb_extract_path_text(invoice.c.contents, str(product_code)) != None)
     )
 
@@ -82,12 +88,12 @@ def get_business_item_invoice_data(
 
     total_purchase = 0
     total_sale = 0
-    for sale_obj, inout_flag in invoices:
+    for sale_obj, discount, inout_flag in invoices:
         for amount, quantity in sale_obj.items():
             if inout_flag == 9:
-                total_purchase += float(amount)*float(quantity)
+                total_purchase += float(amount)*float(quantity) - float(discount)
             if inout_flag == 15:
-                total_sale += float(amount)*float(quantity)
+                total_sale += float(amount)*float(quantity) - float(discount)
     return total_purchase, total_sale
 
 
