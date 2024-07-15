@@ -87,7 +87,6 @@ def createAccount(con, type, accName, orgcode):
         type is used to specify that what type of account is creating. Group name will be decides on basis of that.
         And if the account is default then proper defaultflag will set for that.
         """
-        # self.con = eng.connect()
         groupName = ""
         default = 0
         sys = 0
@@ -204,8 +203,6 @@ def getDefaultAcc(con, queryParams, orgcode):
         * POS creates vouchers directly between sale/purchase a/c and mode of payment a/c.
         * Party creates voucher first between sale/purchase a/c and the party a/c, then between party a/c and mode of payment a/c.
         """
-        # self.con = eng.connect()
-        # taxRateDict = {0.1: 0.05, 0.25:  , 5: 2.5, 12: 6, 18: 9, 28: 14}
         taxRateDict = {
             1: 0.5,
             3: 1.5,
@@ -826,13 +823,10 @@ def getDefaultAcc(con, queryParams, orgcode):
                     ],
                 )
 
-        # con.close()
         return {"gkstatus": enumdict["Success"], "vchNo": v_No, "vid": v_ID}
     except:
         print(traceback.format_exc())
         return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-    # finally:
-    # con.close()
 
 
 def gst(ProductCode, con):
@@ -897,19 +891,19 @@ def getInvoiceData(con, orgcode, params):
             )
 
         # below field deletable is for check whether invoice having voucher or not
-        # vch_count is checking whether their is any billwise entry of perticuler invid is available in billwise or not
+        # vch_count is checking whether there is any billwise entry of particular invid is available in billwise or not
         v_count = con.execute(
             "select count(vouchercode) as vcount from billwise where invid = '%d' "
             % (int(params["invid"]))
         )
         vch_count = v_count.fetchone()
-        # vch_count is checking whether their is any entry of perticuler invid is available in dr cr table or not
+        # vch_count is checking whether there is any entry of particular invid is available in dr cr table or not
         cd_count = con.execute(
             "select count(drcrno) as vcdcount from drcr where invid = '%d' "
             % (int(params["invid"]))
         )
         cdh_count = cd_count.fetchone()
-        # r_count is checking wheather their is any entry of perticuler invid is available in rejection note
+        # r_count is checking whether there is any entry of particular invid is available in rejection note
         r_count = con.execute(
             "select count(rnno) as vrncount from rejectionnote where invid = '%d' "
             % (int(params["invid"]))
@@ -1077,7 +1071,7 @@ def getInvoiceData(con, orgcode, params):
                 inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
         # contents is a nested dictionary from invoice table.
         # It contains productcode as the key with a value as a dictionary.
-        # this dictionary has two key value pare, priceperunit and quantity.
+        # this dictionary has two key value pairs, priceperunit and quantity.
         contentsData = invrow["contents"]
         # invContents is the finally dictionary which will not just have the dataset from original contents,
         # but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
@@ -1642,7 +1636,6 @@ def getDelchalId(self, auth):
         else:
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
     except exc.IntegrityError:
-        # print(traceback.format_exc())
         return {"gkstatus": enumdict["DuplicateEntry"]}
     except:
         return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
@@ -1687,7 +1680,7 @@ class api_invoice(object):
                     voucherData = {}
                     pricedetails = []
                     self.con = eng.connect()
-                   # Check for duplicate entry before insertion
+                    # Check for duplicate entry before insertion
                     result_duplicate_check = self.con.execute(
                         select([invoice.c.invoiceno]).where(
                             and_(
@@ -1696,7 +1689,7 @@ class api_invoice(object):
                             )
                         )
                     )
-                    
+
                     if result_duplicate_check.rowcount > 0:
                         # Duplicate entry found, handle accordingly
                         return {"gkstatus": enumdict["DuplicateEntry"]}
@@ -1746,7 +1739,7 @@ class api_invoice(object):
                             dcinvdataset["invprods"] = stockdataset["items"]
                             result = self.con.execute(dcinv.insert(), [dcinvdataset])
                             if result.rowcount == 1:
-                                # check automatic voucher flag  if it is 1 get maflag
+                                # check automatic voucher flag if it is 1 get maflag
                                 avfl = self.con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
@@ -1854,7 +1847,7 @@ class api_invoice(object):
                                             stock.insert(), [stockdataset]
                                         )
 
-                                # check automatic voucher flag  if it is 1 get maflag
+                                # check automatic voucher flag if it is 1 get maflag
                                 avfl = self.con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
@@ -1942,7 +1935,7 @@ class api_invoice(object):
                                         result = self.con.execute(
                                             stock.insert(), [stockdataset]
                                         )
-                                    # check automatic voucher flag  if it is 1 get maflag
+                                    # check automatic voucher flag if it is 1 get maflag
                                 avfl = self.con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
@@ -2033,7 +2026,7 @@ class api_invoice(object):
                             )
 
                             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                else: 
+                else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
                 print(traceback.format_exc())
@@ -2242,9 +2235,10 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    """This method gives all invoices which are not fully rejected yet. It is used in rejection note, to prepare rejection note against these invoices"""
-
-    # request_param="type=nonrejected",
+    """
+    This method gives all invoices which are not fully rejected yet.
+    It is used in rejection note, to prepare rejection note against these invoices.
+    """
     @view_config(
         route_name="invoice_nonrejected", request_method="GET", renderer="json"
     )
@@ -2709,7 +2703,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="type=rectifyinvlist",
     @view_config(
         route_name="invoice_list_rectify", request_method="GET", renderer="json"
     )
@@ -2773,7 +2766,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="inv=single",
     @view_config(route_name="invoice_invid", request_method="GET", renderer="json")
     def getInvoiceDetails(self):
         """
@@ -3116,8 +3108,9 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # Below fuction is use to delete the invoice entry from invoice table using invid and store in invoicebin table. Also delete billwise entry and stock entry for same invid and corsponding vouchers as well.
-    # request_param="type=cancel"
+    # Delete the invoice entry from invoice table using invid and store in invoicebin
+    # table. Also delete billwise entry and stock entry for same invid and corsponding
+    # vouchers as well.
     @view_config(route_name="invoice_cancel", request_method="DELETE", renderer="json")
     def cancelInvoice(self):
         try:
@@ -3138,7 +3131,7 @@ class api_invoice(object):
                 )
                 invoicedata = invoicedata.fetchone()
 
-                # Add all data of cancel invoice into invoicebin"
+                # Add all data of cancel invoice into invoicebin
                 invoiceBinData = {
                     "invoiceno": invoicedata["invoiceno"],
                     "invoicedate": invoicedata["invoicedate"],
@@ -3254,7 +3247,7 @@ class api_invoice(object):
                             return {"gkstatus": enumdict["ConnectionFailed"]}
                 else:
                     pass
-                # To delete invoice enrty from invoice table
+                # To delete invoice entry from invoice table
                 self.con.execute(
                     "delete from invoice  where invid = %d and orgcode=%d"
                     % (int(invid), authDetails["orgcode"])
@@ -3299,7 +3292,7 @@ class api_invoice(object):
             try:
                 self.con = eng.connect()
                 invid = self.request.matchdict["invid"]
-                # delete vouchers, stock, dcinv, invoice with invid if available ither pass it.
+                # delete vouchers, stock, dcinv, invoice with invid if available
                 try:
                     deletevoucher = self.con.execute(
                         vouchers.delete().where(vouchers.c.invid == invid)
@@ -3399,7 +3392,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="inv=deletedsingle",
     @view_config(route_name="invoice_cancel", request_method="GET", renderer="json")
     def getCancelledInvoiceDetails(self):
         """
@@ -3533,7 +3525,7 @@ class api_invoice(object):
                     inv["custSupDetails"] = custSupDetails
                 # contents is a nested dictionary from invoice table.
                 # It contains productcode as the key with a value as a dictionary.
-                # this dictionary has two key value pare, priceperunit and quantity.
+                # this dictionary has two key value pairs, priceperunit and quantity.
                 contentsData = invrow["contents"]
                 # invContents is the finally dictionary which will not just have the dataset from original contents,
                 # but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxam
@@ -3771,7 +3763,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="getinvid"
     @view_config(route_name="invoice_id", request_method="GET", renderer="json")
     def getinvid(self):
         try:
@@ -3858,7 +3849,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="cash=all",
     @view_config(route_name="cashmemo", request_method="GET", renderer="json")
     def getAllcashmemos(self):
         try:
@@ -3907,7 +3897,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="attach=image",
     @view_config(route_name="invoice_attachment", request_method="GET", renderer="json")
     def getInvoiceAttachment(self):
         try:
@@ -3940,7 +3929,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="unbilled_delnotes",
     @view_config(route_name="delnote_unbilled", request_method="GET", renderer="json")
     def unbilled_delnotes(self):
         try:
@@ -4637,7 +4625,6 @@ class api_invoice(object):
             finally:
                 self.con.close()
 
-    # request_param="type=dcid",
     @view_config(route_name="invoice_crdrid", request_method="GET", renderer="json")
     def getcrdrid(self):
         try:
