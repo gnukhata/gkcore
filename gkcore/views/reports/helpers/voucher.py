@@ -1,6 +1,8 @@
 from sqlalchemy.sql import select
-from gkcore.models.gkdb import vouchers, accounts, voucherbin
-from gkcore import enumdict
+from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice
+from sqlalchemy import func
+
+
 
 def get_account_details(account_code, connection):
     """Fetches the account details and returns a dict with keys, "name", "group" and
@@ -55,6 +57,38 @@ def get_transaction_details(voucher_code, connection, entry_type=None, is_cancel
     else:
         raise AttributeError("'entry_type' accepts only 'Dr' and 'Cr' as allowed values")
     return voucher
+
+
+def get_business_item_invoice_data(
+        connection,
+        product_code,
+        from_date = None,
+        to_date = None,
+):
+    """Calculates total purchase and sales for a product. Product code is required, from
+    date and to dates are optional. Returns tuple (Purchase Total, Sales Total)
+    """
+    statement = (
+        select([invoice.c.contents[str(product_code)], invoice.c.inoutflag])
+        .where(func.jsonb_extract_path_text(invoice.c.contents, str(product_code)) != None)
+    )
+
+    if from_date:
+        statement = statement.where(invoice.c.invoicedate >= from_date)
+    if to_date:
+        statement = statement.where(invoice.c.invoicedate <= to_date)
+
+    invoices = connection.execute(statement).fetchall()
+
+    total_purchase = 0
+    total_sale = 0
+    for sale_obj, inout_flag in invoices:
+        for amount, quantity in sale_obj.items():
+            if inout_flag == 9:
+                total_purchase += float(amount)*float(quantity)
+            if inout_flag == 15:
+                total_sale += float(amount)*float(quantity)
+    return total_purchase, total_sale
 
 
 def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
