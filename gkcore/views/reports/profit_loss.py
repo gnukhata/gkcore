@@ -11,6 +11,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
 from gkcore.models.gkdb import accounts
+from gkcore.views.reports.helpers.voucher import get_org_invoice_data
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -332,9 +333,12 @@ class api_profit_loss(object):
                 #     grsD = grpDEbalance - grpDIbalance
                 #     result["grosslosscf"] = "%.2f" % (float(grsD))
                 #     result["totalD"] = "%.2f" % (float(grpDEbalance))
+                service_invoice_data = get_org_invoice_data(
+                    self.con, orgcode, calculateFrom, calculateTo, 19
+                )
 
                 priceDiff = calculateProfitLossValue(self.con, orgcode, calculateTo)
-                grossDiff = priceDiff["total"] + grpDI - grpDE
+                grossDiff = priceDiff["total"] + grpDI - grpDE + service_invoice_data[1]
 
                 if grossDiff >= 0:
                     result["grossprofitcf"] = "%.2f" % (float(grossDiff))
