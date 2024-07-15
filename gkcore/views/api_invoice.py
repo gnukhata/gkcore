@@ -66,7 +66,6 @@ from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc, func
-from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
@@ -1646,7 +1645,6 @@ def getDelchalId(self, auth):
 @view_defaults(route_name="invoice")
 class api_invoice(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
