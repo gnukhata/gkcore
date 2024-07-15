@@ -57,8 +57,8 @@ docker-prod:
 # deploy devel branch changes to gkcore test server
 update_test_server:
   stage: deploy
+  image: curlimages/curl:latest
   script:
-    - apt update && apt install -y curl
     - curl -f $TEST_SERVER_HOOK
   only:
     - devel
