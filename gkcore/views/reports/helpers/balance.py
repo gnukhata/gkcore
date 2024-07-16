@@ -1163,7 +1163,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
         if subgroup["groupname"] == "Inventory":
             accounts.append(
                 {
-                    "groupAccname": "Inventory",
+                    "groupAccname": "Closing Stock",
                     "amount": "%.2f" % (closingStockVal),
                     "groupAcccode": "",
                     "subgroupof": groupcode,
