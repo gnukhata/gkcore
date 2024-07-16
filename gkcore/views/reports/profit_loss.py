@@ -1,22 +1,21 @@
 """
-This file is part of GNUKhata:A modular,robust and Free Accounting System.
+This file is part of GNUKhata: A modular, robust and Free Accounting System.
 
 License: AGPLv3
 
 Contributors:
 "Ankita Chakrabarti"<chakrabarti.ankita94@gmail.com>
 "Sai Karthik"<kskarthik@disrot.org>
-
+"Kannan"<@kannan:poddery.com>
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
 from gkcore.models.gkdb import accounts
+from gkcore.views.reports.helpers.voucher import get_org_invoice_data
 from sqlalchemy.sql import select
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
-import traceback  # for printing detailed exception logs
 from gkcore.views.reports.helpers.stock import (
     calculateOpeningStockValue,
     calculateClosingStockValue,
@@ -28,9 +27,8 @@ from gkcore.views.reports.helpers.profit_loss import calculateProfitLossValue
 @view_defaults(request_method="GET")
 class api_profit_loss(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
+
     @view_config(route_name="profit-loss", renderer="json")
     def profitLoss(self):
         """
@@ -60,10 +58,9 @@ class api_profit_loss(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            try:
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
-                financialstart = self.con.execute(
+                financialstart = con.execute(
                     "select orgtype from organisation where orgcode = %d" % int(orgcode)
                 )
                 financialstartRow = financialstart.fetchone()
@@ -71,12 +68,6 @@ class api_profit_loss(object):
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 result = {}
-                # grsD = 0.00
-                # income = 0.00
-                # expense = 0.00
-                # profit = ""
-                # loss = ""
-                # closingStockBal = 0.00
                 directIncome = {}
                 grpDIbalance = 0.00
                 grpDI = 0.00  # Direct Income other than sales
@@ -90,13 +81,10 @@ class api_profit_loss(object):
 
                 # Calculate closing stock value
                 result["Closing Stock"] = calculateClosingStockValue(
-                    self.con, orgcode, calculateTo
+                    con, orgcode, calculateTo
                 )
-                # print("Profit Loss")
-                # print(orgcode)
-                # print(calculateTo)
                 # Calculate opening stock value
-                result["Opening Stock"] = calculateOpeningStockValue(self.con, orgcode)
+                result["Opening Stock"] = calculateOpeningStockValue(con, orgcode)
                 if orgtype == "Profit Making":
                     profit = "Profit"
                     loss = "Loss"
@@ -107,19 +95,17 @@ class api_profit_loss(object):
                     pnlAccountname = "Income & Expenditure"
 
                 # Get all subgroups with their group code and group name under Group Direct Expense
-                DESubGroupsData = self.con.execute(
+                DESubGroupsData = con.execute(
                     "select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
                 DESubGroups = DESubGroupsData.fetchall()
-                # print("Direct Expense sub groups")
-                # print(DESubGroups)
                 # now we have list of subgroups under Direct Expense.
                 # We will loop through each and get list of their accounts.
                 for DESub in DESubGroups:
                     # Start looping with the subgroup in hand,
                     # and get it's list of accounts.
-                    DESubAccsData = self.con.execute(
+                    DESubAccsData = con.execute(
                         select([accounts.c.accountcode, accounts.c.accountname]).where(
                             and_(
                                 accounts.c.orgcode == orgcode,
@@ -134,7 +120,7 @@ class api_profit_loss(object):
 
                         for desubacc in DESubAccs:
                             calbalData = calculateBalance(
-                                self.con,
+                                con,
                                 desubacc["accountcode"],
                                 calculateFrom,
                                 calculateFrom,
@@ -163,19 +149,15 @@ class api_profit_loss(object):
                         continue
 
                 # Now consider those accounts which are directly created under Direct Expense group
-                getDEAccData = self.con.execute(
+                getDEAccData = con.execute(
                     "select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Expense' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
-                    # print("Direct Expense Account data")
-                    # print(deAccData)print("Balance Sheet")
-                    # print(orgcode)
-                    # print(calculateTo)
                     for deAcc in deAccData:
                         calbalData = calculateBalance(
-                            self.con,
+                            con,
                             deAcc["accountcode"],
                             calculateFrom,
                             calculateFrom,
@@ -201,7 +183,7 @@ class api_profit_loss(object):
 
                 # Calculation for Direct Income
                 # Same procedure as Direct Expense.
-                DISubGroupsData = self.con.execute(
+                DISubGroupsData = con.execute(
                     "select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -211,7 +193,7 @@ class api_profit_loss(object):
                 for DISub in DISubGroups:
                     # Start looping with the subgroup in hand,
                     # and get it's list of accounts.
-                    DISubAccsData = self.con.execute(
+                    DISubAccsData = con.execute(
                         select([accounts.c.accountcode, accounts.c.accountname]).where(
                             and_(
                                 accounts.c.orgcode == orgcode,
@@ -223,17 +205,14 @@ class api_profit_loss(object):
                         DISubAccs = DISubAccsData.fetchall()
                         DISUBDict = {}
                         DISubBal = 0.00
-                        # print("Direct Income Sub Acc")
-                        # print(DISubAccs)
                         for disubacc in DISubAccs:
                             calbalData = calculateBalance(
-                                self.con,
+                                con,
                                 disubacc["accountcode"],
                                 calculateFrom,
                                 calculateFrom,
                                 calculateTo,
                             )
-                            # print(calbalData["curbal"])
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -255,7 +234,7 @@ class api_profit_loss(object):
                             grpDI = grpDI + float(DISubBal)
                         directIncome[DISub["groupname"]] = DISUBDict
 
-                getDIAccData = self.con.execute(
+                getDIAccData = con.execute(
                     "select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Direct Income' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -265,7 +244,7 @@ class api_profit_loss(object):
                         print(diAcc["accountname"])
                         if diAcc["accountname"] != pnlAccountname:
                             calbalData = calculateBalance(
-                                self.con,
+                                con,
                                 diAcc["accountcode"],
                                 calculateFrom,
                                 calculateFrom,
@@ -289,23 +268,6 @@ class api_profit_loss(object):
                                     calbalData["curbal"]
                                 )
                                 grpDI = grpDI - float(calbalData["curbal"])
-                        # else:
-                        #     csAccountcode = self.con.execute(
-                        #         "select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"
-                        #         % (orgcode)
-                        #     )
-                        #     csAccountcodeRow = csAccountcode.fetchone()
-                        #     calbalData = calculateBalance(
-                        #         self.con,
-                        #         csAccountcodeRow["accountcode"],
-                        #         calculateFrom,
-                        #         calculateFrom,
-                        #         calculateTo,
-                        #     )
-                        #     result["Closing Stock"] = "%.2f" % (
-                        #         float(calbalData["curbal"])
-                        #     )
-                        #     closingStockBal = float(calbalData["curbal"])
 
                 directIncome["dirincmbal"] = "%.2f" % (float(grpDIbalance))
                 result["Direct Income"] = directIncome
@@ -315,26 +277,12 @@ class api_profit_loss(object):
                     + grpDEbalance
                     - result["Closing Stock"]["total"]
                 )
-                # sale =
-                # if saleCost < grpDEbalance:
-                #     grsD = grpDEbalance - saleCost
-                #     result["grossprofitcf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDEbalance))
-                # else:
-                #     grsD = saleCost - grpDEbalance
-                #     result["grosslosscf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(saleCost))
-                # if grpDIbalance > grpDEbalance:
-                #     grsD = grpDIbalance - grpDEbalance
-                #     result["grossprofitcf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDIbalance))
-                # else:
-                #     grsD = grpDEbalance - grpDIbalance
-                #     result["grosslosscf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDEbalance))
+                service_invoice_data = get_org_invoice_data(
+                    con, orgcode, calculateFrom, calculateTo, 19
+                )
 
-                priceDiff = calculateProfitLossValue(self.con, orgcode, calculateTo)
-                grossDiff = priceDiff["total"] + grpDI - grpDE
+                priceDiff = calculateProfitLossValue(con, orgcode, calculateTo)
+                grossDiff = priceDiff["total"] + grpDI - grpDE + service_invoice_data[1]
 
                 if grossDiff >= 0:
                     result["grossprofitcf"] = "%.2f" % (float(grossDiff))
@@ -343,7 +291,7 @@ class api_profit_loss(object):
 
                 """ ################   Indirect Income & Indirect Expense  ################ """
                 # Get all subgroups with their group code and group name under Group Indirect Expense
-                IESubGroupsData = self.con.execute(
+                IESubGroupsData = con.execute(
                     "select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -351,7 +299,7 @@ class api_profit_loss(object):
                 for IESub in IESubGroups:
                     # Start looping with the subgroup in hand,
                     # and get it's list of accounts.
-                    IESubAccsData = self.con.execute(
+                    IESubAccsData = con.execute(
                         select([accounts.c.accountcode, accounts.c.accountname]).where(
                             and_(
                                 accounts.c.orgcode == orgcode,
@@ -365,7 +313,7 @@ class api_profit_loss(object):
                         IESubBal = 0.00
                         for iesubacc in IESubAccs:
                             calbalData = calculateBalance(
-                                self.con,
+                                con,
                                 iesubacc["accountcode"],
                                 calculateFrom,
                                 calculateFrom,
@@ -392,7 +340,7 @@ class api_profit_loss(object):
                         continue
 
                 # Now consider those accounts which are directly created under Direct Expense group
-                getIEAccData = self.con.execute(
+                getIEAccData = con.execute(
                     "select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Indirect Expense' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -400,7 +348,7 @@ class api_profit_loss(object):
                     ieAccData = getIEAccData.fetchall()
                     for ieAcc in ieAccData:
                         calbalData = calculateBalance(
-                            self.con,
+                            con,
                             ieAcc["accountcode"],
                             calculateFrom,
                             calculateFrom,
@@ -423,7 +371,7 @@ class api_profit_loss(object):
 
                 # Calculation for Indirect Income
                 # Same procedure as Direct Expense.
-                IISubGroupsData = self.con.execute(
+                IISubGroupsData = con.execute(
                     "select groupcode,groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -433,7 +381,7 @@ class api_profit_loss(object):
                 for IISub in IISubGroups:
                     # Start looping with the subgroup in hand,
                     # and get it's list of accounts.
-                    IISubAccsData = self.con.execute(
+                    IISubAccsData = con.execute(
                         select([accounts.c.accountcode, accounts.c.accountname]).where(
                             and_(
                                 accounts.c.orgcode == orgcode,
@@ -448,7 +396,7 @@ class api_profit_loss(object):
 
                         for iisubacc in IISubAccs:
                             calbalData = calculateBalance(
-                                self.con,
+                                con,
                                 iisubacc["accountcode"],
                                 calculateFrom,
                                 calculateFrom,
@@ -473,7 +421,7 @@ class api_profit_loss(object):
                         grpIIbalance = grpIIbalance + float(IISubBal)
                         indirectIncome[IISub["groupname"]] = IISUBDict
 
-                getIIAccData = self.con.execute(
+                getIIAccData = con.execute(
                     "select accountname,accountcode from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where groupname = 'Indirect Income' and orgcode = %d)"
                     % (orgcode, orgcode)
                 )
@@ -481,7 +429,7 @@ class api_profit_loss(object):
                     iiAccData = getIIAccData.fetchall()
                     for iiAcc in iiAccData:
                         calbalData = calculateBalance(
-                            self.con,
+                            con,
                             iiAcc["accountcode"],
                             calculateFrom,
                             calculateFrom,
@@ -526,26 +474,7 @@ class api_profit_loss(object):
                         float(result["netloss"]) + float(grpIEbalance)
                     )
 
-                # income = grpDIbalance + grpIIbalance + closingStockBal
-                # net profit = grossprofit + indirectincome - grpIEbalance
-                # income = grpDIbalance + grpIIbalance + result["Closing Stock"]["total"]
-                # expense = grpDEbalance + grpIEbalance
-                # if income > expense:
-                #     netProfit = income - expense
-                #     result["netprofit"] = "%.2f" % (float(netProfit))
-                #     result["Total"] = "%.2f" % (float(income))
-                # else:
-                #     netLoss = expense - income
-                #     result["netloss"] = "%.2f" % (float(netLoss))
-                #     result["Total"] = "%.2f" % (float(expense))
-
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
-
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
 @view_defaults(route_name="profit-loss-new")
