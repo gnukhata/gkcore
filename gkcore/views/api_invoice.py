@@ -1686,9 +1686,15 @@ class api_invoice(object):
                     if len(pricedetails) > 0:
                         for price in pricedetails:
                             price["orgcode"] = authDetails["orgcode"]
-                            try:
-                                con.execute(cslastprice.insert(), [price])
-                            except:
+                            cslastpriceResult = con.execute(select([cslastprice]).where(
+                                and_(
+                                    cslastprice.c.orgcode == price["orgcode"],
+                                    cslastprice.c.custid == price["custid"],
+                                    cslastprice.c.productcode == price["productcode"],
+                                    cslastprice.c.inoutflag == price["inoutflag"],
+                                )
+                            ))
+                            if (cslastpriceResult.fetchone()):
                                 con.execute(
                                     cslastprice.update()
                                     .where(
@@ -1699,9 +1705,10 @@ class api_invoice(object):
                                             cslastprice.c.inoutflag == price["inoutflag"],
                                             cslastprice.c.orgcode == price["orgcode"],
                                         )
-                                    )
-                                    .values(price)
+                                    ).values(price)
                                 )
+                            else:
+                                con.execute(cslastprice.insert(), [price])
                     # when delivery note is selected
                     if "dcid" in invdataset:
                         if result.rowcount == 1:
