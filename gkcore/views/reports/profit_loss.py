@@ -1,12 +1,12 @@
 """
-This file is part of GNUKhata:A modular,robust and Free Accounting System.
+This file is part of GNUKhata: A modular, robust and Free Accounting System.
 
 License: AGPLv3
 
 Contributors:
 "Ankita Chakrabarti"<chakrabarti.ankita94@gmail.com>
 "Sai Karthik"<kskarthik@disrot.org>
-
+"Kannan"<@kannan:poddery.com>
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
@@ -68,12 +68,6 @@ class api_profit_loss(object):
                 orgtype = financialstartRow["orgtype"]
                 calculateTo = self.request.params["calculateto"]
                 result = {}
-                # grsD = 0.00
-                # income = 0.00
-                # expense = 0.00
-                # profit = ""
-                # loss = ""
-                # closingStockBal = 0.00
                 directIncome = {}
                 grpDIbalance = 0.00
                 grpDI = 0.00  # Direct Income other than sales
@@ -89,9 +83,6 @@ class api_profit_loss(object):
                 result["Closing Stock"] = calculateClosingStockValue(
                     con, orgcode, calculateTo
                 )
-                # print("Profit Loss")
-                # print(orgcode)
-                # print(calculateTo)
                 # Calculate opening stock value
                 result["Opening Stock"] = calculateOpeningStockValue(con, orgcode)
                 if orgtype == "Profit Making":
@@ -109,8 +100,6 @@ class api_profit_loss(object):
                     % (orgcode, orgcode)
                 )
                 DESubGroups = DESubGroupsData.fetchall()
-                # print("Direct Expense sub groups")
-                # print(DESubGroups)
                 # now we have list of subgroups under Direct Expense.
                 # We will loop through each and get list of their accounts.
                 for DESub in DESubGroups:
@@ -166,10 +155,6 @@ class api_profit_loss(object):
                 )
                 if getDEAccData.rowcount > 0:
                     deAccData = getDEAccData.fetchall()
-                    # print("Direct Expense Account data")
-                    # print(deAccData)print("Balance Sheet")
-                    # print(orgcode)
-                    # print(calculateTo)
                     for deAcc in deAccData:
                         calbalData = calculateBalance(
                             con,
@@ -220,8 +205,6 @@ class api_profit_loss(object):
                         DISubAccs = DISubAccsData.fetchall()
                         DISUBDict = {}
                         DISubBal = 0.00
-                        # print("Direct Income Sub Acc")
-                        # print(DISubAccs)
                         for disubacc in DISubAccs:
                             calbalData = calculateBalance(
                                 con,
@@ -230,7 +213,6 @@ class api_profit_loss(object):
                                 calculateFrom,
                                 calculateTo,
                             )
-                            # print(calbalData["curbal"])
                             if calbalData["curbal"] == 0.00:
                                 continue
                             if calbalData["baltype"] == "Cr":
@@ -286,23 +268,6 @@ class api_profit_loss(object):
                                     calbalData["curbal"]
                                 )
                                 grpDI = grpDI - float(calbalData["curbal"])
-                        # else:
-                        #     csAccountcode = self.con.execute(
-                        #         "select accountcode from accounts where orgcode=%d and accountname='Closing Stock'"
-                        #         % (orgcode)
-                        #     )
-                        #     csAccountcodeRow = csAccountcode.fetchone()
-                        #     calbalData = calculateBalance(
-                        #         self.con,
-                        #         csAccountcodeRow["accountcode"],
-                        #         calculateFrom,
-                        #         calculateFrom,
-                        #         calculateTo,
-                        #     )
-                        #     result["Closing Stock"] = "%.2f" % (
-                        #         float(calbalData["curbal"])
-                        #     )
-                        #     closingStockBal = float(calbalData["curbal"])
 
                 directIncome["dirincmbal"] = "%.2f" % (float(grpDIbalance))
                 result["Direct Income"] = directIncome
@@ -312,23 +277,6 @@ class api_profit_loss(object):
                     + grpDEbalance
                     - result["Closing Stock"]["total"]
                 )
-                # sale =
-                # if saleCost < grpDEbalance:
-                #     grsD = grpDEbalance - saleCost
-                #     result["grossprofitcf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDEbalance))
-                # else:
-                #     grsD = saleCost - grpDEbalance
-                #     result["grosslosscf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(saleCost))
-                # if grpDIbalance > grpDEbalance:
-                #     grsD = grpDIbalance - grpDEbalance
-                #     result["grossprofitcf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDIbalance))
-                # else:
-                #     grsD = grpDEbalance - grpDIbalance
-                #     result["grosslosscf"] = "%.2f" % (float(grsD))
-                #     result["totalD"] = "%.2f" % (float(grpDEbalance))
                 service_invoice_data = get_org_invoice_data(
                     con, orgcode, calculateFrom, calculateTo, 19
                 )
@@ -525,19 +473,6 @@ class api_profit_loss(object):
                     result["Total"] = "%.2f" % (
                         float(result["netloss"]) + float(grpIEbalance)
                     )
-
-                # income = grpDIbalance + grpIIbalance + closingStockBal
-                # net profit = grossprofit + indirectincome - grpIEbalance
-                # income = grpDIbalance + grpIIbalance + result["Closing Stock"]["total"]
-                # expense = grpDEbalance + grpIEbalance
-                # if income > expense:
-                #     netProfit = income - expense
-                #     result["netprofit"] = "%.2f" % (float(netProfit))
-                #     result["Total"] = "%.2f" % (float(income))
-                # else:
-                #     netLoss = expense - income
-                #     result["netloss"] = "%.2f" % (float(netLoss))
-                #     result["Total"] = "%.2f" % (float(expense))
 
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
 
