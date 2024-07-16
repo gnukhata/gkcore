@@ -1558,88 +1558,77 @@ def rename_inv_no_uniquely(con, orgcode):
         print(traceback.format_exc())
         return 0
 
-def getDelchalId(self, auth):
-    try:
-        self.con = eng.connect()
-        dataset = self.request.json_body
-        delchaldata = dataset['delchalPayload']["delchaldata"]
-        stockdata = dataset['delchalPayload']["stockdata"]
-        freeqty = delchaldata["freeqty"]
-        inoutflag = stockdata["inout"]
-        items = delchaldata["contents"]
-        delchaldata["orgcode"] = auth
-        stockdata["orgcode"] = auth
-        if delchaldata["dcflag"] == 19:
-            delchaldata["issuerid"] = auth
-        result = self.con.execute(delchal.insert(), [delchaldata])
-        if result.rowcount == 1:
-            dciddata = self.con.execute(
-                select([delchal.c.dcid, delchal.c.dcdate]).where(
+def getDelchalId(con, orgCode, requestBody):
+    delchaldata = requestBody['delchalPayload']["delchaldata"]
+    stockdata = requestBody['delchalPayload']["stockdata"]
+    freeqty = delchaldata["freeqty"]
+    inoutflag = stockdata["inout"]
+    items = delchaldata["contents"]
+    delchaldata["orgcode"] = orgCode
+    stockdata["orgcode"] = orgCode
+    if delchaldata["dcflag"] == 19:
+        delchaldata["issuerid"] = orgCode
+    result = con.execute(delchal.insert(), [delchaldata])
+    if result.rowcount == 1:
+        dciddata = con.execute(
+            select([delchal.c.dcid, delchal.c.dcdate]).where(
+                and_(
+                    delchal.c.orgcode == orgCode,
+                    delchal.c.dcno == delchaldata["dcno"],
+                    delchal.c.custid == delchaldata["custid"],
+                )
+            )
+        )
+        dcidrow = dciddata.fetchone()
+        stockdata["dcinvtnid"] = dcidrow["dcid"]
+        stockdata["dcinvtnflag"] = 4
+        stockdata["stockdate"] = dcidrow["dcdate"]
+        try:
+            for key in list(items.keys()):
+                itemQty = float(list(items[key].values())[0])
+                itemRate = float(list(items[key].keys())[0])
+                stockdata["rate"] = itemRate
+                stockdata["productcode"] = key
+                stockdata["qty"] = itemQty + float(freeqty[key])
+                result = con.execute(stock.insert(), [stockdata])
+                if "goid" in stockdata:
+                    resultgoprod = con.execute(
+                        select([goprod]).where(
+                            and_(
+                                goprod.c.goid == stockdata["goid"],
+                                goprod.c.productcode == key,
+                            )
+                        )
+                    )
+                    if resultgoprod.rowcount == 0:
+                        result = con.execute(
+                            goprod.insert(),
+                            [
+                                {
+                                    "goid": stockdata["goid"],
+                                    "productcode": key,
+                                    "goopeningstock": 0.00,
+                                    "orgcode": orgCode,
+                                }
+                            ],
+                        )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": dcidrow["dcid"],
+            }
+        except:
+            result = con.execute(
+                stock.delete().where(
                     and_(
-                        delchal.c.orgcode == auth,
-                        delchal.c.dcno == delchaldata["dcno"],
-                        delchal.c.custid == delchaldata["custid"],
+                        stock.c.dcinvtnid == dcidrow["dcid"],
+                        stock.c.dcinvtnflag == 4,
                     )
                 )
             )
-            dcidrow = dciddata.fetchone()
-            stockdata["dcinvtnid"] = dcidrow["dcid"]
-            stockdata["dcinvtnflag"] = 4
-            stockdata["stockdate"] = dcidrow["dcdate"]
-            try:
-                for key in list(items.keys()):
-                    itemQty = float(list(items[key].values())[0])
-                    itemRate = float(list(items[key].keys())[0])
-                    stockdata["rate"] = itemRate
-                    stockdata["productcode"] = key
-                    stockdata["qty"] = itemQty + float(freeqty[key])
-                    result = self.con.execute(stock.insert(), [stockdata])
-                    if "goid" in stockdata:
-                        resultgoprod = self.con.execute(
-                            select([goprod]).where(
-                                and_(
-                                    goprod.c.goid == stockdata["goid"],
-                                    goprod.c.productcode == key,
-                                )
-                            )
-                        )
-                        if resultgoprod.rowcount == 0:
-                            result = self.con.execute(
-                                goprod.insert(),
-                                [
-                                    {
-                                        "goid": stockdata["goid"],
-                                        "productcode": key,
-                                        "goopeningstock": 0.00,
-                                        "orgcode": auth,
-                                    }
-                                ],
-                            )
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": dcidrow["dcid"],
-                }
-            except:
-                result = self.con.execute(
-                    stock.delete().where(
-                        and_(
-                            stock.c.dcinvtnid == dcidrow["dcid"],
-                            stock.c.dcinvtnflag == 4,
-                        )
-                    )
-                )
-                result = self.con.execute(
-                    delchal.delete().where(delchal.c.dcid == dcidrow["dcid"])
-                )
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-        else:
+            result = con.execute(
+                delchal.delete().where(delchal.c.dcid == dcidrow["dcid"])
+            )
             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-    except exc.IntegrityError:
-        return {"gkstatus": enumdict["DuplicateEntry"]}
-    except:
-        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-    finally:
-        self.con.close()
 
 
 @view_defaults(route_name="invoice")
@@ -1660,8 +1649,9 @@ class api_invoice(object):
             with eng.begin() as con:
                 dtset = self.request.json_body
                 inv = getDelchalId(
-                    self,
-                    authDetails["orgcode"]
+                    con,
+                    authDetails["orgcode"],
+                    dtset,
                 )
                 if inv["gkresult"]:
                     dcinvdataset = {}
