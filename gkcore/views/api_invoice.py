@@ -1646,7 +1646,6 @@ def getDelchalId(self, auth):
 class api_invoice(object):
     def __init__(self, request):
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="POST", renderer="json")
     def addInvoice(self):
@@ -1658,8 +1657,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dtset = self.request.json_body
                 inv = getDelchalId(
                     self,
@@ -1677,9 +1675,8 @@ class api_invoice(object):
                     queryParams = {}
                     voucherData = {}
                     pricedetails = []
-                    self.con = eng.connect()
                     # Check for duplicate entry before insertion
-                    result_duplicate_check = self.con.execute(
+                    result_duplicate_check = con.execute(
                         select([invoice.c.invoiceno]).where(
                             and_(
                                 invoice.c.orgcode == authDetails["orgcode"],
@@ -1695,14 +1692,14 @@ class api_invoice(object):
                     if "pricedetails" in invdataset:
                         pricedetails = invdataset["pricedetails"]
                         invdataset.pop("pricedetails", pricedetails)
-                    result = self.con.execute(invoice.insert(), [invdataset])
+                    result = con.execute(invoice.insert(), [invdataset])
                     if len(pricedetails) > 0:
                         for price in pricedetails:
                             price["orgcode"] = authDetails["orgcode"]
                             try:
-                                self.con.execute(cslastprice.insert(), [price])
+                                con.execute(cslastprice.insert(), [price])
                             except:
-                                self.con.execute(
+                                con.execute(
                                     cslastprice.update()
                                     .where(
                                         and_(
@@ -1721,7 +1718,7 @@ class api_invoice(object):
                             icflag = (
                                 int(invdataset["icflag"]) if "icflag" in invdataset else 9
                             )
-                            result = self.con.execute(
+                            result = con.execute(
                                 "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = %d"
                                 % (
                                     int(invdataset["custid"]),
@@ -1735,10 +1732,10 @@ class api_invoice(object):
                             dcinvdataset["invid"] = invoiceid["invid"]
                             dcinvdataset["orgcode"] = invdataset["orgcode"]
                             dcinvdataset["invprods"] = stockdataset["items"]
-                            result = self.con.execute(dcinv.insert(), [dcinvdataset])
+                            result = con.execute(dcinv.insert(), [dcinvdataset])
                             if result.rowcount == 1:
                                 # check automatic voucher flag if it is 1 get maflag
-                                avfl = self.con.execute(
+                                avfl = con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
                                     )
@@ -1746,13 +1743,13 @@ class api_invoice(object):
                                 av = avfl.fetchone()
                                 if av["avflag"] == 1:
                                     avData = invdataset["av"]
-                                    mafl = self.con.execute(
+                                    mafl = con.execute(
                                         select([organisation.c.maflag]).where(
                                             organisation.c.orgcode == invdataset["orgcode"]
                                         )
                                     )
                                     maFlag = mafl.fetchone()
-                                    csName = self.con.execute(
+                                    csName = con.execute(
                                         select([customerandsupplier.c.custname]).where(
                                             and_(
                                                 customerandsupplier.c.orgcode
@@ -1801,7 +1798,7 @@ class api_invoice(object):
 
                                     # call getDefaultAcc
                                     av_Result = getDefaultAcc(
-                                        self.con, queryParams, int(invdataset["orgcode"])
+                                        con, queryParams, int(invdataset["orgcode"])
                                     )
                                     if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -1820,7 +1817,7 @@ class api_invoice(object):
                         try:
                             # if it is cash memo
                             if "icflag" in invdataset:
-                                result = self.con.execute(
+                                result = con.execute(
                                     "select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"
                                     % (
                                         str(invdataset["invoiceno"]),
@@ -1830,7 +1827,7 @@ class api_invoice(object):
                                 invoiceid = result.fetchone()
                                 stockdataset["dcinvtnid"] = invoiceid["invid"]
                                 for item in list(items.keys()):
-                                    gstResult = gst(item, self.con)
+                                    gstResult = gst(item, con)
                                     if int(gstResult["gsflag"]) == 7:
                                         itemQty = float(list(items[item].values())[0])
                                         itemRate = float(list(items[item].keys())[0])
@@ -1841,12 +1838,12 @@ class api_invoice(object):
                                         stockdataset["stockdate"] = invdataset[
                                             "invoicedate"
                                         ]
-                                        result = self.con.execute(
+                                        result = con.execute(
                                             stock.insert(), [stockdataset]
                                         )
 
                                 # check automatic voucher flag if it is 1 get maflag
-                                avfl = self.con.execute(
+                                avfl = con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
                                     )
@@ -1854,7 +1851,7 @@ class api_invoice(object):
                                 av = avfl.fetchone()
                                 if av["avflag"] == 1:
                                     avData = invdataset["av"]
-                                    mafl = self.con.execute(
+                                    mafl = con.execute(
                                         select([organisation.c.maflag]).where(
                                             organisation.c.orgcode == invdataset["orgcode"]
                                         )
@@ -1895,7 +1892,7 @@ class api_invoice(object):
                                         queryParams["taxpayment"] = avData["taxpayment"]
                                     # call getDefaultAcc
                                     av_Result = getDefaultAcc(
-                                        self.con, queryParams, int(invdataset["orgcode"])
+                                        con, queryParams, int(invdataset["orgcode"])
                                     )
                                     if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -1909,7 +1906,7 @@ class api_invoice(object):
                                     "vchData": voucherData,
                                 }
                             else:
-                                result = self.con.execute(
+                                result = con.execute(
                                     "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"
                                     % (
                                         int(invdataset["custid"]),
@@ -1921,8 +1918,7 @@ class api_invoice(object):
                                 stockdataset["dcinvtnid"] = invoiceid["invid"]
                                 stockdataset["stockdate"] = invdataset["invoicedate"]
                                 for item in list(items.keys()):
-                                    self.con = eng.connect()
-                                    gstResult = gst(item, self.con)
+                                    gstResult = gst(item, con)
                                     if int(gstResult["gsflag"]) == 7:
                                         itemQty = float(list(items[item].values())[0])
                                         itemRate = float(list(items[item].keys())[0])
@@ -1930,11 +1926,11 @@ class api_invoice(object):
                                         stockdataset["productcode"] = item
                                         stockdataset["qty"] = itemQty + float(freeqty[item])
                                         stockdataset["dcinvtnflag"] = "9"
-                                        result = self.con.execute(
+                                        result = con.execute(
                                             stock.insert(), [stockdataset]
                                         )
                                     # check automatic voucher flag if it is 1 get maflag
-                                avfl = self.con.execute(
+                                avfl = con.execute(
                                     select([organisation.c.avflag]).where(
                                         organisation.c.orgcode == invdataset["orgcode"]
                                     )
@@ -1942,13 +1938,13 @@ class api_invoice(object):
                                 av = avfl.fetchone()
                                 if av["avflag"] == 1:
                                     avData = invdataset["av"]
-                                    mafl = self.con.execute(
+                                    mafl = con.execute(
                                         select([organisation.c.maflag]).where(
                                             organisation.c.orgcode == invdataset["orgcode"]
                                         )
                                     )
                                     maFlag = mafl.fetchone()
-                                    csName = self.con.execute(
+                                    csName = con.execute(
                                         select([customerandsupplier.c.custname]).where(
                                             and_(
                                                 customerandsupplier.c.orgcode
@@ -1995,7 +1991,7 @@ class api_invoice(object):
                                         queryParams["taxpayment"] = avData["taxpayment"]
                                     # call getDefaultAcc
                                     av_Result = getDefaultAcc(
-                                        self.con, queryParams, int(invdataset["orgcode"])
+                                        con, queryParams, int(invdataset["orgcode"])
                                     )
                                     if av_Result["gkstatus"] == 0:
                                         voucherData["status"] = 0
@@ -2009,7 +2005,7 @@ class api_invoice(object):
                                     "vchData": voucherData,
                                 }
                         except:
-                            self.con.execute(
+                            con.execute(
                                 stock.delete().where(
                                     and_(
                                         stock.c.dcinvtnid == invoiceid["invid"],
@@ -2017,7 +2013,7 @@ class api_invoice(object):
                                     )
                                 )
                             )
-                            self.con.execute(
+                            con.execute(
                                 invoice.delete().where(
                                     invoice.c.invid == invoiceid["invid"]
                                 )
@@ -2026,14 +2022,6 @@ class api_invoice(object):
                             return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                print(traceback.format_exc())
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="inv=all", renderer="json")
     def getAllinvoices(self):
