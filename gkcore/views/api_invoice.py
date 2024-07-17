@@ -1583,52 +1583,39 @@ def getDelchalId(con, orgCode, requestBody):
         stockdata["dcinvtnid"] = dcidrow["dcid"]
         stockdata["dcinvtnflag"] = 4
         stockdata["stockdate"] = dcidrow["dcdate"]
-        try:
-            for key in list(items.keys()):
-                itemQty = float(list(items[key].values())[0])
-                itemRate = float(list(items[key].keys())[0])
-                stockdata["rate"] = itemRate
-                stockdata["productcode"] = key
-                stockdata["qty"] = itemQty + float(freeqty[key])
-                result = con.execute(stock.insert(), [stockdata])
-                if "goid" in stockdata:
-                    resultgoprod = con.execute(
-                        select([goprod]).where(
-                            and_(
-                                goprod.c.goid == stockdata["goid"],
-                                goprod.c.productcode == key,
-                            )
+
+        for key in list(items.keys()):
+            itemQty = float(list(items[key].values())[0])
+            itemRate = float(list(items[key].keys())[0])
+            stockdata["rate"] = itemRate
+            stockdata["productcode"] = key
+            stockdata["qty"] = itemQty + float(freeqty[key])
+            result = con.execute(stock.insert(), [stockdata])
+            if "goid" in stockdata:
+                resultgoprod = con.execute(
+                    select([goprod]).where(
+                        and_(
+                            goprod.c.goid == stockdata["goid"],
+                            goprod.c.productcode == key,
                         )
-                    )
-                    if resultgoprod.rowcount == 0:
-                        result = con.execute(
-                            goprod.insert(),
-                            [
-                                {
-                                    "goid": stockdata["goid"],
-                                    "productcode": key,
-                                    "goopeningstock": 0.00,
-                                    "orgcode": orgCode,
-                                }
-                            ],
-                        )
-            return {
-                "gkstatus": enumdict["Success"],
-                "gkresult": dcidrow["dcid"],
-            }
-        except:
-            result = con.execute(
-                stock.delete().where(
-                    and_(
-                        stock.c.dcinvtnid == dcidrow["dcid"],
-                        stock.c.dcinvtnflag == 4,
                     )
                 )
-            )
-            result = con.execute(
-                delchal.delete().where(delchal.c.dcid == dcidrow["dcid"])
-            )
-            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                if resultgoprod.rowcount == 0:
+                    result = con.execute(
+                        goprod.insert(),
+                        [
+                            {
+                                "goid": stockdata["goid"],
+                                "productcode": key,
+                                "goopeningstock": 0.00,
+                                "orgcode": orgCode,
+                            }
+                        ],
+                    )
+        return {
+            "gkstatus": enumdict["Success"],
+            "gkresult": dcidrow["dcid"],
+        }
 
 
 @view_defaults(route_name="invoice")
