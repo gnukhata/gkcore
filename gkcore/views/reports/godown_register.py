@@ -848,7 +848,7 @@ class api_godownregister(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(route_name="godownwise-stock-on-hand", renderer="json")
-    def godownStockHReport(self):
+    def godownwise_stock_on_hand(self):
         """
         Purpose:
         Return the structured data grid of godown wise stock on hand report for given product.
