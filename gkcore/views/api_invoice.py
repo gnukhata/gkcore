@@ -3806,8 +3806,7 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 try:
                     dataset = self.request.json_body
@@ -3820,7 +3819,7 @@ class api_invoice(object):
                 new_inputdate = dataset["inputdate"]
                 new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
                 dc_unbilled = []
-                alldcids = self.con.execute(
+                alldcids = con.execute(
                     select([delchal.c.dcid, delchal.c.dcdate])
                     .distinct()
                     .where(
@@ -3839,7 +3838,7 @@ class api_invoice(object):
                 i = 0
                 while i < len(alldcids):
                     dcid = alldcids[i]
-                    invidresult = self.con.execute(
+                    invidresult = con.execute(
                         select([dcinv.c.invid]).where(
                             and_(
                                 dcid[0] == dcinv.c.dcid,
@@ -3852,7 +3851,7 @@ class api_invoice(object):
                     )
                     invidresult = invidresult.fetchall()
                     if len(invidresult) == 0:
-                        dcprodresult = self.con.execute(
+                        dcprodresult = con.execute(
                             select([stock.c.productcode, stock.c.qty]).where(
                                 and_(
                                     stock.c.orgcode == orgcode,
@@ -3864,7 +3863,7 @@ class api_invoice(object):
                         dcprodresult = dcprodresult.fetchall()
                         # This code is for rejection note
                         # even if an invoice is not prepared and rejection note prepared for whole delivery note then it should not come into unbilled delivery note.
-                        allrnidres = self.con.execute(
+                        allrnidres = con.execute(
                             select([rejectionnote.c.rnid])
                             .distinct()
                             .where(
@@ -3879,7 +3878,7 @@ class api_invoice(object):
                         rnprodresult = []
                         # get stock respected to all rejection notes
                         for rnid in allrnidres:
-                            temp = self.con.execute(
+                            temp = con.execute(
                                 select([stock.c.productcode, stock.c.qty]).where(
                                     and_(
                                         stock.c.orgcode == orgcode,
@@ -3916,7 +3915,7 @@ class api_invoice(object):
                             i -= 1
                     else:
                         # invid's will be distinct only. So no problem to explicitly applying distinct clause.
-                        dcprodresult = self.con.execute(
+                        dcprodresult = con.execute(
                             select([stock.c.productcode, stock.c.qty]).where(
                                 and_(
                                     stock.c.orgcode == orgcode,
@@ -3927,7 +3926,7 @@ class api_invoice(object):
                         )
                         dcprodresult = dcprodresult.fetchall()
 
-                        dcdataqty = temp = self.con.execute(
+                        dcdataqty = temp = con.execute(
                             select([delchal.c.contents]).where(
                                 and_(
                                     delchal.c.orgcode == orgcode,
@@ -3941,7 +3940,7 @@ class api_invoice(object):
                         # what if dcprodresult or invprodresult is empty?
                         invprodresult = []
                         for invid in invidresult:
-                            temp = self.con.execute(
+                            temp = con.execute(
                                 select([invoice.c.contents]).where(
                                     and_(
                                         invoice.c.orgcode == orgcode,
@@ -4020,7 +4019,7 @@ class api_invoice(object):
                                             pass
 
                         # This code is for rejection note
-                        allrnidres = self.con.execute(
+                        allrnidres = con.execute(
                             select([rejectionnote.c.rnid])
                             .distinct()
                             .where(
@@ -4035,7 +4034,7 @@ class api_invoice(object):
                         rnprodresult = []
                         # get stock respected to all rejection notes
                         for rnid in allrnidres:
-                            temp = self.con.execute(
+                            temp = con.execute(
                                 select([stock.c.productcode, stock.c.qty]).where(
                                     and_(
                                         stock.c.orgcode == orgcode,
@@ -4066,7 +4065,7 @@ class api_invoice(object):
                     pass
 
                 for eachdcid in alldcids:
-                    singledcResult = self.con.execute(
+                    singledcResult = con.execute(
                         select(
                             [
                                 delchal.c.dcid,
@@ -4144,14 +4143,7 @@ class api_invoice(object):
                         }
                         dc_unbilled.append(temp_dict)
                         srno += 1
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": dc_unbilled}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     """
         This function gives details of single rejection note from it's invid.
