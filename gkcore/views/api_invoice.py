@@ -2371,12 +2371,11 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # fetch all invoices
 
                 if "orderflag" in self.request.params:
-                    result = self.con.execute(
+                    result = con.execute(
                         select([invoicebin])
                         .where(
                             and_(
@@ -2391,7 +2390,7 @@ class api_invoice(object):
                         .order_by(desc(invoicebin.c.invoicedate))
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         select([invoicebin])
                         .where(
                             and_(
@@ -2410,11 +2409,11 @@ class api_invoice(object):
                 # for each invoice
                 for row in result:
                     if row["sourcestate"] != None:
-                        sourceStateCode = getStateCode(row["sourcestate"], self.con)[
+                        sourceStateCode = getStateCode(row["sourcestate"], con)[
                             "statecode"
                         ]
                     if row["taxstate"] != None:
-                        destinationStateCode = getStateCode(row["taxstate"], self.con)[
+                        destinationStateCode = getStateCode(row["taxstate"], con)[
                             "statecode"
                         ]
                     dcno = ""
@@ -2425,7 +2424,7 @@ class api_invoice(object):
                         dcno = delinfo["dcno"]
                         dcdate = delinfo["dcdate"]
                         if "goid" in delinfo:
-                            godownres = self.con.execute(
+                            godownres = con.execute(
                                 "select goname, goaddr from godown where goid = %d"
                                 % int(row["dcinfo"]["goid"])
                             )
@@ -2448,7 +2447,7 @@ class api_invoice(object):
                                 cessrate = "%.2f" % float(row["cess"][productservice])
                             discount = 0.00
                             # Fetching GSFlag of product.
-                            psdetails = self.con.execute(
+                            psdetails = con.execute(
                                 select([product.c.gsflag]).where(
                                     product.c.productcode == productservice
                                 )
@@ -2515,7 +2514,7 @@ class api_invoice(object):
                         except:
                             pass
                     netamt = float(row["invoicetotal"]) - taxamt
-                    cresult = self.con.execute(
+                    cresult = con.execute(
                         select(
                             [
                                 customerandsupplier.c.custname,
@@ -2548,7 +2547,7 @@ class api_invoice(object):
 
                     # below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
                     cancelinv = 1
-                    exist_drcr = self.con.execute(
+                    exist_drcr = con.execute(
                         "select count(invid) as invcount from drcr where invid=%d and orgcode=%d"
                         % (row["invid"], authDetails["orgcode"])
                     )
@@ -2629,10 +2628,6 @@ class api_invoice(object):
                         )
                         srno += 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(
         route_name="invoice_list_rectify", request_method="GET", renderer="json"
