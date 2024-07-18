@@ -1240,32 +1240,19 @@ def getInvoiceData(con, orgcode, params):
 
 
 def getInvoiceList(con, orgcode, reqParams):
+    query = select([invoice]).where(and_(
+        invoice.c.orgcode == orgcode,
+        invoice.c.icflag == 9,
+        invoice.c.invoicedate <= reqParams["todate"],
+        invoice.c.invoicedate >= reqParams["fromdate"],
+    ))
+
     if "orderflag" in reqParams:
-        result = con.execute(
-            select([invoice])
-            .where(
-                and_(
-                    invoice.c.orgcode == orgcode,
-                    invoice.c.icflag == 9,
-                    invoice.c.invoicedate <= reqParams["todate"],
-                    invoice.c.invoicedate >= reqParams["fromdate"],
-                )
-            )
-            .order_by(desc(invoice.c.invoicedate))
-        )
+        query = query.order_by(desc(invoice.c.invoicedate))
     else:
-        result = con.execute(
-            select([invoice])
-            .where(
-                and_(
-                    invoice.c.orgcode == orgcode,
-                    invoice.c.icflag == 9,
-                    invoice.c.invoicedate <= reqParams["todate"],
-                    invoice.c.invoicedate >= reqParams["fromdate"],
-                )
-            )
-            .order_by(invoice.c.invoicedate)
-        )
+        query = query.order_by(invoice.c.invoicedate)
+
+    result = con.execute(query)
     invoices = []
     srno = 1
     # for each invoice
