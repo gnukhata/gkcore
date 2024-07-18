@@ -2361,16 +2361,11 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 invoices = getInvoiceList(
-                    self.con, authDetails["orgcode"], self.request.params
+                    con, authDetails["orgcode"], self.request.params
                 )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
         """This function gives list of invoices. with all details of canceled invoice.
     This method will be used to see report of list of invoices.
