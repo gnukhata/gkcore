@@ -28,7 +28,6 @@ import logging
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from pyramid.view import view_defaults, view_config
-from pyramid.request import Request
 from gkcore.models.gkdb import (
     organisation,
     delchal,
@@ -54,7 +53,6 @@ from gkcore.views.reports.helpers.stock import (
 @view_defaults(route_name="godown-register")
 class api_godownregister(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
 
     @view_config(request_method="GET", renderer="json")
