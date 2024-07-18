@@ -48,12 +48,12 @@ from gkcore.views.reports.helpers.stock import (
     godownwisestockonhandfun,
 )
 
-@view_defaults(route_name="godown-register")
+@view_defaults(request_method="GET", renderer="json")
 class api_godownregister(object):
     def __init__(self, request):
         self.request = request
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(route_name="godown-register")
     def godown_register(self):
         # Check whether the user is registered & valid
         try:
@@ -108,7 +108,7 @@ class api_godownregister(object):
         return {"gkstatus": enumdict["Success"], "gkresult": godown_items}
 
 
-    @view_config(route_name="product-register", renderer="json")
+    @view_config(route_name="product-register")
     def godownStockReport(self):
         """
         Purpose:
@@ -719,7 +719,7 @@ class api_godownregister(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": stockReport}
 
 
-    @view_config(route_name="godown-stock-godownincharge", renderer="json")
+    @view_config(route_name="godown-stock-godownincharge")
     def godownwisestockforgodownincharge(self):
         try:
             token = self.request.headers["gktoken"]
@@ -793,7 +793,7 @@ class api_godownregister(object):
                     }
 
 
-    @view_config(route_name="godownwise-stock-value", renderer="json")
+    @view_config(route_name="godownwise-stock-value")
     def godownwise_stock_value(self):
         try:
             token = self.request.headers["gktoken"]
@@ -823,7 +823,7 @@ class api_godownregister(object):
                 }
 
 
-    @view_config(route_name="godownwise-stock-on-hand", renderer="json")
+    @view_config(route_name="godownwise-stock-on-hand")
     def godownwise_stock_on_hand(self):
         """
         Purpose:
