@@ -3309,9 +3309,8 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([invoicebin]).where(
                         invoicebin.c.invid == self.request.matchdict["invid"]
                     )
@@ -3336,9 +3335,9 @@ class api_invoice(object):
                 if invrow["sourcestate"] != None:
                     inv["sourcestate"] = invrow["sourcestate"]
                     inv["sourcestatecode"] = getStateCode(
-                        invrow["sourcestate"], self.con
+                        invrow["sourcestate"], con
                     )["statecode"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"], self.con)[
+                    sourceStateCode = getStateCode(invrow["sourcestate"], con)[
                         "statecode"
                     ]
                 if invrow["address"] == None:
@@ -3365,7 +3364,7 @@ class api_invoice(object):
                     inv["reversecharge"] = invrow["reversecharge"]
                     if invrow["taxstate"] != None:
                         inv["destinationstate"] = invrow["taxstate"]
-                        taxStateCode = getStateCode(invrow["taxstate"], self.con)[
+                        taxStateCode = getStateCode(invrow["taxstate"], con)[
                             "statecode"
                         ]
                         inv["taxstatecode"] = taxStateCode
@@ -3373,7 +3372,7 @@ class api_invoice(object):
                         inv["dcno"] = invrow["dcinfo"]["dcno"]
                     else:
                         inv["dcno"] = ""
-                    custandsup = self.con.execute(
+                    custandsup = con.execute(
                         select(
                             [
                                 customerandsupplier.c.custname,
@@ -3387,7 +3386,7 @@ class api_invoice(object):
                         ).where(customerandsupplier.c.custid == invrow["custid"])
                     )
                     custData = custandsup.fetchone()
-                    custsupstatecode = getStateCode(custData["state"], self.con)[
+                    custsupstatecode = getStateCode(custData["state"], con)[
                         "statecode"
                     ]
                     custSupDetails = {
@@ -3455,7 +3454,7 @@ class api_invoice(object):
                         freeqty = freeqtys[pc]
                     else:
                         freeqty = 0.00
-                    prod = self.con.execute(
+                    prod = con.execute(
                         select(
                             [
                                 product.c.productdesc,
@@ -3467,7 +3466,7 @@ class api_invoice(object):
                     )
                     prodrow = prod.fetchone()
                     if int(prodrow["gsflag"]) == 7:
-                        um = self.con.execute(
+                        um = con.execute(
                             select([unitofmeasurement.c.unitname]).where(
                                 unitofmeasurement.c.uomid == int(prodrow["uomid"])
                             )
@@ -3578,10 +3577,6 @@ class api_invoice(object):
                 inv["invcontents"] = invContents
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": inv}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="type=bwa", renderer="json")
     def getCSUPBills(self):
