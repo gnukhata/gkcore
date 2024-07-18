@@ -2694,22 +2694,16 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 invid = self.request.matchdict["invid"]
                 inv = getInvoiceData(
-                    self.con,
+                    con,
                     authDetails["orgcode"],
                     {"invid": invid},
                 )
                 if not len(inv):
                     raise Exception("Issue fetching Invoice Data")
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": inv}
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     """
     This is a function to update an invoice.
