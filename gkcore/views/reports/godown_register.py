@@ -880,9 +880,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            try:
-                #
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 startDate = ""
 
@@ -907,7 +905,7 @@ class api_godownregister(object):
 
                 result = []
                 if stocktype == "apg":
-                    prows = self.con.execute(
+                    prows = con.execute(
                         select([product.c.productcode, product.c.productdesc]).where(
                             and_(
                                 product.c.orgcode == orgcode,
@@ -920,7 +918,7 @@ class api_godownregister(object):
                         pmap[prod["productcode"]] = prod["productdesc"]
 
                     # gpc - godown product code
-                    gpcrows = self.con.execute(
+                    gpcrows = con.execute(
                         select([goprod.c.productcode]).where(
                             and_(
                                 goprod.c.goid == godownCode,
@@ -932,7 +930,7 @@ class api_godownregister(object):
                     for gpcode in gpcodes:
                         pcode = gpcode["productcode"]
                         temp = godownwisestockonhandfun(
-                            self.con,
+                            con,
                             orgcode,
                             startDate,
                             endDate,
@@ -947,7 +945,7 @@ class api_godownregister(object):
                             result.append(temp[0])
                 else:
                     result = godownwisestockonhandfun(
-                        self.con,
+                        con,
                         orgcode,
                         startDate,
                         endDate,
@@ -955,10 +953,4 @@ class api_godownregister(object):
                         productCode,
                         godownCode,
                     )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
-            except Exception as e:
-                # print(traceback.format_exc())
-                # print(e)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
