@@ -24,7 +24,6 @@ Contributors:
 "Sai Karthik"<kskarthik@disrot.org>
 
 """
-import logging
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from pyramid.view import view_defaults, view_config
@@ -44,7 +43,6 @@ from gkcore.models.gkdb import (
 from sqlalchemy.sql import select, and_, or_
 from datetime import datetime
 from sqlalchemy.sql.functions import func
-import traceback  # for printing detailed exception logs
 from gkcore.views.reports.helpers.stock import (
     calculateStockValue,
     godownwisestockonhandfun,
@@ -149,8 +147,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 godownCode = self.request.params["goid"]
@@ -164,7 +161,7 @@ class api_godownregister(object):
                 totalinward = 0.00
                 totaloutward = 0.00
                 openingStock = 0.00
-                goopeningStockResult = self.con.execute(
+                goopeningStockResult = con.execute(
                     select([goprod.c.goopeningstock]).where(
                         and_(
                             goprod.c.productcode == productCode,
@@ -178,7 +175,7 @@ class api_godownregister(object):
                     gopeningStock = gosRow["goopeningstock"]
                 else:
                     gopeningStock = 0.00
-                stockRecords = self.con.execute(
+                stockRecords = con.execute(
                     select([stock])
                     .where(
                         and_(
@@ -195,14 +192,14 @@ class api_godownregister(object):
                     .order_by(stock.c.stockdate)
                 )
                 stockData = stockRecords.fetchall()
-                ysData = self.con.execute(
+                ysData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == orgcode
                     )
                 )
                 ysRow = ysData.fetchone()
                 yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
-                enData = self.con.execute(
+                enData = con.execute(
                     select([organisation.c.yearend]).where(
                         organisation.c.orgcode == orgcode
                     )
@@ -213,7 +210,7 @@ class api_godownregister(object):
                     for stockRow in stockData:
                         if stockRow["dcinvtnflag"] == 4:
                             # delivery note
-                            countresult = self.con.execute(
+                            countresult = con.execute(
                                 select([func.count(delchal.c.dcid).label("dc")]).where(
                                     and_(
                                         delchal.c.dcdate >= yearStart,
@@ -234,7 +231,7 @@ class api_godownregister(object):
                                     )
                         if stockRow["dcinvtnflag"] == 20:
                             # transfer note
-                            countresult = self.con.execute(
+                            countresult = con.execute(
                                 select(
                                     [
                                         func.count(transfernote.c.transfernoteid).label(
@@ -317,7 +314,7 @@ class api_godownregister(object):
 
                 for finalRow in stockData:
                     if finalRow["dcinvtnflag"] == 4:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
                             ).where(
@@ -330,20 +327,20 @@ class api_godownregister(object):
                         )
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
-                            custdata = self.con.execute(
+                            custdata = con.execute(
                                 select([customerandsupplier.c.custname]).where(
                                     customerandsupplier.c.custid == countrow["custid"]
                                 )
                             )
                             custrow = custdata.fetchone()
-                            dcinvresult = self.con.execute(
+                            dcinvresult = con.execute(
                                 select([dcinv.c.invid]).where(
                                     dcinv.c.dcid == finalRow["dcinvtnid"]
                                 )
                             )
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
-                                invresult = self.con.execute(
+                                invresult = con.execute(
                                     select(
                                         [invoice.c.invoiceno, invoice.c.icflag]
                                     ).where(invoice.c.invid == dcinvrow["invid"])
@@ -423,7 +420,7 @@ class api_godownregister(object):
                                     }
                                 )
                     if finalRow["dcinvtnflag"] == 20:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     transfernote.c.transfernotedate,
@@ -508,7 +505,7 @@ class api_godownregister(object):
                                 )
 
                     if finalRow["dcinvtnflag"] == 18:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     rejectionnote.c.rndate,
@@ -527,7 +524,7 @@ class api_godownregister(object):
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
                             if countrow["dcid"] != None:
-                                custdata = self.con.execute(
+                                custdata = con.execute(
                                     select([customerandsupplier.c.custname]).where(
                                         customerandsupplier.c.custid
                                         == (
@@ -538,7 +535,7 @@ class api_godownregister(object):
                                     )
                                 )
                             elif countrow["invid"] != None:
-                                custdata = self.con.execute(
+                                custdata = con.execute(
                                     select([customerandsupplier.c.custname]).where(
                                         customerandsupplier.c.custid
                                         == (
@@ -610,7 +607,7 @@ class api_godownregister(object):
                                     }
                                 )
                     if finalRow["dcinvtnflag"] == 7:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     drcr.c.drcrdate,
@@ -628,13 +625,13 @@ class api_godownregister(object):
                         )
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
-                            drcrinvdata = self.con.execute(
+                            drcrinvdata = con.execute(
                                 select([invoice.c.custid]).where(
                                     invoice.c.invid == countrow["invid"]
                                 )
                             )
                             drcrinv = drcrinvdata.fetchone()
-                            custdata = self.con.execute(
+                            custdata = con.execute(
                                 select([customerandsupplier.c.custname]).where(
                                     customerandsupplier.c.custid == drcrinv["custid"]
                                 )
@@ -728,11 +725,6 @@ class api_godownregister(object):
                 )
                 return {"gkstatus": enumdict["Success"], "gkresult": stockReport}
 
-                self.con.close()
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(route_name="godown-stock-godownincharge", renderer="json")
     def godownwisestockforgodownincharge(self):
