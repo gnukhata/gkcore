@@ -3784,12 +3784,11 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 invid = self.request.matchdict["invid"]
-                invoiceData = self.con.execute(
+                invoiceData = con.execute(
                     select([invoice.c.invoiceno, invoice.c.attachment]).where(
                         and_(invoice.c.invid == invid)
                     )
@@ -3801,10 +3800,6 @@ class api_invoice(object):
                     "invoiceno": attachment["invoiceno"],
                     "userrole": urole["userrole"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(route_name="delnote_unbilled", request_method="GET", renderer="json")
     def unbilled_delnotes(self):
