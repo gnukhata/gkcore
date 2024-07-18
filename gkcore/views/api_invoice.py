@@ -4507,10 +4507,9 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 invid = self.request.matchdict["invid"]
-                delchalresult = self.con.execute(
+                delchalresult = con.execute(
                     select([drcr.c.drcrid, drcr.c.dctypeflag]).where(
                         drcr.c.invid == invid
                     )
@@ -4521,10 +4520,6 @@ class api_invoice(object):
                     dctypeflag = row[drcr.c.dctypeflag]
                     data_dict[drcrid] = dctypeflag
                 return {"gkstatus": 0, "data": data_dict}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(route_name="invoice_rnid", request_method="GET", renderer="json")
     def getrnid(self):
