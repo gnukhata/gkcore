@@ -118,10 +118,10 @@ def createAccount(con, type, accName, orgcode):
         # customer or supplier account when payment mode is on credit
         elif type == 15:
             custOrSupl = con.execute(
-                select([gkdb.customerandsupplier.c.csflag]).where(
+                select([customerandsupplier.c.csflag]).where(
                     and_(
-                        gkdb.customerandsupplier.c.custname == str(accName),
-                        gkdb.customerandsupplier.c.orgcode == orgcode,
+                        customerandsupplier.c.custname == str(accName),
+                        customerandsupplier.c.orgcode == orgcode,
                     )
                 )
             )
