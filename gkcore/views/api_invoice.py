@@ -2373,37 +2373,19 @@ class api_invoice(object):
         else:
             with eng.connect() as con:
                 # fetch all invoices
+                query = select([invoicebin]).where(and_(
+                    invoicebin.c.orgcode == authDetails["orgcode"],
+                    invoicebin.c.icflag == 9,
+                    invoicebin.c.invoicedate <= self.request.params["todate"],
+                    invoicebin.c.invoicedate >= self.request.params["fromdate"],
+                ))
 
                 if "orderflag" in self.request.params:
-                    result = con.execute(
-                        select([invoicebin])
-                        .where(
-                            and_(
-                                invoicebin.c.orgcode == authDetails["orgcode"],
-                                invoicebin.c.icflag == 9,
-                                invoicebin.c.invoicedate
-                                <= self.request.params["todate"],
-                                invoicebin.c.invoicedate
-                                >= self.request.params["fromdate"],
-                            )
-                        )
-                        .order_by(desc(invoicebin.c.invoicedate))
-                    )
+                    query = query.order_by(desc(invoicebin.c.invoicedate))
                 else:
-                    result = con.execute(
-                        select([invoicebin])
-                        .where(
-                            and_(
-                                invoicebin.c.orgcode == authDetails["orgcode"],
-                                invoicebin.c.icflag == 9,
-                                invoicebin.c.invoicedate
-                                <= self.request.params["todate"],
-                                invoicebin.c.invoicedate
-                                >= self.request.params["fromdate"],
-                            )
-                        )
-                        .order_by(invoicebin.c.invoicedate)
-                    )
+                    query = query.order_by(invoicebin.c.invoicedate)
+
+                result = con.execute(query)
                 invoices = []
                 srno = 1
                 # for each invoice
