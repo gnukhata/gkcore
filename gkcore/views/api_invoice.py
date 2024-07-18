@@ -3667,23 +3667,18 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                invcount = self.con.execute(
+            with eng.connect() as con:
+                invcount = con.execute(
                     "select count(invid) as icount from invoice where inoutflag=%d and orgcode = %d"
                     % (int(self.request.params["type"]), authDetails["orgcode"])
                 )
                 invoicecount = invcount.fetchone()
-                invoiceBinCount = invcount = self.con.execute(
+                invoiceBinCount = invcount = con.execute(
                     "select count(invid) as icount from invoicebin where inoutflag=%d and orgcode = %d"
                     % (int(self.request.params["type"]), authDetails["orgcode"])
                 ).fetchone()
                 invid = int(invoicecount["icount"]) + int(invoiceBinCount["icount"]) + 1
                 return {"gkstatus": 0, "invoiceid": invid}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="forvoucher", renderer="json")
     def getforvoucher(self):
