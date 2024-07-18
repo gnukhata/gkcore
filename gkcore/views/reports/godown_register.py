@@ -822,8 +822,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
 
                 orgcode = authDetails["orgcode"]
 
@@ -834,18 +833,14 @@ class api_godownregister(object):
                 productCode = int(self.request.params["productcode"])
 
                 valueOnHand = calculateStockValue(
-                    self.con, orgcode, endDate, productCode, godownCode
+                    con, orgcode, endDate, productCode, godownCode
                 )
-                self.con.close()
 
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": valueOnHand,
                 }
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="godownwise-stock-on-hand", renderer="json")
     def godownwise_stock_on_hand(self):
