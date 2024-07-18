@@ -744,8 +744,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
 
                 orgcode = authDetails["orgcode"]
 
@@ -762,7 +761,7 @@ class api_godownregister(object):
                 stocktype = self.request.params["type"]
                 godownCode = int(self.request.params["goid"])
 
-                prodcode = self.con.execute(
+                prodcode = con.execute(
                     "select productcode as productcode from goprod where goid=%d and orgcode=%d"
                     % (godownCode, orgcode)
                 )
@@ -776,7 +775,7 @@ class api_godownregister(object):
                     for productcode in prodcodelist:
                         productCode = productcode["productcode"]
                         result = godownwisestockonhandfun(
-                            self.con,
+                            con,
                             orgcode,
                             startDate,
                             endDate,
@@ -791,7 +790,7 @@ class api_godownregister(object):
                         stocklist, key=lambda x: float(x["balance"])
                     )[0:5]
                     for prodcode in allprodstocklist:
-                        proddesc = self.con.execute(
+                        proddesc = con.execute(
                             "select productdesc as proddesc from product where productcode=%d"
                             % (prodcode["prodid"])
                         )
@@ -802,15 +801,12 @@ class api_godownregister(object):
                                 "proddesc": proddesclist["proddesc"],
                             }
                         )
-                    self.con.close()
                     return {
                         "gkstatus": enumdict["Success"],
                         "gkresult": allprodstocklist,
                         "proddesclist": prodcodedesclist,
                     }
-            except Exception as e:
-                logging.warn(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="godownwise-stock-value", renderer="json")
     def godownwise_stock_value(self):
