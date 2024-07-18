@@ -72,9 +72,8 @@ class api_godownregister(object):
         goid = self.request.matchdict["goid"]
 
         # Connecting to the DB table goprod & filtering the data for required org & godown
-
-        try:
-            result = eng.connect().execute(
+        with eng.connect() as con:
+            result = con.execute(
                 select([goprod]).where(
                     and_(
                         goprod.c.orgcode == auth_details["orgcode"],
@@ -84,36 +83,30 @@ class api_godownregister(object):
             )
             goproddetails = result.fetchall()
 
-        except:
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-
         # Connecting to the DB table product & filtering the data for the required productcode
 
-        for productid in goproddetails:
-            try:
+            for productid in goproddetails:
                 result = eng.connect().execute(
                     select([product]).where(
                         product.c.productcode == productid["productcode"]
                     )
                 )
                 godownstock.append(result.fetchone())
-            except Exception as e:
-                print(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
         # Formatting the fetched data
 
-        for p in godownstock:
-            temp_dict = dict()
-            for name, val in p.items():
-                value_type = str(type(val))
-                if value_type == "<class 'decimal.Decimal'>":
-                    temp_dict[name] = str(val)
-                else:
-                    temp_dict[name] = val
-            godown_items.append(temp_dict)
+            for p in godownstock:
+                temp_dict = dict()
+                for name, val in p.items():
+                    value_type = str(type(val))
+                    if value_type == "<class 'decimal.Decimal'>":
+                        temp_dict[name] = str(val)
+                    else:
+                        temp_dict[name] = val
+                godown_items.append(temp_dict)
 
         return {"gkstatus": enumdict["Success"], "gkresult": godown_items}
+
 
     @view_config(route_name="product-register", renderer="json")
     def godownStockReport(self):
