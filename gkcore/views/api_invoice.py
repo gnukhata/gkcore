@@ -1240,292 +1240,288 @@ def getInvoiceData(con, orgcode, params):
 
 
 def getInvoiceList(con, orgcode, reqParams):
-    try:
-        if "orderflag" in reqParams:
-            result = con.execute(
-                select([invoice])
-                .where(
-                    and_(
-                        invoice.c.orgcode == orgcode,
-                        invoice.c.icflag == 9,
-                        invoice.c.invoicedate <= reqParams["todate"],
-                        invoice.c.invoicedate >= reqParams["fromdate"],
-                    )
-                )
-                .order_by(desc(invoice.c.invoicedate))
-            )
-        else:
-            result = con.execute(
-                select([invoice])
-                .where(
-                    and_(
-                        invoice.c.orgcode == orgcode,
-                        invoice.c.icflag == 9,
-                        invoice.c.invoicedate <= reqParams["todate"],
-                        invoice.c.invoicedate >= reqParams["fromdate"],
-                    )
-                )
-                .order_by(invoice.c.invoicedate)
-            )
-        invoices = []
-        srno = 1
-        # for each invoice
-        for row in result:
-            if row["sourcestate"] != None:
-                sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
-            if row["taxstate"] != None:
-                destinationStateCode = getStateCode(row["taxstate"], con)["statecode"]
-            dcno = ""
-            dcdate = ""
-            godowns = ""
-            dcresult = con.execute(
-                select([dcinv.c.dcid]).where(
-                    and_(
-                        dcinv.c.orgcode == orgcode,
-                        dcinv.c.invid == row["invid"],
-                    )
+    if "orderflag" in reqParams:
+        result = con.execute(
+            select([invoice])
+            .where(
+                and_(
+                    invoice.c.orgcode == orgcode,
+                    invoice.c.icflag == 9,
+                    invoice.c.invoicedate <= reqParams["todate"],
+                    invoice.c.invoicedate >= reqParams["fromdate"],
                 )
             )
-            dcresult = dcresult.fetchall()
-            # Assuming there are multiple delivery challans for a single invoice.
-            i = 1
-            # fetch all delivery challans for an invoice.
-            for dc in dcresult:
-                godownres = con.execute(
-                    "select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"
-                    % int(dc["dcid"])
+            .order_by(desc(invoice.c.invoicedate))
+        )
+    else:
+        result = con.execute(
+            select([invoice])
+            .where(
+                and_(
+                    invoice.c.orgcode == orgcode,
+                    invoice.c.icflag == 9,
+                    invoice.c.invoicedate <= reqParams["todate"],
+                    invoice.c.invoicedate >= reqParams["fromdate"],
                 )
-                godownresult = godownres.fetchone()
-                if godownresult != None:
-                    godownname = godownresult["goname"]
-                    godownaddrs = godownresult["goaddr"]
-                    godowns = godowns + godownname + "(" + godownaddrs + ")"
-                else:
-                    godownname = ""
-                    godownaddrs = ""
-                    godowns = ""
-                delchalres = con.execute(
-                    select([delchal.c.dcno, delchal.c.dcdate]).where(
-                        and_(
-                            delchal.c.orgcode == orgcode,
-                            delchal.c.dcid == dc["dcid"],
-                        )
-                    )
-                )
-                delchalres = delchalres.fetchone()
-                if i == len(dcresult):
-                    dcno = dcno + delchalres["dcno"]
-                    dcdate = dcdate + str(
-                        datetime.strftime(delchalres["dcdate"], "%d-%m-%Y")
-                    )
-
-                else:
-                    dcno = dcno + delchalres["dcno"] + ", "
-                    dcdate = (
-                        dcdate
-                        + str(datetime.strftime(delchalres["dcdate"], "%d-%m-%Y"))
-                        + ", "
-                    )
-
-                i += 1
-            taxamt = 0.00
-            # calculate tax amount of an invoice.
-            for productservice in row["contents"].keys():
-                try:
-                    taxrate = "%.2f" % float(row["tax"][productservice])
-                    cessrate = 0.00
-                    if productservice in row["cess"]:
-                        cessrate = "%.2f" % float(row["cess"][productservice])
-                    discount = 0.00
-                    # Fetching GSFlag of product.
-                    psdetails = con.execute(
-                        select([product.c.gsflag]).where(
-                            product.c.productcode == productservice
-                        )
-                    )
-                    gsflag = psdetails.fetchone()["gsflag"]
-                    # Fetching discount and price for each product.
-                    # Taxabe amount is also found out considering whether the item is a product/service
-                    for productprice in row["contents"][productservice].keys():
-                        ppu = productprice
-                        if productservice in row["discount"]:
-                            # discflag is for discount type. Percent=16/Amount=1
-                            # here we convert percent discount in to amount.
-                            if row["discflag"] == 16:
-                                qty = float(
-                                    list(row["contents"][str(productservice)].keys())[0]
-                                )
-                                price = float(
-                                    list(row["contents"][str(productservice)].values())[
-                                        0
-                                    ]
-                                )
-                                totalWithoutDiscount = qty * price
-                                discount = totalWithoutDiscount * float(
-                                    float(row["discount"][productservice]) / 100
-                                )
-                            else:
-                                discount = float(row["discount"][productservice])
-                        qty = float(row["contents"][productservice][productprice])
-                        # Calculating taxable amount(variable taxablevalue)
-                        if int(gsflag) == 7:
-                            taxablevalue = (
-                                float("%.2f" % float(ppu)) * float("%.2f" % float(qty))
-                            ) - float("%.2f" % float(discount))
-                        else:
-                            taxablevalue = float("%.2f" % float(ppu)) - float(
-                                "%.2f" % float(discount)
-                            )
-                        # Calculating tax amount.
-                        taxamt = (
-                            taxamt
-                            + float(
-                                "%.2f" % ((taxablevalue * float(taxrate)) / float(100))
-                            )
-                            + float(
-                                "%.2f" % ((taxablevalue * float(cessrate)) / float(100))
-                            )
-                        )
-                except:
-                    pass
-            netamt = float(row["invoicetotal"]) - taxamt
-            cresult = con.execute(
-                select(
-                    [
-                        customerandsupplier.c.custname,
-                        customerandsupplier.c.csflag,
-                        customerandsupplier.c.custtan,
-                        customerandsupplier.c.gstin,
-                    ]
-                ).where(customerandsupplier.c.custid == row["custid"])
             )
-            customerdetails = cresult.fetchone()
-            # TIN/GSTIN of customer/supplier is found out.
-            if int(row["taxflag"]) == 7:
-                if int(customerdetails["csflag"]) == 3:
-                    try:
-                        if destinationStateCode not in customerdetails["gstin"]:
-                            if (
-                                "0" + str(destinationStateCode)
-                                in customerdetails["gstin"]
-                            ):
-                                destinationStateCode = "0" + str(destinationStateCode)
-                        custtin = customerdetails["gstin"][str(destinationStateCode)]
-                    except:
-                        custtin = None
-                else:
-                    try:
-                        if sourceStateCode not in customerdetails["gstin"]:
-                            if "0" + str(sourceStateCode) in customerdetails["gstin"]:
-                                sourceStateCode = "0" + str(sourceStateCode)
-                        custtin = customerdetails["gstin"][str(sourceStateCode)]
-                    except:
-                        custtin = None
+            .order_by(invoice.c.invoicedate)
+        )
+    invoices = []
+    srno = 1
+    # for each invoice
+    for row in result:
+        if row["sourcestate"] != None:
+            sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
+        if row["taxstate"] != None:
+            destinationStateCode = getStateCode(row["taxstate"], con)["statecode"]
+        dcno = ""
+        dcdate = ""
+        godowns = ""
+        dcresult = con.execute(
+            select([dcinv.c.dcid]).where(
+                and_(
+                    dcinv.c.orgcode == orgcode,
+                    dcinv.c.invid == row["invid"],
+                )
+            )
+        )
+        dcresult = dcresult.fetchall()
+        # Assuming there are multiple delivery challans for a single invoice.
+        i = 1
+        # fetch all delivery challans for an invoice.
+        for dc in dcresult:
+            godownres = con.execute(
+                "select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"
+                % int(dc["dcid"])
+            )
+            godownresult = godownres.fetchone()
+            if godownresult != None:
+                godownname = godownresult["goname"]
+                godownaddrs = godownresult["goaddr"]
+                godowns = godowns + godownname + "(" + godownaddrs + ")"
             else:
+                godownname = ""
+                godownaddrs = ""
+                godowns = ""
+            delchalres = con.execute(
+                select([delchal.c.dcno, delchal.c.dcdate]).where(
+                    and_(
+                        delchal.c.orgcode == orgcode,
+                        delchal.c.dcid == dc["dcid"],
+                    )
+                )
+            )
+            delchalres = delchalres.fetchone()
+            if i == len(dcresult):
+                dcno = dcno + delchalres["dcno"]
+                dcdate = dcdate + str(
+                    datetime.strftime(delchalres["dcdate"], "%d-%m-%Y")
+                )
+
+            else:
+                dcno = dcno + delchalres["dcno"] + ", "
+                dcdate = (
+                    dcdate
+                    + str(datetime.strftime(delchalres["dcdate"], "%d-%m-%Y"))
+                    + ", "
+                )
+
+            i += 1
+        taxamt = 0.00
+        # calculate tax amount of an invoice.
+        for productservice in row["contents"].keys():
+            try:
+                taxrate = "%.2f" % float(row["tax"][productservice])
+                cessrate = 0.00
+                if productservice in row["cess"]:
+                    cessrate = "%.2f" % float(row["cess"][productservice])
+                discount = 0.00
+                # Fetching GSFlag of product.
+                psdetails = con.execute(
+                    select([product.c.gsflag]).where(
+                        product.c.productcode == productservice
+                    )
+                )
+                gsflag = psdetails.fetchone()["gsflag"]
+                # Fetching discount and price for each product.
+                # Taxabe amount is also found out considering whether the item is a product/service
+                for productprice in row["contents"][productservice].keys():
+                    ppu = productprice
+                    if productservice in row["discount"]:
+                        # discflag is for discount type. Percent=16/Amount=1
+                        # here we convert percent discount in to amount.
+                        if row["discflag"] == 16:
+                            qty = float(
+                                list(row["contents"][str(productservice)].keys())[0]
+                            )
+                            price = float(
+                                list(row["contents"][str(productservice)].values())[
+                                    0
+                                ]
+                            )
+                            totalWithoutDiscount = qty * price
+                            discount = totalWithoutDiscount * float(
+                                float(row["discount"][productservice]) / 100
+                            )
+                        else:
+                            discount = float(row["discount"][productservice])
+                    qty = float(row["contents"][productservice][productprice])
+                    # Calculating taxable amount(variable taxablevalue)
+                    if int(gsflag) == 7:
+                        taxablevalue = (
+                            float("%.2f" % float(ppu)) * float("%.2f" % float(qty))
+                        ) - float("%.2f" % float(discount))
+                    else:
+                        taxablevalue = float("%.2f" % float(ppu)) - float(
+                            "%.2f" % float(discount)
+                        )
+                    # Calculating tax amount.
+                    taxamt = (
+                        taxamt
+                        + float(
+                            "%.2f" % ((taxablevalue * float(taxrate)) / float(100))
+                        )
+                        + float(
+                            "%.2f" % ((taxablevalue * float(cessrate)) / float(100))
+                        )
+                    )
+            except:
+                pass
+        netamt = float(row["invoicetotal"]) - taxamt
+        cresult = con.execute(
+            select(
+                [
+                    customerandsupplier.c.custname,
+                    customerandsupplier.c.csflag,
+                    customerandsupplier.c.custtan,
+                    customerandsupplier.c.gstin,
+                ]
+            ).where(customerandsupplier.c.custid == row["custid"])
+        )
+        customerdetails = cresult.fetchone()
+        # TIN/GSTIN of customer/supplier is found out.
+        if int(row["taxflag"]) == 7:
+            if int(customerdetails["csflag"]) == 3:
                 try:
-                    custtin = customerdetails["custtan"]
+                    if destinationStateCode not in customerdetails["gstin"]:
+                        if (
+                            "0" + str(destinationStateCode)
+                            in customerdetails["gstin"]
+                        ):
+                            destinationStateCode = "0" + str(destinationStateCode)
+                    custtin = customerdetails["gstin"][str(destinationStateCode)]
                 except:
                     custtin = None
+            else:
+                try:
+                    if sourceStateCode not in customerdetails["gstin"]:
+                        if "0" + str(sourceStateCode) in customerdetails["gstin"]:
+                            sourceStateCode = "0" + str(sourceStateCode)
+                    custtin = customerdetails["gstin"][str(sourceStateCode)]
+                except:
+                    custtin = None
+        else:
+            try:
+                custtin = customerdetails["custtan"]
+            except:
+                custtin = None
 
-            # below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentryflag to 0 else to 1 to create voucher for the same.
-            billentryflag = 1
-            billwiseentry = con.execute(
-                "select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "
-                % (row["invid"], orgcode)
+        # below code is to check if invoicetotal is greater than ammount paid from invoice table. If invoicetotal is greater amountpaid it set billentryflag to 0 else to 1 to create voucher for the same.
+        billentryflag = 1
+        billwiseentry = con.execute(
+            "select 1 from invoice where invid=%d and orgcode=%d and invoicetotal > amountpaid "
+            % (row["invid"], orgcode)
+        )
+        billwise_entry = billwiseentry.rowcount
+        if billwiseentry != None and billwise_entry > 0:
+            billentryflag = 0
+
+        # below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
+        cancelinv = 1
+        exist_drcr = con.execute(
+            "select count(invid) as invcount from drcr where invid=%d and orgcode=%d"
+            % (row["invid"], orgcode)
+        )
+        existDrcr = exist_drcr.fetchone()
+        if existDrcr["invcount"] > 0:
+            cancelinv = 0
+
+        # flag=0, all invoices.
+        if reqParams["flag"] == "0":
+            invoices.append(
+                {
+                    "srno": srno,
+                    "invoiceno": row["invoiceno"],
+                    "invid": row["invid"],
+                    "dcno": dcno,
+                    "dcdate": dcdate,
+                    "netamt": "%.2f" % netamt,
+                    "taxamt": "%.2f" % taxamt,
+                    "godown": godowns,
+                    "custname": customerdetails["custname"],
+                    "csflag": customerdetails["csflag"],
+                    "custtin": custtin,
+                    "invoicedate": datetime.strftime(
+                        row["invoicedate"], "%d-%m-%Y"
+                    ),
+                    "grossamt": "%.2f" % float(row["invoicetotal"]),
+                    "cancelflag": cancelinv,
+                    "billentryflag": billentryflag,
+                    "inoutflag": row["inoutflag"],
+                }
             )
-            billwise_entry = billwiseentry.rowcount
-            if billwiseentry != None and billwise_entry > 0:
-                billentryflag = 0
-
-            # below code is to check invid is present in dcinv table or drcr table. If invid present it set cancleflag 1 else 0 to cancel the invoice from list of invoice.
-            cancelinv = 1
-            exist_drcr = con.execute(
-                "select count(invid) as invcount from drcr where invid=%d and orgcode=%d"
-                % (row["invid"], orgcode)
+            srno += 1
+        # flag=1, sales invoices
+        elif reqParams["flag"] == "1" and row["inoutflag"] == 15:
+            invoices.append(
+                {
+                    "srno": srno,
+                    "invoiceno": row["invoiceno"],
+                    "invid": row["invid"],
+                    "dcno": dcno,
+                    "dcdate": dcdate,
+                    "netamt": "%.2f" % netamt,
+                    "taxamt": "%.2f" % taxamt,
+                    "godown": godowns,
+                    "custname": customerdetails["custname"],
+                    "csflag": customerdetails["csflag"],
+                    "custtin": custtin,
+                    "invoicedate": datetime.strftime(
+                        row["invoicedate"], "%d-%m-%Y"
+                    ),
+                    "grossamt": "%.2f" % float(row["invoicetotal"]),
+                    "cancelflag": cancelinv,
+                    "billentryflag": billentryflag,
+                    "inoutflag": row["inoutflag"],
+                }
             )
-            existDrcr = exist_drcr.fetchone()
-            if existDrcr["invcount"] > 0:
-                cancelinv = 0
-
-            # flag=0, all invoices.
-            if reqParams["flag"] == "0":
-                invoices.append(
-                    {
-                        "srno": srno,
-                        "invoiceno": row["invoiceno"],
-                        "invid": row["invid"],
-                        "dcno": dcno,
-                        "dcdate": dcdate,
-                        "netamt": "%.2f" % netamt,
-                        "taxamt": "%.2f" % taxamt,
-                        "godown": godowns,
-                        "custname": customerdetails["custname"],
-                        "csflag": customerdetails["csflag"],
-                        "custtin": custtin,
-                        "invoicedate": datetime.strftime(
-                            row["invoicedate"], "%d-%m-%Y"
-                        ),
-                        "grossamt": "%.2f" % float(row["invoicetotal"]),
-                        "cancelflag": cancelinv,
-                        "billentryflag": billentryflag,
-                        "inoutflag": row["inoutflag"],
-                    }
-                )
-                srno += 1
-            # flag=1, sales invoices
-            elif reqParams["flag"] == "1" and row["inoutflag"] == 15:
-                invoices.append(
-                    {
-                        "srno": srno,
-                        "invoiceno": row["invoiceno"],
-                        "invid": row["invid"],
-                        "dcno": dcno,
-                        "dcdate": dcdate,
-                        "netamt": "%.2f" % netamt,
-                        "taxamt": "%.2f" % taxamt,
-                        "godown": godowns,
-                        "custname": customerdetails["custname"],
-                        "csflag": customerdetails["csflag"],
-                        "custtin": custtin,
-                        "invoicedate": datetime.strftime(
-                            row["invoicedate"], "%d-%m-%Y"
-                        ),
-                        "grossamt": "%.2f" % float(row["invoicetotal"]),
-                        "cancelflag": cancelinv,
-                        "billentryflag": billentryflag,
-                        "inoutflag": row["inoutflag"],
-                    }
-                )
-                srno += 1
-            # flag=2, purchase invoices.
-            elif reqParams["flag"] == "2" and row["inoutflag"] == 9:
-                invoices.append(
-                    {
-                        "srno": srno,
-                        "invoiceno": row["invoiceno"],
-                        "invid": row["invid"],
-                        "dcno": dcno,
-                        "dcdate": dcdate,
-                        "netamt": "%.2f" % netamt,
-                        "taxamt": "%.2f" % taxamt,
-                        "godown": godowns,
-                        "custname": customerdetails["custname"],
-                        "csflag": customerdetails["csflag"],
-                        "custtin": custtin,
-                        "invoicedate": datetime.strftime(
-                            row["invoicedate"], "%d-%m-%Y"
-                        ),
-                        "grossamt": "%.2f" % float(row["invoicetotal"]),
-                        "cancelflag": cancelinv,
-                        "billentryflag": billentryflag,
-                        "inoutflag": row["inoutflag"],
-                    }
-                )
-                srno += 1
-        return invoices
-    except:
-        return []
-
+            srno += 1
+        # flag=2, purchase invoices.
+        elif reqParams["flag"] == "2" and row["inoutflag"] == 9:
+            invoices.append(
+                {
+                    "srno": srno,
+                    "invoiceno": row["invoiceno"],
+                    "invid": row["invid"],
+                    "dcno": dcno,
+                    "dcdate": dcdate,
+                    "netamt": "%.2f" % netamt,
+                    "taxamt": "%.2f" % taxamt,
+                    "godown": godowns,
+                    "custname": customerdetails["custname"],
+                    "csflag": customerdetails["csflag"],
+                    "custtin": custtin,
+                    "invoicedate": datetime.strftime(
+                        row["invoicedate"], "%d-%m-%Y"
+                    ),
+                    "grossamt": "%.2f" % float(row["invoicetotal"]),
+                    "cancelflag": cancelinv,
+                    "billentryflag": billentryflag,
+                    "inoutflag": row["inoutflag"],
+                }
+            )
+            srno += 1
+    return invoices
 
 """
 Updates the Duplicate invoice numbers to be unique by prefixing them with a counter, i.e. counter-inv_no
