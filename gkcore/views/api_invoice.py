@@ -2620,14 +2620,13 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 org = authDetails["orgcode"]
                 # An empty list into which invoices shall be appended.
                 list_Invoices = []
                 # Fetching id, number, date of all invoices.
                 # check whether invtype does exist and further check its type
-                invoices = self.con.execute(
+                invoices = con.execute(
                     "select invid,invoiceno,invoicedate,custid from invoice where invid not in (select invid from drcr where orgcode = %d) and invid not in (select invid from rejectionnote where orgcode = %d) and invid not in(select invid from billwise where orgcode = %d) and orgcode = %d and icflag = 9 and inoutflag = %d order by invoicedate desc"
                     % (org, org, org, org, int(self.request.params["invtype"]))
                 )
@@ -2636,7 +2635,7 @@ class api_invoice(object):
                 # Appending dictionaries into empty list.
                 # Each dictionary has details of an invoice viz. id, number, date, total amount, amount paid and balance.
                 for inv in invoicesData:
-                    custData = self.con.execute(
+                    custData = con.execute(
                         select(
                             [
                                 customerandsupplier.c.custname,
@@ -2659,12 +2658,6 @@ class api_invoice(object):
                         }
                     )
                 return {"gkstatus": enumdict["Success"], "invoices": list_Invoices}
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-                self.con.close()
-            finally:
-                self.con.close()
 
     @view_config(route_name="invoice_invid", request_method="GET", renderer="json")
     def getInvoiceDetails(self):
