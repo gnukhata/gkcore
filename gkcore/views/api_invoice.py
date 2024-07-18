@@ -3736,9 +3736,8 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [
                             invoice.c.invoiceno,
@@ -3769,10 +3768,6 @@ class api_invoice(object):
                         }
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(route_name="invoice_attachment", request_method="GET", renderer="json")
     def getInvoiceAttachment(self):
