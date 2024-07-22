@@ -46,24 +46,18 @@ class api_balance_sheet(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        try:
-            self.con = eng.connect()
+        with eng.connect() as conn:
             balanceSheet = getBalanceSheet(
-                self.con,
+                conn,
                 authDetails["orgcode"],
                 self.request.params["calculateto"],
                 self.request.params["calculatefrom"],
                 int(self.request.params["baltype"]),
             )
-            self.con.close()
             return {
                 "gkstatus": enumdict["Success"],
                 "gkresult": balanceSheet,
             }
-
-        except:
-            self.con.close()
-            return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_param="type=conventionalbalancesheet", renderer="json")
     def conventionalbalanceSheet(self):

@@ -1161,7 +1161,18 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
         groupWiseTotal += subgroupTotal
         # calculate the inventory
         if subgroup["groupname"] == "Inventory":
-            subgroupTotal = closingStockVal
+            accounts.append(
+                {
+                    "groupAccname": "Closing Stock",
+                    "amount": "%.2f" % (closingStockVal),
+                    "groupAcccode": "",
+                    "subgroupof": groupcode,
+                    "accountof": subgroup["groupcode"],
+                    "groupAccflag": 2,
+                    "advflag": adverseflag,
+                }
+            )
+            subgroupTotal += closingStockVal
         groupAccSubgroup.append(
             {
                 "groupAccname": subgroup["groupname"],
@@ -1175,7 +1186,6 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
         )
         # TODO: check if accname is inventory and if it is, make the amount as closing stock value
         groupAccSubgroup += accounts
-        # print(subgroup["groupname"])
 
     applicationsTotal += groupWiseTotal
     abalanceSheet.append(
