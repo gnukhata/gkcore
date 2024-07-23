@@ -24,11 +24,9 @@ Contributors:
 "Sai Karthik"<kskarthik@disrot.org>
 
 """
-import logging
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from pyramid.view import view_defaults, view_config
-from pyramid.request import Request
 from gkcore.models.gkdb import (
     organisation,
     delchal,
@@ -45,19 +43,17 @@ from gkcore.models.gkdb import (
 from sqlalchemy.sql import select, and_, or_
 from datetime import datetime
 from sqlalchemy.sql.functions import func
-import traceback  # for printing detailed exception logs
 from gkcore.views.reports.helpers.stock import (
     calculateStockValue,
     godownwisestockonhandfun,
 )
 
-@view_defaults(route_name="godown-register")
+@view_defaults(request_method="GET", renderer="json")
 class api_godownregister(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(route_name="godown-register")
     def godown_register(self):
         # Check whether the user is registered & valid
         try:
@@ -76,9 +72,8 @@ class api_godownregister(object):
         goid = self.request.matchdict["goid"]
 
         # Connecting to the DB table goprod & filtering the data for required org & godown
-
-        try:
-            result = eng.connect().execute(
+        with eng.connect() as con:
+            result = con.execute(
                 select([goprod]).where(
                     and_(
                         goprod.c.orgcode == auth_details["orgcode"],
@@ -88,38 +83,32 @@ class api_godownregister(object):
             )
             goproddetails = result.fetchall()
 
-        except:
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-
         # Connecting to the DB table product & filtering the data for the required productcode
 
-        for productid in goproddetails:
-            try:
+            for productid in goproddetails:
                 result = eng.connect().execute(
                     select([product]).where(
                         product.c.productcode == productid["productcode"]
                     )
                 )
                 godownstock.append(result.fetchone())
-            except Exception as e:
-                print(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
         # Formatting the fetched data
 
-        for p in godownstock:
-            temp_dict = dict()
-            for name, val in p.items():
-                value_type = str(type(val))
-                if value_type == "<class 'decimal.Decimal'>":
-                    temp_dict[name] = str(val)
-                else:
-                    temp_dict[name] = val
-            godown_items.append(temp_dict)
+            for p in godownstock:
+                temp_dict = dict()
+                for name, val in p.items():
+                    value_type = str(type(val))
+                    if value_type == "<class 'decimal.Decimal'>":
+                        temp_dict[name] = str(val)
+                    else:
+                        temp_dict[name] = val
+                godown_items.append(temp_dict)
 
         return {"gkstatus": enumdict["Success"], "gkresult": godown_items}
 
-    @view_config(route_name="product-register", renderer="json")
+
+    @view_config(route_name="product-register")
     def godownStockReport(self):
         """
         Purpose:
@@ -151,8 +140,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 godownCode = self.request.params["goid"]
@@ -166,7 +154,7 @@ class api_godownregister(object):
                 totalinward = 0.00
                 totaloutward = 0.00
                 openingStock = 0.00
-                goopeningStockResult = self.con.execute(
+                goopeningStockResult = con.execute(
                     select([goprod.c.goopeningstock]).where(
                         and_(
                             goprod.c.productcode == productCode,
@@ -180,7 +168,7 @@ class api_godownregister(object):
                     gopeningStock = gosRow["goopeningstock"]
                 else:
                     gopeningStock = 0.00
-                stockRecords = self.con.execute(
+                stockRecords = con.execute(
                     select([stock])
                     .where(
                         and_(
@@ -197,14 +185,14 @@ class api_godownregister(object):
                     .order_by(stock.c.stockdate)
                 )
                 stockData = stockRecords.fetchall()
-                ysData = self.con.execute(
+                ysData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == orgcode
                     )
                 )
                 ysRow = ysData.fetchone()
                 yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
-                enData = self.con.execute(
+                enData = con.execute(
                     select([organisation.c.yearend]).where(
                         organisation.c.orgcode == orgcode
                     )
@@ -215,7 +203,7 @@ class api_godownregister(object):
                     for stockRow in stockData:
                         if stockRow["dcinvtnflag"] == 4:
                             # delivery note
-                            countresult = self.con.execute(
+                            countresult = con.execute(
                                 select([func.count(delchal.c.dcid).label("dc")]).where(
                                     and_(
                                         delchal.c.dcdate >= yearStart,
@@ -236,7 +224,7 @@ class api_godownregister(object):
                                     )
                         if stockRow["dcinvtnflag"] == 20:
                             # transfer note
-                            countresult = self.con.execute(
+                            countresult = con.execute(
                                 select(
                                     [
                                         func.count(transfernote.c.transfernoteid).label(
@@ -319,7 +307,7 @@ class api_godownregister(object):
 
                 for finalRow in stockData:
                     if finalRow["dcinvtnflag"] == 4:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
                             ).where(
@@ -332,20 +320,20 @@ class api_godownregister(object):
                         )
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
-                            custdata = self.con.execute(
+                            custdata = con.execute(
                                 select([customerandsupplier.c.custname]).where(
                                     customerandsupplier.c.custid == countrow["custid"]
                                 )
                             )
                             custrow = custdata.fetchone()
-                            dcinvresult = self.con.execute(
+                            dcinvresult = con.execute(
                                 select([dcinv.c.invid]).where(
                                     dcinv.c.dcid == finalRow["dcinvtnid"]
                                 )
                             )
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
-                                invresult = self.con.execute(
+                                invresult = con.execute(
                                     select(
                                         [invoice.c.invoiceno, invoice.c.icflag]
                                     ).where(invoice.c.invid == dcinvrow["invid"])
@@ -425,7 +413,7 @@ class api_godownregister(object):
                                     }
                                 )
                     if finalRow["dcinvtnflag"] == 20:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     transfernote.c.transfernotedate,
@@ -510,7 +498,7 @@ class api_godownregister(object):
                                 )
 
                     if finalRow["dcinvtnflag"] == 18:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     rejectionnote.c.rndate,
@@ -529,7 +517,7 @@ class api_godownregister(object):
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
                             if countrow["dcid"] != None:
-                                custdata = self.con.execute(
+                                custdata = con.execute(
                                     select([customerandsupplier.c.custname]).where(
                                         customerandsupplier.c.custid
                                         == (
@@ -540,7 +528,7 @@ class api_godownregister(object):
                                     )
                                 )
                             elif countrow["invid"] != None:
-                                custdata = self.con.execute(
+                                custdata = con.execute(
                                     select([customerandsupplier.c.custname]).where(
                                         customerandsupplier.c.custid
                                         == (
@@ -612,7 +600,7 @@ class api_godownregister(object):
                                     }
                                 )
                     if finalRow["dcinvtnflag"] == 7:
-                        countresult = self.con.execute(
+                        countresult = con.execute(
                             select(
                                 [
                                     drcr.c.drcrdate,
@@ -630,13 +618,13 @@ class api_godownregister(object):
                         )
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
-                            drcrinvdata = self.con.execute(
+                            drcrinvdata = con.execute(
                                 select([invoice.c.custid]).where(
                                     invoice.c.invid == countrow["invid"]
                                 )
                             )
                             drcrinv = drcrinvdata.fetchone()
-                            custdata = self.con.execute(
+                            custdata = con.execute(
                                 select([customerandsupplier.c.custname]).where(
                                     customerandsupplier.c.custid == drcrinv["custid"]
                                 )
@@ -730,13 +718,8 @@ class api_godownregister(object):
                 )
                 return {"gkstatus": enumdict["Success"], "gkresult": stockReport}
 
-                self.con.close()
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(route_name="godown-stock-godownincharge", renderer="json")
+    @view_config(route_name="godown-stock-godownincharge")
     def godownwisestockforgodownincharge(self):
         try:
             token = self.request.headers["gktoken"]
@@ -746,8 +729,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
 
                 orgcode = authDetails["orgcode"]
 
@@ -764,7 +746,7 @@ class api_godownregister(object):
                 stocktype = self.request.params["type"]
                 godownCode = int(self.request.params["goid"])
 
-                prodcode = self.con.execute(
+                prodcode = con.execute(
                     "select productcode as productcode from goprod where goid=%d and orgcode=%d"
                     % (godownCode, orgcode)
                 )
@@ -778,7 +760,7 @@ class api_godownregister(object):
                     for productcode in prodcodelist:
                         productCode = productcode["productcode"]
                         result = godownwisestockonhandfun(
-                            self.con,
+                            con,
                             orgcode,
                             startDate,
                             endDate,
@@ -793,7 +775,7 @@ class api_godownregister(object):
                         stocklist, key=lambda x: float(x["balance"])
                     )[0:5]
                     for prodcode in allprodstocklist:
-                        proddesc = self.con.execute(
+                        proddesc = con.execute(
                             "select productdesc as proddesc from product where productcode=%d"
                             % (prodcode["prodid"])
                         )
@@ -804,17 +786,14 @@ class api_godownregister(object):
                                 "proddesc": proddesclist["proddesc"],
                             }
                         )
-                    self.con.close()
                     return {
                         "gkstatus": enumdict["Success"],
                         "gkresult": allprodstocklist,
                         "proddesclist": prodcodedesclist,
                     }
-            except Exception as e:
-                logging.warn(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(route_name="godownwise-stock-value", renderer="json")
+
+    @view_config(route_name="godownwise-stock-value")
     def godownwise_stock_value(self):
         try:
             token = self.request.headers["gktoken"]
@@ -824,8 +803,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
 
                 orgcode = authDetails["orgcode"]
 
@@ -836,21 +814,17 @@ class api_godownregister(object):
                 productCode = int(self.request.params["productcode"])
 
                 valueOnHand = calculateStockValue(
-                    self.con, orgcode, endDate, productCode, godownCode
+                    con, orgcode, endDate, productCode, godownCode
                 )
-                self.con.close()
 
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": valueOnHand,
                 }
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    @view_config(route_name="godownwise-stock-on-hand", renderer="json")
-    def godownStockHReport(self):
+
+    @view_config(route_name="godownwise-stock-on-hand")
+    def godownwise_stock_on_hand(self):
         """
         Purpose:
         Return the structured data grid of godown wise stock on hand report for given product.
@@ -882,9 +856,7 @@ class api_godownregister(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            try:
-                #
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 startDate = ""
 
@@ -909,7 +881,7 @@ class api_godownregister(object):
 
                 result = []
                 if stocktype == "apg":
-                    prows = self.con.execute(
+                    prows = con.execute(
                         select([product.c.productcode, product.c.productdesc]).where(
                             and_(
                                 product.c.orgcode == orgcode,
@@ -922,7 +894,7 @@ class api_godownregister(object):
                         pmap[prod["productcode"]] = prod["productdesc"]
 
                     # gpc - godown product code
-                    gpcrows = self.con.execute(
+                    gpcrows = con.execute(
                         select([goprod.c.productcode]).where(
                             and_(
                                 goprod.c.goid == godownCode,
@@ -934,7 +906,7 @@ class api_godownregister(object):
                     for gpcode in gpcodes:
                         pcode = gpcode["productcode"]
                         temp = godownwisestockonhandfun(
-                            self.con,
+                            con,
                             orgcode,
                             startDate,
                             endDate,
@@ -949,7 +921,7 @@ class api_godownregister(object):
                             result.append(temp[0])
                 else:
                     result = godownwisestockonhandfun(
-                        self.con,
+                        con,
                         orgcode,
                         startDate,
                         endDate,
@@ -957,10 +929,4 @@ class api_godownregister(object):
                         productCode,
                         godownCode,
                     )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": result}
-            except Exception as e:
-                # print(traceback.format_exc())
-                # print(e)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
