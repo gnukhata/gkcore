@@ -52,25 +52,24 @@ class api_ledger(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 accountCode = self.request.params["accountcode"]
-                accNameData = self.con.execute(
+                accNameData = con.execute(
                     select([accounts.c.accountname]).where(
                         accounts.c.accountcode == accountCode
                     )
                 )
                 row = accNameData.fetchone()
                 accname = row["accountname"]
-                finStartData = self.con.execute(
+                finStartData = con.execute(
                     select([organisation.c.yearstart]).where(
                         organisation.c.orgcode == orgcode
                     )
                 )
                 finRow = finStartData.fetchone()
                 financialStart = finRow["yearstart"]
-                finEndData = self.con.execute(
+                finEndData = con.execute(
                     select([organisation.c.yearend]).where(
                         organisation.c.orgcode == orgcode
                     )
@@ -86,7 +85,7 @@ class api_ledger(object):
                 )
                 monthlyBal = []
                 while endMonthDate <= financialEnd:
-                    count = self.con.execute(
+                    count = con.execute(
                         "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "
                         % (
                             endMonthDate,
@@ -97,17 +96,17 @@ class api_ledger(object):
                         )
                     )
                     count = count.fetchone()
-                    countDr = self.con.execute(
+                    countDr = con.execute(
                         "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s') "
                         % (endMonthDate, startMonthDate, orgcode, accountCode)
                     )
                     countDr = countDr.fetchone()
-                    countCr = self.con.execute(
+                    countCr = con.execute(
                         "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (crs ? '%s') "
                         % (endMonthDate, startMonthDate, orgcode, accountCode)
                     )
                     countCr = countCr.fetchone()
-                    countLock = self.con.execute(
+                    countLock = con.execute(
                         "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and lockflag='t' and (drs ? '%s' or crs ? '%s') "
                         % (
                             endMonthDate,
@@ -120,7 +119,7 @@ class api_ledger(object):
                     countLock = countLock.fetchone()
                     adverseflag = 0
                     monthClBal = calculateBalance(
-                        self.con,
+                        con,
                         accountCode,
                         str(financialStart),
                         str(financialStart),
@@ -237,7 +236,6 @@ class api_ledger(object):
                         ],
                     )
                     monthCounter += 1
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": monthlyBal,
@@ -245,10 +243,6 @@ class api_ledger(object):
                     "accountname": accname,
                 }
 
-            except Exception as E:
-                print(E)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(route_name="ledger", renderer="json")
     def ledger(self):
