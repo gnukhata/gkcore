@@ -281,8 +281,7 @@ class api_ledger(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 orgcode = authDetails["orgcode"]
@@ -292,12 +291,12 @@ class api_ledger(object):
                 projectCode = self.request.params["projectcode"]
                 financialStart = self.request.params["financialstart"]
                 calbalDict = calculateBalance(
-                    self.con, accountCode, financialStart, calculateFrom, calculateTo
+                    con, accountCode, financialStart, calculateFrom, calculateTo
                 )
                 vouchergrid = []
                 bal = 0.00
                 adverseflag = 0
-                accnamerow = self.con.execute(
+                accnamerow = con.execute(
                     select([accounts.c.accountname]).where(
                         accounts.c.accountcode == int(accountCode)
                     )
@@ -316,7 +315,7 @@ class api_ledger(object):
                     ),
                 }
                 if projectCode != "":
-                    prjnamerow = self.con.execute(
+                    prjnamerow = con.execute(
                         select([projects.c.projectname]).where(
                             projects.c.projectcode == int(projectCode)
                         )
@@ -356,18 +355,18 @@ class api_ledger(object):
                 transactionsRecords = ""
                 if projectCode == "":
                     if "orderflag" in self.request.params:
-                        transactionsRecords = self.con.execute(
+                        transactionsRecords = con.execute(
                             "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"
                             % (calculateFrom, calculateTo, accountCode, accountCode)
                         )
                     else:
-                        transactionsRecords = self.con.execute(
+                        transactionsRecords = con.execute(
                             "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"
                             % (calculateFrom, calculateTo, accountCode, accountCode)
                         )
                 else:
                     if "orderflag" in self.request.params:
-                        transactionsRecords = self.con.execute(
+                        transactionsRecords = con.execute(
                             "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"
                             % (
                                 calculateFrom,
@@ -378,7 +377,7 @@ class api_ledger(object):
                             )
                         )
                     else:
-                        transactionsRecords = self.con.execute(
+                        transactionsRecords = con.execute(
                             "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"
                             % (
                                 calculateFrom,
@@ -413,7 +412,7 @@ class api_ledger(object):
                         drtotal += float(transaction["drs"][accountCode])
                         par = []
                         for cr in list(transaction["crs"].keys()):
-                            accountnameRow = self.con.execute(
+                            accountnameRow = con.execute(
                                 select([accounts.c.accountname]).where(
                                     accounts.c.accountcode == int(cr)
                                 )
@@ -439,7 +438,7 @@ class api_ledger(object):
                         crtotal += float(transaction["crs"][accountCode])
                         par = []
                         for dr in list(transaction["drs"].keys()):
-                            accountnameRow = self.con.execute(
+                            accountnameRow = con.execute(
                                 select([accounts.c.accountname]).where(
                                     accounts.c.accountcode == int(dr)
                                 )
@@ -466,7 +465,7 @@ class api_ledger(object):
                     ledgerRecord["ttlRunCr"] = "%.2f" % (crtotal)
                     # get related document details
                     dcinfo = billwiseEntryLedger(
-                        self.con,
+                        con,
                         orgcode,
                         transaction["vouchercode"],
                         transaction["invid"],
@@ -596,16 +595,13 @@ class api_ledger(object):
                     }
 
                     vouchergrid.append(ledgerRecord)
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": vouchergrid,
                     "userrole": urole["userrole"],
                     "ledgerheader": headerrow,
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="ledger-crdr", renderer="json")
     def crdrledger(self):
