@@ -403,12 +403,13 @@ class api_ledger(object):
                         "status": transaction["lockflag"],
                         "vouchertype": transaction["vouchertype"],
                         "advflag": "",
+                        "Cr": "",
+                        "Dr": "",
                     }
                     if accountCode in transaction["drs"]:
                         ledgerRecord["Dr"] = "%.2f" % float(
                             transaction["drs"][accountCode]
                         )
-                        ledgerRecord["Cr"] = ""
                         drtotal += float(transaction["drs"][accountCode])
                         par = []
                         for cr in list(transaction["crs"].keys()):
@@ -434,7 +435,6 @@ class api_ledger(object):
                         ledgerRecord["Cr"] = "%.2f" % float(
                             transaction["crs"][accountCode]
                         )
-                        ledgerRecord["Dr"] = ""
                         crtotal += float(transaction["crs"][accountCode])
                         par = []
                         for dr in list(transaction["drs"].keys()):
