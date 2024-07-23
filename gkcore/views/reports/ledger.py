@@ -6,8 +6,6 @@ from gkcore.models.gkdb import (
     organisation,
 )
 from sqlalchemy.sql import select
-from sqlalchemy.engine.base import Connection
-from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime, date
@@ -20,9 +18,7 @@ from gkcore.views.reports.helpers.balance import calculateBalance
 @view_defaults(request_method="GET")
 class api_ledger(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(route_name="ledger-monthly", renderer="json")
     def monthlyLedger(self):
