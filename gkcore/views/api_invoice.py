@@ -914,15 +914,12 @@ def getInvoiceData(con, orgcode, params):
         inv["deletable"] = 1
     else:
         inv["deletable"] = 0
-    if invrow["sourcestate"] != None:
+    inv["sourcestate"] = None
+    inv["sourcestatecode"] = None
+    if invrow["sourcestate"]:
         inv["sourcestate"] = invrow["sourcestate"]
-        inv["sourcestatecode"] = getStateCode(invrow["sourcestate"], con)[
-            "statecode"
-        ]
         sourceStateCode = getStateCode(invrow["sourcestate"], con)["statecode"]
-    else:
-        inv["sourcestate"] = None
-        inv["sourcestatecode"] = None
+        inv["sourcestatecode"] = sourceStateCode
     if invrow["address"] == None:
         inv["address"] = ""
     else:
@@ -945,7 +942,9 @@ def getInvoiceData(con, orgcode, params):
         inv["transportationmode"] = invrow["transportationmode"]
         inv["vehicleno"] = invrow["vehicleno"]
         inv["reversecharge"] = invrow["reversecharge"]
-        if invrow["taxstate"] != None:
+        inv["destinationstate"] = None
+        inv["taxstatecode"] = None
+        if invrow["taxstate"]:
             inv["destinationstate"] = invrow["taxstate"]
             taxStateCode = getStateCode(invrow["taxstate"], con)["statecode"]
             inv["taxstatecode"] = taxStateCode
@@ -1001,7 +1000,9 @@ def getInvoiceData(con, orgcode, params):
                 statename = statedata.fetchone()
                 statelist.append({statename["statecode"]: statename["statename"]})
 
-            custsupstatecode = getStateCode(custData["state"], con)["statecode"]
+            custsupstatecode = None
+            if custData["state"]:
+                custsupstatecode = getStateCode(custData["state"], con)["statecode"]
             if str(custsupstatecode) not in list(custData["gstin"].keys()):
                 statelist.append({custsupstatecode: custData["state"]})
             if custsc != custsupstatecode and str(custsc) not in list(
@@ -1009,12 +1010,13 @@ def getInvoiceData(con, orgcode, params):
             ):
                 statelist.append({custsc: custSatename})
         else:
-            custsupstatecode = getStateCode(custData["state"], con)["statecode"]
+            custsupstatecode = None
+            if custData["state"]:
+                custsupstatecode = getStateCode(custData["state"], con)["statecode"]
             statelist.append({custsupstatecode: custData["state"]})
             if custsc != custsupstatecode:
                 statelist.append({custsc: custSatename})
 
-        custsupstatecode = getStateCode(custData["state"], con)["statecode"]
         custSupDetails = {
             "custid": invrow["custid"],
             "custname": custData["custname"],
@@ -1249,9 +1251,9 @@ def getInvoiceList(con, orgcode, reqParams):
     srno = 1
     # for each invoice
     for row in result:
-        if row["sourcestate"] != None:
+        if row["sourcestate"]:
             sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
-        if row["taxstate"] != None:
+        if row["taxstate"]:
             destinationStateCode = getStateCode(row["taxstate"], con)["statecode"]
         dcno = ""
         dcdate = ""
