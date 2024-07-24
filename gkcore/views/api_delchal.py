@@ -1300,27 +1300,26 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                dcstatus = int(self.request.params["status"])
-                dc_count = con.execute(
-                    select([func.count(delchal.c.dcid)]).where(
-                        and_(
-                            delchal.c.inoutflag == dcstatus,
-                            delchal.c.orgcode == authDetails["orgcode"],
-                        )
+        with eng.connect() as con:
+            dcstatus = int(self.request.params["status"])
+            dc_count = con.execute(
+                select([func.count(delchal.c.dcid)]).where(
+                    and_(
+                        delchal.c.inoutflag == dcstatus,
+                        delchal.c.orgcode == authDetails["orgcode"],
                     )
-                ).scalar()
-                dcbin_count = con.execute(
-                    select([func.count(delchalbin.c.dcid)]).where(
-                        and_(
-                            delchalbin.c.inoutflag == dcstatus,
-                            delchalbin.c.orgcode == authDetails["orgcode"],
-                        )
+                )
+            ).scalar()
+            dcbin_count = con.execute(
+                select([func.count(delchalbin.c.dcid)]).where(
+                    and_(
+                        delchalbin.c.inoutflag == dcstatus,
+                        delchalbin.c.orgcode == authDetails["orgcode"],
                     )
-                ).scalar()
-                dcid = int(dc_count) + int(dcbin_count) + 1
-                return {"gkstatus": 0, "dcid": dcid}
+                )
+            ).scalar()
+            dcid = int(dc_count) + int(dcbin_count) + 1
+            return {"gkstatus": 0, "dcid": dcid}
 
     @view_config(route_name="delchal_invid", request_method="GET", renderer="json")
     def getinviddetails(self):
