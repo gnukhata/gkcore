@@ -1379,11 +1379,10 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dcid = self.request.params["dcid"]
                 items = {}
-                delchalresult = self.con.execute(
+                delchalresult = con.execute(
                     select([delchal.c.contents, delchal.c.freeqty]).where(
                         delchal.c.dcid == dcid
                     )
@@ -1392,7 +1391,7 @@ class api_delchal(object):
                 freeprod = deliveryinfo["freeqty"]
                 proddata = deliveryinfo["contents"]
                 for pc in list(proddata.keys()):
-                    productdata = self.con.execute(
+                    productdata = con.execute(
                         select(
                             [product.c.productdesc, product.c.uomid, product.c.gscode]
                         ).where(
@@ -1400,7 +1399,7 @@ class api_delchal(object):
                         )
                     )
                     productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(
+                    uomresult = con.execute(
                         select([unitofmeasurement.c.unitname]).where(
                             unitofmeasurement.c.uomid == productdesc["uomid"]
                         )
@@ -1417,7 +1416,7 @@ class api_delchal(object):
                 for frep in list(freeprod.keys()):
                     items[int(frep)]["freeqty"] = float("%.2f" % float(freeprod[frep]))
 
-                result = self.con.execute(
+                result = con.execute(
                     select([dcinv.c.invid, dcinv.c.invprods]).where(
                         dcinv.c.dcid == dcid
                     )
@@ -1425,7 +1424,7 @@ class api_delchal(object):
                 linkedinvoices = result.fetchall()
                 # linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
                 for invoiceid in linkedinvoices:
-                    invresult = self.con.execute(
+                    invresult = con.execute(
                         select([invoice.c.contents, invoice.c.freeqty]).where(
                             invoice.c.invid == invoiceid["invid"]
                         )
@@ -1451,7 +1450,7 @@ class api_delchal(object):
                         except:
                             pass
 
-                allrnidres = self.con.execute(
+                allrnidres = con.execute(
                     select([rejectionnote.c.rnid])
                     .distinct()
                     .where(
@@ -1465,7 +1464,7 @@ class api_delchal(object):
                 rnprodresult = []
                 # get stock respected to all rejection notes
                 for rnid in allrnidres:
-                    temp = self.con.execute(
+                    temp = con.execute(
                         select([stock.c.productcode, stock.c.qty]).where(
                             and_(
                                 stock.c.orgcode == authDetails["orgcode"],
@@ -1487,8 +1486,3 @@ class api_delchal(object):
                         if items[productcode]["qty"] == 0:
                             del items[productcode]
                 return {"gkstatus": enumdict["Success"], "gkresult": items}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
-
