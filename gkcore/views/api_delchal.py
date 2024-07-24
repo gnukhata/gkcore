@@ -208,54 +208,54 @@ class api_delchal(object):
                 if delchaldata["dcflag"] == 19:
                     delchaldata["issuerid"] = authDetails["userid"]
                 result = con.execute(delchal.insert(), [delchaldata])
-                if result.rowcount == 1:
-                    dciddata = con.execute(
-                        select([delchal.c.dcid, delchal.c.dcdate]).where(
-                            and_(
-                                delchal.c.orgcode == authDetails["orgcode"],
-                                delchal.c.dcno == delchaldata["dcno"],
-                                delchal.c.custid == delchaldata["custid"],
-                            )
+                if result.rowcount != 1:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+
+                dciddata = con.execute(
+                    select([delchal.c.dcid, delchal.c.dcdate]).where(
+                        and_(
+                            delchal.c.orgcode == authDetails["orgcode"],
+                            delchal.c.dcno == delchaldata["dcno"],
+                            delchal.c.custid == delchaldata["custid"],
                         )
                     )
-                    dcidrow = dciddata.fetchone()
-                    stockdata["dcinvtnid"] = dcidrow["dcid"]
-                    stockdata["dcinvtnflag"] = 4
-                    stockdata["stockdate"] = dcidrow["dcdate"]
-                    for key in list(items.keys()):
-                        itemQty = float(list(items[key].values())[0])
-                        itemRate = float(list(items[key].keys())[0])
-                        stockdata["rate"] = itemRate
-                        stockdata["productcode"] = key
-                        stockdata["qty"] = itemQty + float(freeqty[key])
-                        result = con.execute(stock.insert(), [stockdata])
-                        if "goid" in stockdata:
-                            resultgoprod = con.execute(
-                                select([goprod]).where(
-                                    and_(
-                                        goprod.c.goid == stockdata["goid"],
-                                        goprod.c.productcode == key,
-                                    )
+                )
+                dcidrow = dciddata.fetchone()
+                stockdata["dcinvtnid"] = dcidrow["dcid"]
+                stockdata["dcinvtnflag"] = 4
+                stockdata["stockdate"] = dcidrow["dcdate"]
+                for key in list(items.keys()):
+                    itemQty = float(list(items[key].values())[0])
+                    itemRate = float(list(items[key].keys())[0])
+                    stockdata["rate"] = itemRate
+                    stockdata["productcode"] = key
+                    stockdata["qty"] = itemQty + float(freeqty[key])
+                    result = con.execute(stock.insert(), [stockdata])
+                    if "goid" in stockdata:
+                        resultgoprod = con.execute(
+                            select([goprod]).where(
+                                and_(
+                                    goprod.c.goid == stockdata["goid"],
+                                    goprod.c.productcode == key,
                                 )
                             )
-                            if resultgoprod.rowcount == 0:
-                                result = con.execute(
-                                    goprod.insert(),
-                                    [
-                                        {
-                                            "goid": stockdata["goid"],
-                                            "productcode": key,
-                                            "goopeningstock": 0.00,
-                                            "orgcode": authDetails["orgcode"],
-                                        }
-                                    ],
-                                )
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": dcidrow["dcid"],
-                    }
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                        )
+                        if resultgoprod.rowcount == 0:
+                            result = con.execute(
+                                goprod.insert(),
+                                [
+                                    {
+                                        "goid": stockdata["goid"],
+                                        "productcode": key,
+                                        "goopeningstock": 0.00,
+                                        "orgcode": authDetails["orgcode"],
+                                    }
+                                ],
+                            )
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": dcidrow["dcid"],
+                }
 
     @view_config(route_name="delchal_dcid", request_method="PUT", renderer="json")
     def editdelchal(self):
