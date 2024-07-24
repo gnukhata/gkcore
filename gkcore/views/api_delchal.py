@@ -1122,133 +1122,132 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                orgcode = authDetails["orgcode"]
-                if "inputdate" in self.request.params:
-                    dataset = {
-                        "inputdate": self.request.params["inputdate"],
-                        "del_cancelled_type": self.request.params["del_cancelled_type"],
-                    }
-                else:
-                    dataset = self.request.json_body
-                inout = self.request.params["inout"]
-                inputdate = dataset["inputdate"]
-                del_cancelled_type = dataset["del_cancelled_type"]
-                new_inputdate = dataset["inputdate"]
-                new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
-                dc_unbilled = []
-                alldcids = None
-                # Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
-                if inout == "i":  # in
-                    if del_cancelled_type == "0":
-                        alldcids = con.execute(
-                            select([delchalbin])
-                            .where(
-                                and_(
-                                    delchalbin.c.orgcode == orgcode,
-                                    delchalbin.c.inoutflag == 9,
-                                    delchalbin.c.dcdate <= new_inputdate,
-                                )
+        with eng.connect() as con:
+            orgcode = authDetails["orgcode"]
+            if "inputdate" in self.request.params:
+                dataset = {
+                    "inputdate": self.request.params["inputdate"],
+                    "del_cancelled_type": self.request.params["del_cancelled_type"],
+                }
+            else:
+                dataset = self.request.json_body
+            inout = self.request.params["inout"]
+            inputdate = dataset["inputdate"]
+            del_cancelled_type = dataset["del_cancelled_type"]
+            new_inputdate = dataset["inputdate"]
+            new_inputdate = datetime.strptime(new_inputdate, "%Y-%m-%d")
+            dc_unbilled = []
+            alldcids = None
+            # Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
+            if inout == "i":  # in
+                if del_cancelled_type == "0":
+                    alldcids = con.execute(
+                        select([delchalbin])
+                        .where(
+                            and_(
+                                delchalbin.c.orgcode == orgcode,
+                                delchalbin.c.inoutflag == 9,
+                                delchalbin.c.dcdate <= new_inputdate,
                             )
-                            .order_by(delchalbin.c.dcdate)
                         )
-                    else:
-                        alldcids = con.execute(
-                            select([delchalbin])
-                            .where(
-                                and_(
-                                    delchalbin.c.orgcode == orgcode,
-                                    delchalbin.c.inoutflag == 9,
-                                    delchalbin.c.dcflag == int(del_cancelled_type),
-                                    delchalbin.c.dcdate <= new_inputdate,
-                                )
-                            )
-                            .order_by(delchalbin.c.dcdate)
-                        )
-                if inout == "o":  # out
-                    if del_cancelled_type == "0":
-                        alldcids = con.execute(
-                            select([delchalbin])
-                            .where(
-                                and_(
-                                    delchalbin.c.orgcode == orgcode,
-                                    delchalbin.c.inoutflag == 15,
-                                    delchalbin.c.dcdate <= new_inputdate,
-                                )
-                            )
-                            .order_by(delchalbin.c.dcdate)
-                        )
-                    else:
-                        alldcids = con.execute(
-                            select([delchalbin])
-                            .where(
-                                and_(
-                                    delchalbin.c.orgcode == orgcode,
-                                    delchalbin.c.inoutflag == 15,
-                                    delchalbin.c.dcflag == int(del_cancelled_type),
-                                    delchalbin.c.dcdate <= new_inputdate,
-                                )
-                            )
-                            .order_by(delchalbin.c.dcdate)
-                        )
-                alldcids = alldcids.fetchall()
-                dcdata = []
-                srno = 1
-                for row in alldcids:
-                    godown = ""
-                    cresult = con.execute(
-                        select(
-                            [
-                                customerandsupplier.c.custname,
-                                customerandsupplier.c.csflag,
-                            ]
-                        ).where(customerandsupplier.c.custid == row["custid"])
+                        .order_by(delchalbin.c.dcdate)
                     )
-                    customerdetails = cresult.fetchone()
-                    if row["goid"] != None:
-                        godownres = con.execute(
-                            "select goname, goaddr from godown where goid = %d"
-                            % int(row["goid"])
+                else:
+                    alldcids = con.execute(
+                        select([delchalbin])
+                        .where(
+                            and_(
+                                delchalbin.c.orgcode == orgcode,
+                                delchalbin.c.inoutflag == 9,
+                                delchalbin.c.dcflag == int(del_cancelled_type),
+                                delchalbin.c.dcdate <= new_inputdate,
+                            )
                         )
-                        godownresult = godownres.fetchone()
-                        if godownresult != None:
-                            godownname = godownresult["goname"]
-                            godownaddrs = godownresult["goaddr"]
-                            godown = godownname + "(" + godownaddrs + ")"
-                        else:
-                            godownname = ""
-                            godownaddrs = ""
-                            godown = ""
-                    if row["dcflag"] == 1:
-                        dcflag = "Approval"
-                    elif row["dcflag"] == 3:
-                        dcflag = "Consignment"
-                    elif row["dcflag"] == 4:
-                        dcflag = "Sale"
-                    elif row["dcflag"] == 16:
-                        dcflag = "Purchase"
-                    elif row["dcflag"] == 19:
-                        # We don't have to consider sample.
-                        dcflag = "Sample"
-                    elif row["dcflag"] == 6:
-                        # we ignore this as well
-                        dcflag = "Free Replacement"
+                        .order_by(delchalbin.c.dcdate)
+                    )
+            if inout == "o":  # out
+                if del_cancelled_type == "0":
+                    alldcids = con.execute(
+                        select([delchalbin])
+                        .where(
+                            and_(
+                                delchalbin.c.orgcode == orgcode,
+                                delchalbin.c.inoutflag == 15,
+                                delchalbin.c.dcdate <= new_inputdate,
+                            )
+                        )
+                        .order_by(delchalbin.c.dcdate)
+                    )
+                else:
+                    alldcids = con.execute(
+                        select([delchalbin])
+                        .where(
+                            and_(
+                                delchalbin.c.orgcode == orgcode,
+                                delchalbin.c.inoutflag == 15,
+                                delchalbin.c.dcflag == int(del_cancelled_type),
+                                delchalbin.c.dcdate <= new_inputdate,
+                            )
+                        )
+                        .order_by(delchalbin.c.dcdate)
+                    )
+            alldcids = alldcids.fetchall()
+            dcdata = []
+            srno = 1
+            for row in alldcids:
+                godown = ""
+                cresult = con.execute(
+                    select(
+                        [
+                            customerandsupplier.c.custname,
+                            customerandsupplier.c.csflag,
+                        ]
+                    ).where(customerandsupplier.c.custid == row["custid"])
+                )
+                customerdetails = cresult.fetchone()
+                if row["goid"] != None:
+                    godownres = con.execute(
+                        "select goname, goaddr from godown where goid = %d"
+                        % int(row["goid"])
+                    )
+                    godownresult = godownres.fetchone()
+                    if godownresult != None:
+                        godownname = godownresult["goname"]
+                        godownaddrs = godownresult["goaddr"]
+                        godown = godownname + "(" + godownaddrs + ")"
                     else:
-                        dcflag = "Bad Input"
-                    singledcdata = {
-                        "dcid": row["dcid"],
-                        "dcno": row["dcno"],
-                        "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
-                        "dcflag": dcflag,
-                        "inoutflag": row["inoutflag"],
-                        "custname": customerdetails["custname"],
-                        "goname": godown,
-                        "srno": srno,
-                    }
-                    dcdata.append(singledcdata)
-                    srno += 1
-                return {"gkstatus": enumdict["Success"], "gkresult": dcdata}
+                        godownname = ""
+                        godownaddrs = ""
+                        godown = ""
+                if row["dcflag"] == 1:
+                    dcflag = "Approval"
+                elif row["dcflag"] == 3:
+                    dcflag = "Consignment"
+                elif row["dcflag"] == 4:
+                    dcflag = "Sale"
+                elif row["dcflag"] == 16:
+                    dcflag = "Purchase"
+                elif row["dcflag"] == 19:
+                    # We don't have to consider sample.
+                    dcflag = "Sample"
+                elif row["dcflag"] == 6:
+                    # we ignore this as well
+                    dcflag = "Free Replacement"
+                else:
+                    dcflag = "Bad Input"
+                singledcdata = {
+                    "dcid": row["dcid"],
+                    "dcno": row["dcno"],
+                    "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
+                    "dcflag": dcflag,
+                    "inoutflag": row["inoutflag"],
+                    "custname": customerdetails["custname"],
+                    "goname": godown,
+                    "srno": srno,
+                }
+                dcdata.append(singledcdata)
+                srno += 1
+            return {"gkstatus": enumdict["Success"], "gkresult": dcdata}
 
     @view_config(route_name="delchal_last", request_method="GET", renderer="json")
     def getLastDelChalDetails(self):
