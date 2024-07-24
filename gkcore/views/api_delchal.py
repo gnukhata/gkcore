@@ -73,14 +73,13 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 """
                 given below is the condition to check the values is delivery in,out or all.
                 if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
                 """
                 if "inoutflag" in self.request.params:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [
                                 delchal.c.dcid,
@@ -101,7 +100,7 @@ class api_delchal(object):
                         )
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [
                                 delchal.c.dcid,
@@ -118,7 +117,7 @@ class api_delchal(object):
                         .order_by(delchal.c.dcno)
                     )
                 # Creating a godown id to godown data map, to add godown details to the delchal list data
-                godata = self.con.execute(
+                godata = con.execute(
                     "select goid, goname from godown where orgcode = %d"
                     % (authDetails["orgcode"])
                 )
@@ -145,7 +144,7 @@ class api_delchal(object):
                 for row in result:
                     # if delchal is linked to invoice, it shouldn't be cancelled. canceldelchal = 1 (if cancellable), 0 (if uncancellable)
                     canceldelchal = 1
-                    exist_dcinv = self.con.execute(
+                    exist_dcinv = con.execute(
                         "select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"
                         % (row["dcid"], authDetails["orgcode"])
                     )
@@ -153,7 +152,7 @@ class api_delchal(object):
                     if existDcinv["dccount"] > 0:
                         canceldelchal = 0
 
-                    delchalgodown = self.con.execute(
+                    delchalgodown = con.execute(
                         select([stock.c.goid]).where(
                             and_(
                                 stock.c.dcinvtnid == row["dcid"],
@@ -172,7 +171,7 @@ class api_delchal(object):
                         # If the user has no godowns assigned to them, then all delivery challans will be returned
                         proceed = True
                     if proceed:
-                        custdata = self.con.execute(
+                        custdata = con.execute(
                             select(
                                 [
                                     customerandsupplier.c.custname,
@@ -194,10 +193,6 @@ class api_delchal(object):
                             }
                         )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     """
     create method for delchal resource.
