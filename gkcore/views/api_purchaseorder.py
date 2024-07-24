@@ -27,11 +27,9 @@ Contributors:
 "Pravin Dake" <pravindake24@gmail.com>
 """
 
-
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
-from pyramid.request import Request
 from gkcore.models.gkdb import (
     purchaseorder,
     stock,
@@ -46,14 +44,11 @@ from gkcore.models.gkdb import (
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc
 import json
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
 from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.models.meta import dbconnect
-
-from datetime import datetime, date
 
 
 def getStateCode(StateName, con):
@@ -67,9 +62,7 @@ def getStateCode(StateName, con):
 @view_defaults(route_name="purchaseorder")
 class api_purchaseorder(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
         print("Purchase order initialized")
 
     @view_config(request_method="POST", renderer="json")
