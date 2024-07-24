@@ -78,44 +78,28 @@ class api_delchal(object):
             given below is the condition to check the values is delivery in,out or all.
             if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
             """
+            query = select([
+                delchal.c.dcid,
+                delchal.c.dcno,
+                delchal.c.custid,
+                delchal.c.dcdate,
+                delchal.c.noofpackages,
+                delchal.c.modeoftransport,
+                delchal.c.attachmentcount,
+                delchal.c.orgcode,
+            ])
             if "inoutflag" in self.request.params:
-                result = con.execute(
-                    select(
-                        [
-                            delchal.c.dcid,
-                            delchal.c.dcno,
-                            delchal.c.custid,
-                            delchal.c.dcdate,
-                            delchal.c.noofpackages,
-                            delchal.c.modeoftransport,
-                            delchal.c.attachmentcount,
-                            delchal.c.orgcode,
-                        ]
-                    ).where(
-                        and_(
-                            delchal.c.inoutflag
-                            == int(self.request.params["inoutflag"]),
-                            delchal.c.orgcode == authDetails["orgcode"],
-                        )
-                    )
-                )
+                query = query.where(and_(
+                    delchal.c.inoutflag
+                    == int(self.request.params["inoutflag"]),
+                    delchal.c.orgcode == authDetails["orgcode"],
+                ))
             else:
-                result = con.execute(
-                    select(
-                        [
-                            delchal.c.dcid,
-                            delchal.c.dcno,
-                            delchal.c.custid,
-                            delchal.c.dcdate,
-                            delchal.c.noofpackages,
-                            delchal.c.modeoftransport,
-                            delchal.c.attachmentcount,
-                            delchal.c.orgcode,
-                        ]
-                    )
-                    .where(delchal.c.orgcode == authDetails["orgcode"])
-                    .order_by(delchal.c.dcno)
-                )
+                query = query.where(
+                    delchal.c.orgcode == authDetails["orgcode"]
+                ).order_by(delchal.c.dcno)
+            result = con.execute(query)
+
             # Creating a godown id to godown data map, to add godown details to the delchal list data
             godata = con.execute(
                 "select goid, goname from godown where orgcode = %d"
