@@ -58,12 +58,12 @@ from gkcore.views.api_godown import getusergodowns
 from gkcore.views.api_invoice import getStateCode
 
 
-@view_defaults(route_name="delchal")
+@view_defaults(request_method="GET", renderer="json")
 class api_delchal(object):
     def __init__(self, request):
         self.request = request
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(route_name="delchal")
     def getAlldelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -186,7 +186,7 @@ class api_delchal(object):
     If stock table insert fails then the delchal entry will be deleted.
     It also returns 'dcid' to front end.
     """
-    @view_config(request_method="POST", renderer="json")
+    @view_config(route_name="delchal", request_method="POST")
     def adddelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -256,7 +256,7 @@ class api_delchal(object):
                 "gkresult": dcidrow["dcid"],
             }
 
-    @view_config(route_name="delchal_dcid", request_method="PUT", renderer="json")
+    @view_config(route_name="delchal_dcid", request_method="PUT")
     def editdelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -301,7 +301,7 @@ class api_delchal(object):
             return {"gkstatus": enumdict["Success"]}
 
     # Below function is used to cancel the delivery note entry from delchal table using dcid and stored in delchalbin table. Also delete stock entry for same dcid.
-    @view_config(route_name="delchal_dcid", request_method="DELETE", renderer="json")
+    @view_config(route_name="delchal_dcid", request_method="DELETE")
     def cancelDelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -409,7 +409,7 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    @view_config(route_name="delchal_dcid", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_dcid")
     def getdelchal(self):
         """
         This function returns the single delivery challan data to frontend depending on 'dcid;.
@@ -808,9 +808,7 @@ class api_delchal(object):
                 "gkresult": singledelchal,
             }
 
-    @view_config(
-        route_name="delchal_cancel_dcid", request_method="GET", renderer="json"
-    )
+    @view_config(route_name="delchal_cancel_dcid")
     def getcanceldelchal(self):
         """
         This function returns the single delivery challan data to frontend depending on 'dcid'.
@@ -1113,7 +1111,7 @@ class api_delchal(object):
             }
 
     # This function returns list of cancelled delivery notes.
-    @view_config(route_name="delchal_cancel", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_cancel")
     def listofCancelDelchal(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1249,7 +1247,7 @@ class api_delchal(object):
                 srno += 1
             return {"gkstatus": enumdict["Success"], "gkresult": dcdata}
 
-    @view_config(route_name="delchal_last", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_last")
     def getLastDelChalDetails(self):
         try:
             """
@@ -1291,7 +1289,7 @@ class api_delchal(object):
                 "gkresult": deliverychallandata,
             }
 
-    @view_config(route_name="delchal_next_id", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_next_id")
     def getdelchalid(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1321,7 +1319,7 @@ class api_delchal(object):
             dcid = int(dc_count) + int(dcbin_count) + 1
             return {"gkstatus": 0, "dcid": dcid}
 
-    @view_config(route_name="delchal_invid", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_invid")
     def getinviddetails(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1340,7 +1338,7 @@ class api_delchal(object):
             deliveryinfo = delchalresult.fetchone()
             return {"gkstatus": 0, "data": deliveryinfo[0]}
 
-    @view_config(route_name="delchal_attachment", request_method="GET", renderer="json")
+    @view_config(route_name="delchal_attachment")
     def getdelchalattachment(self):
         try:
             token = self.request.headers["gktoken"]
@@ -1367,9 +1365,7 @@ class api_delchal(object):
                 "userrole": urole["userrole"],
             }
 
-    @view_config(
-        request_method="GET", request_param="action=getdcinvprods", renderer="json"
-    )
+    @view_config(route_name="delchal", request_param="action=getdcinvprods")
     def getdcinvproducts(self):
         try:
             token = self.request.headers["gktoken"]
