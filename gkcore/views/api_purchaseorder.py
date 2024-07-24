@@ -454,15 +454,14 @@ class api_purchaseorder(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                result = con.execute(
-                    purchaseorder.update()
-                    .where(purchaseorder.c.orderid == dataset["orderid"])
-                    .values(dataset)
-                )
-                return {"gkstatus": enumdict["Success"]}
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                purchaseorder.update()
+                .where(purchaseorder.c.orderid == dataset["orderid"])
+                .values(dataset)
+            )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="DELETE", renderer="json")
     def deletePurchaseOrder(self):
