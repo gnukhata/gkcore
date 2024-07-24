@@ -1263,34 +1263,33 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                deliverychallandata = {"dcdate": "", "dcno": ""}
-                dcstatus = int(self.request.params["status"])
-                result = con.execute(
-                    select([delchal.c.dcno, delchal.c.dcdate]).where(
-                        delchal.c.dcid
-                        == (
-                            select([func.max(stock.c.dcinvtnid)]).where(
-                                and_(
-                                    stock.c.inout == dcstatus,
-                                    stock.c.dcinvtnflag == 4,
-                                    stock.c.orgcode == authDetails["orgcode"],
-                                )
+        with eng.connect() as con:
+            deliverychallandata = {"dcdate": "", "dcno": ""}
+            dcstatus = int(self.request.params["status"])
+            result = con.execute(
+                select([delchal.c.dcno, delchal.c.dcdate]).where(
+                    delchal.c.dcid
+                    == (
+                        select([func.max(stock.c.dcinvtnid)]).where(
+                            and_(
+                                stock.c.inout == dcstatus,
+                                stock.c.dcinvtnflag == 4,
+                                stock.c.orgcode == authDetails["orgcode"],
                             )
                         )
                     )
                 )
-                row = result.fetchone()
-                if row != None:
-                    deliverychallandata["dcdate"] = datetime.strftime(
-                        (row["dcdate"]), "%d-%m-%Y"
-                    )
-                    deliverychallandata["dcno"] = row["dcno"]
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": deliverychallandata,
-                }
+            )
+            row = result.fetchone()
+            if row != None:
+                deliverychallandata["dcdate"] = datetime.strftime(
+                    (row["dcdate"]), "%d-%m-%Y"
+                )
+                deliverychallandata["dcno"] = row["dcno"]
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": deliverychallandata,
+            }
 
     @view_config(route_name="delchal_next_id", request_method="GET", renderer="json")
     def getdelchalid(self):
