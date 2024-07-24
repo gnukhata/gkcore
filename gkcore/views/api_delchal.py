@@ -1123,8 +1123,7 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 if "inputdate" in self.request.params:
                     dataset = {
@@ -1143,7 +1142,7 @@ class api_delchal(object):
                 # Adding the query here only, which will select the dcids either with "delivery-out" type or "delivery-in".
                 if inout == "i":  # in
                     if del_cancelled_type == "0":
-                        alldcids = self.con.execute(
+                        alldcids = con.execute(
                             select([delchalbin])
                             .where(
                                 and_(
@@ -1155,7 +1154,7 @@ class api_delchal(object):
                             .order_by(delchalbin.c.dcdate)
                         )
                     else:
-                        alldcids = self.con.execute(
+                        alldcids = con.execute(
                             select([delchalbin])
                             .where(
                                 and_(
@@ -1169,7 +1168,7 @@ class api_delchal(object):
                         )
                 if inout == "o":  # out
                     if del_cancelled_type == "0":
-                        alldcids = self.con.execute(
+                        alldcids = con.execute(
                             select([delchalbin])
                             .where(
                                 and_(
@@ -1181,7 +1180,7 @@ class api_delchal(object):
                             .order_by(delchalbin.c.dcdate)
                         )
                     else:
-                        alldcids = self.con.execute(
+                        alldcids = con.execute(
                             select([delchalbin])
                             .where(
                                 and_(
@@ -1198,7 +1197,7 @@ class api_delchal(object):
                 srno = 1
                 for row in alldcids:
                     godown = ""
-                    cresult = self.con.execute(
+                    cresult = con.execute(
                         select(
                             [
                                 customerandsupplier.c.custname,
@@ -1208,7 +1207,7 @@ class api_delchal(object):
                     )
                     customerdetails = cresult.fetchone()
                     if row["goid"] != None:
-                        godownres = self.con.execute(
+                        godownres = con.execute(
                             "select goname, goaddr from godown where goid = %d"
                             % int(row["goid"])
                         )
@@ -1250,11 +1249,6 @@ class api_delchal(object):
                     dcdata.append(singledcdata)
                     srno += 1
                 return {"gkstatus": enumdict["Success"], "gkresult": dcdata}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(route_name="delchal_last", request_method="GET", renderer="json")
     def getLastDelChalDetails(self):
