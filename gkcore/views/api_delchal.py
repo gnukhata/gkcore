@@ -18,7 +18,7 @@ Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pv
   Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
   Boston, MA  02110-1301  USA59 Temple Place, Suite 330,
 
-  
+
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 "Ishan Masdekar " <imasdekar@dff.org.in>
@@ -59,8 +59,6 @@ from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from gkcore.views.api_invoice import getStateCode
 
-# import traceback  # for printing detailed exception logs
-
 
 @view_defaults(route_name="delchal")
 class api_delchal(object):
@@ -69,7 +67,6 @@ class api_delchal(object):
         self.request = request
         self.con = Connection
 
-    # request_param="delchal=all",
     @view_config(request_method="GET", renderer="json")
     def getAlldelchal(self):
         try:
@@ -137,7 +134,7 @@ class api_delchal(object):
                 """
                 An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
                 Loop is used to go through the result, fetch customer/supplier data and append them to the list.
-                Each entry in the list is in the form of a dictionary. 
+                Each entry in the list is in the form of a dictionary.
                 """
                 delchals = []
                 """
@@ -212,10 +209,8 @@ class api_delchal(object):
         -delchal id goes in dcinvtnid column of stock table.
         -dcinvtnflag column will be set to 4 for delivery challan entry.
     If stock table insert fails then the delchal entry will be deleted.
-    It's return also 'dcid' to front end.
+    It also returns 'dcid' to front end.
     """
-
-    # added delchal dataset and stockdata dataset in post method.
     @view_config(request_method="POST", renderer="json")
     def adddelchal(self):
         try:
@@ -303,7 +298,6 @@ class api_delchal(object):
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except exc.IntegrityError:
-                # print(traceback.format_exc())
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             except:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
@@ -354,16 +348,13 @@ class api_delchal(object):
                         result = self.con.execute(stock.insert(), [stockdata])
                     return {"gkstatus": enumdict["Success"]}
                 else:
-                    # print(traceback.format_exc())
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             except:
-                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    # Below fuction is use to cancel the deliverynote entry from delchal table using dcid and store in delchalbin table. Also delete stock entry for same dcid.
-    # request_param="type=canceldel",
+    # Below function is used to cancel the delivery note entry from delchal table using dcid and stored in delchalbin table. Also delete stock entry for same dcid.
     @view_config(route_name="delchal_dcid", request_method="DELETE", renderer="json")
     def cancelDelchal(self):
         try:
@@ -382,7 +373,7 @@ class api_delchal(object):
                     select([delchal]).where(delchal.c.dcid == dcid)
                 )
                 delchaldata = delchalData.fetchone()
-                # Add all data of cancel delivry note into delchalbin"
+                # Add all data of cancel delivery note into delchalbin
                 delchalbinData = {
                     "dcid": delchaldata["dcid"],
                     "dcno": delchaldata["dcno"],
@@ -418,7 +409,7 @@ class api_delchal(object):
                 if delchaldata["attachment"] != None:
                     delchalbinData["attachment"] = delchaldata["attachment"]
                 try:
-                    # To add goid for cancelled delivery note in delchalbin table before delete stock entry.
+                    # To add goid for cancelled delivery note in delchalbin table before deleting stock entry.
                     delgodown = self.con.execute(
                         "select goid from stock where dcinvtnid = %d and orgcode=%d and dcinvtnflag=4"
                         % (int(dcid), authDetails["orgcode"])
@@ -460,7 +451,7 @@ class api_delchal(object):
             except:
                 try:
                     dcid = self.request.matchdict["dcid"]
-                    # if delivery note entry is not deleted then delete that delivery note from bin table
+                    # if delivery note entry is not deleted then delete that delivery note from delchalbin table
                     self.con.execute(
                         "delete from delchalbin  where dcid = %d and orgcode=%d"
                         % (int(dcid), authDetails["orgcode"])
@@ -472,14 +463,13 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    # request_param="delchal=single",
     @view_config(route_name="delchal_dcid", request_method="GET", renderer="json")
     def getdelchal(self):
         """
-        This function returns the single delivery challan data to frontend depends on 'dcid;.
-        if for given dcid 'contents' field not available then 'stockdata' will return, else 'delchalContents' will return.
+        This function returns the single delivery challan data to frontend depending on 'dcid;.
+        if for given dcid 'contents' field not available then 'stockdata' will be returned, else 'delchalContents' will be returned.
         we also return the 'delchalflag' for 'Old' and 'new' deliverychallan. for 'Old deliverychallan' delchalflag is '15',
-        and for 'New deliverychallan' delchalflag is '14' set.
+        and for 'New deliverychallan' delchalflag is '14'.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -536,9 +526,7 @@ class api_delchal(object):
                         "modeoftransport": delchaldata["modeoftransport"],
                         "vehicleno": delchaldata["vehicleno"],
                         "attachmentcount": delchaldata["attachmentcount"],
-                        "inoutflag": delchaldata[
-                            "inoutflag"
-                        ],  # added inoutflag in get method
+                        "inoutflag": delchaldata["inoutflag"],
                         "inout": stockinout,
                         "dcnarration": delchaldata["dcnarration"],
                         "roundoffflag": delchaldata["roundoffflag"],
@@ -646,7 +634,7 @@ class api_delchal(object):
                 # ..........................................Delchal ProductCode Info....................
                 # contents is a nested dictionary from invoice table.
                 # It contains productcode as the key with a value as a dictionary.
-                # this dictionary has two key value pare, priceperunit and quantity.
+                # this dictionary has two key value pairs, priceperunit and quantity.
                 if delchaldata["contents"] == None:
                     singledelchal["delchalflag"] = 15
                     stockdata = self.con.execute(
@@ -689,7 +677,7 @@ class api_delchal(object):
                 if delchaldata["contents"] != None:
                     singledelchal["delchalflag"] = 14
                     contentsData = delchaldata["contents"]
-                    # delchalContents is the finally dictionary which will not just have the dataset from original contents,
+                    # delchalContents is the final dictionary which will not just have the dataset from original contents,
                     # but also productdesc,unitname,freeqty,discount,taxname,taxrate,amount and taxamount
                     delchalContents = {}
                     # get the dictionary of discount and access it inside the loop for one product each.
@@ -705,7 +693,7 @@ class api_delchal(object):
                     for pc in list(contentsData.keys()):
                         # freeqty and discount can be 0 as these field were not present in previous version of 4.25 hence we have to check if it is None or not and have to pass values accordingly for code optimization.
                         if discounts != None:
-                            # discflag is for discount type. Percent=16/Amount=1
+                            # discflag is for discount type: 16=Percent, 1=Amount
                             # here we convert percent discount in to amount.
                             if delchaldata["discflag"] == 16:
                                 qty = float(list(contentsData[str(pc)].keys())[0])
@@ -723,7 +711,7 @@ class api_delchal(object):
                             freeqty = freeqtys[pc]
                         else:
                             freeqty = 0.00
-                        # uomid=unit of measurment
+                        # uomid=unit of measurement
                         prod = self.con.execute(
                             select(
                                 [
@@ -876,21 +864,19 @@ class api_delchal(object):
                     "gkresult": singledelchal,
                 }
             except:
-                # print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
 
-    # request_param="delchal=singlecancel",
     @view_config(
         route_name="delchal_cancel_dcid", request_method="GET", renderer="json"
     )
     def getcanceldelchal(self):
         """
-        This function returns the single delivery challan data to frontend depends on 'dcid;.
-        if for given dcid 'contents' field not available then 'stockdata' will return, else 'delchalContents' will return.
+        This function returns the single delivery challan data to frontend depending on 'dcid'.
+        if for given dcid 'contents' field not available then 'stockdata' will be returned, else 'delchalContents' will be returned.
         we also return the 'delchalflag' for 'Old' and 'new' deliverychallan. for 'Old deliverychallan' delchalflag is '15',
-        and for 'New deliverychallan' delchalflag is '14' set.
+        and for 'New deliverychallan' delchalflag is '14'.
         """
         try:
             token = self.request.headers["gktoken"]
@@ -920,16 +906,12 @@ class api_delchal(object):
                         "orggstin": delchaldata["orgstategstin"],
                         "dcdate": datetime.strftime(delchaldata["dcdate"], "%d-%m-%Y"),
                         "taxflag": delchaldata["taxflag"],
-                        # "cancelflag":delchaldata["cancelflag"],
                         "noofpackages": delchaldata["noofpackages"],
                         "modeoftransport": delchaldata["modeoftransport"],
                         "vehicleno": delchaldata["vehicleno"],
                         "attachmentcount": delchaldata["attachmentcount"],
                         "dcnarration": delchaldata["dcnarration"],
-                        "inoutflag": delchaldata[
-                            "inoutflag"
-                        ],  # added inoutflag in get method
-                        # "inout":stockinout,
+                        "inoutflag": delchaldata["inoutflag"],
                         "roundoffflag": delchaldata["roundoffflag"],
                         "totalinword": delchaldata["totalinword"],
                     }
@@ -1051,7 +1033,7 @@ class api_delchal(object):
                             freeqty = freeqtys[pc]
                         else:
                             freeqty = 0.00
-                        # uomid=unit of measurment
+                        # uomid=unit of measurement
                         prod = self.con.execute(
                             select(
                                 [
@@ -1196,8 +1178,7 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    # This function return list of cancelled delivery notes.
-    # request_param="type=listofcancelleddel",
+    # This function returns list of cancelled delivery notes.
     @view_config(route_name="delchal_cancel", request_method="GET", renderer="json")
     def listofCancelDelchal(self):
         try:
@@ -1343,7 +1324,6 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    # request_param="delchal=last",
     @view_config(route_name="delchal_last", request_method="GET", renderer="json")
     def getLastDelChalDetails(self):
         try:
@@ -1392,7 +1372,6 @@ class api_delchal(object):
                 self.con.close()
                 return {"gkstatus": enumdict["ConnectionFailed"]}
 
-    # request_param="type=dcid",
     @view_config(route_name="delchal_next_id", request_method="GET", renderer="json")
     def getdelchalid(self):
         try:
@@ -1405,10 +1384,6 @@ class api_delchal(object):
         else:
             try:
                 self.con = eng.connect()
-                # invcount = self.con.execute(
-                #     "select count(invid) as icount from invoice where inoutflag=%d and orgcode = %d"
-                #     % (int(self.request.params["type"]), authDetails["orgcode"])
-                # )
                 dcstatus = int(self.request.params["status"])
                 dc_count = self.con.execute(
                     select([func.count(delchal.c.dcid)]).where(
@@ -1427,7 +1402,6 @@ class api_delchal(object):
                     )
                 ).scalar()
                 print(dc_count)
-                # dcid = int(dc_count) + 1
                 dcid = int(dc_count) + int(dcbin_count) + 1
                 return {"gkstatus": 0, "dcid": dcid}
             except:
@@ -1435,7 +1409,6 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    # request_param="type=dcid",
     @view_config(route_name="delchal_invid", request_method="GET", renderer="json")
     def getinviddetails(self):
         try:
@@ -1461,7 +1434,6 @@ class api_delchal(object):
             finally:
                 self.con.close()
 
-    # request_param="attach=image",
     @view_config(route_name="delchal_attachment", request_method="GET", renderer="json")
     def getdelchalattachment(self):
         try:
@@ -1619,3 +1591,4 @@ class api_delchal(object):
                 return {"gkstatus": enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
+
