@@ -425,12 +425,11 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 if not self.request.matchdict["dcid"]:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
                 dcid = self.request.matchdict["dcid"]
-                result = self.con.execute(
+                result = con.execute(
                     select([delchal]).where(delchal.c.dcid == dcid)
                 )
                 delchaldata = result.fetchone()
@@ -439,7 +438,7 @@ class api_delchal(object):
                     flag = 40
                 else:
                     flag = 4
-                stockdata = self.con.execute(
+                stockdata = con.execute(
                     select(
                         [stock.c.productcode, stock.c.qty, stock.c.inout, stock.c.goid]
                     ).where(
@@ -497,7 +496,7 @@ class api_delchal(object):
                     )
 
                 if goiddata != None:
-                    godata = self.con.execute(
+                    godata = con.execute(
                         select(
                             [godown.c.goname, godown.c.state, godown.c.goaddr]
                         ).where(godown.c.goid == goiddata)
@@ -512,7 +511,7 @@ class api_delchal(object):
 
                 if delchaldata["taxstate"] != None:
                     singledelchal["destinationstate"] = delchaldata["taxstate"]
-                    taxStateCode = getStateCode(delchaldata["taxstate"], self.con)[
+                    taxStateCode = getStateCode(delchaldata["taxstate"], con)[
                         "statecode"
                     ]
                     singledelchal["taxstatecode"] = taxStateCode
@@ -520,10 +519,10 @@ class api_delchal(object):
                 if delchaldata["sourcestate"] != None:
                     singledelchal["sourcestate"] = delchaldata["sourcestate"]
                     singledelchal["sourcestatecode"] = getStateCode(
-                        delchaldata["sourcestate"], self.con
+                        delchaldata["sourcestate"], con
                     )["statecode"]
                     sourceStateCode = getStateCode(
-                        delchaldata["sourcestate"], self.con
+                        delchaldata["sourcestate"], con
                     )["statecode"]
 
                 if delchaldata["dateofsupply"] != None:
@@ -533,7 +532,7 @@ class api_delchal(object):
                 else:
                     singledelchal["dateofsupply"] = ""
 
-                custandsup = self.con.execute(
+                custandsup = con.execute(
                     select(
                         [
                             customerandsupplier.c.custname,
@@ -547,7 +546,7 @@ class api_delchal(object):
                     ).where(customerandsupplier.c.custid == delchaldata["custid"])
                 )
                 custData = custandsup.fetchone()
-                custsupstatecode = getStateCode(custData["state"], self.con)[
+                custsupstatecode = getStateCode(custData["state"], con)[
                     "statecode"
                 ]
                 singledelchal["custSupDetails"] = {
@@ -583,7 +582,7 @@ class api_delchal(object):
                 # this dictionary has two key value pairs, priceperunit and quantity.
                 if delchaldata["contents"] == None:
                     singledelchal["delchalflag"] = 15
-                    stockdata = self.con.execute(
+                    stockdata = con.execute(
                         select(
                             [
                                 stock.c.productcode,
@@ -599,7 +598,7 @@ class api_delchal(object):
                         )
                     )
                 for stockrow in stockdata:
-                    productdata = self.con.execute(
+                    productdata = con.execute(
                         select([product.c.productdesc, product.c.uomid]).where(
                             and_(
                                 product.c.productcode == stockrow["productcode"],
@@ -608,7 +607,7 @@ class api_delchal(object):
                         )
                     )
                     productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(
+                    uomresult = con.execute(
                         select([unitofmeasurement.c.unitname]).where(
                             unitofmeasurement.c.uomid == productdesc["uomid"]
                         )
@@ -658,7 +657,7 @@ class api_delchal(object):
                         else:
                             freeqty = 0.00
                         # uomid=unit of measurement
-                        prod = self.con.execute(
+                        prod = con.execute(
                             select(
                                 [
                                     product.c.productdesc,
@@ -670,7 +669,7 @@ class api_delchal(object):
                             ).where(product.c.productcode == pc)
                         )
                         prodrow = prod.fetchone()
-                        goid_result = self.con.execute(
+                        goid_result = con.execute(
                             select([stock.c.goid]).where(
                                 and_(
                                     stock.c.productcode == pc,
@@ -681,7 +680,7 @@ class api_delchal(object):
                         goidrow = goid_result.fetchall()
                         # For 'Goods'
                         if int(prodrow["gsflag"]) == 7:
-                            um = self.con.execute(
+                            um = con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
                                     unitofmeasurement.c.uomid == int(prodrow["uomid"])
                                 )
@@ -809,10 +808,6 @@ class api_delchal(object):
                     "gkstatus": gkcore.enumdict["Success"],
                     "gkresult": singledelchal,
                 }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(
         route_name="delchal_cancel_dcid", request_method="GET", renderer="json"
