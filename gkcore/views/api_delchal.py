@@ -1330,16 +1330,15 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                dcid = self.request.matchdict["dcid"]
-                delchalresult = con.execute(
-                    select([dcinv.c.invid]).where(
-                        dcinv.c.dcid == dcid
-                    )
+        with eng.connect() as con:
+            dcid = self.request.matchdict["dcid"]
+            delchalresult = con.execute(
+                select([dcinv.c.invid]).where(
+                    dcinv.c.dcid == dcid
                 )
-                deliveryinfo = delchalresult.fetchone()
-                return {"gkstatus": 0, "data": deliveryinfo[0]}
+            )
+            deliveryinfo = delchalresult.fetchone()
+            return {"gkstatus": 0, "data": deliveryinfo[0]}
 
     @view_config(route_name="delchal_attachment", request_method="GET", renderer="json")
     def getdelchalattachment(self):
