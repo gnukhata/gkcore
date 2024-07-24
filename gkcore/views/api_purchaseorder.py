@@ -103,66 +103,65 @@ class api_purchaseorder(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                if "psflag" in self.request.params:
-                    result = con.execute(
-                        select(
-                            [
-                                purchaseorder.c.orderid,
-                                purchaseorder.c.orderdate,
-                                purchaseorder.c.orderno,
-                                purchaseorder.c.csid,
-                                purchaseorder.c.attachmentcount,
-                                purchaseorder.c.purchaseordertotal,
-                            ]
-                        )
-                        .where(
-                            and_(
-                                purchaseorder.c.orgcode == authDetails["orgcode"],
-                                purchaseorder.c.psflag
-                                == "%d" % int(self.request.params["psflag"]),
-                            )
-                        )
-                        .order_by(purchaseorder.c.orderdate)
+        with eng.connect() as con:
+            if "psflag" in self.request.params:
+                result = con.execute(
+                    select(
+                        [
+                            purchaseorder.c.orderid,
+                            purchaseorder.c.orderdate,
+                            purchaseorder.c.orderno,
+                            purchaseorder.c.csid,
+                            purchaseorder.c.attachmentcount,
+                            purchaseorder.c.purchaseordertotal,
+                        ]
                     )
-                else:
-                    result = con.execute(
-                        select(
-                            [
-                                purchaseorder.c.orderid,
-                                purchaseorder.c.orderdate,
-                                purchaseorder.c.orderno,
-                                purchaseorder.c.csid,
-                                purchaseorder.c.attachmentcount,
-                                purchaseorder.c.purchaseordertotal,
-                            ]
-                        )
-                        .where(purchaseorder.c.orgcode == authDetails["orgcode"])
-                        .order_by(purchaseorder.c.orderdate)
-                    )
-                allposo = []
-                for row in result:
-                    custdata = con.execute(
-                        select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(
-                            customerandsupplier.c.custid == row["csid"]
+                    .where(
+                        and_(
+                            purchaseorder.c.orgcode == authDetails["orgcode"],
+                            purchaseorder.c.psflag
+                            == "%d" % int(self.request.params["psflag"]),
                         )
                     )
-                    custrow = custdata.fetchone()
-                    allposo.append(
-                        {
-                            "orderid": row["orderid"],
-                            "orderno": row["orderno"],
-                            "orderdate": datetime.strftime(
-                                row["orderdate"], "%d-%m-%Y"
-                            ),
-                            "attachmentcount": row["attachmentcount"],
-                            "customer": custrow["custname"],
-                            "ordertotal": float(row["purchaseordertotal"]),
-                            "csflag":  custrow["csflag"],
-                        }
+                    .order_by(purchaseorder.c.orderdate)
+                )
+            else:
+                result = con.execute(
+                    select(
+                        [
+                            purchaseorder.c.orderid,
+                            purchaseorder.c.orderdate,
+                            purchaseorder.c.orderno,
+                            purchaseorder.c.csid,
+                            purchaseorder.c.attachmentcount,
+                            purchaseorder.c.purchaseordertotal,
+                        ]
                     )
-                return {"gkstatus": enumdict["Success"], "gkresult": allposo}
+                    .where(purchaseorder.c.orgcode == authDetails["orgcode"])
+                    .order_by(purchaseorder.c.orderdate)
+                )
+            allposo = []
+            for row in result:
+                custdata = con.execute(
+                    select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(
+                        customerandsupplier.c.custid == row["csid"]
+                    )
+                )
+                custrow = custdata.fetchone()
+                allposo.append(
+                    {
+                        "orderid": row["orderid"],
+                        "orderno": row["orderno"],
+                        "orderdate": datetime.strftime(
+                            row["orderdate"], "%d-%m-%Y"
+                        ),
+                        "attachmentcount": row["attachmentcount"],
+                        "customer": custrow["custname"],
+                        "ordertotal": float(row["purchaseordertotal"]),
+                        "csflag":  custrow["csflag"],
+                    }
+                )
+            return {"gkstatus": enumdict["Success"], "gkresult": allposo}
 
     @view_config(request_method="GET", request_param="poso=single", renderer="json")
     def getSingleposo(self):
