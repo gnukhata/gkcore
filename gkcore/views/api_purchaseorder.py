@@ -432,10 +432,9 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 orderid = self.request.params["orderid"]
-                purchaseorderData = self.con.execute(
+                purchaseorderData = con.execute(
                     select([purchaseorder.c.orderno, purchaseorder.c.attachment]).where(
                         and_(purchaseorder.c.orderid == orderid)
                     )
@@ -446,10 +445,6 @@ class api_purchaseorder(object):
                     "gkresult": attachment["attachment"],
                     "orderno": attachment["orderno"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="PUT", renderer="json")
     def editPurchaseOrder(self):
