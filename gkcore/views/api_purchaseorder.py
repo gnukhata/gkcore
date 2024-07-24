@@ -59,13 +59,13 @@ def getStateCode(StateName, con):
     return {"statecode": staterow["statecode"]}
 
 
-@view_defaults(route_name="purchaseorder")
+@view_defaults(route_name="purchaseorder", request_method="GET", renderer="json")
 class api_purchaseorder(object):
     def __init__(self, request):
         self.request = request
         print("Purchase order initialized")
 
-    @view_config(request_method="POST", renderer="json")
+    @view_config(request_method="POST")
     def addPoSo(self):
         try:
             token = self.request.headers["gktoken"]
@@ -93,7 +93,7 @@ class api_purchaseorder(object):
                 "gkresult": orderIdRow["orderid"],
             }
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(route_name="purchaseorder")
     def getAllPoSoData(self):
         """This function returns all existing PO and SO"""
         try:
@@ -146,7 +146,7 @@ class api_purchaseorder(object):
                 )
             return {"gkstatus": enumdict["Success"], "gkresult": allposo}
 
-    @view_config(request_method="GET", request_param="poso=single", renderer="json")
+    @view_config(request_param="poso=single")
     def getSingleposo(self):
         try:
             token = self.request.headers["gktoken"]
@@ -422,7 +422,7 @@ class api_purchaseorder(object):
                 "gkresult": purchaseorderdetails,
             }
 
-    @view_config(request_method="GET", request_param="attach=image", renderer="json")
+    @view_config(request_param="attach=image")
     def getattachment(self):
         try:
             token = self.request.headers["gktoken"]
@@ -445,7 +445,7 @@ class api_purchaseorder(object):
                 "orderno": attachment["orderno"],
             }
 
-    @view_config(request_method="PUT", renderer="json")
+    @view_config(request_method="PUT")
     def editPurchaseOrder(self):
         try:
             token = self.request.headers["gktoken"]
@@ -463,7 +463,7 @@ class api_purchaseorder(object):
             )
             return {"gkstatus": enumdict["Success"]}
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(request_method="DELETE")
     def deletePurchaseOrder(self):
         try:
             token = self.request.headers["gktoken"]
