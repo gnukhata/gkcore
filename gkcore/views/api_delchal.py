@@ -46,9 +46,7 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 import json
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
-from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
@@ -63,9 +61,7 @@ from gkcore.views.api_invoice import getStateCode
 @view_defaults(route_name="delchal")
 class api_delchal(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="GET", renderer="json")
     def getAlldelchal(self):
