@@ -156,9 +156,8 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([purchaseorder]).where(
                         purchaseorder.c.orderid == self.request.params["orderid"]
                     )
@@ -204,19 +203,19 @@ class api_purchaseorder(object):
                 if podata["sourcestate"] != None:
                     purchaseorderdetails["sourcestate"] = podata["sourcestate"]
                     purchaseorderdetails["sourcestatecode"] = getStateCode(
-                        podata["sourcestate"], self.con
+                        podata["sourcestate"], con
                     )["statecode"]
-                    sourceStateCode = getStateCode(podata["sourcestate"], self.con)[
+                    sourceStateCode = getStateCode(podata["sourcestate"], con)[
                         "statecode"
                     ]
                 if podata["taxstate"] != None:
                     purchaseorderdetails["destinationstate"] = podata["taxstate"]
-                    taxStateCode = getStateCode(podata["taxstate"], self.con)[
+                    taxStateCode = getStateCode(podata["taxstate"], con)[
                         "statecode"
                     ]
                     purchaseorderdetails["taxstatecode"] = taxStateCode
                 if podata["togodown"] != None:
-                    godowndata = self.con.execute(
+                    godowndata = con.execute(
                         select([godown.c.goname, godown.c.goaddr]).where(
                             and_(
                                 godown.c.goid == podata["togodown"],
@@ -228,7 +227,7 @@ class api_purchaseorder(object):
                     purchaseorderdetails["goname"] = godowndetails["goname"]
                     purchaseorderdetails["goaddr"] = godowndetails["goaddr"]
                 # Customer And Supplier details
-                custandsup = self.con.execute(
+                custandsup = con.execute(
                     select(
                         [
                             customerandsupplier.c.custname,
@@ -242,7 +241,7 @@ class api_purchaseorder(object):
                     ).where(customerandsupplier.c.custid == podata["csid"])
                 )
                 custData = custandsup.fetchone()
-                custsupstatecode = getStateCode(custData["state"], self.con)[
+                custsupstatecode = getStateCode(custData["state"], con)[
                     "statecode"
                 ]
                 custSupDetails = {
@@ -290,7 +289,7 @@ class api_purchaseorder(object):
                     else:
                         freeqty = 0.00
                     # Productname and unitofMeasurement depending on productcode.
-                    prod = self.con.execute(
+                    prod = con.execute(
                         select(
                             [
                                 product.c.productdesc,
@@ -302,7 +301,7 @@ class api_purchaseorder(object):
                         ).where(product.c.productcode == productCode)
                     )
                     prodrow = prod.fetchone()
-                    goid_result = self.con.execute(
+                    goid_result = con.execute(
                             select([stock.c.goid]).where(
                                 and_(
                                     stock.c.productcode == productCode,
@@ -312,7 +311,7 @@ class api_purchaseorder(object):
                         )
                     goidrow = goid_result.fetchall()
                     if int(prodrow["gsflag"]) == 7:
-                        um = self.con.execute(
+                        um = con.execute(
                             select([unitofmeasurement.c.unitname]).where(
                                 unitofmeasurement.c.uomid == int(prodrow["uomid"])
                             )
@@ -423,9 +422,6 @@ class api_purchaseorder(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": purchaseorderdetails,
                 }
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
