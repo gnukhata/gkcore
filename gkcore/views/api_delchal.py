@@ -280,26 +280,26 @@ class api_delchal(object):
                 result = con.execute(
                     delchal.update().where(delchal.c.dcid == dcid).values(delchaldata)
                 )
-                if result.rowcount == 1:
-                    result = con.execute(
-                        stock.delete().where(
-                            and_(
-                                stock.c.dcinvtnid == dcid,
-                                stock.c.dcinvtnflag == 4,
-                            )
+                if result.rowcount != 1:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+
+                result = con.execute(
+                    stock.delete().where(
+                        and_(
+                            stock.c.dcinvtnid == dcid,
+                            stock.c.dcinvtnflag == 4,
                         )
                     )
-                    items = delchaldata["contents"]
-                    for key in list(items.keys()):
-                        itemQty = float(list(items[key].values())[0])
-                        itemRate = float(list(items[key].keys())[0])
-                        stockdata["rate"] = itemRate
-                        stockdata["productcode"] = key
-                        stockdata["qty"] = itemQty + float(freeqty[key])
-                        result = con.execute(stock.insert(), [stockdata])
-                    return {"gkstatus": enumdict["Success"]}
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                )
+                items = delchaldata["contents"]
+                for key in list(items.keys()):
+                    itemQty = float(list(items[key].values())[0])
+                    itemRate = float(list(items[key].keys())[0])
+                    stockdata["rate"] = itemRate
+                    stockdata["productcode"] = key
+                    stockdata["qty"] = itemQty + float(freeqty[key])
+                    result = con.execute(stock.insert(), [stockdata])
+                return {"gkstatus": enumdict["Success"]}
 
     # Below function is used to cancel the delivery note entry from delchal table using dcid and stored in delchalbin table. Also delete stock entry for same dcid.
     @view_config(route_name="delchal_dcid", request_method="DELETE", renderer="json")
