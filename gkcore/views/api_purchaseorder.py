@@ -74,25 +74,24 @@ class api_purchaseorder(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                con.execute(purchaseorder.insert(), [dataset])
-                orderIdData = con.execute(
-                    select([purchaseorder.c.orderid]).where(
-                        and_(
-                            purchaseorder.c.orderno == dataset["orderno"],
-                            purchaseorder.c.orderdate == dataset["orderdate"],
-                            purchaseorder.c.orgcode == dataset["orgcode"] ,
-                        )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            dataset["orgcode"] = authDetails["orgcode"]
+            con.execute(purchaseorder.insert(), [dataset])
+            orderIdData = con.execute(
+                select([purchaseorder.c.orderid]).where(
+                    and_(
+                        purchaseorder.c.orderno == dataset["orderno"],
+                        purchaseorder.c.orderdate == dataset["orderdate"],
+                        purchaseorder.c.orgcode == dataset["orgcode"] ,
                     )
                 )
-                orderIdRow = orderIdData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": orderIdRow["orderid"],
-                }
+            )
+            orderIdRow = orderIdData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": orderIdRow["orderid"],
+            }
 
     @view_config(request_method="GET", renderer="json")
     def getAllPoSoData(self):
