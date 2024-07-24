@@ -1195,7 +1195,6 @@ class api_delchal(object):
                     }
                 else:
                     dataset = self.request.json_body
-                print(dataset)
                 inout = self.request.params["inout"]
                 inputdate = dataset["inputdate"]
                 del_cancelled_type = dataset["del_cancelled_type"]
@@ -1257,7 +1256,6 @@ class api_delchal(object):
                             .order_by(delchalbin.c.dcdate)
                         )
                 alldcids = alldcids.fetchall()
-                print(alldcids)
                 dcdata = []
                 srno = 1
                 for row in alldcids:
@@ -1397,7 +1395,6 @@ class api_delchal(object):
                         )
                     )
                 ).scalar()
-                print(dc_count)
                 dcid = int(dc_count) + int(dcbin_count) + 1
                 return {"gkstatus": 0, "dcid": dcid}
             except:
