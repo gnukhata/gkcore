@@ -75,12 +75,11 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
-                self.con.execute(purchaseorder.insert(), [dataset])
-                orderIdData = self.con.execute(
+                con.execute(purchaseorder.insert(), [dataset])
+                orderIdData = con.execute(
                     select([purchaseorder.c.orderid]).where(
                         and_(
                             purchaseorder.c.orderno == dataset["orderno"],
@@ -94,12 +93,6 @@ class api_purchaseorder(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": orderIdRow["orderid"],
                 }
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", renderer="json")
     def getAllPoSoData(self):
