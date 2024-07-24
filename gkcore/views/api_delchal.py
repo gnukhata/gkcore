@@ -826,9 +826,8 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([delchalbin]).where(
                         delchalbin.c.dcid == self.request.matchdict["dcid"]
                     )
@@ -868,7 +867,7 @@ class api_delchal(object):
                     )
 
                 if goiddata != None:
-                    godata = self.con.execute(
+                    godata = con.execute(
                         select(
                             [godown.c.goname, godown.c.state, godown.c.goaddr]
                         ).where(godown.c.goid == goiddata)
@@ -883,7 +882,7 @@ class api_delchal(object):
 
                 if delchaldata["taxstate"] != None:
                     singledelchal["destinationstate"] = delchaldata["taxstate"]
-                    taxStateCode = getStateCode(delchaldata["taxstate"], self.con)[
+                    taxStateCode = getStateCode(delchaldata["taxstate"], con)[
                         "statecode"
                     ]
                     singledelchal["taxstatecode"] = taxStateCode
@@ -891,10 +890,10 @@ class api_delchal(object):
                 if delchaldata["sourcestate"] != None:
                     singledelchal["sourcestate"] = delchaldata["sourcestate"]
                     singledelchal["sourcestatecode"] = getStateCode(
-                        delchaldata["sourcestate"], self.con
+                        delchaldata["sourcestate"], con
                     )["statecode"]
                     sourceStateCode = getStateCode(
-                        delchaldata["sourcestate"], self.con
+                        delchaldata["sourcestate"], con
                     )["statecode"]
 
                 if delchaldata["dateofsupply"] != None:
@@ -904,7 +903,7 @@ class api_delchal(object):
                 else:
                     singledelchal["dateofsupply"] = ""
 
-                custandsup = self.con.execute(
+                custandsup = con.execute(
                     select(
                         [
                             customerandsupplier.c.custname,
@@ -918,7 +917,7 @@ class api_delchal(object):
                     ).where(customerandsupplier.c.custid == delchaldata["custid"])
                 )
                 custData = custandsup.fetchone()
-                custsupstatecode = getStateCode(custData["state"], self.con)[
+                custsupstatecode = getStateCode(custData["state"], con)[
                     "statecode"
                 ]
                 singledelchal["custSupDetails"] = {
@@ -974,7 +973,7 @@ class api_delchal(object):
                         else:
                             freeqty = 0.00
                         # uomid=unit of measurement
-                        prod = self.con.execute(
+                        prod = con.execute(
                             select(
                                 [
                                     product.c.productdesc,
@@ -987,7 +986,7 @@ class api_delchal(object):
                         prodrow = prod.fetchone()
                         # For 'Goods'
                         if int(prodrow["gsflag"]) == 7:
-                            um = self.con.execute(
+                            um = con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
                                     unitofmeasurement.c.uomid == int(prodrow["uomid"])
                                 )
@@ -1113,10 +1112,6 @@ class api_delchal(object):
                     "gkstatus": gkcore.enumdict["Success"],
                     "gkresult": singledelchal,
                 }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     # This function returns list of cancelled delivery notes.
     @view_config(route_name="delchal_cancel", request_method="GET", renderer="json")
