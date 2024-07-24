@@ -104,10 +104,9 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 if "psflag" in self.request.params:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [
                                 purchaseorder.c.orderid,
@@ -128,7 +127,7 @@ class api_purchaseorder(object):
                         .order_by(purchaseorder.c.orderdate)
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [
                                 purchaseorder.c.orderid,
@@ -144,7 +143,7 @@ class api_purchaseorder(object):
                     )
                 allposo = []
                 for row in result:
-                    custdata = self.con.execute(
+                    custdata = con.execute(
                         select([customerandsupplier.c.custname, customerandsupplier.c.csflag]).where(
                             customerandsupplier.c.custid == row["csid"]
                         )
@@ -163,13 +162,7 @@ class api_purchaseorder(object):
                             "csflag":  custrow["csflag"],
                         }
                     )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": allposo}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="poso=single", renderer="json")
     def getSingleposo(self):
