@@ -1301,10 +1301,9 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dcstatus = int(self.request.params["status"])
-                dc_count = self.con.execute(
+                dc_count = con.execute(
                     select([func.count(delchal.c.dcid)]).where(
                         and_(
                             delchal.c.inoutflag == dcstatus,
@@ -1312,7 +1311,7 @@ class api_delchal(object):
                         )
                     )
                 ).scalar()
-                dcbin_count = self.con.execute(
+                dcbin_count = con.execute(
                     select([func.count(delchalbin.c.dcid)]).where(
                         and_(
                             delchalbin.c.inoutflag == dcstatus,
@@ -1322,10 +1321,6 @@ class api_delchal(object):
                 ).scalar()
                 dcid = int(dc_count) + int(dcbin_count) + 1
                 return {"gkstatus": 0, "dcid": dcid}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(route_name="delchal_invid", request_method="GET", renderer="json")
     def getinviddetails(self):
