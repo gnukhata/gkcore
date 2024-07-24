@@ -1350,12 +1350,11 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 dcid = self.request.matchdict["dcid"]
-                delchalData = self.con.execute(
+                delchalData = con.execute(
                     select(
                         [delchal.c.dcno, delchal.c.attachment, delchal.c.cancelflag]
                     ).where(and_(delchal.c.dcid == dcid))
@@ -1368,10 +1367,6 @@ class api_delchal(object):
                     "cancelflag": attachment["cancelflag"],
                     "userrole": urole["userrole"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(
         request_method="GET", request_param="action=getdcinvprods", renderer="json"
