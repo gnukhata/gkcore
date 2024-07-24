@@ -1264,11 +1264,10 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 deliverychallandata = {"dcdate": "", "dcno": ""}
                 dcstatus = int(self.request.params["status"])
-                result = self.con.execute(
+                result = con.execute(
                     select([delchal.c.dcno, delchal.c.dcdate]).where(
                         delchal.c.dcid
                         == (
@@ -1288,14 +1287,10 @@ class api_delchal(object):
                         (row["dcdate"]), "%d-%m-%Y"
                     )
                     deliverychallandata["dcno"] = row["dcno"]
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": deliverychallandata,
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(route_name="delchal_next_id", request_method="GET", renderer="json")
     def getdelchalid(self):
