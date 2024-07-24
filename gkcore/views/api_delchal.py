@@ -1349,24 +1349,23 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                dcid = self.request.matchdict["dcid"]
-                delchalData = con.execute(
-                    select(
-                        [delchal.c.dcno, delchal.c.attachment, delchal.c.cancelflag]
-                    ).where(and_(delchal.c.dcid == dcid))
-                )
-                attachment = delchalData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": attachment["attachment"],
-                    "dcno": attachment["dcno"],
-                    "cancelflag": attachment["cancelflag"],
-                    "userrole": urole["userrole"],
-                }
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            dcid = self.request.matchdict["dcid"]
+            delchalData = con.execute(
+                select(
+                    [delchal.c.dcno, delchal.c.attachment, delchal.c.cancelflag]
+                ).where(and_(delchal.c.dcid == dcid))
+            )
+            attachment = delchalData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": attachment["attachment"],
+                "dcno": attachment["dcno"],
+                "cancelflag": attachment["cancelflag"],
+                "userrole": urole["userrole"],
+            }
 
     @view_config(
         request_method="GET", request_param="action=getdcinvprods", renderer="json"
