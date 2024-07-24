@@ -1378,111 +1378,110 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                dcid = self.request.params["dcid"]
-                items = {}
-                delchalresult = con.execute(
-                    select([delchal.c.contents, delchal.c.freeqty]).where(
-                        delchal.c.dcid == dcid
+        with eng.connect() as con:
+            dcid = self.request.params["dcid"]
+            items = {}
+            delchalresult = con.execute(
+                select([delchal.c.contents, delchal.c.freeqty]).where(
+                    delchal.c.dcid == dcid
+                )
+            )
+            deliveryinfo = delchalresult.fetchone()
+            freeprod = deliveryinfo["freeqty"]
+            proddata = deliveryinfo["contents"]
+            for pc in list(proddata.keys()):
+                productdata = con.execute(
+                    select(
+                        [product.c.productdesc, product.c.uomid, product.c.gscode]
+                    ).where(
+                        and_(product.c.productcode == pc, product.c.gsflag == 7)
                     )
                 )
-                deliveryinfo = delchalresult.fetchone()
-                freeprod = deliveryinfo["freeqty"]
-                proddata = deliveryinfo["contents"]
-                for pc in list(proddata.keys()):
-                    productdata = con.execute(
-                        select(
-                            [product.c.productdesc, product.c.uomid, product.c.gscode]
-                        ).where(
-                            and_(product.c.productcode == pc, product.c.gsflag == 7)
-                        )
+                productdesc = productdata.fetchone()
+                uomresult = con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        unitofmeasurement.c.uomid == productdesc["uomid"]
                     )
-                    productdesc = productdata.fetchone()
-                    uomresult = con.execute(
-                        select([unitofmeasurement.c.unitname]).where(
-                            unitofmeasurement.c.uomid == productdesc["uomid"]
-                        )
-                    )
-                    unitnamrrow = uomresult.fetchone()
-                    items[int(pc)] = {
-                        "qty": float(
-                            "%.2f" % float(proddata[pc][list(proddata[pc].keys())[0]])
-                        ),
-                        "productdesc": productdesc["productdesc"],
-                        "unitname": unitnamrrow["unitname"],
-                        "gscode": productdesc["gscode"],
-                    }
-                for frep in list(freeprod.keys()):
-                    items[int(frep)]["freeqty"] = float("%.2f" % float(freeprod[frep]))
+                )
+                unitnamrrow = uomresult.fetchone()
+                items[int(pc)] = {
+                    "qty": float(
+                        "%.2f" % float(proddata[pc][list(proddata[pc].keys())[0]])
+                    ),
+                    "productdesc": productdesc["productdesc"],
+                    "unitname": unitnamrrow["unitname"],
+                    "gscode": productdesc["gscode"],
+                }
+            for frep in list(freeprod.keys()):
+                items[int(frep)]["freeqty"] = float("%.2f" % float(freeprod[frep]))
 
-                result = con.execute(
-                    select([dcinv.c.invid, dcinv.c.invprods]).where(
-                        dcinv.c.dcid == dcid
+            result = con.execute(
+                select([dcinv.c.invid, dcinv.c.invprods]).where(
+                    dcinv.c.dcid == dcid
+                )
+            )
+            linkedinvoices = result.fetchall()
+            # linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
+            for invoiceid in linkedinvoices:
+                invresult = con.execute(
+                    select([invoice.c.contents, invoice.c.freeqty]).where(
+                        invoice.c.invid == invoiceid["invid"]
                     )
                 )
-                linkedinvoices = result.fetchall()
-                # linkedinvoices refers to the invoices which are associated with the delivery challan whose id = dcid.
-                for invoiceid in linkedinvoices:
-                    invresult = con.execute(
-                        select([invoice.c.contents, invoice.c.freeqty]).where(
-                            invoice.c.invid == invoiceid["invid"]
-                        )
-                    )
-                    invoiceinfo = invresult.fetchone()
-                    freeprodinv = invoiceinfo["freeqty"]
-                    proddatainv = invoiceinfo["contents"]
-                    for pc in list(proddatainv.keys()):
-                        try:
-                            items[int(pc)]["qty"] -= float(
-                                "%.2f"
-                                % float(
-                                    proddatainv[pc][list(proddatainv[pc].keys())[0]]
-                                )
-                            )
-                        except:
-                            pass
-                    for pc in list(freeprodinv.keys()):
-                        try:
-                            items[int(pc)]["freeqty"] -= float(
-                                "%.2f" % float(freeprodinv[pc])
-                            )
-                        except:
-                            pass
-
-                allrnidres = con.execute(
-                    select([rejectionnote.c.rnid])
-                    .distinct()
-                    .where(
-                        and_(
-                            rejectionnote.c.orgcode == authDetails["orgcode"],
-                            rejectionnote.c.dcid == dcid,
-                        )
-                    )
-                )
-                allrnidres = allrnidres.fetchall()
-                rnprodresult = []
-                # get stock respected to all rejection notes
-                for rnid in allrnidres:
-                    temp = con.execute(
-                        select([stock.c.productcode, stock.c.qty]).where(
-                            and_(
-                                stock.c.orgcode == authDetails["orgcode"],
-                                stock.c.dcinvtnflag == 18,
-                                stock.c.dcinvtnid == rnid[0],
-                            )
-                        )
-                    )
-                    temp = temp.fetchall()
-                    rnprodresult.append(temp)
-                for row in rnprodresult:
+                invoiceinfo = invresult.fetchone()
+                freeprodinv = invoiceinfo["freeqty"]
+                proddatainv = invoiceinfo["contents"]
+                for pc in list(proddatainv.keys()):
                     try:
-                        for prodc, qty in row:
-                            items[int(prodc)]["qty"] -= float(qty)
+                        items[int(pc)]["qty"] -= float(
+                            "%.2f"
+                            % float(
+                                proddatainv[pc][list(proddatainv[pc].keys())[0]]
+                            )
+                        )
                     except:
                         pass
-                if len(linkedinvoices) != 0 or len(rnprodresult) != 0:
-                    for productcode in list(items.keys()):
-                        if items[productcode]["qty"] == 0:
-                            del items[productcode]
-                return {"gkstatus": enumdict["Success"], "gkresult": items}
+                for pc in list(freeprodinv.keys()):
+                    try:
+                        items[int(pc)]["freeqty"] -= float(
+                            "%.2f" % float(freeprodinv[pc])
+                        )
+                    except:
+                        pass
+
+            allrnidres = con.execute(
+                select([rejectionnote.c.rnid])
+                .distinct()
+                .where(
+                    and_(
+                        rejectionnote.c.orgcode == authDetails["orgcode"],
+                        rejectionnote.c.dcid == dcid,
+                    )
+                )
+            )
+            allrnidres = allrnidres.fetchall()
+            rnprodresult = []
+            # get stock respected to all rejection notes
+            for rnid in allrnidres:
+                temp = con.execute(
+                    select([stock.c.productcode, stock.c.qty]).where(
+                        and_(
+                            stock.c.orgcode == authDetails["orgcode"],
+                            stock.c.dcinvtnflag == 18,
+                            stock.c.dcinvtnid == rnid[0],
+                        )
+                    )
+                )
+                temp = temp.fetchall()
+                rnprodresult.append(temp)
+            for row in rnprodresult:
+                try:
+                    for prodc, qty in row:
+                        items[int(prodc)]["qty"] -= float(qty)
+                except:
+                    pass
+            if len(linkedinvoices) != 0 or len(rnprodresult) != 0:
+                for productcode in list(items.keys()):
+                    if items[productcode]["qty"] == 0:
+                        del items[productcode]
+            return {"gkstatus": enumdict["Success"], "gkresult": items}
