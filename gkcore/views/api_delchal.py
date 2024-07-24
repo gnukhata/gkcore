@@ -266,8 +266,7 @@ class api_delchal(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dcid = self.request.matchdict["dcid"]
                 dataset = self.request.json_body
                 delchaldata = dataset["delchaldata"]
@@ -278,11 +277,11 @@ class api_delchal(object):
                 stockdata["stockdate"] = delchaldata["dcdate"]
                 freeqty = delchaldata["freeqty"]
                 stockdata["dcinvtnflag"] = 4
-                result = self.con.execute(
+                result = con.execute(
                     delchal.update().where(delchal.c.dcid == dcid).values(delchaldata)
                 )
                 if result.rowcount == 1:
-                    result = self.con.execute(
+                    result = con.execute(
                         stock.delete().where(
                             and_(
                                 stock.c.dcinvtnid == dcid,
@@ -297,14 +296,10 @@ class api_delchal(object):
                         stockdata["rate"] = itemRate
                         stockdata["productcode"] = key
                         stockdata["qty"] = itemQty + float(freeqty[key])
-                        result = self.con.execute(stock.insert(), [stockdata])
+                        result = con.execute(stock.insert(), [stockdata])
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     # Below function is used to cancel the delivery note entry from delchal table using dcid and stored in delchalbin table. Also delete stock entry for same dcid.
     @view_config(route_name="delchal_dcid", request_method="DELETE", renderer="json")
