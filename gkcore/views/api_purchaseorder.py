@@ -455,19 +455,14 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     purchaseorder.update()
                     .where(purchaseorder.c.orderid == dataset["orderid"])
                     .values(dataset)
                 )
                 return {"gkstatus": enumdict["Success"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="DELETE", renderer="json")
     def deletePurchaseOrder(self):
