@@ -72,127 +72,127 @@ class api_delchal(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                """
-                given below is the condition to check the values is delivery in,out or all.
-                if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
-                """
-                if "inoutflag" in self.request.params:
-                    result = con.execute(
-                        select(
-                            [
-                                delchal.c.dcid,
-                                delchal.c.dcno,
-                                delchal.c.custid,
-                                delchal.c.dcdate,
-                                delchal.c.noofpackages,
-                                delchal.c.modeoftransport,
-                                delchal.c.attachmentcount,
-                                delchal.c.orgcode,
-                            ]
-                        ).where(
-                            and_(
-                                delchal.c.inoutflag
-                                == int(self.request.params["inoutflag"]),
-                                delchal.c.orgcode == authDetails["orgcode"],
-                            )
+
+        with eng.connect() as con:
+            """
+            given below is the condition to check the values is delivery in,out or all.
+            if inoutflag is there then it will perform the following if condition for delivery in or out. otherwise it will perform else condition
+            """
+            if "inoutflag" in self.request.params:
+                result = con.execute(
+                    select(
+                        [
+                            delchal.c.dcid,
+                            delchal.c.dcno,
+                            delchal.c.custid,
+                            delchal.c.dcdate,
+                            delchal.c.noofpackages,
+                            delchal.c.modeoftransport,
+                            delchal.c.attachmentcount,
+                            delchal.c.orgcode,
+                        ]
+                    ).where(
+                        and_(
+                            delchal.c.inoutflag
+                            == int(self.request.params["inoutflag"]),
+                            delchal.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                else:
-                    result = con.execute(
-                        select(
-                            [
-                                delchal.c.dcid,
-                                delchal.c.dcno,
-                                delchal.c.custid,
-                                delchal.c.dcdate,
-                                delchal.c.noofpackages,
-                                delchal.c.modeoftransport,
-                                delchal.c.attachmentcount,
-                                delchal.c.orgcode,
-                            ]
-                        )
-                        .where(delchal.c.orgcode == authDetails["orgcode"])
-                        .order_by(delchal.c.dcno)
-                    )
-                # Creating a godown id to godown data map, to add godown details to the delchal list data
-                godata = con.execute(
-                    "select goid, goname from godown where orgcode = %d"
-                    % (authDetails["orgcode"])
                 )
-                gorows = godata.fetchall()
-                godownMap = {}
-                for gorow in gorows:
-                    godownMap[gorow["goid"]] = {"goname": gorow["goname"]}
-
-                """
-                An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
-                Loop is used to go through the result, fetch customer/supplier data and append them to the list.
-                Each entry in the list is in the form of a dictionary.
-                """
-                delchals = []
-                """
-                A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
-                If user is not a godown keeper this list will be empty.
-                If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
-                """
-                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
-                godowns = []
-                for godown in usergodowmns:
-                    godowns.append(godown["goid"])
-                for row in result:
-                    # if delchal is linked to invoice, it shouldn't be cancelled. canceldelchal = 1 (if cancellable), 0 (if uncancellable)
-                    canceldelchal = 1
-                    exist_dcinv = con.execute(
-                        "select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"
-                        % (row["dcid"], authDetails["orgcode"])
+            else:
+                result = con.execute(
+                    select(
+                        [
+                            delchal.c.dcid,
+                            delchal.c.dcno,
+                            delchal.c.custid,
+                            delchal.c.dcdate,
+                            delchal.c.noofpackages,
+                            delchal.c.modeoftransport,
+                            delchal.c.attachmentcount,
+                            delchal.c.orgcode,
+                        ]
                     )
-                    existDcinv = exist_dcinv.fetchone()
-                    if existDcinv["dccount"] > 0:
-                        canceldelchal = 0
+                    .where(delchal.c.orgcode == authDetails["orgcode"])
+                    .order_by(delchal.c.dcno)
+                )
+            # Creating a godown id to godown data map, to add godown details to the delchal list data
+            godata = con.execute(
+                "select goid, goname from godown where orgcode = %d"
+                % (authDetails["orgcode"])
+            )
+            gorows = godata.fetchall()
+            godownMap = {}
+            for gorow in gorows:
+                godownMap[gorow["goid"]] = {"goname": gorow["goname"]}
 
-                    delchalgodown = con.execute(
-                        select([stock.c.goid]).where(
-                            and_(
-                                stock.c.dcinvtnid == row["dcid"],
-                                stock.c.dcinvtnflag == 4,
-                            )
+            """
+            An empty list is created. Details of each delivery note and customer/supplier associated with it is stored in it.
+            Loop is used to go through the result, fetch customer/supplier data and append them to the list.
+            Each entry in the list is in the form of a dictionary.
+            """
+            delchals = []
+            """
+            A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
+            If user is not a godown keeper this list will be empty.
+            If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
+            """
+            usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+            godowns = []
+            for godown in usergodowmns:
+                godowns.append(godown["goid"])
+            for row in result:
+                # if delchal is linked to invoice, it shouldn't be cancelled. canceldelchal = 1 (if cancellable), 0 (if uncancellable)
+                canceldelchal = 1
+                exist_dcinv = con.execute(
+                    "select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"
+                    % (row["dcid"], authDetails["orgcode"])
+                )
+                existDcinv = exist_dcinv.fetchone()
+                if existDcinv["dccount"] > 0:
+                    canceldelchal = 0
+
+                delchalgodown = con.execute(
+                    select([stock.c.goid]).where(
+                        and_(
+                            stock.c.dcinvtnid == row["dcid"],
+                            stock.c.dcinvtnflag == 4,
                         )
                     )
-                    delchalgodata = delchalgodown.fetchone()
-                    delchalgoid = delchalgodata["goid"]
-                    proceed = False
-                    if usergodowmns:
-                        if delchalgoid in godowns:
-                            # If the user has godowns assigned, then only those delchals mapped to the user godowns will be returned
-                            proceed = True
-                    else:
-                        # If the user has no godowns assigned to them, then all delivery challans will be returned
+                )
+                delchalgodata = delchalgodown.fetchone()
+                delchalgoid = delchalgodata["goid"]
+                proceed = False
+                if usergodowmns:
+                    if delchalgoid in godowns:
+                        # If the user has godowns assigned, then only those delchals mapped to the user godowns will be returned
                         proceed = True
-                    if proceed:
-                        custdata = con.execute(
-                            select(
-                                [
-                                    customerandsupplier.c.custname,
-                                    customerandsupplier.c.csflag,
-                                ]
-                            ).where(customerandsupplier.c.custid == row["custid"])
-                        )
-                        custrow = custdata.fetchone()
-                        delchals.append(
-                            {
-                                "dcid": row["dcid"],
-                                "dcno": row["dcno"],
-                                "custname": custrow["custname"],
-                                "csflag": custrow["csflag"],
-                                "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
-                                "attachmentcount": row["attachmentcount"],
-                                "goname": godownMap[delchalgoid]["goname"] or "",
-                                "canceldelchal": canceldelchal,
-                            }
-                        )
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
+                else:
+                    # If the user has no godowns assigned to them, then all delivery challans will be returned
+                    proceed = True
+                if proceed:
+                    custdata = con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == row["custid"])
+                    )
+                    custrow = custdata.fetchone()
+                    delchals.append(
+                        {
+                            "dcid": row["dcid"],
+                            "dcno": row["dcno"],
+                            "custname": custrow["custname"],
+                            "csflag": custrow["csflag"],
+                            "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
+                            "attachmentcount": row["attachmentcount"],
+                            "goname": godownMap[delchalgoid]["goname"] or "",
+                            "canceldelchal": canceldelchal,
+                        }
+                    )
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
 
     """
     create method for delchal resource.
