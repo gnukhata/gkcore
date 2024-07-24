@@ -104,42 +104,25 @@ class api_purchaseorder(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.connect() as con:
+            query = select([
+                purchaseorder.c.orderid,
+                purchaseorder.c.orderdate,
+                purchaseorder.c.orderno,
+                purchaseorder.c.csid,
+                purchaseorder.c.attachmentcount,
+                purchaseorder.c.purchaseordertotal,
+            ])
             if "psflag" in self.request.params:
-                result = con.execute(
-                    select(
-                        [
-                            purchaseorder.c.orderid,
-                            purchaseorder.c.orderdate,
-                            purchaseorder.c.orderno,
-                            purchaseorder.c.csid,
-                            purchaseorder.c.attachmentcount,
-                            purchaseorder.c.purchaseordertotal,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            purchaseorder.c.orgcode == authDetails["orgcode"],
-                            purchaseorder.c.psflag
-                            == "%d" % int(self.request.params["psflag"]),
-                        )
-                    )
-                    .order_by(purchaseorder.c.orderdate)
-                )
+                query = query.where(and_(
+                    purchaseorder.c.orgcode == authDetails["orgcode"],
+                    purchaseorder.c.psflag
+                    == "%d" % int(self.request.params["psflag"]),
+                )).order_by(purchaseorder.c.orderdate)
             else:
-                result = con.execute(
-                    select(
-                        [
-                            purchaseorder.c.orderid,
-                            purchaseorder.c.orderdate,
-                            purchaseorder.c.orderno,
-                            purchaseorder.c.csid,
-                            purchaseorder.c.attachmentcount,
-                            purchaseorder.c.purchaseordertotal,
-                        ]
-                    )
-                    .where(purchaseorder.c.orgcode == authDetails["orgcode"])
-                    .order_by(purchaseorder.c.orderdate)
-                )
+                query = query.where(
+                    purchaseorder.c.orgcode == authDetails["orgcode"]
+                ).order_by(purchaseorder.c.orderdate)
+            result = con.execute(query)
             allposo = []
             for row in result:
                 custdata = con.execute(
