@@ -431,20 +431,19 @@ class api_purchaseorder(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                orderid = self.request.params["orderid"]
-                purchaseorderData = con.execute(
-                    select([purchaseorder.c.orderno, purchaseorder.c.attachment]).where(
-                        and_(purchaseorder.c.orderid == orderid)
-                    )
+        with eng.connect() as con:
+            orderid = self.request.params["orderid"]
+            purchaseorderData = con.execute(
+                select([purchaseorder.c.orderno, purchaseorder.c.attachment]).where(
+                    and_(purchaseorder.c.orderid == orderid)
                 )
-                attachment = purchaseorderData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": attachment["attachment"],
-                    "orderno": attachment["orderno"],
-                }
+            )
+            attachment = purchaseorderData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": attachment["attachment"],
+                "orderno": attachment["orderno"],
+            }
 
     @view_config(request_method="PUT", renderer="json")
     def editPurchaseOrder(self):
