@@ -751,8 +751,7 @@ def drcrVoucher(queryParams, orgcode):
     type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a
     Debit or Credit Note Voucher.
     """
-    try:
-        con = eng.connect()
+    with eng.begin() as con:
         # taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
         taxRateDict = {
             1: 0.5,
@@ -4211,5 +4210,3 @@ def drcrVoucher(queryParams, orgcode):
                 )
             vchCodes.append(initialType)
         return vchCodes
-    except:
-        raise Exception("Issue with voucher creation")
