@@ -541,43 +541,27 @@ class api_drcr(object):
                         ).where(customerandsupplier.c.custid == invdata["custid"])
                     )
                     custsuppdata = custsupp.fetchone()
+                    rowdata = {
+                        "drcrid": row["drcrid"],
+                        "drcrno": row["drcrno"],
+                        "drcrdate": datetime.strftime(
+                            row["drcrdate"], "%d-%m-%Y"
+                            ),
+                        "dctypeflag": row["dctypeflag"],
+                        "totreduct": "%.2f" % float(row["totreduct"]),
+                        "invid": row["invid"],
+                        "attachmentcount": row["attachmentcount"],
+                        "custid": invdata["custid"],
+                        "custname": custsuppdata["custname"],
+                        "csflag": custsuppdata["csflag"],
+                    }
                     if "drcrflag" in self.request.params:
                         if int(self.request.params["drcrflag"]) == int(
                             row["dctypeflag"]
                         ):
-                            drcrdata.append(
-                                {
-                                    "drcrid": row["drcrid"],
-                                    "drcrno": row["drcrno"],
-                                    "drcrdate": datetime.strftime(
-                                        row["drcrdate"], "%d-%m-%Y"
-                                    ),
-                                    "dctypeflag": row["dctypeflag"],
-                                    "totreduct": "%.2f" % float(row["totreduct"]),
-                                    "invid": row["invid"],
-                                    "attachmentcount": row["attachmentcount"],
-                                    "custid": invdata["custid"],
-                                    "custname": custsuppdata["custname"],
-                                    "csflag": custsuppdata["csflag"],
-                                }
-                            )
+                            drcrdata.append(rowdata)
                     else:
-                        drcrdata.append(
-                            {
-                                "drcrid": row["drcrid"],
-                                "drcrno": row["drcrno"],
-                                "drcrdate": datetime.strftime(
-                                    row["drcrdate"], "%d-%m-%Y"
-                                ),
-                                "dctypeflag": row["dctypeflag"],
-                                "totreduct": "%.2f" % float(row["totreduct"]),
-                                "invid": row["invid"],
-                                "attachmentcount": row["attachmentcount"],
-                                "custid": invdata["custid"],
-                                "custname": custsuppdata["custname"],
-                                "csflag": custsuppdata["csflag"],
-                            }
-                        )
+                        drcrdata.append(rowdata)
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     """
