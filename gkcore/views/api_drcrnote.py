@@ -64,117 +64,116 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                wholedataset = self.request.json_body
-                dataset = wholedataset["dataset"]
-                vdataset = wholedataset["vdataset"]
-                dataset["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = con.execute(
-                    select([drcr.c.drcrno]).where(
-                        and_(
-                            drcr.c.orgcode == authDetails["orgcode"],
-                            func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
-                        )
+        with eng.begin() as con:
+            wholedataset = self.request.json_body
+            dataset = wholedataset["dataset"]
+            vdataset = wholedataset["vdataset"]
+            dataset["orgcode"] = authDetails["orgcode"]
+            # Check for duplicate entry before insertion
+            result_duplicate_check = con.execute(
+                select([drcr.c.drcrno]).where(
+                    and_(
+                        drcr.c.orgcode == authDetails["orgcode"],
+                        func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
                     )
                 )
+            )
 
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
+            if result_duplicate_check.rowcount > 0:
+                # Duplicate entry found, handle accordingly
+                return {"gkstatus": enumdict["DuplicateEntry"]}
 
-                result = con.execute(drcr.insert(), [dataset])
-                lastdrcr = con.execute(
-                    select([drcr.c.drcrid]).where(
-                        and_(
-                            drcr.c.invid == dataset["invid"],
-                            drcr.c.drcrno == dataset["drcrno"],
-                            drcr.c.orgcode == dataset["orgcode"],
-                            drcr.c.dctypeflag == dataset["dctypeflag"],
-                        )
+            result = con.execute(drcr.insert(), [dataset])
+            lastdrcr = con.execute(
+                select([drcr.c.drcrid]).where(
+                    and_(
+                        drcr.c.invid == dataset["invid"],
+                        drcr.c.drcrno == dataset["drcrno"],
+                        drcr.c.orgcode == dataset["orgcode"],
+                        drcr.c.dctypeflag == dataset["dctypeflag"],
                     )
                 )
-                drcrid = lastdrcr.fetchone()
-                if int(dataset["drcrmode"]) == 18:
-                    stockdataset = {
-                        "dcinvtnid": drcrid["drcrid"],
-                        "orgcode": dataset["orgcode"],
-                        "stockdate": dataset["drcrdate"],
-                    }
-                    if int(dataset["dctypeflag"]) == 3:
-                        stockdataset["inout"] = 9
-                        if int(vdataset["inoutflag"]) == 15:
-                            # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
-                            stockdataset["dcinvtnflag"] = int(dataset["dcinvtnflag"])
-                        else:
-                            stockdataset["dcinvtnflag"] = 7
-                    else:
-                        stockdataset["inout"] = 15
-                        stockdataset["dcinvtnflag"] = 7
-
-                    if "goid" in vdataset:
-                        stockdataset["goid"] = vdataset["goid"]
-
-                    # Iterate through the keys and values using a for loop
-                    if "quantities" in dataset["reductionval"]:
-                        for key, value in dataset["reductionval"]["quantities"].items():
-                            stockdataset["qty"] = value
-                            stockdataset["productcode"] = key
-                            itemPrice = con.execute(
-                                select([product.c.prodmrp]).where(
-                                    product.c.productcode == stockdataset["productcode"]
-                                )
-                            )
-                            itemP = itemPrice.fetchone()
-                            stockdataset["rate"] = itemP[0]
-                            con.execute(stock.insert(), stockdataset)
-
-                # check automatic voucher flag  if it is 1 get maflag
-                avfl = con.execute(
-                    select([organisation.c.avflag]).where(
-                        organisation.c.orgcode == dataset["orgcode"]
-                    )
-                )
-                av = avfl.fetchone()
-                if av["avflag"] != 1:
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": drcrid["drcrid"],
-                    }
-
-                mafl = con.execute(
-                    select([organisation.c.maflag]).where(
-                        organisation.c.orgcode == dataset["orgcode"]
-                    )
-                )
-                maFlag = mafl.fetchone()
-                queryParams = {
-                    "maflag": maFlag["maflag"],
-                    "cessname": "CESS",
-                    "drcrid": drcrid["drcrid"],
+            )
+            drcrid = lastdrcr.fetchone()
+            if int(dataset["drcrmode"]) == 18:
+                stockdataset = {
+                    "dcinvtnid": drcrid["drcrid"],
+                    "orgcode": dataset["orgcode"],
+                    "stockdate": dataset["drcrdate"],
                 }
-                queryParams.update(dataset)
-                queryParams.update(vdataset)
-                if dataset["roundoffflag"] == 1:
-                    roundOffAmount = float(dataset["totreduct"]) - round(
-                        float(dataset["totreduct"])
-                    )
-                    if float(roundOffAmount) != 0.00:
-                        queryParams["roundoffamt"] = float(roundOffAmount)
-                try:
-                    drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
-                        "gkresult": drcrid["drcrid"],
-                    }
-                except:
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "vchCode": {"vflag": 0},
-                        "gkresult": drcrid["drcrid"],
-                    }
+                if int(dataset["dctypeflag"]) == 3:
+                    stockdataset["inout"] = 9
+                    if int(vdataset["inoutflag"]) == 15:
+                        # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                        stockdataset["dcinvtnflag"] = int(dataset["dcinvtnflag"])
+                    else:
+                        stockdataset["dcinvtnflag"] = 7
+                else:
+                    stockdataset["inout"] = 15
+                    stockdataset["dcinvtnflag"] = 7
+
+                if "goid" in vdataset:
+                    stockdataset["goid"] = vdataset["goid"]
+
+                # Iterate through the keys and values using a for loop
+                if "quantities" in dataset["reductionval"]:
+                    for key, value in dataset["reductionval"]["quantities"].items():
+                        stockdataset["qty"] = value
+                        stockdataset["productcode"] = key
+                        itemPrice = con.execute(
+                            select([product.c.prodmrp]).where(
+                                product.c.productcode == stockdataset["productcode"]
+                            )
+                        )
+                        itemP = itemPrice.fetchone()
+                        stockdataset["rate"] = itemP[0]
+                        con.execute(stock.insert(), stockdataset)
+
+            # check automatic voucher flag  if it is 1 get maflag
+            avfl = con.execute(
+                select([organisation.c.avflag]).where(
+                    organisation.c.orgcode == dataset["orgcode"]
+                )
+            )
+            av = avfl.fetchone()
+            if av["avflag"] != 1:
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": drcrid["drcrid"],
+                }
+
+            mafl = con.execute(
+                select([organisation.c.maflag]).where(
+                    organisation.c.orgcode == dataset["orgcode"]
+                )
+            )
+            maFlag = mafl.fetchone()
+            queryParams = {
+                "maflag": maFlag["maflag"],
+                "cessname": "CESS",
+                "drcrid": drcrid["drcrid"],
+            }
+            queryParams.update(dataset)
+            queryParams.update(vdataset)
+            if dataset["roundoffflag"] == 1:
+                roundOffAmount = float(dataset["totreduct"]) - round(
+                    float(dataset["totreduct"])
+                )
+                if float(roundOffAmount) != 0.00:
+                    queryParams["roundoffamt"] = float(roundOffAmount)
+            try:
+                drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
+                    "gkresult": drcrid["drcrid"],
+                }
+            except:
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "vchCode": {"vflag": 0},
+                    "gkresult": drcrid["drcrid"],
+                }
 
     @view_config(request_method="GET", request_param="drcr=single", renderer="json")
     def getDrCrDetails(self):
