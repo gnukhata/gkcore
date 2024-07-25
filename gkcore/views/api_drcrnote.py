@@ -137,42 +137,42 @@ class api_drcr(object):
                     )
                 )
                 av = avfl.fetchone()
-                if av["avflag"] == 1:
-                    mafl = con.execute(
-                        select([organisation.c.maflag]).where(
-                            organisation.c.orgcode == dataset["orgcode"]
-                        )
-                    )
-                    maFlag = mafl.fetchone()
-                    queryParams = {
-                        "maflag": maFlag["maflag"],
-                        "cessname": "CESS",
-                        "drcrid": drcrid["drcrid"],
-                    }
-                    queryParams.update(dataset)
-                    queryParams.update(vdataset)
-                    if dataset["roundoffflag"] == 1:
-                        roundOffAmount = float(dataset["totreduct"]) - round(
-                            float(dataset["totreduct"])
-                        )
-                        if float(roundOffAmount) != 0.00:
-                            queryParams["roundoffamt"] = float(roundOffAmount)
-                    try:
-                        drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
-                            "gkresult": drcrid["drcrid"],
-                        }
-                    except:
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "vchCode": {"vflag": 0},
-                            "gkresult": drcrid["drcrid"],
-                        }
-                else:
+                if av["avflag"] != 1:
                     return {
                         "gkstatus": enumdict["Success"],
+                        "gkresult": drcrid["drcrid"],
+                    }
+
+                mafl = con.execute(
+                    select([organisation.c.maflag]).where(
+                        organisation.c.orgcode == dataset["orgcode"]
+                    )
+                )
+                maFlag = mafl.fetchone()
+                queryParams = {
+                    "maflag": maFlag["maflag"],
+                    "cessname": "CESS",
+                    "drcrid": drcrid["drcrid"],
+                }
+                queryParams.update(dataset)
+                queryParams.update(vdataset)
+                if dataset["roundoffflag"] == 1:
+                    roundOffAmount = float(dataset["totreduct"]) - round(
+                        float(dataset["totreduct"])
+                    )
+                    if float(roundOffAmount) != 0.00:
+                        queryParams["roundoffamt"] = float(roundOffAmount)
+                try:
+                    drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
+                        "gkresult": drcrid["drcrid"],
+                    }
+                except:
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "vchCode": {"vflag": 0},
                         "gkresult": drcrid["drcrid"],
                     }
 
