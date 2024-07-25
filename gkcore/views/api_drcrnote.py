@@ -578,26 +578,19 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     select([drcr.c.drcrid, drcr.c.reference]).where(
                         drcr.c.drcrid == dataset["drcrid"]
                     )
                 )
                 row = result.fetchone()
                 if not row["reference"]:
-                    result = self.con.execute(
+                    result = con.execute(
                         drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
                     )
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
