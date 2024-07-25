@@ -247,12 +247,13 @@ class api_drcr(object):
             }
             drcrdata["contents"] = invrow["contents"]
             contentsData = invrow["contents"]
-            if invrow["sourcestate"] != None or invrow["taxstate"] != None:
+            if invrow["sourcestate"]:
                 invdata["sourcestate"] = invrow["sourcestate"]
                 sourceStateCode = getStateCode(invrow["sourcestate"], con)[
                     "statecode"
                 ]
                 invdata["sourcestatecode"] = sourceStateCode
+            if invrow["taxstate"]:
                 invdata["taxstate"] = invrow["taxstate"]
                 taxStateCode = getStateCode(invrow["taxstate"], con)[
                     "statecode"
