@@ -50,7 +50,6 @@ import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_invoice import getStateCode
-import traceback  # for printing detailed exception logs
 
 
 @view_defaults(route_name="drcrnote")
@@ -85,7 +84,7 @@ class api_drcr(object):
                         )
                     )
                 )
-                
+
                 if result_duplicate_check.rowcount > 0:
                     # Duplicate entry found, handle accordingly
                     return {"gkstatus": enumdict["DuplicateEntry"]}
@@ -101,7 +100,7 @@ class api_drcr(object):
                         )
                     )
                 )
-                drcrid = lastdrcr.fetchone()           
+                drcrid = lastdrcr.fetchone()
                 if int(dataset["drcrmode"]) == 18:
                     stockdataset = {
                         "dcinvtnid": drcrid["drcrid"],
@@ -512,7 +511,6 @@ class api_drcr(object):
                     drcrdata["badquality"] = 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
             except:
-                print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
             finally:
                 self.con.close()
@@ -1199,7 +1197,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -2049,7 +2046,6 @@ def drcrVoucher(queryParams, orgcode):
                                     val = float(taxDict[taxNameCESS])
                                     taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                         for Tax in taxDict:
-                            print(Tax)
                             taxAcc = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
@@ -2962,7 +2958,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -3765,7 +3760,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -4311,5 +4305,4 @@ def drcrVoucher(queryParams, orgcode):
             vchCodes.append(initialType)
         return vchCodes
     except:
-        print(traceback.format_exc())
         raise Exception("Issue with voucher creation")
