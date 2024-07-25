@@ -650,11 +650,10 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 drcrflag = int(self.request.params["drcrflag"])
                 DrCrInvs = []
-                invsInDrCr = self.con.execute(
+                invsInDrCr = con.execute(
                     select([drcr.c.invid]).where(
                         and_(
                             drcr.c.orgcode == authDetails["orgcode"],
@@ -662,7 +661,7 @@ class api_drcr(object):
                         )
                     )
                 )
-                invData = self.con.execute(
+                invData = con.execute(
                     select(
                         [
                             invoice.c.invoiceno,
@@ -681,7 +680,7 @@ class api_drcr(object):
                     )
                     .order_by(invoice.c.invoicedate)
                 )
-                lastdrcrno = self.con.execute(
+                lastdrcrno = con.execute(
                     "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
                     % (int(authDetails["orgcode"]), int(drcrflag))
                 )
@@ -695,7 +694,7 @@ class api_drcr(object):
                 invoices = []
                 for row in invData:
                     if row["invid"] not in DrCrInvs:
-                        customer = self.con.execute(
+                        customer = con.execute(
                             select(
                                 [
                                     customerandsupplier.c.custname,
@@ -760,10 +759,6 @@ class api_drcr(object):
                     "gkresult": invoices,
                     "lastdrcrno": lastdrcrno,
                 }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
 
 def drcrVoucher(queryParams, orgcode):
