@@ -703,57 +703,30 @@ class api_drcr(object):
                             ).where(customerandsupplier.c.custid == row["custid"])
                         )
                         custname = customer.fetchone()
+                        rowdata = {
+                            "invoiceno": row["invoiceno"],
+                            "invid": row["invid"],
+                            "custname": custname["custname"],
+                            "csflag": custname["csflag"],
+                            "invoicedate": datetime.strftime(
+                                row["invoicedate"], "%d-%m-%Y"
+                            ),
+                            "invoicetotal": "%.2f" % float(row["invoicetotal"]),
+                            "attachmentcount": row["attachmentcount"],
+                        }
                         if "type" in self.request.params:
                             if (
                                 str(self.request.params["type"]) == "sale"
                                 and row["inoutflag"] == 15
                             ):
-                                invoices.append(
-                                    {
-                                        "invoiceno": row["invoiceno"],
-                                        "invid": row["invid"],
-                                        "custname": custname["custname"],
-                                        "csflag": custname["csflag"],
-                                        "invoicedate": datetime.strftime(
-                                            row["invoicedate"], "%d-%m-%Y"
-                                        ),
-                                        "invoicetotal": "%.2f"
-                                        % float(row["invoicetotal"]),
-                                        "attachmentcount": row["attachmentcount"],
-                                    }
-                                )
+                                invoices.append(rowdata)
                             elif (
                                 str(self.request.params["type"]) == "purchase"
                                 and row["inoutflag"] == 9
                             ):
-                                invoices.append(
-                                    {
-                                        "invoiceno": row["invoiceno"],
-                                        "invid": row["invid"],
-                                        "custname": custname["custname"],
-                                        "csflag": custname["csflag"],
-                                        "invoicedate": datetime.strftime(
-                                            row["invoicedate"], "%d-%m-%Y"
-                                        ),
-                                        "invoicetotal": "%.2f"
-                                        % float(row["invoicetotal"]),
-                                        "attachmentcount": row["attachmentcount"],
-                                    }
-                                )
+                                invoices.append(rowdata)
                         else:
-                            invoices.append(
-                                {
-                                    "invoiceno": row["invoiceno"],
-                                    "invid": row["invid"],
-                                    "custname": custname["custname"],
-                                    "csflag": custname["csflag"],
-                                    "invoicedate": datetime.strftime(
-                                        row["invoicedate"], "%d-%m-%Y"
-                                    ),
-                                    "invoicetotal": "%.2f" % float(row["invoicetotal"]),
-                                    "attachmentcount": row["attachmentcount"],
-                                }
-                            )
+                            invoices.append(rowdata)
                 return {
                     "gkstatus": gkcore.enumdict["Success"],
                     "gkresult": invoices,
