@@ -195,10 +195,9 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # taken credit/debit note data on the basis on drcrid
-                drcrresult = self.con.execute(
+                drcrresult = con.execute(
                     select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
                 )
                 drcrrow = drcrresult.fetchone()
@@ -233,7 +232,7 @@ class api_drcr(object):
                     )
                     drcrdata["reference"] = drcrrow["reference"]
                 # taken data of invoice on the basis of invid.
-                invresult = self.con.execute(
+                invresult = con.execute(
                     select([invoice]).where(invoice.c.invid == drcrrow["invid"])
                 )
                 invrow = invresult.fetchone()
@@ -251,17 +250,17 @@ class api_drcr(object):
                 contentsData = invrow["contents"]
                 if invrow["sourcestate"] != None or invrow["taxstate"] != None:
                     invdata["sourcestate"] = invrow["sourcestate"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"], self.con)[
+                    sourceStateCode = getStateCode(invrow["sourcestate"], con)[
                         "statecode"
                     ]
                     invdata["sourcestatecode"] = sourceStateCode
                     invdata["taxstate"] = invrow["taxstate"]
-                    taxStateCode = getStateCode(invrow["taxstate"], self.con)[
+                    taxStateCode = getStateCode(invrow["taxstate"], con)[
                         "statecode"
                     ]
                     invdata["taxstatecode"] = taxStateCode
                 # taken data of customerandsupplier on the basis of custid
-                custresult = self.con.execute(
+                custresult = con.execute(
                     select(
                         [
                             customerandsupplier.c.custid,
@@ -311,7 +310,7 @@ class api_drcr(object):
                 elif int(invrow["inoutflag"]) == 9:
                     # if inoutflag=9 then issuername and designation is taken from login details.
                     # user deatils
-                    userrow = self.con.execute(
+                    userrow = con.execute(
                         "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
                         % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
                     ).fetchone()
@@ -352,7 +351,7 @@ class api_drcr(object):
                             pcquantity = float(
                                 contentsData[pc][list(contentsData[pc].keys())[0]]
                             )
-                        prodresult = self.con.execute(
+                        prodresult = con.execute(
                             select(
                                 [
                                     product.c.productdesc,
@@ -368,7 +367,7 @@ class api_drcr(object):
                         totalAmount = 0.00
                         taxRate = float(invrow["tax"][pc])
                         if int(invrow["taxflag"]) == 22:
-                            umresult = self.con.execute(
+                            umresult = con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
                                     unitofmeasurement.c.uomid == int(prodrow["uomid"])
                                 )
@@ -407,7 +406,7 @@ class api_drcr(object):
                             }
                         else:
                             if int(prodrow["gsflag"]) == 7:
-                                umresult = self.con.execute(
+                                umresult = con.execute(
                                     select([unitofmeasurement.c.unitname]).where(
                                         unitofmeasurement.c.uomid
                                         == int(prodrow["uomid"])
@@ -443,7 +442,7 @@ class api_drcr(object):
                                 cessVal = float(invrow["cess"][pc])
                                 cessAmount = reductprice * (cessVal / 100)
                                 totalCessAmt = totalCessAmt + cessAmount
-                            goid_result = self.con.execute(
+                            goid_result = con.execute(
                                     select([stock.c.goid]).where(
                                         and_(
                                             stock.c.productcode == pc,
@@ -489,7 +488,7 @@ class api_drcr(object):
                 drcrdata["drcrcontents"] = drcrContents
                 drcrdata["invdata"] = invdata
                 # Flag sent to indicate whether goods returned where of badquality.
-                drcrGetSingleStockResult = self.con.execute(
+                drcrGetSingleStockResult = con.execute(
                     "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
                     % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
                 ).fetchone()
@@ -498,10 +497,6 @@ class api_drcr(object):
                 else:
                     drcrdata["badquality"] = 1
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="drcr=all", renderer="json")
     def getAlldrcr(self):
