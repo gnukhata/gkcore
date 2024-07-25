@@ -600,23 +600,22 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                drcrid = self.request.params["drcrid"]
-                drcrData = con.execute(
-                    select([drcr.c.drcrno, drcr.c.attachment]).where(
-                        drcr.c.drcrid == drcrid
-                    )
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            drcrid = self.request.params["drcrid"]
+            drcrData = con.execute(
+                select([drcr.c.drcrno, drcr.c.attachment]).where(
+                    drcr.c.drcrid == drcrid
                 )
-                attachment = drcrData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": attachment["attachment"],
-                    "drcrno": attachment["drcrno"],
-                    "userrole": urole["userrole"],
-                }
+            )
+            attachment = drcrData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": attachment["attachment"],
+                "drcrno": attachment["drcrno"],
+                "userrole": urole["userrole"],
+            }
 
     """This is a function to update .
     This function is primarily used to enable editing of debit and credit note.
