@@ -649,89 +649,88 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                drcrflag = int(self.request.params["drcrflag"])
-                DrCrInvs = []
-                invsInDrCr = con.execute(
-                    select([drcr.c.invid]).where(
-                        and_(
-                            drcr.c.orgcode == authDetails["orgcode"],
-                            drcr.c.dctypeflag == drcrflag,
-                        )
+        with eng.connect() as con:
+            drcrflag = int(self.request.params["drcrflag"])
+            DrCrInvs = []
+            invsInDrCr = con.execute(
+                select([drcr.c.invid]).where(
+                    and_(
+                        drcr.c.orgcode == authDetails["orgcode"],
+                        drcr.c.dctypeflag == drcrflag,
                     )
                 )
-                invData = con.execute(
-                    select(
-                        [
-                            invoice.c.invoiceno,
-                            invoice.c.invid,
-                            invoice.c.invoicedate,
-                            invoice.c.custid,
-                            invoice.c.inoutflag,
-                            invoice.c.invoicetotal,
-                            invoice.c.attachmentcount,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            invoice.c.orgcode == authDetails["orgcode"],
-                        )
-                    )
-                    .order_by(invoice.c.invoicedate)
+            )
+            invData = con.execute(
+                select(
+                    [
+                        invoice.c.invoiceno,
+                        invoice.c.invid,
+                        invoice.c.invoicedate,
+                        invoice.c.custid,
+                        invoice.c.inoutflag,
+                        invoice.c.invoicetotal,
+                        invoice.c.attachmentcount,
+                    ]
                 )
-                lastdrcrno = con.execute(
-                    "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
-                    % (int(authDetails["orgcode"]), int(drcrflag))
+                .where(
+                    and_(
+                        invoice.c.orgcode == authDetails["orgcode"],
+                    )
                 )
-                lastdrcrno = lastdrcrno.fetchone()
-                if lastdrcrno == None:
-                    lastdrcrno = ""
-                else:
-                    lastdrcrno = lastdrcrno[0]
-                for DrCrInv in invsInDrCr:
-                    DrCrInvs.append(DrCrInv["invid"])
-                invoices = []
-                for row in invData:
-                    if row["invid"] not in DrCrInvs:
-                        customer = con.execute(
-                            select(
-                                [
-                                    customerandsupplier.c.custname,
-                                    customerandsupplier.c.csflag,
-                                ]
-                            ).where(customerandsupplier.c.custid == row["custid"])
-                        )
-                        custname = customer.fetchone()
-                        rowdata = {
-                            "invoiceno": row["invoiceno"],
-                            "invid": row["invid"],
-                            "custname": custname["custname"],
-                            "csflag": custname["csflag"],
-                            "invoicedate": datetime.strftime(
-                                row["invoicedate"], "%d-%m-%Y"
-                            ),
-                            "invoicetotal": "%.2f" % float(row["invoicetotal"]),
-                            "attachmentcount": row["attachmentcount"],
-                        }
-                        if "type" in self.request.params:
-                            if (
-                                str(self.request.params["type"]) == "sale"
-                                and row["inoutflag"] == 15
-                            ):
-                                invoices.append(rowdata)
-                            elif (
-                                str(self.request.params["type"]) == "purchase"
-                                and row["inoutflag"] == 9
-                            ):
-                                invoices.append(rowdata)
-                        else:
+                .order_by(invoice.c.invoicedate)
+            )
+            lastdrcrno = con.execute(
+                "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
+                % (int(authDetails["orgcode"]), int(drcrflag))
+            )
+            lastdrcrno = lastdrcrno.fetchone()
+            if lastdrcrno == None:
+                lastdrcrno = ""
+            else:
+                lastdrcrno = lastdrcrno[0]
+            for DrCrInv in invsInDrCr:
+                DrCrInvs.append(DrCrInv["invid"])
+            invoices = []
+            for row in invData:
+                if row["invid"] not in DrCrInvs:
+                    customer = con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == row["custid"])
+                    )
+                    custname = customer.fetchone()
+                    rowdata = {
+                        "invoiceno": row["invoiceno"],
+                        "invid": row["invid"],
+                        "custname": custname["custname"],
+                        "csflag": custname["csflag"],
+                        "invoicedate": datetime.strftime(
+                            row["invoicedate"], "%d-%m-%Y"
+                        ),
+                        "invoicetotal": "%.2f" % float(row["invoicetotal"]),
+                        "attachmentcount": row["attachmentcount"],
+                    }
+                    if "type" in self.request.params:
+                        if (
+                            str(self.request.params["type"]) == "sale"
+                            and row["inoutflag"] == 15
+                        ):
                             invoices.append(rowdata)
-                return {
-                    "gkstatus": gkcore.enumdict["Success"],
-                    "gkresult": invoices,
-                    "lastdrcrno": lastdrcrno,
-                }
+                        elif (
+                            str(self.request.params["type"]) == "purchase"
+                            and row["inoutflag"] == 9
+                        ):
+                            invoices.append(rowdata)
+                    else:
+                        invoices.append(rowdata)
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": invoices,
+                "lastdrcrno": lastdrcrno,
+            }
 
 
 def drcrVoucher(queryParams, orgcode):
