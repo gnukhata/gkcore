@@ -506,63 +506,62 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                result = con.execute(
+        with eng.connect() as con:
+            result = con.execute(
+                select(
+                    [
+                        drcr.c.drcrno,
+                        drcr.c.drcrid,
+                        drcr.c.drcrdate,
+                        drcr.c.invid,
+                        drcr.c.dctypeflag,
+                        drcr.c.totreduct,
+                        drcr.c.attachmentcount,
+                    ]
+                )
+                .where(drcr.c.orgcode == authDetails["orgcode"])
+                .order_by(drcr.c.drcrdate)
+            )
+            drcrdata = []
+            for row in result:
+                # invoice,cust
+                inv = con.execute(
+                    select([invoice.c.custid]).where(
+                        invoice.c.invid == row["invid"]
+                    )
+                )
+                invdata = inv.fetchone()
+                custsupp = con.execute(
                     select(
                         [
-                            drcr.c.drcrno,
-                            drcr.c.drcrid,
-                            drcr.c.drcrdate,
-                            drcr.c.invid,
-                            drcr.c.dctypeflag,
-                            drcr.c.totreduct,
-                            drcr.c.attachmentcount,
+                            customerandsupplier.c.custname,
+                            customerandsupplier.c.csflag,
                         ]
-                    )
-                    .where(drcr.c.orgcode == authDetails["orgcode"])
-                    .order_by(drcr.c.drcrdate)
+                    ).where(customerandsupplier.c.custid == invdata["custid"])
                 )
-                drcrdata = []
-                for row in result:
-                    # invoice,cust
-                    inv = con.execute(
-                        select([invoice.c.custid]).where(
-                            invoice.c.invid == row["invid"]
-                        )
-                    )
-                    invdata = inv.fetchone()
-                    custsupp = con.execute(
-                        select(
-                            [
-                                customerandsupplier.c.custname,
-                                customerandsupplier.c.csflag,
-                            ]
-                        ).where(customerandsupplier.c.custid == invdata["custid"])
-                    )
-                    custsuppdata = custsupp.fetchone()
-                    rowdata = {
-                        "drcrid": row["drcrid"],
-                        "drcrno": row["drcrno"],
-                        "drcrdate": datetime.strftime(
-                            row["drcrdate"], "%d-%m-%Y"
-                            ),
-                        "dctypeflag": row["dctypeflag"],
-                        "totreduct": "%.2f" % float(row["totreduct"]),
-                        "invid": row["invid"],
-                        "attachmentcount": row["attachmentcount"],
-                        "custid": invdata["custid"],
-                        "custname": custsuppdata["custname"],
-                        "csflag": custsuppdata["csflag"],
-                    }
-                    if "drcrflag" in self.request.params:
-                        if int(self.request.params["drcrflag"]) == int(
-                            row["dctypeflag"]
-                        ):
-                            drcrdata.append(rowdata)
-                    else:
+                custsuppdata = custsupp.fetchone()
+                rowdata = {
+                    "drcrid": row["drcrid"],
+                    "drcrno": row["drcrno"],
+                    "drcrdate": datetime.strftime(
+                        row["drcrdate"], "%d-%m-%Y"
+                        ),
+                    "dctypeflag": row["dctypeflag"],
+                    "totreduct": "%.2f" % float(row["totreduct"]),
+                    "invid": row["invid"],
+                    "attachmentcount": row["attachmentcount"],
+                    "custid": invdata["custid"],
+                    "custname": custsuppdata["custname"],
+                    "csflag": custsuppdata["csflag"],
+                }
+                if "drcrflag" in self.request.params:
+                    if int(self.request.params["drcrflag"]) == int(
+                        row["dctypeflag"]
+                    ):
                         drcrdata.append(rowdata)
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
+                else:
+                    drcrdata.append(rowdata)
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     """
     Deleteing drcr on the basis of reference field and drcrid
