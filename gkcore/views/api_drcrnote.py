@@ -65,14 +65,13 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 wholedataset = self.request.json_body
                 dataset = wholedataset["dataset"]
                 vdataset = wholedataset["vdataset"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
+                result_duplicate_check = con.execute(
                     select([drcr.c.drcrno]).where(
                         and_(
                             drcr.c.orgcode == authDetails["orgcode"],
@@ -85,8 +84,8 @@ class api_drcr(object):
                     # Duplicate entry found, handle accordingly
                     return {"gkstatus": enumdict["DuplicateEntry"]}
 
-                result = self.con.execute(drcr.insert(), [dataset])
-                lastdrcr = self.con.execute(
+                result = con.execute(drcr.insert(), [dataset])
+                lastdrcr = con.execute(
                     select([drcr.c.drcrid]).where(
                         and_(
                             drcr.c.invid == dataset["invid"],
@@ -122,24 +121,24 @@ class api_drcr(object):
                         for key, value in dataset["reductionval"]["quantities"].items():
                             stockdataset["qty"] = value
                             stockdataset["productcode"] = key
-                            itemPrice = self.con.execute(
+                            itemPrice = con.execute(
                                 select([product.c.prodmrp]).where(
                                     product.c.productcode == stockdataset["productcode"]
                                 )
                             )
                             itemP = itemPrice.fetchone()
                             stockdataset["rate"] = itemP[0]
-                            self.con.execute(stock.insert(), stockdataset)
+                            con.execute(stock.insert(), stockdataset)
 
                 # check automatic voucher flag  if it is 1 get maflag
-                avfl = self.con.execute(
+                avfl = con.execute(
                     select([organisation.c.avflag]).where(
                         organisation.c.orgcode == dataset["orgcode"]
                     )
                 )
                 av = avfl.fetchone()
                 if av["avflag"] == 1:
-                    mafl = self.con.execute(
+                    mafl = con.execute(
                         select([organisation.c.maflag]).where(
                             organisation.c.orgcode == dataset["orgcode"]
                         )
@@ -176,12 +175,6 @@ class api_drcr(object):
                         "gkstatus": enumdict["Success"],
                         "gkresult": drcrid["drcrid"],
                     }
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="drcr=single", renderer="json")
     def getDrCrDetails(self):
