@@ -577,20 +577,19 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                result = con.execute(
-                    select([drcr.c.drcrid, drcr.c.reference]).where(
-                        drcr.c.drcrid == dataset["drcrid"]
-                    )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                select([drcr.c.drcrid, drcr.c.reference]).where(
+                    drcr.c.drcrid == dataset["drcrid"]
                 )
-                row = result.fetchone()
-                if not row["reference"]:
-                    result = con.execute(
-                        drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
-                    )
-                return {"gkstatus": enumdict["Success"]}
+            )
+            row = result.fetchone()
+            if not row["reference"]:
+                result = con.execute(
+                    drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
+                )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
