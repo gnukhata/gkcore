@@ -194,188 +194,234 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                # taken credit/debit note data on the basis on drcrid
-                drcrresult = con.execute(
-                    select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
+        with eng.connect() as con:
+            # taken credit/debit note data on the basis on drcrid
+            drcrresult = con.execute(
+                select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
+            )
+            drcrrow = drcrresult.fetchone()
+            invdata = {}
+            custSupDetails = {}
+            drcrdata = {}
+            drcrdata = {
+                "drcrid": drcrrow["drcrid"],
+                "drcrno": drcrrow["drcrno"],
+                "drcrdate": datetime.strftime(drcrrow["drcrdate"], "%d-%m-%Y"),
+                "dctypeflag": drcrrow["dctypeflag"],
+                "totreduct": "%.2f" % float(drcrrow["totreduct"]),
+                "reduct": drcrrow["reductionval"],
+                "drcrmode": drcrrow["drcrmode"],
+                "drcrnarration": drcrrow["drcrnarration"],
+            }
+            # this will show that total amount is rounded of or not
+            drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
+            drcrdata["roundedoffvalue"] = "%.2f" % float(
+                round(drcrrow["totreduct"])
+            )
+            # reference is a dictionary which contains reference number as key and reference date as value.
+            # if reference field is not None then send refernce dictionary.
+            if drcrrow["reference"] == None:
+                drcrdata["reference"] = ""
+            else:
+                drcrrow["reference"]["dcdate"] = datetime.strftime(
+                    datetime.strptime(
+                        drcrrow["reference"]["dcdate"], "%Y-%m-%d"
+                    ).date(),
+                    "%d-%m-%Y",
                 )
-                drcrrow = drcrresult.fetchone()
-                invdata = {}
-                custSupDetails = {}
-                drcrdata = {}
-                drcrdata = {
-                    "drcrid": drcrrow["drcrid"],
-                    "drcrno": drcrrow["drcrno"],
-                    "drcrdate": datetime.strftime(drcrrow["drcrdate"], "%d-%m-%Y"),
-                    "dctypeflag": drcrrow["dctypeflag"],
-                    "totreduct": "%.2f" % float(drcrrow["totreduct"]),
-                    "reduct": drcrrow["reductionval"],
-                    "drcrmode": drcrrow["drcrmode"],
-                    "drcrnarration": drcrrow["drcrnarration"],
-                }
-                # this will show that total amount is rounded of or not
-                drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
-                drcrdata["roundedoffvalue"] = "%.2f" % float(
-                    round(drcrrow["totreduct"])
-                )
-                # reference is a dictionary which contains reference number as key and reference date as value.
-                # if reference field is not None then send refernce dictionary.
-                if drcrrow["reference"] == None:
-                    drcrdata["reference"] = ""
-                else:
-                    drcrrow["reference"]["dcdate"] = datetime.strftime(
-                        datetime.strptime(
-                            drcrrow["reference"]["dcdate"], "%Y-%m-%d"
-                        ).date(),
-                        "%d-%m-%Y",
-                    )
-                    drcrdata["reference"] = drcrrow["reference"]
-                # taken data of invoice on the basis of invid.
-                invresult = con.execute(
-                    select([invoice]).where(invoice.c.invid == drcrrow["invid"])
-                )
-                invrow = invresult.fetchone()
-                invdata = {
-                    "invid": invrow["invid"],
-                    "invoiceno": invrow["invoiceno"],
-                    "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
-                    "inoutflag": invrow["inoutflag"],
-                    "taxflag": invrow["taxflag"],
-                    "tax": invrow["tax"],
-                    "orgstategstin": invrow["orgstategstin"],
-                    "icflag": invrow["icflag"],
-                }
-                drcrdata["contents"] = invrow["contents"]
-                contentsData = invrow["contents"]
-                if invrow["sourcestate"] != None or invrow["taxstate"] != None:
-                    invdata["sourcestate"] = invrow["sourcestate"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"], con)[
-                        "statecode"
+                drcrdata["reference"] = drcrrow["reference"]
+            # taken data of invoice on the basis of invid.
+            invresult = con.execute(
+                select([invoice]).where(invoice.c.invid == drcrrow["invid"])
+            )
+            invrow = invresult.fetchone()
+            invdata = {
+                "invid": invrow["invid"],
+                "invoiceno": invrow["invoiceno"],
+                "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
+                "inoutflag": invrow["inoutflag"],
+                "taxflag": invrow["taxflag"],
+                "tax": invrow["tax"],
+                "orgstategstin": invrow["orgstategstin"],
+                "icflag": invrow["icflag"],
+            }
+            drcrdata["contents"] = invrow["contents"]
+            contentsData = invrow["contents"]
+            if invrow["sourcestate"] != None or invrow["taxstate"] != None:
+                invdata["sourcestate"] = invrow["sourcestate"]
+                sourceStateCode = getStateCode(invrow["sourcestate"], con)[
+                    "statecode"
+                ]
+                invdata["sourcestatecode"] = sourceStateCode
+                invdata["taxstate"] = invrow["taxstate"]
+                taxStateCode = getStateCode(invrow["taxstate"], con)[
+                    "statecode"
+                ]
+                invdata["taxstatecode"] = taxStateCode
+            # taken data of customerandsupplier on the basis of custid
+            custresult = con.execute(
+                select(
+                    [
+                        customerandsupplier.c.custid,
+                        customerandsupplier.c.custname,
+                        customerandsupplier.c.custaddr,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custtan,
+                        customerandsupplier.c.csflag,
+                        customerandsupplier.c.pincode,
                     ]
-                    invdata["sourcestatecode"] = sourceStateCode
-                    invdata["taxstate"] = invrow["taxstate"]
-                    taxStateCode = getStateCode(invrow["taxstate"], con)[
-                        "statecode"
-                    ]
-                    invdata["taxstatecode"] = taxStateCode
-                # taken data of customerandsupplier on the basis of custid
-                custresult = con.execute(
-                    select(
-                        [
-                            customerandsupplier.c.custid,
-                            customerandsupplier.c.custname,
-                            customerandsupplier.c.custaddr,
-                            customerandsupplier.c.gstin,
-                            customerandsupplier.c.custtan,
-                            customerandsupplier.c.csflag,
-                            customerandsupplier.c.pincode,
+                ).where(customerandsupplier.c.custid == invrow["custid"])
+            )
+            custrow = custresult.fetchone()
+            custSupDetails = {
+                "custid": custrow["custid"],
+                "custname": custrow["custname"],
+                "custaddr": custrow["custaddr"],
+                "gstin": custrow["gstin"],
+                "custtin": custrow["custtan"],
+                "pincode": custrow["pincode"],
+            }
+            # tin and gstin checked.
+            if custSupDetails["custtin"] != None:
+                custSupDetails["custtin"] = custSupDetails["custtin"]
+            if custSupDetails["gstin"] != None:
+                if int(custrow["csflag"]) == 3:
+                    try:
+                        custSupDetails["custgstin"] = custrow["gstin"][
+                            str(taxStateCode)
                         ]
-                    ).where(customerandsupplier.c.custid == invrow["custid"])
-                )
-                custrow = custresult.fetchone()
-                custSupDetails = {
-                    "custid": custrow["custid"],
-                    "custname": custrow["custname"],
-                    "custaddr": custrow["custaddr"],
-                    "gstin": custrow["gstin"],
-                    "custtin": custrow["custtan"],
-                    "pincode": custrow["pincode"],
+                    except:
+                        custSupDetails["custgstin"] = None
+                else:
+                    try:
+                        custSupDetails["custgstin"] = custrow["gstin"][
+                            str(sourceStateCode)
+                        ]
+                    except:
+                        custSupDetails["custgstin"] = None
+            drcrdata["custSupDetails"] = custSupDetails
+
+            # all data checked using inout flag,
+            if int(invrow["inoutflag"]) == 15:
+                # if inoutflag=15 then issuername and designation is same as invoice details
+                invdata["issuername"] = invrow["issuername"]
+                invdata["designation"] = invrow["designation"]
+            elif int(invrow["inoutflag"]) == 9:
+                # if inoutflag=9 then issuername and designation is taken from login details.
+                # user deatils
+                userrow = con.execute(
+                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
+                    % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
+                ).fetchone()
+                userdata = {
+                    "userid": drcrrow["userid"],
+                    "username": userrow["username"],
+                    "userrole": userrow["userrole"],
                 }
-                # tin and gstin checked.
-                if custSupDetails["custtin"] != None:
-                    custSupDetails["custtin"] = custSupDetails["custtin"]
-                if custSupDetails["gstin"] != None:
-                    if int(custrow["csflag"]) == 3:
-                        try:
-                            custSupDetails["custgstin"] = custrow["gstin"][
-                                str(taxStateCode)
-                            ]
-                        except:
-                            custSupDetails["custgstin"] = None
-                    else:
-                        try:
-                            custSupDetails["custgstin"] = custrow["gstin"][
-                                str(sourceStateCode)
-                            ]
-                        except:
-                            custSupDetails["custgstin"] = None
-                drcrdata["custSupDetails"] = custSupDetails
+                invdata["issuername"] = userrow["username"]
+                invdata["designation"] = userrow["userrole"]
 
-                # all data checked using inout flag,
-                if int(invrow["inoutflag"]) == 15:
-                    # if inoutflag=15 then issuername and designation is same as invoice details
-                    invdata["issuername"] = invrow["issuername"]
-                    invdata["designation"] = invrow["designation"]
-                elif int(invrow["inoutflag"]) == 9:
-                    # if inoutflag=9 then issuername and designation is taken from login details.
-                    # user deatils
-                    userrow = con.execute(
-                        "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
-                        % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
-                    ).fetchone()
-                    userdata = {
-                        "userid": drcrrow["userid"],
-                        "username": userrow["username"],
-                        "userrole": userrow["userrole"],
-                    }
-                    invdata["issuername"] = userrow["username"]
-                    invdata["designation"] = userrow["userrole"]
+            # calculations
+            # contents is a nested dictionary from drcr table.
+            # It contains productcode as the key with a value as a dictionary.
+            # this dictionary has two key value pair, priceperunit and quantity.
+            idrateData = drcrrow["reductionval"]
+            # drcrdata is the final dictionary which will not just have the dataset from original contents,
+            # but also productdesc,unitname,taxname,taxrate,amount and taxamount
+            # invdata containing invoice details.
+            drcrContents = {}
+            idrate = {}
+            # get the dictionary of discount and access it inside the loop for one product each.
+            totalTaxableVal = 0.00
+            totalTaxAmt = 0.00
+            totalCessAmt = 0.00
 
-                # calculations
-                # contents is a nested dictionary from drcr table.
-                # It contains productcode as the key with a value as a dictionary.
-                # this dictionary has two key value pair, priceperunit and quantity.
-                idrateData = drcrrow["reductionval"]
-                # drcrdata is the final dictionary which will not just have the dataset from original contents,
-                # but also productdesc,unitname,taxname,taxrate,amount and taxamount
-                # invdata containing invoice details.
-                drcrContents = {}
-                idrate = {}
-                # get the dictionary of discount and access it inside the loop for one product each.
-                totalTaxableVal = 0.00
-                totalTaxAmt = 0.00
-                totalCessAmt = 0.00
-
-                # pc will have the productcode which will be the key in contentsData.
-                for pc in list(idrateData.keys()):
-                    if str(pc) != "quantities":
-                        pcquantity = 0.00
-                        if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                            pcquantity = (
-                                idrateData["quantities"][pc]
-                                if "quantities" in idrateData
-                                else 0
-                            )
-                        else:
-                            pcquantity = float(
-                                contentsData[pc][list(contentsData[pc].keys())[0]]
-                            )
-                        prodresult = con.execute(
-                            select(
-                                [
-                                    product.c.productdesc,
-                                    product.c.uomid,
-                                    product.c.gsflag,
-                                    product.c.gscode,
-                                ]
-                            ).where(product.c.productcode == pc)
+            # pc will have the productcode which will be the key in contentsData.
+            for pc in list(idrateData.keys()):
+                if str(pc) != "quantities":
+                    pcquantity = 0.00
+                    if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
+                        pcquantity = (
+                            idrateData["quantities"][pc]
+                            if "quantities" in idrateData
+                            else 0
                         )
-                        prodrow = prodresult.fetchone()
-                        # product or service check and taxableAmount calculate=newppu*newqty
-                        taxRate = 0.00
-                        totalAmount = 0.00
+                    else:
+                        pcquantity = float(
+                            contentsData[pc][list(contentsData[pc].keys())[0]]
+                        )
+                    prodresult = con.execute(
+                        select(
+                            [
+                                product.c.productdesc,
+                                product.c.uomid,
+                                product.c.gsflag,
+                                product.c.gscode,
+                            ]
+                        ).where(product.c.productcode == pc)
+                    )
+                    prodrow = prodresult.fetchone()
+                    # product or service check and taxableAmount calculate=newppu*newqty
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate = float(invrow["tax"][pc])
+                    if int(invrow["taxflag"]) == 22:
+                        umresult = con.execute(
+                            select([unitofmeasurement.c.unitname]).where(
+                                unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                            )
+                        )
+                        umrow = umresult.fetchone()
+                        unitofMeasurement = umrow["unitname"]
+                        if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
+                            reductprice = float(idrateData[pc])
+                        else:
+                            reductprice = (
+                                float(
+                                    contentsData[pc][
+                                        list(contentsData[pc].keys())[0]
+                                    ]
+                                )
+                            ) * (float(idrateData[pc]))
                         taxRate = float(invrow["tax"][pc])
-                        if int(invrow["taxflag"]) == 22:
+                        taxAmount = reductprice * float(taxRate / 100)
+                        taxname = "VAT"
+                        totalAmount = reductprice + taxAmount
+                        totalTaxableVal = totalTaxableVal + reductprice
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        drcrContents[pc] = {
+                            "proddesc": prodrow["productdesc"],
+                            "gscode": prodrow["gscode"],
+                            "uom": unitofMeasurement,
+                            "qty": "%.2f" % float(pcquantity),
+                            "priceperunit": "%.2f"
+                            % (float(list(contentsData[pc].keys())[0])),
+                            "totalAmount": "%.2f" % (float(totalAmount)),
+                            "taxname": "VAT",
+                            "taxrate": "%.2f" % (float(taxRate)),
+                            "taxamount": "%.2f" % (float(taxAmount)),
+                            "newtaxableamnt": "%.2f" % (float(reductprice)),
+                            "reductionval": "%.2f" % float(idrateData[pc]),
+                        }
+                    else:
+                        if int(prodrow["gsflag"]) == 7:
                             umresult = con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
-                                    unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                                    unitofmeasurement.c.uomid
+                                    == int(prodrow["uomid"])
                                 )
                             )
                             umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
-                            if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                                reductprice = float(idrateData[pc])
+                            if (
+                                drcrrow["drcrmode"]
+                                and int(drcrrow["drcrmode"]) == 18
+                            ):
+                                reductprice = (
+                                    float(
+                                       drcrdata["reduct"][pc]
+                                    )
+                                ) * (float(idrateData["quantities"][pc]))
                             else:
                                 reductprice = (
                                     float(
@@ -384,119 +430,72 @@ class api_drcr(object):
                                         ]
                                     )
                                 ) * (float(idrateData[pc]))
-                            taxRate = float(invrow["tax"][pc])
-                            taxAmount = reductprice * float(taxRate / 100)
-                            taxname = "VAT"
-                            totalAmount = reductprice + taxAmount
-                            totalTaxableVal = totalTaxableVal + reductprice
-                            totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {
-                                "proddesc": prodrow["productdesc"],
-                                "gscode": prodrow["gscode"],
-                                "uom": unitofMeasurement,
-                                "qty": "%.2f" % float(pcquantity),
-                                "priceperunit": "%.2f"
-                                % (float(list(contentsData[pc].keys())[0])),
-                                "totalAmount": "%.2f" % (float(totalAmount)),
-                                "taxname": "VAT",
-                                "taxrate": "%.2f" % (float(taxRate)),
-                                "taxamount": "%.2f" % (float(taxAmount)),
-                                "newtaxableamnt": "%.2f" % (float(reductprice)),
-                                "reductionval": "%.2f" % float(idrateData[pc]),
-                            }
                         else:
-                            if int(prodrow["gsflag"]) == 7:
-                                umresult = con.execute(
-                                    select([unitofmeasurement.c.unitname]).where(
-                                        unitofmeasurement.c.uomid
-                                        == int(prodrow["uomid"])
+                            unitofMeasurement = ""
+                            reductprice = float(idrateData[pc])
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if invrow["cess"] != None:
+                            cessVal = float(invrow["cess"][pc])
+                            cessAmount = reductprice * (cessVal / 100)
+                            totalCessAmt = totalCessAmt + cessAmount
+                        goid_result = con.execute(
+                                select([stock.c.goid]).where(
+                                    and_(
+                                        stock.c.productcode == pc,
+                                        stock.c.orgcode == authDetails["orgcode"],
                                     )
                                 )
-                                umrow = umresult.fetchone()
-                                unitofMeasurement = umrow["unitname"]
-                                if (
-                                    drcrrow["drcrmode"]
-                                    and int(drcrrow["drcrmode"]) == 18
-                                ):
-                                    reductprice = (
-                                        float(
-                                           drcrdata["reduct"][pc]
-                                        )
-                                    ) * (float(idrateData["quantities"][pc]))
-                                else:
-                                    reductprice = (
-                                        float(
-                                            contentsData[pc][
-                                                list(contentsData[pc].keys())[0]
-                                            ]
-                                        )
-                                    ) * (float(idrateData[pc]))
-                            else:
-                                unitofMeasurement = ""
-                                reductprice = float(idrateData[pc])
-                            cessRate = 0.00
-                            cessAmount = 0.00
-                            cessVal = 0.00
-                            taxname = ""
-                            if invrow["cess"] != None:
-                                cessVal = float(invrow["cess"][pc])
-                                cessAmount = reductprice * (cessVal / 100)
-                                totalCessAmt = totalCessAmt + cessAmount
-                            goid_result = con.execute(
-                                    select([stock.c.goid]).where(
-                                        and_(
-                                            stock.c.productcode == pc,
-                                            stock.c.orgcode == authDetails["orgcode"],
-                                        )
-                                    )
-                                )
+                            )
 
-                            goidrow = goid_result.fetchall()
-                            if invrow["sourcestate"] != invrow["taxstate"]:
-                                taxname = "IGST"
-                                taxAmount = reductprice * (taxRate / 100)
-                                totalAmount = reductprice + taxAmount + cessAmount
-                            else:
-                                taxname = "SGST"
-                                # SGST and CGST rates are equal and exactly half the IGST rate.
-                                taxAmount = reductprice * (taxRate / 200)
-                                totalAmount = reductprice + (2 * taxAmount) + cessAmount
-                            totalTaxableVal = totalTaxableVal + reductprice
-                            totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {
-                                "proddesc": prodrow["productdesc"],
-                                "gscode": prodrow["gscode"],
-                                "uom": unitofMeasurement,
-                                "qty": "%.2f" % float(pcquantity),
-                                "priceperunit": "%.2f"
-                                % (float(list(contentsData[pc].keys())[0])),
-                                "totalAmount": "%.2f" % (float(totalAmount)),
-                                "taxname": taxname,
-                                "taxrate": "%.2f" % (float(taxRate)),
-                                "taxamount": "%.2f" % (float(taxAmount)),
-                                "cess": "%.2f" % (float(cessAmount)),
-                                "cessrate": "%.2f" % (float(cessVal)),
-                                "newtaxableamnt": "%.2f" % (float(reductprice)),
-                                "reductionval": "%.2f" % float(idrateData[pc]),
-                                "gsflag": prodrow["gsflag"],
-                                "goid": goidrow[0][0],
-                            }
-                drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
-                drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
-                drcrdata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
-                drcrdata["taxname"] = taxname
-                drcrdata["drcrcontents"] = drcrContents
-                drcrdata["invdata"] = invdata
-                # Flag sent to indicate whether goods returned where of badquality.
-                drcrGetSingleStockResult = con.execute(
-                    "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
-                    % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
-                ).fetchone()
-                if int(drcrGetSingleStockResult["drcrcount"]) == 0:
-                    drcrdata["badquality"] = 0
-                else:
-                    drcrdata["badquality"] = 1
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
+                        goidrow = goid_result.fetchall()
+                        if invrow["sourcestate"] != invrow["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = reductprice * (taxRate / 100)
+                            totalAmount = reductprice + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            # SGST and CGST rates are equal and exactly half the IGST rate.
+                            taxAmount = reductprice * (taxRate / 200)
+                            totalAmount = reductprice + (2 * taxAmount) + cessAmount
+                        totalTaxableVal = totalTaxableVal + reductprice
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        drcrContents[pc] = {
+                            "proddesc": prodrow["productdesc"],
+                            "gscode": prodrow["gscode"],
+                            "uom": unitofMeasurement,
+                            "qty": "%.2f" % float(pcquantity),
+                            "priceperunit": "%.2f"
+                            % (float(list(contentsData[pc].keys())[0])),
+                            "totalAmount": "%.2f" % (float(totalAmount)),
+                            "taxname": taxname,
+                            "taxrate": "%.2f" % (float(taxRate)),
+                            "taxamount": "%.2f" % (float(taxAmount)),
+                            "cess": "%.2f" % (float(cessAmount)),
+                            "cessrate": "%.2f" % (float(cessVal)),
+                            "newtaxableamnt": "%.2f" % (float(reductprice)),
+                            "reductionval": "%.2f" % float(idrateData[pc]),
+                            "gsflag": prodrow["gsflag"],
+                            "goid": goidrow[0][0],
+                        }
+            drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
+            drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
+            drcrdata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
+            drcrdata["taxname"] = taxname
+            drcrdata["drcrcontents"] = drcrContents
+            drcrdata["invdata"] = invdata
+            # Flag sent to indicate whether goods returned where of badquality.
+            drcrGetSingleStockResult = con.execute(
+                "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
+                % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
+            ).fetchone()
+            if int(drcrGetSingleStockResult["drcrcount"]) == 0:
+                drcrdata["badquality"] = 0
+            else:
+                drcrdata["badquality"] = 1
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     @view_config(request_method="GET", request_param="drcr=all", renderer="json")
     def getAlldrcr(self):
