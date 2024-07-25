@@ -507,9 +507,8 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [
                             drcr.c.drcrno,
@@ -527,13 +526,13 @@ class api_drcr(object):
                 drcrdata = []
                 for row in result:
                     # invoice,cust
-                    inv = self.con.execute(
+                    inv = con.execute(
                         select([invoice.c.custid]).where(
                             invoice.c.invid == row["invid"]
                         )
                     )
                     invdata = inv.fetchone()
-                    custsupp = self.con.execute(
+                    custsupp = con.execute(
                         select(
                             [
                                 customerandsupplier.c.custname,
@@ -580,10 +579,6 @@ class api_drcr(object):
                             }
                         )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     """
     Deleteing drcr on the basis of reference field and drcrid
