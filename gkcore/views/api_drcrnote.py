@@ -631,15 +631,14 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                result = con.execute(
-                    drcr.update()
-                    .where(drcr.c.drcrid == dataset["drcrid"])
-                    .values(dataset)
-                )
-                return {"gkstatus": enumdict["Success"]}
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                drcr.update()
+                .where(drcr.c.drcrid == dataset["drcrid"])
+                .values(dataset)
+            )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="GET", request_param="inv=all", renderer="json")
     def getAllinvoices(self):
