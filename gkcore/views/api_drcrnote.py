@@ -601,12 +601,11 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 drcrid = self.request.params["drcrid"]
-                drcrData = self.con.execute(
+                drcrData = con.execute(
                     select([drcr.c.drcrno, drcr.c.attachment]).where(
                         drcr.c.drcrid == drcrid
                     )
@@ -618,10 +617,6 @@ class api_drcr(object):
                     "drcrno": attachment["drcrno"],
                     "userrole": urole["userrole"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     """This is a function to update .
     This function is primarily used to enable editing of debit and credit note.
