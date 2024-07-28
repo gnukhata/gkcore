@@ -1536,6 +1536,7 @@ def rename_inv_no_uniquely(con, orgcode):
 def getDelchalId(con, orgCode, requestBody):
     delchaldata = requestBody['delchalPayload']["delchaldata"]
     stockdata = requestBody['delchalPayload']["stockdata"]
+    discount = requestBody["payload"]["invoice"]["discount"]
     freeqty = delchaldata["freeqty"]
     inoutflag = stockdata["inout"]
     items = delchaldata["contents"]
@@ -1562,7 +1563,11 @@ def getDelchalId(con, orgCode, requestBody):
         for key in list(items.keys()):
             itemQty = float(list(items[key].values())[0])
             itemRate = float(list(items[key].keys())[0])
-            stockdata["rate"] = itemRate
+            itemTotalDiscount = float(discount.get(key, 0))
+            itemDiscount = 0
+            if itemQty:
+                itemDiscount = itemTotalDiscount / itemQty
+            stockdata["rate"] = itemRate - itemDiscount
             stockdata["productcode"] = key
             stockdata["qty"] = itemQty + float(freeqty[key])
             result = con.execute(stock.insert(), [stockdata])
@@ -1621,6 +1626,7 @@ class api_invoice(object):
                 dcinvdataset = {}
                 invdataset = dtset["payload"]["invoice"]
                 freeqty = invdataset["freeqty"]
+                discount = invdataset["discount"]
                 stockdataset = dtset["payload"]["stock"]
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
@@ -1791,7 +1797,11 @@ class api_invoice(object):
                             if int(gstResult["gsflag"]) == 7:
                                 itemQty = float(list(items[item].values())[0])
                                 itemRate = float(list(items[item].keys())[0])
-                                stockdataset["rate"] = itemRate
+                                itemTotalDiscount = float(discount.get(item, 0))
+                                itemDiscount = 0
+                                if itemQty:
+                                    itemDiscount = itemTotalDiscount / itemQty
+                                stockdataset["rate"] = itemRate - itemDiscount
                                 stockdataset["productcode"] = item
                                 stockdataset["qty"] = itemQty + float(freeqty[item])
                                 stockdataset["dcinvtnflag"] = "3"
@@ -1882,7 +1892,11 @@ class api_invoice(object):
                             if int(gstResult["gsflag"]) == 7:
                                 itemQty = float(list(items[item].values())[0])
                                 itemRate = float(list(items[item].keys())[0])
-                                stockdataset["rate"] = itemRate
+                                itemTotalDiscount = float(discount.get(item, 0))
+                                itemDiscount = 0
+                                if itemQty:
+                                    itemDiscount = itemTotalDiscount / itemQty
+                                stockdataset["rate"] = itemRate - itemDiscount
                                 stockdataset["productcode"] = item
                                 stockdataset["qty"] = itemQty + float(freeqty[item])
                                 stockdataset["dcinvtnflag"] = "9"
@@ -2717,6 +2731,7 @@ class api_invoice(object):
             invdataset = dtset["invoice"]
             invid = self.request.matchdict["invid"]
             stockdataset = dtset["stock"]
+            discount = invdataset["discount"]
             items = invdataset["contents"]
             invdataset["orgcode"] = authDetails["orgcode"]
             stockdataset["orgcode"] = authDetails["orgcode"]
@@ -2910,7 +2925,11 @@ class api_invoice(object):
             for item in list(items.keys()):
                 itemQty = float(list(items[item].values())[0])
                 itemRate = float(list(items[item].keys())[0])
-                stockdataset["rate"] = itemRate
+                itemTotalDiscount = float(discount.get(item, 0))
+                itemDiscount = 0
+                if itemQty:
+                    itemDiscount = itemTotalDiscount / itemQty
+                stockdataset["rate"] = itemRate - itemDiscount
                 stockdataset["productcode"] = item
                 stockdataset["qty"] = itemQty
                 result = con.execute(stock.insert(), [stockdataset])
