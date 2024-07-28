@@ -2708,213 +2708,74 @@ class api_invoice(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                # Data is stored in a variable dtset.
-                dtset = self.request.json_body
-                # Empty dictionary to store details of delivery challan linked if any.
-                dcinvdataset = {}
-                # Details of invoice and stock are stored in separate variables.
-                invdataset = dtset["invoice"]
-                invid = self.request.matchdict["invid"]
-                stockdataset = dtset["stock"]
-                items = invdataset["contents"]
-                invdataset["orgcode"] = authDetails["orgcode"]
-                stockdataset["orgcode"] = authDetails["orgcode"]
-                voucherData = {}
-                pricedetails = []
-                if "pricedetails" in invdataset:
-                    pricedetails = invdataset["pricedetails"]
-                    invdataset.pop("pricedetails", pricedetails)
-                # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
-                stockresult = con.execute(
-                    select([stock.c.stockid]).where(and_(
-                        stock.c.dcinvtnid == invid,
-                        stock.c.dcinvtnflag == 9,
-                    ))
+        with eng.begin() as con:
+            # Data is stored in a variable dtset.
+            dtset = self.request.json_body
+            # Empty dictionary to store details of delivery challan linked if any.
+            dcinvdataset = {}
+            # Details of invoice and stock are stored in separate variables.
+            invdataset = dtset["invoice"]
+            invid = self.request.matchdict["invid"]
+            stockdataset = dtset["stock"]
+            items = invdataset["contents"]
+            invdataset["orgcode"] = authDetails["orgcode"]
+            stockdataset["orgcode"] = authDetails["orgcode"]
+            voucherData = {}
+            pricedetails = []
+            if "pricedetails" in invdataset:
+                pricedetails = invdataset["pricedetails"]
+                invdataset.pop("pricedetails", pricedetails)
+            # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
+            stockresult = con.execute(
+                select([stock.c.stockid]).where(and_(
+                    stock.c.dcinvtnid == invid,
+                    stock.c.dcinvtnflag == 9,
+                ))
+            )
+            stockid = stockresult.scalar()
+            if stockid:
+                deletestock = con.execute(
+                    stock.delete().where(stock.c.stockid == stockid)
                 )
-                stockid = stockresult.scalar()
-                if stockid:
-                    deletestock = con.execute(
-                        stock.delete().where(stock.c.stockid == stockid)
-                    )
-                dcinvresult = con.execute(
-                    select([dcinv.c.dcinvid]).where(dcinv.c.invid == invid)
+            dcinvresult = con.execute(
+                select([dcinv.c.dcinvid]).where(dcinv.c.invid == invid)
+            )
+            dcinvid = dcinvresult.scalar()
+            if dcinvid:
+                deletedcinv = con.execute(
+                    dcinv.delete().where(dcinv.c.invid == invid)
                 )
-                dcinvid = dcinvresult.scalar()
-                if dcinvid:
-                    deletedcinv = con.execute(
-                        dcinv.delete().where(dcinv.c.invid == invid)
-                    )
 
-                # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
-                if "dcid" in invdataset:
-                    dcinvdataset["dcid"] = invdataset.pop("dcid")
-                    dcinvdataset["orgcode"] = invdataset["orgcode"]
-                    dcinvdataset["invid"] = invid
-                    dcinvdataset["invprods"] = stockdataset["items"]
-                    updateinvoice = con.execute(
-                        invoice.update()
-                        .where(invoice.c.invid == invid)
-                        .values(invdataset)
-                    )
-                    if len(pricedetails) > 0:
-                        for price in pricedetails:
-                            price["orgcode"] = authDetails["orgcode"]
-                            updateprice = con.execute(
-                                cslastprice.update()
-                                .where(
-                                    and_(
-                                        cslastprice.c.custid == price["custid"],
-                                        cslastprice.c.productcode
-                                        == price["productcode"],
-                                        cslastprice.c.inoutflag
-                                        == price["inoutflag"],
-                                        cslastprice.c.orgcode == price["orgcode"],
-                                    )
+            # If delivery chalan is linked  details of invoice are updated and a new entry is made in the dcinv table.
+            if "dcid" in invdataset:
+                dcinvdataset["dcid"] = invdataset.pop("dcid")
+                dcinvdataset["orgcode"] = invdataset["orgcode"]
+                dcinvdataset["invid"] = invid
+                dcinvdataset["invprods"] = stockdataset["items"]
+                updateinvoice = con.execute(
+                    invoice.update()
+                    .where(invoice.c.invid == invid)
+                    .values(invdataset)
+                )
+                if len(pricedetails) > 0:
+                    for price in pricedetails:
+                        price["orgcode"] = authDetails["orgcode"]
+                        updateprice = con.execute(
+                            cslastprice.update()
+                            .where(
+                                and_(
+                                    cslastprice.c.custid == price["custid"],
+                                    cslastprice.c.productcode
+                                    == price["productcode"],
+                                    cslastprice.c.inoutflag
+                                    == price["inoutflag"],
+                                    cslastprice.c.orgcode == price["orgcode"],
                                 )
-                                .values(price)
                             )
-                    result = con.execute(dcinv.insert(), [dcinvdataset])
-                    if result.rowcount > 0:
-                        avfl = con.execute(
-                            select([organisation.c.avflag]).where(
-                                organisation.c.orgcode == invdataset["orgcode"]
-                            )
+                            .values(price)
                         )
-                        av = avfl.fetchone()
-                        if av["avflag"] == 1:
-                            avData = dtset["av"]
-                            voucherresult = con.execute(
-                                select([vouchers.c.vouchercode]).where(
-                                    vouchers.c.invid == invid
-                                )
-                            )
-                            voucherid = voucherresult.scalar()
-                            if voucherid:
-                                deletevch = con.execute(
-                                    vouchers.delete().where(
-                                        vouchers.c.vouchercode == voucherid
-                                    )
-                                )
-                            mafl = con.execute(
-                                select([organisation.c.maflag]).where(
-                                    organisation.c.orgcode == invdataset["orgcode"]
-                                )
-                            )
-                            maFlag = mafl.fetchone()
-                            csName = con.execute(
-                                select([customerandsupplier.c.custname]).where(
-                                    and_(
-                                        customerandsupplier.c.orgcode
-                                        == invdataset["orgcode"],
-                                        customerandsupplier.c.custid
-                                        == int(invdataset["custid"]),
-                                    )
-                                )
-                            )
-                            CSname = csName.fetchone()
-                            queryParams = {
-                                "invtype": invdataset["inoutflag"],
-                                "pmtmode": invdataset["paymentmode"],
-                                "taxType": invdataset["taxflag"],
-                                "destinationstate": invdataset["taxstate"],
-                                "totaltaxablevalue": avData["totaltaxable"],
-                                "maflag": maFlag["maflag"],
-                                "totalAmount": invdataset["invoicetotal"],
-                                "invoicedate": invdataset["invoicedate"],
-                                "invid": invid,
-                                "invoiceno": invdataset["invoiceno"],
-                                "csname": CSname["custname"],
-                                "taxes": invdataset["tax"],
-                                "cess": invdataset["cess"],
-                                "products": avData["product"],
-                                "prodData": avData["prodData"],
-                            }
-                            # when invoice total is rounded off
-                            if invdataset["roundoffflag"] == 1:
-                                roundOffAmount = float(
-                                    invdataset["invoicetotal"]
-                                ) - round(float(invdataset["invoicetotal"]))
-                                if float(roundOffAmount) != 0.00:
-                                    queryParams["roundoffamt"] = float(
-                                        roundOffAmount
-                                    )
-
-                            if int(invdataset["taxflag"]) == 7:
-                                queryParams["gstname"] = avData["avtax"]["GSTName"]
-                                queryParams["cessname"] = avData["avtax"][
-                                    "CESSName"
-                                ]
-
-                            if int(invdataset["taxflag"]) == 22:
-                                queryParams["taxpayment"] = avData["taxpayment"]
-                            # call getDefaultAcc
-                            a = getDefaultAcc(
-                                con, queryParams, int(invdataset["orgcode"])
-                            )
-                            if a["gkstatus"] == 0:
-                                voucherData["status"] = 0
-                                voucherData["vchno"] = a["vchNo"]
-                                voucherData["vchid"] = a["vid"]
-                            else:
-                                voucherData["status"] = 1
-                    return {"gkstatus": enumdict["Success"], "vchData": voucherData}
-                # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
-                else:
-                    updateinvoice = con.execute(
-                        invoice.update()
-                        .where(invoice.c.invid == invid)
-                        .values(invdataset)
-                    )
-                    if len(pricedetails) > 0:
-                        for price in pricedetails:
-                            price["orgcode"] = authDetails["orgcode"]
-                            updateprice = con.execute(
-                                cslastprice.update()
-                                .where(
-                                    and_(
-                                        cslastprice.c.custid == price["custid"],
-                                        cslastprice.c.productcode
-                                        == price["productcode"],
-                                        cslastprice.c.inoutflag
-                                        == price["inoutflag"],
-                                        cslastprice.c.orgcode == price["orgcode"],
-                                    )
-                                )
-                                .values(price)
-                            )
-                    # Code for updating bankdetails when user switch to cash payment from bank.
-                    getpaymentmode = int(
-                        invdataset["paymentmode"]
-                    )  # Loading paymentmode.
-                    idinv = int(invid)  # Loading invoiceid.
-                    # checking paymentmod whether it is 2 or 3 (i.e. 2 -> bank (pos), 3 -> cash (pos), 4 -> bank (party), 5 -> cash (party)).
-                    if getpaymentmode in [3, 5]:
-                        # Updating bankdetails to NULL if paymentmod is 3 or 5.
-                        updatebankdetails = con.execute(
-                            "update invoice set bankdetails = NULL where invid = %d"
-                            % (idinv)
-                        )
-                    result = con.execute(
-                        select([invoice.c.invid, invoice.c.invoicedate]).where(
-                            and_(
-                                invoice.c.custid == invdataset["custid"],
-                                invoice.c.invoiceno == invdataset["invoiceno"],
-                            )
-                        )
-                    )
-                    invoiceid = result.fetchone()
-                    stockdataset["dcinvtnid"] = invoiceid["invid"]
-                    stockdataset["stockdate"] = invdataset["invoicedate"]
-                    stockdataset["dcinvtnflag"] = "9"
-                    for item in list(items.keys()):
-                        itemQty = float(list(items[item].values())[0])
-                        itemRate = float(list(items[item].keys())[0])
-                        stockdataset["rate"] = itemRate
-                        stockdataset["productcode"] = item
-                        stockdataset["qty"] = itemQty
-                        result = con.execute(stock.insert(), [stockdataset])
+                result = con.execute(dcinv.insert(), [dcinvdataset])
+                if result.rowcount > 0:
                     avfl = con.execute(
                         select([organisation.c.avflag]).where(
                             organisation.c.orgcode == invdataset["orgcode"]
@@ -2961,7 +2822,7 @@ class api_invoice(object):
                             "maflag": maFlag["maflag"],
                             "totalAmount": invdataset["invoicetotal"],
                             "invoicedate": invdataset["invoicedate"],
-                            "invid": invoiceid["invid"],
+                            "invid": invid,
                             "invoiceno": invdataset["invoiceno"],
                             "csname": CSname["custname"],
                             "taxes": invdataset["tax"],
@@ -2975,10 +2836,15 @@ class api_invoice(object):
                                 invdataset["invoicetotal"]
                             ) - round(float(invdataset["invoicetotal"]))
                             if float(roundOffAmount) != 0.00:
-                                queryParams["roundoffamt"] = float(roundOffAmount)
+                                queryParams["roundoffamt"] = float(
+                                    roundOffAmount
+                                )
+
                         if int(invdataset["taxflag"]) == 7:
                             queryParams["gstname"] = avData["avtax"]["GSTName"]
-                            queryParams["cessname"] = avData["avtax"]["CESSName"]
+                            queryParams["cessname"] = avData["avtax"][
+                                "CESSName"
+                            ]
 
                         if int(invdataset["taxflag"]) == 22:
                             queryParams["taxpayment"] = avData["taxpayment"]
@@ -2992,7 +2858,140 @@ class api_invoice(object):
                             voucherData["vchid"] = a["vid"]
                         else:
                             voucherData["status"] = 1
-                    return {"gkstatus": enumdict["Success"], "vchData": voucherData}
+                return {"gkstatus": enumdict["Success"], "vchData": voucherData}
+
+            # If no delivery challan is linked an entry is made in stock table after invoice details are updated.
+            updateinvoice = con.execute(
+                invoice.update()
+                .where(invoice.c.invid == invid)
+                .values(invdataset)
+            )
+            if len(pricedetails) > 0:
+                for price in pricedetails:
+                    price["orgcode"] = authDetails["orgcode"]
+                    updateprice = con.execute(
+                        cslastprice.update()
+                        .where(
+                            and_(
+                                cslastprice.c.custid == price["custid"],
+                                cslastprice.c.productcode
+                                == price["productcode"],
+                                cslastprice.c.inoutflag
+                                == price["inoutflag"],
+                                cslastprice.c.orgcode == price["orgcode"],
+                            )
+                        )
+                        .values(price)
+                    )
+            # Code for updating bankdetails when user switch to cash payment from bank.
+            getpaymentmode = int(
+                invdataset["paymentmode"]
+            )  # Loading paymentmode.
+            idinv = int(invid)  # Loading invoiceid.
+            # checking paymentmod whether it is 2 or 3 (i.e. 2 -> bank (pos), 3 -> cash (pos), 4 -> bank (party), 5 -> cash (party)).
+            if getpaymentmode in [3, 5]:
+                # Updating bankdetails to NULL if paymentmod is 3 or 5.
+                updatebankdetails = con.execute(
+                    "update invoice set bankdetails = NULL where invid = %d"
+                    % (idinv)
+                )
+            result = con.execute(
+                select([invoice.c.invid, invoice.c.invoicedate]).where(
+                    and_(
+                        invoice.c.custid == invdataset["custid"],
+                        invoice.c.invoiceno == invdataset["invoiceno"],
+                    )
+                )
+            )
+            invoiceid = result.fetchone()
+            stockdataset["dcinvtnid"] = invoiceid["invid"]
+            stockdataset["stockdate"] = invdataset["invoicedate"]
+            stockdataset["dcinvtnflag"] = "9"
+            for item in list(items.keys()):
+                itemQty = float(list(items[item].values())[0])
+                itemRate = float(list(items[item].keys())[0])
+                stockdataset["rate"] = itemRate
+                stockdataset["productcode"] = item
+                stockdataset["qty"] = itemQty
+                result = con.execute(stock.insert(), [stockdataset])
+            avfl = con.execute(
+                select([organisation.c.avflag]).where(
+                    organisation.c.orgcode == invdataset["orgcode"]
+                )
+            )
+            av = avfl.fetchone()
+            if av["avflag"] == 1:
+                avData = dtset["av"]
+                voucherresult = con.execute(
+                    select([vouchers.c.vouchercode]).where(
+                        vouchers.c.invid == invid
+                    )
+                )
+                voucherid = voucherresult.scalar()
+                if voucherid:
+                    deletevch = con.execute(
+                        vouchers.delete().where(
+                            vouchers.c.vouchercode == voucherid
+                        )
+                    )
+                mafl = con.execute(
+                    select([organisation.c.maflag]).where(
+                        organisation.c.orgcode == invdataset["orgcode"]
+                    )
+                )
+                maFlag = mafl.fetchone()
+                csName = con.execute(
+                    select([customerandsupplier.c.custname]).where(
+                        and_(
+                            customerandsupplier.c.orgcode
+                            == invdataset["orgcode"],
+                            customerandsupplier.c.custid
+                            == int(invdataset["custid"]),
+                        )
+                    )
+                )
+                CSname = csName.fetchone()
+                queryParams = {
+                    "invtype": invdataset["inoutflag"],
+                    "pmtmode": invdataset["paymentmode"],
+                    "taxType": invdataset["taxflag"],
+                    "destinationstate": invdataset["taxstate"],
+                    "totaltaxablevalue": avData["totaltaxable"],
+                    "maflag": maFlag["maflag"],
+                    "totalAmount": invdataset["invoicetotal"],
+                    "invoicedate": invdataset["invoicedate"],
+                    "invid": invoiceid["invid"],
+                    "invoiceno": invdataset["invoiceno"],
+                    "csname": CSname["custname"],
+                    "taxes": invdataset["tax"],
+                    "cess": invdataset["cess"],
+                    "products": avData["product"],
+                    "prodData": avData["prodData"],
+                }
+                # when invoice total is rounded off
+                if invdataset["roundoffflag"] == 1:
+                    roundOffAmount = float(
+                        invdataset["invoicetotal"]
+                    ) - round(float(invdataset["invoicetotal"]))
+                    if float(roundOffAmount) != 0.00:
+                        queryParams["roundoffamt"] = float(roundOffAmount)
+                if int(invdataset["taxflag"]) == 7:
+                    queryParams["gstname"] = avData["avtax"]["GSTName"]
+                    queryParams["cessname"] = avData["avtax"]["CESSName"]
+
+                if int(invdataset["taxflag"]) == 22:
+                    queryParams["taxpayment"] = avData["taxpayment"]
+                # call getDefaultAcc
+                a = getDefaultAcc(
+                    con, queryParams, int(invdataset["orgcode"])
+                )
+                if a["gkstatus"] == 0:
+                    voucherData["status"] = 0
+                    voucherData["vchno"] = a["vchNo"]
+                    voucherData["vchid"] = a["vid"]
+                else:
+                    voucherData["status"] = 1
+            return {"gkstatus": enumdict["Success"], "vchData": voucherData}
 
     # Delete the invoice entry from invoice table using invid and store in invoicebin
     # table. Also delete billwise entry and stock entry for same invid and corsponding
