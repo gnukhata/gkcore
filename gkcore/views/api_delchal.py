@@ -269,6 +269,7 @@ class api_delchal(object):
             dcid = self.request.matchdict["dcid"]
             dataset = self.request.json_body
             delchaldata = dataset["delchaldata"]
+            discount = delchaldata["discount"]
             stockdata = dataset["stockdata"]
             delchaldata["orgcode"] = authDetails["orgcode"]
             stockdata["orgcode"] = authDetails["orgcode"]
@@ -294,7 +295,11 @@ class api_delchal(object):
             for key in list(items.keys()):
                 itemQty = float(list(items[key].values())[0])
                 itemRate = float(list(items[key].keys())[0])
-                stockdata["rate"] = itemRate
+                itemTotalDiscount = float(discount.get(key, 0))
+                itemDiscount = 0
+                if itemQty:
+                    itemDiscount = itemTotalDiscount / itemQty
+                stockdata["rate"] = itemRate - itemDiscount
                 stockdata["productcode"] = key
                 stockdata["qty"] = itemQty + float(freeqty[key])
                 result = con.execute(stock.insert(), [stockdata])
