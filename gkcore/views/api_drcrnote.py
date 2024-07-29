@@ -41,24 +41,19 @@ from gkcore.models.gkdb import (
     stock,
 )
 from sqlalchemy.sql import select
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
-from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_invoice import getStateCode
-import traceback  # for printing detailed exception logs
 
 
 @view_defaults(route_name="drcrnote")
 class api_drcr(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="POST", renderer="json")
     def createDrCrNote(self):
@@ -69,124 +64,116 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                wholedataset = self.request.json_body
-                dataset = wholedataset["dataset"]
-                vdataset = wholedataset["vdataset"]
-                dataset["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
-                    select([drcr.c.drcrno]).where(
-                        and_(
-                            drcr.c.orgcode == authDetails["orgcode"],
-                            func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
-                        )
+        with eng.begin() as con:
+            wholedataset = self.request.json_body
+            dataset = wholedataset["dataset"]
+            vdataset = wholedataset["vdataset"]
+            dataset["orgcode"] = authDetails["orgcode"]
+            # Check for duplicate entry before insertion
+            result_duplicate_check = con.execute(
+                select([drcr.c.drcrno]).where(
+                    and_(
+                        drcr.c.orgcode == authDetails["orgcode"],
+                        func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
                     )
                 )
-                
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
+            )
 
-                result = self.con.execute(drcr.insert(), [dataset])
-                lastdrcr = self.con.execute(
-                    select([drcr.c.drcrid]).where(
-                        and_(
-                            drcr.c.invid == dataset["invid"],
-                            drcr.c.drcrno == dataset["drcrno"],
-                            drcr.c.orgcode == dataset["orgcode"],
-                            drcr.c.dctypeflag == dataset["dctypeflag"],
-                        )
-                    )
-                )
-                drcrid = lastdrcr.fetchone()           
-                if int(dataset["drcrmode"]) == 18:
-                    stockdataset = {
-                        "dcinvtnid": drcrid["drcrid"],
-                        "orgcode": dataset["orgcode"],
-                        "stockdate": dataset["drcrdate"],
-                    }
-                    if int(dataset["dctypeflag"]) == 3:
-                        stockdataset["inout"] = 9
-                        if int(vdataset["inoutflag"]) == 15:
-                            # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
-                            stockdataset["dcinvtnflag"] = int(dataset["dcinvtnflag"])
-                        else:
-                            stockdataset["dcinvtnflag"] = 7
-                    else:
-                        stockdataset["inout"] = 15
-                        stockdataset["dcinvtnflag"] = 7
-
-                    if "goid" in vdataset:
-                        stockdataset["goid"] = vdataset["goid"]
-
-                    # Iterate through the keys and values using a for loop
-                    if "quantities" in dataset["reductionval"]:
-                        for key, value in dataset["reductionval"]["quantities"].items():
-                            stockdataset["qty"] = value
-                            stockdataset["productcode"] = key
-                            itemPrice = self.con.execute(
-                                select([product.c.prodmrp]).where(
-                                    product.c.productcode == stockdataset["productcode"]
-                                )
-                            )
-                            itemP = itemPrice.fetchone()
-                            stockdataset["rate"] = itemP[0]
-                            self.con.execute(stock.insert(), stockdataset)
-
-                # check automatic voucher flag  if it is 1 get maflag
-                avfl = self.con.execute(
-                    select([organisation.c.avflag]).where(
-                        organisation.c.orgcode == dataset["orgcode"]
-                    )
-                )
-                av = avfl.fetchone()
-                if av["avflag"] == 1:
-                    mafl = self.con.execute(
-                        select([organisation.c.maflag]).where(
-                            organisation.c.orgcode == dataset["orgcode"]
-                        )
-                    )
-                    maFlag = mafl.fetchone()
-                    queryParams = {
-                        "maflag": maFlag["maflag"],
-                        "cessname": "CESS",
-                        "drcrid": drcrid["drcrid"],
-                    }
-                    queryParams.update(dataset)
-                    queryParams.update(vdataset)
-                    if dataset["roundoffflag"] == 1:
-                        roundOffAmount = float(dataset["totreduct"]) - round(
-                            float(dataset["totreduct"])
-                        )
-                        if float(roundOffAmount) != 0.00:
-                            queryParams["roundoffamt"] = float(roundOffAmount)
-                    try:
-                        drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
-                            "gkresult": drcrid["drcrid"],
-                        }
-                    except:
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "vchCode": {"vflag": 0},
-                            "gkresult": drcrid["drcrid"],
-                        }
-                else:
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": drcrid["drcrid"],
-                    }
-            except exc.IntegrityError:
+            if result_duplicate_check.rowcount > 0:
+                # Duplicate entry found, handle accordingly
                 return {"gkstatus": enumdict["DuplicateEntry"]}
+
+            result = con.execute(drcr.insert(), [dataset])
+            lastdrcr = con.execute(
+                select([drcr.c.drcrid]).where(
+                    and_(
+                        drcr.c.invid == dataset["invid"],
+                        drcr.c.drcrno == dataset["drcrno"],
+                        drcr.c.orgcode == dataset["orgcode"],
+                        drcr.c.dctypeflag == dataset["dctypeflag"],
+                    )
+                )
+            )
+            drcrid = lastdrcr.fetchone()
+            if int(dataset["drcrmode"]) == 18:
+                stockdataset = {
+                    "dcinvtnid": drcrid["drcrid"],
+                    "orgcode": dataset["orgcode"],
+                    "stockdate": dataset["drcrdate"],
+                }
+                if int(dataset["dctypeflag"]) == 3:
+                    stockdataset["inout"] = 9
+                    if int(vdataset["inoutflag"]) == 15:
+                        # value dcinvtnflag set to 2 when if Goods returned are of bad quality else set 7 from front.
+                        stockdataset["dcinvtnflag"] = int(dataset["dcinvtnflag"])
+                    else:
+                        stockdataset["dcinvtnflag"] = 7
+                else:
+                    stockdataset["inout"] = 15
+                    stockdataset["dcinvtnflag"] = 7
+
+                if "goid" in vdataset:
+                    stockdataset["goid"] = vdataset["goid"]
+
+                # Iterate through the keys and values using a for loop
+                if "quantities" in dataset["reductionval"]:
+                    for key, value in dataset["reductionval"]["quantities"].items():
+                        stockdataset["qty"] = value
+                        stockdataset["productcode"] = key
+                        itemPrice = con.execute(
+                            select([product.c.prodmrp]).where(
+                                product.c.productcode == stockdataset["productcode"]
+                            )
+                        )
+                        itemP = itemPrice.fetchone()
+                        stockdataset["rate"] = itemP[0]
+                        con.execute(stock.insert(), stockdataset)
+
+            # check automatic voucher flag  if it is 1 get maflag
+            avfl = con.execute(
+                select([organisation.c.avflag]).where(
+                    organisation.c.orgcode == dataset["orgcode"]
+                )
+            )
+            av = avfl.fetchone()
+            if av["avflag"] != 1:
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": drcrid["drcrid"],
+                }
+
+            mafl = con.execute(
+                select([organisation.c.maflag]).where(
+                    organisation.c.orgcode == dataset["orgcode"]
+                )
+            )
+            maFlag = mafl.fetchone()
+            queryParams = {
+                "maflag": maFlag["maflag"],
+                "cessname": "CESS",
+                "drcrid": drcrid["drcrid"],
+            }
+            queryParams.update(dataset)
+            queryParams.update(vdataset)
+            if dataset["roundoffflag"] == 1:
+                roundOffAmount = float(dataset["totreduct"]) - round(
+                    float(dataset["totreduct"])
+                )
+                if float(roundOffAmount) != 0.00:
+                    queryParams["roundoffamt"] = float(roundOffAmount)
+            try:
+                drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
+                    "gkresult": drcrid["drcrid"],
+                }
             except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "vchCode": {"vflag": 0},
+                    "gkresult": drcrid["drcrid"],
+                }
 
     @view_config(request_method="GET", request_param="drcr=single", renderer="json")
     def getDrCrDetails(self):
@@ -207,189 +194,234 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                # taken credit/debit note data on the basis on drcrid
-                drcrresult = self.con.execute(
-                    select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
+        with eng.connect() as con:
+            # taken credit/debit note data on the basis on drcrid
+            drcrresult = con.execute(
+                select([drcr]).where(drcr.c.drcrid == self.request.params["drcrid"])
+            )
+            drcrrow = drcrresult.fetchone()
+            invdata = {}
+            custSupDetails = {}
+            drcrdata = {}
+            drcrdata = {
+                "drcrid": drcrrow["drcrid"],
+                "drcrno": drcrrow["drcrno"],
+                "drcrdate": datetime.strftime(drcrrow["drcrdate"], "%d-%m-%Y"),
+                "dctypeflag": drcrrow["dctypeflag"],
+                "totreduct": "%.2f" % float(drcrrow["totreduct"]),
+                "reduct": drcrrow["reductionval"],
+                "drcrmode": drcrrow["drcrmode"],
+                "drcrnarration": drcrrow["drcrnarration"],
+            }
+            # this will show that total amount is rounded of or not
+            drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
+            drcrdata["roundedoffvalue"] = "%.2f" % float(
+                round(drcrrow["totreduct"])
+            )
+            # reference is a dictionary which contains reference number as key and reference date as value.
+            # if reference field is not None then send refernce dictionary.
+            if drcrrow["reference"] == None:
+                drcrdata["reference"] = ""
+            else:
+                drcrrow["reference"]["dcdate"] = datetime.strftime(
+                    datetime.strptime(
+                        drcrrow["reference"]["dcdate"], "%Y-%m-%d"
+                    ).date(),
+                    "%d-%m-%Y",
                 )
-                drcrrow = drcrresult.fetchone()
-                invdata = {}
-                custSupDetails = {}
-                drcrdata = {}
-                drcrdata = {
-                    "drcrid": drcrrow["drcrid"],
-                    "drcrno": drcrrow["drcrno"],
-                    "drcrdate": datetime.strftime(drcrrow["drcrdate"], "%d-%m-%Y"),
-                    "dctypeflag": drcrrow["dctypeflag"],
-                    "totreduct": "%.2f" % float(drcrrow["totreduct"]),
-                    "reduct": drcrrow["reductionval"],
-                    "drcrmode": drcrrow["drcrmode"],
-                    "drcrnarration": drcrrow["drcrnarration"],
-                }
-                # this will show that total amount is rounded of or not
-                drcrdata["roundedoffflag"] = drcrrow["roundoffflag"]
-                drcrdata["roundedoffvalue"] = "%.2f" % float(
-                    round(drcrrow["totreduct"])
-                )
-                # reference is a dictionary which contains reference number as key and reference date as value.
-                # if reference field is not None then send refernce dictionary.
-                if drcrrow["reference"] == None:
-                    drcrdata["reference"] = ""
-                else:
-                    drcrrow["reference"]["dcdate"] = datetime.strftime(
-                        datetime.strptime(
-                            drcrrow["reference"]["dcdate"], "%Y-%m-%d"
-                        ).date(),
-                        "%d-%m-%Y",
-                    )
-                    drcrdata["reference"] = drcrrow["reference"]
-                # taken data of invoice on the basis of invid.
-                invresult = self.con.execute(
-                    select([invoice]).where(invoice.c.invid == drcrrow["invid"])
-                )
-                invrow = invresult.fetchone()
-                invdata = {
-                    "invid": invrow["invid"],
-                    "invoiceno": invrow["invoiceno"],
-                    "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
-                    "inoutflag": invrow["inoutflag"],
-                    "taxflag": invrow["taxflag"],
-                    "tax": invrow["tax"],
-                    "orgstategstin": invrow["orgstategstin"],
-                    "icflag": invrow["icflag"],
-                }
-                drcrdata["contents"] = invrow["contents"]
-                contentsData = invrow["contents"]
-                if invrow["sourcestate"] != None or invrow["taxstate"] != None:
-                    invdata["sourcestate"] = invrow["sourcestate"]
-                    sourceStateCode = getStateCode(invrow["sourcestate"], self.con)[
-                        "statecode"
+                drcrdata["reference"] = drcrrow["reference"]
+            # taken data of invoice on the basis of invid.
+            invresult = con.execute(
+                select([invoice]).where(invoice.c.invid == drcrrow["invid"])
+            )
+            invrow = invresult.fetchone()
+            invdata = {
+                "invid": invrow["invid"],
+                "invoiceno": invrow["invoiceno"],
+                "invoicedate": datetime.strftime(invrow["invoicedate"], "%d-%m-%Y"),
+                "inoutflag": invrow["inoutflag"],
+                "taxflag": invrow["taxflag"],
+                "tax": invrow["tax"],
+                "orgstategstin": invrow["orgstategstin"],
+                "icflag": invrow["icflag"],
+            }
+            drcrdata["contents"] = invrow["contents"]
+            contentsData = invrow["contents"]
+            if invrow["sourcestate"] != None or invrow["taxstate"] != None:
+                invdata["sourcestate"] = invrow["sourcestate"]
+                sourceStateCode = getStateCode(invrow["sourcestate"], con)[
+                    "statecode"
+                ]
+                invdata["sourcestatecode"] = sourceStateCode
+                invdata["taxstate"] = invrow["taxstate"]
+                taxStateCode = getStateCode(invrow["taxstate"], con)[
+                    "statecode"
+                ]
+                invdata["taxstatecode"] = taxStateCode
+            # taken data of customerandsupplier on the basis of custid
+            custresult = con.execute(
+                select(
+                    [
+                        customerandsupplier.c.custid,
+                        customerandsupplier.c.custname,
+                        customerandsupplier.c.custaddr,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custtan,
+                        customerandsupplier.c.csflag,
+                        customerandsupplier.c.pincode,
                     ]
-                    invdata["sourcestatecode"] = sourceStateCode
-                    invdata["taxstate"] = invrow["taxstate"]
-                    taxStateCode = getStateCode(invrow["taxstate"], self.con)[
-                        "statecode"
-                    ]
-                    invdata["taxstatecode"] = taxStateCode
-                # taken data of customerandsupplier on the basis of custid
-                custresult = self.con.execute(
-                    select(
-                        [
-                            customerandsupplier.c.custid,
-                            customerandsupplier.c.custname,
-                            customerandsupplier.c.custaddr,
-                            customerandsupplier.c.gstin,
-                            customerandsupplier.c.custtan,
-                            customerandsupplier.c.csflag,
-                            customerandsupplier.c.pincode,
+                ).where(customerandsupplier.c.custid == invrow["custid"])
+            )
+            custrow = custresult.fetchone()
+            custSupDetails = {
+                "custid": custrow["custid"],
+                "custname": custrow["custname"],
+                "custaddr": custrow["custaddr"],
+                "gstin": custrow["gstin"],
+                "custtin": custrow["custtan"],
+                "pincode": custrow["pincode"],
+            }
+            # tin and gstin checked.
+            if custSupDetails["custtin"] != None:
+                custSupDetails["custtin"] = custSupDetails["custtin"]
+            if custSupDetails["gstin"] != None:
+                if int(custrow["csflag"]) == 3:
+                    try:
+                        custSupDetails["custgstin"] = custrow["gstin"][
+                            str(taxStateCode)
                         ]
-                    ).where(customerandsupplier.c.custid == invrow["custid"])
-                )
-                custrow = custresult.fetchone()
-                custSupDetails = {
-                    "custid": custrow["custid"],
-                    "custname": custrow["custname"],
-                    "custaddr": custrow["custaddr"],
-                    "gstin": custrow["gstin"],
-                    "custtin": custrow["custtan"],
-                    "pincode": custrow["pincode"],
+                    except:
+                        custSupDetails["custgstin"] = None
+                else:
+                    try:
+                        custSupDetails["custgstin"] = custrow["gstin"][
+                            str(sourceStateCode)
+                        ]
+                    except:
+                        custSupDetails["custgstin"] = None
+            drcrdata["custSupDetails"] = custSupDetails
+
+            # all data checked using inout flag,
+            if int(invrow["inoutflag"]) == 15:
+                # if inoutflag=15 then issuername and designation is same as invoice details
+                invdata["issuername"] = invrow["issuername"]
+                invdata["designation"] = invrow["designation"]
+            elif int(invrow["inoutflag"]) == 9:
+                # if inoutflag=9 then issuername and designation is taken from login details.
+                # user deatils
+                userrow = con.execute(
+                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
+                    % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
+                ).fetchone()
+                userdata = {
+                    "userid": drcrrow["userid"],
+                    "username": userrow["username"],
+                    "userrole": userrow["userrole"],
                 }
-                # tin and gstin checked.
-                if custSupDetails["custtin"] != None:
-                    custSupDetails["custtin"] = custSupDetails["custtin"]
-                if custSupDetails["gstin"] != None:
-                    if int(custrow["csflag"]) == 3:
-                        try:
-                            custSupDetails["custgstin"] = custrow["gstin"][
-                                str(taxStateCode)
-                            ]
-                        except:
-                            custSupDetails["custgstin"] = None
-                    else:
-                        try:
-                            custSupDetails["custgstin"] = custrow["gstin"][
-                                str(sourceStateCode)
-                            ]
-                        except:
-                            custSupDetails["custgstin"] = None
-                drcrdata["custSupDetails"] = custSupDetails
+                invdata["issuername"] = userrow["username"]
+                invdata["designation"] = userrow["userrole"]
 
-                # all data checked using inout flag,
-                if int(invrow["inoutflag"]) == 15:
-                    # if inoutflag=15 then issuername and designation is same as invoice details
-                    invdata["issuername"] = invrow["issuername"]
-                    invdata["designation"] = invrow["designation"]
-                elif int(invrow["inoutflag"]) == 9:
-                    # if inoutflag=9 then issuername and designation is taken from login details.
-                    # user deatils
-                    userrow = self.con.execute(
-                        "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
-                        % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
-                    ).fetchone()
-                    userdata = {
-                        "userid": drcrrow["userid"],
-                        "username": userrow["username"],
-                        "userrole": userrow["userrole"],
-                    }
-                    invdata["issuername"] = userrow["username"]
-                    invdata["designation"] = userrow["userrole"]
+            # calculations
+            # contents is a nested dictionary from drcr table.
+            # It contains productcode as the key with a value as a dictionary.
+            # this dictionary has two key value pair, priceperunit and quantity.
+            idrateData = drcrrow["reductionval"]
+            # drcrdata is the final dictionary which will not just have the dataset from original contents,
+            # but also productdesc,unitname,taxname,taxrate,amount and taxamount
+            # invdata containing invoice details.
+            drcrContents = {}
+            idrate = {}
+            # get the dictionary of discount and access it inside the loop for one product each.
+            totalTaxableVal = 0.00
+            totalTaxAmt = 0.00
+            totalCessAmt = 0.00
 
-                # calculations
-                # contents is a nested dictionary from drcr table.
-                # It contains productcode as the key with a value as a dictionary.
-                # this dictionary has two key value pair, priceperunit and quantity.
-                idrateData = drcrrow["reductionval"]
-                # drcrdata is the final dictionary which will not just have the dataset from original contents,
-                # but also productdesc,unitname,taxname,taxrate,amount and taxamount
-                # invdata containing invoice details.
-                drcrContents = {}
-                idrate = {}
-                # get the dictionary of discount and access it inside the loop for one product each.
-                totalTaxableVal = 0.00
-                totalTaxAmt = 0.00
-                totalCessAmt = 0.00
-
-                # pc will have the productcode which will be the key in contentsData.
-                for pc in list(idrateData.keys()):
-                    if str(pc) != "quantities":
-                        pcquantity = 0.00
-                        if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                            pcquantity = (
-                                idrateData["quantities"][pc]
-                                if "quantities" in idrateData
-                                else 0
-                            )
-                        else:
-                            pcquantity = float(
-                                contentsData[pc][list(contentsData[pc].keys())[0]]
-                            )
-                        prodresult = self.con.execute(
-                            select(
-                                [
-                                    product.c.productdesc,
-                                    product.c.uomid,
-                                    product.c.gsflag,
-                                    product.c.gscode,
-                                ]
-                            ).where(product.c.productcode == pc)
+            # pc will have the productcode which will be the key in contentsData.
+            for pc in list(idrateData.keys()):
+                if str(pc) != "quantities":
+                    pcquantity = 0.00
+                    if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
+                        pcquantity = (
+                            idrateData["quantities"][pc]
+                            if "quantities" in idrateData
+                            else 0
                         )
-                        prodrow = prodresult.fetchone()
-                        # product or service check and taxableAmount calculate=newppu*newqty
-                        taxRate = 0.00
-                        totalAmount = 0.00
+                    else:
+                        pcquantity = float(
+                            contentsData[pc][list(contentsData[pc].keys())[0]]
+                        )
+                    prodresult = con.execute(
+                        select(
+                            [
+                                product.c.productdesc,
+                                product.c.uomid,
+                                product.c.gsflag,
+                                product.c.gscode,
+                            ]
+                        ).where(product.c.productcode == pc)
+                    )
+                    prodrow = prodresult.fetchone()
+                    # product or service check and taxableAmount calculate=newppu*newqty
+                    taxRate = 0.00
+                    totalAmount = 0.00
+                    taxRate = float(invrow["tax"][pc])
+                    if int(invrow["taxflag"]) == 22:
+                        umresult = con.execute(
+                            select([unitofmeasurement.c.unitname]).where(
+                                unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                            )
+                        )
+                        umrow = umresult.fetchone()
+                        unitofMeasurement = umrow["unitname"]
+                        if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
+                            reductprice = float(idrateData[pc])
+                        else:
+                            reductprice = (
+                                float(
+                                    contentsData[pc][
+                                        list(contentsData[pc].keys())[0]
+                                    ]
+                                )
+                            ) * (float(idrateData[pc]))
                         taxRate = float(invrow["tax"][pc])
-                        if int(invrow["taxflag"]) == 22:
-                            umresult = self.con.execute(
+                        taxAmount = reductprice * float(taxRate / 100)
+                        taxname = "VAT"
+                        totalAmount = reductprice + taxAmount
+                        totalTaxableVal = totalTaxableVal + reductprice
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        drcrContents[pc] = {
+                            "proddesc": prodrow["productdesc"],
+                            "gscode": prodrow["gscode"],
+                            "uom": unitofMeasurement,
+                            "qty": "%.2f" % float(pcquantity),
+                            "priceperunit": "%.2f"
+                            % (float(list(contentsData[pc].keys())[0])),
+                            "totalAmount": "%.2f" % (float(totalAmount)),
+                            "taxname": "VAT",
+                            "taxrate": "%.2f" % (float(taxRate)),
+                            "taxamount": "%.2f" % (float(taxAmount)),
+                            "newtaxableamnt": "%.2f" % (float(reductprice)),
+                            "reductionval": "%.2f" % float(idrateData[pc]),
+                        }
+                    else:
+                        if int(prodrow["gsflag"]) == 7:
+                            umresult = con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
-                                    unitofmeasurement.c.uomid == int(prodrow["uomid"])
+                                    unitofmeasurement.c.uomid
+                                    == int(prodrow["uomid"])
                                 )
                             )
                             umrow = umresult.fetchone()
                             unitofMeasurement = umrow["unitname"]
-                            if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                                reductprice = float(idrateData[pc])
+                            if (
+                                drcrrow["drcrmode"]
+                                and int(drcrrow["drcrmode"]) == 18
+                            ):
+                                reductprice = (
+                                    float(
+                                       drcrdata["reduct"][pc]
+                                    )
+                                ) * (float(idrateData["quantities"][pc]))
                             else:
                                 reductprice = (
                                     float(
@@ -398,124 +430,72 @@ class api_drcr(object):
                                         ]
                                     )
                                 ) * (float(idrateData[pc]))
-                            taxRate = float(invrow["tax"][pc])
-                            taxAmount = reductprice * float(taxRate / 100)
-                            taxname = "VAT"
-                            totalAmount = reductprice + taxAmount
-                            totalTaxableVal = totalTaxableVal + reductprice
-                            totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {
-                                "proddesc": prodrow["productdesc"],
-                                "gscode": prodrow["gscode"],
-                                "uom": unitofMeasurement,
-                                "qty": "%.2f" % float(pcquantity),
-                                "priceperunit": "%.2f"
-                                % (float(list(contentsData[pc].keys())[0])),
-                                "totalAmount": "%.2f" % (float(totalAmount)),
-                                "taxname": "VAT",
-                                "taxrate": "%.2f" % (float(taxRate)),
-                                "taxamount": "%.2f" % (float(taxAmount)),
-                                "newtaxableamnt": "%.2f" % (float(reductprice)),
-                                "reductionval": "%.2f" % float(idrateData[pc]),
-                            }
                         else:
-                            if int(prodrow["gsflag"]) == 7:
-                                umresult = self.con.execute(
-                                    select([unitofmeasurement.c.unitname]).where(
-                                        unitofmeasurement.c.uomid
-                                        == int(prodrow["uomid"])
+                            unitofMeasurement = ""
+                            reductprice = float(idrateData[pc])
+                        cessRate = 0.00
+                        cessAmount = 0.00
+                        cessVal = 0.00
+                        taxname = ""
+                        if invrow["cess"] != None:
+                            cessVal = float(invrow["cess"][pc])
+                            cessAmount = reductprice * (cessVal / 100)
+                            totalCessAmt = totalCessAmt + cessAmount
+                        goid_result = con.execute(
+                                select([stock.c.goid]).where(
+                                    and_(
+                                        stock.c.productcode == pc,
+                                        stock.c.orgcode == authDetails["orgcode"],
                                     )
                                 )
-                                umrow = umresult.fetchone()
-                                unitofMeasurement = umrow["unitname"]
-                                if (
-                                    drcrrow["drcrmode"]
-                                    and int(drcrrow["drcrmode"]) == 18
-                                ):
-                                    reductprice = (
-                                        float(
-                                           drcrdata["reduct"][pc]
-                                        )
-                                    ) * (float(idrateData["quantities"][pc]))
-                                else:
-                                    reductprice = (
-                                        float(
-                                            contentsData[pc][
-                                                list(contentsData[pc].keys())[0]
-                                            ]
-                                        )
-                                    ) * (float(idrateData[pc]))
-                            else:
-                                unitofMeasurement = ""
-                                reductprice = float(idrateData[pc])
-                            cessRate = 0.00
-                            cessAmount = 0.00
-                            cessVal = 0.00
-                            taxname = ""
-                            if invrow["cess"] != None:
-                                cessVal = float(invrow["cess"][pc])
-                                cessAmount = reductprice * (cessVal / 100)
-                                totalCessAmt = totalCessAmt + cessAmount
-                            goid_result = self.con.execute(
-                                    select([stock.c.goid]).where(
-                                        and_(
-                                            stock.c.productcode == pc,
-                                            stock.c.orgcode == authDetails["orgcode"],
-                                        )
-                                    )
-                                )
+                            )
 
-                            goidrow = goid_result.fetchall()
-                            if invrow["sourcestate"] != invrow["taxstate"]:
-                                taxname = "IGST"
-                                taxAmount = reductprice * (taxRate / 100)
-                                totalAmount = reductprice + taxAmount + cessAmount
-                            else:
-                                taxname = "SGST"
-                                # SGST and CGST rates are equal and exactly half the IGST rate.
-                                taxAmount = reductprice * (taxRate / 200)
-                                totalAmount = reductprice + (2 * taxAmount) + cessAmount
-                            totalTaxableVal = totalTaxableVal + reductprice
-                            totalTaxAmt = totalTaxAmt + taxAmount
-                            drcrContents[pc] = {
-                                "proddesc": prodrow["productdesc"],
-                                "gscode": prodrow["gscode"],
-                                "uom": unitofMeasurement,
-                                "qty": "%.2f" % float(pcquantity),
-                                "priceperunit": "%.2f"
-                                % (float(list(contentsData[pc].keys())[0])),
-                                "totalAmount": "%.2f" % (float(totalAmount)),
-                                "taxname": taxname,
-                                "taxrate": "%.2f" % (float(taxRate)),
-                                "taxamount": "%.2f" % (float(taxAmount)),
-                                "cess": "%.2f" % (float(cessAmount)),
-                                "cessrate": "%.2f" % (float(cessVal)),
-                                "newtaxableamnt": "%.2f" % (float(reductprice)),
-                                "reductionval": "%.2f" % float(idrateData[pc]),
-                                "gsflag": prodrow["gsflag"],
-                                "goid": goidrow[0][0],
-                            }
-                drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
-                drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
-                drcrdata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
-                drcrdata["taxname"] = taxname
-                drcrdata["drcrcontents"] = drcrContents
-                drcrdata["invdata"] = invdata
-                # Flag sent to indicate whether goods returned where of badquality.
-                drcrGetSingleStockResult = self.con.execute(
-                    "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
-                    % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
-                ).fetchone()
-                if int(drcrGetSingleStockResult["drcrcount"]) == 0:
-                    drcrdata["badquality"] = 0
-                else:
-                    drcrdata["badquality"] = 1
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                        goidrow = goid_result.fetchall()
+                        if invrow["sourcestate"] != invrow["taxstate"]:
+                            taxname = "IGST"
+                            taxAmount = reductprice * (taxRate / 100)
+                            totalAmount = reductprice + taxAmount + cessAmount
+                        else:
+                            taxname = "SGST"
+                            # SGST and CGST rates are equal and exactly half the IGST rate.
+                            taxAmount = reductprice * (taxRate / 200)
+                            totalAmount = reductprice + (2 * taxAmount) + cessAmount
+                        totalTaxableVal = totalTaxableVal + reductprice
+                        totalTaxAmt = totalTaxAmt + taxAmount
+                        drcrContents[pc] = {
+                            "proddesc": prodrow["productdesc"],
+                            "gscode": prodrow["gscode"],
+                            "uom": unitofMeasurement,
+                            "qty": "%.2f" % float(pcquantity),
+                            "priceperunit": "%.2f"
+                            % (float(list(contentsData[pc].keys())[0])),
+                            "totalAmount": "%.2f" % (float(totalAmount)),
+                            "taxname": taxname,
+                            "taxrate": "%.2f" % (float(taxRate)),
+                            "taxamount": "%.2f" % (float(taxAmount)),
+                            "cess": "%.2f" % (float(cessAmount)),
+                            "cessrate": "%.2f" % (float(cessVal)),
+                            "newtaxableamnt": "%.2f" % (float(reductprice)),
+                            "reductionval": "%.2f" % float(idrateData[pc]),
+                            "gsflag": prodrow["gsflag"],
+                            "goid": goidrow[0][0],
+                        }
+            drcrdata["totaltaxablevalue"] = "%.2f" % (float(totalTaxableVal))
+            drcrdata["totaltaxamt"] = "%.2f" % (float(totalTaxAmt))
+            drcrdata["totalcessamt"] = "%.2f" % (float(totalCessAmt))
+            drcrdata["taxname"] = taxname
+            drcrdata["drcrcontents"] = drcrContents
+            drcrdata["invdata"] = invdata
+            # Flag sent to indicate whether goods returned where of badquality.
+            drcrGetSingleStockResult = con.execute(
+                "select count(stock.dcinvtnflag) as drcrcount from stock where stock.dcinvtnflag = 2 and stock.dcinvtnid = %d and orgcode = %d"
+                % (int(self.request.params["drcrid"]), int(authDetails["orgcode"]))
+            ).fetchone()
+            if int(drcrGetSingleStockResult["drcrcount"]) == 0:
+                drcrdata["badquality"] = 0
+            else:
+                drcrdata["badquality"] = 1
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     @view_config(request_method="GET", request_param="drcr=all", renderer="json")
     def getAlldrcr(self):
@@ -526,84 +506,62 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+        with eng.connect() as con:
+            result = con.execute(
+                select(
+                    [
+                        drcr.c.drcrno,
+                        drcr.c.drcrid,
+                        drcr.c.drcrdate,
+                        drcr.c.invid,
+                        drcr.c.dctypeflag,
+                        drcr.c.totreduct,
+                        drcr.c.attachmentcount,
+                    ]
+                )
+                .where(drcr.c.orgcode == authDetails["orgcode"])
+                .order_by(drcr.c.drcrdate)
+            )
+            drcrdata = []
+            for row in result:
+                # invoice,cust
+                inv = con.execute(
+                    select([invoice.c.custid]).where(
+                        invoice.c.invid == row["invid"]
+                    )
+                )
+                invdata = inv.fetchone()
+                custsupp = con.execute(
                     select(
                         [
-                            drcr.c.drcrno,
-                            drcr.c.drcrid,
-                            drcr.c.drcrdate,
-                            drcr.c.invid,
-                            drcr.c.dctypeflag,
-                            drcr.c.totreduct,
-                            drcr.c.attachmentcount,
+                            customerandsupplier.c.custname,
+                            customerandsupplier.c.csflag,
                         ]
-                    )
-                    .where(drcr.c.orgcode == authDetails["orgcode"])
-                    .order_by(drcr.c.drcrdate)
+                    ).where(customerandsupplier.c.custid == invdata["custid"])
                 )
-                drcrdata = []
-                for row in result:
-                    # invoice,cust
-                    inv = self.con.execute(
-                        select([invoice.c.custid]).where(
-                            invoice.c.invid == row["invid"]
-                        )
-                    )
-                    invdata = inv.fetchone()
-                    custsupp = self.con.execute(
-                        select(
-                            [
-                                customerandsupplier.c.custname,
-                                customerandsupplier.c.csflag,
-                            ]
-                        ).where(customerandsupplier.c.custid == invdata["custid"])
-                    )
-                    custsuppdata = custsupp.fetchone()
-                    if "drcrflag" in self.request.params:
-                        if int(self.request.params["drcrflag"]) == int(
-                            row["dctypeflag"]
-                        ):
-                            drcrdata.append(
-                                {
-                                    "drcrid": row["drcrid"],
-                                    "drcrno": row["drcrno"],
-                                    "drcrdate": datetime.strftime(
-                                        row["drcrdate"], "%d-%m-%Y"
-                                    ),
-                                    "dctypeflag": row["dctypeflag"],
-                                    "totreduct": "%.2f" % float(row["totreduct"]),
-                                    "invid": row["invid"],
-                                    "attachmentcount": row["attachmentcount"],
-                                    "custid": invdata["custid"],
-                                    "custname": custsuppdata["custname"],
-                                    "csflag": custsuppdata["csflag"],
-                                }
-                            )
-                    else:
-                        drcrdata.append(
-                            {
-                                "drcrid": row["drcrid"],
-                                "drcrno": row["drcrno"],
-                                "drcrdate": datetime.strftime(
-                                    row["drcrdate"], "%d-%m-%Y"
-                                ),
-                                "dctypeflag": row["dctypeflag"],
-                                "totreduct": "%.2f" % float(row["totreduct"]),
-                                "invid": row["invid"],
-                                "attachmentcount": row["attachmentcount"],
-                                "custid": invdata["custid"],
-                                "custname": custsuppdata["custname"],
-                                "csflag": custsuppdata["csflag"],
-                            }
-                        )
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                custsuppdata = custsupp.fetchone()
+                rowdata = {
+                    "drcrid": row["drcrid"],
+                    "drcrno": row["drcrno"],
+                    "drcrdate": datetime.strftime(
+                        row["drcrdate"], "%d-%m-%Y"
+                        ),
+                    "dctypeflag": row["dctypeflag"],
+                    "totreduct": "%.2f" % float(row["totreduct"]),
+                    "invid": row["invid"],
+                    "attachmentcount": row["attachmentcount"],
+                    "custid": invdata["custid"],
+                    "custname": custsuppdata["custname"],
+                    "csflag": custsuppdata["csflag"],
+                }
+                if "drcrflag" in self.request.params:
+                    if int(self.request.params["drcrflag"]) == int(
+                        row["dctypeflag"]
+                    ):
+                        drcrdata.append(rowdata)
+                else:
+                    drcrdata.append(rowdata)
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     """
     Deleteing drcr on the basis of reference field and drcrid
@@ -619,27 +577,19 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(
-                    select([drcr.c.drcrid, drcr.c.reference]).where(
-                        drcr.c.drcrid == dataset["drcrid"]
-                    )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                select([drcr.c.drcrid, drcr.c.reference]).where(
+                    drcr.c.drcrid == dataset["drcrid"]
                 )
-                row = result.fetchone()
-                if not row["reference"]:
-                    result = self.con.execute(
-                        drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
-                    )
-                return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            )
+            row = result.fetchone()
+            if not row["reference"]:
+                result = con.execute(
+                    drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
+                )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
@@ -650,28 +600,22 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                drcrid = self.request.params["drcrid"]
-                drcrData = self.con.execute(
-                    select([drcr.c.drcrno, drcr.c.attachment]).where(
-                        drcr.c.drcrid == drcrid
-                    )
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            drcrid = self.request.params["drcrid"]
+            drcrData = con.execute(
+                select([drcr.c.drcrno, drcr.c.attachment]).where(
+                    drcr.c.drcrid == drcrid
                 )
-                attachment = drcrData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": attachment["attachment"],
-                    "drcrno": attachment["drcrno"],
-                    "userrole": urole["userrole"],
-                }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            )
+            attachment = drcrData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": attachment["attachment"],
+                "drcrno": attachment["drcrno"],
+                "userrole": urole["userrole"],
+            }
 
     """This is a function to update .
     This function is primarily used to enable editing of debit and credit note.
@@ -687,20 +631,14 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(
-                    drcr.update()
-                    .where(drcr.c.drcrid == dataset["drcrid"])
-                    .values(dataset)
-                )
-                return {"gkstatus": enumdict["Success"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                drcr.update()
+                .where(drcr.c.drcrid == dataset["drcrid"])
+                .values(dataset)
+            )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="GET", request_param="inv=all", renderer="json")
     def getAllinvoices(self):
@@ -711,121 +649,88 @@ class api_drcr(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                drcrflag = int(self.request.params["drcrflag"])
-                DrCrInvs = []
-                invsInDrCr = self.con.execute(
-                    select([drcr.c.invid]).where(
-                        and_(
-                            drcr.c.orgcode == authDetails["orgcode"],
-                            drcr.c.dctypeflag == drcrflag,
-                        )
+        with eng.connect() as con:
+            drcrflag = int(self.request.params["drcrflag"])
+            DrCrInvs = []
+            invsInDrCr = con.execute(
+                select([drcr.c.invid]).where(
+                    and_(
+                        drcr.c.orgcode == authDetails["orgcode"],
+                        drcr.c.dctypeflag == drcrflag,
                     )
                 )
-                invData = self.con.execute(
-                    select(
-                        [
-                            invoice.c.invoiceno,
-                            invoice.c.invid,
-                            invoice.c.invoicedate,
-                            invoice.c.custid,
-                            invoice.c.inoutflag,
-                            invoice.c.invoicetotal,
-                            invoice.c.attachmentcount,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            invoice.c.orgcode == authDetails["orgcode"],
-                        )
-                    )
-                    .order_by(invoice.c.invoicedate)
+            )
+            invData = con.execute(
+                select(
+                    [
+                        invoice.c.invoiceno,
+                        invoice.c.invid,
+                        invoice.c.invoicedate,
+                        invoice.c.custid,
+                        invoice.c.inoutflag,
+                        invoice.c.invoicetotal,
+                        invoice.c.attachmentcount,
+                    ]
                 )
-                lastdrcrno = self.con.execute(
-                    "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
-                    % (int(authDetails["orgcode"]), int(drcrflag))
+                .where(
+                    and_(
+                        invoice.c.orgcode == authDetails["orgcode"],
+                    )
                 )
-                lastdrcrno = lastdrcrno.fetchone()
-                if lastdrcrno == None:
-                    lastdrcrno = ""
-                else:
-                    lastdrcrno = lastdrcrno[0]
-                for DrCrInv in invsInDrCr:
-                    DrCrInvs.append(DrCrInv["invid"])
-                invoices = []
-                for row in invData:
-                    if row["invid"] not in DrCrInvs:
-                        customer = self.con.execute(
-                            select(
-                                [
-                                    customerandsupplier.c.custname,
-                                    customerandsupplier.c.csflag,
-                                ]
-                            ).where(customerandsupplier.c.custid == row["custid"])
-                        )
-                        custname = customer.fetchone()
-                        if "type" in self.request.params:
-                            if (
-                                str(self.request.params["type"]) == "sale"
-                                and row["inoutflag"] == 15
-                            ):
-                                invoices.append(
-                                    {
-                                        "invoiceno": row["invoiceno"],
-                                        "invid": row["invid"],
-                                        "custname": custname["custname"],
-                                        "csflag": custname["csflag"],
-                                        "invoicedate": datetime.strftime(
-                                            row["invoicedate"], "%d-%m-%Y"
-                                        ),
-                                        "invoicetotal": "%.2f"
-                                        % float(row["invoicetotal"]),
-                                        "attachmentcount": row["attachmentcount"],
-                                    }
-                                )
-                            elif (
-                                str(self.request.params["type"]) == "purchase"
-                                and row["inoutflag"] == 9
-                            ):
-                                invoices.append(
-                                    {
-                                        "invoiceno": row["invoiceno"],
-                                        "invid": row["invid"],
-                                        "custname": custname["custname"],
-                                        "csflag": custname["csflag"],
-                                        "invoicedate": datetime.strftime(
-                                            row["invoicedate"], "%d-%m-%Y"
-                                        ),
-                                        "invoicetotal": "%.2f"
-                                        % float(row["invoicetotal"]),
-                                        "attachmentcount": row["attachmentcount"],
-                                    }
-                                )
-                        else:
-                            invoices.append(
-                                {
-                                    "invoiceno": row["invoiceno"],
-                                    "invid": row["invid"],
-                                    "custname": custname["custname"],
-                                    "csflag": custname["csflag"],
-                                    "invoicedate": datetime.strftime(
-                                        row["invoicedate"], "%d-%m-%Y"
-                                    ),
-                                    "invoicetotal": "%.2f" % float(row["invoicetotal"]),
-                                    "attachmentcount": row["attachmentcount"],
-                                }
-                            )
-                return {
-                    "gkstatus": gkcore.enumdict["Success"],
-                    "gkresult": invoices,
-                    "lastdrcrno": lastdrcrno,
-                }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                .order_by(invoice.c.invoicedate)
+            )
+            lastdrcrno = con.execute(
+                "select drcrno from drcr where drcrid = (select max(drcrid) from drcr where orgcode=%d and dctypeflag=%d)"
+                % (int(authDetails["orgcode"]), int(drcrflag))
+            )
+            lastdrcrno = lastdrcrno.fetchone()
+            if lastdrcrno == None:
+                lastdrcrno = ""
+            else:
+                lastdrcrno = lastdrcrno[0]
+            for DrCrInv in invsInDrCr:
+                DrCrInvs.append(DrCrInv["invid"])
+            invoices = []
+            for row in invData:
+                if row["invid"] not in DrCrInvs:
+                    customer = con.execute(
+                        select(
+                            [
+                                customerandsupplier.c.custname,
+                                customerandsupplier.c.csflag,
+                            ]
+                        ).where(customerandsupplier.c.custid == row["custid"])
+                    )
+                    custname = customer.fetchone()
+                    rowdata = {
+                        "invoiceno": row["invoiceno"],
+                        "invid": row["invid"],
+                        "custname": custname["custname"],
+                        "csflag": custname["csflag"],
+                        "invoicedate": datetime.strftime(
+                            row["invoicedate"], "%d-%m-%Y"
+                        ),
+                        "invoicetotal": "%.2f" % float(row["invoicetotal"]),
+                        "attachmentcount": row["attachmentcount"],
+                    }
+                    if "type" in self.request.params:
+                        if (
+                            str(self.request.params["type"]) == "sale"
+                            and row["inoutflag"] == 15
+                        ):
+                            invoices.append(rowdata)
+                        elif (
+                            str(self.request.params["type"]) == "purchase"
+                            and row["inoutflag"] == 9
+                        ):
+                            invoices.append(rowdata)
+                    else:
+                        invoices.append(rowdata)
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": invoices,
+                "lastdrcrno": lastdrcrno,
+            }
 
 
 def drcrVoucher(queryParams, orgcode):
@@ -846,8 +751,7 @@ def drcrVoucher(queryParams, orgcode):
     type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a
     Debit or Credit Note Voucher.
     """
-    try:
-        con = eng.connect()
+    with eng.begin() as con:
         # taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
         taxRateDict = {
             1: 0.5,
@@ -1199,7 +1103,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -2049,7 +1952,6 @@ def drcrVoucher(queryParams, orgcode):
                                     val = float(taxDict[taxNameCESS])
                                     taxDict[taxNameCESS] = "%.2f" % float(csVal + val)
                         for Tax in taxDict:
-                            print(Tax)
                             taxAcc = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
@@ -2962,7 +2864,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -3765,7 +3666,6 @@ def drcrVoucher(queryParams, orgcode):
                                 )
                             )
                             taxRow = taxAcc.fetchone()
-                            print(Tax)
                             drs[taxRow["accountcode"]] = "%.2f" % float(taxDict[Tax])
                     else:
                         vatoutaccount = con.execute(
@@ -4310,6 +4210,3 @@ def drcrVoucher(queryParams, orgcode):
                 )
             vchCodes.append(initialType)
         return vchCodes
-    except:
-        print(traceback.format_exc())
-        raise Exception("Issue with voucher creation")
