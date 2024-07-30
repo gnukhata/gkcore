@@ -550,9 +550,11 @@ class api_delchal(object):
                 ).where(customerandsupplier.c.custid == delchaldata["custid"])
             )
             custData = custandsup.fetchone()
-            custsupstatecode = getStateCode(custData["state"], con)[
-                "statecode"
-            ]
+            custsupstatecode = None
+            if custData["state"]:
+                custsupstatecode = getStateCode(custData["state"], con)[
+                    "statecode"
+                ]
             singledelchal["custSupDetails"] = {
                 "custname": custData["custname"],
                 "custsupstate": custData["state"],
