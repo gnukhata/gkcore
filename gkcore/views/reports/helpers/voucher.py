@@ -20,33 +20,25 @@ def get_voucher_accounts(accounts_list, entry_type, connection):
     return voucher_accounts
 
 
-def get_transaction_details(voucher_code, connection, entry_type=None, is_cancelled=False):
+def get_transaction_details(connection, voucher_row, entry_type=None):
     """Returns details of a transaction. Dr/Cr items will be listed in a unified list
     with "name", "group", "sysaccount", "amount and entry_type" data.
     Attributes: `voucher_id`, `is_cancelled`, `entry_type`
-    `is_cancelled` is the status of voucher, it should be true if the voucher is
-    cancelled. `is_cancelled` is False by default.
     `entry_type` can be "Dr" or "Cr", by default its None.
     """
-    voucher_table = voucherbin if is_cancelled else vouchers
-    voucher = connection.execute(
-        select("*").where(voucher_table.c.vouchercode == voucher_code)
-    ).fetchone()
-    if not voucher:
-        return voucher
-    voucher = dict(voucher)
+    transaction_details = dict(voucher_row)
     if not entry_type:
-        voucher["transactions"] = [
-            *get_voucher_accounts(voucher["drs"], "Dr", connection),
-            *get_voucher_accounts(voucher["crs"], "Cr", connection),
+        transaction_details["transactions"] = [
+            *get_voucher_accounts(voucher_row["drs"], "Dr", connection),
+            *get_voucher_accounts(voucher_row["crs"], "Cr", connection),
         ]
     elif entry_type in ["Dr", "Cr"]:
-        voucher["transactions"] = [
-            *get_voucher_accounts(voucher[entry_type.lower()+"s"], entry_type, connection),
+        transaction_details["transactions"] = [
+            *get_voucher_accounts(voucher_row[entry_type.lower()+"s"], entry_type, connection),
         ]
     else:
         raise AttributeError("'entry_type' accepts only 'Dr' and 'Cr' as allowed values")
-    return voucher
+    return transaction_details
 
 
 def get_business_item_invoice_data(
