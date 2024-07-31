@@ -3,8 +3,7 @@ from gkcore.views.helpers.invoice import get_invoice_details
 from gkcore.views.helpers.drcr_note import get_drcr_note_details
 from sqlalchemy.sql import select
 from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
-from sqlalchemy import func
-
+from sqlalchemy import func, or_
 
 
 def get_voucher_accounts(accounts_list, entry_type, connection):
@@ -62,6 +61,51 @@ def get_voucher_details(connection, voucher_row):
             }
         )
     return voucher_details
+
+
+def get_org_vouchers(
+        connection,
+        org_code,
+        account_code=None,
+        from_date=None,
+        to_date=None,
+        entry_type=None,
+        is_cancelled=False
+):
+    """ Fetches vouchers for an organization.
+
+    This supports,
+    1. Filter by period. Default is entire financial year.
+    2. Filter with account. Default fetches all accounts.
+    3. Filter with entry type (Dr, Cr). Default fetches all entries.
+    4. Filter with cancelled status. Default is False.
+
+    """
+    voucher_table = voucherbin if is_cancelled else vouchers
+    statement = select("*").where(voucher_table.c.orgcode == org_code)
+    if account_code:
+        if entry_type:
+            statement = statement.where(
+                func.jsonb_extract_path_text(
+                    getattr(voucher_table.c, entry_type.lower()+"s"), str(account_code)
+                ) != None
+            )
+        else:
+            statement = statement.where(
+                or_(
+                    func.jsonb_extract_path_text(
+                        voucher_table.c.crs, str(account_code)
+                    ) != None,
+                    func.jsonb_extract_path_text(
+                        voucher_table.c.drs, str(account_code)
+                    ) != None,
+                )
+            )
+    if from_date:
+        statement = statement.where(voucher_table.c.voucherdate >= from_date)
+    if to_date:
+        statement = statement.where(voucher_table.c.voucherdate <= to_date)
+    return connection.execute(statement).fetchall()
 
 
 def get_business_item_invoice_data(
