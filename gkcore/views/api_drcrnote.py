@@ -47,7 +47,8 @@ from datetime import datetime
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_invoice import getStateCode
+from gkcore.views.api_invoice import getStateCode, createAccount
+import traceback  # for printing detailed exception logs
 
 
 @view_defaults(route_name="drcrnote")
@@ -162,7 +163,7 @@ class api_drcr(object):
                 if float(roundOffAmount) != 0.00:
                     queryParams["roundoffamt"] = float(roundOffAmount)
             try:
-                drcrautoVch = drcrVoucher(queryParams, int(dataset["orgcode"]))
+                drcrautoVch = drcrVoucher(con, queryParams, int(dataset["orgcode"]))
                 return {
                     "gkstatus": enumdict["Success"],
                     "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
@@ -734,7 +735,7 @@ class api_drcr(object):
             }
 
 
-def drcrVoucher(queryParams, orgcode):
+def drcrVoucher(con, queryParams, orgcode):
     """
     This function creates voucher for Debit and Credit Notes.
 
@@ -752,7 +753,7 @@ def drcrVoucher(queryParams, orgcode):
     type of voucher, narration and id of Debit/Credit Note. This dictionary is used to create a
     Debit or Credit Note Voucher.
     """
-    with eng.begin() as con:
+    try:
         # taxRateDict = {5: 2.5, 12: 6, 18: 9, 28: 14}
         taxRateDict = {
             1: 0.5,
@@ -831,7 +832,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -861,7 +862,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -1031,7 +1032,7 @@ def drcrVoucher(queryParams, orgcode):
                                     taxHalf = taxRateDict[int(taxRate)]
                                     tx = float(taxRate) / 2
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTIN_"
                                         + str(abb["abbreviation"])
@@ -1061,7 +1062,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTIN_"
                                         + str(abb["abbreviation"])
@@ -1231,7 +1232,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -1261,7 +1262,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -1431,7 +1432,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTIN_"
                                         + str(abb["abbreviation"])
@@ -1461,7 +1462,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTIN_"
                                         + str(abb["abbreviation"])
@@ -1662,7 +1663,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -1692,7 +1693,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -1862,17 +1863,17 @@ def drcrVoucher(queryParams, orgcode):
                             vchProdAcc = prodAccount["accountcode"]
                     else:
                         # if multiple acc is 0 , then select default sale account
-                        salesAccount = con.execute(
+                        purchaseAccount = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
-                                    accounts.c.defaultflag == 19,
+                                    accounts.c.defaultflag == 16,
                                     accounts.c.orgcode == orgcode,
                                 )
                             )
                         )
-                        saleAcc = salesAccount.fetchone()
-                        drs[saleAcc["accountcode"]] = totalTaxableVal
-                        vchProdAcc = saleAcc["accountcode"]
+                        purchaseAcc = purchaseAccount.fetchone()
+                        drs[purchaseAcc["accountcode"]] = totalTaxableVal
+                        vchProdAcc = purchaseAcc["accountcode"]
                     if int(queryParams["taxflag"]) == 7:
                         abv = con.execute(
                             select([state.c.abbreviation]).where(
@@ -1889,7 +1890,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTIN_"
                                         + str(abb["abbreviation"])
@@ -1919,7 +1920,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTIN_"
                                         + str(abb["abbreviation"])
@@ -2118,7 +2119,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -2148,7 +2149,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTOUT_"
                                         + str(abb["abbreviation"])
@@ -2320,17 +2321,17 @@ def drcrVoucher(queryParams, orgcode):
                             vchProdAcc = prodAccount["accountcode"]
                     else:
                         # if multiple acc is 0 , then select default sale account
-                        salesAccount = con.execute(
+                        purchaseAccount = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
-                                    accounts.c.defaultflag == 19,
+                                    accounts.c.defaultflag == 16,
                                     accounts.c.orgcode == orgcode,
                                 )
                             )
                         )
-                        saleAcc = salesAccount.fetchone()
-                        crs[saleAcc["accountcode"]] = totalTaxableVal
-                        vchProdAcc = saleAcc["accountcode"]
+                        purchaseAcc = purchaseAccount.fetchone()
+                        crs[purchaseAcc["accountcode"]] = totalTaxableVal
+                        vchProdAcc = purchaseAcc["accountcode"]
                     if int(queryParams["taxflag"]) == 7:
                         abv = con.execute(
                             select([state.c.abbreviation]).where(
@@ -2347,7 +2348,7 @@ def drcrVoucher(queryParams, orgcode):
                                     tx = float(taxRate) / 2
                                     taxHalf = taxRateDict[int(taxRate)]
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameSGST = (
                                         "SGSTIN_"
                                         + str(abb["abbreviation"])
@@ -2377,7 +2378,7 @@ def drcrVoucher(queryParams, orgcode):
                                 if taxRate > 0.00:
                                     tx = float(taxRate)
                                     # this is the value which is going to Dr/Cr
-                                    taxVal = taxable * (tx / 100)
+                                    taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                     taxNameIGST = (
                                         "IGSTIN_"
                                         + str(abb["abbreviation"])
@@ -4211,3 +4212,6 @@ def drcrVoucher(queryParams, orgcode):
                 )
             vchCodes.append(initialType)
         return vchCodes
+    except:
+        print(traceback.format_exc())
+        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
