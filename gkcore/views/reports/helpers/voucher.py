@@ -1,4 +1,5 @@
 from gkcore.views.helpers.account import get_account_details
+from gkcore.views.helpers.contact import get_party_details
 from sqlalchemy.sql import select
 from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
 from sqlalchemy import func
