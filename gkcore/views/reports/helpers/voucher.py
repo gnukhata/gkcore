@@ -1,20 +1,8 @@
+from gkcore.views.helpers.account import get_account_details
 from sqlalchemy.sql import select
 from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
 from sqlalchemy import func
 
-
-
-def get_account_details(account_code, connection):
-    """Fetches the account details and returns a dict with keys, "name", "group" and
-    "sysaccount"."""
-    account = connection.execute(
-        select("*").where(accounts.c.accountcode == account_code)
-    ).fetchone()
-    return {
-        "account_name": account["accountname"],
-        "account_group": account["groupcode"],
-        "is_sysaccount": account["sysaccount"]
-    }
 
 
 def get_voucher_accounts(accounts_list, entry_type, connection):
