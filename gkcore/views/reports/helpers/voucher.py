@@ -41,6 +41,29 @@ def get_transaction_details(connection, voucher_row, entry_type=None):
     return transaction_details
 
 
+def get_voucher_details(connection, voucher_row):
+    """Fetch voucher details from voucher table and related tables. Currently, this
+    function looks into invoice and debit-credit note tables. It can be expanded if
+    there are other related tables.
+    """
+    voucher_details = get_transaction_details(connection, voucher_row)
+    if voucher_row["invid"]:
+        voucher_details.update(
+            {
+                "record_type": "invoice",
+                **get_invoice_details(connection, voucher_row["invid"]),
+            }
+        )
+    if voucher_row["drcrid"]:
+        voucher_details.update(
+            {
+                "record_type": "drcr_note",
+                **get_drcr_note_details(connection, voucher_row["drcrid"]),
+            }
+        )
+    return voucher_details
+
+
 def get_business_item_invoice_data(
         connection,
         product_code,
