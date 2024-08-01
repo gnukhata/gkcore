@@ -11,7 +11,7 @@ from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime, date
 import calendar
 from monthdelta import monthdelta
-from gkcore.views.reports.helpers.voucher import billwiseEntryLedger
+from gkcore.views.helpers.invoice import billwiseEntryLedger
 from gkcore.views.reports.helpers.balance import calculateBalance
 
 
