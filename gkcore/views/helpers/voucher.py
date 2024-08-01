@@ -201,7 +201,9 @@ def generate_consolidated_voucher_data(connection, voucher_rows, account_id):
         amount = cr_amount + dr_amount
         voucher_details["taxed"] = voucher_details.get("taxed") or amount
         voucher_details["tax_data"] = voucher_details.get("tax_data") or []
-        voucher_details["custname"] = voucher_details.get("custname") or "Journal"
+        voucher_details["custname"] = (
+            voucher_details.get("custname") or voucher_details["vouchertype"].title()
+        )
         taxed_total += voucher_details["taxed"]
         voucher_details["amount"] = amount
         voucher_total += amount
