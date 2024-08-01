@@ -103,7 +103,7 @@ def get_invoice_details(connection, invoice_id):
     return {
         **dict(invoice_details),
         **dict(party_details),
-        "docuemnt_no": invoice_details["invoiceno"],
+        "document_no": invoice_details["invoiceno"],
         "tax_total": sum([float(value) for value in invoice_details["tax"].values()]),
         "tax_data": tax_details,
         "taxfree": f"{invoice_total_taxfree:.2f}",

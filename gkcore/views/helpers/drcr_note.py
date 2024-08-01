@@ -77,7 +77,7 @@ def get_drcr_note_details(connection, drcr_id):
     return {
         **drcr_note_details,
         **invoice_details,
-        "docuemnt_no": drcr_note_details["drcrno"],
+        "document_no": drcr_note_details["drcrno"],
         "tax_data": drcr_tax_details,
         "taxed": total_amount,
     }
