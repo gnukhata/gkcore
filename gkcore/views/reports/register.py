@@ -16,7 +16,7 @@ from gkcore.models.gkdb import (
     godown,
     categorysubcategories,
 )
-from gkcore.views.reports.helpers.voucher import (
+from gkcore.views.helpers.voucher import (
     generate_consolidated_voucher_data, get_org_vouchers
 )
 from sqlalchemy.sql import select
