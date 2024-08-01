@@ -2,7 +2,9 @@ from gkcore.views.helpers.account import get_account_details
 from gkcore.views.helpers.invoice import get_invoice_details
 from gkcore.views.helpers.drcr_note import get_drcr_note_details
 from sqlalchemy.sql import select
-from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
+from gkcore.models.gkdb import (
+    accounts, groupsubgroups, vouchers, voucherbin, invoice, product
+)
 from sqlalchemy import func, or_
 
 
@@ -106,6 +108,59 @@ def get_org_vouchers(
     if to_date:
         statement = statement.where(voucher_table.c.voucherdate <= to_date)
     return connection.execute(statement).fetchall()
+
+
+def get_account_dr_sign(connection, account_id):
+    """ This function checks if the increase in account head amounts to a Debit entry.
+    If it is an asset account, it will return +1 since a Debit entry for asset means
+    increase. For liability it will be -1 since a Debit entry for liability means
+    decrease. The value for for dr_sign will switch between 1 and -1 wrt the behaviour
+    of the account head to have Dr/Cr entry on increase or decrease.
+    """
+
+    account_details = connection.execute(
+        select([accounts.c.groupcode]).where(accounts.c.accountcode == account_id)
+    ).fetchone()
+    group_details = connection.execute(
+        select([groupsubgroups.c.subgroupof, groupsubgroups.c.groupname]).where(
+            groupsubgroups.c.groupcode == account_details["groupcode"]
+        )
+    ).fetchone()
+    if group_details["subgroupof"]:
+        group_details = connection.execute(
+            select([groupsubgroups.c.subgroupof, groupsubgroups.c.groupname]).where(
+                groupsubgroups.c.groupcode == group_details["subgroupof"]
+            )
+        ).fetchone()
+
+    # groups where Dr entry means increase in modern golden rules of accounting.
+    dr_positive_groups = [
+        "Current Assets",
+        "Direct Expense",
+        "Fixed Assets",
+        "Indirect Expense",
+        "Investments",
+        "Loans(Asset)",
+        "Reserves",
+        "Miscellaneous Expenses(Asset)",
+        "Current Assets",
+    ]
+    # groups where Cr entry means increase in modern golden rules of accounting.
+    dr_negative_groups = [
+        "Current Liabilities",
+        "Direct Income",
+        "Indirect Income",
+        "Loans(Liability)",
+        "Capital",
+    ]
+
+    if group_details["groupname"] in dr_positive_groups:
+        return 1
+    if group_details["groupname"] in dr_negative_groups:
+        return -1
+    raise Exception(
+        f"Group {group_details['groupname']} is not in `get_account_dr_sign` function."
+    )
 
 
 def get_business_item_invoice_data(
