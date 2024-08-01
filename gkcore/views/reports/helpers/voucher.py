@@ -163,6 +163,66 @@ def get_account_dr_sign(connection, account_id):
     )
 
 
+def generate_consolidated_voucher_data(connection, voucher_rows, account_id):
+    """ Calculate consolidated data for a list of vouchers.
+
+    This function accept SQLAlchemy result proxy rows of voucher table and account_id
+    to which consolidated data is generated.
+
+ This should be
+    automatically fetched from account_id.
+
+    This function will give,
+    1. Voucher list with voucher details,
+    2. Total voucher amount,
+    3. Total taxed amount,
+    4. Total taxes,
+    5. Tax strings for the tax entries in the voucher,
+    6. Total credit entry,
+    7. Total debit entry.
+    """
+
+
+    dr_sign = get_account_dr_sign(connection, account_id)
+    cr_sign = -1*dr_sign
+    voucher_total = 0
+    taxed_total = 0
+    tax_strings = set()
+    tax_totals = {}
+    dr_total = 0
+    cr_total = 0
+    voucher_list = []
+    for voucher_row in voucher_rows:
+        voucher_details = get_voucher_details(connection, voucher_row)
+        cr_amount = cr_sign * float(voucher_details["crs"].get(str(account_id), 0))
+        dr_amount = dr_sign * float(voucher_details["drs"].get(str(account_id), 0))
+        dr_total += dr_amount
+        cr_total += cr_amount
+        amount = cr_amount + dr_amount
+        voucher_details["taxed"] = voucher_details.get("taxed") or amount
+        voucher_details["tax_data"] = voucher_details.get("tax_data") or []
+        voucher_details["custname"] = voucher_details.get("custname") or "Journal"
+        taxed_total += voucher_details["taxed"]
+        voucher_details["amount"] = amount
+        voucher_total += amount
+        for tax_item in voucher_details["tax_data"]:
+            tax_str = tax_item["tax_str"]
+            tax_strings.add(tax_str)
+            tax_totals[tax_str] = (
+                tax_totals.get(tax_str, 0) + float(tax_item["tax_amount"])
+            )
+        voucher_list.append(voucher_details)
+    return {
+        "vouchers": voucher_list,
+        "voucher_total": voucher_total,
+        "taxed_total": taxed_total,
+        "tax_strings": tax_strings,
+        "tax_totals": tax_totals,
+        "cr_total": cr_total,
+        "dr_total": dr_total,
+    }
+
+
 def get_business_item_invoice_data(
         connection,
         product_code,
@@ -177,7 +237,7 @@ def get_business_item_invoice_data(
             [
                 invoice.c.contents[str(product_code)],
                 invoice.c.discount[str(product_code)],
-                 invoice.c.inoutflag,
+                invoice.c.inoutflag,
             ]
         )
         .where(func.jsonb_extract_path_text(invoice.c.contents, str(product_code)) != None)
