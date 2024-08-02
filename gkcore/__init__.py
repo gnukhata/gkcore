@@ -54,6 +54,8 @@ def main(global_config, **settings):
 
     config.include("pyramid_openapi3")
     config.include('.routes')
+    if settings.get('development'): # Use only when it is development mode.
+        config.include('.logging')
     config.scan()
     # include the pyramid-openapi3 plugin config
     # link: https://github.com/Pylons/pyramid_openapi3
