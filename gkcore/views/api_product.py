@@ -32,29 +32,21 @@ from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck, gk_log
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
-from pyramid.request import Request
-from pyramid.response import Response
 from gkcore.models import gkdb
-from sqlalchemy.sql import select, distinct
-from sqlalchemy import func, desc
-import json
+from sqlalchemy.sql import select
+from sqlalchemy import func
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, func
-import jwt
-import gkcore
-from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import goprod, product, accounts, organisation
+from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
-from datetime import datetime, date
-from time import strftime, strptime
+from datetime import datetime
 import traceback
 
 
 @view_defaults(route_name="product")
 class api_product(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
