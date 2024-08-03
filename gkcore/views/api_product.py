@@ -56,175 +56,171 @@ class api_product(object):
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                gorole = userrole["gkresult"]
-                if gorole["userrole"] == 3:
-                    uId = getusergodowns(authDetails["userid"])
-                    gid = []
-                    for record1 in uId["gkresult"]:
-                        gid.append(record1["goid"])
-                    productCodes = []
-                    for record2 in gid:
-                        proCode = self.con.execute(
-                            select([gkdb.goprod.c.productcode]).where(
-                                gkdb.goprod.c.goid == record2
-                            )
-                        )
-                        proCodes = proCode.fetchall()
-                        for record3 in proCodes:
-                            if record3["productcode"] not in productCodes:
-                                productCodes.append(record3["productcode"])
-                    results = []
-                    for record4 in productCodes:
-                        result = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(
-                                and_(
-                                    gkdb.product.c.orgcode == authDetails["orgcode"],
-                                    gkdb.product.c.productcode == record4,
-                                )
-                            )
-                            .order_by(gkdb.product.c.productdesc)
-                        )
-                        products = result.fetchone()
-                        results.append(products)
-                else:
-                    invdc = 9
-                    try:
-                        invdc = int(self.request.params["invdc"])
-                    except:
-                        invdc = 9
-                    if invdc == 4:
-                        results = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(
-                                and_(
-                                    gkdb.product.c.orgcode == authDetails["orgcode"],
-                                    gkdb.product.c.gsflag == 7,
-                                )
-                            )
-                            .order_by(gkdb.product.c.productdesc)
-                        )
-                    if invdc == 9:
-                        results = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(gkdb.product.c.orgcode == authDetails["orgcode"])
-                            .order_by(gkdb.product.c.productdesc)
-                        )
 
-                products = []
-                srno = 1
-                for row in results:
-                    unitsofmeasurement = self.con.execute(
-                        select([gkdb.unitofmeasurement.c.unitname]).where(
-                            gkdb.unitofmeasurement.c.uomid == row["uomid"]
+        with eng.connect() as con:
+            userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            gorole = userrole["gkresult"]
+            if gorole["userrole"] == 3:
+                uId = getusergodowns(authDetails["userid"])
+                gid = []
+                for record1 in uId["gkresult"]:
+                    gid.append(record1["goid"])
+                productCodes = []
+                for record2 in gid:
+                    proCode = con.execute(
+                        select([gkdb.goprod.c.productcode]).where(
+                            gkdb.goprod.c.goid == record2
                         )
                     )
-                    unitofmeasurement = unitsofmeasurement.fetchone()
-                    if unitofmeasurement != None:
-                        unitname = unitofmeasurement["unitname"]
-                    else:
-                        unitname = ""
-                    if row["categorycode"] != None:
-                        categories = self.con.execute(
-                            select([gkdb.categorysubcategories.c.categoryname]).where(
-                                gkdb.categorysubcategories.c.categorycode
-                                == row["categorycode"]
+                    proCodes = proCode.fetchall()
+                    for record3 in proCodes:
+                        if record3["productcode"] not in productCodes:
+                            productCodes.append(record3["productcode"])
+                results = []
+                for record4 in productCodes:
+                    result = con.execute(
+                        select(
+                            [
+                                gkdb.product.c.productcode,
+                                gkdb.product.c.productdesc,
+                                gkdb.product.c.categorycode,
+                                gkdb.product.c.uomid,
+                                gkdb.product.c.gsflag,
+                                gkdb.product.c.prodsp,
+                                gkdb.product.c.prodmrp,
+                            ]
+                        )
+                        .where(
+                            and_(
+                                gkdb.product.c.orgcode == authDetails["orgcode"],
+                                gkdb.product.c.productcode == record4,
                             )
                         )
-                        category = categories.fetchone()
-                        categoryname = category["categoryname"]
-                    else:
-                        categoryname = ""
-                    if row["productcode"] != None:
-                        openingStockResult = self.con.execute(
-                            select([gkdb.product.c.openingstock]).where(
-                                gkdb.product.c.productcode == row["productcode"]
-                            )
-                        )
-                        osRow = openingStockResult.fetchone()
-                        openingStock = osRow["openingstock"]
-                        productstockin = self.con.execute(
-                            select(
-                                [func.sum(gkdb.stock.c.qty).label("sumofins")]
-                            ).where(
-                                and_(
-                                    gkdb.stock.c.productcode == row["productcode"],
-                                    gkdb.stock.c.inout == 9,
-                                )
-                            )
-                        )
-                        stockinsum = productstockin.fetchone()
-                        if stockinsum["sumofins"] != None:
-                            openingStock = openingStock + stockinsum["sumofins"]
-                        productstockout = self.con.execute(
-                            select(
-                                [func.sum(gkdb.stock.c.qty).label("sumofouts")]
-                            ).where(
-                                and_(
-                                    gkdb.stock.c.productcode == row["productcode"],
-                                    gkdb.stock.c.inout == 15,
-                                )
-                            )
-                        )
-                        stockoutsum = productstockout.fetchone()
-                        if stockoutsum["sumofouts"] != None:
-                            openingStock = openingStock - stockoutsum["sumofouts"]
-                    products.append(
-                        {
-                            "srno": srno,
-                            "unitname": unitname,
-                            "categoryname": categoryname,
-                            "productcode": row["productcode"],
-                            "productdesc": row["productdesc"],
-                            "categorycode": row["categorycode"],
-                            "productquantity": "%.2f" % float(openingStock),
-                            "gsflag": row["gsflag"],
-                        }
+                        .order_by(gkdb.product.c.productdesc)
                     )
-                    srno = srno + 1
-                return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                    products = result.fetchone()
+                    results.append(products)
+            else:
+                invdc = 9
+                try:
+                    invdc = int(self.request.params["invdc"])
+                except:
+                    invdc = 9
+                if invdc == 4:
+                    results = con.execute(
+                        select(
+                            [
+                                gkdb.product.c.productcode,
+                                gkdb.product.c.gsflag,
+                                gkdb.product.c.productdesc,
+                                gkdb.product.c.categorycode,
+                                gkdb.product.c.uomid,
+                                gkdb.product.c.prodsp,
+                                gkdb.product.c.prodmrp,
+                            ]
+                        )
+                        .where(
+                            and_(
+                                gkdb.product.c.orgcode == authDetails["orgcode"],
+                                gkdb.product.c.gsflag == 7,
+                            )
+                        )
+                        .order_by(gkdb.product.c.productdesc)
+                    )
+                if invdc == 9:
+                    results = con.execute(
+                        select(
+                            [
+                                gkdb.product.c.productcode,
+                                gkdb.product.c.productdesc,
+                                gkdb.product.c.gsflag,
+                                gkdb.product.c.categorycode,
+                                gkdb.product.c.uomid,
+                                gkdb.product.c.prodsp,
+                                gkdb.product.c.prodmrp,
+                            ]
+                        )
+                        .where(gkdb.product.c.orgcode == authDetails["orgcode"])
+                        .order_by(gkdb.product.c.productdesc)
+                    )
+
+            products = []
+            srno = 1
+            for row in results:
+                unitsofmeasurement = con.execute(
+                    select([gkdb.unitofmeasurement.c.unitname]).where(
+                        gkdb.unitofmeasurement.c.uomid == row["uomid"]
+                    )
+                )
+                unitofmeasurement = unitsofmeasurement.fetchone()
+                if unitofmeasurement != None:
+                    unitname = unitofmeasurement["unitname"]
+                else:
+                    unitname = ""
+                if row["categorycode"] != None:
+                    categories = con.execute(
+                        select([gkdb.categorysubcategories.c.categoryname]).where(
+                            gkdb.categorysubcategories.c.categorycode
+                            == row["categorycode"]
+                        )
+                    )
+                    category = categories.fetchone()
+                    categoryname = category["categoryname"]
+                else:
+                    categoryname = ""
+                if row["productcode"] != None:
+                    openingStockResult = con.execute(
+                        select([gkdb.product.c.openingstock]).where(
+                            gkdb.product.c.productcode == row["productcode"]
+                        )
+                    )
+                    osRow = openingStockResult.fetchone()
+                    openingStock = osRow["openingstock"]
+                    productstockin = con.execute(
+                        select(
+                            [func.sum(gkdb.stock.c.qty).label("sumofins")]
+                        ).where(
+                            and_(
+                                gkdb.stock.c.productcode == row["productcode"],
+                                gkdb.stock.c.inout == 9,
+                            )
+                        )
+                    )
+                    stockinsum = productstockin.fetchone()
+                    if stockinsum["sumofins"] != None:
+                        openingStock = openingStock + stockinsum["sumofins"]
+                    productstockout = con.execute(
+                        select(
+                            [func.sum(gkdb.stock.c.qty).label("sumofouts")]
+                        ).where(
+                            and_(
+                                gkdb.stock.c.productcode == row["productcode"],
+                                gkdb.stock.c.inout == 15,
+                            )
+                        )
+                    )
+                    stockoutsum = productstockout.fetchone()
+                    if stockoutsum["sumofouts"] != None:
+                        openingStock = openingStock - stockoutsum["sumofouts"]
+                products.append(
+                    {
+                        "srno": srno,
+                        "unitname": unitname,
+                        "categoryname": categoryname,
+                        "productcode": row["productcode"],
+                        "productdesc": row["productdesc"],
+                        "categorycode": row["categorycode"],
+                        "productquantity": "%.2f" % float(openingStock),
+                        "gsflag": row["gsflag"],
+                    }
+                )
+                srno = srno + 1
+            return {"gkstatus": enumdict["Success"], "gkresult": products}
+
 
     @view_config(request_method="POST", renderer="json")
     def addProduct(self):
