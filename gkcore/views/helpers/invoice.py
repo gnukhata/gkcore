@@ -55,7 +55,7 @@ def get_invoice_details(connection, invoice_id):
     gstin = (
         party_details["gstin"].get(str(state_details["statecode"]))
         if party_details["gstin"]
-        else party_details["gstin"]
+        else ""
     )
 
     tax_details = []
@@ -76,9 +76,9 @@ def get_invoice_details(connection, invoice_id):
         item_qty = float(list(invoice_details["contents"][item_id].values())[0])
         item_price = float(list(invoice_details["contents"][item_id].keys())[0])
         item_discount = float(invoice_details["discount"][item_id])
-        item_price_taxfree = item_price*item_qty - item_discount
-        tax_amount = f"{item_price_taxfree*tax_percent/100:.2f}"
-        if tax_amount == "0.00":
+        item_price_taxfree = item_price * item_qty - item_discount
+        tax_amount = item_price_taxfree * tax_percent/100
+        if not tax_amount:
             continue
         item_tax_details = {
             "product_id": item_id,
