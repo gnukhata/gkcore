@@ -223,11 +223,7 @@ class api_product(object):
                 return {"gkstatus": enumdict["DuplicateEntry"]}
 
             # handle exception if db insertion fails for product
-            try:
-                result = con.execute(gkdb.product.insert(), [productDetails])
-            except Exception as e:
-                gk_log(__name__).error(e)
-                return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
+            result = con.execute(gkdb.product.insert(), [productDetails])
 
             spec = productDetails["specs"]
             for sp in list(spec.keys()):
@@ -270,13 +266,7 @@ class api_product(object):
                         "openingstockvalue": goDetail["rate"],
                         "orgcode": authDetails["orgcode"],
                     }
-                    try:
-                        con.execute(goprod.insert(), [goro])
-                    except Exception as e:
-                        return {
-                            "gkstatus": enumdict["ConnectionFailed"],
-                            "error": str(e),
-                        }
+                    con.execute(goprod.insert(), [goro])
                 # update opening stock value
                 con.execute(
                     product.update()
