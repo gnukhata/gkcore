@@ -471,10 +471,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 productCode = self.request.matchdict["productcode"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.product]).where(
                         gkdb.product.c.productcode == productCode
                     )
@@ -493,7 +492,7 @@ class api_product(object):
                 # first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
                 # if count is grater than 0 it send 1 else it send 0 as value of deletable key
                 if int(row["gsflag"]) == 19:
-                    prod_countinv = self.con.execute(
+                    prod_countinv = con.execute(
                         "SELECT (contents ::json)->'%s' is NULL FROM invoice where orgcode ='%d'"
                         % (
                             (str(productCode)),
@@ -503,7 +502,7 @@ class api_product(object):
                     if (False,) in prod_countinv:
                         productDetails["deletable"] = 1
                     else:
-                        prod_purch = self.con.execute(
+                        prod_purch = con.execute(
                             "SELECT (schedule ::json)->'%s' is NULL FROM purchaseorder where orgcode ='%d'"
                             % (
                                 (str(productCode)),
@@ -522,7 +521,7 @@ class api_product(object):
                 else:
                     productDetails["prodmrp"] = "%.2f" % 0.00
                 if int(row["gsflag"]) == 7:
-                    prod_countinstock = self.con.execute(
+                    prod_countinstock = con.execute(
                         "select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"
                         % (
                             (str(productCode)),
@@ -535,7 +534,7 @@ class api_product(object):
                         productDetails["deletable"] = 1
 
                     else:
-                        prod_countinpuchaseorder = self.con.execute(
+                        prod_countinpuchaseorder = con.execute(
                             "select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"
                             % (
                                 (str(productCode)),
@@ -547,7 +546,7 @@ class api_product(object):
                             productDetails["deletable"] = 1
                         else:
                             productDetails["deletable"] = 0
-                    result1 = self.con.execute(
+                    result1 = con.execute(
                         select([gkdb.unitofmeasurement.c.unitname]).where(
                             gkdb.unitofmeasurement.c.uomid == row["uomid"]
                         )
@@ -563,7 +562,7 @@ class api_product(object):
                         authDetails["userid"], authDetails["orgcode"]
                     )
                     if int(userrole["gkresult"]["userrole"]) != 3:
-                        godownswithstock = self.con.execute(
+                        godownswithstock = con.execute(
                             select(
                                 [
                                     func.count(gkdb.goprod.c.productcode).label(
@@ -578,7 +577,7 @@ class api_product(object):
                         usergodowmns = getusergodowns(authDetails["userid"])
                         numberofgodowns = 0
                         for usergodown in usergodowmns["gkresult"]:
-                            godownswithstock = self.con.execute(
+                            godownswithstock = con.execute(
                                 select([gkdb.goprod.c.goid]).where(
                                     and_(
                                         gkdb.goprod.c.productcode == productCode,
@@ -600,11 +599,6 @@ class api_product(object):
                 else:
                     return {"gkstatus": enumdict["Success"], "gkresult": productDetails}
 
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     # request_param="type=pt",
     @view_config(request_method="GET", route_name="product_tax", renderer="json")
