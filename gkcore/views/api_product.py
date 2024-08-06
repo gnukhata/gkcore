@@ -977,21 +977,20 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                orgcode = authDetails["orgcode"]
-                goid = dataset["goid"]
-                productDetails = dataset["productdetails"]
-                for product in productDetails:
-                    details = {
-                        "goid": goid,
-                        "goopeningstock": productDetails[product],
-                        "productcode": product,
-                        "orgcode": orgcode,
-                    }
-                    result = con.execute(gkdb.goprod.insert(), [details])
-                return {"gkstatus": enumdict["Success"]}
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            orgcode = authDetails["orgcode"]
+            goid = dataset["goid"]
+            productDetails = dataset["productdetails"]
+            for product in productDetails:
+                details = {
+                    "goid": goid,
+                    "goopeningstock": productDetails[product],
+                    "productcode": product,
+                    "orgcode": orgcode,
+                }
+                result = con.execute(gkdb.goprod.insert(), [details])
+            return {"gkstatus": enumdict["Success"]}
 
 
     """
