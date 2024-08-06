@@ -820,8 +820,7 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 currentgoid = int(self.request.params["goid"])
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
@@ -831,7 +830,7 @@ class api_product(object):
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])
                     if currentgoid in gid:
-                        proCode = self.con.execute(
+                        proCode = con.execute(
                             select([gkdb.goprod.c.productcode]).where(
                                 gkdb.goprod.c.goid == currentgoid
                             )
@@ -841,7 +840,7 @@ class api_product(object):
                     for record3 in proCodes:
                         if record3["productcode"] not in productCodes:
                             productCodes.append(record3["productcode"])
-                    results = self.con.execute(
+                    results = con.execute(
                         select([gkdb.product.c.productcode, gkdb.product.c.productdesc])
                         .where(
                             and_(
@@ -862,11 +861,7 @@ class api_product(object):
                             )
 
                     return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="GET", route_name="product_hsn", renderer="json")
     def gethsnuom(self):
