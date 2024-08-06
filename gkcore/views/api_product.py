@@ -621,21 +621,15 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 return calTax(
                     int(self.request.params["taxflag"]),
                     self.request.params["source"],
                     self.request.params["destination"],
                     int(self.request.params["productcode"]),
-                    self.con,
+                    con,
                 )
 
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     # request_param="by=category",
     @view_config(request_method="GET", route_name="product_category", renderer="json")
