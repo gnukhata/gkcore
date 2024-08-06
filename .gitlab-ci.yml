@@ -8,6 +8,19 @@ stages:
   # tests are run against the dev server, so deploy stage should complete first
   - test
 
+# test running gkcore on creating or updating merge requests
+gkcore:
+  image: python:3.8-slim-buster
+  stage: test
+  script:
+   - apt update && apt install -y build-essential libpq-dev
+   - pip3 install -r requirements.txt
+   - python3 setup.py develop
+   - python3 initdb.py
+   - pserve production.ini
+  only:
+  - merge_requests
+
 # runs the api tests against the dev server
 api_tests:
   image: digitalfreedom/nexial-core:latest
