@@ -333,27 +333,26 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dataset = self.request.json_body
                 productCode = self.request.matchdict["productcode"]
                 productDetails = dataset["productdetails"]
 
                 godownFlag = dataset["godownflag"]
-                pn = self.con.execute(
+                pn = con.execute(
                     select([gkdb.product.c.productdesc]).where(
                         gkdb.product.c.productcode == productCode
                     )
                 )
                 prodName = pn.fetchone()
-                self.con.execute(
+                con.execute(
                     gkdb.product.update()
                     .where(gkdb.product.c.productcode == productCode)
                     .values(productDetails)
                 )
                 if godownFlag:
                     goDetails = dataset["godetails"]
-                    result = self.con.execute(
+                    result = con.execute(
                         gkdb.goprod.delete().where(
                             and_(
                                 gkdb.goprod.c.productcode == productCode,
@@ -374,8 +373,8 @@ class api_product(object):
                             "openingstockvalue": goDetail["rate"],
                             "orgcode": authDetails["orgcode"],
                         }
-                        self.con.execute(gkdb.goprod.insert(), [goro])
-                    self.con.execute(
+                        con.execute(gkdb.goprod.insert(), [goro])
+                    con.execute(
                         product.update()
                         .where(
                             and_(
@@ -390,7 +389,7 @@ class api_product(object):
                 newpnSL = str(productDetails["productdesc"]) + " Sale"
                 pnPurch = str(prodName["productdesc"]) + " Purchase"
                 newpnPH = str(productDetails["productdesc"]) + " Purchase"
-                self.con.execute(
+                con.execute(
                     accounts.update()
                     .where(
                         and_(
@@ -400,7 +399,7 @@ class api_product(object):
                     )
                     .values(accountname=newpnSL)
                 )
-                self.con.execute(
+                con.execute(
                     accounts.update()
                     .where(
                         and_(
@@ -411,13 +410,7 @@ class api_product(object):
                     .values(accountname=newpnPH)
                 )
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except Exception as e:
-                gk_log(__name__).warn(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         request_method="DELETE", route_name="product_productcode", renderer="json"
