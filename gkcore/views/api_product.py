@@ -730,10 +730,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 goid = self.request.matchdict["godownid"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.goprod.c.goprodid,
@@ -756,11 +755,7 @@ class api_product(object):
                     }
                     products.append(productDetails)
                 return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # request_param="tax=vatorgst",
     @view_config(request_method="GET", route_name="product_check_gst", renderer="json")
