@@ -52,6 +52,13 @@ class api_product(object):
 
     @view_config(request_method="GET", renderer="json")
     def getAllProducts(self):
+        """ This API is to fetch product list based on user role and item type (all or
+        product only). If the user is the godown incharge, it will be filtering the
+        item list with their respective godowns.
+
+        To filter services, `invdc` is 4 for not listing services. `invdc` is 9 for
+        listing both.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -64,6 +71,18 @@ class api_product(object):
         with eng.connect() as con:
             userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
             gorole = userrole["gkresult"]
+            statement = select(
+                [
+                    gkdb.product.c.productcode,
+                    gkdb.product.c.gsflag,
+                    gkdb.product.c.productdesc,
+                    gkdb.product.c.categorycode,
+                    gkdb.product.c.uomid,
+                    gkdb.product.c.prodsp,
+                    gkdb.product.c.prodmrp,
+                ]
+            ).where(gkdb.product.c.orgcode == authDetails["orgcode"])
+
             if gorole["userrole"] == 3:
                 uId = getusergodowns(authDetails["userid"])
                 gid = []
@@ -83,71 +102,17 @@ class api_product(object):
                 results = []
                 for record4 in productCodes:
                     result = con.execute(
-                        select(
-                            [
-                                gkdb.product.c.productcode,
-                                gkdb.product.c.productdesc,
-                                gkdb.product.c.categorycode,
-                                gkdb.product.c.uomid,
-                                gkdb.product.c.gsflag,
-                                gkdb.product.c.prodsp,
-                                gkdb.product.c.prodmrp,
-                            ]
-                        )
-                        .where(
-                            and_(
-                                gkdb.product.c.orgcode == authDetails["orgcode"],
-                                gkdb.product.c.productcode == record4,
-                            )
-                        )
+                        statement
+                        .where(gkdb.product.c.productcode == record4)
                         .order_by(gkdb.product.c.productdesc)
                     )
                     products = result.fetchone()
                     results.append(products)
             else:
-                invdc = 9
-                try:
-                    invdc = int(self.request.params["invdc"])
-                except:
-                    invdc = 9
+                invdc = int(self.request.params.get("invdc", 9))
                 if invdc == 4:
-                    results = con.execute(
-                        select(
-                            [
-                                gkdb.product.c.productcode,
-                                gkdb.product.c.gsflag,
-                                gkdb.product.c.productdesc,
-                                gkdb.product.c.categorycode,
-                                gkdb.product.c.uomid,
-                                gkdb.product.c.prodsp,
-                                gkdb.product.c.prodmrp,
-                            ]
-                        )
-                        .where(
-                            and_(
-                                gkdb.product.c.orgcode == authDetails["orgcode"],
-                                gkdb.product.c.gsflag == 7,
-                            )
-                        )
-                        .order_by(gkdb.product.c.productdesc)
-                    )
-                if invdc == 9:
-                    results = con.execute(
-                        select(
-                            [
-                                gkdb.product.c.productcode,
-                                gkdb.product.c.productdesc,
-                                gkdb.product.c.gsflag,
-                                gkdb.product.c.categorycode,
-                                gkdb.product.c.uomid,
-                                gkdb.product.c.prodsp,
-                                gkdb.product.c.prodmrp,
-                            ]
-                        )
-                        .where(gkdb.product.c.orgcode == authDetails["orgcode"])
-                        .order_by(gkdb.product.c.productdesc)
-                    )
-
+                    statement = statement.where(gkdb.product.c.gsflag == 7)
+                results = con.execute(statement.order_by(gkdb.product.c.productdesc))
             products = []
             srno = 1
             for row in results:
