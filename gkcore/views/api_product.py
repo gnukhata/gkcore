@@ -332,84 +332,83 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                dataset = self.request.json_body
-                productCode = self.request.matchdict["productcode"]
-                productDetails = dataset["productdetails"]
+        with eng.connect() as con:
+            dataset = self.request.json_body
+            productCode = self.request.matchdict["productcode"]
+            productDetails = dataset["productdetails"]
 
-                godownFlag = dataset["godownflag"]
-                pn = con.execute(
-                    select([gkdb.product.c.productdesc]).where(
-                        gkdb.product.c.productcode == productCode
-                    )
+            godownFlag = dataset["godownflag"]
+            pn = con.execute(
+                select([gkdb.product.c.productdesc]).where(
+                    gkdb.product.c.productcode == productCode
                 )
-                prodName = pn.fetchone()
-                con.execute(
-                    gkdb.product.update()
-                    .where(gkdb.product.c.productcode == productCode)
-                    .values(productDetails)
-                )
-                if godownFlag:
-                    goDetails = dataset["godetails"]
-                    result = con.execute(
-                        gkdb.goprod.delete().where(
-                            and_(
-                                gkdb.goprod.c.productcode == productCode,
-                                gkdb.goprod.c.orgcode == authDetails["orgcode"],
-                            )
+            )
+            prodName = pn.fetchone()
+            con.execute(
+                gkdb.product.update()
+                .where(gkdb.product.c.productcode == productCode)
+                .values(productDetails)
+            )
+            if godownFlag:
+                goDetails = dataset["godetails"]
+                result = con.execute(
+                    gkdb.goprod.delete().where(
+                        and_(
+                            gkdb.goprod.c.productcode == productCode,
+                            gkdb.goprod.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                    ttlOpening = 0.0
-                    for goId in list(goDetails.keys()):
-                        goDetail = goDetails[goId]
-                        if type(goDetail) != dict:
-                            goDetail = {"qty": goDetail, "rate": 0}
-                        ttlOpening = ttlOpening + float(goDetail["qty"])
-                        goro = {
-                            "productcode": productCode,
-                            "goid": goId,
-                            "goopeningstock": goDetail["qty"],
-                            "openingstockvalue": goDetail["rate"],
-                            "orgcode": authDetails["orgcode"],
-                        }
-                        con.execute(gkdb.goprod.insert(), [goro])
-                    con.execute(
-                        product.update()
-                        .where(
-                            and_(
-                                product.c.productcode == productCode,
-                                product.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                        .values(openingstock=ttlOpening)
-                    )
-                # We need to update accountname also.
-                pnSL = str(prodName["productdesc"]) + " Sale"
-                newpnSL = str(productDetails["productdesc"]) + " Sale"
-                pnPurch = str(prodName["productdesc"]) + " Purchase"
-                newpnPH = str(productDetails["productdesc"]) + " Purchase"
+                )
+                ttlOpening = 0.0
+                for goId in list(goDetails.keys()):
+                    goDetail = goDetails[goId]
+                    if type(goDetail) != dict:
+                        goDetail = {"qty": goDetail, "rate": 0}
+                    ttlOpening = ttlOpening + float(goDetail["qty"])
+                    goro = {
+                        "productcode": productCode,
+                        "goid": goId,
+                        "goopeningstock": goDetail["qty"],
+                        "openingstockvalue": goDetail["rate"],
+                        "orgcode": authDetails["orgcode"],
+                    }
+                    con.execute(gkdb.goprod.insert(), [goro])
                 con.execute(
-                    accounts.update()
+                    product.update()
                     .where(
                         and_(
-                            accounts.c.accountname == pnSL,
-                            accounts.c.orgcode == authDetails["orgcode"],
+                            product.c.productcode == productCode,
+                            product.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                    .values(accountname=newpnSL)
+                    .values(openingstock=ttlOpening)
                 )
-                con.execute(
-                    accounts.update()
-                    .where(
-                        and_(
-                            accounts.c.accountname == pnPurch,
-                            accounts.c.orgcode == authDetails["orgcode"],
-                        )
+            # We need to update accountname also.
+            pnSL = str(prodName["productdesc"]) + " Sale"
+            newpnSL = str(productDetails["productdesc"]) + " Sale"
+            pnPurch = str(prodName["productdesc"]) + " Purchase"
+            newpnPH = str(productDetails["productdesc"]) + " Purchase"
+            con.execute(
+                accounts.update()
+                .where(
+                    and_(
+                        accounts.c.accountname == pnSL,
+                        accounts.c.orgcode == authDetails["orgcode"],
                     )
-                    .values(accountname=newpnPH)
                 )
-                return {"gkstatus": enumdict["Success"]}
+                .values(accountname=newpnSL)
+            )
+            con.execute(
+                accounts.update()
+                .where(
+                    and_(
+                        accounts.c.accountname == pnPurch,
+                        accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+                .values(accountname=newpnPH)
+            )
+            return {"gkstatus": enumdict["Success"]}
 
 
     @view_config(
