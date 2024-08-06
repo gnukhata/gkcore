@@ -884,10 +884,9 @@ class api_product(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            try:
+            with eng.connect() as con:
                 # fetch a product matching the given productcode
-                product = self.con.execute(
+                product = con.execute(
                     select(
                         [
                             gkdb.product.c.uomid,
@@ -903,7 +902,7 @@ class api_product(object):
                 ).fetchone()
                 # only products have an uomid
                 if product is not None:
-                    uom = self.con.execute(
+                    uom = con.execute(
                         select([gkdb.unitofmeasurement.c.unitname]).where(
                             gkdb.unitofmeasurement.c.uomid == product["uomid"]
                         )
@@ -920,12 +919,7 @@ class api_product(object):
                         "gkstatus": enumdict["ActionDisallowed"],
                         "gkresult": "Not a Product",
                     }
-            except Exception as e:
-                gk_log(__name__).error(e)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # request_param="type=addstock",
     @view_config(request_method="POST", route_name="product_stock", renderer="json")
