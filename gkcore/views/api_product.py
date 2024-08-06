@@ -677,12 +677,11 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 productcode = self.request.matchdict["productcode"]
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 if int(userrole["gkresult"]["userrole"]) != 3:
-                    result = self.con.execute(
+                    result = con.execute(
                         select([goprod]).where(goprod.c.productcode == productcode)
                     )
                     godowns = []
@@ -699,7 +698,7 @@ class api_product(object):
                     usergodowns = getusergodowns(authDetails["userid"])
                     godowns = []
                     for usergodown in usergodowns["gkresult"]:
-                        thisgodown = self.con.execute(
+                        thisgodown = con.execute(
                             select([goprod]).where(
                                 and_(
                                     goprod.c.productcode == productcode,
@@ -719,12 +718,7 @@ class api_product(object):
                         except:
                             continue
                 return {"gkstatus": enumdict["Success"], "gkresult": godowns}
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="GET", route_name="product_godown", renderer="json")
     def getProductfromGodown(self):
