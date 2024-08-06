@@ -197,7 +197,6 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
-            gk_log(__name__).warn("prod")
             dataset = self.request.json_body
             productDetails = dataset["productdetails"]
             godownFlag = dataset["godownflag"]
@@ -257,7 +256,6 @@ class api_product(object):
                     if type(goDetail) != dict:
                         goDetail = {"qty": goDetail, "rate": 0}
                     # calculate the opening stock
-                    # ttlOpening = ttlOpening + float(goDetail["qty"])
                     ttlOpening += float(goDetail["qty"])
                     goro = {
                         "productcode": productCode,
