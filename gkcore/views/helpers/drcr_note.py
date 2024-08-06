@@ -10,8 +10,8 @@ def get_drcr_note_details(connection, drcr_id):
     1. All debit-credit note database fields.
     2. Info available from `get_invoice_details` function.
     3. Item wise tax details for debit-credit note.
-    4. Debit-credit note tax free total.
-    5. Debit-credit notetax included total.
+    4. Debit-credit note tax-free total.
+    5. Debit-credit note tax included total.
     6. Cumulative tax amount for the debit-credit note.
     7. Document No.
     """
