@@ -189,6 +189,13 @@ class api_product(object):
 
     @view_config(request_method="POST", renderer="json")
     def addProduct(self):
+        """API will,
+        1. Create business item and related stock.
+        2. Create rows in `goprod` table.
+        3. Calculate total opening stock.
+        4. Create accounts for products.
+        Item name (`productdesc`) is unique.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
