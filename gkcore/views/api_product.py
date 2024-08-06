@@ -196,137 +196,128 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            self.con = eng.connect()
-            try:
-                gk_log(__name__).warn("prod")
-                dataset = self.request.json_body
-                productDetails = dataset["productdetails"]
-                godownFlag = dataset["godownflag"]
-                productDetails["orgcode"] = authDetails["orgcode"]
-                duplicateproduct = self.con.execute(
-                    select(
-                        [
-                            func.count(gkdb.product.c.productcode).label(
-                                "productcount"
-                            )
-                        ]
-                    ).where(
-                        and_(
-                            gkdb.product.c.productdesc
-                            == productDetails["productdesc"],
-                            gkdb.product.c.categorycode == None,
-                            gkdb.product.c.orgcode == productDetails["orgcode"],
-                        )
-                    )
-                )
-                duplicateproductrow = duplicateproduct.fetchone()
-                if duplicateproductrow["productcount"] > 0:
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
-
-                # handle exception if db insertion fails for product
-                try:
-                    result = self.con.execute(gkdb.product.insert(), [productDetails])
-                except Exception as e:
-                    gk_log(__name__).error(e)
-                    return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
-
-                spec = productDetails["specs"]
-                for sp in list(spec.keys()):
-                    self.con.execute(
-                        "update categoryspecs set productcount = productcount +1 where spcode = %d"
-                        % (int(sp))
-                    )
-
-                if ("categorycode" in productDetails) == False:
-                    productDetails["categorycode"] = None
-                result = self.con.execute(
-                    select([gkdb.product.c.productcode]).where(
-                        and_(
-                            gkdb.product.c.productdesc == productDetails["productdesc"],
-                            gkdb.product.c.categorycode
-                            == productDetails["categorycode"],
-                            gkdb.product.c.orgcode == productDetails["orgcode"],
-                        )
-                    )
-                )
-                row = result.fetchone()
-                productCode = row["productcode"]
-                # create godown only if godown flag is true and is product
-                if godownFlag and productDetails["gsflag"] == 7:
-                    goDetails = dataset["godetails"]
-                    # insert godown stock into goprod table & calculate opening stock
-                    ttlOpening = 0.00
-                    # loop over all godowns stock entries
-                    for goId in list(goDetails.keys()):
-                        goDetail = goDetails[goId]
-                        if type(goDetail) != dict:
-                            goDetail = {"qty": goDetail, "rate": 0}
-                        # calculate the opening stock
-                        # ttlOpening = ttlOpening + float(goDetail["qty"])
-                        ttlOpening += float(goDetail["qty"])
-                        goro = {
-                            "productcode": productCode,
-                            "goid": goId,
-                            "goopeningstock": goDetail["qty"],
-                            "openingstockvalue": goDetail["rate"],
-                            "orgcode": authDetails["orgcode"],
-                        }
-                        try:
-                            self.con.execute(goprod.insert(), [goro])
-                        except Exception as e:
-                            return {
-                                "gkstatus": enumdict["ConnectionFailed"],
-                                "error": str(e),
-                            }
-                    # update opening stock value
-                    self.con.execute(
-                        product.update()
-                        .where(
-                            and_(
-                                product.c.productcode == productCode,
-                                product.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                        .values(openingstock=ttlOpening)
-                    )
-
-                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
-                sp = self.con.execute(
-                    "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
-                    % ("Sales", "Purchase", productDetails["orgcode"])
-                )
-                s = sp.fetchall()
-                prodName = productDetails["productdesc"]
-                proSale = prodName + " Sale"
-                proPurch = prodName + " Purchase"
-                self.con.execute(
-                    gkdb.accounts.insert(),
+        with eng.begin() as con:
+            gk_log(__name__).warn("prod")
+            dataset = self.request.json_body
+            productDetails = dataset["productdetails"]
+            godownFlag = dataset["godownflag"]
+            productDetails["orgcode"] = authDetails["orgcode"]
+            duplicateproduct = con.execute(
+                select(
                     [
-                        {
-                            "accountname": proPurch,
-                            "groupcode": s[0][0],
-                            "orgcode": authDetails["orgcode"],
-                            "sysaccount": 1,
-                        },
-                        {
-                            "accountname": proSale,
-                            "groupcode": s[1][0],
-                            "orgcode": authDetails["orgcode"],
-                            "sysaccount": 1,
-                        },
-                    ],
+                        func.count(gkdb.product.c.productcode).label(
+                            "productcount"
+                        )
+                    ]
+                ).where(
+                    and_(
+                        gkdb.product.c.productdesc
+                        == productDetails["productdesc"],
+                        gkdb.product.c.categorycode == None,
+                        gkdb.product.c.orgcode == productDetails["orgcode"],
+                    )
+                )
+            )
+            duplicateproductrow = duplicateproduct.fetchone()
+            if duplicateproductrow["productcount"] > 0:
+                return {"gkstatus": enumdict["DuplicateEntry"]}
+
+            # handle exception if db insertion fails for product
+            try:
+                result = con.execute(gkdb.product.insert(), [productDetails])
+            except Exception as e:
+                gk_log(__name__).error(e)
+                return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
+
+            spec = productDetails["specs"]
+            for sp in list(spec.keys()):
+                con.execute(
+                    "update categoryspecs set productcount = productcount +1 where spcode = %d"
+                    % (int(sp))
                 )
 
-                return {"gkstatus": enumdict["Success"], "gkresult": row["productcode"]}
+            if ("categorycode" in productDetails) == False:
+                productDetails["categorycode"] = None
+            result = con.execute(
+                select([gkdb.product.c.productcode]).where(
+                    and_(
+                        gkdb.product.c.productdesc == productDetails["productdesc"],
+                        gkdb.product.c.categorycode
+                        == productDetails["categorycode"],
+                        gkdb.product.c.orgcode == productDetails["orgcode"],
+                    )
+                )
+            )
+            row = result.fetchone()
+            productCode = row["productcode"]
+            # create godown only if godown flag is true and is product
+            if godownFlag and productDetails["gsflag"] == 7:
+                goDetails = dataset["godetails"]
+                # insert godown stock into goprod table & calculate opening stock
+                ttlOpening = 0.00
+                # loop over all godowns stock entries
+                for goId in list(goDetails.keys()):
+                    goDetail = goDetails[goId]
+                    if type(goDetail) != dict:
+                        goDetail = {"qty": goDetail, "rate": 0}
+                    # calculate the opening stock
+                    # ttlOpening = ttlOpening + float(goDetail["qty"])
+                    ttlOpening += float(goDetail["qty"])
+                    goro = {
+                        "productcode": productCode,
+                        "goid": goId,
+                        "goopeningstock": goDetail["qty"],
+                        "openingstockvalue": goDetail["rate"],
+                        "orgcode": authDetails["orgcode"],
+                    }
+                    try:
+                        con.execute(goprod.insert(), [goro])
+                    except Exception as e:
+                        return {
+                            "gkstatus": enumdict["ConnectionFailed"],
+                            "error": str(e),
+                        }
+                # update opening stock value
+                con.execute(
+                    product.update()
+                    .where(
+                        and_(
+                            product.c.productcode == productCode,
+                            product.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                    .values(openingstock=ttlOpening)
+                )
 
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except Exception as e:
-                gk_log(__name__).error("prod err", e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
+            sp = con.execute(
+                "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
+                % ("Sales", "Purchase", productDetails["orgcode"])
+            )
+            s = sp.fetchall()
+            prodName = productDetails["productdesc"]
+            proSale = prodName + " Sale"
+            proPurch = prodName + " Purchase"
+            con.execute(
+                gkdb.accounts.insert(),
+                [
+                    {
+                        "accountname": proPurch,
+                        "groupcode": s[0][0],
+                        "orgcode": authDetails["orgcode"],
+                        "sysaccount": 1,
+                    },
+                    {
+                        "accountname": proSale,
+                        "groupcode": s[1][0],
+                        "orgcode": authDetails["orgcode"],
+                        "sysaccount": 1,
+                    },
+                ],
+            )
+
+            return {"gkstatus": enumdict["Success"], "gkresult": row["productcode"]}
+
 
     """
     Here product data is updated with new data input by the user while editing product.
