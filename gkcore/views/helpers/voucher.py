@@ -24,7 +24,7 @@ def get_voucher_accounts(accounts_list, entry_type, connection):
 def get_transaction_details(connection, voucher_row, entry_type=None):
     """Returns details of a transaction. Dr/Cr items will be listed in a unified list
     with "name", "group", "sysaccount", "amount and entry_type" data.
-    Attributes: `voucher_id`, `is_cancelled`, `entry_type`
+    Parameters: `connection`, `voucher_row`, `entry_type`
     `entry_type` can be "Dr" or "Cr", by default its None.
     """
     transaction_details = dict(voucher_row)
@@ -169,8 +169,7 @@ def generate_consolidated_voucher_data(connection, voucher_rows, account_id):
     This function accept SQLAlchemy result proxy rows of voucher table and account_id
     to which consolidated data is generated.
 
- This should be
-    automatically fetched from account_id.
+    This should be automatically fetched from account_id.
 
     This function will give,
     1. Voucher list with voucher details,
