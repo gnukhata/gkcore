@@ -26,7 +26,7 @@ def request_logger_tween_factory(handler, registry):
         logger.info(
             "%s %s %s %s %s",
             request.method,
-            request.path,
+            request.path_qs,
             response.status,
             response.content_length,
             gkstatus,
