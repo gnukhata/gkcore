@@ -1012,9 +1012,8 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                lastPriceData = self.con.execute(
+            with eng.connect() as con:
+                lastPriceData = con.execute(
                     select([gkdb.cslastprice.c.lastprice]).where(
                         and_(
                             gkdb.cslastprice.c.custid
@@ -1032,7 +1031,3 @@ class api_product(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": "%.2f" % float(lastPriceValue),
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
