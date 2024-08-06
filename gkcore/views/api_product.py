@@ -978,8 +978,7 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 orgcode = authDetails["orgcode"]
                 goid = dataset["goid"]
@@ -991,14 +990,9 @@ class api_product(object):
                         "productcode": product,
                         "orgcode": orgcode,
                     }
-                    result = self.con.execute(gkdb.goprod.insert(), [details])
+                    result = con.execute(gkdb.goprod.insert(), [details])
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     """
     This funtion returns the last price for which a product was sold/purchased to/from a party.
