@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 import logging
 
 def request_logger_tween_factory(handler, registry):
@@ -16,7 +17,10 @@ def request_logger_tween_factory(handler, registry):
     def request_logger_tween(request):
         response = handler(request)
 
-        response_json = getattr(response, "json_body", None)
+        try:
+            response_json = getattr(response, "json_body", None)
+        except JSONDecodeError:
+            response_json = None
         gkstatus = response_json.get("gkstatus") if response_json else None
 
         logger.info(
