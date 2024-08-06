@@ -1,62 +1,115 @@
+from gkcore.views.helpers.contact import get_party_details
 from sqlalchemy.sql import select
-from gkcore.models.gkdb import vouchers, accounts, voucherbin, invoice, product
+from gkcore.models.gkdb import invoice, state, product
 from sqlalchemy import func
+from gkcore import enumdict
 
 
+def get_invoice_details(connection, invoice_id):
+    """ Fetches invoice details.
 
-def get_account_details(account_code, connection):
-    """Fetches the account details and returns a dict with keys, "name", "group" and
-    "sysaccount"."""
-    account = connection.execute(
-        select("*").where(accounts.c.accountcode == account_code)
-    ).fetchone()
-    return {
-        "account_name": account["accountname"],
-        "account_group": account["groupcode"],
-        "is_sysaccount": account["sysaccount"]
-    }
-
-
-def get_voucher_accounts(accounts_list, entry_type, connection):
-    """Fetches the account details of voucher accounts and returns a list of dicts
-    with account details."""
-    voucher_accounts = []
-    for account_code in accounts_list.keys():
-        account_details = get_account_details(account_code, connection)
-        account_details.update(
-            {"amount": float(accounts_list[account_code]), "entry_type": entry_type}
-        )
-        voucher_accounts.append(account_details)
-    return voucher_accounts
-
-
-def get_transaction_details(voucher_code, connection, entry_type=None, is_cancelled=False):
-    """Returns details of a transaction. Dr/Cr items will be listed in a unified list
-    with "name", "group", "sysaccount", "amount and entry_type" data.
-    Attributes: `voucher_id`, `is_cancelled`, `entry_type`
-    `is_cancelled` is the status of voucher, it should be true if the voucher is
-    cancelled. `is_cancelled` is False by default.
-    `entry_type` can be "Dr" or "Cr", by default its None.
+    Details will include,
+    1. Invoice database fields: `invid`, `invoiceno`, `invnarration`, `contents`,
+    `invoicedate`, `invoicetotal`, `icflag`, `custid`, `inoutflag`, `address`,
+    `tax`, `taxflag`, `taxstate`, `sourcestate`, `cess` and `discount`.
+    2. Party details - contact details of customer/seller.
+    3. GSTIN.
+    4. Item wise tax details.
+    5. Invoice tax free total.
+    6. Invoice tax included total.
+    7. Cumulative tax amount for the invoice.
+    8. Document No.
     """
-    voucher_table = voucherbin if is_cancelled else vouchers
-    voucher = connection.execute(
-        select("*").where(voucher_table.c.vouchercode == voucher_code)
+
+    invoice_details = connection.execute(
+        select(
+            [
+                invoice.c.invid,
+                invoice.c.invoiceno,
+                invoice.c.invnarration,
+                invoice.c.contents,
+                invoice.c.invoicedate,
+                invoice.c.invoicetotal,
+                invoice.c.icflag,
+                invoice.c.custid,
+                invoice.c.inoutflag,
+                invoice.c.address,
+                invoice.c.tax,
+                invoice.c.taxflag,
+                invoice.c.taxstate,
+                invoice.c.sourcestate,
+                invoice.c.cess,
+                invoice.c.discount,
+            ]
+        ).where(invoice.c.invid == invoice_id)
     ).fetchone()
-    if not voucher:
-        return voucher
-    voucher = dict(voucher)
-    if not entry_type:
-        voucher["transactions"] = [
-            *get_voucher_accounts(voucher["drs"], "Dr", connection),
-            *get_voucher_accounts(voucher["crs"], "Cr", connection),
-        ]
-    elif entry_type in ["Dr", "Cr"]:
-        voucher["transactions"] = [
-            *get_voucher_accounts(voucher[entry_type.lower()+"s"], entry_type, connection),
-        ]
-    else:
-        raise AttributeError("'entry_type' accepts only 'Dr' and 'Cr' as allowed values")
-    return voucher
+
+    party_details = get_party_details(connection, invoice_details["custid"])
+
+    state_details = connection.execute(
+        select([state.c.statecode]).where(
+            state.c.statename == invoice_details["taxstate"]
+        )
+    ).fetchone()
+
+    gstin = (
+        party_details["gstin"].get(str(state_details["statecode"]))
+        if party_details["gstin"]
+        else ""
+    )
+
+    tax_details = []
+    if invoice_details["taxflag"] == 22:
+        tax_name = "VAT"
+    elif invoice_details["taxflag"] == 7:
+        if invoice_details["sourcestate"] == invoice_details["taxstate"]:
+            tax_name = "SGST"
+        else:
+            tax_name = "IGST"
+
+
+    tax_total = sum([float(value) for value in invoice_details["tax"].values()])
+    invoice_total_taxfree = float(invoice_details["invoicetotal"])*100/(100+tax_total)
+
+    for item_id, tax_percent in invoice_details["tax"].items():
+        tax_percent = float(tax_percent)/2 if tax_name == "SGST" else float(tax_percent)
+        item_qty = float(list(invoice_details["contents"][item_id].values())[0])
+        item_price = float(list(invoice_details["contents"][item_id].keys())[0])
+        item_discount = float(invoice_details["discount"][item_id])
+        item_price_taxfree = item_price * item_qty - item_discount
+        tax_amount = item_price_taxfree * tax_percent/100
+        if not tax_amount:
+            continue
+        item_tax_details = {
+            "product_id": item_id,
+            "tax_amount": tax_amount,
+            "tax_name": tax_name,
+            "tax_str": f"{tax_percent}% {tax_name}",
+            "tax_percent": tax_percent,
+        }
+        tax_details.append(item_tax_details)
+        if tax_name == "SGST":
+            tax_name = "CGST"
+            tax_details.append(
+                {
+                    "product_id": item_id,
+                    "tax_amount": tax_amount,
+                    "tax_name": tax_name,
+                    "tax_str": f"{tax_percent}% {tax_name}",
+                    "tax_percent": tax_percent,
+                }
+            )
+
+    return {
+        **dict(invoice_details),
+        **dict(party_details),
+        "document_no": invoice_details["invoiceno"],
+        "tax_total": sum([float(value) for value in invoice_details["tax"].values()]),
+        "tax_data": tax_details,
+        "taxfree": f"{invoice_total_taxfree:.2f}",
+        "taxed": float(invoice_details['invoicetotal']),
+        "gstin": gstin,
+    }
 
 
 def get_business_item_invoice_data(
@@ -73,7 +126,7 @@ def get_business_item_invoice_data(
             [
                 invoice.c.contents[str(product_code)],
                 invoice.c.discount[str(product_code)],
-                 invoice.c.inoutflag,
+                invoice.c.inoutflag,
             ]
         )
         .where(func.jsonb_extract_path_text(invoice.c.contents, str(product_code)) != None)

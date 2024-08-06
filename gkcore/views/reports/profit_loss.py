@@ -11,7 +11,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
 from gkcore.models.gkdb import accounts
-from gkcore.views.reports.helpers.voucher import get_org_invoice_data
+from gkcore.views.helpers.invoice import get_org_invoice_data
 from sqlalchemy.sql import select
 from sqlalchemy import and_
 from pyramid.request import Request

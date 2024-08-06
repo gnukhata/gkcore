@@ -39,7 +39,6 @@ from gkcore.models.meta import eng
 from wsgicors import CORS
 from gkcore.enum import STATUS_CODES as enumdict
 
-
 def get_secret():
     with eng.connect() as connection:
         resultset = connection.execute("select * from signature")
@@ -49,6 +48,7 @@ def get_secret():
 
 secret = get_secret() # for compatibility with old code
 
+
 def main(global_config, **settings):
     config = Configurator(settings=settings)
 
@@ -56,6 +56,7 @@ def main(global_config, **settings):
     config.include('.routes')
     if settings.get('development'): # Use only when it is development mode.
         config.include('.logging')
+    config.include('.renderers')
     config.scan()
     # include the pyramid-openapi3 plugin config
     # link: https://github.com/Pylons/pyramid_openapi3
