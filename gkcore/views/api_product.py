@@ -455,7 +455,6 @@ class api_product(object):
                 return {"gkstatus": enumdict["Success"]}
 
 
-    # request_param="qty=single",
     @view_config(
         route_name="product_productcode", request_method="GET", renderer="json"
     )
@@ -597,7 +596,6 @@ class api_product(object):
                     return {"gkstatus": enumdict["Success"], "gkresult": productDetails}
 
 
-    # request_param="type=pt",
     @view_config(request_method="GET", route_name="product_tax", renderer="json")
     def getTaxForProduct(self):
         """
@@ -628,7 +626,6 @@ class api_product(object):
                 )
 
 
-    # request_param="by=category",
     @view_config(request_method="GET", route_name="product_category", renderer="json")
     def getProductbyCategory(self):
         try:
@@ -663,7 +660,6 @@ class api_product(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": prodlist}
 
 
-    # , request_param="by=godown"
     @view_config(request_method="GET", route_name="godown_product", renderer="json")
     def getProductbyGodown(self):
         try:
@@ -754,7 +750,6 @@ class api_product(object):
                 return {"gkstatus": enumdict["Success"], "gkresult": products}
 
 
-    # request_param="tax=vatorgst",
     @view_config(request_method="GET", route_name="product_check_gst", renderer="json")
     def getvatorgst(self):
         """
@@ -918,7 +913,6 @@ class api_product(object):
                     }
 
 
-    # request_param="type=addstock",
     @view_config(request_method="POST", route_name="product_stock", renderer="json")
     def addstock(self):
         """
@@ -955,7 +949,6 @@ class api_product(object):
     Price is found out from the contents using productcode as key and sent as response.
     """
 
-    # request_param="type=lastprice",
     @view_config(route_name="product_lastprice", request_method="GET", renderer="json")
     def lastPrice(self):
         try:
