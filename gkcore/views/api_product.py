@@ -642,17 +642,16 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 categoryCode = self.request.matchdict["categorycode"]
                 if categoryCode == "":
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
                         ).where(gkdb.product.c.categorycode == None)
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
                         ).where(gkdb.product.c.categorycode == categoryCode)
@@ -665,11 +664,7 @@ class api_product(object):
                     }
                     prodlist.append(productDetails)
                 return {"gkstatus": enumdict["Success"], "gkresult": prodlist}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # , request_param="by=godown"
     @view_config(request_method="GET", route_name="godown_product", renderer="json")
