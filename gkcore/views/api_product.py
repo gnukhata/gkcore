@@ -423,10 +423,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.product.c.specs, gkdb.product.c.productdesc]).where(
                         gkdb.product.c.productcode == dataset["productcode"]
                     )
@@ -435,18 +434,18 @@ class api_product(object):
                 spec = row["specs"]
                 pn = row["productdesc"]
                 for sp in list(spec.keys()):
-                    self.con.execute(
+                    con.execute(
                         "update categoryspecs set productcount = productcount -1 where spcode = %d"
                         % (int(sp))
                     )
 
-                result = self.con.execute(
+                result = con.execute(
                     gkdb.product.delete().where(
                         gkdb.product.c.productcode == dataset["productcode"]
                     )
                 )
                 try:
-                    self.con.execute(
+                    con.execute(
                         accounts.delete().where(
                             and_(
                                 accounts.c.accountname.like(pn + "%"),
@@ -457,12 +456,7 @@ class api_product(object):
                 except:
                     pass
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # request_param="qty=single",
     @view_config(
