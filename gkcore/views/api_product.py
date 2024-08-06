@@ -29,26 +29,23 @@ Contributors:
 
 
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck, gk_log
+from gkcore.utils import authCheck
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import func
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, func
+from sqlalchemy import and_, func
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
 from datetime import datetime
-import traceback
 
 
 @view_defaults(route_name="product")
 class api_product(object):
     def __init__(self, request):
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="GET", renderer="json")
     def getAllProducts(self):
