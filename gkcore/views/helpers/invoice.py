@@ -62,7 +62,7 @@ def get_invoice_details(connection, invoice_id):
     if invoice_details["taxflag"] == 22:
         tax_name = "VAT"
     elif invoice_details["taxflag"] == 7:
-        if invoice_details["sourcestate"] == invoice_details["sourcestate"]:
+        if invoice_details["sourcestate"] == invoice_details["taxstate"]:
             tax_name = "SGST"
         else:
             tax_name = "IGST"
