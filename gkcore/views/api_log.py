@@ -61,14 +61,13 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                dataset["userid"] = authDetails["userid"]
-                dataset["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-                con.execute(log.insert(), [dataset])
-                return {"gkstatus": enumdict["Success"]}
+        with eng.connect() as con:
+            dataset = self.request.json_body
+            dataset["orgcode"] = authDetails["orgcode"]
+            dataset["userid"] = authDetails["userid"]
+            dataset["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
+            con.execute(log.insert(), [dataset])
+            return {"gkstatus": enumdict["Success"]}
 
 
     @view_config(request_method="PUT", renderer="json")
