@@ -613,11 +613,11 @@ def getDefaultAcc(con, queryParams, orgcode):
                     taxVal = taxable * (tx / 100)
                     taxNameVAT = "VAT_" + invType[3]
 
-                if taxNameVAT not in taxDict:
-                    taxDict[taxNameVAT] = "%.2f" % float(taxVal)
-                else:
-                    val = float(taxDict[taxNameVAT])
-                    taxDict[taxNameVAT] = "%.2f" % float(taxVal + val)
+                    if taxNameVAT not in taxDict:
+                        taxDict[taxNameVAT] = "%.2f" % float(taxVal)
+                    else:
+                        val = float(taxDict[taxNameVAT])
+                        taxDict[taxNameVAT] = "%.2f" % float(taxVal + val)
 
 
                 if isSale:
