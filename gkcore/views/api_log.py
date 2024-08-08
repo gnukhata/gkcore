@@ -62,18 +62,14 @@ class api_log(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 dataset["userid"] = authDetails["userid"]
                 dataset["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
-                result = self.con.execute(log.insert(), [dataset])
+                con.execute(log.insert(), [dataset])
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="PUT", renderer="json")
     def editLog(self):
