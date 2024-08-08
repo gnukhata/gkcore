@@ -809,7 +809,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -1009,7 +1009,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -1209,7 +1209,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -1409,7 +1409,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -1640,7 +1640,7 @@ def drcrVoucher(con, queryParams, orgcode):
                     saleAcc = salesAccount.fetchone()
                     drs[saleAcc["accountcode"]] = totalTaxableVal
                     vchProdAcc = saleAcc["accountcode"]
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -1867,7 +1867,7 @@ def drcrVoucher(con, queryParams, orgcode):
                     purchaseAcc = purchaseAccount.fetchone()
                     drs[purchaseAcc["accountcode"]] = totalTaxableVal
                     vchProdAcc = purchaseAcc["accountcode"]
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -2096,7 +2096,7 @@ def drcrVoucher(con, queryParams, orgcode):
                     saleAcc = salesAccount.fetchone()
                     crs[saleAcc["accountcode"]] = totalTaxableVal
                     vchProdAcc = saleAcc["accountcode"]
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -2325,7 +2325,7 @@ def drcrVoucher(con, queryParams, orgcode):
                     purchaseAcc = purchaseAccount.fetchone()
                     crs[purchaseAcc["accountcode"]] = totalTaxableVal
                     vchProdAcc = purchaseAcc["accountcode"]
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -2570,7 +2570,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -2770,7 +2770,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -2970,7 +2970,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -3170,7 +3170,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -3372,7 +3372,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -3572,7 +3572,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 crs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 drs[discountpaidaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -3772,7 +3772,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
@@ -3972,7 +3972,7 @@ def drcrVoucher(con, queryParams, orgcode):
             ):
                 drs[partyaccountcode["accountcode"]] = queryParams["totreduct"]
                 crs[discountreceivedaccountcode["accountcode"]] = totalTaxableVal
-                if int(queryParams["taxflag"]) == 7:
+                if int(queryParams["taxflag"]) == 7 and queryParams.get("taxstate"):
                     abv = con.execute(
                         select([state.c.abbreviation]).where(
                             state.c.statename == queryParams["taxstate"]
