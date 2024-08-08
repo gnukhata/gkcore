@@ -744,6 +744,9 @@ class api_delchal(object):
                             "taxname": "VAT",
                             "taxrate": "%.2f" % (float(taxRate)),
                             "taxamount": "%.2f" % (float(taxAmount)),
+                            "productCode": prodrow["productcode"],
+                            "gsflag": prodrow["gsflag"],
+                            "goid": goidrow[0][0],
                         }
 
                     else:
