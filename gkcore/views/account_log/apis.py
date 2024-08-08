@@ -26,6 +26,7 @@ Contributors:
 import logging
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, gkusers
+from gkcore.views.account_log.schemas import LogSchema
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
@@ -46,7 +47,6 @@ Only admin role can access logs
 @view_defaults(route_name="log")
 class api_log(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
@@ -61,8 +61,9 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        schema = LogSchema()
+        dataset = schema.deserialize(self.request.json_body)
         with eng.connect() as con:
-            dataset = self.request.json_body
             dataset["orgcode"] = authDetails["orgcode"]
             dataset["userid"] = authDetails["userid"]
             dataset["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
