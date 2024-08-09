@@ -1190,7 +1190,7 @@ def getInvoiceData(con, orgcode, params):
             cessAmount = 0.00
             cessVal = 0.00
             taxname = ""
-            if invrow["cess"] != None:
+            if invrow["cess"]:
                 cessVal = float(invrow["cess"][pc])
                 cessAmount = taxableAmount * (cessVal / 100)
                 totalCessAmt = totalCessAmt + cessAmount
@@ -3557,7 +3557,7 @@ class api_invoice(object):
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if invrow["cess"] != None:
+                        if invrow["cess"]:
                             cessVal = float(invrow["cess"][pc])
                             cessAmount = taxableAmount * (cessVal / 100)
                             totalCessAmt = totalCessAmt + cessAmount
@@ -4384,7 +4384,7 @@ class api_invoice(object):
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if invData["cess"] != None:
+                        if invData["cess"]:
                             cessVal = float(invData["cess"][eachitem])
                             cessAmount = taxableAmount * (cessVal / 100)
                             totalCessAmt = totalCessAmt + cessAmount
