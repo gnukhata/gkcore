@@ -3,7 +3,7 @@ import sys, traceback
 from gkcore import enumdict
 from sqlalchemy.exc import IntegrityError
 from colander import Invalid
-
+from pydantic import ValidationError
 
 @view_config(context=Invalid, renderer="json")
 def validation_error(error, request):
@@ -15,6 +15,18 @@ def validation_error(error, request):
         "gkstatus": enumdict["ValidationError"],
         "error": error.asdict(),
     }
+
+
+@view_config(context=ValidationError, renderer="json")
+def validation_error(error, request):
+    """To handle ValidationError from Pydantic. This will not be logged in console and
+    the validaiton errors are passed in response as a dict.
+    """
+    return {
+        "gkstatus": enumdict["ValidationError"],
+        "error": error.errors(),
+    }
+
 
 
 @view_config(context=Exception, renderer="json")
