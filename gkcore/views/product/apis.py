@@ -28,6 +28,7 @@ Contributors:
 """
 
 
+from gkcore.views.product.schemas import ProductGodown
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore.views.api_tax import calTax
@@ -200,8 +201,8 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        dataset = ProductGodown(**self.request.json_body).model_dump()
         with eng.begin() as con:
-            dataset = self.request.json_body
             productDetails = dataset["productdetails"]
             godownFlag = dataset["godownflag"]
             productDetails["orgcode"] = authDetails["orgcode"]
