@@ -603,10 +603,33 @@ def getDefaultAcc(con, queryParams, orgcode):
             except:
                 a = createAccount(con, 20, "VAT_" + invType[3], orgcode)
                 accCode = a["accountcode"]
+
+            for prod in queryParams["prodData"]:
+                taxRate = float(queryParams["taxes"][prod])
+                taxable = float(queryParams["prodData"][prod])
+                if taxRate > 0.00:
+                    tx = float(taxRate)
+                    # this is the value which is going to Dr/Cr
+                    taxVal = taxable * (tx / 100)
+                    taxNameVAT = "VAT_" + invType[3]
+
+                    if taxNameVAT not in taxDict:
+                        taxDict[taxNameVAT] = "%.2f" % float(taxVal)
+                    else:
+                        val = float(taxDict[taxNameVAT])
+                        taxDict[taxNameVAT] = "%.2f" % float(taxVal + val)
+
+
+                if isSale:
+                    crs[accCode] = "%.2f" % float(taxVal)
+                else:
+                    drs[accCode] = "%.2f" % float(taxVal)
+   
+        for Tax in taxDict:
             if isSale:
-                crs[accCode] = "%.2f" % float(queryParams["taxpayment"])
+                crs[accCode] = "%.2f" % float(taxDict[Tax])
             else:
-                drs[accCode] = "%.2f" % float(queryParams["taxpayment"])
+                drs[accCode] = "%.2f" % float(taxDict[Tax])  
 
         voucherDict = {
             "drs": drs,
