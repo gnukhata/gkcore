@@ -1,4 +1,6 @@
-import colander
+from pydantic import BaseModel, constr
+from typing import Optional
 
-class LogSchema(colander.MappingSchema):
-    activity = colander.SchemaNode(colander.String(), validator=colander.Length(max=500))
+
+class AccountLog(BaseModel):
+     activity: Optional[constr(max_length=1000)]

@@ -36,4 +36,3 @@ openapi-core < 0.17.0
 
 # for api payload validation
 pydantic==2.4.0
-colander==2.0
