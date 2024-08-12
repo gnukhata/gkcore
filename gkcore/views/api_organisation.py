@@ -33,7 +33,7 @@ Contributors:
 
 from pyramid.view import view_defaults, view_config
 from requests import request
-from gkcore.utils import authCheck, gk_log, userAuthCheck
+from gkcore.utils import authCheck, generateSecret, gk_log, userAuthCheck
 from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models import gkdb
@@ -204,22 +204,7 @@ class api_organisation(object):
                 self.con = eng.connect()
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
-                result = self.con.execute(select([gkdb.signature]))
-                sign = result.fetchone()
-                if sign == None:
-                    key = RSA.generate(2560)
-                    privatekey = key.exportKey("PEM")
-                    sig = {"secretcode": privatekey}
-                    gkcore.secret = privatekey
-                    result = self.con.execute(gkdb.signature.insert(), [sig])
-                elif len(sign["secretcode"]) <= 20:
-                    result = con.execute(gkdb.signature.delete())
-                    if result.rowcount == 1:
-                        key = RSA.generate(2560)
-                        privatekey = key.exportKey("PEM")
-                        sig = {"secretcode": privatekey}
-                        gkcore.secret = privatekey
-                        result = self.con.execute(gkdb.signature.insert(), [sig])
+                result = generateSecret(con)
                 try:
                     self.con.execute(select([gkdb.organisation.c.invflag]))
                 except:
