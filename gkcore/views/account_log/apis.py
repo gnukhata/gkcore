@@ -26,7 +26,7 @@ Contributors:
 import logging
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import log, gkusers
-from gkcore.views.account_log.schemas import LogSchema
+from gkcore.views.account_log.schemas import AccountLog
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
@@ -61,8 +61,7 @@ class api_log(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        schema = LogSchema()
-        dataset = schema.deserialize(self.request.json_body)
+        dataset = AccountLog(**self.request.json_body).model_dump()
         with eng.connect() as con:
             dataset["orgcode"] = authDetails["orgcode"]
             dataset["userid"] = authDetails["userid"]
