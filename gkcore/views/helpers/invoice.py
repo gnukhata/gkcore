@@ -59,6 +59,7 @@ def get_invoice_details(connection, invoice_id):
     )
 
     tax_details = []
+    tax_name = None
     if invoice_details["taxflag"] == 22:
         tax_name = "VAT"
     elif invoice_details["taxflag"] == 7:
