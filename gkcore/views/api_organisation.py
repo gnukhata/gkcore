@@ -1249,14 +1249,13 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 userRoleData = getUserRole(
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
                 if userRole == -1:
-                    orgdata = self.con.execute(
+                    orgdata = con.execute(
                         "select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"
                         % authDetails["orgcode"]
                     )
@@ -1264,7 +1263,7 @@ class api_organisation(object):
                     lastdate = datetime.strftime(
                         getorgdata["yearstart"] - timedelta(1), "%Y-%m-%d"
                     )
-                    checkorg = self.con.execute(
+                    checkorg = con.execute(
                         "select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"
                         % (
                             str(getorgdata["orgname"]),
@@ -1274,7 +1273,7 @@ class api_organisation(object):
                     )
                     checkorgcode = checkorg.fetchone()
                     # remove the orgcode from all users who are part of it
-                    orgUsers = self.con.execute(
+                    orgUsers = con.execute(
                         select([gkdb.organisation.c.users]).where(
                             gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
@@ -1287,19 +1286,19 @@ class api_organisation(object):
                         orgUsers = {}
                     for orgUser in orgUsers:
                         print(orgUser)
-                        self.con.execute(
+                        con.execute(
                             "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
                             % (str(authDetails["orgcode"]), int(orgUser))
                         )
 
                     # delete the org
-                    result = self.con.execute(
+                    result = con.execute(
                         gkdb.organisation.delete().where(
                             gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
                     )
                     if result.rowcount == 1:
-                        result = self.con.execute(
+                        result = con.execute(
                             select(
                                 [
                                     func.count(gkdb.organisation.c.orgcode).label(
@@ -1310,22 +1309,17 @@ class api_organisation(object):
                         )
                         orgcount = result.fetchone()
                         if orgcount["ocount"] == 0:
-                            result = self.con.execute(gkdb.signature.delete())
+                            result = con.execute(gkdb.signature.delete())
                     if checkorgcode != None:
-                        resetroflag = self.con.execute(
+                        resetroflag = con.execute(
                             "update organisation set roflag = 0 where orgcode='%d'"
                             % (checkorgcode["orgcode"])
                         )
 
-                    self.con.close()
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": enumdict["BadPrivilege"]}
-            except Exception as e:
-                print(traceback.format_exc())
-                gk_log(__name__).error(e)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
+
 
     @view_config(request_method="GET", request_param="type=exists", renderer="json")
     def Orgexists(self):
