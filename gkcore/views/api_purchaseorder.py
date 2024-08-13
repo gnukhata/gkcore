@@ -199,7 +199,7 @@ class api_purchaseorder(object):
                 purchaseorderdetails["address"] = podata["address"]
 
             # If sourcestate and taxstate are present.
-            if podata["sourcestate"] != None:
+            if podata["sourcestate"]:
                 purchaseorderdetails["sourcestate"] = podata["sourcestate"]
                 purchaseorderdetails["sourcestatecode"] = getStateCode(
                     podata["sourcestate"], con
@@ -207,7 +207,7 @@ class api_purchaseorder(object):
                 sourceStateCode = getStateCode(podata["sourcestate"], con)[
                     "statecode"
                 ]
-            if podata["taxstate"] != None:
+            if podata["taxstate"]:
                 purchaseorderdetails["destinationstate"] = podata["taxstate"]
                 taxStateCode = getStateCode(podata["taxstate"], con)[
                     "statecode"
@@ -240,9 +240,11 @@ class api_purchaseorder(object):
                 ).where(customerandsupplier.c.custid == podata["csid"])
             )
             custData = custandsup.fetchone()
-            custsupstatecode = getStateCode(custData["state"], con)[
-                "statecode"
-            ]
+            custsupstatecode = None
+            if custData["state"]:
+                custsupstatecode = getStateCode(custData["state"], con)[
+                    "statecode"
+                ]
             custSupDetails = {
                 "custname": custData["custname"],
                 "custsupstate": custData["state"],
