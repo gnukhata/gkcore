@@ -178,17 +178,16 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
                 result = generateSecret(con)
                 try:
-                    self.con.execute(select([gkdb.organisation.c.invflag]))
+                    con.execute(select([gkdb.organisation.c.invflag]))
                 except:
-                    inventoryMigration(self.con, eng)
+                    inventoryMigration(con, eng)
                 try:
-                    self.con.execute(
+                    con.execute(
                         select(
                             [
                                 gkdb.delchal.c.modeoftransport,
@@ -196,13 +195,13 @@ class api_organisation(object):
                             ]
                         )
                     )
-                    self.con.execute(select([gkdb.transfernote.c.recieveddate]))
+                    con.execute(select([gkdb.transfernote.c.recieveddate]))
                 except:
-                    addFields(self.con, eng)
+                    addFields(con, eng)
 
-                result = self.con.execute(gkdb.organisation.insert(), [orgdata])
+                result = con.execute(gkdb.organisation.insert(), [orgdata])
                 if result.rowcount == 1:
-                    code = self.con.execute(
+                    code = con.execute(
                         select([gkdb.organisation.c.orgcode]).where(
                             and_(
                                 gkdb.organisation.c.orgname == orgdata["orgname"],
@@ -218,10 +217,10 @@ class api_organisation(object):
                             "groupname": "Current Assets",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), currentassets
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Current Assets",
@@ -230,7 +229,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -261,7 +260,7 @@ class api_organisation(object):
                             ],
                         )
                         # Create account Cash in hand under subgroup Cash & Bank A/C under Bank.
-                        csh = self.con.execute(
+                        csh = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Cash",
@@ -270,7 +269,7 @@ class api_organisation(object):
                             )
                         )
                         cshgrpcd = csh.fetchone()
-                        resultc = self.con.execute(
+                        resultc = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Cash in hand",
@@ -279,7 +278,7 @@ class api_organisation(object):
                                 "defaultflag": 3,
                             },
                         )
-                        bnk = self.con.execute(
+                        bnk = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Bank",
@@ -288,7 +287,7 @@ class api_organisation(object):
                             )
                         )
                         bnkgrpcd = bnk.fetchone()
-                        resultb = self.con.execute(
+                        resultb = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Bank A/C",
@@ -302,10 +301,10 @@ class api_organisation(object):
                             "groupname": "Current Liabilities",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), currentliability
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname
@@ -315,7 +314,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -340,7 +339,7 @@ class api_organisation(object):
                                 },
                             ],
                         )
-                        resultDT = self.con.execute(
+                        resultDT = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Duties & Taxes",
@@ -349,7 +348,7 @@ class api_organisation(object):
                             )
                         )
                         grpcd = resultDT.fetchone()
-                        resultL = self.con.execute(
+                        resultL = con.execute(
                             gkdb.accounts.insert(),
                             [
                                 {
@@ -372,10 +371,10 @@ class api_organisation(object):
                             "groupname": "Direct Expense",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), directexpense
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Direct Expense",
@@ -385,7 +384,7 @@ class api_organisation(object):
                         )
                         DEGrpCodeData = result.fetchone()
                         DEGRPCode = DEGrpCodeData["groupcode"]
-                        insData = self.con.execute(
+                        insData = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -400,7 +399,7 @@ class api_organisation(object):
                                 },
                             ],
                         )
-                        purchgrp = self.con.execute(
+                        purchgrp = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Purchase",
@@ -409,7 +408,7 @@ class api_organisation(object):
                             )
                         )
                         purchgrpcd = purchgrp.fetchone()
-                        resultp = self.con.execute(
+                        resultp = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Purchase A/C",
@@ -423,10 +422,10 @@ class api_organisation(object):
                             "groupname": "Direct Income",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), directincome
                         )
-                        results = self.con.execute(
+                        results = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Direct Income",
@@ -435,7 +434,7 @@ class api_organisation(object):
                             )
                         )
                         DIGrpCodeData = results.fetchone()
-                        insData = self.con.execute(
+                        insData = con.execute(
                             gkdb.groupsubgroups.insert(),
                             {
                                 "groupname": "Sales",
@@ -443,7 +442,7 @@ class api_organisation(object):
                                 "orgcode": orgcode["orgcode"],
                             },
                         )
-                        slgrp = self.con.execute(
+                        slgrp = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Sales",
@@ -452,7 +451,7 @@ class api_organisation(object):
                             )
                         )
                         slgrpcd = slgrp.fetchone()
-                        resultsl = self.con.execute(
+                        resultsl = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Sale A/C",
@@ -466,10 +465,10 @@ class api_organisation(object):
                             "groupname": "Fixed Assets",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), fixedassets
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Fixed Assets",
@@ -478,7 +477,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -503,7 +502,7 @@ class api_organisation(object):
                                 },
                             ],
                         )
-                        resultad = self.con.execute(
+                        resultad = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Accumulated Depreciation",
@@ -516,10 +515,10 @@ class api_organisation(object):
                             "groupname": "Indirect Expense",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), indirectexpense
                         )
-                        resultie = self.con.execute(
+                        resultie = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname
@@ -529,7 +528,7 @@ class api_organisation(object):
                             )
                         )
                         iegrpcd = resultie.fetchone()
-                        resultDP = self.con.execute(
+                        resultDP = con.execute(
                             gkdb.accounts.insert(),
                             [
                                 {
@@ -584,7 +583,7 @@ class api_organisation(object):
                                 },
                             ],
                         )
-                        resultROP = self.con.execute(
+                        resultROP = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Round Off Paid",
@@ -598,10 +597,10 @@ class api_organisation(object):
                             "groupname": "Indirect Income",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), indirectincome
                         )
-                        resultii = self.con.execute(
+                        resultii = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname
@@ -611,7 +610,7 @@ class api_organisation(object):
                             )
                         )
                         iigrpcd = resultii.fetchone()
-                        resultDS = self.con.execute(
+                        resultDS = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Discount Received",
@@ -619,7 +618,7 @@ class api_organisation(object):
                                 "orgcode": orgcode["orgcode"],
                             },
                         )
-                        resultROR = self.con.execute(
+                        resultROR = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Round Off Received",
@@ -633,10 +632,10 @@ class api_organisation(object):
                             "groupname": "Investments",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), investment
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Investments",
@@ -645,7 +644,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -665,7 +664,7 @@ class api_organisation(object):
                             "groupname": "Loans(Asset)",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), loansasset
                         )
 
@@ -673,10 +672,10 @@ class api_organisation(object):
                             "groupname": "Loans(Liability)",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), loansliab
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname
@@ -686,7 +685,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(),
                             [
                                 {
@@ -706,11 +705,11 @@ class api_organisation(object):
                             "groupname": "Reserves",
                             "orgcode": orgcode["orgcode"],
                         }
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.groupsubgroups.insert(), reserves
                         )
 
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Direct Income",
@@ -720,7 +719,7 @@ class api_organisation(object):
                         )
                         grpcode = result.fetchone()
                         if orgdata["orgtype"] == "Profit Making":
-                            result = self.con.execute(
+                            result = con.execute(
                                 gkdb.groupsubgroups.insert(),
                                 [
                                     {
@@ -734,7 +733,7 @@ class api_organisation(object):
                                 ],
                             )
 
-                            result = self.con.execute(
+                            result = con.execute(
                                 gkdb.accounts.insert(),
                                 {
                                     "accountname": "Profit & Loss",
@@ -745,12 +744,12 @@ class api_organisation(object):
                             )
 
                         else:
-                            result = self.con.execute(
+                            result = con.execute(
                                 gkdb.groupsubgroups.insert(),
                                 {"groupname": "Corpus", "orgcode": orgcode["orgcode"]},
                             )
 
-                            result = self.con.execute(
+                            result = con.execute(
                                 gkdb.accounts.insert(),
                                 {
                                     "accountname": "Income & Expenditure",
@@ -760,7 +759,7 @@ class api_organisation(object):
                                 },
                             )
 
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Inventory",
@@ -769,7 +768,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.accounts.insert(),
                             [
                                 {
@@ -787,7 +786,7 @@ class api_organisation(object):
                             ],
                         )
 
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.groupsubgroups.c.groupcode]).where(
                                 and_(
                                     gkdb.groupsubgroups.c.groupname == "Direct Expense",
@@ -796,7 +795,7 @@ class api_organisation(object):
                             )
                         )
                         grpcode = result.fetchone()
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.accounts.insert(),
                             {
                                 "accountname": "Opening Stock",
@@ -814,7 +813,7 @@ class api_organisation(object):
                         # )
                         # print(users)
                         # print(authDetails["userid"])
-                        self.con.execute(
+                        con.execute(
                             gkdb.organisation.update()
                             .where(gkdb.organisation.c.orgcode == orgcode["orgcode"])
                             .values(users=users)
@@ -827,7 +826,7 @@ class api_organisation(object):
                         }
                         # orgs[str(orgcode["orgcode"])] = {}
                         print(orgs)
-                        self.con.execute(
+                        con.execute(
                             "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                             % (
                                 str(orgcode["orgcode"]),
@@ -854,19 +853,19 @@ class api_organisation(object):
                         # delete the org created and undo any updates made to the users table in case of failure
                         print("Create org failed !!")
                         print(traceback.format_exc())
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.organisation.delete().where(
                                 gkdb.organisation.c.orgcode == orgcode["orgcode"]
                             )
                         )
                         # check if orgcode is in orgs column in gkusers
-                        userOrgs = self.con.execute(
+                        userOrgs = con.execute(
                             "select orgs->'%s' from gkusers where userid = %d;"
                             % (str(orgcode["orgcode"]), authDetails["userid"])
                         )
                         if userOrgs.rowcount > 0:
                             # if yes, remove that key value pair from orgs in gkusers
-                            self.con.execute(
+                            con.execute(
                                 "UPDATE gkusers SET orgs = orgs - '%s' WHERE userid = %d;"
                                 % (str(orgcode["orgcode"]), authDetails["userid"])
                             )
@@ -874,11 +873,7 @@ class api_organisation(object):
                 else:
                     print(traceback.format_exc())
                     return {"gkstatus": enumdict["ConnectionFailed"]}
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="GET", renderer="json")
     def getOrg(self):
