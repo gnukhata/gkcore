@@ -754,7 +754,7 @@ class api_delchal(object):
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if delchaldata["cess"] != None:
+                        if delchaldata["cess"]:
                             cessVal = float(delchaldata["cess"][pc])
                             cessAmount = taxableAmount * (cessVal / 100)
                             totalCessAmt = totalCessAmt + cessAmount
@@ -1058,7 +1058,7 @@ class api_delchal(object):
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if delchaldata["cess"] != None:
+                        if delchaldata["cess"]:
                             cessVal = float(delchaldata["cess"][pc])
                             cessAmount = taxableAmount * (cessVal / 100)
                             totalCessAmt = totalCessAmt + cessAmount
