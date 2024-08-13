@@ -178,7 +178,7 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            with eng.connect() as con:
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
                 result = generateSecret(con)
@@ -1255,7 +1255,7 @@ class api_organisation(object):
         if userRole != -1:
             return {"gkstatus": enumdict["BadPrivilege"]}
 
-        with eng.connect() as con:
+        with eng.begin() as con:
             orgdata = con.execute(
                 "select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"
                 % authDetails["orgcode"]
