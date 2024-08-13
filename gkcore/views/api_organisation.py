@@ -371,21 +371,6 @@ class api_organisation(object):
                             )
                         )
                         grpcd = resultDT.fetchone()
-                        resultp = self.con.execute(
-                            gkdb.accounts.insert(),
-                            [
-                                {
-                                    "accountname": "Krishi Kalyan Cess",
-                                    "groupcode": grpcd["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Swachh Bharat Cess",
-                                    "groupcode": grpcd["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                            ],
-                        )
                         resultL = self.con.execute(
                             gkdb.accounts.insert(),
                             [
