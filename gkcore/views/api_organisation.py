@@ -1248,77 +1248,76 @@ class api_organisation(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                userRoleData = getUserRole(
-                    authDetails["userid"], authDetails["orgcode"]
+        userRoleData = getUserRole(
+            authDetails["userid"], authDetails["orgcode"]
+        )
+        userRole = userRoleData["gkresult"]["userrole"]
+        if userRole != -1:
+            return {"gkstatus": enumdict["BadPrivilege"]}
+
+        with eng.connect() as con:
+            orgdata = con.execute(
+                "select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"
+                % authDetails["orgcode"]
+            )
+            getorgdata = orgdata.fetchone()
+            lastdate = datetime.strftime(
+                getorgdata["yearstart"] - timedelta(1), "%Y-%m-%d"
+            )
+            checkorg = con.execute(
+                "select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"
+                % (
+                    str(getorgdata["orgname"]),
+                    str(getorgdata["orgtype"]),
+                    lastdate,
                 )
-                userRole = userRoleData["gkresult"]["userrole"]
-                if userRole == -1:
-                    orgdata = con.execute(
-                        "select orgname as orgname, yearstart as yearstart, orgtype as orgtype from organisation where orgcode=%d"
-                        % authDetails["orgcode"]
-                    )
-                    getorgdata = orgdata.fetchone()
-                    lastdate = datetime.strftime(
-                        getorgdata["yearstart"] - timedelta(1), "%Y-%m-%d"
-                    )
-                    checkorg = con.execute(
-                        "select orgcode from organisation where orgname='%s' and orgtype='%s' and yearend='%s'"
-                        % (
-                            str(getorgdata["orgname"]),
-                            str(getorgdata["orgtype"]),
-                            lastdate,
-                        )
-                    )
-                    checkorgcode = checkorg.fetchone()
-                    # remove the orgcode from all users who are part of it
-                    orgUsers = con.execute(
-                        select([gkdb.organisation.c.users]).where(
-                            gkdb.organisation.c.orgcode == authDetails["orgcode"]
-                        )
-                    ).fetchone()
-                    if type(orgUsers["users"]) == str:
-                        orgUsers = json.loads(orgUsers["users"])
-                    elif type(orgUsers["users"]) == dict:
-                        orgUsers = orgUsers["users"]
-                    else:
-                        orgUsers = {}
-                    for orgUser in orgUsers:
-                        print(orgUser)
-                        con.execute(
-                            "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
-                            % (str(authDetails["orgcode"]), int(orgUser))
-                        )
+            )
+            checkorgcode = checkorg.fetchone()
+            # remove the orgcode from all users who are part of it
+            orgUsers = con.execute(
+                select([gkdb.organisation.c.users]).where(
+                    gkdb.organisation.c.orgcode == authDetails["orgcode"]
+                )
+            ).fetchone()
+            if type(orgUsers["users"]) == str:
+                orgUsers = json.loads(orgUsers["users"])
+            elif type(orgUsers["users"]) == dict:
+                orgUsers = orgUsers["users"]
+            else:
+                orgUsers = {}
+            for orgUser in orgUsers:
+                print(orgUser)
+                con.execute(
+                    "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
+                    % (str(authDetails["orgcode"]), int(orgUser))
+                )
 
-                    # delete the org
-                    result = con.execute(
-                        gkdb.organisation.delete().where(
-                            gkdb.organisation.c.orgcode == authDetails["orgcode"]
-                        )
-                    )
-                    if result.rowcount == 1:
-                        result = con.execute(
-                            select(
-                                [
-                                    func.count(gkdb.organisation.c.orgcode).label(
-                                        "ocount"
-                                    )
-                                ]
+            # delete the org
+            result = con.execute(
+                gkdb.organisation.delete().where(
+                    gkdb.organisation.c.orgcode == authDetails["orgcode"]
+                )
+            )
+            if result.rowcount == 1:
+                result = con.execute(
+                    select(
+                        [
+                            func.count(gkdb.organisation.c.orgcode).label(
+                                "ocount"
                             )
-                        )
-                        orgcount = result.fetchone()
-                        if orgcount["ocount"] == 0:
-                            result = con.execute(gkdb.signature.delete())
-                    if checkorgcode != None:
-                        resetroflag = con.execute(
-                            "update organisation set roflag = 0 where orgcode='%d'"
-                            % (checkorgcode["orgcode"])
-                        )
+                        ]
+                    )
+                )
+                orgcount = result.fetchone()
+                if orgcount["ocount"] == 0:
+                    result = con.execute(gkdb.signature.delete())
+            if checkorgcode != None:
+                resetroflag = con.execute(
+                    "update organisation set roflag = 0 where orgcode='%d'"
+                    % (checkorgcode["orgcode"])
+                )
 
-                    return {"gkstatus": enumdict["Success"]}
-                else:
-                    return {"gkstatus": enumdict["BadPrivilege"]}
+            return {"gkstatus": enumdict["Success"]}
 
 
     @view_config(request_method="GET", request_param="type=exists", renderer="json")
