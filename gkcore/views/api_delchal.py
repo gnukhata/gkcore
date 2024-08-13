@@ -513,14 +513,14 @@ class api_delchal(object):
             else:
                 singledelchal["delchaldata"]["goid"] = ""
 
-            if delchaldata["taxstate"] != None:
+            if delchaldata["taxstate"]:
                 singledelchal["destinationstate"] = delchaldata["taxstate"]
                 taxStateCode = getStateCode(delchaldata["taxstate"], con)[
                     "statecode"
                 ]
                 singledelchal["taxstatecode"] = taxStateCode
 
-            if delchaldata["sourcestate"] != None:
+            if delchaldata["sourcestate"]:
                 singledelchal["sourcestate"] = delchaldata["sourcestate"]
                 singledelchal["sourcestatecode"] = getStateCode(
                     delchaldata["sourcestate"], con
@@ -887,14 +887,14 @@ class api_delchal(object):
             else:
                 singledelchal["delchaldata"]["goid"] = ""
 
-            if delchaldata["taxstate"] != None:
+            if delchaldata["taxstate"]:
                 singledelchal["destinationstate"] = delchaldata["taxstate"]
                 taxStateCode = getStateCode(delchaldata["taxstate"], con)[
                     "statecode"
                 ]
                 singledelchal["taxstatecode"] = taxStateCode
 
-            if delchaldata["sourcestate"] != None:
+            if delchaldata["sourcestate"]:
                 singledelchal["sourcestate"] = delchaldata["sourcestate"]
                 singledelchal["sourcestatecode"] = getStateCode(
                     delchaldata["sourcestate"], con
