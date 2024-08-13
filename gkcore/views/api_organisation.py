@@ -555,6 +555,41 @@ class api_organisation(object):
                             gkdb.accounts.insert(),
                             [
                                 {
+                                    "accountname": "Bank Charges",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Salary",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Miscellaneous Expense",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Rent",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Travel Expense",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Electricity Expense",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
+                                    "accountname": "Professional Fees",
+                                    "groupcode": grpcode["groupcode"],
+                                    "orgcode": orgcode["orgcode"],
+                                },
+                                {
                                     "accountname": "Discount Paid",
                                     "groupcode": iegrpcd["groupcode"],
                                     "orgcode": orgcode["orgcode"],
@@ -791,46 +826,6 @@ class api_organisation(object):
                                 "orgcode": orgcode["orgcode"],
                                 "sysaccount": 1,
                             },
-                        )
-                        results = self.con.execute(
-                            gkdb.accounts.insert(),
-                            [
-                                {
-                                    "accountname": "Salary",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Miscellaneous Expense",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Bank Charges",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Rent",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Travel Expense",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Electricity Expense",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                                {
-                                    "accountname": "Professional Fees",
-                                    "groupcode": grpcode["groupcode"],
-                                    "orgcode": orgcode["orgcode"],
-                                },
-                            ],
                         )
 
                         # Update organisation table about its admin user
