@@ -330,7 +330,7 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        with eng.connect() as con:
+        with eng.begin() as con:
             dataset = self.request.json_body
             productCode = self.request.matchdict["productcode"]
             productDetails = dataset["productdetails"]
@@ -421,7 +421,7 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            with eng.connect() as con:
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 result = con.execute(
                     select([gkdb.product.c.specs, gkdb.product.c.productdesc]).where(
