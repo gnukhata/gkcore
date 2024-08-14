@@ -370,7 +370,7 @@ class api_drcr(object):
                         umrow = umresult.fetchone()
                         unitofMeasurement = umrow["unitname"]
                         if drcrrow["drcrmode"] and int(drcrrow["drcrmode"]) == 18:
-                            reductprice = float(idrateData[pc])
+                            reductprice = float(idrateData[pc]) * float(idrateData["quantities"][pc])
                         else:
                             reductprice = (
                                 float(
@@ -910,9 +910,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -1110,9 +1110,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -1310,9 +1310,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -1510,9 +1510,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -1741,9 +1741,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -1968,9 +1968,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -2197,9 +2197,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -2426,9 +2426,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -2671,9 +2671,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -2871,9 +2871,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -3071,9 +3071,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -3271,9 +3271,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -3473,9 +3473,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -3673,9 +3673,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     drs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -3873,9 +3873,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
@@ -4073,9 +4073,9 @@ def drcrVoucher(con, queryParams, orgcode):
                     )
                     vatoutaccountcode = vatoutaccount.fetchone()
                     for prod in queryParams["taxes"]:
-                        taxAmount = taxAmount + float(queryParams["prodData"][prod]) * (
+                        taxAmount = taxAmount + float(queryParams["reductionval"][prod]) * (
                             float(queryParams["taxes"][prod]) / 100
-                        )
+                        ) * float(queryParams["reductionval"]["quantities"][prod])
                     crs[vatoutaccountcode["accountcode"]] = "%.2f" % float(taxAmount)
 
                 Narration = (
