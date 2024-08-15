@@ -26,6 +26,7 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
+from .schemas import GodownRegister
 from pyramid.view import view_defaults, view_config
 from gkcore.models.gkdb import (
     organisation,
@@ -142,14 +143,13 @@ class api_godownregister(object):
         else:
             with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
-                productCode = self.request.params["productcode"]
-                godownCode = self.request.params["goid"]
-                startDate = datetime.strptime(
-                    str(self.request.params["startdate"]), "%Y-%m-%d"
-                )
-                endDate = datetime.strptime(
-                    str(self.request.params["enddate"]), "%Y-%m-%d"
-                )
+                dataset = GodownRegister(**self.request.params).model_dump()
+                productCode = dataset["productcode"]
+                godownCode = dataset["goid"]
+                # Following date to datetime convert hack exists because other related
+                # queries were using datetime format.
+                startDate = datetime.strptime(str(dataset["startdate"]), "%Y-%m-%d")
+                endDate = datetime.strptime(str(dataset["enddate"]), "%Y-%m-%d")
                 stockReport = []
                 totalinward = 0.00
                 totaloutward = 0.00
