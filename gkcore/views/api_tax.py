@@ -251,75 +251,72 @@ def calTax(taxflag, source, destination, productcode, con):
     In both cases (CGST and IGST) CESS is returned if available in the tax table for the given product code.
     Returns the taxnames as keys (CESS and GST in cases of GST) and their respective rates as values in  dictionary in gkresult.
     """
-    try:
-        if taxflag == 22:
-            # this is VAT.
-            if source == destination:
-                taxResult = con.execute(
-                    select([tax.c.taxrate]).where(
-                        and_(
-                            tax.c.taxname == "VAT",
-                            tax.c.productcode == productcode,
-                            tax.c.state == source,
-                        )
-                    )
-                )
-                taxData = taxResult.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": {"VAT": "%.2f" % float(taxData["taxrate"])},
-                }
-            else:
-                taxResult = con.execute(
-                    select([tax.c.taxrate]).where(
-                        and_(tax.c.taxname == "CVAT", tax.c.productcode == productcode)
-                    )
-                )
-                taxData = taxResult.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": {"CVAT": "%.2f" % float(taxData["taxrate"])},
-                }
-        else:
-            # since it is not 22 means it is 7 = "GST".
-            # Also we will need CESS in Both Inter and Intra State GST.
-            taxDict = {}
-            CESSResult = con.execute(
+    if taxflag == 22:
+        # this is VAT.
+        if source == destination:
+            taxResult = con.execute(
                 select([tax.c.taxrate]).where(
-                    and_(tax.c.taxname == "CESS", tax.c.productcode == productcode)
+                    and_(
+                        tax.c.taxname == "VAT",
+                        tax.c.productcode == productcode,
+                        tax.c.state == source,
+                    )
                 )
             )
-            if CESSResult.rowcount > 0:
-                cessRow = CESSResult.fetchone()
-                cessData = "%.2f" % float(cessRow["taxrate"])
-                taxDict["CESS"] = cessData
+            taxData = taxResult.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": {"VAT": "%.2f" % float(taxData["taxrate"])},
+            }
+        else:
+            taxResult = con.execute(
+                select([tax.c.taxrate]).where(
+                    and_(tax.c.taxname == "CVAT", tax.c.productcode == productcode)
+                )
+            )
+            taxData = taxResult.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": {"CVAT": "%.2f" % float(taxData["taxrate"])},
+            }
+    else:
+        # since it is not 22 means it is 7 = "GST".
+        # Also we will need CESS in Both Inter and Intra State GST.
+        taxDict = {}
+        CESSResult = con.execute(
+            select([tax.c.taxrate]).where(
+                and_(tax.c.taxname == "CESS", tax.c.productcode == productcode)
+            )
+        )
+        if CESSResult.rowcount > 0:
+            cessRow = CESSResult.fetchone()
+            cessData = "%.2f" % float(cessRow["taxrate"])
+            taxDict["CESS"] = cessData
 
-            if source == destination:
-                # this is SGST and CGST.
-                # IGST / 2 = SGST and CGST.
-                taxResult = con.execute(
-                    select([tax.c.taxrate]).where(
-                        and_(tax.c.taxname == "IGST", tax.c.productcode == productcode)
-                    )
+        if source == destination:
+            # this is SGST and CGST.
+            # IGST / 2 = SGST and CGST.
+            taxResult = con.execute(
+                select([tax.c.taxrate]).where(
+                    and_(tax.c.taxname == "IGST", tax.c.productcode == productcode)
                 )
-                taxData = taxResult.fetchone()
-                gst = float(taxData["taxrate"]) / 2
-                # note although we are returning only SGST, same rate applies to CGST.
-                # so when u see taxname is sgst then cgst with same rate is asumed.
-                taxDict["SGST"] = gst
-                return {"gkstatus": enumdict["Success"], "gkresult": taxDict}
-            else:
-                # this is IGST.
-                taxResult = con.execute(
-                    select([tax.c.taxrate]).where(
-                        and_(tax.c.taxname == "IGST", tax.c.productcode == productcode)
-                    )
+            )
+            taxData = taxResult.fetchone()
+            gst = float(taxData["taxrate"]) / 2
+            # note although we are returning only SGST, same rate applies to CGST.
+            # so when u see taxname is sgst then cgst with same rate is asumed.
+            taxDict["SGST"] = gst
+            return {"gkstatus": enumdict["Success"], "gkresult": taxDict}
+        else:
+            # this is IGST.
+            taxResult = con.execute(
+                select([tax.c.taxrate]).where(
+                    and_(tax.c.taxname == "IGST", tax.c.productcode == productcode)
                 )
-                taxData = taxResult.fetchone()
-                taxDict["IGST"] = "%.2f" % float(taxData["taxrate"])
-                return {"gkstatus": enumdict["Success"], "gkresult": taxDict}
-    except:
-        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            )
+            taxData = taxResult.fetchone()
+            taxDict["IGST"] = "%.2f" % float(taxData["taxrate"])
+            return {"gkstatus": enumdict["Success"], "gkresult": taxDict}
 
 
 @view_defaults(route_name="tax")
