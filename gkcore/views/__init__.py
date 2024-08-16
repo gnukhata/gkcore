@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 
 
-@view_config(context=ValidationError, renderer="json")
+@view_config(context=ValidationError, renderer="json_extended")
 def validation_error(error, request):
     """To handle ValidationError from Pydantic. This will not be logged in console and
     the validaiton errors are passed in response as a dict.
