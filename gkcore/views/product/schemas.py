@@ -15,7 +15,7 @@ class ProductDetail(BaseModel):
     categorycode: Optional[int] = None
     gscode: Optional[str] = None
     gsflag: Literal[7, 19]
-    openingstock: Optional[float] = None
+    openingstock: Optional[float] = 0.0
     percentdiscount: Optional[confloat(ge=0, le=100)] = 0
     prodmrp: Optional[confloat(ge=0)] = 0
     productdesc: str
