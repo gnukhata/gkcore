@@ -28,14 +28,13 @@ Contributors:
 """
 
 
-from gkcore.views.product.schemas import ProductGodown
+from gkcore.views.product.schemas import ProductGodown, ProductGodownUpdate
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-from sqlalchemy import func
 from sqlalchemy import and_, func
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
@@ -333,9 +332,12 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = ProductGodownUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
         with eng.begin() as con:
-            dataset = self.request.json_body
-            productCode = self.request.matchdict["productcode"]
+            productCode = dataset["productdetails"]["productcode"]
             productDetails = dataset["productdetails"]
 
             godownFlag = dataset["godownflag"]
