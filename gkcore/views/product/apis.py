@@ -201,7 +201,10 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        dataset = ProductGodown(**self.request.json_body).model_dump()
+        validated_data = ProductGodown.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
         with eng.begin() as con:
             productDetails = dataset["productdetails"]
             godownFlag = dataset["godownflag"]

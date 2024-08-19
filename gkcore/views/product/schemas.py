@@ -1,10 +1,13 @@
-from pydantic import BaseModel, confloat
+from pydantic import BaseModel, ValidationInfo, confloat, model_validator
 from typing import Optional, Dict, Any, Literal
+from typing_extensions import Self
+
+from gkcore.views.product.services import check_duplicate_item_name
 
 
 class GodownStock(BaseModel):
-     qty: Optional[float] = None
-     rate: Optional[float] = None
+    qty: Optional[float] = None
+    rate: Optional[float] = None
 
 
 class ProductDetail(BaseModel):
@@ -25,3 +28,20 @@ class ProductGodown(BaseModel):
     productdetails: ProductDetail
     godownflag: Optional[bool] = None
     godetails: Optional[Dict[int, GodownStock]] = None
+
+    @model_validator(mode="after")
+    def validate_productdesc(self, info: ValidationInfo) -> Self:
+        check_duplicate_item_name(
+             self.productdetails.productdesc,
+             info.context["orgcode"],
+             getattr(self.productdetails, "productcode", None),
+        )
+        return self
+
+
+class ProductDetailUpdate(ProductDetail):
+    productcode: int
+
+
+class ProductGodownUpdate(ProductGodown):
+    productdetails: ProductDetailUpdate
