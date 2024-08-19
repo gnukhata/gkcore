@@ -28,214 +28,171 @@ Contributors:
 """
 
 
+from gkcore.views.product.schemas import ProductGodown, ProductGodownUpdate
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck, gk_log
+from gkcore.utils import authCheck
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
-from pyramid.request import Request
-from pyramid.response import Response
 from gkcore.models import gkdb
-from sqlalchemy.sql import select, distinct
-from sqlalchemy import func, desc
-import json
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, func
-import jwt
-import gkcore
-from gkcore.models.meta import dbconnect
-from gkcore.models.gkdb import goprod, product, accounts, organisation
+from sqlalchemy.sql import select
+from sqlalchemy import and_, func
+from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
-from datetime import datetime, date
-from time import strftime, strptime
-import traceback
+from datetime import datetime
 
 
 @view_defaults(route_name="product")
 class api_product(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="GET", renderer="json")
     def getAllProducts(self):
+        """ This API is to fetch product list based on user role and item type (all or
+        product only). If the user is the godown incharge, it will be filtering the
+        item list with their respective godowns.
+
+        To filter services, `invdc` is 4 for not listing services. `invdc` is 9 for
+        listing both.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                gorole = userrole["gkresult"]
-                if gorole["userrole"] == 3:
-                    uId = getusergodowns(authDetails["userid"])
-                    gid = []
-                    for record1 in uId["gkresult"]:
-                        gid.append(record1["goid"])
-                    productCodes = []
-                    for record2 in gid:
-                        proCode = self.con.execute(
-                            select([gkdb.goprod.c.productcode]).where(
-                                gkdb.goprod.c.goid == record2
-                            )
-                        )
-                        proCodes = proCode.fetchall()
-                        for record3 in proCodes:
-                            if record3["productcode"] not in productCodes:
-                                productCodes.append(record3["productcode"])
-                    results = []
-                    for record4 in productCodes:
-                        result = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(
-                                and_(
-                                    gkdb.product.c.orgcode == authDetails["orgcode"],
-                                    gkdb.product.c.productcode == record4,
-                                )
-                            )
-                            .order_by(gkdb.product.c.productdesc)
-                        )
-                        products = result.fetchone()
-                        results.append(products)
-                else:
-                    invdc = 9
-                    try:
-                        invdc = int(self.request.params["invdc"])
-                    except:
-                        invdc = 9
-                    if invdc == 4:
-                        results = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(
-                                and_(
-                                    gkdb.product.c.orgcode == authDetails["orgcode"],
-                                    gkdb.product.c.gsflag == 7,
-                                )
-                            )
-                            .order_by(gkdb.product.c.productdesc)
-                        )
-                    if invdc == 9:
-                        results = self.con.execute(
-                            select(
-                                [
-                                    gkdb.product.c.productcode,
-                                    gkdb.product.c.productdesc,
-                                    gkdb.product.c.gsflag,
-                                    gkdb.product.c.categorycode,
-                                    gkdb.product.c.uomid,
-                                    gkdb.product.c.prodsp,
-                                    gkdb.product.c.prodmrp,
-                                ]
-                            )
-                            .where(gkdb.product.c.orgcode == authDetails["orgcode"])
-                            .order_by(gkdb.product.c.productdesc)
-                        )
 
-                products = []
-                srno = 1
-                for row in results:
-                    unitsofmeasurement = self.con.execute(
-                        select([gkdb.unitofmeasurement.c.unitname]).where(
-                            gkdb.unitofmeasurement.c.uomid == row["uomid"]
+        with eng.connect() as con:
+            userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            gorole = userrole["gkresult"]
+            statement = select(
+                [
+                    gkdb.product.c.productcode,
+                    gkdb.product.c.gsflag,
+                    gkdb.product.c.productdesc,
+                    gkdb.product.c.categorycode,
+                    gkdb.product.c.uomid,
+                    gkdb.product.c.prodsp,
+                    gkdb.product.c.prodmrp,
+                ]
+            ).where(gkdb.product.c.orgcode == authDetails["orgcode"])
+
+            if gorole["userrole"] == 3:
+                uId = getusergodowns(authDetails["userid"])
+                gid = []
+                for record1 in uId["gkresult"]:
+                    gid.append(record1["goid"])
+                productCodes = []
+                for record2 in gid:
+                    proCode = con.execute(
+                        select([gkdb.goprod.c.productcode]).where(
+                            gkdb.goprod.c.goid == record2
                         )
                     )
-                    unitofmeasurement = unitsofmeasurement.fetchone()
-                    if unitofmeasurement != None:
-                        unitname = unitofmeasurement["unitname"]
-                    else:
-                        unitname = ""
-                    if row["categorycode"] != None:
-                        categories = self.con.execute(
-                            select([gkdb.categorysubcategories.c.categoryname]).where(
-                                gkdb.categorysubcategories.c.categorycode
-                                == row["categorycode"]
-                            )
-                        )
-                        category = categories.fetchone()
-                        categoryname = category["categoryname"]
-                    else:
-                        categoryname = ""
-                    if row["productcode"] != None:
-                        openingStockResult = self.con.execute(
-                            select([gkdb.product.c.openingstock]).where(
-                                gkdb.product.c.productcode == row["productcode"]
-                            )
-                        )
-                        osRow = openingStockResult.fetchone()
-                        openingStock = osRow["openingstock"]
-                        productstockin = self.con.execute(
-                            select(
-                                [func.sum(gkdb.stock.c.qty).label("sumofins")]
-                            ).where(
-                                and_(
-                                    gkdb.stock.c.productcode == row["productcode"],
-                                    gkdb.stock.c.inout == 9,
-                                )
-                            )
-                        )
-                        stockinsum = productstockin.fetchone()
-                        if stockinsum["sumofins"] != None:
-                            openingStock = openingStock + stockinsum["sumofins"]
-                        productstockout = self.con.execute(
-                            select(
-                                [func.sum(gkdb.stock.c.qty).label("sumofouts")]
-                            ).where(
-                                and_(
-                                    gkdb.stock.c.productcode == row["productcode"],
-                                    gkdb.stock.c.inout == 15,
-                                )
-                            )
-                        )
-                        stockoutsum = productstockout.fetchone()
-                        if stockoutsum["sumofouts"] != None:
-                            openingStock = openingStock - stockoutsum["sumofouts"]
-                    products.append(
-                        {
-                            "srno": srno,
-                            "unitname": unitname,
-                            "categoryname": categoryname,
-                            "productcode": row["productcode"],
-                            "productdesc": row["productdesc"],
-                            "categorycode": row["categorycode"],
-                            "productquantity": "%.2f" % float(openingStock),
-                            "gsflag": row["gsflag"],
-                        }
+                    proCodes = proCode.fetchall()
+                    for record3 in proCodes:
+                        if record3["productcode"] not in productCodes:
+                            productCodes.append(record3["productcode"])
+                results = []
+                for record4 in productCodes:
+                    result = con.execute(
+                        statement
+                        .where(gkdb.product.c.productcode == record4)
+                        .order_by(gkdb.product.c.productdesc)
                     )
-                    srno = srno + 1
-                return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                    products = result.fetchone()
+                    results.append(products)
+            else:
+                invdc = int(self.request.params.get("invdc", 9))
+                if invdc == 4:
+                    statement = statement.where(gkdb.product.c.gsflag == 7)
+                results = con.execute(statement.order_by(gkdb.product.c.productdesc))
+            products = []
+            srno = 1
+            for row in results:
+                unitsofmeasurement = con.execute(
+                    select([gkdb.unitofmeasurement.c.unitname]).where(
+                        gkdb.unitofmeasurement.c.uomid == row["uomid"]
+                    )
+                )
+                unitofmeasurement = unitsofmeasurement.fetchone()
+                if unitofmeasurement != None:
+                    unitname = unitofmeasurement["unitname"]
+                else:
+                    unitname = ""
+                if row["categorycode"] != None:
+                    categories = con.execute(
+                        select([gkdb.categorysubcategories.c.categoryname]).where(
+                            gkdb.categorysubcategories.c.categorycode
+                            == row["categorycode"]
+                        )
+                    )
+                    category = categories.fetchone()
+                    categoryname = category["categoryname"]
+                else:
+                    categoryname = ""
+                if row["productcode"] != None:
+                    openingStockResult = con.execute(
+                        select([gkdb.product.c.openingstock]).where(
+                            gkdb.product.c.productcode == row["productcode"]
+                        )
+                    )
+                    osRow = openingStockResult.fetchone()
+                    openingStock = osRow["openingstock"]
+                    productstockin = con.execute(
+                        select(
+                            [func.sum(gkdb.stock.c.qty).label("sumofins")]
+                        ).where(
+                            and_(
+                                gkdb.stock.c.productcode == row["productcode"],
+                                gkdb.stock.c.inout == 9,
+                            )
+                        )
+                    )
+                    stockinsum = productstockin.fetchone()
+                    if stockinsum["sumofins"] != None:
+                        openingStock = openingStock + stockinsum["sumofins"]
+                    productstockout = con.execute(
+                        select(
+                            [func.sum(gkdb.stock.c.qty).label("sumofouts")]
+                        ).where(
+                            and_(
+                                gkdb.stock.c.productcode == row["productcode"],
+                                gkdb.stock.c.inout == 15,
+                            )
+                        )
+                    )
+                    stockoutsum = productstockout.fetchone()
+                    if stockoutsum["sumofouts"] != None:
+                        openingStock = openingStock - stockoutsum["sumofouts"]
+                products.append(
+                    {
+                        "srno": srno,
+                        "unitname": unitname,
+                        "categoryname": categoryname,
+                        "productcode": row["productcode"],
+                        "productdesc": row["productdesc"],
+                        "categorycode": row["categorycode"],
+                        "productquantity": "%.2f" % float(openingStock),
+                        "gsflag": row["gsflag"],
+                    }
+                )
+                srno = srno + 1
+            return {"gkstatus": enumdict["Success"], "gkresult": products}
+
 
     @view_config(request_method="POST", renderer="json")
     def addProduct(self):
+        """API will,
+        1. Create business item and related stock.
+        2. Create rows in `goprod` table.
+        3. Calculate total opening stock.
+        4. Create accounts for products.
+        Item name (`productdesc`) is unique.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -243,137 +200,119 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            self.con = eng.connect()
-            try:
-                gk_log(__name__).warn("prod")
-                dataset = self.request.json_body
-                productDetails = dataset["productdetails"]
-                godownFlag = dataset["godownflag"]
-                productDetails["orgcode"] = authDetails["orgcode"]
-                duplicateproduct = self.con.execute(
-                    select(
-                        [
-                            func.count(gkdb.product.c.productcode).label(
-                                "productcount"
-                            )
-                        ]
-                    ).where(
-                        and_(
-                            gkdb.product.c.productdesc
-                            == productDetails["productdesc"],
-                            gkdb.product.c.categorycode == None,
-                            gkdb.product.c.orgcode == productDetails["orgcode"],
-                        )
-                    )
-                )
-                duplicateproductrow = duplicateproduct.fetchone()
-                if duplicateproductrow["productcount"] > 0:
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
-
-                # handle exception if db insertion fails for product
-                try:
-                    result = self.con.execute(gkdb.product.insert(), [productDetails])
-                except Exception as e:
-                    gk_log(__name__).error(e)
-                    return {"gkstatus": enumdict["ConnectionFailed"], "error": f"{e}"}
-
-                spec = productDetails["specs"]
-                for sp in list(spec.keys()):
-                    self.con.execute(
-                        "update categoryspecs set productcount = productcount +1 where spcode = %d"
-                        % (int(sp))
-                    )
-
-                if ("categorycode" in productDetails) == False:
-                    productDetails["categorycode"] = None
-                result = self.con.execute(
-                    select([gkdb.product.c.productcode]).where(
-                        and_(
-                            gkdb.product.c.productdesc == productDetails["productdesc"],
-                            gkdb.product.c.categorycode
-                            == productDetails["categorycode"],
-                            gkdb.product.c.orgcode == productDetails["orgcode"],
-                        )
-                    )
-                )
-                row = result.fetchone()
-                productCode = row["productcode"]
-                # create godown only if godown flag is true and is product
-                if godownFlag and productDetails["gsflag"] == 7:
-                    goDetails = dataset["godetails"]
-                    # insert godown stock into goprod table & calculate opening stock
-                    ttlOpening = 0.00
-                    # loop over all godowns stock entries
-                    for goId in list(goDetails.keys()):
-                        goDetail = goDetails[goId]
-                        if type(goDetail) != dict:
-                            goDetail = {"qty": goDetail, "rate": 0}
-                        # calculate the opening stock
-                        # ttlOpening = ttlOpening + float(goDetail["qty"])
-                        ttlOpening += float(goDetail["qty"])
-                        goro = {
-                            "productcode": productCode,
-                            "goid": goId,
-                            "goopeningstock": goDetail["qty"],
-                            "openingstockvalue": goDetail["rate"],
-                            "orgcode": authDetails["orgcode"],
-                        }
-                        try:
-                            self.con.execute(goprod.insert(), [goro])
-                        except Exception as e:
-                            return {
-                                "gkstatus": enumdict["ConnectionFailed"],
-                                "error": str(e),
-                            }
-                    # update opening stock value
-                    self.con.execute(
-                        product.update()
-                        .where(
-                            and_(
-                                product.c.productcode == productCode,
-                                product.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                        .values(openingstock=ttlOpening)
-                    )
-
-                # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
-                sp = self.con.execute(
-                    "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
-                    % ("Sales", "Purchase", productDetails["orgcode"])
-                )
-                s = sp.fetchall()
-                prodName = productDetails["productdesc"]
-                proSale = prodName + " Sale"
-                proPurch = prodName + " Purchase"
-                self.con.execute(
-                    gkdb.accounts.insert(),
+        validated_data = ProductGodown.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
+        with eng.begin() as con:
+            productDetails = dataset["productdetails"]
+            godownFlag = dataset["godownflag"]
+            productDetails["orgcode"] = authDetails["orgcode"]
+            duplicateproduct = con.execute(
+                select(
                     [
-                        {
-                            "accountname": proPurch,
-                            "groupcode": s[0][0],
-                            "orgcode": authDetails["orgcode"],
-                            "sysaccount": 1,
-                        },
-                        {
-                            "accountname": proSale,
-                            "groupcode": s[1][0],
-                            "orgcode": authDetails["orgcode"],
-                            "sysaccount": 1,
-                        },
-                    ],
+                        func.count(gkdb.product.c.productcode).label(
+                            "productcount"
+                        )
+                    ]
+                ).where(
+                    and_(
+                        gkdb.product.c.productdesc
+                        == productDetails["productdesc"],
+                        gkdb.product.c.categorycode == None,
+                        gkdb.product.c.orgcode == productDetails["orgcode"],
+                    )
+                )
+            )
+            duplicateproductrow = duplicateproduct.fetchone()
+            if duplicateproductrow["productcount"] > 0:
+                return {"gkstatus": enumdict["DuplicateEntry"]}
+
+            # handle exception if db insertion fails for product
+            result = con.execute(gkdb.product.insert(), [productDetails])
+
+            spec = productDetails["specs"]
+            for sp in list(spec.keys()):
+                con.execute(
+                    "update categoryspecs set productcount = productcount +1 where spcode = %d"
+                    % (int(sp))
                 )
 
-                return {"gkstatus": enumdict["Success"], "gkresult": row["productcode"]}
+            if ("categorycode" in productDetails) == False:
+                productDetails["categorycode"] = None
+            result = con.execute(
+                select([gkdb.product.c.productcode]).where(
+                    and_(
+                        gkdb.product.c.productdesc == productDetails["productdesc"],
+                        gkdb.product.c.categorycode
+                        == productDetails["categorycode"],
+                        gkdb.product.c.orgcode == productDetails["orgcode"],
+                    )
+                )
+            )
+            row = result.fetchone()
+            productCode = row["productcode"]
+            # create godown only if godown flag is true and is product
+            if godownFlag and productDetails["gsflag"] == 7:
+                goDetails = dataset["godetails"]
+                # insert godown stock into goprod table & calculate opening stock
+                ttlOpening = 0.00
+                # loop over all godowns stock entries
+                for goId in list(goDetails.keys()):
+                    goDetail = goDetails[goId]
+                    if type(goDetail) != dict:
+                        goDetail = {"qty": goDetail, "rate": 0}
+                    # calculate the opening stock
+                    ttlOpening += float(goDetail["qty"])
+                    goro = {
+                        "productcode": productCode,
+                        "goid": goId,
+                        "goopeningstock": goDetail["qty"],
+                        "openingstockvalue": goDetail["rate"],
+                        "orgcode": authDetails["orgcode"],
+                    }
+                    con.execute(goprod.insert(), [goro])
+                # update opening stock value
+                con.execute(
+                    product.update()
+                    .where(
+                        and_(
+                            product.c.productcode == productCode,
+                            product.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                    .values(openingstock=ttlOpening)
+                )
 
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except Exception as e:
-                gk_log(__name__).error("prod err", e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
+            sp = con.execute(
+                "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
+                % ("Sales", "Purchase", productDetails["orgcode"])
+            )
+            s = sp.fetchall()
+            prodName = productDetails["productdesc"]
+            proSale = prodName + " Sale"
+            proPurch = prodName + " Purchase"
+            con.execute(
+                gkdb.accounts.insert(),
+                [
+                    {
+                        "accountname": proPurch,
+                        "groupcode": s[0][0],
+                        "orgcode": authDetails["orgcode"],
+                        "sysaccount": 1,
+                    },
+                    {
+                        "accountname": proSale,
+                        "groupcode": s[1][0],
+                        "orgcode": authDetails["orgcode"],
+                        "sysaccount": 1,
+                    },
+                ],
+            )
+
+            return {"gkstatus": enumdict["Success"], "gkresult": row["productcode"]}
+
 
     """
     Here product data is updated with new data input by the user while editing product.
@@ -393,92 +332,87 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                productCode = self.request.matchdict["productcode"]
-                productDetails = dataset["productdetails"]
+        validated_data = ProductGodownUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
+        with eng.begin() as con:
+            productCode = dataset["productdetails"]["productcode"]
+            productDetails = dataset["productdetails"]
 
-                godownFlag = dataset["godownflag"]
-                pn = self.con.execute(
-                    select([gkdb.product.c.productdesc]).where(
-                        gkdb.product.c.productcode == productCode
-                    )
+            godownFlag = dataset["godownflag"]
+            pn = con.execute(
+                select([gkdb.product.c.productdesc]).where(
+                    gkdb.product.c.productcode == productCode
                 )
-                prodName = pn.fetchone()
-                self.con.execute(
-                    gkdb.product.update()
-                    .where(gkdb.product.c.productcode == productCode)
-                    .values(productDetails)
-                )
-                if godownFlag:
-                    goDetails = dataset["godetails"]
-                    result = self.con.execute(
-                        gkdb.goprod.delete().where(
-                            and_(
-                                gkdb.goprod.c.productcode == productCode,
-                                gkdb.goprod.c.orgcode == authDetails["orgcode"],
-                            )
+            )
+            prodName = pn.fetchone()
+            con.execute(
+                gkdb.product.update()
+                .where(gkdb.product.c.productcode == productCode)
+                .values(productDetails)
+            )
+            if godownFlag:
+                goDetails = dataset["godetails"]
+                result = con.execute(
+                    gkdb.goprod.delete().where(
+                        and_(
+                            gkdb.goprod.c.productcode == productCode,
+                            gkdb.goprod.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                    ttlOpening = 0.0
-                    for goId in list(goDetails.keys()):
-                        goDetail = goDetails[goId]
-                        if type(goDetail) != dict:
-                            goDetail = {"qty": goDetail, "rate": 0}
-                        ttlOpening = ttlOpening + float(goDetail["qty"])
-                        goro = {
-                            "productcode": productCode,
-                            "goid": goId,
-                            "goopeningstock": goDetail["qty"],
-                            "openingstockvalue": goDetail["rate"],
-                            "orgcode": authDetails["orgcode"],
-                        }
-                        self.con.execute(gkdb.goprod.insert(), [goro])
-                    self.con.execute(
-                        product.update()
-                        .where(
-                            and_(
-                                product.c.productcode == productCode,
-                                product.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                        .values(openingstock=ttlOpening)
-                    )
-                # We need to update accountname also.
-                pnSL = str(prodName["productdesc"]) + " Sale"
-                newpnSL = str(productDetails["productdesc"]) + " Sale"
-                pnPurch = str(prodName["productdesc"]) + " Purchase"
-                newpnPH = str(productDetails["productdesc"]) + " Purchase"
-                self.con.execute(
-                    accounts.update()
+                )
+                ttlOpening = 0.0
+                for goId in list(goDetails.keys()):
+                    goDetail = goDetails[goId]
+                    if type(goDetail) != dict:
+                        goDetail = {"qty": goDetail, "rate": 0}
+                    ttlOpening = ttlOpening + float(goDetail["qty"])
+                    goro = {
+                        "productcode": productCode,
+                        "goid": goId,
+                        "goopeningstock": goDetail["qty"],
+                        "openingstockvalue": goDetail["rate"],
+                        "orgcode": authDetails["orgcode"],
+                    }
+                    con.execute(gkdb.goprod.insert(), [goro])
+                con.execute(
+                    product.update()
                     .where(
                         and_(
-                            accounts.c.accountname == pnSL,
-                            accounts.c.orgcode == authDetails["orgcode"],
+                            product.c.productcode == productCode,
+                            product.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                    .values(accountname=newpnSL)
+                    .values(openingstock=ttlOpening)
                 )
-                self.con.execute(
-                    accounts.update()
-                    .where(
-                        and_(
-                            accounts.c.accountname == pnPurch,
-                            accounts.c.orgcode == authDetails["orgcode"],
-                        )
+            # We need to update accountname also.
+            pnSL = str(prodName["productdesc"]) + " Sale"
+            newpnSL = str(productDetails["productdesc"]) + " Sale"
+            pnPurch = str(prodName["productdesc"]) + " Purchase"
+            newpnPH = str(productDetails["productdesc"]) + " Purchase"
+            con.execute(
+                accounts.update()
+                .where(
+                    and_(
+                        accounts.c.accountname == pnSL,
+                        accounts.c.orgcode == authDetails["orgcode"],
                     )
-                    .values(accountname=newpnPH)
                 )
-                return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except Exception as e:
-                gk_log(__name__).warn(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                .values(accountname=newpnSL)
+            )
+            con.execute(
+                accounts.update()
+                .where(
+                    and_(
+                        accounts.c.accountname == pnPurch,
+                        accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+                .values(accountname=newpnPH)
+            )
+            return {"gkstatus": enumdict["Success"]}
+
 
     @view_config(
         request_method="DELETE", route_name="product_productcode", renderer="json"
@@ -492,10 +426,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.product.c.specs, gkdb.product.c.productdesc]).where(
                         gkdb.product.c.productcode == dataset["productcode"]
                     )
@@ -504,18 +437,18 @@ class api_product(object):
                 spec = row["specs"]
                 pn = row["productdesc"]
                 for sp in list(spec.keys()):
-                    self.con.execute(
+                    con.execute(
                         "update categoryspecs set productcount = productcount -1 where spcode = %d"
                         % (int(sp))
                     )
 
-                result = self.con.execute(
+                result = con.execute(
                     gkdb.product.delete().where(
                         gkdb.product.c.productcode == dataset["productcode"]
                     )
                 )
                 try:
-                    self.con.execute(
+                    con.execute(
                         accounts.delete().where(
                             and_(
                                 accounts.c.accountname.like(pn + "%"),
@@ -526,14 +459,8 @@ class api_product(object):
                 except:
                     pass
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # request_param="qty=single",
+
     @view_config(
         route_name="product_productcode", request_method="GET", renderer="json"
     )
@@ -546,10 +473,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 productCode = self.request.matchdict["productcode"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.product]).where(
                         gkdb.product.c.productcode == productCode
                     )
@@ -568,7 +494,7 @@ class api_product(object):
                 # first it check that product/service are use in stock table and purchaseorder table and then give count of product/service are in use
                 # if count is grater than 0 it send 1 else it send 0 as value of deletable key
                 if int(row["gsflag"]) == 19:
-                    prod_countinv = self.con.execute(
+                    prod_countinv = con.execute(
                         "SELECT (contents ::json)->'%s' is NULL FROM invoice where orgcode ='%d'"
                         % (
                             (str(productCode)),
@@ -578,7 +504,7 @@ class api_product(object):
                     if (False,) in prod_countinv:
                         productDetails["deletable"] = 1
                     else:
-                        prod_purch = self.con.execute(
+                        prod_purch = con.execute(
                             "SELECT (schedule ::json)->'%s' is NULL FROM purchaseorder where orgcode ='%d'"
                             % (
                                 (str(productCode)),
@@ -597,7 +523,7 @@ class api_product(object):
                 else:
                     productDetails["prodmrp"] = "%.2f" % 0.00
                 if int(row["gsflag"]) == 7:
-                    prod_countinstock = self.con.execute(
+                    prod_countinstock = con.execute(
                         "select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"
                         % (
                             (str(productCode)),
@@ -610,7 +536,7 @@ class api_product(object):
                         productDetails["deletable"] = 1
 
                     else:
-                        prod_countinpuchaseorder = self.con.execute(
+                        prod_countinpuchaseorder = con.execute(
                             "select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"
                             % (
                                 (str(productCode)),
@@ -622,7 +548,7 @@ class api_product(object):
                             productDetails["deletable"] = 1
                         else:
                             productDetails["deletable"] = 0
-                    result1 = self.con.execute(
+                    result1 = con.execute(
                         select([gkdb.unitofmeasurement.c.unitname]).where(
                             gkdb.unitofmeasurement.c.uomid == row["uomid"]
                         )
@@ -638,7 +564,7 @@ class api_product(object):
                         authDetails["userid"], authDetails["orgcode"]
                     )
                     if int(userrole["gkresult"]["userrole"]) != 3:
-                        godownswithstock = self.con.execute(
+                        godownswithstock = con.execute(
                             select(
                                 [
                                     func.count(gkdb.goprod.c.productcode).label(
@@ -653,7 +579,7 @@ class api_product(object):
                         usergodowmns = getusergodowns(authDetails["userid"])
                         numberofgodowns = 0
                         for usergodown in usergodowmns["gkresult"]:
-                            godownswithstock = self.con.execute(
+                            godownswithstock = con.execute(
                                 select([gkdb.goprod.c.goid]).where(
                                     and_(
                                         gkdb.goprod.c.productcode == productCode,
@@ -675,13 +601,7 @@ class api_product(object):
                 else:
                     return {"gkstatus": enumdict["Success"], "gkresult": productDetails}
 
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # request_param="type=pt",
     @view_config(request_method="GET", route_name="product_tax", renderer="json")
     def getTaxForProduct(self):
         """
@@ -702,23 +622,16 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 return calTax(
                     int(self.request.params["taxflag"]),
                     self.request.params["source"],
                     self.request.params["destination"],
                     int(self.request.params["productcode"]),
-                    self.con,
+                    con,
                 )
 
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # request_param="by=category",
     @view_config(request_method="GET", route_name="product_category", renderer="json")
     def getProductbyCategory(self):
         try:
@@ -729,17 +642,16 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 categoryCode = self.request.matchdict["categorycode"]
                 if categoryCode == "":
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
                         ).where(gkdb.product.c.categorycode == None)
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         select(
                             [gkdb.product.c.productcode, gkdb.product.c.productdesc]
                         ).where(gkdb.product.c.categorycode == categoryCode)
@@ -752,13 +664,8 @@ class api_product(object):
                     }
                     prodlist.append(productDetails)
                 return {"gkstatus": enumdict["Success"], "gkresult": prodlist}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # , request_param="by=godown"
+
     @view_config(request_method="GET", route_name="godown_product", renderer="json")
     def getProductbyGodown(self):
         try:
@@ -769,12 +676,11 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 productcode = self.request.matchdict["productcode"]
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 if int(userrole["gkresult"]["userrole"]) != 3:
-                    result = self.con.execute(
+                    result = con.execute(
                         select([goprod]).where(goprod.c.productcode == productcode)
                     )
                     godowns = []
@@ -791,7 +697,7 @@ class api_product(object):
                     usergodowns = getusergodowns(authDetails["userid"])
                     godowns = []
                     for usergodown in usergodowns["gkresult"]:
-                        thisgodown = self.con.execute(
+                        thisgodown = con.execute(
                             select([goprod]).where(
                                 and_(
                                     goprod.c.productcode == productcode,
@@ -811,12 +717,7 @@ class api_product(object):
                         except:
                             continue
                 return {"gkstatus": enumdict["Success"], "gkresult": godowns}
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="GET", route_name="product_godown", renderer="json")
     def getProductfromGodown(self):
@@ -828,10 +729,9 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 goid = self.request.matchdict["godownid"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.goprod.c.goprodid,
@@ -854,13 +754,8 @@ class api_product(object):
                     }
                     products.append(productDetails)
                 return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # request_param="tax=vatorgst",
+
     @view_config(request_method="GET", route_name="product_check_gst", renderer="json")
     def getvatorgst(self):
         """
@@ -881,9 +776,8 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]
                     ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
@@ -906,10 +800,7 @@ class api_product(object):
                 elif gstdate <= financialStart and gstdate <= financialEnd:
                     gstorvatflag = 7
                 return {"gkstatus": enumdict["Success"], "gkresult": str(gstorvatflag)}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     """
     A godown keeper can only access the list of products that are present in the godowns assigned to him.
@@ -927,8 +818,7 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 currentgoid = int(self.request.params["goid"])
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
@@ -938,7 +828,7 @@ class api_product(object):
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])
                     if currentgoid in gid:
-                        proCode = self.con.execute(
+                        proCode = con.execute(
                             select([gkdb.goprod.c.productcode]).where(
                                 gkdb.goprod.c.goid == currentgoid
                             )
@@ -948,7 +838,7 @@ class api_product(object):
                     for record3 in proCodes:
                         if record3["productcode"] not in productCodes:
                             productCodes.append(record3["productcode"])
-                    results = self.con.execute(
+                    results = con.execute(
                         select([gkdb.product.c.productcode, gkdb.product.c.productdesc])
                         .where(
                             and_(
@@ -969,11 +859,7 @@ class api_product(object):
                             )
 
                     return {"gkstatus": enumdict["Success"], "gkresult": products}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="GET", route_name="product_hsn", renderer="json")
     def gethsnuom(self):
@@ -996,10 +882,9 @@ class api_product(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            self.con = eng.connect()
-            try:
+            with eng.connect() as con:
                 # fetch a product matching the given productcode
-                product = self.con.execute(
+                product = con.execute(
                     select(
                         [
                             gkdb.product.c.uomid,
@@ -1015,7 +900,7 @@ class api_product(object):
                 ).fetchone()
                 # only products have an uomid
                 if product is not None:
-                    uom = self.con.execute(
+                    uom = con.execute(
                         select([gkdb.unitofmeasurement.c.unitname]).where(
                             gkdb.unitofmeasurement.c.uomid == product["uomid"]
                         )
@@ -1032,14 +917,8 @@ class api_product(object):
                         "gkstatus": enumdict["ActionDisallowed"],
                         "gkresult": "Not a Product",
                     }
-            except Exception as e:
-                gk_log(__name__).error(e)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
-    # request_param="type=addstock",
+
     @view_config(request_method="POST", route_name="product_stock", renderer="json")
     def addstock(self):
         """
@@ -1052,28 +931,21 @@ class api_product(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                orgcode = authDetails["orgcode"]
-                goid = dataset["goid"]
-                productDetails = dataset["productdetails"]
-                for product in productDetails:
-                    details = {
-                        "goid": goid,
-                        "goopeningstock": productDetails[product],
-                        "productcode": product,
-                        "orgcode": orgcode,
-                    }
-                    result = self.con.execute(gkdb.goprod.insert(), [details])
-                return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            orgcode = authDetails["orgcode"]
+            goid = dataset["goid"]
+            productDetails = dataset["productdetails"]
+            for product in productDetails:
+                details = {
+                    "goid": goid,
+                    "goopeningstock": productDetails[product],
+                    "productcode": product,
+                    "orgcode": orgcode,
+                }
+                result = con.execute(gkdb.goprod.insert(), [details])
+            return {"gkstatus": enumdict["Success"]}
+
 
     """
     This funtion returns the last price for which a product was sold/purchased to/from a party.
@@ -1083,7 +955,6 @@ class api_product(object):
     Price is found out from the contents using productcode as key and sent as response.
     """
 
-    # request_param="type=lastprice",
     @view_config(route_name="product_lastprice", request_method="GET", renderer="json")
     def lastPrice(self):
         try:
@@ -1094,9 +965,8 @@ class api_product(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                lastPriceData = self.con.execute(
+            with eng.connect() as con:
+                lastPriceData = con.execute(
                     select([gkdb.cslastprice.c.lastprice]).where(
                         and_(
                             gkdb.cslastprice.c.custid
@@ -1114,7 +984,3 @@ class api_product(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": "%.2f" % float(lastPriceValue),
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()

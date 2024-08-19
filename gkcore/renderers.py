@@ -15,8 +15,12 @@ def includeme(config):
     def set_adapter(obj, request):
         return list(obj)
 
+    def exception_adapter(obj, request):
+        return f"{obj}"
+
     json_renderer.add_adapter(date, date_adapter)
     json_renderer.add_adapter(Decimal, decimal_adapter)
     json_renderer.add_adapter(set, set_adapter)
+    json_renderer.add_adapter(Exception, exception_adapter)
 
     config.add_renderer('json_extended', json_renderer)
