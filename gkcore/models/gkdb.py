@@ -293,6 +293,7 @@ customerandsupplier = Table(
     Column("gstin", JSONB),
     Column("gst_reg_type", Integer),
     Column("gst_party_type", Integer),
+    Column("tin", UnicodeText),
     Column("custaddr", UnicodeText),
     Column("pincode", UnicodeText),
     Column("custphone", UnicodeText),
@@ -316,6 +317,7 @@ customerandsupplier = Table(
     UniqueConstraint("orgcode", "custname", "custpan", "csflag"),
     UniqueConstraint("orgcode", "custname", "custtan", "csflag"),
     UniqueConstraint("orgcode", "custname", "gstin"),
+    UniqueConstraint("orgcode", "custname", "tin"),
     Index("customer_supplier_orgcodeindex", "orgcode"),
 )
 """

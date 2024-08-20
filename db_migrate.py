@@ -1976,6 +1976,7 @@ class Migrate:
                 conn.execute("alter table bankrecon add column if not exists entry_type text")
                 conn.execute("alter table bankrecon add column if not exists amount float")
                 conn.execute("alter table customerandsupplier add column if not exists country text")
+                conn.execute("alter table customerandsupplier add column if not exists tin text")
 
             print("Database migration successful")
 
