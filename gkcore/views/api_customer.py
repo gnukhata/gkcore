@@ -206,6 +206,7 @@ class api_customer(object):
                     "custdoc": row["custdoc"],
                     "csflag": row["csflag"],
                     "gstin": row["gstin"],
+                    "tin": row["tin"],
                     "pincode": row["pincode"],
                     "bankdetails": bankdetails,
                     "statelist": statelist,
