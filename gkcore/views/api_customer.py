@@ -202,6 +202,7 @@ class api_customer(object):
                     "custpan": row["custpan"],
                     "custtan": row["custtan"],
                     "state": row["state"],
+                    "country": row["country"],
                     "custdoc": row["custdoc"],
                     "csflag": row["csflag"],
                     "gstin": row["gstin"],

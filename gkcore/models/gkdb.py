@@ -302,6 +302,7 @@ customerandsupplier = Table(
     Column("custtan", UnicodeText),
     Column("custdoc", JSONB),
     Column("state", UnicodeText),
+    Column("country", UnicodeText),
     Column("csflag", Integer, nullable=False),
     Column("bankdetails", JSONB),
     Column(
