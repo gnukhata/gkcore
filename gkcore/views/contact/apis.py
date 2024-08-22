@@ -261,10 +261,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.customerandsupplier.c.custname,
@@ -286,10 +285,7 @@ class api_customer(object):
                         {"custid": row["custid"], "custname": row["custname"]}
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": customers}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_param="qty=supall", request_method="GET", renderer="json")
     def getAllSuppliers(self):
