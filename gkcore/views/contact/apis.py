@@ -441,11 +441,10 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 accountcode = self.request.matchdict["accountcode"]
                 # there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.accounts.c.accountname]).where(
                         and_(
                             gkdb.accounts.c.orgcode == authDetails["orgcode"],
@@ -455,7 +454,7 @@ class api_customer(object):
                 )
                 account = result.fetchone()
                 accountname = account["accountname"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -469,7 +468,3 @@ class api_customer(object):
                     "gkstatus": gkcore.enumdict["Success"],
                     "gkresult": customer["custid"],
                 }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
