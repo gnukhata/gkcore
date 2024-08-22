@@ -28,7 +28,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
-from gkcore.views.contact.schemas import ContactDetails
+from gkcore.views.contact.schemas import ContactDetails, ContactDetailsUpdate
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -211,8 +211,11 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            validated_data = ContactDetailsUpdate.model_validate(
+                self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+            )
+            dataset = validated_data.model_dump()
             with eng.begin() as con:
-                dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
                 result = con.execute(
