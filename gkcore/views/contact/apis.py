@@ -28,6 +28,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.contact.schemas import ContactDetails
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -67,22 +68,13 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = con.execute(
-                    select([gkdb.customerandsupplier.c.custname])
-                    .where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode == dataset["orgcode"],
-                            func.lower(gkdb.customerandsupplier.c.custname) == func.lower(dataset["custname"]),
-                        )
-                    )
-                )
+            validated_data = ContactDetails.model_validate(
+                self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+            )
+            dataset = validated_data.model_dump()
 
-                if result_duplicate_check.rowcount > 0:
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
+            with eng.begin() as con:
+                dataset["orgcode"] = authDetails["orgcode"]
 
                 result = con.execute(gkdb.customerandsupplier.insert(), [dataset])
                 custid = con.execute(
@@ -250,7 +242,7 @@ class api_customer(object):
                         .values(dataset))
                     return {
                             "gkstatus": enumdict["Success"],
-                            "gkresult": {"custid": custid},
+                            "gkresult": {"custid": dataset["custid"]},
                         }
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
