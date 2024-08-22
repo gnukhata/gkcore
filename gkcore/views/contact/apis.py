@@ -370,10 +370,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 custname = self.request.matchdict["custname"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -393,7 +392,7 @@ class api_customer(object):
                     statelist = []
                     if row["gstin"] != None and bool(row["gstin"]):
                         for statecd in row["gstin"]:
-                            statedata = self.con.execute(
+                            statedata = con.execute(
                                 select(
                                     [gkdb.state.c.statename, gkdb.state.c.statecode]
                                 ).where(gkdb.state.c.statecode == statecd)
@@ -403,7 +402,7 @@ class api_customer(object):
                                 {statename["statecode"]: statename["statename"]}
                             )
                     else:
-                        custsupstatecode = getStateCode(row["state"], self.con)[
+                        custsupstatecode = getStateCode(row["state"], con)[
                             "statecode"
                         ]
                         statelist.append({custsupstatecode: row["state"]})
@@ -428,10 +427,7 @@ class api_customer(object):
                         "gst_party_type": row["gst_party_type"],
                     }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         route_name="customer_search_by_account", request_method="GET", renderer="json"
