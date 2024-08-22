@@ -333,9 +333,8 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.begin() as con:
+                result = con.execute(
                     select([gkdb.customerandsupplier.c.custname]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
@@ -344,7 +343,7 @@ class api_customer(object):
                     )
                 )
                 if result.rowcount == 1:
-                    self.con.execute(
+                    con.execute(
                         gkdb.customerandsupplier.delete().where(
                             gkdb.customerandsupplier.c.custid
                             == self.request.matchdict["custid"]
@@ -353,12 +352,7 @@ class api_customer(object):
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         route_name="customer_search_by_name", request_method="GET", renderer="json"
