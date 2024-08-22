@@ -1069,6 +1069,7 @@ class api_organisation(object):
                     "billflag": row["billflag"],
                     "invsflag": row["invsflag"],
                     "gstin": row["gstin"],
+                    "tin": row["tin"],
                     "bankdetails": row["bankdetails"],
                     "avflag": row["avflag"],
                     "maflag": row["maflag"],

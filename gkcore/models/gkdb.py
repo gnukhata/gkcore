@@ -136,6 +136,7 @@ organisation = Table(
     Column("ainvnoflag", Integer, default=0),
     Column("logo", JSON),
     Column("gstin", JSONB),
+    Column("tin", UnicodeText),
     Column("users", JSONB),
     Column("bankdetails", JSON),
     UniqueConstraint("orgname", "orgtype", "yearstart"),
