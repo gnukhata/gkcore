@@ -230,12 +230,11 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier.c.custname]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
@@ -246,35 +245,27 @@ class api_customer(object):
                 if result.rowcount == 1:
                     if "bankdetails" not in dataset:
                         # if bankdetails are null, set bankdetails as null in database.
-                        self.con.execute(
+                        con.execute(
                             "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
                             % int(custcode)
                         )
                     if "gstin" not in dataset:
                         # if gstin are null, set gstin as null in database.
-                        self.con.execute(
+                        con.execute(
                             "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
                             % int(custcode)
                         )
-                    try:
-                        self.con.execute(
+                    con.execute(
                         gkdb.customerandsupplier.update()
                         .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
                         .values(dataset))
-                        return {
+                    return {
                             "gkstatus": enumdict["Success"],
                             "gkresult": {"custid": custid},
                         }
-                    except:
-                        return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_param="qty=custall", request_method="GET", renderer="json")
     def getAllCustomers(self):
