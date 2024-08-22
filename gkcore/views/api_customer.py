@@ -67,12 +67,11 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
+                result_duplicate_check = con.execute(
                     select([gkdb.customerandsupplier.c.custname])
                     .where(
                         and_(
@@ -85,8 +84,8 @@ class api_customer(object):
                 if result_duplicate_check.rowcount > 0:
                     return {"gkstatus": enumdict["DuplicateEntry"]}
 
-                result = self.con.execute(gkdb.customerandsupplier.insert(), [dataset])
-                custid = self.con.execute(
+                result = con.execute(gkdb.customerandsupplier.insert(), [dataset])
+                custid = con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -102,7 +101,7 @@ class api_customer(object):
                         groupname = "Sundry Debtors"
                     else:
                         groupname = "Sundry Creditors for Purchase"
-                    groupcode = self.con.execute(
+                    groupcode = con.execute(
                         select([gkdb.groupsubgroups.c.groupcode]).where(
                             and_(
                                 gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
@@ -118,24 +117,14 @@ class api_customer(object):
                         "groupcode": subgroupcode,
                         "orgcode": authDetails["orgcode"],
                     }
-                    try:
-                        result = self.con.execute(gkdb.accounts.insert(), [accountData])
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": {"custid": custid},
-                        }
-                    except:
-                        return {"gkstatus": enumdict["Success"]}
+                    result = con.execute(gkdb.accounts.insert(), [accountData])
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": {"custid": custid},
+                    }
                 else:
-                    # print(traceback.format_exc())
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                # print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # route_name="customer_custid",
     @view_config(route_name="customer_custid", request_method="GET", renderer="json")
