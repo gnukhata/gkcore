@@ -7,6 +7,8 @@ LABEL Sai Karthik <kskarthik@disroot.org>
 
 ARG VERSION="dev"
 ENV GKCORE_VERSION=${VERSION}
+ENV PYRAMID_CONFIG_FILE production.ini
+
 # install the required dependencies
 RUN apt-get update && apt-get upgrade -y \
 		&& apt-get install -y \
@@ -26,8 +28,9 @@ RUN adduser --no-create-home --disabled-password gk && \
 		rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # switch to non-root user named gk, which we created above
 USER gk
+
 # initialize db & start gkcore
-ENTRYPOINT python3 initdb.py && python3 db_migrate.py && pserve production.ini
+ENTRYPOINT python3 initdb.py && python3 db_migrate.py && pserve ${PYRAMID_CONFIG_FILE}
 # expose the gkcore port
 EXPOSE 6543
 # check the health of the container at regular intervals
