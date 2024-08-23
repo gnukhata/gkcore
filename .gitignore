@@ -5,3 +5,5 @@
 gkcore.egg-info/
 gkenv/
 /tests/output
+.direnv/
+.envrc
