@@ -22,3 +22,16 @@ def check_duplicate_contact_name(contact_name, orgcode, current_custid=None):
         contact_results = conn.execute(statement)
         if contact_results.rowcount:
             raise ValueError("This name is already used.")
+
+def check_custid_exists(custid, orgcode):
+    with eng.connect() as conn:
+        result = conn.execute(
+            select([customerandsupplier.c.custname]).where(
+                and_(
+                    customerandsupplier.c.orgcode == orgcode,
+                    customerandsupplier.c.custid == custid,
+                )
+            )
+        )
+        if result.rowcount == 0:
+            raise ValueError("Invalid custid.")

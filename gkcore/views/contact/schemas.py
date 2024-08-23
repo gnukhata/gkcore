@@ -1,8 +1,8 @@
-from pydantic import BaseModel, EmailStr, ValidationInfo, conint, constr, model_validator
+from pydantic import BaseModel, EmailStr, ValidationInfo, conint, constr, field_validator, model_validator
 from typing import Optional, Dict, Literal
 from typing_extensions import Self
 from pydantic_extra_types.phone_numbers import PhoneNumber
-from gkcore.views.contact.services import check_duplicate_contact_name
+from gkcore.views.contact.services import check_custid_exists, check_duplicate_contact_name
 
 
 class BankDetails(BaseModel):
@@ -40,3 +40,12 @@ class ContactDetails(BaseModel):
 
 class ContactDetailsUpdate(ContactDetails):
     custid: int
+
+    @field_validator("custid")
+    @classmethod
+    def custid_validate(cls, value: int, info: ValidationInfo) -> int:
+        check_custid_exists(
+             value,
+             info.context["orgcode"],
+        )
+        return value

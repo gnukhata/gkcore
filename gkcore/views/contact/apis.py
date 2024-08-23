@@ -218,37 +218,26 @@ class api_customer(object):
             with eng.begin() as con:
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
-                result = con.execute(
-                    select([gkdb.customerandsupplier.c.custname]).where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
-                            gkdb.customerandsupplier.c.custid == custcode,
-                        )
-                    )
-                )
-                if result.rowcount == 1:
-                    if "bankdetails" not in dataset:
-                        # if bankdetails are null, set bankdetails as null in database.
-                        con.execute(
-                            "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
-                            % int(custcode)
-                        )
-                    if "gstin" not in dataset:
-                        # if gstin are null, set gstin as null in database.
-                        con.execute(
-                            "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
-                            % int(custcode)
-                        )
+                if "bankdetails" not in dataset:
+                    # if bankdetails are null, set bankdetails as null in database.
                     con.execute(
-                        gkdb.customerandsupplier.update()
-                        .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
-                        .values(dataset))
-                    return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": {"custid": dataset["custid"]},
-                        }
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                        "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
+                        % int(custcode)
+                    )
+                if "gstin" not in dataset:
+                    # if gstin are null, set gstin as null in database.
+                    con.execute(
+                        "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
+                        % int(custcode)
+                    )
+                con.execute(
+                    gkdb.customerandsupplier.update()
+                    .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
+                    .values(dataset))
+                return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": {"custid": dataset["custid"]},
+                    }
 
 
     @view_config(request_param="qty=custall", request_method="GET", renderer="json")
