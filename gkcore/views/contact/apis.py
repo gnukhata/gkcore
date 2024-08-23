@@ -54,7 +54,6 @@ def getStateCode(StateName, con):
 @view_defaults(route_name="customer")
 class api_customer(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
@@ -133,10 +132,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 custid = self.request.matchdict["custid"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier]).where(
                         gkdb.customerandsupplier.c.custid == custid
                     )
@@ -150,7 +148,7 @@ class api_customer(object):
                 statelist = []
 
                 if row["state"] is not None and row["state"]:
-                    statedata = self.con.execute(
+                    statedata = con.execute(
                         select([gkdb.state.c.statecode]).where(
                             gkdb.state.c.statename == row["state"]
                         )
@@ -160,7 +158,7 @@ class api_customer(object):
 
                 if row["gstin"] != None and bool(row["gstin"]):
                     for statecd in row["gstin"]:
-                        statedata = self.con.execute(
+                        statedata = con.execute(
                             select(
                                 [gkdb.state.c.statename, gkdb.state.c.statecode]
                             ).where(gkdb.state.c.statecode == statecd)
@@ -170,7 +168,7 @@ class api_customer(object):
                             {statename["statecode"]: statename["statename"]}
                         )
                 elif row["state"] is not None and row["state"]:
-                    custsupstatecode = getStateCode(row["state"], self.con)["statecode"]
+                    custsupstatecode = getStateCode(row["state"], con)["statecode"]
                     statelist.append({custsupstatecode: row["state"]})
 
                 Customer = {
@@ -195,11 +193,7 @@ class api_customer(object):
                     "gst_party_type": row["gst_party_type"],
                 }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
-            except:
-                # print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(route_name="customer_custid", request_method="PUT", renderer="json")
     def editCustomerSupplier(self):
