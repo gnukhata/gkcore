@@ -1414,8 +1414,7 @@ class api_organisation(object):
                         .values(dataset)
                     )
                     return {"gkstatus": enumdict["Success"]}
-                else:
-                    {"gkstatus": enumdict["BadPrivilege"]}
+                return {"gkstatus": enumdict["BadPrivilege"]}
 
 
     @view_config(
