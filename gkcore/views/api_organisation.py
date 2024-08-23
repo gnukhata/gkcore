@@ -1164,8 +1164,7 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
 
                 userRoleData = getUserRole(
                     authDetails["userid"], authDetails["orgcode"]
@@ -1173,7 +1172,7 @@ class api_organisation(object):
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
+                result_duplicate_check = con.execute(
                     select([gkdb.organisation.c.orgname]).where(
                         and_(
                             func.lower(gkdb.organisation.c.orgname) == func.lower(dataset["orgname"]),
@@ -1187,36 +1186,28 @@ class api_organisation(object):
                     return {"gkstatus": enumdict["DuplicateEntry"]}
 
                 if userRole == -1 or userRole == 0:
-                    try:
-                        self.con.execute(
-                            gkdb.organisation.update()
-                            .where(
-                                gkdb.organisation.c.orgcode == authDetails["orgcode"]
-                            )
-                            .values(dataset)
+                    con.execute(
+                        gkdb.organisation.update()
+                        .where(
+                            gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
-                    except Exception as e:
-                        gk_log(__name__).error(e)
-                        return {"gkstatus": enumdict["ConnectionFailed"]}
+                        .values(dataset)
+                    )
 
                     if "bankdetails" not in dataset:
-                        self.con.execute(
+                        con.execute(
                             "update organisation set bankdetails=NULL where bankdetails IS NOT NULL and orgcode=%d"
                             % int(orgcode)
                         )
                     if "gstin" not in dataset:
-                        self.con.execute(
+                        con.execute(
                             "update organisation set gstin=NULL where orgcode=%d"
                             % int(orgcode)
                         )
-                    self.con.close()
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": enumdict["BadPrivilege"]}
-            except:
-                print(traceback.format_exc())
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(
         request_method="PUT", request_param="type=editorganisation", renderer="json"
