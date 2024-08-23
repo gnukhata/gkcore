@@ -1218,19 +1218,15 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     gkdb.organisation.update()
                     .where(gkdb.organisation.c.orgcode == dataset["orgcode"])
                     .values(dataset)
                 )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteOrg(self):
