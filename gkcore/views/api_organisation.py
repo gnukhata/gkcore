@@ -1401,26 +1401,22 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 userRoleData = getUserRole(
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1:
-                    result = self.con.execute(
+                    result = con.execute(
                         gkdb.organisation.update()
                         .where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
                         .values(dataset)
                     )
-                    self.con.close()
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     {"gkstatus": enumdict["BadPrivilege"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(
         route_name="organisation_attachment",
