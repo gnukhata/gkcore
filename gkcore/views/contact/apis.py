@@ -30,17 +30,11 @@ from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.contact.schemas import ContactDetails, ContactDetailsUpdate
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, func
-from pyramid.request import Request
-from pyramid.response import Response
+from sqlalchemy import and_
 from pyramid.view import view_defaults, view_config
-import jwt
 import gkcore
 from gkcore.utils import authCheck
-
-# import traceback  # for printing detailed exception logs
 
 
 def getStateCode(StateName, con):
