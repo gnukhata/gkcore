@@ -35,8 +35,7 @@ invoice:
                       - $ref: "./invoice/schemas_invoice.yaml#/allInvoiceDetails"
   post:
     tags: ["Invoice"]
-    summary: Create a new invoices
-    description: Delivery note must be created first & the resulting `dcid` must be passed in the request body
+    summary: Create new invoice
     operationId: addInvoice
     requestBody:
       content:
@@ -45,17 +44,12 @@ invoice:
             allOf:
               - type: object
                 properties:
-                  invoice:
-                    allOf:
-                      - $ref: "./invoice/schemas_invoice.yaml#/invoice"
-                      - type: object
-                        properties:
-                          av:
-                            $ref: "./invoice/schemas_invoice.yaml#/av"
+                  delchalPayload:
+                    $ref: "./invoice/schemas_invoice.yaml#/delchalPayload"
               - type: object
                 properties:
-                  stock:
-                    $ref: "./invoice/schemas_invoice.yaml#/stock"
+                  payload:
+                    $ref: "./invoice/schemas_invoice.yaml#/payload"
     responses:
       200:
         description: ok
@@ -117,16 +111,12 @@ invoice_invid:
             allOf:
               - type: object
                 properties:
-                  invoice:
-                    $ref: "./invoice/schemas_invoice.yaml#/invoice"
+                  delchalPayload:
+                    $ref: "./invoice/schemas_invoice.yaml#/delchalPayload"
               - type: object
                 properties:
-                  stock:
-                    $ref: "./invoice/schemas_invoice.yaml#/stock"
-              - type: object
-                properties:
-                  av:
-                    $ref: "./invoice/schemas_invoice.yaml#/av"
+                  payload:
+                    $ref: "./invoice/schemas_invoice.yaml#/payload"
     responses:
       200:
         description: ok
