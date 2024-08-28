@@ -1180,7 +1180,7 @@ class api_rollclose(object):
                             },
                         )
                 oldGroupAccounts = self.con.execute(
-                    "select accountname,accountcode,groupname from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
+                    "select accountname,accountcode,groupname,defaultflag from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
                     % (orgCode)
                 )
                 for angn in oldGroupAccounts:
@@ -1238,6 +1238,7 @@ class api_rollclose(object):
                             "openingbal": float(opnbal),
                             "groupcode": newGroupCodeRow["groupcode"],
                             "orgcode": newOrgCode,
+                            "defaultflag": angn["defaultflag"],
                         },
                     )
                 csobData = self.con.execute(
