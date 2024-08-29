@@ -1640,7 +1640,7 @@ class api_organisation(object):
 
         with eng.begin() as con:
         # remove user keys in org table & org keys in user table
-            admin_count = len(self.orgAdminList(org_code=authDetails["orgcode"]))
+            admin_count = len(self.orgAdminList(con, authDetails["orgcode"]))
             # check if user is trying to remove self
             # do not allow self removal if org has one admin only
             if authDetails["userid"] == request_body["userid"] and admin_count == 1:
@@ -1656,35 +1656,27 @@ class api_organisation(object):
             return {"gkstatus": enumdict["Success"]}
 
 
-    def orgAdminList(self, org_code: int) -> list:
+    def orgAdminList(self, con, org_code):
         """
         Get the list of all admins of an org
         """
-        self.con = eng.connect()
         # first, get the org users
-        try:
-            org_info = self.con.execute(
-                select([gkdb.organisation]).where(
-                    and_(
-                        gkdb.organisation.c.orgcode == org_code,
-                    )
+        org_info = con.execute(
+            select([gkdb.organisation]).where(
+                and_(
+                    gkdb.organisation.c.orgcode == org_code,
+                )
+            )
+        ).fetchone()
+        # loop throught the users & look for users with
+        # admin roles & append them to admin_list array
+        admin_list: list = []
+        for usr_code in org_info["users"].keys():
+            user_info = con.execute(
+                select([gkdb.gkusers]).where(
+                    and_(gkdb.gkusers.c.userid == usr_code)
                 )
             ).fetchone()
-            # loop throught the users & look for users with
-            # admin roles & append them to admin_list array
-            admin_list: list = []
-            for usr_code in org_info["users"].keys():
-                try:
-                    user_info = self.con.execute(
-                        select([gkdb.gkusers]).where(
-                            and_(gkdb.gkusers.c.userid == usr_code)
-                        )
-                    ).fetchone()
-                    if user_info["orgs"][str(org_code)]["userrole"] == -1:
-                        admin_list.append(usr_code)
-                except Exception as e:
-                    raise e
-            return admin_list
-        except Exception as e:
-            raise e
-
+            if user_info["orgs"][str(org_code)]["userrole"] == -1:
+                admin_list.append(usr_code)
+        return admin_list
