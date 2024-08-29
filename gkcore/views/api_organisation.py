@@ -32,10 +32,8 @@ Contributors:
 """
 
 from pyramid.view import view_defaults, view_config
-from requests import request
-from gkcore.utils import authCheck, generateSecret, gk_log, userAuthCheck
+from gkcore.utils import authCheck, generateSecret, userAuthCheck
 from gkcore import eng, enumdict
-from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import func, desc
@@ -44,17 +42,8 @@ from sqlalchemy import and_
 import jwt
 import gkcore
 import json
-from Crypto.PublicKey import RSA
-from gkcore.models.meta import (
-    columnExists,
-    columnTypeMatches,
-    tableExists,
-    getOnDelete,
-    uniqueConstraintExists,
-)
 from datetime import datetime, timedelta
 import os
-import traceback
 from gkcore.views.api_gkuser import getUserRole
 
 con = Connection
@@ -63,9 +52,7 @@ con = Connection
 @view_defaults(route_name="organisation")
 class api_organisation(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
         self.disableRegistration = os.getenv("GKCORE_DISABLE_REGISTRATION")
 
     @view_config(
