@@ -1042,10 +1042,9 @@ class api_rollclose(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 orgCode = int(authDetails["orgcode"])
-                financialStartEnd = self.con.execute(
+                financialStartEnd = con.execute(
                     "select * from organisation where orgcode = %d" % int(orgCode)
                 )
                 startEndRow = financialStartEnd.fetchone()
@@ -1091,9 +1090,9 @@ class api_rollclose(object):
                     "bankdetails": startEndRow["bankdetails"],
                     "users": startEndRow["users"],
                 }
-                self.con.execute(organisation.insert(), newOrg)
+                con.execute(organisation.insert(), newOrg)
                 # must move all the users data from old org to the new org
-                newOrgCodeData = self.con.execute(
+                newOrgCodeData = con.execute(
                     select([organisation.c.orgcode]).where(
                         and_(
                             organisation.c.orgname == newOrg["orgname"],
@@ -1106,7 +1105,7 @@ class api_rollclose(object):
                 newOrgRow = newOrgCodeData.fetchone()
                 newOrgCode = newOrgRow["orgcode"]
                 # need not create a new user here. But update the new orgcode in the gkusers table
-                oldUsers = self.con.execute(
+                oldUsers = con.execute(
                     select([organisation.c.users]).where(
                         organisation.c.orgcode == orgCode
                     )
@@ -1121,7 +1120,7 @@ class api_rollclose(object):
 
                 for oldUser in oldUsers:
                     # print(oldUser)
-                    orgDataQuery = self.con.execute(
+                    orgDataQuery = con.execute(
                         "select u.orgs#>'{%s}' as data from gkusers u where userid = %d;"
                         % (str(orgCode), int(oldUser))
                     )
@@ -1130,7 +1129,7 @@ class api_rollclose(object):
                         if orgDataQuery.rowcount > 0
                         else {"data": {}}
                     )
-                    self.con.execute(
+                    con.execute(
                         "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                         % (
                             str(newOrgCode),
@@ -1138,21 +1137,21 @@ class api_rollclose(object):
                             int(oldUser),
                         )
                     )
-                oldGroups = self.con.execute(
+                oldGroups = con.execute(
                     "select groupname from groupsubgroups where subgroupof is null and orgcode = %d"
                     % (orgCode)
                 )
                 oldGroupRecords = oldGroups.fetchall()
                 for oldgrp in oldGroupRecords:
-                    self.con.execute(
+                    con.execute(
                         groupsubgroups.insert(),
                         {"groupname": oldgrp["groupname"], "orgcode": newOrgCode},
                     )
-                    oldSubGroupsForGroupData = self.con.execute(
+                    oldSubGroupsForGroupData = con.execute(
                         "select groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = '%s' and orgcode = %d)"
                         % (orgCode, oldgrp["groupname"], orgCode)
                     )
-                    newgroupCodeData = self.con.execute(
+                    newgroupCodeData = con.execute(
                         select([groupsubgroups.c.groupcode]).where(
                             and_(
                                 groupsubgroups.c.groupname == oldgrp["groupname"],
@@ -1163,7 +1162,7 @@ class api_rollclose(object):
                     newGroupCodeRow = newgroupCodeData.fetchone()
                     newGroupCode = newGroupCodeRow["groupcode"]
                     for osg in oldSubGroupsForGroupData:
-                        res = self.con.execute(
+                        res = con.execute(
                             groupsubgroups.insert(),
                             {
                                 "groupname": osg["groupname"],
@@ -1171,12 +1170,12 @@ class api_rollclose(object):
                                 "orgcode": newOrgCode,
                             },
                         )
-                oldGroupAccounts = self.con.execute(
+                oldGroupAccounts = con.execute(
                     "select accountname,accountcode,groupname,defaultflag from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
                     % (orgCode)
                 )
                 for angn in oldGroupAccounts:
-                    newCodeForGroup = self.con.execute(
+                    newCodeForGroup = con.execute(
                         select([groupsubgroups.c.groupcode]).where(
                             and_(
                                 groupsubgroups.c.groupname == angn["groupname"],
@@ -1186,7 +1185,7 @@ class api_rollclose(object):
                     )
                     newGroupCodeRow = newCodeForGroup.fetchone()
                     cbRecord = calculateBalance(
-                        self.con,
+                        con,
                         angn["accountcode"],
                         str(oldstartDate),
                         str(oldstartDate),
@@ -1223,7 +1222,7 @@ class api_rollclose(object):
                         "Deficit C/F",
                     ):
                         accname = accname.replace("C/F", "B/F")
-                    self.con.execute(
+                    con.execute(
                         accounts.insert(),
                         {
                             "accountname": accname,
@@ -1233,7 +1232,7 @@ class api_rollclose(object):
                             "defaultflag": angn["defaultflag"],
                         },
                     )
-                csobData = self.con.execute(
+                csobData = con.execute(
                     select([accounts.c.openingbal]).where(
                         and_(
                             accounts.c.orgcode == newOrgCode,
@@ -1244,21 +1243,21 @@ class api_rollclose(object):
                 csobRow = csobData.fetchone()
                 csob = csobRow["openingbal"]
                 if csob > 0:
-                    self.con.execute(
+                    con.execute(
                         "update accounts set openingbal = %f where accountname = 'Stock at the Beginning' and orgcode = %d"
                         % (csob, newOrgCode)
                     )
-                    self.con.execute(
+                    con.execute(
                         "update accounts set openingbal = 0.00 where accountname = 'Closing Stock' and orgcode = %d"
                         % (newOrgCode)
                     )
-                    osCodeData = self.con.execute(
+                    osCodeData = con.execute(
                         "select accountcode from accounts where accountname = 'Opening Stock' and orgcode = %d"
                         % (newOrgCode)
                     )
                     osCodeRow = osCodeData.fetchone()
                     osCode = osCodeRow["accountcode"]
-                    sabData = self.con.execute(
+                    sabData = con.execute(
                         "select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"
                         % (newOrgCode)
                     )
@@ -1266,7 +1265,7 @@ class api_rollclose(object):
                     sabCode = sabRow["accountcode"]
                     crs = {sabCode: "%.2f" % (csob)}
                     drs = {osCode: "%.2f" % (csob)}
-                    self.con.execute(
+                    con.execute(
                         vouchers.insert(),
                         {
                             "vouchernumber": "1",
@@ -1280,11 +1279,11 @@ class api_rollclose(object):
                         },
                     )
                 # Customer / supplier Migration
-                oldContacts = self.con.execute(
+                oldContacts = con.execute(
                     "select * from customerandsupplier where orgcode = %d" % (orgCode)
                 )
                 for row in oldContacts:
-                    self.con.execute(
+                    con.execute(
                         customerandsupplier.insert(),
                         {
                             "custname": row["custname"],
@@ -1307,7 +1306,7 @@ class api_rollclose(object):
 
                 # old category code to new category code referrence dict
                 oldToNewCatCodes = {}
-                oldCategoryData = self.con.execute(
+                oldCategoryData = con.execute(
                     "select * from categorysubcategories where orgcode = %d and subcategoryof is null"
                     % (orgCode)
                 )
@@ -1319,7 +1318,7 @@ class api_rollclose(object):
                         parentCode = None
                         if cat["subcategoryof"] in oldToNewCatCodes:
                             parentCode = oldToNewCatCodes[cat["subcategoryof"]]
-                        self.con.execute(
+                        con.execute(
                             categorysubcategories.insert(),
                             {
                                 "categoryname": cat["categoryname"],
@@ -1327,25 +1326,25 @@ class api_rollclose(object):
                                 "orgcode": newOrgCode,
                             },
                         )
-                        newCatCodeData = self.con.execute(
+                        newCatCodeData = con.execute(
                             "select categorycode from categorysubcategories where orgcode = %d and categoryname = '%s'"
                             % (newOrgCode, cat["categoryname"])
                         )
                         newCatCodeRow = newCatCodeData.fetchone()
                         newCatCode = newCatCodeRow["categorycode"]
                         oldToNewCatCodes[cat["categorycode"]] = newCatCode
-                        grandchildrenData = self.con.execute(
+                        grandchildrenData = con.execute(
                             "select * from categorysubcategories where orgcode = %d and subcategoryof = %d"
                             % (orgCode, cat["categorycode"])
                         )
                         if grandchildrenData.rowcount > 0:
                             children.extend(grandchildrenData.fetchall())
-                oldCategorySpecData = self.con.execute(
+                oldCategorySpecData = con.execute(
                     "select * from categoryspecs where orgcode = %d" % (orgCode)
                 )
                 oldCategorySpecRows = oldCategorySpecData.fetchall()
                 for categorySpec in oldCategorySpecRows:
-                    self.con.execute(
+                    con.execute(
                         categoryspecs.insert(),
                         {
                             "attrname": categorySpec["attrname"],
@@ -1359,7 +1358,7 @@ class api_rollclose(object):
                     )
 
                 ## Product/ Service Migration
-                oldProductData = self.con.execute(
+                oldProductData = con.execute(
                     "select * from product where orgcode = %d" % (orgCode)
                 )
                 oldProductRows = oldProductData.fetchall()
@@ -1382,7 +1381,7 @@ class api_rollclose(object):
                             openingStock = 0
                         openingStock = float(openingStock)
 
-                    self.con.execute(
+                    con.execute(
                         product.insert(),
                         {
                             "gscode": prodRow["gscode"],
@@ -1399,7 +1398,7 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
-                    newProdData = self.con.execute(
+                    newProdData = con.execute(
                         "select productcode from product where orgcode = %d and productdesc = '%s'"
                         % (newOrgCode, prodRow["productdesc"])
                     )
@@ -1409,7 +1408,7 @@ class api_rollclose(object):
                     ]
 
                 # Tax Migration
-                oldTaxData = self.con.execute(
+                oldTaxData = con.execute(
                     "select * from tax where orgcode = %d" % (orgCode)
                 )
                 oldTaxRows = oldTaxData.fetchall()
@@ -1422,7 +1421,7 @@ class api_rollclose(object):
                         newCatCode = oldToNewCatCodes[oldCatCode]
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
-                    self.con.execute(
+                    con.execute(
                         tax.insert(),
                         {
                             "taxname": taxRow["taxname"],
@@ -1435,11 +1434,11 @@ class api_rollclose(object):
                     )
 
                 # Godowns Migration
-                oldGodowns = self.con.execute(
+                oldGodowns = con.execute(
                     "select * from godown where orgcode = %d" % (orgCode)
                 )
                 for row in oldGodowns:
-                    self.con.execute(
+                    con.execute(
                         godown.insert(),
                         {
                             "goname": row["goname"],
@@ -1452,19 +1451,19 @@ class api_rollclose(object):
                         },
                     )
                 # Old/New Godown Id's mapping
-                oldgo = self.con.execute(
+                oldgo = con.execute(
                     f"select * from godown where orgcode={orgCode}"
                 ).fetchall()
                 godownMap = {}
                 for i in oldgo:
-                    newgo = self.con.execute(
+                    newgo = con.execute(
                         f"select * from godown where orgcode={newOrgCode} and goname='%s'"
                         % (i["goname"])
                     ).fetchone()
                     godownMap[i["goid"]] = newgo["goid"]
 
                 # Godown Producs
-                oldGp = self.con.execute(
+                oldGp = con.execute(
                     "select * from goprod where orgcode = %d" % (orgCode)
                 )
                 for row in oldGp:
@@ -1473,7 +1472,7 @@ class api_rollclose(object):
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
                     stockData = godownwisestockonhandfun(
-                        self.con,
+                        con,
                         orgCode,
                         oldstartDate,
                         endDate,
@@ -1482,12 +1481,12 @@ class api_rollclose(object):
                         row["goid"],
                     )
                     stockValue = calculateStockValue(
-                        self.con, orgCode, endDate, oldProdCode, row["goid"]
+                        con, orgCode, endDate, oldProdCode, row["goid"]
                     )
                     stockBalance = 0
                     if len(stockData) and "balance" in stockData[0]:
                         stockBalance = float(stockData[0]["balance"])
-                    self.con.execute(
+                    con.execute(
                         goprod.insert(),
                         {
                             "goid": godownMap[row["goid"]],
@@ -1498,21 +1497,21 @@ class api_rollclose(object):
                         },
                     )
                 # User Godowns migration
-                oldUserGodowns = self.con.execute(
+                oldUserGodowns = con.execute(
                     f"select * from usergodown where orgcode={orgCode}"
                 ).fetchall()
-                oldgi = self.con.execute(
+                oldgi = con.execute(
                     f"select * from users where userrole=3 and orgcode={orgCode}"
                 ).fetchall()
                 gimap = {}
                 for i in oldgi:
-                    newgi = self.con.execute(
+                    newgi = con.execute(
                         f"select userid from users where userrole=3 and orgcode={newOrgCode} and username='%s'"
                         % (i["username"])
                     ).fetchone()
                     gimap[i["userid"]] = newgi["userid"]
                 for row in oldUserGodowns:
-                    self.con.execute(
+                    con.execute(
                         usergodown.insert(),
                         {
                             "goid": godownMap[row["goid"]],
@@ -1522,12 +1521,11 @@ class api_rollclose(object):
                     )
                 # set existing org's roflag to 1
                 gk_log(__name__).info("setting roflag to 1")
-                self.con.execute(
+                con.execute(
                     organisation.update()
                     .where(organisation.c.orgcode == orgCode)
                     .values({"roflag": 1})
                 )
-                self.con.close()
                 payload = {
                     "neworgcode": newOrgCode,
                     "yearstart": newYearStart,
@@ -1535,9 +1533,6 @@ class api_rollclose(object):
                 }
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
 
-            except Exception as E:
-                print(traceback.format_exc(), E)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     def getNextOrgCode(self, prevOrgCode, con):
         """
