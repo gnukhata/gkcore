@@ -80,35 +80,32 @@ class api_customer(object):
                     )
                 ).fetchone()
                 custid = custid["custid"]
-                if result.rowcount == 1:
-                    # Account for customer / supplier
-                    if dataset["csflag"] == 3:
-                        groupname = "Sundry Debtors"
-                    else:
-                        groupname = "Sundry Creditors for Purchase"
-                    groupcode = con.execute(
-                        select([gkdb.groupsubgroups.c.groupcode]).where(
-                            and_(
-                                gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
-                                gkdb.groupsubgroups.c.groupname == groupname,
-                            )
+                # Account for customer / supplier
+                if dataset["csflag"] == 3:
+                    groupname = "Sundry Debtors"
+                else:
+                    groupname = "Sundry Creditors for Purchase"
+                groupcode = con.execute(
+                    select([gkdb.groupsubgroups.c.groupcode]).where(
+                        and_(
+                            gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
+                            gkdb.groupsubgroups.c.groupname == groupname,
                         )
                     )
-                    group = groupcode.fetchone()
-                    subgroupcode = group["groupcode"]
-                    accountData = {
-                        "openingbal": 0.00,
-                        "accountname": dataset["custname"],
-                        "groupcode": subgroupcode,
-                        "orgcode": authDetails["orgcode"],
-                    }
-                    result = con.execute(gkdb.accounts.insert(), [accountData])
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": {"custid": custid},
-                    }
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                )
+                group = groupcode.fetchone()
+                subgroupcode = group["groupcode"]
+                accountData = {
+                    "openingbal": 0.00,
+                    "accountname": dataset["custname"],
+                    "groupcode": subgroupcode,
+                    "orgcode": authDetails["orgcode"],
+                }
+                result = con.execute(gkdb.accounts.insert(), [accountData])
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": {"custid": custid},
+                }
 
 
     # route_name="customer_custid",
