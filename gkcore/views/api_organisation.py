@@ -768,11 +768,6 @@ class api_organisation(object):
                 # Update organisation table about its admin user
                 users = {}
                 users[authDetails["userid"]] = True
-                # print(
-                #     "=============== Adding the relation code now ==============="
-                # )
-                # print(users)
-                # print(authDetails["userid"])
                 con.execute(
                     gkdb.organisation.update()
                     .where(gkdb.organisation.c.orgcode == orgcode["orgcode"])
@@ -784,8 +779,6 @@ class api_organisation(object):
                     "userconf": {},
                     "userrole": -1,
                 }
-                # orgs[str(orgcode["orgcode"])] = {}
-                print(orgs)
                 con.execute(
                     "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                     % (
@@ -1198,7 +1191,6 @@ class api_organisation(object):
             else:
                 orgUsers = {}
             for orgUser in orgUsers:
-                print(orgUser)
                 con.execute(
                     "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
                     % (str(authDetails["orgcode"]), int(orgUser))
@@ -1285,7 +1277,6 @@ class api_organisation(object):
                 )
             )
             org = orgncount.fetchone()
-            print(org["orgcode"])
             if org["orgcode"] != 0:
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             else:
