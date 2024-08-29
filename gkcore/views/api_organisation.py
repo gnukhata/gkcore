@@ -1634,36 +1634,27 @@ class api_organisation(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         if userAuthDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        self.con = eng.connect()
         # check if the user is admin of the current org
         if authDetails["userrole"] != -1:
             return {"gkstatus": enumdict["BadPrivilege"]}
+
+        with eng.begin() as con:
         # remove user keys in org table & org keys in user table
-        try:
             admin_count = len(self.orgAdminList(org_code=authDetails["orgcode"]))
             # check if user is trying to remove self
             # do not allow self removal if org has one admin only
             if authDetails["userid"] == request_body["userid"] and admin_count == 1:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             # delete user from organisation users jsonb list
-            try:
-                self.con.execute(
-                    f"update organisation set users = users - '{request_body['userid']}' WHERE orgcode = {authDetails['orgcode']}"
-                )
-            except Exception as e:
-                gk_log(__name__).error("remove user: ", e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+            con.execute(
+                f"update organisation set users = users - '{request_body['userid']}' WHERE orgcode = {authDetails['orgcode']}"
+            )
             # delete org key in corresponding gkuser column
-            try:
-                self.con.execute(
-                    f"update gkusers set orgs = orgs - '{authDetails['orgcode']}' WHERE userid = {request_body['userid']}"
-                )
-            except Exception as e:
-                gk_log(__name__).error("remove org: ", e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+            con.execute(
+                f"update gkusers set orgs = orgs - '{authDetails['orgcode']}' WHERE userid = {request_body['userid']}"
+            )
             return {"gkstatus": enumdict["Success"]}
-        except Exception as e:
-            gk_log(__name__).error(e)
+
 
     def orgAdminList(self, org_code: int) -> list:
         """
