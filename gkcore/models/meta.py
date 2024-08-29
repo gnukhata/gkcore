@@ -34,6 +34,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.dialects.postgresql.base import PGInspector
 import sys, os, json, pathlib
 from pyramid.request import Request
+from sqlalchemy import inspect
 
 # from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import metadata
@@ -64,6 +65,14 @@ def dbconnect():
     return engine
 
 eng = dbconnect()
+
+
+def does_foreignkey_exist(eng, table_name, constraint_name):
+    # Inspect the database to check for the constraint
+    inspector = inspect(eng)
+    constraints = inspector.get_foreign_keys(table_name)
+    # return true if the constraint already exists
+    return any(constraint['name'] == constraint_name for constraint in constraints)
 
 
 def inventoryMigration(con, eng):
