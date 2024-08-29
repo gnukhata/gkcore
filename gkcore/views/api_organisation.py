@@ -74,9 +74,8 @@ class api_organisation(object):
         renderer="json",
     )
     def getsubOrgs(self):
-        try:
-            self.con = eng.connect()
-            result = self.con.execute(
+        with eng.connect() as con:
+            result = con.execute(
                 select(
                     [
                         gkdb.organisation.c.orgname,
@@ -99,17 +98,13 @@ class api_organisation(object):
                     }
                 )
                 orgs.sort()
-            self.con.close()
             return {"gkstatus": enumdict["Success"], "gkdata": orgs}
-        except:
-            self.con.close()
-            return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="orgyears", request_method="GET", renderer="json")
     def getYears(self):
-        try:
-            self.con = eng.connect()
-            result = self.con.execute(
+        with eng.connect() as con:
+            result = con.execute(
                 select(
                     [
                         gkdb.organisation.c.yearstart,
@@ -136,11 +131,8 @@ class api_organisation(object):
                         "orgcode": row["orgcode"],
                     }
                 )
-            self.con.close()
             return {"gkstatus": enumdict["Success"], "gkdata": years}
-        except:
-            self.con.close()
-            return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(
         request_method="GET",
@@ -155,6 +147,7 @@ class api_organisation(object):
             return {"gkstatus": enumdict["ActionDisallowed"]}
         else:
             return {"gkstatus": enumdict["Success"]}
+
 
     @view_config(
         request_method="POST",
@@ -841,9 +834,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.organisation]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
@@ -972,11 +964,8 @@ class api_organisation(object):
                     "modeflag": row["modeflag"],
                 }
 
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkdata": orgDetails}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", request_param="type=genstats", renderer="json")
     def getGeneralStats(self):
@@ -988,21 +977,20 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                inv = self.con.execute(
+            with eng.connect() as con:
+                inv = con.execute(
                     "select count(invid) as invcount from invoice where orgcode = %d"
                     % int(authDetails["orgcode"])
                 ).fetchone()
-                party = self.con.execute(
+                party = con.execute(
                     "select count(custid) as pcount from customerandsupplier where orgcode = %d"
                     % int(authDetails["orgcode"])
                 ).fetchone()
-                prod = self.con.execute(
+                prod = con.execute(
                     "select count(productcode) as prodcount from product where orgcode = %d"
                     % int(authDetails["orgcode"])
                 ).fetchone()
-                voucher = self.con.execute(
+                voucher = con.execute(
                     "select count(vouchercode) vcount from vouchers where orgcode = %d"
                     % int(authDetails["orgcode"])
                 ).fetchone()
@@ -1014,10 +1002,7 @@ class api_organisation(object):
                 }
 
                 return {"gkstatus": enumdict["Success"], "gkresult": data}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
         """
         This function returns Organisation Details for Invoicing.
@@ -1031,10 +1016,9 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 statecode = self.request.params["statecode"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.organisation]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
@@ -1101,10 +1085,8 @@ class api_organisation(object):
                     "orgfax": orgfax,
                     "orgemail": orgemail,
                 }
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkdata": orgDetails}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     # code for saving null values of bankdetails and updation in database
     # variable created for orgcode so that query will work easily
@@ -1265,13 +1247,12 @@ class api_organisation(object):
 
     @view_config(request_method="GET", request_param="type=exists", renderer="json")
     def Orgexists(self):
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             orgtype = self.request.params["orgtype"]
             orgname = self.request.params["orgname"]
             finstart = self.request.params["finstart"]
             finend = self.request.params["finend"]
-            orgncount = self.con.execute(
+            orgncount = con.execute(
                 select(
                     [func.count(gkdb.organisation.c.orgcode).label("orgcode")]
                 ).where(
@@ -1288,10 +1269,7 @@ class api_organisation(object):
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             else:
                 return {"gkstatus": enumdict["Success"]}
-        except:
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+
 
     @view_config(
         request_method="GET", route_name="organisation_orgname", renderer="json"
@@ -1308,10 +1286,9 @@ class api_organisation(object):
         if userAuthDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         # proceed to check if org name is unique
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             orgname = self.request.matchdict["orgname"]
-            orgncount = self.con.execute(
+            orgncount = con.execute(
                 select(
                     [func.count(gkdb.organisation.c.orgcode).label("orgcode")]
                 ).where(
@@ -1326,11 +1303,7 @@ class api_organisation(object):
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             else:
                 return {"gkstatus": enumdict["Success"]}
-        except:
-            print(traceback.format_exc())
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+
 
     @view_config(request_param="orgcode", request_method="GET", renderer="json")
     def getOrgcode(self):
@@ -1343,6 +1316,7 @@ class api_organisation(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             return {"gkstatus": enumdict["Success"], "gkdata": authDetails["orgcode"]}
+
 
     @view_config(
         request_method="PUT", request_param="type=getinventory", renderer="json"
@@ -1383,19 +1357,15 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.organisation.c.logo]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
                 row = result.fetchone()
                 return {"gkstatus": enumdict["Success"], "logo": row["logo"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # Code for fetching organisations bankdetails depending on organisation code.
     @view_config(
@@ -1409,9 +1379,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.organisation.c.bankdetails]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
@@ -1423,10 +1392,8 @@ class api_organisation(object):
                     bankdetails = row["bankdetails"]
 
                 orgbankDetails = {"bankdetails": bankdetails}
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkbankdata": orgbankDetails}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     """
     Purpose: Get groupcode of group 'Current Liabilities' and subgroup 'Duties & Taxes'
@@ -1446,9 +1413,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.groupsubgroups.c.groupcode]).where(
                         and_(
                             gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
@@ -1456,7 +1422,7 @@ class api_organisation(object):
                         )
                     )
                 )
-                grOup = self.con.execute(
+                grOup = con.execute(
                     select([gkdb.groupsubgroups.c.groupcode]).where(
                         and_(
                             gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
@@ -1478,9 +1444,7 @@ class api_organisation(object):
                         "subgroupcode": "New",
                         "groupcode": int(grOupName["groupcode"]),
                     }
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     """
     Purpose: Get all accounts of group 'Current Liabilities' and subgroup 'Duties & Taxes' created for GST.
@@ -1500,9 +1464,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.groupsubgroups.c.groupcode]).where(
                         and_(
                             gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
@@ -1513,7 +1476,7 @@ class api_organisation(object):
                 row = result.fetchone()
                 accounts = []
                 if result.rowcount != 0 and row["groupcode"] != None:
-                    accountsdata = self.con.execute(
+                    accountsdata = con.execute(
                         select([gkdb.accounts.c.accountname]).where(
                             and_(
                                 gkdb.accounts.c.orgcode == authDetails["orgcode"],
@@ -1527,9 +1490,7 @@ class api_organisation(object):
                     return {"gkstatus": enumdict["Success"], "accounts": accounts}
                 else:
                     return {"gkstatus": enumdict["ConnectionFailed"]}
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     # returns avfalag , to decide auto voucher creation
     @view_config(request_method="GET", request_param="autovoucher", renderer="json")
@@ -1539,9 +1500,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.organisation.c.avflag]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
@@ -1550,9 +1510,7 @@ class api_organisation(object):
                     "gkstatus": enumdict["Success"],
                     "autovoucher": result["avflag"],
                 }
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(
         request_method="GET",
@@ -1565,15 +1523,14 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [gkdb.organisation.c.yearstart, gkdb.organisation.c.yearend]
                     ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
                 )
                 orgfy = result.fetchall()
-                allorg = self.con.execute(
+                allorg = con.execute(
                     "select orgcode, orgname, orgtype from organisation where yearstart='%s' and yearend= '%s'"
                     % (orgfy[0]["yearstart"], orgfy[0]["yearend"])
                 )
@@ -1592,9 +1549,7 @@ class api_organisation(object):
                     orgs.sort()
 
                 return {"gkstatus": enumdict["Success"], "gkdata": orgs}
-                self.con.close()
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     # TODO: does the same as getOrgStateGstin, must merge the two methods
     @view_config(
@@ -1608,15 +1563,14 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [gkdb.organisation.c.gstin, gkdb.organisation.c.orgstate]
                     ).where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
                 ).fetchone()
 
-                stateCode = self.con.execute(
+                stateCode = con.execute(
                     select([gkdb.state.c.statecode]).where(
                         gkdb.state.c.statename == result["orgstate"]
                     )
@@ -1628,10 +1582,7 @@ class api_organisation(object):
                 }
 
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         request_method="GET",
@@ -1644,9 +1595,8 @@ class api_organisation(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                gstinResult = self.con.execute(
+            with eng.connect() as con:
+                gstinResult = con.execute(
                     "select gstin ->> '%d' as stgstin from organisation where gstin ? '%d' and orgcode = %d "
                     % (
                         int(self.request.params["statecode"]),
@@ -1659,8 +1609,7 @@ class api_organisation(object):
                     gstinrow = gstinResult.fetchone()
                     gstinval = str(gstinrow["stgstin"])
                 return {"gkstatus": enumdict["Success"], "gkresult": gstinval}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(
         request_method="DELETE", route_name="organisation_rm_user", renderer="json"
