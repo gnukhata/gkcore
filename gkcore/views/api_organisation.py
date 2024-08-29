@@ -46,8 +46,6 @@ import gkcore
 import json
 from Crypto.PublicKey import RSA
 from gkcore.models.meta import (
-    inventoryMigration,
-    addFields,
     columnExists,
     columnTypeMatches,
     tableExists,
@@ -182,22 +180,6 @@ class api_organisation(object):
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
                 result = generateSecret(con)
-                try:
-                    con.execute(select([gkdb.organisation.c.invflag]))
-                except:
-                    inventoryMigration(con, eng)
-                try:
-                    con.execute(
-                        select(
-                            [
-                                gkdb.delchal.c.modeoftransport,
-                                gkdb.delchal.c.noofpackages,
-                            ]
-                        )
-                    )
-                    con.execute(select([gkdb.transfernote.c.recieveddate]))
-                except:
-                    addFields(con, eng)
 
                 result = con.execute(gkdb.organisation.insert(), [orgdata])
                 if result.rowcount == 1:
