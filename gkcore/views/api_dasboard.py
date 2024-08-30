@@ -356,12 +356,6 @@ def delchalcountbymonth(inoutflag, orgcode):
 def stockonhanddashboard(orgcode):
     try:
         con = eng.connect()
-        yearenddate = con.execute(
-            "select yearend as calculateto from organisation where orgcode=%d"
-            % (orgcode)
-        )
-        yearenddateresult = yearenddate.fetchone()
-        calculateto = datetime.strftime(yearenddateresult["calculateto"], "%Y-%m-%d")
         # this is use to fetch top five product/service  which is order by  invoice count.
         topfiveprod = con.execute(
             "select ky as productcode from invoice cross join lateral jsonb_object_keys(contents) as t(ky) where orgcode=%d and invoice.inoutflag=15 group by ky order by count(*) desc limit(5)"
@@ -374,44 +368,26 @@ def stockonhanddashboard(orgcode):
                 "select productdesc as proddesc from product where productcode=%d"
                 % (int(prodcode["productcode"]))
             )
+            sale = get_business_item_invoice_data(
+                con, int(prodcode["productcode"])
+            )[1]
             proddesclist = proddesc.fetchone()
             prodcodedesclist.append(
                 {
                     "prodcode": prodcode["productcode"],
                     "proddesc": proddesclist["proddesc"],
+                    "sale": f"{sale:.2f}",
                 }
             )
 
-        prodname = []
-        stockresultlist = []
-        for i in prodcodedesclist:
-            prodname.append({"prodname": i["proddesc"]})
-            orgcode = orgcode
-            productCode = i["prodcode"]
-            endDate = datetime.strptime(str(calculateto), "%Y-%m-%d")
-            stockresult = stockonhandfun(orgcode, productCode, endDate)
-            # product
-            if stockresult["gkstatus"] == 0:
-                stockresultlist.append(stockresult["gkresult"][0])
-            # handle service type
-            if stockresult["gkstatus"] == 3:
-                # print(productCode)
-                stockresultlist.append(
-                    {
-                        "productname": i["proddesc"],
-                        "productcode": productCode,
-                        "balance": "N/A",
-                    }
-                )
         con.close()
         # return {
         #     "gkstatus": enumdict["Success"],
         #     "stockresultlist": stockresultlist,
         #     "productname": prodname,
         # }
-        return stockresultlist
+        return prodcodedesclist
     except Exception as e:
-        print(e)
         return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
