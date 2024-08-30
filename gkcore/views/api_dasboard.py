@@ -27,7 +27,7 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, generate_month_start_end_dates
-from gkcore.views.helpers.invoice import get_business_item_invoice_data
+from gkcore.views.helpers.invoice import get_business_item_invoice_data, get_invoice_details
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc
@@ -225,14 +225,14 @@ def topfivecustsup(inoutflag, orgcode):
         # this is to fetch top five customer which is sort by total amount.
         if inoutflag == 15:
             topfivecust = con.execute(
-                "select custid as custid, sum(invoicetotal) as data from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by data desc limit(5)"
+                "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by invoicetotal desc limit(5)"
                 % (orgcode)
             )
             topfivecustlist = topfivecust.fetchall()
         # this is to fetch top five suppplier which is sort by total invoice.
         else:
             topfivecust = con.execute(
-                "select custid as custid, count(custid) as data from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by data desc limit(5)"
+                "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by invoicetotal desc limit(5)"
                 % (orgcode)
             )
             topfivecustlist = topfivecust.fetchall()
@@ -248,12 +248,15 @@ def topfivecustsup(inoutflag, orgcode):
                     )
                 )
             )
+            invoice_total = 0
+            for invid in inv["invids"]:
+                invoice_total += float(get_invoice_details(con, invid)["taxfree"])
             csDetails = csd.fetchone()
             topfivecustdetails.append(
                 {
                     "custname": csDetails["custname"],
                     "custid": inv["custid"],
-                    "data": "%.2f" % inv["data"],
+                    "invoice_total": "%.2f" % invoice_total,
                 }
             )
 
@@ -262,8 +265,10 @@ def topfivecustsup(inoutflag, orgcode):
             "gkstatus": enumdict["Success"],
             "topfivecustdetails": topfivecustdetails,
         }
-    except:
+    except Exception as e:
         con.close()
+        print(e)
+
         return {"gkstatus": enumdict["ConnectionFailed"]}
     finally:
         con.close()
