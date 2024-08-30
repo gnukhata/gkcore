@@ -27,6 +27,7 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck, generate_month_start_end_dates
+from gkcore.views.helpers.invoice import get_business_item_invoice_data
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc
@@ -281,6 +282,9 @@ def topfiveprodsev(orgcode):
 
         prodinfolist = []
         for prodinfo in topfiveprodlist:
+            purchase = get_business_item_invoice_data(
+                con, int(prodinfo["productcode"])
+            )[0]
             proddesc = con.execute(
                 "select productdesc as proddesc, gsflag as gs from product where productcode=%d and orgcode=%d"
                 % (int(prodinfo["productcode"]), orgcode)
@@ -299,6 +303,7 @@ def topfiveprodsev(orgcode):
                 {
                     "prodcode": prodinfo["productcode"],
                     "count": prodinfo["numkeys"],
+                    "purchase": f"{purchase:.2f}",
                     "proddesc": proddesclist["proddesc"],
                     "goid": goidrow[0][0],
                     "gsflag": proddesclist['gs'],
