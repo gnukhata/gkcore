@@ -219,59 +219,49 @@ def get_invoice_monthly_balance(inoutflag, orgcode):
 
 
 # this function use to show top five customer/supplier at dashbord in most valued costomer and supplier div
-def topfivecustsup(inoutflag, orgcode):
-    try:
-        con = eng.connect()
-        # this is to fetch top five customer which is sort by total amount.
-        if inoutflag == 15:
-            topfivecust = con.execute(
-                "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by invoicetotal desc limit(5)"
-                % (orgcode)
-            )
-            topfivecustlist = topfivecust.fetchall()
-        # this is to fetch top five suppplier which is sort by total invoice.
-        else:
-            topfivecust = con.execute(
-                "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by invoicetotal desc limit(5)"
-                % (orgcode)
-            )
-            topfivecustlist = topfivecust.fetchall()
+def topfivecustsup(con, inoutflag, orgcode):
+    # this is to fetch top five customer which is sort by total amount.
+    if inoutflag == 15:
+        topfivecust = con.execute(
+            "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=15 and orgcode= %d and icflag=9 group by custid order by invoicetotal desc limit(5)"
+            % (orgcode)
+        )
+        topfivecustlist = topfivecust.fetchall()
+    # this is to fetch top five suppplier which is sort by total invoice.
+    else:
+        topfivecust = con.execute(
+            "select custid as custid, sum(invoicetotal) as invoicetotal, array_agg(invid) as invids from invoice where inoutflag=9 and orgcode=%d and icflag=9  group by custid order by invoicetotal desc limit(5)"
+            % (orgcode)
+        )
+        topfivecustlist = topfivecust.fetchall()
 
-        topfivecustdetails = []
-        for inv in topfivecustlist:
-            # for fetch customer or supplier name using cust id in invoice.
-            csd = con.execute(
-                select([customerandsupplier.c.custname]).where(
-                    and_(
-                        customerandsupplier.c.custid == inv["custid"],
-                        customerandsupplier.c.orgcode == orgcode,
-                    )
+    topfivecustdetails = []
+    for inv in topfivecustlist:
+        # for fetch customer or supplier name using cust id in invoice.
+        csd = con.execute(
+            select([customerandsupplier.c.custname]).where(
+                and_(
+                    customerandsupplier.c.custid == inv["custid"],
+                    customerandsupplier.c.orgcode == orgcode,
                 )
             )
-            invoice_total = 0
-            for invid in inv["invids"]:
-                invoice_total += float(get_invoice_details(con, invid)["taxfree"])
-            csDetails = csd.fetchone()
-            topfivecustdetails.append(
-                {
-                    "custname": csDetails["custname"],
-                    "custid": inv["custid"],
-                    "invoice_total": "%.2f" % invoice_total,
-                }
-            )
+        )
+        invoice_total = 0
+        for invid in inv["invids"]:
+            invoice_total += float(get_invoice_details(con, invid)["taxfree"])
+        csDetails = csd.fetchone()
+        topfivecustdetails.append(
+            {
+                "custname": csDetails["custname"],
+                "custid": inv["custid"],
+                "invoice_total": "%.2f" % invoice_total,
+            }
+        )
 
-        con.close()
-        return {
-            "gkstatus": enumdict["Success"],
-            "topfivecustdetails": topfivecustdetails,
-        }
-    except Exception as e:
-        con.close()
-        print(e)
-
-        return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
+    return {
+        "gkstatus": enumdict["Success"],
+        "topfivecustdetails": topfivecustdetails,
+    }
 
 
 # this function use to show top five most bought product and service at dashbord in most bought product/service div
@@ -514,7 +504,7 @@ class api_dashboard(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            with eng.connect() as con:
                 userinfo = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 userrole: int = userinfo["gkresult"]["userrole"]
                 orgcode = authDetails["orgcode"]
@@ -528,8 +518,8 @@ class api_dashboard(object):
                     datewise_purchaseinv = datewiseinvoice(9, orgcode)
                     amountwiise_saleinv = amountwiseinvoice(15, orgcode)
                     datewise_saleinv = datewiseinvoice(15, orgcode)
-                    sup_data = topfivecustsup(9, orgcode)
-                    cust_data = topfivecustsup(15, orgcode)
+                    sup_data = topfivecustsup(con, 9, orgcode)
+                    cust_data = topfivecustsup(con, 15, orgcode)
                     mostbought_prodsev = topfiveprodsev(orgcode)
                     stockonhanddata = stockonhanddashboard(orgcode)
                     balancedata = cashbankbalance(orgcode)
@@ -562,8 +552,8 @@ class api_dashboard(object):
                     datewise_saleinv = datewiseinvoice(15, orgcode)
                     delchal_out = delchalcountbymonth(15, orgcode)
                     delchal_in = delchalcountbymonth(9, orgcode)
-                    sup_data = topfivecustsup(9, orgcode)
-                    cust_data = topfivecustsup(15, orgcode)
+                    sup_data = topfivecustsup(con, 9, orgcode)
+                    cust_data = topfivecustsup(con, 15, orgcode)
                     mostbought_prodsev = topfiveprodsev(orgcode)
                     stockonhanddata = stockonhanddashboard(orgcode)
                     balancedata = cashbankbalance(orgcode)
@@ -614,8 +604,7 @@ class api_dashboard(object):
                             "delchalin": delchal_in["totalamount"],
                         },
                     }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     # this function use to show transfer note count by month at dashbord in bar chart
     @view_config(
