@@ -23,7 +23,7 @@ from gkcore import eng
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, MetaData, inspect
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 import jwt
@@ -31,6 +31,7 @@ import gkcore
 import json
 from Crypto.PublicKey import RSA
 from gkcore.models.meta import (
+    does_foreignkey_exist,
     inventoryMigration,
     addFields,
     columnExists,
@@ -1982,6 +1983,41 @@ class Migrate:
 
             with eng.begin() as conn:
                 conn.execute("alter table organisation add column if not exists tin text")
+
+            with eng.begin() as conn:
+                if not does_foreignkey_exist(
+                        eng,
+                        "categorysubcategories",
+                        "categorysubcategories_subcategoryof_fkey"
+                ):
+                    conn.execute(
+                        "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
+                    )
+                if not does_foreignkey_exist(
+                        eng,
+                        "unitofmeasurement",
+                        "unitofmeasurement_subunitof_fkey"
+                ):
+                    conn.execute(
+                    "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
+                    )
+                conn.execute("alter table organisation add column if not exists invflag Integer default 0 ")
+                conn.execute("alter table vouchers add column if not exists invid Integer")
+                if not does_foreignkey_exist(
+                        eng,
+                        "vouchers",
+                        "vouchers_invid_fkey"
+                ):
+                    conn.execute(
+                        "alter table vouchers add foreign key (invid) references invoice(invid)"
+                    )
+                conn.execute("alter table users add column if not exists themename text default 'Default'")
+
+            with eng.begin() as conn:
+                conn.execute("alter table transfernote add column if not exists recieveddate date")
+                conn.execute("alter table delchal add column if not exists noofpackages int")
+                conn.execute("alter table delchal add column if not exists modeoftransport text")
+
 
             print("Database migration successful")
 

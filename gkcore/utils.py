@@ -17,24 +17,28 @@ def gk_log(name: str = __name__):
     return logging.getLogger(name)
 
 
-def generateAuthToken(con, tokenItems, tokenType="userorg"):
-    try:
-        result = con.execute(select([gkdb.signature]))
-        sign = result.fetchone()
-        if sign == None:
+def generateSecret(con):
+    result = con.execute(select([gkdb.signature]))
+    sign = result.fetchone()
+    if sign == None:
+        key = RSA.generate(2560)
+        privatekey = key.exportKey("PEM")
+        sig = {"secretcode": privatekey}
+        gkcore.secret = privatekey
+        result = con.execute(gkdb.signature.insert(), [sig])
+    elif len(sign["secretcode"]) <= 20:
+        result = con.execute(gkdb.signature.delete())
+        if result.rowcount == 1:
             key = RSA.generate(2560)
             privatekey = key.exportKey("PEM")
             sig = {"secretcode": privatekey}
             gkcore.secret = privatekey
             result = con.execute(gkdb.signature.insert(), [sig])
-        elif len(sign["secretcode"]) <= 20:
-            result = con.execute(gkdb.signature.delete())
-            if result.rowcount == 1:
-                key = RSA.generate(2560)
-                privatekey = key.exportKey("PEM")
-                sig = {"secretcode": privatekey}
-                gkcore.secret = privatekey
-                result = con.execute(gkdb.signature.insert(), [sig])
+    return result
+
+def generateAuthToken(con, tokenItems, tokenType="userorg"):
+    try:
+        generateSecret(con)
         if tokenType == "user":
             token = jwt.encode(
                 {"username": tokenItems["username"], "userid": tokenItems["userid"]},
