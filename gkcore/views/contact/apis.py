@@ -28,18 +28,13 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.contact.schemas import ContactDetails, ContactDetailsUpdate
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, func
-from pyramid.request import Request
-from pyramid.response import Response
+from sqlalchemy import and_
 from pyramid.view import view_defaults, view_config
-import jwt
 import gkcore
 from gkcore.utils import authCheck
-
-# import traceback  # for printing detailed exception logs
 
 
 def getStateCode(StateName, con):
@@ -53,7 +48,6 @@ def getStateCode(StateName, con):
 @view_defaults(route_name="customer")
 class api_customer(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
         self.con = Connection
 
@@ -67,26 +61,16 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
+            validated_data = ContactDetails.model_validate(
+                self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+            )
+            dataset = validated_data.model_dump()
+
+            with eng.begin() as con:
                 dataset["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
-                    select([gkdb.customerandsupplier.c.custname])
-                    .where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode == dataset["orgcode"],
-                            func.lower(gkdb.customerandsupplier.c.custname) == func.lower(dataset["custname"]),
-                        )
-                    )
-                )
 
-                if result_duplicate_check.rowcount > 0:
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
-
-                result = self.con.execute(gkdb.customerandsupplier.insert(), [dataset])
-                custid = self.con.execute(
+                result = con.execute(gkdb.customerandsupplier.insert(), [dataset])
+                custid = con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -96,46 +80,33 @@ class api_customer(object):
                     )
                 ).fetchone()
                 custid = custid["custid"]
-                if result.rowcount == 1:
-                    # Account for customer / supplier
-                    if dataset["csflag"] == 3:
-                        groupname = "Sundry Debtors"
-                    else:
-                        groupname = "Sundry Creditors for Purchase"
-                    groupcode = self.con.execute(
-                        select([gkdb.groupsubgroups.c.groupcode]).where(
-                            and_(
-                                gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
-                                gkdb.groupsubgroups.c.groupname == groupname,
-                            )
+                # Account for customer / supplier
+                if dataset["csflag"] == 3:
+                    groupname = "Sundry Debtors"
+                else:
+                    groupname = "Sundry Creditors for Purchase"
+                groupcode = con.execute(
+                    select([gkdb.groupsubgroups.c.groupcode]).where(
+                        and_(
+                            gkdb.groupsubgroups.c.orgcode == authDetails["orgcode"],
+                            gkdb.groupsubgroups.c.groupname == groupname,
                         )
                     )
-                    group = groupcode.fetchone()
-                    subgroupcode = group["groupcode"]
-                    accountData = {
-                        "openingbal": 0.00,
-                        "accountname": dataset["custname"],
-                        "groupcode": subgroupcode,
-                        "orgcode": authDetails["orgcode"],
-                    }
-                    try:
-                        result = self.con.execute(gkdb.accounts.insert(), [accountData])
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": {"custid": custid},
-                        }
-                    except:
-                        return {"gkstatus": enumdict["Success"]}
-                else:
-                    # print(traceback.format_exc())
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                # print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                )
+                group = groupcode.fetchone()
+                subgroupcode = group["groupcode"]
+                accountData = {
+                    "openingbal": 0.00,
+                    "accountname": dataset["custname"],
+                    "groupcode": subgroupcode,
+                    "orgcode": authDetails["orgcode"],
+                }
+                result = con.execute(gkdb.accounts.insert(), [accountData])
+                return {
+                    "gkstatus": enumdict["Success"],
+                    "gkresult": {"custid": custid},
+                }
+
 
     # route_name="customer_custid",
     @view_config(route_name="customer_custid", request_method="GET", renderer="json")
@@ -152,10 +123,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 custid = self.request.matchdict["custid"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier]).where(
                         gkdb.customerandsupplier.c.custid == custid
                     )
@@ -169,7 +139,7 @@ class api_customer(object):
                 statelist = []
 
                 if row["state"] is not None and row["state"]:
-                    statedata = self.con.execute(
+                    statedata = con.execute(
                         select([gkdb.state.c.statecode]).where(
                             gkdb.state.c.statename == row["state"]
                         )
@@ -179,7 +149,7 @@ class api_customer(object):
 
                 if row["gstin"] != None and bool(row["gstin"]):
                     for statecd in row["gstin"]:
-                        statedata = self.con.execute(
+                        statedata = con.execute(
                             select(
                                 [gkdb.state.c.statename, gkdb.state.c.statecode]
                             ).where(gkdb.state.c.statecode == statecd)
@@ -189,7 +159,7 @@ class api_customer(object):
                             {statename["statecode"]: statename["statename"]}
                         )
                 elif row["state"] is not None and row["state"]:
-                    custsupstatecode = getStateCode(row["state"], self.con)["statecode"]
+                    custsupstatecode = getStateCode(row["state"], con)["statecode"]
                     statelist.append({custsupstatecode: row["state"]})
 
                 Customer = {
@@ -214,11 +184,7 @@ class api_customer(object):
                     "gst_party_type": row["gst_party_type"],
                 }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
-            except:
-                # print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(route_name="customer_custid", request_method="PUT", renderer="json")
     def editCustomerSupplier(self):
@@ -230,51 +196,34 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
+            validated_data = ContactDetailsUpdate.model_validate(
+                self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+            )
+            dataset = validated_data.model_dump()
+            with eng.begin() as con:
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
-                result = self.con.execute(
-                    select([gkdb.customerandsupplier.c.custname]).where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
-                            gkdb.customerandsupplier.c.custid == custcode,
-                        )
+                if "bankdetails" not in dataset:
+                    # if bankdetails are null, set bankdetails as null in database.
+                    con.execute(
+                        "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
+                        % int(custcode)
                     )
-                )
-                if result.rowcount == 1:
-                    if "bankdetails" not in dataset:
-                        # if bankdetails are null, set bankdetails as null in database.
-                        self.con.execute(
-                            "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
-                            % int(custcode)
-                        )
-                    if "gstin" not in dataset:
-                        # if gstin are null, set gstin as null in database.
-                        self.con.execute(
-                            "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
-                            % int(custcode)
-                        )
-                    try:
-                        self.con.execute(
-                        gkdb.customerandsupplier.update()
-                        .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
-                        .values(dataset))
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": {"custid": custid},
-                        }
-                    except:
-                        return {"gkstatus": enumdict["Success"]}
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                if "gstin" not in dataset:
+                    # if gstin are null, set gstin as null in database.
+                    con.execute(
+                        "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
+                        % int(custcode)
+                    )
+                con.execute(
+                    gkdb.customerandsupplier.update()
+                    .where(gkdb.customerandsupplier.c.custid == dataset["custid"])
+                    .values(dataset))
+                return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": {"custid": dataset["custid"]},
+                    }
+
 
     @view_config(request_param="qty=custall", request_method="GET", renderer="json")
     def getAllCustomers(self):
@@ -286,10 +235,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.customerandsupplier.c.custname,
@@ -311,10 +259,7 @@ class api_customer(object):
                         {"custid": row["custid"], "custname": row["custname"]}
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": customers}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_param="qty=supall", request_method="GET", renderer="json")
     def getAllSuppliers(self):
@@ -326,10 +271,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.customerandsupplier.c.custname,
@@ -351,10 +295,7 @@ class api_customer(object):
                         {"custid": row["custid"], "custname": row["custname"]}
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": suppliers}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(route_name="customer_custid", request_method="DELETE", renderer="json")
     def deleteCustomer(self):
@@ -366,9 +307,8 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.begin() as con:
+                result = con.execute(
                     select([gkdb.customerandsupplier.c.custname]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode == authDetails["orgcode"],
@@ -377,7 +317,7 @@ class api_customer(object):
                     )
                 )
                 if result.rowcount == 1:
-                    self.con.execute(
+                    con.execute(
                         gkdb.customerandsupplier.delete().where(
                             gkdb.customerandsupplier.c.custid
                             == self.request.matchdict["custid"]
@@ -386,12 +326,7 @@ class api_customer(object):
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         route_name="customer_search_by_name", request_method="GET", renderer="json"
@@ -409,10 +344,9 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 custname = self.request.matchdict["custname"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -432,7 +366,7 @@ class api_customer(object):
                     statelist = []
                     if row["gstin"] != None and bool(row["gstin"]):
                         for statecd in row["gstin"]:
-                            statedata = self.con.execute(
+                            statedata = con.execute(
                                 select(
                                     [gkdb.state.c.statename, gkdb.state.c.statecode]
                                 ).where(gkdb.state.c.statecode == statecd)
@@ -442,7 +376,7 @@ class api_customer(object):
                                 {statename["statecode"]: statename["statename"]}
                             )
                     else:
-                        custsupstatecode = getStateCode(row["state"], self.con)[
+                        custsupstatecode = getStateCode(row["state"], con)[
                             "statecode"
                         ]
                         statelist.append({custsupstatecode: row["state"]})
@@ -467,10 +401,7 @@ class api_customer(object):
                         "gst_party_type": row["gst_party_type"],
                     }
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": Customer}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         route_name="customer_search_by_account", request_method="GET", renderer="json"
@@ -484,11 +415,10 @@ class api_customer(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 accountcode = self.request.matchdict["accountcode"]
                 # there is only one possibility for a catch which is failed connection to db.
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.accounts.c.accountname]).where(
                         and_(
                             gkdb.accounts.c.orgcode == authDetails["orgcode"],
@@ -498,7 +428,7 @@ class api_customer(object):
                 )
                 account = result.fetchone()
                 accountname = account["accountname"]
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.customerandsupplier.c.custid]).where(
                         and_(
                             gkdb.customerandsupplier.c.orgcode
@@ -512,7 +442,3 @@ class api_customer(object):
                     "gkstatus": gkcore.enumdict["Success"],
                     "gkresult": customer["custid"],
                 }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()

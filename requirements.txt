@@ -35,4 +35,8 @@ pyramid-openapi3 == 0.16.0
 openapi-core < 0.17.0
 
 # for api payload validation
-pydantic==2.4.0
+pydantic >= 2.8.2
+pydantic-core >= 2.20.1
+pydantic-extra-types >= 2.9.0
+phonenumbers >= 8.13.43
+email-validator >= 2.2.0
