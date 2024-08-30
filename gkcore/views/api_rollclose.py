@@ -104,12 +104,11 @@ class api_rollclose(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 orgCode = int(authDetails["orgcode"])
                 endDate = self.request.params["financialend"]
                 closBal = 0.00
-                blacktransactionsdata = self.con.execute(
+                blacktransactionsdata = con.execute(
                     select(
                         [func.count(vouchers.c.vouchercode).label("blackcount")]
                     ).where(
@@ -122,7 +121,7 @@ class api_rollclose(object):
                 blacktransactions = blacktransactionsdata.fetchone()
                 if blacktransactions["blackcount"] > 0:
                     return {"gkstatus": enumdict["ActionDisallowed"]}
-                financialStartEnd = self.con.execute(
+                financialStartEnd = con.execute(
                     "select yearstart, yearend, orgtype from organisation where orgcode = %d"
                     % int(orgCode)
                 )
@@ -132,7 +131,7 @@ class api_rollclose(object):
                 closingAccountCode = 0
                 if startEndRow["orgtype"] == "Profit Making":
                     closingAccount = "Profit & Loss"
-                    closeCodeData = self.con.execute(
+                    closeCodeData = con.execute(
                         "select accountcode from accounts where orgcode = %d and accountname = '%s'"
                         % (orgCode, closingAccount)
                     )
@@ -140,13 +139,13 @@ class api_rollclose(object):
                     closingAccountCode = int(codeRow["accountcode"])
                 else:
                     closingAccount = "Income & Expenditure"
-                    closeCodeData = self.con.execute(
+                    closeCodeData = con.execute(
                         "select accountcode from accounts where orgcode = %d and accountname = '%s'"
                         % (orgCode, closingAccount)
                     )
                     codeRow = closeCodeData.fetchone()
                     closingAccountCode = int(codeRow["accountcode"])
-                directIncomeData = self.con.execute(
+                directIncomeData = con.execute(
                     "select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Income', 'Indirect Income') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Income','Indirect Income')));"
                     % (orgCode, orgCode, orgCode)
                 )
@@ -158,7 +157,7 @@ class api_rollclose(object):
                     ):
                         continue
                     cbRecord = calculateBalance(
-                        self.con, int(di["accountcode"]), startDate, startDate, endDate
+                        con, int(di["accountcode"]), startDate, startDate, endDate
                     )
                     if float(cbRecord["curbal"]) == 0:
                         continue
@@ -188,15 +187,15 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
-                directExpenseData = self.con.execute(
+                    result = con.execute(vouchers.insert(), [cljv])
+                directExpenseData = con.execute(
                     "select accountcode, accountname from accounts where orgcode = %d and groupcode in(select groupcode from groupsubgroups where orgcode =%d and groupname in ('Direct Expense', 'Indirect Expense') or subgroupof in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Direct Expense','Indirect Expense')));"
                     % (orgCode, orgCode, orgCode)
                 )
                 deRecords = directExpenseData.fetchall()
                 for de in deRecords:
                     cbRecord = calculateBalance(
-                        self.con, int(de["accountcode"]), startDate, startDate, endDate
+                        con, int(de["accountcode"]), startDate, startDate, endDate
                     )
                     if float(cbRecord["curbal"]) == 0:
                         continue
@@ -226,12 +225,12 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
+                    result = con.execute(vouchers.insert(), [cljv])
                 plResult = calculateBalance(
-                    self.con, closingAccountCode, startDate, startDate, endDate
+                    con, closingAccountCode, startDate, startDate, endDate
                 )
                 startEndRow["orgtype"]
-                groupCodeData = self.con.execute(
+                groupCodeData = con.execute(
                     "select groupcode from groupsubgroups where groupname = 'Reserves' and orgcode = %d"
                     % (orgCode)
                 )
@@ -246,9 +245,9 @@ class api_rollclose(object):
                         "groupcode": int(groupCode),
                         "orgcode": orgCode,
                     }
-                    ins = self.con.execute(accounts.insert(), [pAccount])
+                    ins = con.execute(accounts.insert(), [pAccount])
                     finalreservecode = 0
-                    curreservedata = self.con.execute(
+                    curreservedata = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
                                 accounts.c.orgcode == orgCode,
@@ -284,8 +283,8 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
-                    paccnumdata = self.con.execute(
+                    result = con.execute(vouchers.insert(), [cljv])
+                    paccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -295,7 +294,7 @@ class api_rollclose(object):
                             )
                         )
                     )
-                    laccnumdata = self.con.execute(
+                    laccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -313,8 +312,8 @@ class api_rollclose(object):
                             "groupcode": int(groupCode),
                             "orgcode": orgCode,
                         }
-                        ins = self.con.execute(accounts.insert(), [pAccount])
-                        finalreservedata = self.con.execute(
+                        ins = con.execute(accounts.insert(), [pAccount])
+                        finalreservedata = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
                                     accounts.c.orgcode == orgCode,
@@ -326,11 +325,11 @@ class api_rollclose(object):
                         finalreservecode = finalreserverow["accountcode"]
                     else:
                         if paccnumrow["account"] > 0:
-                            res = self.con.execute(
+                            res = con.execute(
                                 "update accounts set accountname = 'Profit C/F' where orgcode = %d and accountname = 'Profit B/F'"
                                 % (orgCode)
                             )
-                            finalreservedata = self.con.execute(
+                            finalreservedata = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -341,7 +340,7 @@ class api_rollclose(object):
                             finalreserverow = finalreservedata.fetchone()
                             finalreservecode = finalreserverow["accountcode"]
                         if laccnumrow["account"] > 0:
-                            lcfData = self.con.execute(
+                            lcfData = con.execute(
                                 select([accounts.c.openingbal]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -352,11 +351,11 @@ class api_rollclose(object):
                             lcfRow = lcfData.fetchone()
                             lcf = float(lcfRow["openingbal"])
                             if lcf > plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Loss C/F' where orgcode = %d and accountname = 'Loss B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -367,11 +366,11 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             elif lcf < plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Profit C/F' where orgcode = %d and accountname = 'Loss B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -382,7 +381,7 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             else:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "delete from accounts where orgcode = %d and accountname = 'Loss B/F'"
                                     % (orgCode)
                                 )
@@ -414,7 +413,7 @@ class api_rollclose(object):
                             "vouchertype": "journal",
                             "orgcode": orgCode,
                         }
-                        result = self.con.execute(vouchers.insert(), [cljv])
+                        result = con.execute(vouchers.insert(), [cljv])
 
                 if (
                     plResult["baltype"] == "Cr"
@@ -425,9 +424,9 @@ class api_rollclose(object):
                         "groupcode": int(groupCode),
                         "orgcode": orgCode,
                     }
-                    ins = self.con.execute(accounts.insert(), [sAccount])
+                    ins = con.execute(accounts.insert(), [sAccount])
                     finalreservecode = 0
-                    curreservedata = self.con.execute(
+                    curreservedata = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
                                 accounts.c.orgcode == orgCode,
@@ -463,8 +462,8 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
-                    paccnumdata = self.con.execute(
+                    result = con.execute(vouchers.insert(), [cljv])
+                    paccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -474,7 +473,7 @@ class api_rollclose(object):
                             )
                         )
                     )
-                    laccnumdata = self.con.execute(
+                    laccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -492,8 +491,8 @@ class api_rollclose(object):
                             "groupcode": int(groupCode),
                             "orgcode": orgCode,
                         }
-                        ins = self.con.execute(accounts.insert(), [pAccount])
-                        finalreservedata = self.con.execute(
+                        ins = con.execute(accounts.insert(), [pAccount])
+                        finalreservedata = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
                                     accounts.c.orgcode == orgCode,
@@ -505,11 +504,11 @@ class api_rollclose(object):
                         finalreservecode = finalreserverow["accountcode"]
                     else:
                         if paccnumrow["account"] > 0:
-                            res = self.con.execute(
+                            res = con.execute(
                                 "update accounts set accountname = 'Surplus C/F' where orgcode = %d and accountname = 'Surplus B/F'"
                                 % (orgCode)
                             )
-                            finalreservedata = self.con.execute(
+                            finalreservedata = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -520,7 +519,7 @@ class api_rollclose(object):
                             finalreserverow = finalreservedata.fetchone()
                             finalreservecode = finalreserverow["accountcode"]
                         if laccnumrow["account"] > 0:
-                            lcfData = self.con.execute(
+                            lcfData = con.execute(
                                 select([accounts.c.openingbal]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -531,11 +530,11 @@ class api_rollclose(object):
                             lcfRow = lcfData.fetchone()
                             lcf = float(lcfRow["openingbal"])
                             if lcf > plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Deficit C/F' where orgcode = %d and accountname = 'Deficit B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -546,11 +545,11 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             elif lcf < plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Surplus C/F' where orgcode = %d and accountname = 'Deficit B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -561,7 +560,7 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             else:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "delete from accounts where orgcode = %d and accountname = 'Deficit B/F'"
                                     % (orgCode)
                                 )
@@ -593,7 +592,7 @@ class api_rollclose(object):
                             "vouchertype": "journal",
                             "orgcode": orgCode,
                         }
-                        result = self.con.execute(vouchers.insert(), [cljv])
+                        result = con.execute(vouchers.insert(), [cljv])
                 if (
                     plResult["baltype"] == "Dr"
                     and startEndRow["orgtype"] == "Profit Making"
@@ -603,9 +602,9 @@ class api_rollclose(object):
                         "groupcode": int(groupCode),
                         "orgcode": orgCode,
                     }
-                    ins = self.con.execute(accounts.insert(), [lAccount])
+                    ins = con.execute(accounts.insert(), [lAccount])
                     finalreservecode = 0
-                    curreservedata = self.con.execute(
+                    curreservedata = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
                                 accounts.c.orgcode == orgCode,
@@ -641,8 +640,8 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
-                    paccnumdata = self.con.execute(
+                    result = con.execute(vouchers.insert(), [cljv])
+                    paccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -652,7 +651,7 @@ class api_rollclose(object):
                             )
                         )
                     )
-                    laccnumdata = self.con.execute(
+                    laccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -670,8 +669,8 @@ class api_rollclose(object):
                             "groupcode": int(groupCode),
                             "orgcode": orgCode,
                         }
-                        ins = self.con.execute(accounts.insert(), [pAccount])
-                        finalreservedata = self.con.execute(
+                        ins = con.execute(accounts.insert(), [pAccount])
+                        finalreservedata = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
                                     accounts.c.orgcode == orgCode,
@@ -683,11 +682,11 @@ class api_rollclose(object):
                         finalreservecode = finalreserverow["accountcode"]
                     else:
                         if laccnumrow["account"] > 0:
-                            res = self.con.execute(
+                            res = con.execute(
                                 "update accounts set accountname = 'Loss C/F' where orgcode = %d and accountname = 'Loss B/F'"
                                 % (orgCode)
                             )
-                            finalreservedata = self.con.execute(
+                            finalreservedata = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -698,7 +697,7 @@ class api_rollclose(object):
                             finalreserverow = finalreservedata.fetchone()
                             finalreservecode = finalreserverow["accountcode"]
                         if paccnumrow["account"] > 0:
-                            pcfData = self.con.execute(
+                            pcfData = con.execute(
                                 select([accounts.c.openingbal]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -709,11 +708,11 @@ class api_rollclose(object):
                             pcfRow = pcfData.fetchone()
                             pcf = float(pcfRow["openingbal"])
                             if pcf > plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Profit C/F' where orgcode = %d and accountname = 'Profit B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -724,11 +723,11 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             elif pcf < plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Loss C/F' where orgcode = %d and accountname = 'Profit B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -739,7 +738,7 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             else:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "delete from accounts where orgcode = %d and accountname = 'Profit B/F'"
                                     % (orgCode)
                                 )
@@ -771,7 +770,7 @@ class api_rollclose(object):
                             "vouchertype": "journal",
                             "orgcode": orgCode,
                         }
-                        result = self.con.execute(vouchers.insert(), [cljv])
+                        result = con.execute(vouchers.insert(), [cljv])
                 if (
                     plResult["baltype"] == "Dr"
                     and startEndRow["orgtype"] == "Not For Profit"
@@ -781,9 +780,9 @@ class api_rollclose(object):
                         "groupcode": int(groupCode),
                         "orgcode": orgCode,
                     }
-                    ins = self.con.execute(accounts.insert(), [dAccount])
+                    ins = con.execute(accounts.insert(), [dAccount])
                     finalreservecode = 0
-                    curreservedata = self.con.execute(
+                    curreservedata = con.execute(
                         select([accounts.c.accountcode]).where(
                             and_(
                                 accounts.c.orgcode == orgCode,
@@ -819,8 +818,8 @@ class api_rollclose(object):
                         "vouchertype": "journal",
                         "orgcode": orgCode,
                     }
-                    result = self.con.execute(vouchers.insert(), [cljv])
-                    paccnumdata = self.con.execute(
+                    result = con.execute(vouchers.insert(), [cljv])
+                    paccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -830,7 +829,7 @@ class api_rollclose(object):
                             )
                         )
                     )
-                    laccnumdata = self.con.execute(
+                    laccnumdata = con.execute(
                         select(
                             [func.count(accounts.c.accountcode).label("account")]
                         ).where(
@@ -848,8 +847,8 @@ class api_rollclose(object):
                             "groupcode": int(groupCode),
                             "orgcode": orgCode,
                         }
-                        ins = self.con.execute(accounts.insert(), [pAccount])
-                        finalreservedata = self.con.execute(
+                        ins = con.execute(accounts.insert(), [pAccount])
+                        finalreservedata = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
                                     accounts.c.orgcode == orgCode,
@@ -861,11 +860,11 @@ class api_rollclose(object):
                         finalreservecode = finalreserverow["accountcode"]
                     else:
                         if laccnumrow["account"] > 0:
-                            res = self.con.execute(
+                            res = con.execute(
                                 "update accounts set accountname = 'Deficit C/F' where orgcode = %d and accountname = 'Deficit B/F'"
                                 % (orgCode)
                             )
-                            finalreservedata = self.con.execute(
+                            finalreservedata = con.execute(
                                 select([accounts.c.accountcode]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -876,7 +875,7 @@ class api_rollclose(object):
                             finalreserverow = finalreservedata.fetchone()
                             finalreservecode = finalreserverow["accountcode"]
                         if paccnumrow["account"] > 0:
-                            pcfData = self.con.execute(
+                            pcfData = con.execute(
                                 select([accounts.c.openingbal]).where(
                                     and_(
                                         accounts.c.orgcode == orgCode,
@@ -887,11 +886,11 @@ class api_rollclose(object):
                             pcfRow = pcfData.fetchone()
                             pcf = float(pcfRow["openingbal"])
                             if pcf > plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Surplus C/F' where orgcode = %d and accountname = 'Surplus B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -902,11 +901,11 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             elif pcf < plResult["curbal"]:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "update accounts set accountname = 'Deficit C/F' where orgcode = %d and accountname = 'Surplus B/F'"
                                     % (orgCode)
                                 )
-                                finalreservedata = self.con.execute(
+                                finalreservedata = con.execute(
                                     select([accounts.c.accountcode]).where(
                                         and_(
                                             accounts.c.orgcode == orgCode,
@@ -917,7 +916,7 @@ class api_rollclose(object):
                                 finalreserverow = finalreservedata.fetchone()
                                 finalreservecode = finalreserverow["accountcode"]
                             else:
-                                res = self.con.execute(
+                                res = con.execute(
                                     "delete from accounts where orgcode = %d and accountname = 'Profit B/F'"
                                     % (orgCode)
                                 )
@@ -949,18 +948,15 @@ class api_rollclose(object):
                             "vouchertype": "journal",
                             "orgcode": orgCode,
                         }
-                        try:
-                            self.con.execute(vouchers.insert(), [cljv])
-                        except Exception as e:
-                            print(e)
+                        con.execute(vouchers.insert(), [cljv])
                 # set existing org's booksclosedflag to 1
-                self.con.execute(
+                con.execute(
                     organisation.update()
                     .where(organisation.c.orgcode == orgCode)
                     .values({"booksclosedflag": 1})
                 )
                 # check if rollclose is true.
-                ROData = self.con.execute(
+                ROData = con.execute(
                     select([organisation.c.roflag]).where(
                         organisation.c.orgcode == orgCode
                     )
@@ -968,16 +964,16 @@ class api_rollclose(object):
                 ROFlagRow = ROData.fetchone()
                 roStatus = ROFlagRow["roflag"]
                 if roStatus == 1:
-                    accList = self.con.execute(
+                    accList = con.execute(
                         select([accounts.c.accountname, accounts.c.accountcode]).where(
                             accounts.c.orgcode == orgCode
                         )
                     )
                     accData = accList.fetchall()
-                    RoOrgCode = self.getNextOrgCode(orgCode, self.con)
+                    RoOrgCode = self.getNextOrgCode(orgCode, con)
                     for acc in accData:
                         # we must compare if the rolled over organisation contains all these accounts.
-                        newAccData = self.con.execute(
+                        newAccData = con.execute(
                             select([accounts.c.accountcode]).where(
                                 and_(
                                     accounts.c.accountname == acc["accountname"],
@@ -987,17 +983,17 @@ class api_rollclose(object):
                         )
                         # called closebook and get the balance.
                         calBalData = calculateBalance(
-                            self.con, acc["accountcode"], startDate, startDate, endDate
+                            con, acc["accountcode"], startDate, startDate, endDate
                         )
                         closBal = calBalData["curbal"]
                         if newAccData.rowcount == 0:
                             # this means  we first need to created this account for the rolled over org.
-                            grpResult = self.con.execute(
+                            grpResult = con.execute(
                                 "select groupname from groupsubgroups where orgcode = %d and groupcode = (select groupcode from accounts where accountcode = %d and orgcode = %d)"
                                 % (orgCode, acc["accountcode"], orgCode)
                             )
                             grpName = grpResult.fetchone()
-                            newGrpResult = self.con.execute(
+                            newGrpResult = con.execute(
                                 select([groupsubgroups.c.groupcode]).where(
                                     and_(
                                         groupsubgroups.c.orgcode == RoOrgCode,
@@ -1015,21 +1011,17 @@ class api_rollclose(object):
                                 "groupcode": grpCD["groupcode"],
                                 "orgcode": RoOrgCode,
                             }
-                            insACC = self.con.execute(accounts.insert(), [dataset])
+                            insACC = con.execute(accounts.insert(), [dataset])
                         else:
                             newAcc = newAccData.fetchone()
-                            updateData = self.con.execute(
+                            updateData = con.execute(
                                 accounts.update()
                                 .where(accounts.c.accountcode == newAcc["accountcode"])
                                 .values(openingbal=closBal)
                             )
 
-                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            except Exception as E:
-                print(E)
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="roll-over", renderer="json")
     def rollOver(self):
@@ -1050,10 +1042,9 @@ class api_rollclose(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 orgCode = int(authDetails["orgcode"])
-                financialStartEnd = self.con.execute(
+                financialStartEnd = con.execute(
                     "select * from organisation where orgcode = %d" % int(orgCode)
                 )
                 startEndRow = financialStartEnd.fetchone()
@@ -1099,9 +1090,9 @@ class api_rollclose(object):
                     "bankdetails": startEndRow["bankdetails"],
                     "users": startEndRow["users"],
                 }
-                self.con.execute(organisation.insert(), newOrg)
+                con.execute(organisation.insert(), newOrg)
                 # must move all the users data from old org to the new org
-                newOrgCodeData = self.con.execute(
+                newOrgCodeData = con.execute(
                     select([organisation.c.orgcode]).where(
                         and_(
                             organisation.c.orgname == newOrg["orgname"],
@@ -1114,7 +1105,7 @@ class api_rollclose(object):
                 newOrgRow = newOrgCodeData.fetchone()
                 newOrgCode = newOrgRow["orgcode"]
                 # need not create a new user here. But update the new orgcode in the gkusers table
-                oldUsers = self.con.execute(
+                oldUsers = con.execute(
                     select([organisation.c.users]).where(
                         organisation.c.orgcode == orgCode
                     )
@@ -1129,7 +1120,7 @@ class api_rollclose(object):
 
                 for oldUser in oldUsers:
                     # print(oldUser)
-                    orgDataQuery = self.con.execute(
+                    orgDataQuery = con.execute(
                         "select u.orgs#>'{%s}' as data from gkusers u where userid = %d;"
                         % (str(orgCode), int(oldUser))
                     )
@@ -1138,7 +1129,7 @@ class api_rollclose(object):
                         if orgDataQuery.rowcount > 0
                         else {"data": {}}
                     )
-                    self.con.execute(
+                    con.execute(
                         "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
                         % (
                             str(newOrgCode),
@@ -1146,21 +1137,21 @@ class api_rollclose(object):
                             int(oldUser),
                         )
                     )
-                oldGroups = self.con.execute(
+                oldGroups = con.execute(
                     "select groupname from groupsubgroups where subgroupof is null and orgcode = %d"
                     % (orgCode)
                 )
                 oldGroupRecords = oldGroups.fetchall()
                 for oldgrp in oldGroupRecords:
-                    self.con.execute(
+                    con.execute(
                         groupsubgroups.insert(),
                         {"groupname": oldgrp["groupname"], "orgcode": newOrgCode},
                     )
-                    oldSubGroupsForGroupData = self.con.execute(
+                    oldSubGroupsForGroupData = con.execute(
                         "select groupname from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where groupname = '%s' and orgcode = %d)"
                         % (orgCode, oldgrp["groupname"], orgCode)
                     )
-                    newgroupCodeData = self.con.execute(
+                    newgroupCodeData = con.execute(
                         select([groupsubgroups.c.groupcode]).where(
                             and_(
                                 groupsubgroups.c.groupname == oldgrp["groupname"],
@@ -1171,7 +1162,7 @@ class api_rollclose(object):
                     newGroupCodeRow = newgroupCodeData.fetchone()
                     newGroupCode = newGroupCodeRow["groupcode"]
                     for osg in oldSubGroupsForGroupData:
-                        res = self.con.execute(
+                        res = con.execute(
                             groupsubgroups.insert(),
                             {
                                 "groupname": osg["groupname"],
@@ -1179,12 +1170,12 @@ class api_rollclose(object):
                                 "orgcode": newOrgCode,
                             },
                         )
-                oldGroupAccounts = self.con.execute(
-                    "select accountname,accountcode,groupname from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
+                oldGroupAccounts = con.execute(
+                    "select accountname,accountcode,groupname,defaultflag from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
                     % (orgCode)
                 )
                 for angn in oldGroupAccounts:
-                    newCodeForGroup = self.con.execute(
+                    newCodeForGroup = con.execute(
                         select([groupsubgroups.c.groupcode]).where(
                             and_(
                                 groupsubgroups.c.groupname == angn["groupname"],
@@ -1194,7 +1185,7 @@ class api_rollclose(object):
                     )
                     newGroupCodeRow = newCodeForGroup.fetchone()
                     cbRecord = calculateBalance(
-                        self.con,
+                        con,
                         angn["accountcode"],
                         str(oldstartDate),
                         str(oldstartDate),
@@ -1231,16 +1222,17 @@ class api_rollclose(object):
                         "Deficit C/F",
                     ):
                         accname = accname.replace("C/F", "B/F")
-                    self.con.execute(
+                    con.execute(
                         accounts.insert(),
                         {
                             "accountname": accname,
                             "openingbal": float(opnbal),
                             "groupcode": newGroupCodeRow["groupcode"],
                             "orgcode": newOrgCode,
+                            "defaultflag": angn["defaultflag"],
                         },
                     )
-                csobData = self.con.execute(
+                csobData = con.execute(
                     select([accounts.c.openingbal]).where(
                         and_(
                             accounts.c.orgcode == newOrgCode,
@@ -1251,21 +1243,21 @@ class api_rollclose(object):
                 csobRow = csobData.fetchone()
                 csob = csobRow["openingbal"]
                 if csob > 0:
-                    self.con.execute(
+                    con.execute(
                         "update accounts set openingbal = %f where accountname = 'Stock at the Beginning' and orgcode = %d"
                         % (csob, newOrgCode)
                     )
-                    self.con.execute(
+                    con.execute(
                         "update accounts set openingbal = 0.00 where accountname = 'Closing Stock' and orgcode = %d"
                         % (newOrgCode)
                     )
-                    osCodeData = self.con.execute(
+                    osCodeData = con.execute(
                         "select accountcode from accounts where accountname = 'Opening Stock' and orgcode = %d"
                         % (newOrgCode)
                     )
                     osCodeRow = osCodeData.fetchone()
                     osCode = osCodeRow["accountcode"]
-                    sabData = self.con.execute(
+                    sabData = con.execute(
                         "select accountcode from accounts where accountname = 'Stock at the Beginning' and orgcode = %d"
                         % (newOrgCode)
                     )
@@ -1273,7 +1265,7 @@ class api_rollclose(object):
                     sabCode = sabRow["accountcode"]
                     crs = {sabCode: "%.2f" % (csob)}
                     drs = {osCode: "%.2f" % (csob)}
-                    self.con.execute(
+                    con.execute(
                         vouchers.insert(),
                         {
                             "vouchernumber": "1",
@@ -1287,11 +1279,11 @@ class api_rollclose(object):
                         },
                     )
                 # Customer / supplier Migration
-                oldContacts = self.con.execute(
+                oldContacts = con.execute(
                     "select * from customerandsupplier where orgcode = %d" % (orgCode)
                 )
                 for row in oldContacts:
-                    self.con.execute(
+                    con.execute(
                         customerandsupplier.insert(),
                         {
                             "custname": row["custname"],
@@ -1314,7 +1306,7 @@ class api_rollclose(object):
 
                 # old category code to new category code referrence dict
                 oldToNewCatCodes = {}
-                oldCategoryData = self.con.execute(
+                oldCategoryData = con.execute(
                     "select * from categorysubcategories where orgcode = %d and subcategoryof is null"
                     % (orgCode)
                 )
@@ -1326,7 +1318,7 @@ class api_rollclose(object):
                         parentCode = None
                         if cat["subcategoryof"] in oldToNewCatCodes:
                             parentCode = oldToNewCatCodes[cat["subcategoryof"]]
-                        self.con.execute(
+                        con.execute(
                             categorysubcategories.insert(),
                             {
                                 "categoryname": cat["categoryname"],
@@ -1334,25 +1326,25 @@ class api_rollclose(object):
                                 "orgcode": newOrgCode,
                             },
                         )
-                        newCatCodeData = self.con.execute(
+                        newCatCodeData = con.execute(
                             "select categorycode from categorysubcategories where orgcode = %d and categoryname = '%s'"
                             % (newOrgCode, cat["categoryname"])
                         )
                         newCatCodeRow = newCatCodeData.fetchone()
                         newCatCode = newCatCodeRow["categorycode"]
                         oldToNewCatCodes[cat["categorycode"]] = newCatCode
-                        grandchildrenData = self.con.execute(
+                        grandchildrenData = con.execute(
                             "select * from categorysubcategories where orgcode = %d and subcategoryof = %d"
                             % (orgCode, cat["categorycode"])
                         )
                         if grandchildrenData.rowcount > 0:
                             children.extend(grandchildrenData.fetchall())
-                oldCategorySpecData = self.con.execute(
+                oldCategorySpecData = con.execute(
                     "select * from categoryspecs where orgcode = %d" % (orgCode)
                 )
                 oldCategorySpecRows = oldCategorySpecData.fetchall()
                 for categorySpec in oldCategorySpecRows:
-                    self.con.execute(
+                    con.execute(
                         categoryspecs.insert(),
                         {
                             "attrname": categorySpec["attrname"],
@@ -1366,7 +1358,7 @@ class api_rollclose(object):
                     )
 
                 ## Product/ Service Migration
-                oldProductData = self.con.execute(
+                oldProductData = con.execute(
                     "select * from product where orgcode = %d" % (orgCode)
                 )
                 oldProductRows = oldProductData.fetchall()
@@ -1389,7 +1381,7 @@ class api_rollclose(object):
                             openingStock = 0
                         openingStock = float(openingStock)
 
-                    self.con.execute(
+                    con.execute(
                         product.insert(),
                         {
                             "gscode": prodRow["gscode"],
@@ -1406,7 +1398,7 @@ class api_rollclose(object):
                             "orgcode": newOrgCode,
                         },
                     )
-                    newProdData = self.con.execute(
+                    newProdData = con.execute(
                         "select productcode from product where orgcode = %d and productdesc = '%s'"
                         % (newOrgCode, prodRow["productdesc"])
                     )
@@ -1416,7 +1408,7 @@ class api_rollclose(object):
                     ]
 
                 # Tax Migration
-                oldTaxData = self.con.execute(
+                oldTaxData = con.execute(
                     "select * from tax where orgcode = %d" % (orgCode)
                 )
                 oldTaxRows = oldTaxData.fetchall()
@@ -1429,7 +1421,7 @@ class api_rollclose(object):
                         newCatCode = oldToNewCatCodes[oldCatCode]
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
-                    self.con.execute(
+                    con.execute(
                         tax.insert(),
                         {
                             "taxname": taxRow["taxname"],
@@ -1442,11 +1434,11 @@ class api_rollclose(object):
                     )
 
                 # Godowns Migration
-                oldGodowns = self.con.execute(
+                oldGodowns = con.execute(
                     "select * from godown where orgcode = %d" % (orgCode)
                 )
                 for row in oldGodowns:
-                    self.con.execute(
+                    con.execute(
                         godown.insert(),
                         {
                             "goname": row["goname"],
@@ -1459,19 +1451,19 @@ class api_rollclose(object):
                         },
                     )
                 # Old/New Godown Id's mapping
-                oldgo = self.con.execute(
+                oldgo = con.execute(
                     f"select * from godown where orgcode={orgCode}"
                 ).fetchall()
                 godownMap = {}
                 for i in oldgo:
-                    newgo = self.con.execute(
+                    newgo = con.execute(
                         f"select * from godown where orgcode={newOrgCode} and goname='%s'"
                         % (i["goname"])
                     ).fetchone()
                     godownMap[i["goid"]] = newgo["goid"]
 
                 # Godown Producs
-                oldGp = self.con.execute(
+                oldGp = con.execute(
                     "select * from goprod where orgcode = %d" % (orgCode)
                 )
                 for row in oldGp:
@@ -1480,7 +1472,7 @@ class api_rollclose(object):
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
                     stockData = godownwisestockonhandfun(
-                        self.con,
+                        con,
                         orgCode,
                         oldstartDate,
                         endDate,
@@ -1489,12 +1481,12 @@ class api_rollclose(object):
                         row["goid"],
                     )
                     stockValue = calculateStockValue(
-                        self.con, orgCode, endDate, oldProdCode, row["goid"]
+                        con, orgCode, endDate, oldProdCode, row["goid"]
                     )
                     stockBalance = 0
                     if len(stockData) and "balance" in stockData[0]:
                         stockBalance = float(stockData[0]["balance"])
-                    self.con.execute(
+                    con.execute(
                         goprod.insert(),
                         {
                             "goid": godownMap[row["goid"]],
@@ -1505,21 +1497,21 @@ class api_rollclose(object):
                         },
                     )
                 # User Godowns migration
-                oldUserGodowns = self.con.execute(
+                oldUserGodowns = con.execute(
                     f"select * from usergodown where orgcode={orgCode}"
                 ).fetchall()
-                oldgi = self.con.execute(
+                oldgi = con.execute(
                     f"select * from users where userrole=3 and orgcode={orgCode}"
                 ).fetchall()
                 gimap = {}
                 for i in oldgi:
-                    newgi = self.con.execute(
+                    newgi = con.execute(
                         f"select userid from users where userrole=3 and orgcode={newOrgCode} and username='%s'"
                         % (i["username"])
                     ).fetchone()
                     gimap[i["userid"]] = newgi["userid"]
                 for row in oldUserGodowns:
-                    self.con.execute(
+                    con.execute(
                         usergodown.insert(),
                         {
                             "goid": godownMap[row["goid"]],
@@ -1529,12 +1521,11 @@ class api_rollclose(object):
                     )
                 # set existing org's roflag to 1
                 gk_log(__name__).info("setting roflag to 1")
-                self.con.execute(
+                con.execute(
                     organisation.update()
                     .where(organisation.c.orgcode == orgCode)
                     .values({"roflag": 1})
                 )
-                self.con.close()
                 payload = {
                     "neworgcode": newOrgCode,
                     "yearstart": newYearStart,
@@ -1542,9 +1533,6 @@ class api_rollclose(object):
                 }
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
 
-            except Exception as E:
-                print(traceback.format_exc(), E)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     def getNextOrgCode(self, prevOrgCode, con):
         """
