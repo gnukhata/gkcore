@@ -70,19 +70,6 @@ class api_drcr(object):
             dataset = wholedataset["dataset"]
             vdataset = wholedataset["vdataset"]
             dataset["orgcode"] = authDetails["orgcode"]
-            # Check for duplicate entry before insertion
-            result_duplicate_check = con.execute(
-                select([drcr.c.drcrno]).where(
-                    and_(
-                        drcr.c.orgcode == authDetails["orgcode"],
-                        func.lower(drcr.c.drcrno) == func.lower(dataset["drcrno"]),
-                    )
-                )
-            )
-
-            if result_duplicate_check.rowcount > 0:
-                # Duplicate entry found, handle accordingly
-                return {"gkstatus": enumdict["DuplicateEntry"]}
 
             result = con.execute(drcr.insert(), [dataset])
             lastdrcr = con.execute(
