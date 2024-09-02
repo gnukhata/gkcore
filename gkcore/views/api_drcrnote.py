@@ -72,20 +72,10 @@ class api_drcr(object):
             dataset["orgcode"] = authDetails["orgcode"]
 
             result = con.execute(drcr.insert(), [dataset])
-            lastdrcr = con.execute(
-                select([drcr.c.drcrid]).where(
-                    and_(
-                        drcr.c.invid == dataset["invid"],
-                        drcr.c.drcrno == dataset["drcrno"],
-                        drcr.c.orgcode == dataset["orgcode"],
-                        drcr.c.dctypeflag == dataset["dctypeflag"],
-                    )
-                )
-            )
-            drcrid = lastdrcr.fetchone()
+            drcrid = result.inserted_primary_key[0]
             if int(dataset["drcrmode"]) == 18:
                 stockdataset = {
-                    "dcinvtnid": drcrid["drcrid"],
+                    "dcinvtnid": drcrid,
                     "orgcode": dataset["orgcode"],
                     "stockdate": dataset["drcrdate"],
                 }
@@ -127,7 +117,7 @@ class api_drcr(object):
             if av["avflag"] != 1:
                 return {
                     "gkstatus": enumdict["Success"],
-                    "gkresult": drcrid["drcrid"],
+                    "gkresult": drcrid,
                 }
 
             mafl = con.execute(
@@ -139,7 +129,7 @@ class api_drcr(object):
             queryParams = {
                 "maflag": maFlag["maflag"],
                 "cessname": "CESS",
-                "drcrid": drcrid["drcrid"],
+                "drcrid": drcrid,
             }
             queryParams.update(dataset)
             queryParams.update(vdataset)
@@ -154,7 +144,7 @@ class api_drcr(object):
             return {
                 "gkstatus": enumdict["Success"],
                 "vchCode": {"vflag": 1, "vchCode": drcrautoVch},
-                "gkresult": drcrid["drcrid"],
+                "gkresult": drcrid,
             }
 
     @view_config(request_method="GET", request_param="drcr=single", renderer="json")
