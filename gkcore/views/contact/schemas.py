@@ -6,18 +6,18 @@ from gkcore.views.contact.services import check_custid_exists, check_duplicate_c
 
 
 class BankDetails(BaseModel):
-    accountno: Optional[conint(lt=1000000000000000)] = None
-    bankname: Optional[constr(max_length=100)] = None
-    branchname: Optional[constr(max_length=100)] = None
+    accountno: Optional[constr(max_length=50)] = None
+    bankname: Optional[constr(max_length=200)] = None
+    branchname: Optional[constr(max_length=200)] = None
     ifsc: Optional[constr(max_length=20)] = None
 
 
 class ContactDetails(BaseModel):
     csflag: Literal[3, 19]
-    custaddr: Optional[constr(max_length=200)] = None
+    custaddr: Optional[constr(max_length=2000)] = None
     custemail: Optional[EmailStr] = None
     custfax: Optional[conint(lt=1000000000000000)] = None
-    custname: constr(max_length=100)
+    custname: constr(max_length=200)
     custpan: Optional[constr(max_length=10)] = None
     custphone: Optional[PhoneNumber] = None
     custtan: Optional[constr(max_length=10)] = None
@@ -26,7 +26,7 @@ class ContactDetails(BaseModel):
     gstin: Optional[Dict[conint(le=100), constr(max_length=15)]] = None
     tin: Optional[constr(max_length=11)] = None
     pincode: Optional[constr(max_length=10)] = None
-    state: Optional[constr(max_length=20)] = None
+    state: Optional[constr(max_length=200)] = None
     bankdetails: Optional[BankDetails] = None
 
     @model_validator(mode="after")
