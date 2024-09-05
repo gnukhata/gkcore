@@ -24,6 +24,7 @@ class ContactDetails(BaseModel):
     gst_party_type: Optional[Literal[0,1,2,3]] = None
     gst_reg_type: Optional[Literal[0,1,2,3]] = None
     gstin: Optional[Dict[conint(le=100), constr(max_length=15)]] = None
+    tin: Optional[constr(max_length=11)] = None
     pincode: Optional[constr(max_length=10)] = None
     state: Optional[constr(max_length=20)] = None
     bankdetails: Optional[BankDetails] = None
