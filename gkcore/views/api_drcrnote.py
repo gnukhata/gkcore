@@ -2586,7 +2586,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -2616,7 +2616,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -2786,7 +2786,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 taxHalf = taxRateDict[int(taxRate)]
                                 tx = float(taxRate) / 2
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTIN_"
                                     + str(abb["abbreviation"])
@@ -2816,7 +2816,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTIN_"
                                     + str(abb["abbreviation"])
@@ -2986,7 +2986,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3016,7 +3016,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3186,7 +3186,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTIN_"
                                     + str(abb["abbreviation"])
@@ -3216,7 +3216,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTIN_"
                                     + str(abb["abbreviation"])
@@ -3388,7 +3388,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3418,7 +3418,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3588,7 +3588,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 taxHalf = taxRateDict[int(taxRate)]
                                 tx = float(taxRate) / 2
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTIN_"
                                     + str(abb["abbreviation"])
@@ -3618,7 +3618,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTIN_"
                                     + str(abb["abbreviation"])
@@ -3788,7 +3788,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3818,7 +3818,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTOUT_"
                                     + str(abb["abbreviation"])
@@ -3988,7 +3988,7 @@ def drcrVoucher(con, queryParams, orgcode):
                                 tx = float(taxRate) / 2
                                 taxHalf = taxRateDict[int(taxRate)]
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
                                     "SGSTIN_"
                                     + str(abb["abbreviation"])
@@ -4018,7 +4018,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             if taxRate > 0.00:
                                 tx = float(taxRate)
                                 # this is the value which is going to Dr/Cr
-                                taxVal = taxable * (tx / 100)
+                                taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameIGST = (
                                     "IGSTIN_"
                                     + str(abb["abbreviation"])
