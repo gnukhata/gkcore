@@ -1,7 +1,7 @@
+import re
 from pydantic import BaseModel, EmailStr, ValidationInfo, conint, constr, field_validator, model_validator
 from typing import Optional, Dict, Literal
 from typing_extensions import Self
-from pydantic_extra_types.phone_numbers import PhoneNumber
 from gkcore.views.contact.services import check_custid_exists, check_duplicate_contact_account_name, check_duplicate_contact_name
 
 
@@ -19,7 +19,7 @@ class ContactDetails(BaseModel):
     custfax: Optional[conint(lt=1000000000000000)] = None
     custname: constr(max_length=200)
     custpan: Optional[constr(max_length=10)] = None
-    custphone: Optional[PhoneNumber] = None
+    custphone: Optional[str] = None
     custtan: Optional[constr(max_length=10)] = None
     gst_party_type: Optional[Literal[0,1,2,3]] = None
     gst_reg_type: Optional[Literal[0,1,2,3]] = None
@@ -29,6 +29,17 @@ class ContactDetails(BaseModel):
     country: Optional[constr(max_length=200)] = None
     state: Optional[constr(max_length=200)] = None
     bankdetails: Optional[BankDetails] = None
+
+    @field_validator('custphone')
+    @classmethod
+    def validate_phone_number(cls, value):
+        # Basic regular expression for validating phone numbers.
+        # This will match numbers with 9-15 numbers with optional '+' sign.
+        phone_regex = re.compile(r'^\+?\d{9,15}$')
+
+        if not phone_regex.match(value):
+            raise ValueError(f"Invalid phone number: {value}")
+        return value
 
     @model_validator(mode="after")
     def validate(self, info: ValidationInfo) -> Self:
