@@ -16,7 +16,7 @@ class ContactDetails(BaseModel):
     csflag: Literal[3, 19]
     custaddr: Optional[constr(max_length=2000)] = None
     custemail: Optional[EmailStr] = None
-    custfax: Optional[conint(lt=1000000000000000)] = None
+    custfax: Optional[str] = None
     custname: constr(max_length=200)
     custpan: Optional[constr(max_length=10)] = None
     custphone: Optional[str] = None
@@ -39,6 +39,17 @@ class ContactDetails(BaseModel):
 
         if not phone_regex.match(value):
             raise ValueError(f"Invalid phone number: {value}")
+        return value
+
+    @field_validator('custfax')
+    @classmethod
+    def validate_fax_number(cls, value):
+        # Basic regular expression for validating fax numbers.
+        # This will match numbers with 9-15 numbers with optional '+' sign.
+        fax_regex = re.compile(r'^\+?\d{9,15}$')
+
+        if not fax_regex.match(value):
+            raise ValueError(f"Invalid fax number: {value}")
         return value
 
     @model_validator(mode="after")
