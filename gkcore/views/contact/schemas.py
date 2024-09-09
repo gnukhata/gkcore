@@ -26,6 +26,7 @@ class ContactDetails(BaseModel):
     gstin: Optional[Dict[conint(le=100), constr(max_length=15)]] = None
     tin: Optional[constr(max_length=11)] = None
     pincode: Optional[constr(max_length=10)] = None
+    country: Optional[constr(max_length=200)] = None
     state: Optional[constr(max_length=200)] = None
     bankdetails: Optional[BankDetails] = None
 
