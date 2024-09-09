@@ -35,7 +35,7 @@ from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
@@ -447,17 +447,17 @@ class api_product(object):
                         gkdb.product.c.productcode == dataset["productcode"]
                     )
                 )
-                try:
-                    con.execute(
-                        accounts.delete().where(
-                            and_(
-                                accounts.c.accountname.like(pn + "%"),
-                                accounts.c.orgcode == authDetails["orgcode"],
-                            )
+                con.execute(
+                    accounts.delete().where(
+                        and_(
+                            or_(
+                                accounts.c.accountname == pn + " Sale",
+                                accounts.c.accountname == pn + " Purchase",
+                            ),
+                            accounts.c.orgcode == authDetails["orgcode"],
                         )
                     )
-                except:
-                    pass
+                )
                 return {"gkstatus": enumdict["Success"]}
 
 
