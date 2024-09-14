@@ -1,4 +1,5 @@
 from gkcore.models.gkdb import accounts
+from gkcore.views.helpers.voucher import generate_consolidated_voucher_data, get_org_vouchers
 from sqlalchemy.sql import select
 from datetime import datetime
 from gkcore.views.reports.helpers.stock import (
@@ -1725,3 +1726,24 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                 )
 
     return {"leftlist": sbalanceSheet, "rightlist": abalanceSheet}
+
+
+def get_account_vouchers_data(
+        connection, orgcode, account_id, from_date=None, to_date=None
+):
+    """Function to fetch voucher data for accounts for a given period.
+
+    This function depends on `get_org_vouchers` to fetch voucher entries of that account
+    and `generate_consolidated_voucher_data` to get voucher data.
+    """
+    voucher_rows = get_org_vouchers(
+        connection,
+        orgcode,
+        account_id,
+        from_date,
+        to_date,
+    )
+    vouchers_consolidated = generate_consolidated_voucher_data(
+        connection, voucher_rows, account_id
+    )
+    return vouchers_consolidated["voucher_total"]
