@@ -1,6 +1,8 @@
-from gkcore.models.gkdb import accounts
+from gkcore.views.helpers.account import get_account_grouping
 from gkcore.views.helpers.voucher import generate_consolidated_voucher_data, get_org_vouchers
+from gkcore.models.gkdb import accounts, groupsubgroups
 from sqlalchemy.sql import select
+from sqlalchemy import and_, or_
 from datetime import datetime
 from gkcore.views.reports.helpers.stock import (
     calculateOpeningStockValue,
@@ -1747,3 +1749,108 @@ def get_account_vouchers_data(
         connection, voucher_rows, account_id
     )
     return vouchers_consolidated["voucher_total"]
+
+
+def get_groupwise_accounts_balances(
+        connection, orgcode, group_name, from_date=None, to_date=None
+):
+    """Function to fetch voucher data of accounts of a group.
+
+    This will use `get_account_vouchers_data` to get vouchers data and they are sorted
+    groupwise. Account data dictionary will list both accounts and groups together,
+    where groups will also list their child accounts. This structure is followed to
+    minimize calculations afterwards.
+
+    The function will also calculate the group total. This function returns a tuple of
+    groups accounts data dictionary and group total.
+    """
+    group = connection.execute(
+        select([groupsubgroups.c.groupcode]).where(
+            and_(
+                groupsubgroups.c.groupname == group_name,
+                groupsubgroups.c.orgcode == orgcode,
+            )
+        )
+    ).fetchone()
+    groups = select([groupsubgroups.c.groupcode]).where(
+            or_(
+                groupsubgroups.c.groupcode == group["groupcode"],
+                groupsubgroups.c.subgroupof == group["groupcode"],
+            )
+        )
+    org_accounts = connection.execute(
+        select([accounts])
+        .where(
+            accounts.c.groupcode.in_(groups),
+        )
+    ).fetchall()
+    # `org_accounts_with_group_data` function is used to fetch group details of an
+    # account.
+    org_accounts_with_group_data = [
+        {**dict(account), **get_account_grouping(connection, account["groupcode"])}
+        for account in org_accounts
+    ]
+    groupwise_org_accounts = {}
+    accounts_list = []
+    for account in org_accounts_with_group_data:
+        # Below condition exists because "Opening Stock", "Profit & Loss" are listed
+        # under "Direct Income" and "Direct Expenses". The purpose of this grouping is
+        # unidentified. This check can be removed when these accounts are removed from
+        # these groups.
+        if account["accountname"] in ["Opening Stock", "Profit & Loss"]:
+            continue
+        account_balance = get_account_vouchers_data(
+            connection, orgcode, account["accountcode"], from_date, to_date
+        )
+        account["amount"] = account_balance
+        accounts_list.append({
+            "id": account["accountcode"],
+            "name": account["accountname"],
+            "parent_group": account.get("subgroupcode") or account["groupcode"],
+            "amount": account_balance,
+            "groupcode": group["groupcode"],
+            "subgroupcode": account.get("subgroupcode"),
+            "type": "account",
+        })
+        if not groupwise_org_accounts.get(account["groupcode"]):
+            groupwise_org_accounts.update(
+                {
+                    account["groupcode"]: {
+                        "id": account["groupcode"],
+                        "name": account["groupname"],
+                        "parent_group": None,
+                        "amount": account_balance,
+                        "type": "group",
+                        "accounts": [],
+                    }
+                }
+            )
+        else:
+            groupwise_org_accounts[account["groupcode"]]["amount"] += account_balance
+
+        if account.get("subgroupcode"):
+            if not groupwise_org_accounts.get(account["subgroupcode"]):
+                groupwise_org_accounts.update(
+                    {
+                        account["subgroupcode"]: {
+                            "id": account["subgroupcode"],
+                            "name": account["subgroupname"],
+                            "parent_group": account["groupcode"],
+                            "amount": account_balance,
+                            "type": "subgroup",
+                            "accounts": [account],
+                        }
+                    }
+                )
+            else:
+                groupwise_org_accounts[account["subgroupcode"]]["amount"] += (
+                    account_balance
+                )
+                groupwise_org_accounts[account["subgroupcode"]]["accounts"] += [account]
+        else:
+            groupwise_org_accounts[account["groupcode"]]["accounts"] += [account]
+
+    return (
+        [*groupwise_org_accounts.values(), *accounts_list],
+        groupwise_org_accounts[group["groupcode"]]["amount"],
+    )
