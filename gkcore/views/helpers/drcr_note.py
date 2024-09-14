@@ -21,7 +21,7 @@ def get_drcr_note_details(connection, drcr_id):
     ).fetchone()
     invoice_details = get_invoice_details(connection, drcr_note_details["invid"])
 
-    drcr_note_qty = drcr_note_details["reductionval"].pop("quantities")
+    drcr_note_qty = drcr_note_details["reductionval"].pop("quantities", {})
     drcr_note_price = drcr_note_details["reductionval"]
 
     drcr_tax_details = []
