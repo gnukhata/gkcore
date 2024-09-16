@@ -26,13 +26,11 @@ Contributors:
 """
 
 
-# login function
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import and_
 from pyramid.view import view_config
-from gkcore.models.meta import tableExists
 import gkcore
 from datetime import datetime
 from gkcore.utils import generateAuthToken, userAuthCheck
@@ -64,127 +62,61 @@ def userLogin(request):
             )
         )
         # if username and password exist in gkusers table
-        if result.rowcount == 1:
-            record = result.fetchone()
-            # check if any orgs are mapped to the userid
-            userData = con.execute(
-                select([gkdb.gkusers.c.orgs]).where(
-                    gkdb.gkusers.c.userid == record["userid"]
-                )
-            ).fetchone()
+        if result.rowcount != 1:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
-            payload = {}
-            if userData["orgs"]:
-                for orgCode in userData["orgs"]:
-                    orgData = con.execute(
-                        select(
-                            [
-                                gkdb.organisation.c.orgname,
-                                gkdb.organisation.c.orgtype,
-                                gkdb.organisation.c.yearstart,
-                                gkdb.organisation.c.yearend,
-                            ]
-                        ).where(gkdb.organisation.c.orgcode == orgCode)
-                    ).fetchone()
-                    if not orgData:
-                        print("Log: %d org data is missing " % (int(orgCode)))
-                        continue
-                    if orgData["orgname"] not in payload:
-                        payload[orgData["orgname"]] = []
-                    payload[orgData["orgname"]].append(
-                        {
-                            "orgname": orgData["orgname"],
-                            "yearstart": datetime.strftime(
-                                (orgData["yearstart"]), "%d-%m-%Y"
-                            ),
-                            "orgtype": orgData["orgtype"],
-                            "yearend": datetime.strftime(
-                                (orgData["yearend"]), "%d-%m-%Y"
-                            ),
-                            "orgcode": orgCode,
-                            "invitestatus": userData["orgs"][orgCode]["invitestatus"],
-                            "userrole": userData["orgs"][orgCode]["userrole"],
-                        }
-                    )
-            token = generateAuthToken(
-                con,
-                {"userid": record["userid"], "username": dataset["username"]},
-                "user",
+        record = result.fetchone()
+        # check if any orgs are mapped to the userid
+        userData = con.execute(
+            select([gkdb.gkusers.c.orgs]).where(
+                gkdb.gkusers.c.userid == record["userid"]
             )
-            return {
-                "gkstatus": enumdict["Success"],
-                "userid": record["userid"],
-                "token": token,
-                "gkresult": payload,
-            }
-        # else check if its available in users table
-        elif tableExists("users"):
-            result2 = con.execute(
-                select(
-                    [gkdb.users.c.userid, gkdb.users.c.orgcode, gkdb.users.c.userrole]
-                ).where(
-                    and_(
-                        gkdb.users.c.username == dataset["username"],
-                        gkdb.users.c.userpassword == dataset["userpassword"],
-                    )
-                )
-            )
+        ).fetchone()
 
-            if result2.rowcount > 0:
-                #  return if only one org is available else return message contact admin for login details
-                records2 = result2.fetchall()
-                payload = {}
-
-                for udata in result2:
-                    orgData = con.execute(
-                        select(
+        payload = {}
+        if userData["orgs"]:
+            for orgCode in userData["orgs"]:
+                orgData = con.execute(
+                    select(
+                        [
                             gkdb.organisation.c.orgname,
                             gkdb.organisation.c.orgtype,
                             gkdb.organisation.c.yearstart,
                             gkdb.organisation.c.yearend,
-                        ).where(gkdb.organisation.c.orgcode == udata["orgcode"])
-                    ).fetchone()
-                    if orgData["orgname"] not in payload:
-                        payload[orgData["orgname"]] = []
-                    payload[orgData["orgname"]].append(
-                        {
-                            "orgname": orgData["orgname"],
-                            "orgtype": orgData["orgtype"],
-                            "orgcode": orgData["orgcode"],
-                            "yearstart": datetime.strftime(
-                                (orgData["yearstart"]), "%d-%m-%Y"
-                            ),
-                            "yearend": datetime.strftime(
-                                (orgData["yearend"]), "%d-%m-%Y"
-                            ),
-                            "invitestatus": True,
-                            "userrole": udata["userrole"],
-                        }
-                    )
-
-                if len(payload) == 1:
-                    token = generateAuthToken(
-                        con,
-                        {
-                            "userid": record["userid"],
-                            "username": dataset["username"],
-                        },  # TODO replace record["userid"] with a proper userid, this will throw error
-                        "user",
-                    )
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": payload,
-                        "token": token,
+                        ]
+                    ).where(gkdb.organisation.c.orgcode == orgCode)
+                ).fetchone()
+                if not orgData:
+                    print("Log: %d org data is missing " % (int(orgCode)))
+                    continue
+                if orgData["orgname"] not in payload:
+                    payload[orgData["orgname"]] = []
+                payload[orgData["orgname"]].append(
+                    {
+                        "orgname": orgData["orgname"],
+                        "yearstart": datetime.strftime(
+                            (orgData["yearstart"]), "%d-%m-%Y"
+                        ),
+                        "orgtype": orgData["orgtype"],
+                        "yearend": datetime.strftime(
+                            (orgData["yearend"]), "%d-%m-%Y"
+                        ),
+                        "orgcode": orgCode,
+                        "invitestatus": userData["orgs"][orgCode]["invitestatus"],
+                        "userrole": userData["orgs"][orgCode]["userrole"],
                     }
-                else:
-                    return {
-                        "gkstatus": enumdict["ActionDisallowed"],
-                        "gkresult": "Contact Admin for login credentials.",
-                    }
-            else:
-                return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+                )
+        token = generateAuthToken(
+            con,
+            {"userid": record["userid"], "username": dataset["username"]},
+            "user",
+        )
+        return {
+            "gkstatus": enumdict["Success"],
+            "userid": record["userid"],
+            "token": token,
+            "gkresult": payload,
+        }
 
 
 @view_config(route_name="login_org", request_method="POST", renderer="json")
