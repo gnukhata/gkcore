@@ -1,4 +1,4 @@
-from gkcore.views.api_login import authCheck
+from gkcore.utils import authCheck
 from pyramid.view import view_config, view_defaults
 import requests as r
 from gkcore import enumdict
