@@ -56,8 +56,7 @@ def userLogin(request):
     returned. If the username is mapped to more than one org, then ActionDisallowed
     status is sent with a message asking to contact the admin for login details.
     """
-    con = eng.connect()
-    try:
+    with eng.connect() as con:
         dataset = request.json_body
         result = con.execute(
             select([gkdb.gkusers.c.userid]).where(
@@ -189,10 +188,6 @@ def userLogin(request):
                 return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-    except:
-        return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 @view_config(route_name="login_org", request_method="POST", renderer="json")
