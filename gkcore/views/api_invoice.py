@@ -73,7 +73,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_transaction import deleteVoucherFun
+from gkcore.views.helpers.voucher import cancel_voucher
 import traceback  # for printing detailed exception logs
 
 
@@ -3155,8 +3155,8 @@ class api_invoice(object):
             if voucherCode is not None:
                 # function call to delete vouchers
                 for vcode in voucherCode:
-                    deleteVoucherFun(
-                        vcode["vcode"], authDetails["orgcode"]
+                    cancel_voucher(
+                        con, vcode["vcode"], authDetails["orgcode"]
                     )
 
             # To delete invoice entry from invoice table
