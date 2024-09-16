@@ -192,102 +192,31 @@ def orgLogin(request):
     """
     purpose:
     """
+    try:
+        token = request.headers["gkusertoken"]
+    except:
+        return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+    authDetails = userAuthCheck(token)
+    if authDetails["auth"] == False:
+        return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    userId = authDetails["userid"]
     with eng.connect() as con:
         dataset = request.json_body
 
-        userId = ""
-        oldUserId = ""
-        proceed = True
-        renameUser = False
-
-        if "username" in dataset and "userpassword" in dataset:
-            # legacy login support
-            # check if user creds are matched in gkusers table
-            userIdQuery = con.execute(
-                select([gkdb.gkusers.c.userid]).where(
-                    and_(
-                        gkdb.gkusers.c.username == dataset["username"],
-                        gkdb.gkusers.c.userpassword == dataset["userpassword"],
-                    )
-                )
-            )
-
-            if userIdQuery.rowcount != 1:
-                # recreate the migrate username and check if it exists in gkusers table
-                orgData = con.execute(
-                    select(
-                        [gkdb.organisation.c.orgname, gkdb.organisation.c.orgtype]
-                    ).where(gkdb.organisation.c.orgcode == dataset["orgcode"])
-                ).fetchone()
-                orgname = "_".join(orgData["orgname"].split(" "))
-                orgtype = "p" if orgData["orgtype"] == "Profit Making" else "np"
-                uname = orgname + "_" + orgtype + "_" + dataset["username"]
-
-                userIdQuery = con.execute(
-                    select([gkdb.gkusers.c.userid]).where(
-                        and_(
-                            gkdb.gkusers.c.username == uname,
-                            gkdb.gkusers.c.userpassword == dataset["userpassword"],
-                        )
-                    )
-                )
-                if userIdQuery.rowcount == 1:
-                    renameUser = True
-                    oldUserId = con.execute(
-                        select([gkdb.users.c.userid]).where(
-                            and_(
-                                gkdb.users.c.username == dataset["username"],
-                                gkdb.users.c.orgcode == dataset["orgcode"],
-                            )
-                        )
-                    ).fetchone()
-                else:
-                    proceed = False
-
-            if userIdQuery.rowcount == 1:
-                # if user creds are in gkusers fetch userid and check if there is a
-                # mapping with the specified orgcode
-                userId = userIdQuery.fetchone()
-                userId = userId["userid"]
-                userOrgQuery = con.execute(
-                    "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
-                    % (str(dataset["orgcode"]), userId)
-                )
-                # if no user org mapping found dont proceed
-                if userOrgQuery.rowcount != 1:
-                    proceed = False
-            else:
-                proceed = False
-        else:
-            # New login support
-            try:
-                token = request.headers["gkusertoken"]
-            except:
-                return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-            authDetails = userAuthCheck(token)
-            if authDetails["auth"] == False:
-                return {"gkstatus": enumdict["UnauthorisedAccess"]}
-            else:
-                userId = authDetails["userid"]
-                userOrgQuery = con.execute(
-                    "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
-                    % (str(dataset["orgcode"]), userId)
-                )
-                # if no user org mapping found dont proceed
-                if userOrgQuery.rowcount != 1:
-                    proceed = False
-
-        if proceed:
+        userOrgQuery = con.execute(
+            "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
+            % (str(dataset["orgcode"]), userId)
+        )
+        if userOrgQuery.rowcount == 1:
             token = generateAuthToken(
                 con, {"userid": userId, "orgcode": dataset["orgcode"]}
             )
             if token == -1:
                 raise Exception("Issue with generating Auth Token")
-            payload = {"gkstatus": enumdict["Success"], "token": token}
-            if renameUser:
-                # legacy login to new login change support
-                payload["userid"] = userId
-                payload["olduserid"] = oldUserId["userid"]
+            payload = {
+                "gkstatus": enumdict["Success"],
+                "token": token,
+                "userid": userId,
+            }
             return payload
-        else:
-            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        return {"gkstatus": enumdict["UnauthorisedAccess"]}
