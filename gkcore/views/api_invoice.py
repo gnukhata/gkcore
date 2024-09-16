@@ -3059,41 +3059,15 @@ class api_invoice(object):
             invoicedata = invoicedata.fetchone()
 
             # Add all data of cancel invoice into invoicebin
-            invoiceBinData = {
-                "invoiceno": invoicedata["invoiceno"],
-                "invoicedate": invoicedata["invoicedate"],
-                "taxflag": invoicedata["taxflag"],
-                "contents": invoicedata["contents"],
-                "issuername": invoicedata["issuername"],
-                "designation": invoicedata["designation"],
-                "tax": invoicedata["tax"],
-                "cess": invoicedata["cess"],
-                "amountpaid": invoicedata["amountpaid"],
-                "invoicetotal": invoicedata["invoicetotal"],
-                "icflag": invoicedata["icflag"],
-                "taxstate": invoicedata["taxstate"],
-                "sourcestate": invoicedata["sourcestate"],
-                "orgstategstin": invoicedata["orgstategstin"],
-                "attachment": invoicedata["attachment"],
-                "attachmentcount": invoicedata["attachmentcount"],
-                "orderid": invoicedata["orderid"],
-                "orgcode": invoicedata["orgcode"],
-                "custid": invoicedata["custid"],
-                "consignee": invoicedata["consignee"],
-                "freeqty": invoicedata["freeqty"],
-                "reversecharge": invoicedata["reversecharge"],
-                "bankdetails": invoicedata["bankdetails"],
-                "transportationmode": invoicedata["transportationmode"],
-                "vehicleno": invoicedata["vehicleno"],
-                "dateofsupply": invoicedata["dateofsupply"],
-                "discount": invoicedata["discount"],
-                "paymentmode": invoicedata["paymentmode"],
-                "address": invoicedata["address"],
-                "pincode": invoicedata["pincode"],
-                "inoutflag": invoicedata["inoutflag"],
-                "invoicetotalword": invoicedata["invoicetotalword"],
-                "invnarration": invoicedata["invnarration"],
-            }
+            invoiceBinData = dict(invoicedata.items())
+
+            # Remove fields that are not present in invoicebin table
+            for field in [
+                'ewaybillno',
+                'supinvno',
+                'supinvdate',
+            ]:
+                del invoiceBinData[field]
 
             # below query is for delete billwise entry for cancel invoice.
             con.execute(
