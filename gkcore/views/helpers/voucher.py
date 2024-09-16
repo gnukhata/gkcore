@@ -1,9 +1,16 @@
 from gkcore.views.helpers.account import get_account_details
 from gkcore.views.helpers.invoice import get_invoice_details
 from gkcore.views.helpers.drcr_note import get_drcr_note_details
-from sqlalchemy.sql import select
+from sqlalchemy.sql import select, and_
 from gkcore.models.gkdb import (
-    accounts, groupsubgroups, vouchers, voucherbin, invoice, product
+    accounts,
+    billwise,
+    groupsubgroups,
+    invoice,
+    product,
+    projects,
+    voucherbin,
+    vouchers,
 )
 from sqlalchemy import func, or_
 
@@ -348,3 +355,140 @@ def billwiseEntryLedger(con, orgcode, vouchercode, invid, drcrid):
         return dcinfo
     except:
         return {"gkstatus": enumdict["ConnectionFailed"]}
+
+def move_voucher_to_bin(con, voucher_code):
+    """Soft delete voucher record with the given voucher code by removing it
+    from voucher table and adding to voucherbin table.
+    """
+    voucher = con.execute(
+        select([vouchers]).where(vouchers.c.vouchercode == int(voucher_code))
+    ).fetchone()
+    voucherbin_data = dict(voucher.items())
+
+    project_name = con.execute(
+        select([projects.c.projectname]).where(
+            projects.c.projectcode == voucher["projectcode"]
+        )
+    ).scalar() or ""
+
+    drs = voucher["drs"]
+    crs = voucher["crs"]
+    drs_with_account_names = {}
+    crs_with_account_names = {}
+
+    for dr in list(drs.keys()):
+        # Update voucher count in accounts table
+        con.execute(
+            accounts.update()
+            .where(accounts.c.accountcode == int(dr))
+            .values(vouchercount = accounts.c.vouchercount - 1)
+        )
+        # Get dr account names to be stored in voucherbin table for backwards compatibility
+        dr_account_name = con.execute(
+            select([accounts.c.accountname])
+            .where(accounts.c.accountcode == int(dr))
+        ).scalar()
+        drs_with_account_names[dr_account_name] = drs[dr]
+
+    for cr in list(crs.keys()):
+        # Update voucher count in accounts table
+        con.execute(
+            accounts.update()
+            .where(accounts.c.accountcode == int(cr))
+            .values(vouchercount = accounts.c.vouchercount - 1)
+        )
+        # Get cr account names to be stored in voucherbin table for backwards compatibility
+        cr_account_name = con.execute(
+            select([accounts.c.accountname])
+            .where(accounts.c.accountcode == int(cr))
+        ).scalar()
+        crs_with_account_names[cr_account_name] = crs[cr]
+
+    # Add Drs and Crs with account names and project name to voucherbin_data
+    # and insert it to voucherbin table.
+    voucherbin_data.update({
+        "drs": drs_with_account_names,
+        "crs": crs_with_account_names,
+        "projectname": project_name,
+    })
+    con.execute(voucherbin.insert(), [voucherbin_data])
+
+    # Delete voucher from voucher table
+    con.execute(
+        vouchers.delete().where(and_(
+            vouchers.c.vouchercode == int(voucher_code),
+            vouchers.c.lockflag == 'f',
+        ))
+    )
+
+def cancel_voucher(con, voucher_code, org_code):
+    """Cancel voucher with the given voucher code.
+    This updates all tables affected by the given voucher. It also calls
+    move_voucher_to_bin function for soft deleting the voucher record by moving
+    it to the voucherbin table."""
+
+    # Fetch related billwise entries
+    billwise_entries = con.execute(
+        select([billwise.c.invid])
+        .where(billwise.c.vouchercode == int(voucher_code))
+    ).fetchall()
+    for billwise_entry in billwise_entries:
+        adjusted_amount = con.execute(
+            select([billwise.c.adjadmount]).where(and_(
+                billwise.c.vouchercode == int(voucher_code),
+                billwise.c.invid == billwise_entry["invid"],
+            ))
+        ).fetchone()
+
+        # Deduct the amount in billwise entry from invoice
+        con.execute(
+            invoice.update().where(and_(
+                invoice.amountpaid == float(adjusted_amount["adjamount"]),
+                invoice.c.invid == billwise_entry["invid"],
+                invoice.c.orgcode == int(org_code),
+            ))
+        )
+
+        # If the given voucher is for invoice, check for related round-off voucher
+        # and soft delete it and delete its billwise entry.
+        invoice_round_off_voucher_id = con.execute(
+            select([vouchers.c.vouchercode]).where(and_(
+                vouchers.c.invid == int(billwise_entry["invid"]),
+                vouchers.c.orgcode == int(org_code),
+                vouchers.c.narration.like("Round off amount%"),
+            ))
+        ).scalar()
+        if invoice_round_off_voucher_id:
+            con.execute(
+                billwise.delete()
+                .where(billwise.c.vouchercode == int(invoice_round_off_voucher_id))
+            )
+            move_voucher_to_bin(con, invoice_round_off_voucher_id)
+
+    # Delete billwise entry of the given voucher
+    con.execute(
+        billwise.delete()
+        .where(billwise.c.vouchercode == int(voucher_code))
+    )
+
+    # If the given voucher is for debit or credit note,
+    # check for related round-off voucher and soft delete it.
+    drcr_note_id = con.execute(
+        select([vouchers.c.drcrid])
+        .where(vouchers.c.vouchercode == int(voucher_code))
+    ).scalar()
+    if drcr_note_id:
+        drcr_note_round_off_voucher_id = con.execute(
+            select([vouchers.c.vouchercode]).where(
+                and_(
+                    vouchers.c.drcrid == int(drcr_note_id),
+                    vouchers.c.orgcode == int(orgcode),
+                    vouchers.c.narration.like("Round off amount%"),
+                )
+            )
+        ).scalar()
+        if drcr_note_round_off_voucher:
+            move_voucher_to_bin(con, drcr_note_round_off_voucher_id)
+
+    # Soft delete the given voucher
+    move_voucher_to_bin(con, voucher_code)
