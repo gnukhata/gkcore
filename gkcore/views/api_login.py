@@ -30,15 +30,12 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
 from pyramid.view import view_config
 from gkcore.models.meta import tableExists
 import gkcore
 from datetime import datetime
 from gkcore.utils import generateAuthToken, userAuthCheck
-
-con = Connection
 
 
 @view_config(
@@ -195,8 +192,7 @@ def orgLogin(request):
     """
     purpose:
     """
-    try:
-        con = eng.connect()
+    with eng.connect() as con:
         dataset = request.json_body
 
         userId = ""
@@ -236,7 +232,6 @@ def orgLogin(request):
                     )
                 )
                 if userIdQuery.rowcount == 1:
-                    # userId = userIdQuery.fetchone()
                     renameUser = True
                     oldUserId = con.execute(
                         select([gkdb.users.c.userid]).where(
@@ -296,7 +291,3 @@ def orgLogin(request):
             return payload
         else:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-    except:
-        return {"gkstatus": enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
