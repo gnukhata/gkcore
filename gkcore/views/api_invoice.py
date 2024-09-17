@@ -73,6 +73,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
+from gkcore.views.helpers.delivery_note import cancel_delivery_note
 from gkcore.views.helpers.voucher import cancel_voucher
 import traceback  # for printing detailed exception logs
 
@@ -3075,47 +3076,18 @@ class api_invoice(object):
                 % (int(invid), authDetails["orgcode"])
             )
 
-            # Check invoice is associate with delivery note.
-            check_dcinv = con.execute(
-                "select dcid, dcinvid from dcinv where invid=%d and orgcode=%d"
-                % (int(invid), authDetails["orgcode"])
+            # Update invoiceBinDat with details of the related delivery note
+            # and cancel the delivery note.
+            delivery_note_details = cancel_delivery_note(
+                con, int(invid), authDetails["orgcode"]
             )
-            exist_dcinv = check_dcinv.fetchone()
-            if exist_dcinv != None:
-                dcinfo = {}
-                # if invoice is associated with delivery note delete that invoice record from dcinv table.
-                deldata = con.execute(
-                    "select dcno, dcdate from delchal where dcid=%d and orgcode=%d"
-                    % (int(exist_dcinv["dcid"]), authDetails["orgcode"])
-                )
-                delchal_data = deldata.fetchone()
-                dcinfo["dcno"] = str(delchal_data["dcno"])
-                dcinfo["dcdate"] = str(
-                    datetime.strftime(delchal_data["dcdate"], "%d-%m-%Y")
-                )
-                # Fetch godown id.
-                godata = con.execute(
-                    "select goid from stock where dcinvtnflag=4 and dcinvtnid=%d and orgcode=%d"
-                    % (int(exist_dcinv["dcid"]), authDetails["orgcode"])
-                )
-                godown_data = godata.fetchone()
-                if godown_data != None:
-                    dcinfo["goid"] = godown_data["goid"]
-                invoiceBinData["dcinfo"] = dcinfo
-                con.execute(
-                    "delete from dcinv where dcinvid=%d and invid=%d and orgcode=%d"
-                    % (
-                        int(exist_dcinv["dcinvid"]),
-                        int(invid),
-                        authDetails["orgcode"],
-                    )
-                )
-
-            # Delete stock record of invoice from stock table
-            con.execute(
-                "delete from stock where dcinvtnid=%d and orgcode=%d and dcinvtnflag=4"
-                % (int(invid), authDetails["orgcode"])
-            )
+            invoiceBinData.update({
+                "dcinfo": {
+                    "dcno": delivery_note_details["dcno"],
+                    "dcdate": delivery_note_details["dcdate"],
+                    "goid": delivery_note_details["goid"],
+                },
+            })
 
             invbin = con.execute(invoicebin.insert(), [invoiceBinData])
 
