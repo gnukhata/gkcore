@@ -30,7 +30,7 @@ from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.login.schemas import OrgLogin, UserLogin
 from sqlalchemy.sql import select
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from pyramid.view import view_config
 import gkcore
 from datetime import datetime
@@ -138,11 +138,19 @@ def orgLogin(request):
     dataset = validated_data.model_dump()
     userId = authDetails["userid"]
     with eng.connect() as con:
-        userOrgQuery = con.execute(
-            "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
-            % (str(dataset["orgcode"]), userId)
+        user_org = con.execute(
+            select([gkdb.gkusers.c.orgs[str(dataset["orgcode"])]])
+            .where(
+                and_(
+                    func.jsonb_extract_path_text(
+                        gkdb.gkusers.c.orgs, str(dataset["orgcode"])
+                    ) != None,
+                    gkdb.gkusers.c.userid == userId,
+                )
+            )
         )
-        if userOrgQuery.rowcount == 1:
+
+        if user_org.rowcount == 1:
             token = generateAuthToken(
                 con, {"userid": userId, "orgcode": dataset["orgcode"]}
             )
