@@ -28,6 +28,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.login.schemas import OrgLogin, UserLogin
 from sqlalchemy.sql import select
 from sqlalchemy import and_
 from pyramid.view import view_config
@@ -51,8 +52,10 @@ def userLogin(request):
     returned. If the username is mapped to more than one org, then ActionDisallowed
     status is sent with a message asking to contact the admin for login details.
     """
+    validated_data = UserLogin.model_validate(request.json_body)
+    dataset = validated_data.model_dump()
+
     with eng.connect() as con:
-        dataset = request.json_body
         result = con.execute(
             select([gkdb.gkusers.c.userid]).where(
                 and_(
@@ -131,10 +134,10 @@ def orgLogin(request):
     authDetails = userAuthCheck(token)
     if authDetails["auth"] == False:
         return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    validated_data = OrgLogin.model_validate(request.json_body)
+    dataset = validated_data.model_dump()
     userId = authDetails["userid"]
     with eng.connect() as con:
-        dataset = request.json_body
-
         userOrgQuery = con.execute(
             "select u.orgs#>'{%s}' as orgs from gkusers u where userid = %d;"
             % (str(dataset["orgcode"]), userId)
