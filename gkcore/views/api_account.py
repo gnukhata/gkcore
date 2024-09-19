@@ -126,8 +126,7 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 newdataset = self.request.json_body
                 dataset = {}
                 if "gkdata" in newdataset:
@@ -137,7 +136,7 @@ class api_account(object):
                 dataset["orgcode"] = authDetails["orgcode"]
                 if "defaultflag" in dataset:
                     dflag = dataset["defaultflag"]
-                    grpnames = self.con.execute(
+                    grpnames = con.execute(
                         select([gkdb.groupsubgroups.c.groupname]).where(
                             and_(
                                 gkdb.groupsubgroups.c.groupcode == dataset["groupcode"],
@@ -147,40 +146,40 @@ class api_account(object):
                     )
                     grpname = grpnames.fetchone()
                     if grpname["groupname"] == "Bank" and dflag == 2:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=2 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Cash" and dflag == 3:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=3 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Purchase" and dflag == 16:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=16 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Sales" and dflag == 19:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=19 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Indirect Expense" and dflag == 180:
-                        setROPdflag = self.con.execute(
+                        setROPdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Indirect Income" and dflag == 181:
-                        setRORdflag = self.con.execute(
+                        setRORdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
-                result = self.con.execute(gkdb.accounts.insert(), [dataset])
+                result = con.execute(gkdb.accounts.insert(), [dataset])
                 if "moredata" in newdataset and len(newdataset["moredata"]) > 0:
                     moredata = newdataset["moredata"]
                     moredata["orgcode"] = authDetails["orgcode"]
-                    result = self.con.execute(
+                    result = con.execute(
                         gkdb.customerandsupplier.insert(), [moredata]
                     )
                     logdata = {}
@@ -191,16 +190,10 @@ class api_account(object):
                         logdata["activity"] = moredata["custname"] + " customer created"
                     else:
                         logdata["activity"] = moredata["custname"] + " supplier created"
-                    result = self.con.execute(gkdb.log.insert(), [logdata])
+                    result = con.execute(gkdb.log.insert(), [logdata])
 
-                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                self.con.close()
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="account", request_method="GET", renderer="json")
     def getAccount(self):
