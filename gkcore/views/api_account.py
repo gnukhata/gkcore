@@ -497,15 +497,14 @@ defaultflag '16' or '19' set to the '0'.
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 newdataset = self.request.json_body
                 dataset = newdataset["gkdata"]
                 dataset["orgcode"] = authDetails["orgcode"]
                 # To update defaultflag check whether key exists and then update only those accounts which are under the respective group.
                 if "defaultflag" in dataset:
                     dflag = dataset["defaultflag"]
-                    grpnames = self.con.execute(
+                    grpnames = con.execute(
                         select([gkdb.groupsubgroups.c.groupname]).where(
                             and_(
                                 gkdb.groupsubgroups.c.groupcode == dataset["groupcode"],
@@ -515,43 +514,43 @@ defaultflag '16' or '19' set to the '0'.
                     )
                     grpname = grpnames.fetchone()
                     if grpname["groupname"] == "Bank" and dflag == 2:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=2 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Cash" and dflag == 3:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=3 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Purchase" and dflag == 16:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=16 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Sales" and dflag == 19:
-                        setdflag = self.con.execute(
+                        setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=19 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Indirect Expense" and dflag == 180:
-                        setROPdflag = self.con.execute(
+                        setROPdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=180 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
                     if grpname["groupname"] == "Indirect Income" and dflag == 181:
-                        setRORdflag = self.con.execute(
+                        setRORdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
 
-                accPrevName = self.con.execute(
+                accPrevName = con.execute(
                     select([gkdb.accounts.c.accountname]).where(
                         gkdb.accounts.c.accountcode == dataset["accountcode"]
                     )
                 )
                 accountName = accPrevName.fetchone()
-                result = self.con.execute(
+                result = con.execute(
                     gkdb.accounts.update()
                     .where(gkdb.accounts.c.accountcode == dataset["accountcode"])
                     .values(dataset)
@@ -561,7 +560,7 @@ defaultflag '16' or '19' set to the '0'.
                 if newdataset["custsupflag"] == 1:
                     custdataset = {}
                     custdataset["orgcode"] = authDetails["orgcode"]
-                    custnamelist = self.con.execute(
+                    custnamelist = con.execute(
                         "select exists(select 1 from customerandsupplier where orgcode =%d and custname='%s')"
                         % (authDetails["orgcode"], newdataset["oldcustname"])
                     )
@@ -569,7 +568,7 @@ defaultflag '16' or '19' set to the '0'.
                     # this condition is true when account name is match with custsup name.
                     if listcust[0] == True:
                         # to fetch custid  using custname.
-                        fcustid = self.con.execute(
+                        fcustid = con.execute(
                             select([gkdb.customerandsupplier.c.custid]).where(
                                 and_(
                                     gkdb.customerandsupplier.c.orgcode
@@ -589,7 +588,7 @@ defaultflag '16' or '19' set to the '0'.
                             # if change are only in account name then only custsup name will change at this time 'moredata' field is absent in newdataset.
                             custdataset["custname"] = dataset["accountname"]
                         # update custsup data
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.customerandsupplier.update()
                             .where(gkdb.customerandsupplier.c.custid == custid)
                             .values(custdataset)
@@ -599,13 +598,13 @@ defaultflag '16' or '19' set to the '0'.
                             and "bankdetails" not in custdataset
                         ):
                             # if bankdetails are null, set bankdetails as null in database.
-                            self.con.execute(
+                            con.execute(
                                 "update customerandsupplier set bankdetails = NULL where bankdetails is NOT NULL and custid = %d"
                                 % int(custid)
                             )
                         if "moredata" in newdataset and "gstin" not in custdataset:
                             # if gstin are null, set gstin as null in database.
-                            self.con.execute(
+                            con.execute(
                                 "update customerandsupplier set gstin = NULL where gstin is NOT NULL and custid = %d"
                                 % int(custid)
                             )
@@ -613,7 +612,7 @@ defaultflag '16' or '19' set to the '0'.
                     elif "moredata" in newdataset:
                         custdataset = newdataset["moredata"]
                         custdataset["orgcode"] = authDetails["orgcode"]
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.customerandsupplier.insert(), [custdataset]
                         )
                         logdata = {}
@@ -628,16 +627,9 @@ defaultflag '16' or '19' set to the '0'.
                             logdata["activity"] = (
                                 custdataset["custname"] + " supplier created"
                             )
-                        result = self.con.execute(gkdb.log.insert(), [logdata])
-
-                self.con.close()
+                        result = con.execute(gkdb.log.insert(), [logdata])
                 return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                self.con.close()
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteAccount(self):
