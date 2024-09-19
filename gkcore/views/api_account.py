@@ -641,22 +641,20 @@ defaultflag '16' or '19' set to the '0'.
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 userRoleData = getUserRole(
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
                 dataset = self.request.json_body
                 if userRole == -1:
-                    vouchercountdata = self.con.execute(
+                    vouchercountdata = con.execute(
                         select([gkdb.accounts.c.vouchercount]).where(
                             gkdb.accounts.c.accountcode == dataset["accountcode"]
                         )
                     )
                     vouchercountrow = vouchercountdata.fetchone()
                     if vouchercountrow["vouchercount"] != 0:
-                        self.con.close()
                         return {"gkstatus": enumdict["ActionDisallowed"]}
                     else:
                         result = self.con.execute(
@@ -664,14 +662,10 @@ defaultflag '16' or '19' set to the '0'.
                                 gkdb.accounts.c.accountcode == dataset["accountcode"]
                             )
                         )
-                        self.con.close()
                         return {"gkstatus": enumdict["Success"]}
                 else:
-                    self.con.close()
                     return {"gkstatus": enumdict["BadPrivilege"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     """
     This function returns a list of accounts whose details can be edited.
