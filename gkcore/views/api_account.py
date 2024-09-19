@@ -218,9 +218,8 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.accounts]).where(
                         gkdb.accounts.c.accountcode
                         == self.request.matchdict["accountcode"]
@@ -234,11 +233,8 @@ class api_account(object):
                     "groupcode": row["groupcode"],
                     "defaultflag": row["defaultflag"],
                 }
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": acc}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_param="type=getAccCode", request_method="GET", renderer="json")
     def getCodeofAccount(self):
@@ -258,9 +254,8 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.accounts.c.accountcode]).where(
                         and_(
                             gkdb.accounts.c.accountname
@@ -270,14 +265,11 @@ class api_account(object):
                     )
                 )
                 accountcode = result.fetchone()
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "accountcode": accountcode["accountcode"],
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", renderer="json")
     def getAllAccounts(self):
@@ -289,9 +281,8 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.accounts])
                     .where(gkdb.accounts.c.orgcode == authDetails["orgcode"])
                     .order_by(gkdb.accounts.c.accountname)
@@ -312,7 +303,7 @@ class api_account(object):
                     sg = gkdb.groupsubgroups.alias("sg")
 
                     defaultflag = default_acc[accrow["defaultflag"]]
-                    resultset = self.con.execute(
+                    resultset = con.execute(
                         select(
                             [
                                 (g.c.groupcode).label("groupcode"),
@@ -368,11 +359,8 @@ class api_account(object):
                             }
                         )
                     srno = srno + 1
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": accs}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", request_param="accbygrp", renderer="json")
     def getAllAccountsByGroup(self):
@@ -388,9 +376,8 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [
                             accounts.c.accountcode,
@@ -414,11 +401,8 @@ class api_account(object):
                             "openingbal": "%.2f" % float(row["openingbal"]),
                         }
                     )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": allAcc}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", request_param="acclist", renderer="json")
     def getAccountslist(self):
@@ -430,9 +414,8 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                accData = self.con.execute(
+            with eng.connect() as con:
+                accData = con.execute(
                     select([accounts.c.accountcode, accounts.c.accountname]).where(
                         accounts.c.orgcode == authDetails["orgcode"]
                     )
@@ -443,8 +426,7 @@ class api_account(object):
                     accList[row["accountname"]] = row["accountcode"]
 
                 return {"gkstatus": enumdict["Success"], "gkresult": accList}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", request_param="find=exists", renderer="json")
     def accountExists(self):
@@ -456,10 +438,9 @@ class api_account(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 accountname = self.request.params["accountname"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [func.count(gkdb.accounts.c.accountname).label("acc")]
                     ).where(
@@ -471,14 +452,10 @@ class api_account(object):
                 )
                 acccount = result.fetchone()
                 if acccount["acc"] > 0:
-                    self.con.close()
                     return {"gkstatus": enumdict["DuplicateEntry"]}
                 else:
-                    self.con.close()
                     return {"gkstatus": enumdict["Success"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     """
     If account is updated under sub-group 'Bank' or 'Cash' with defaultflag '2' or '3' respectively then existing account with 
@@ -683,9 +660,8 @@ defaultflag '16' or '19' set to the '0'.
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select([gkdb.accounts])
                     .where(gkdb.accounts.c.orgcode == authDetails["orgcode"])
                     .order_by(gkdb.accounts.c.accountname)
@@ -706,7 +682,7 @@ defaultflag '16' or '19' set to the '0'.
                     sg = gkdb.groupsubgroups.alias("sg")
 
                     defaultflag = default_acc[accrow["defaultflag"]]
-                    resultset = self.con.execute(
+                    resultset = con.execute(
                         select(
                             [
                                 (g.c.groupcode).label("groupcode"),
@@ -766,11 +742,8 @@ defaultflag '16' or '19' set to the '0'.
                                 }
                             )
                     srno = srno + 1
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": accs}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     """
     This function resets the defaultflag of all acounts to system default
@@ -788,11 +761,6 @@ defaultflag '16' or '19' set to the '0'.
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 reset_acc_defaults(self.con, self.request.params["orgcode"])
-                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
