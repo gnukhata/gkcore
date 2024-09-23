@@ -141,7 +141,7 @@ class api_product(object):
                         )
                     )
                     osRow = openingStockResult.fetchone()
-                    openingStock = osRow["openingstock"]
+                    openingStock = osRow["openingstock"] or 0
                     productstockin = con.execute(
                         select(
                             [func.sum(gkdb.stock.c.qty).label("sumofins")]
