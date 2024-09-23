@@ -6,7 +6,9 @@ from sqlalchemy.sql import select
 
 
 class UserLogin(BaseModel):
-    username: constr(max_length=200)
+    # Username can be of 3-40 charcters of alpha numeric or "_" or "-" type.
+    username: constr(pattern=re.compile(r'^[a-zA-Z0-9_-]{3,40}$'))
+    # Userpassword can be of 128 charcters of alpha numeric type.
     userpassword: constr(pattern=re.compile(r'^[a-fA-F0-9]{128}$'))
 
 
