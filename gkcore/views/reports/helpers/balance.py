@@ -1784,7 +1784,7 @@ def get_groupwise_accounts_balances(
             accounts.c.groupcode.in_(groups),
         )
     ).fetchall()
-    # `org_accounts_with_group_data` function is used to fetch group details of an
+    # `get_account_grouping` function is used to fetch group details of an
     # account.
     org_accounts_with_group_data = [
         {**dict(account), **get_account_grouping(connection, account["groupcode"])}
