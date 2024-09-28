@@ -634,7 +634,7 @@ defaultflag '16' or '19' set to the '0'.
                     if vouchercountrow["vouchercount"] != 0:
                         return {"gkstatus": enumdict["ActionDisallowed"]}
                     else:
-                        result = self.con.execute(
+                        result = con.execute(
                             gkdb.accounts.delete().where(
                                 gkdb.accounts.c.accountcode == dataset["accountcode"]
                             )
