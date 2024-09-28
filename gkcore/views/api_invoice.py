@@ -73,7 +73,8 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_transaction import deleteVoucherFun
+from gkcore.views.helpers.delivery_note import cancel_delivery_note
+from gkcore.views.helpers.voucher import cancel_voucher
 import traceback  # for printing detailed exception logs
 
 
@@ -3049,164 +3050,76 @@ class api_invoice(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                invid = self.request.matchdict["invid"]
+        with eng.begin() as con:
+            invid = self.request.matchdict["invid"]
 
-                # to fetch data of all data of cancel invoice.
-                invoicedata = self.con.execute(
-                    select([invoice]).where(invoice.c.invid == invid)
-                )
-                invoicedata = invoicedata.fetchone()
+            # to fetch data of all data of cancel invoice.
+            invoicedata = con.execute(
+                select([invoice]).where(invoice.c.invid == invid)
+            )
+            invoicedata = invoicedata.fetchone()
 
-                # Add all data of cancel invoice into invoicebin
-                invoiceBinData = {
-                    "invoiceno": invoicedata["invoiceno"],
-                    "invoicedate": invoicedata["invoicedate"],
-                    "taxflag": invoicedata["taxflag"],
-                    "contents": invoicedata["contents"],
-                    "issuername": invoicedata["issuername"],
-                    "designation": invoicedata["designation"],
-                    "tax": invoicedata["tax"],
-                    "cess": invoicedata["cess"],
-                    "amountpaid": invoicedata["amountpaid"],
-                    "invoicetotal": invoicedata["invoicetotal"],
-                    "icflag": invoicedata["icflag"],
-                    "taxstate": invoicedata["taxstate"],
-                    "sourcestate": invoicedata["sourcestate"],
-                    "orgstategstin": invoicedata["orgstategstin"],
-                    "attachment": invoicedata["attachment"],
-                    "attachmentcount": invoicedata["attachmentcount"],
-                    "orderid": invoicedata["orderid"],
-                    "orgcode": invoicedata["orgcode"],
-                    "custid": invoicedata["custid"],
-                    "consignee": invoicedata["consignee"],
-                    "freeqty": invoicedata["freeqty"],
-                    "reversecharge": invoicedata["reversecharge"],
-                    "bankdetails": invoicedata["bankdetails"],
-                    "transportationmode": invoicedata["transportationmode"],
-                    "vehicleno": invoicedata["vehicleno"],
-                    "dateofsupply": invoicedata["dateofsupply"],
-                    "discount": invoicedata["discount"],
-                    "paymentmode": invoicedata["paymentmode"],
-                    "address": invoicedata["address"],
-                    "pincode": invoicedata["pincode"],
-                    "inoutflag": invoicedata["inoutflag"],
-                    "invoicetotalword": invoicedata["invoicetotalword"],
-                    "invnarration": invoicedata["invnarration"],
-                }
+            # Add all data of cancel invoice into invoicebin
+            invoiceBinData = dict(invoicedata.items())
 
-                # below query is for delete billwise entry for cancel invoice.
-                try:
-                    self.con.execute(
-                        "delete from billwise  where invid = %d and orgcode=%d"
-                        % (int(invid), authDetails["orgcode"])
-                    )
-                except:
-                    # in case of service based invoice above code will not work
-                    pass
-                # Check invoice is associate with delivery note.
-                check_dcinv = self.con.execute(
-                    "select dcid, dcinvid from dcinv where invid=%d and orgcode=%d"
-                    % (int(invid), authDetails["orgcode"])
-                )
-                exist_dcinv = check_dcinv.fetchone()
-                if exist_dcinv != None:
-                    dcinfo = {}
-                    # if invoice is associated with delivery note delete that invoice record from dcinv table.
-                    deldata = self.con.execute(
-                        "select dcno, dcdate from delchal where dcid=%d and orgcode=%d"
-                        % (int(exist_dcinv["dcid"]), authDetails["orgcode"])
-                    )
-                    delchal_data = deldata.fetchone()
-                    dcinfo["dcno"] = str(delchal_data["dcno"])
-                    dcinfo["dcdate"] = str(
-                        datetime.strftime(delchal_data["dcdate"], "%d-%m-%Y")
-                    )
-                    # Fetch godown id.
-                    godata = self.con.execute(
-                        "select goid from stock where dcinvtnflag = 4 and dcinvtnid =%d and orgcode=%d"
-                        % (int(exist_dcinv["dcid"]), authDetails["orgcode"])
-                    )
-                    godown_data = godata.fetchone()
-                    if godown_data != None:
-                        dcinfo["goid"] = godown_data["goid"]
-                    invoiceBinData["dcinfo"] = dcinfo
-                    self.con.execute(
-                        "delete from dcinv  where dcinvid=%d and invid=%d and orgcode=%d"
-                        % (
-                            int(exist_dcinv["dcinvid"]),
-                            int(invid),
-                            authDetails["orgcode"],
-                        )
-                    )
-                else:
-                    try:
-                        # if invoice is not associated with delivery note delete stock record of invoice from stock table.
-                        self.con.execute(
-                            "delete from stock  where dcinvtnid = %d and orgcode=%d and dcinvtnflag=9"
-                            % (int(invid), authDetails["orgcode"])
-                        )
-                    except:
-                        pass
+            # Remove fields that are not present in invoicebin table
+            for field in [
+                'ewaybillno',
+                'supinvno',
+                'supinvdate',
+            ]:
+                del invoiceBinData[field]
 
-                invbin = self.con.execute(invoicebin.insert(), [invoiceBinData])
+            # below query is for delete billwise entry for cancel invoice.
+            con.execute(
+                "delete from billwise where invid=%d and orgcode=%d"
+                % (int(invid), authDetails["orgcode"])
+            )
 
-                # below query to get voucher code for cancel invoice for delete corsponding vouchers.
-                voucher_code = self.con.execute(
-                    "select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"
-                    % (int(invid), authDetails["orgcode"])
-                )
-                voucherCode = voucher_code.fetchall()
+            # Update invoiceBinDat with details of the related delivery note
+            # and cancel the delivery note.
+            delivery_note_details = cancel_delivery_note(
+                con, int(invid), authDetails["orgcode"]
+            )
+            invoiceBinData.update({
+                "dcinfo": {
+                    "dcno": delivery_note_details["dcno"],
+                    "dcdate": delivery_note_details["dcdate"],
+                    "goid": delivery_note_details["goid"],
+                },
+            })
 
-                if voucherCode is not None:
-                    # function call to delete vouchers
-                    for vcode in voucherCode:
-                        try:
-                            deletestatus = deleteVoucherFun(
-                                vcode["vcode"], authDetails["orgcode"]
-                            )
-                            if deletestatus["gkstatus"] == 3:
-                                self.con.close()
-                                return {"gkstatus": enumdict["ConnectionFailed"]}
+            invbin = con.execute(invoicebin.insert(), [invoiceBinData])
 
-                        except:
-                            self.con.close()
-                            return {"gkstatus": enumdict["ConnectionFailed"]}
-                else:
-                    pass
-                # To delete invoice entry from invoice table
-                self.con.execute(
-                    "delete from invoice  where invid = %d and orgcode=%d"
-                    % (int(invid), authDetails["orgcode"])
-                )
-                try:
-                    logdata = {}
-                    logdata["orgcode"] = authDetails["orgcode"]
-                    logdata["userid"] = authDetails["userid"]
-                    logdata["time"] = datetime.today().strftime("%Y-%m-%d")
-                    logdata["activity"] = (
-                        str(invoicedata["invoiceno"]) + " Invoice Cancelled"
+            # below query to get voucher code for cancel invoice for delete corsponding vouchers.
+            voucher_code = con.execute(
+                "select vouchercode as vcode from vouchers where invid=%d and orgcode=%d"
+                % (int(invid), authDetails["orgcode"])
+            )
+            voucherCode = voucher_code.fetchall()
+
+            if voucherCode is not None:
+                # function call to delete vouchers
+                for vcode in voucherCode:
+                    cancel_voucher(
+                        con, vcode["vcode"], authDetails["orgcode"]
                     )
-                    result = self.con.execute(log.insert(), [logdata])
-                except:
-                    pass
-                return {"gkstatus": enumdict["Success"]}
-            except:
-                try:
-                    invid = self.request.json_body["invid"]
-                    # if invoice entry is not deleted then delete that invoice from bin table
-                    self.con.execute(
-                        "delete from invoicebin  where invid = %d and orgcode=%d"
-                        % (int(invid), authDetails["orgcode"])
-                    )
-                    return {"gkstatus": enumdict["ConnectionFailed"]}
-                except:
-                    self.con.close()
-                    return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
+            # To delete invoice entry from invoice table
+            con.execute(
+                "delete from invoice where invid=%d and orgcode=%d"
+                % (int(invid), authDetails["orgcode"])
+            )
+
+            logdata = {}
+            logdata["orgcode"] = authDetails["orgcode"]
+            logdata["userid"] = authDetails["userid"]
+            logdata["time"] = datetime.today().strftime("%Y-%m-%d")
+            logdata["activity"] = (
+                str(invoicedata["invoiceno"]) + " Invoice Cancelled"
+            )
+            result = con.execute(log.insert(), [logdata])
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(route_name="invoice_invid", request_method="DELETE", renderer="json")
     def deleteinvoice(self):
