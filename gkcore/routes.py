@@ -98,6 +98,7 @@ def includeme(config):
     config.add_route("groupallsubgroup", "/groupallsubgroup/{groupcode}")
     config.add_route("groupsubgroup", "/groupsubgroup/{groupcode}")
     config.add_route("groupsubgroups", "/groupsubgroups")
+    config.add_route("groups_subgroups", "/groups-subgroups")
     config.add_route("groupDetails", "/groupDetails/{groupcode}")
     config.add_route("close-books", "/closebooks")
     config.add_route("roll-over", "/rollover")
