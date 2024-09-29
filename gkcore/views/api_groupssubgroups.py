@@ -29,19 +29,50 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.models.gkdb import groupsubgroups
 from sqlalchemy.sql import select
-import json
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, alias, or_
+from sqlalchemy import and_, or_
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-import jwt
 import gkcore
 from gkcore.utils import authCheck
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import groupsubgroups
 from gkcore.views.api_gkuser import getUserRole
+
+
+@view_defaults(route_name="groups_subgroups")
+class api_groups_subgroups(object):
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(request_method="GET", renderer="json")
+    def get_groups(self):
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+
+        with eng.connect() as conn:
+            groups_subgroups = conn.execute(
+                select([groupsubgroups]).where(
+                    groupsubgroups.c.orgcode == authDetails["orgcode"]
+                )
+            ).fetchall()
+            groups_subgroups = [
+                dict(group_subgroup)
+                for group_subgroup in groups_subgroups
+            ]
+
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": groups_subgroups,
+            }
 
 
 @view_defaults(route_name="groupsubgroups")
