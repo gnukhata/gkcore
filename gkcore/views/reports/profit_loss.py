@@ -29,11 +29,11 @@ class profit_loss(object):
     def get_trading_profit_loss_report(self):
         """This API handles generates Trading and Profit & Loss report for given period.
 
-        This report will have frour parts,
+        This report will have four parts,
         1. Trading Left: This section will have Opening Stock, Direct Expenses and
            Gross Profit c/d to PNL (if any).
         2. Trading Right: This section will have Closing Stock, Direct Income and
-           Gross Loss c/dto PNL (if any).
+           Gross Loss c/d to PNL (if any).
         3. PNL Left: This section will have Gross Loss b/d, Indirect Expense and Net
            Profit c/f.
         4. PNL Right: This section will have Gross Profit b/d, Indirect Income and Net
