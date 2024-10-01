@@ -91,7 +91,7 @@ def get_org_vouchers(
 
     """
     voucher_table = voucherbin if is_cancelled else vouchers
-    statement = select("*").where(voucher_table.c.orgcode == org_code)
+    statement = select([voucher_table]).where(voucher_table.c.orgcode == org_code)
     if account_code:
         if entry_type:
             statement = statement.where(
