@@ -2,7 +2,7 @@ import logging
 import gkcore
 import jwt
 import traceback
-from gkcore.models import gkdb
+from gkcore.models import eng, gkdb
 from sqlalchemy.sql import select, and_
 from Crypto.PublicKey import RSA
 from datetime import date, timedelta
@@ -35,6 +35,11 @@ def generateSecret(con):
             gkcore.secret = privatekey
             result = con.execute(gkdb.signature.insert(), [sig])
     return result
+def get_secret():
+    with eng.connect() as con:
+        signature_ = con.execute(select([gkdb.signature])).fetchone()
+        return signature_["secretcode"] if signature_ else None
+
 
 def generateAuthToken(con, tokenItems, tokenType="userorg"):
     try:
@@ -42,13 +47,13 @@ def generateAuthToken(con, tokenItems, tokenType="userorg"):
         if tokenType == "user":
             token = jwt.encode(
                 {"username": tokenItems["username"], "userid": tokenItems["userid"]},
-                gkcore.secret,
+                secret,
                 algorithm="HS256",
             )
         else:  # if userorg
             token = jwt.encode(
                 {"orgcode": tokenItems["orgcode"], "userid": tokenItems["userid"]},
-                gkcore.secret,
+                secret,
                 algorithm="HS256",
             )
         token = token.decode("ascii")
@@ -63,13 +68,12 @@ def userAuthCheck(token):
     Purpose: on every request check if userid and username are valid combinations
     """
     try:
-        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
+        tokendict = jwt.decode(token, get_secret(), algorithms=["HS256"])
         tokendict["auth"] = True
         tokendict["username"] = tokendict["username"]
         tokendict["userid"] = int(tokendict["userid"])
         return tokendict
     except:
-        print(traceback.format_exc())
         tokendict = {"auth": False}
         return tokendict
 
@@ -79,7 +83,7 @@ def authCheck(token):
     Purpose: on every request check if userid and orgcode are valid combinations
     """
     try:
-        tokendict = jwt.decode(token, gkcore.secret, algorithms=["HS256"])
+        tokendict = jwt.decode(token, get_secret(), algorithms=["HS256"])
         tokendict["auth"] = True
         tokendict["orgcode"] = int(tokendict["orgcode"])
         tokendict["userid"] = int(tokendict["userid"])

@@ -60,12 +60,3 @@ def main(global_config, **settings):
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
     )
-
-def get_secret():
-    with eng.connect() as connection:
-        resultset = connection.execute("select * from signature")
-        if resultset.rowcount == 1:
-            return resultset.fetchone()[0]
-    return None
-
-secret = get_secret() # for compatibility with old code
