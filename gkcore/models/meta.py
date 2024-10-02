@@ -30,41 +30,13 @@ Contributors:
 # Metadata is one such object which helps to get all database related info.
 # inspect is another functions from alchemy which helps to find details info on tables or columns.
 
-from sqlalchemy.engine import create_engine
 from sqlalchemy.dialects.postgresql.base import PGInspector
-import sys, os, json, pathlib
+import json
 from pyramid.request import Request
 from sqlalchemy import inspect
-
-# from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import metadata
 from gkcore.utils import gk_log
-
-
-def dbconnect():
-    """
-    purpose:
-    returns an engine object for the postgresql database.
-    In our case the database is called gkdata.
-    Description:
-    This function can be called to get a working interface to the database.
-    It is as good as a database connection which can directly execute sql queries.
-    """
-    # if env variable GKCORE_DB_URL is set, Use it
-    if os.getenv("GKCORE_DB_URL") != None:
-        stmt = os.getenv("GKCORE_DB_URL")
-    else:
-        if sys.platform.startswith("win"):
-            stmt = "postgresql://postgres:gkadmin@localhost/gkdata"
-        else:
-            stmt = "postgresql+psycopg2:///gkdata?host=/var/run/postgresql"
-    # now we will create an engine instance to connect to the given database.
-    # Note that the echo parameter set to False means sql queries will not be printed to the termina.
-    # Pool size is important to balance between database holding capacity in ram and speed.
-    engine = create_engine(stmt, echo=False, pool_size=15, max_overflow=100)
-    return engine
-
-eng = dbconnect()
+from gkcore import eng
 
 
 def does_foreignkey_exist(eng, table_name, constraint_name):
@@ -117,7 +89,7 @@ def columnExists(tableName, columnName):
     The function traverces through the list of columns and checks if the name exists.
     Returns True if the column exists or False otherwise.
     """
-    gkInspect = PGInspector(dbconnect())
+    gkInspect = PGInspector(eng)
     cols = gkInspect.get_columns(tableName)
     for col in cols:
         if col["name"] == columnName:
@@ -126,7 +98,7 @@ def columnExists(tableName, columnName):
 
 
 def uniqueConstraintExists(tableName, constraints):
-    gkInspect = PGInspector(dbconnect())
+    gkInspect = PGInspector(eng)
     cols = map(lambda x: x["column_names"], gkInspect.get_unique_constraints(tableName))
     exists = True
     col_names = list(cols)
@@ -140,7 +112,7 @@ def uniqueConstraintExists(tableName, constraints):
 
 
 def columnTypeMatches(tableName, columnName, columnType):
-    gkInspect = PGInspector(dbconnect())
+    gkInspect = PGInspector(eng)
     cols = gkInspect.get_columns(tableName)
     for col in cols:
         if col["name"] in columnName:
@@ -155,7 +127,7 @@ def tableExists(tblName):
     Finds out weather the given table exists in the database.
     Function uses inspect object for postgresql.
     """
-    gkInspect = PGInspector(dbconnect())
+    gkInspect = PGInspector(eng)
     tblList = gkInspect.get_table_names()
     return tblName in tblList
 
@@ -169,7 +141,7 @@ def getOnDelete(tblName, keyName):
     On finding the matching foreign key, its value for ondelete option is returned.
     """
     onDelete = False
-    gkInspect = PGInspector(dbconnect())
+    gkInspect = PGInspector(eng)
     fkeys = gkInspect.get_foreign_keys(tblName)
     for fkey in fkeys:
         if fkey["name"] == keyName:

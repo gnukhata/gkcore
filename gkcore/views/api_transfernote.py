@@ -47,7 +47,6 @@ from sqlalchemy import and_, exc, or_
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.models.meta import dbconnect
 from gkcore.views.api_godown import getusergodowns
 
 

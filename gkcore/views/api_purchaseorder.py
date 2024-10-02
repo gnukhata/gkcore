@@ -48,7 +48,6 @@ from sqlalchemy import and_, exc
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.models.meta import dbconnect
 
 
 def getStateCode(StateName, con):

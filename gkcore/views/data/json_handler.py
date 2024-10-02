@@ -1,5 +1,5 @@
 import json, io, logging
-from gkcore.models.meta import dbconnect
+from gkcore import eng
 from pyramid.response import Response
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
@@ -76,7 +76,7 @@ def export_json(self):
         return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
     # get tables list from the db
-    db_tables = dbconnect().table_names()
+    db_tables = eng.table_names()
 
     # add gnukhata key to the exported json
     # This helps to validate the file during import operations
