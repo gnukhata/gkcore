@@ -17,33 +17,26 @@ def gk_log(name: str = __name__):
     return logging.getLogger(name)
 
 
-def generateSecret(con):
-    result = con.execute(select([gkdb.signature]))
-    sign = result.fetchone()
-    if sign == None:
-        key = RSA.generate(2560)
-        privatekey = key.exportKey("PEM")
-        sig = {"secretcode": privatekey}
-        gkcore.secret = privatekey
-        result = con.execute(gkdb.signature.insert(), [sig])
-    elif len(sign["secretcode"]) <= 20:
-        result = con.execute(gkdb.signature.delete())
-        if result.rowcount == 1:
-            key = RSA.generate(2560)
-            privatekey = key.exportKey("PEM")
-            sig = {"secretcode": privatekey}
-            gkcore.secret = privatekey
-            result = con.execute(gkdb.signature.insert(), [sig])
-    return result
+def generate_signature(con):
+    key = RSA.generate(2560)
+    privatekey = key.exportKey("PEM")
+    con.execute(gkdb.signature.insert(), [{"secretcode": privatekey}])
+    return privatekey
+
+
 def get_secret():
     with eng.connect() as con:
-        signature_ = con.execute(select([gkdb.signature])).fetchone()
-        return signature_["secretcode"] if signature_ else None
+        return con.execute(select([gkdb.signature])).scalar()
 
 
 def generateAuthToken(con, tokenItems, tokenType="userorg"):
     try:
-        generateSecret(con)
+        secret = con.execute(select([gkdb.signature])).scalar()
+        if not secret:
+            secret = generate_signature(con)
+        if len(secret) <= 20:
+            con.execute(gkdb.signature.delete())
+            secret = generate_signature(con)
         if tokenType == "user":
             token = jwt.encode(
                 {"username": tokenItems["username"], "userid": tokenItems["userid"]},
