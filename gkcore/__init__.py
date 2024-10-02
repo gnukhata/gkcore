@@ -35,10 +35,10 @@ This module also scanns for the secret from the database which is then used for 
 """
 
 from pyramid.config import Configurator
-from sqlalchemy.engine import create_engine
 from wsgicors import CORS
 from gkcore.enum import STATUS_CODES as enumdict
 from dotenv import load_dotenv
+from gkcore.models import eng
 import os
 
 # Load environment variables from the .env file
@@ -60,49 +60,6 @@ def main(global_config, **settings):
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
     )
-
-def generate_db_url():
-    """ Generate database URL for engine creation. It will look for following
-    environment variables, in absence, it will take the default values.
-
-    GKCORE_DB_URL=
-    GKCORE_DB_USER=
-    GKCORE_DB_PASSWORD=
-    GKCORE_DB_HOST=
-    GKCORE_DB_PORT=
-    GKCORE_DB_NAME=
-
-    The use of dialect & driver are set to postgresql and psycopg2 until support for
-    others are not tested or implemented.
-
-    If GKCORE_DB_URL is given, it is used as database url, ignoring other variables.
-
-    Link to SQL Alchemy documentation: https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
-    """
-    # if env variable GKCORE_DB_URL is set, Use it
-    db_url = os.environ.get("GKCORE_DB_URL")
-    db_url = None
-
-    if not db_url:
-        db_name = os.environ.get("GKCORE_DB_NAME", "gkdata")
-        db_user = os.environ.get("GKCORE_DB_USER", "postgres")
-        db_password = os.environ.get("GKCORE_DB_PASSWORD", "gkadmin")
-        db_host = os.environ.get("GKCORE_DB_HOST", '')
-        db_port = os.environ.get("GKCORE_DB_PORT")
-        db_url = f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?"
-
-        custom_host = db_host + f":{db_port}" if db_port else ''
-        if custom_host:
-            db_url += f"host={custom_host}"
-        else:
-            db_url += "host=/var/run/postgresql&host=localhost"
-
-    return db_url
-
-eng = create_engine(generate_db_url(), echo=False, pool_size=15, max_overflow=100)
-# eng can be used as an engine instance to connect to database.
-# The echo parameter set to False means sql queries will not be printed to the terminal.
-# Pool size is important to balance between database holding capacity in ram and speed.
 
 def get_secret():
     with eng.connect() as connection:
