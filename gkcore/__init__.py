@@ -47,15 +47,15 @@ load_dotenv()
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
-
-    config.include("pyramid_openapi3")
+    if os.environ.get("SHOW_SWAGGER_UI", "true") != "false":
+        config.include(".swagger")
+        # include the pyramid-openapi3 plugin config
+        # link: https://github.com/Pylons/pyramid_openapi3
     config.include('.routes')
     if settings.get('development'): # Use only when it is development mode.
         config.include('.logging')
     config.include('.renderers')
     config.scan()
-    # include the pyramid-openapi3 plugin config
-    # link: https://github.com/Pylons/pyramid_openapi3
 
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
