@@ -13,8 +13,8 @@ services:
 
   # REST API Server
   gkcore:
+    build: .
     restart: "always"
-    image: digitalfreedom/gkcore:devel
     environment:
       - GKCORE_DB_HOST=${GKCORE_DB_HOST:-db}
       - GKCORE_DB_PORT=${GKCORE_DB_PORT:-5432}
