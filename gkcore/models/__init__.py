@@ -24,8 +24,12 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 """
 import os
+
+from dotenv import load_dotenv
 from . import gkdb
 from sqlalchemy.engine import create_engine
+
+load_dotenv()
 
 
 def generate_db_url():
@@ -50,18 +54,19 @@ def generate_db_url():
     db_url = os.environ.get("GKCORE_DB_URL")
 
     if not db_url:
-        db_name = os.environ.get("GKCORE_DB_NAME", "gkdata")
-        db_user = os.environ.get("GKCORE_DB_USER", "postgres")
-        db_password = os.environ.get("GKCORE_DB_PASSWORD", "gkadmin")
-        db_host = os.environ.get("GKCORE_DB_HOST", '')
-        db_port = os.environ.get("GKCORE_DB_PORT")
-        db_url = f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?"
-
-        custom_host = db_host + f":{db_port}" if db_port else ''
-        if custom_host:
-            db_url += f"host={custom_host}"
+        db_name = os.environ.get("GKCORE_DB_NAME") or "gkdata"
+        db_user = os.environ.get("GKCORE_DB_USER") or "gkadmin"
+        db_password = os.environ.get("GKCORE_DB_PASSWORD") or "gkadmin"
+        unix_sock_path = os.environ.get("UNIX_SOCKET_PATH")
+        if unix_sock_path:
+            db_url = (
+                f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?host={unix_sock_path}"
+            )
         else:
-            db_url += "host=/var/run/postgresql&host=localhost"
+            db_host = os.environ.get("GKCORE_DB_HOST", '')
+            db_port = os.environ.get("GKCORE_DB_PORT")
+            custom_host = db_host + f":{db_port}" if db_port else ''
+            db_url = f"postgresql+psycopg2://{db_user}:{db_password}@{custom_host}/{db_name}"
 
     return db_url
 
