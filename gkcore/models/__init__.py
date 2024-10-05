@@ -23,4 +23,58 @@ Contributors:
 "Ishan Masdekar " <imasdekar@dff.org.in>
 "Navin Karkera" <navin@dff.org.in>
 """
+import os
+
+from dotenv import load_dotenv
 from . import gkdb
+from sqlalchemy.engine import create_engine
+
+load_dotenv()
+
+
+def generate_db_url():
+    """ Generate database URL for engine creation. It will look for following
+    environment variables, in absence, it will take the default values.
+
+    GKCORE_DB_URL=
+    GKCORE_DB_USER=
+    GKCORE_DB_PASSWORD=
+    GKCORE_DB_HOST=
+    GKCORE_DB_PORT=
+    GKCORE_DB_NAME=
+
+    The use of dialect & driver are set to postgresql and psycopg2 until support for
+    others are not tested or implemented.
+
+    If GKCORE_DB_URL is given, it is used as database url, ignoring other variables.
+
+    Link to SQL Alchemy documentation: https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg2
+    """
+    # if env variable GKCORE_DB_URL is set, Use it
+    db_url = os.environ.get("GKCORE_DB_URL")
+
+    if not db_url:
+        db_name = os.environ.get("GKCORE_DB_NAME") or "gkdata"
+        db_user = os.environ.get("GKCORE_DB_USER") or "gkadmin"
+        db_password = os.environ.get("GKCORE_DB_PASSWORD") or "gkadmin"
+        unix_sock_path = os.environ.get("UNIX_SOCKET_PATH")
+        if unix_sock_path:
+            db_url = (
+                f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?host={unix_sock_path}"
+            )
+        else:
+            db_host = os.environ.get("GKCORE_DB_HOST", '')
+            db_port = os.environ.get("GKCORE_DB_PORT")
+            custom_host = db_host + f":{db_port}" if db_port else ''
+            db_url = f"postgresql+psycopg2://{db_user}:{db_password}@{custom_host}/{db_name}"
+
+    return db_url
+
+def get_engine():
+    """Create engine that can be used to connect to the database.
+    The echo parameter set to False means sql queries will not be printed to the terminal.
+    Pool size is important to balance between database holding capacity in ram and speed.
+    """
+    return create_engine(generate_db_url(), echo=False, pool_size=15, max_overflow=100)
+
+eng = get_engine()

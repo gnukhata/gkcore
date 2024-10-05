@@ -43,7 +43,6 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
-from gkcore.models.meta import dbconnect
 
 """
 purpose:

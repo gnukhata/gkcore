@@ -22,12 +22,6 @@ OPTIONS:
 def check_flags(arg):
     """Validate script arguments & run appropriate action"""
 
-    # set env variable, used by gkcore to connect to db
-    if sys.platform.startswith("win"):
-        os.environ["GKCORE_DB_URL"] = "postgresql://gkadmin:gkadmin@localhost/gkdata"
-    else:
-        os.environ["GKCORE_DB_URL"] = "postgres://gkadmin:gkadmin@127.0.0.1:5432/gkdata"
-
     if arg == "init":
         if sys.platform.startswith("win"):
             cmd.run(["docker-compose", "up", "-d"])

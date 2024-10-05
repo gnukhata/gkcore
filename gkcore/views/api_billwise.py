@@ -36,7 +36,6 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
-from gkcore.models.meta import dbconnect
 from gkcore.models.gkdb import (
     billwise,
     invoice,

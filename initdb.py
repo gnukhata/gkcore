@@ -25,7 +25,7 @@ Contributors:
 "Navin Karkera" <navin@dff.org.in>
 """
 
-from gkcore.models.meta import dbconnect
+from gkcore import eng
 from gkcore.models.gkdb import metadata
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
@@ -37,7 +37,6 @@ It will use the sqlalchemy's create_all function to convert all python based tab
 Refer to gkdb.py in models package for structure of all tables expressed in the alchemy expression language.
 After creating all tables, it will also create the signature based on timestamp and store in the database.
 """
-eng = dbconnect()
 metadata.create_all(eng)
 print("database created successfully")
 eng.execute(

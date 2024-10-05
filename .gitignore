@@ -7,3 +7,4 @@ gkenv/
 /tests/output
 .direnv/
 .envrc
+.env
