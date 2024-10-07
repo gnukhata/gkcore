@@ -34,12 +34,12 @@ To trace the link of the routes we look at the name of a route and then see wher
 This module also scanns for the secret from the database which is then used for jwt authentication.
 """
 
+import os
 from pyramid.config import Configurator
 from wsgicors import CORS
 from gkcore.enum import STATUS_CODES as enumdict
 from dotenv import load_dotenv
 from gkcore.models import eng
-import os
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -51,6 +51,7 @@ def main(global_config, **settings):
         config.include(".swagger")
         # include the pyramid-openapi3 plugin config
         # link: https://github.com/Pylons/pyramid_openapi3
+    config.include('.security')
     config.include('.routes')
     if settings.get('development'): # Use only when it is development mode.
         config.include('.logging')
@@ -60,12 +61,3 @@ def main(global_config, **settings):
     return CORS(
         config.make_wsgi_app(), headers="*", methods="*", maxage="180", origin="*"
     )
-
-def get_secret():
-    with eng.connect() as connection:
-        resultset = connection.execute("select * from signature")
-        if resultset.rowcount == 1:
-            return resultset.fetchone()[0]
-    return None
-
-secret = get_secret() # for compatibility with old code

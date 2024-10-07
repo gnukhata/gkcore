@@ -32,7 +32,7 @@ Contributors:
 """
 
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck, generateSecret, userAuthCheck
+from gkcore.utils import authCheck, generateAuthToken, userAuthCheck
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
@@ -159,7 +159,6 @@ class api_organisation(object):
             with eng.begin() as con:
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
-                result = generateSecret(con)
 
                 result = con.execute(gkdb.organisation.insert(), [orgdata])
                 code = con.execute(
@@ -788,15 +787,10 @@ class api_organisation(object):
                     )
                 )
 
-                token = jwt.encode(
-                    {
-                        "orgcode": orgcode["orgcode"],
-                        "userid": authDetails["userid"],
-                    },
-                    gkcore.secret,
-                    algorithm="HS256",
+                token = generateAuthToken(
+                    con,
+                    {"userid": authDetails["userid"], "orgcode": orgcode["orgcode"]},
                 )
-                token = token.decode("ascii")
                 return {
                     "gkstatus": enumdict["Success"],
                     "token": token,
