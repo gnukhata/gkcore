@@ -1050,7 +1050,7 @@ class api_rollclose(object):
                 startEndRow = financialStartEnd.fetchone()
                 oldstartDate = startEndRow["yearstart"]
                 endDate = startEndRow["yearend"]
-                newYearStart = self.request.params["financialstart"]
+                newYearStart = (endDate + timedelta(1)).strftime("%Y-%m-%d")
                 newYearEnd = self.request.params["financialend"]
                 #               print newYearStart
                 #               print newYearEnd
