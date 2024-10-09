@@ -46,7 +46,7 @@ from monthdelta import monthdelta
 import calendar
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.reports.helpers.stock import stockonhandfun
-from gkcore.views.reports.helpers.balance import calculateBalance
+from gkcore.views.reports.helpers.balance import calculateBalance, get_groupwise_accounts_balances
 
 
 # This function is use to show amount wise top five unpaid invoice list at dashboard
@@ -805,31 +805,41 @@ class api_dashboard(object):
         calculateto: string
         """
         try:
-            calculatefrom = self.request.params["calculatefrom"]
-            calculateto = self.request.params["calculateto"]
-            header = {"gktoken": self.request.headers["gktoken"]}
-            result = gk_api(
-                url="/reports/profit-loss?calculatefrom=%s&calculateto=%s"
-                % (calculatefrom, calculateto),
-                header=header,
-                request=self.request,
-            )
-            DirectIncome = result["gkresult"]["Direct Income"]["Sales"]["balance"]
-            InDirectIncome = result["gkresult"]["Indirect Income"]["indirincmbal"]
-            DirectExpense = result["gkresult"]["Direct Expense"]["direxpbal"]
-            InDirectExpense = result["gkresult"]["Indirect Expense"]["indirexpbal"]
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        auth_details = authCheck(token)
+        if auth_details["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        with eng.connect() as con:
+            orgcode = auth_details["orgcode"]
+            calculate_from = self.request.params["calculatefrom"]
+            calculate_to = self.request.params["calculateto"]
+
+            direct_expense = get_groupwise_accounts_balances(
+                con, orgcode, "Direct Expense", calculate_from, calculate_to
+            )[1]
+            direct_income = get_groupwise_accounts_balances(
+                con, orgcode, "Direct Income", calculate_from, calculate_to
+            )[1]
+            indirect_expense = get_groupwise_accounts_balances(
+                con, orgcode, "Indirect Expense", calculate_from, calculate_to
+            )[1]
+            indirect_income = get_groupwise_accounts_balances(
+                con, orgcode, "Indirect Income", calculate_from, calculate_to
+            )[1]
+
             return {
-                "gkstatus": result["gkstatus"],
+                "gkstatus": enumdict["Success"],
                 "gkresult": {
-                    "direct_income": DirectIncome,
-                    "indirect_income": InDirectIncome,
-                    "direct_expense": DirectExpense,
-                    "indirect_expense": InDirectExpense,
+                    "direct_income": direct_income,
+                    "indirect_income": indirect_income,
+                    "direct_expense": direct_expense,
+                    "indirect_expense": indirect_expense,
                 },
             }
-        except Exception as e:
-            print(e)
-            return {"gkstatus: 3"}
+
 
     @view_config(
         route_name="dashboard",
