@@ -37,7 +37,7 @@ class ContactDetails(BaseModel):
         # This will match numbers with 9-15 numbers with optional '+' sign.
         phone_regex = re.compile(r'^\+?\d{9,15}$')
 
-        if not phone_regex.match(value):
+        if value and not phone_regex.match(value):
             raise ValueError(f"Invalid phone number: {value}")
         return value
 
@@ -48,7 +48,7 @@ class ContactDetails(BaseModel):
         # This will match numbers with 9-15 numbers with optional '+' sign.
         fax_regex = re.compile(r'^\+?\d{9,15}$')
 
-        if not fax_regex.match(value):
+        if value and not fax_regex.match(value):
             raise ValueError(f"Invalid fax number: {value}")
         return value
 
