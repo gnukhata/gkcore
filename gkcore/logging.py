@@ -19,7 +19,7 @@ def request_logger_tween_factory(handler, registry):
 
         try:
             response_json = getattr(response, "json_body", None)
-        except (JSONDecodeError, UnicodeDecodeError):
+        except (JSONDecodeError, UnicodeDecodeError, TypeError):
             response_json = None
         gkstatus = response_json.get("gkstatus") if response_json else None
 
