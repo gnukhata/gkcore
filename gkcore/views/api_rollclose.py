@@ -1426,6 +1426,7 @@ class api_rollclose(object):
                         {
                             "taxname": taxRow["taxname"],
                             "taxrate": taxRow["taxrate"],
+                            "taxfromdate": taxRow["taxfromdate"],
                             "state": taxRow["state"],
                             "productcode": newProdCode,
                             "categorycode": newCatCode,
