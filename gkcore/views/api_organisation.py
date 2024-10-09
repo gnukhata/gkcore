@@ -1546,11 +1546,11 @@ class api_organisation(object):
                     select([gkdb.state.c.statecode]).where(
                         gkdb.state.c.statename == result["orgstate"]
                     )
-                ).fetchone()
+                ).scalar()
 
                 payload = {
                     "gstin": result["gstin"],
-                    "stateCode": stateCode["statecode"],
+                    "stateCode": stateCode,
                 }
 
                 return {"gkstatus": enumdict["Success"], "gkresult": payload}
