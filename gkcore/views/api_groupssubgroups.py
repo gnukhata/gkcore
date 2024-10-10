@@ -49,6 +49,10 @@ class api_groups_subgroups(object):
 
     @view_config(request_method="POST")
     def add_group_subgroup(self):
+        """ API to add Groups and Subgroups.
+        Requried Fields: Group/sub group name
+        Optional Fields: Parent group
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -72,6 +76,10 @@ class api_groups_subgroups(object):
 
     @view_config(request_method="PUT")
     def update_group_subgroup(self):
+        """ API to udpate Groups and Subgroups.
+        Requried Fields: Group/sub group name, groupcode
+        Optional Fields: Parent group
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -98,6 +106,9 @@ class api_groups_subgroups(object):
 
     @view_config(request_method="DELETE")
     def delete_group_subgroup(self):
+        """ API to delete Groups and Subgroups.
+        Requried Fields: groupcode
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -117,6 +128,11 @@ class api_groups_subgroups(object):
 
     @view_config(request_method="GET")
     def get_groups_subgroups(self):
+        """ API to list Groups and Subgroups.
+        Optional Parameters:
+        - group_type: ["group", "subgroup"] `group_type` can be used to filter by groups
+        and subgroups. If `group_type` is not provided, both will be listed.
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
