@@ -8,6 +8,8 @@ services:
       - POSTGRES_USER=${GKCORE_DB_USER:-gkadmin}
       - POSTGRES_PASSWORD=${GKCORE_DB_PASSWORD:-gkadmin}
       - POSTGRES_DB=${GKCORE_DB_NAME:-gkdata}
+    ports:
+      - "${DB_HOST_PORT:-5432}:5432"
     volumes:
       - gkdb:/var/lib/postgresql/data
 
@@ -16,8 +18,8 @@ services:
     build: .
     restart: "always"
     environment:
-      - GKCORE_DB_HOST=${GKCORE_DB_HOST:-db}
-      - GKCORE_DB_PORT=${GKCORE_DB_PORT:-5432}
+      - GKCORE_DB_HOST=db
+      - GKCORE_DB_PORT=5432
       - PYRAMID_CONFIG_FILE=${PYRAMID_CONFIG_FILE:-production.ini}
     ports:
       - "6543:6543"
