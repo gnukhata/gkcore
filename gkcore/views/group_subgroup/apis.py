@@ -30,6 +30,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.models.gkdb import groupsubgroups
+from gkcore.views.group_subgroup.schemas import GroupSubgroup, GroupSubgroupUpdate
 from sqlalchemy.sql import select, update, insert, delete
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, or_
