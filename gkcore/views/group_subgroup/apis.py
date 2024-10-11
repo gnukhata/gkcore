@@ -61,8 +61,11 @@ class api_groups_subgroups(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = GroupSubgroup.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
         with eng.begin() as conn:
-            dataset = self.request.json_body
             dataset["orgcode"] = authDetails["orgcode"]
             result = conn.execute(
                 insert(groupsubgroups)
@@ -88,10 +91,12 @@ class api_groups_subgroups(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = GroupSubgroupUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
         with eng.begin() as conn:
-            dataset = self.request.json_body
             groupcode = dataset.pop("groupcode")
-            dataset.pop("parent_group_name")
             dataset["orgcode"] = authDetails["orgcode"]
             result = conn.execute(
                 update(groupsubgroups)
