@@ -20,8 +20,7 @@ from sqlalchemy.sql.functions import func
 import traceback  # for printing detailed exception logs
 
 def stockonhandfun(orgcode, productCode, endDate):
-    try:
-        con = eng.connect()
+    with eng.connect() as con:
         stockReport = []
         totalinward = 0.00
         totaloutward = 0.00
@@ -354,12 +353,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                     }
                 )
                 srno = srno + 1
-        con.close()
         return {"gkresult": stockReport}
-
-    except Exception as e:
-        logging.warn(e)
-        return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
 def calculateOpeningStockValue(con, orgcode):
