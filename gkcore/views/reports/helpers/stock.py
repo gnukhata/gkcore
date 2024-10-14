@@ -621,8 +621,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
 def godownwisestockonhandfun(
     con, orgcode, startDate, endDate, stocktype, productCode, godownCode
 ):
-    try:
-        con = eng.connect()
+    with eng.connect() as con:
         stockReport = []
         totalinward = 0.00
         totaloutward = 0.00
@@ -974,6 +973,3 @@ def godownwisestockonhandfun(
                 )
                 srno = srno + 1
             return stockReport
-    except:
-        # print(traceback.format_exc())
-        return {"gkstatus": enumdict["ConnectionFailed"]}
