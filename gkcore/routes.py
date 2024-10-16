@@ -160,6 +160,7 @@ def includeme(config):
 
     # reports spreadsheets
     config.add_route("product-register-xlsx", "/spreadsheet/product-register")
+    config.add_route("view-register-xlsx", "/spreadsheet/view-register")
     config.add_route("profitloss-xlsx", "/spreadsheet/profit-loss")
     config.add_route("balance-sheet-xlsx", "/spreadsheet/balance-sheet")
     config.add_route("trial-balance-xlsx", "/spreadsheet/trial-balance")

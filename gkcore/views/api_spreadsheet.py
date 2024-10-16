@@ -68,7 +68,28 @@ class api_spreadsheet(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
 
+
     # Reports
+    @view_config(
+        route_name="view-register-xlsx",
+        request_method="GET",
+        renderer="json",
+    )
+    def view_register_xlsx(self):
+        """
+        Generates view register report spreadsheet for given date range
+
+        Parameters:
+        - from: From date
+        - to: To date
+        - fystart: Organisation financial year start
+        - fyend: Organisation financial year end
+        - orgname: Organisation name
+        - title: Page title
+        """
+        return sheets.view_register.view_register_xlsx_generator(self.request)
+
+
     @view_config(
         route_name="product-register-xlsx",
         request_method="GET",
