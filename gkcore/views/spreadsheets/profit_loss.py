@@ -43,6 +43,7 @@ import io
 # from io import BytesIO
 import openpyxl
 from openpyxl.styles import Font, Alignment
+from openpyxl.styles import DEFAULT_FONT
 
 # import calendar
 
@@ -68,402 +69,103 @@ def print_profit_loss(self):
     fyend = str(self.request.params["fyend"])
     orgname = str(self.request.params["orgname"])
     req = Request.blank(
-        "/reports/profit-loss?&calculatefrom=%s&calculateto=%s"
+        "/reports/profit-loss?calculatefrom=%s&calculateto=%s"
         % (calculatefrom, calculateto),
         headers=header,
     )
-    result = json.loads(self.request.invoke_subrequest(req).text)
-    calculatefrom = calculatefrom[8:10] + calculatefrom[4:8] + calculatefrom[0:4]
-    calculateto = calculateto[8:10] + calculateto[4:8] + calculateto[0:4]
-    DirectIncome = result["gkresult"]["Direct Income"]
-    InDirectIncome = result["gkresult"]["Indirect Income"]
-    DirectExpense = result["gkresult"]["Direct Expense"]
-    InDirectExpense = result["gkresult"]["Indirect Expense"]
-    gross = {}
-    try:
-        gross["gspCF"] = result["gkresult"]["grossprofitcf"]
-    except:
-        gross["gslCF"] = result["gkresult"]["grosslosscf"]
-    net = {}
-    try:
-        net["netprofit"] = result["gkresult"]["netprofit"]
-    except:
-        net["netloss"] = result["gkresult"]["netloss"]
-    Total = result["gkresult"]["Total"]
+    result = json.loads(self.request.invoke_subrequest(req).text)["gkresult"]
+
     # A workbook is opened.
-    pandlwb = openpyxl.Workbook()
+    wb = openpyxl.Workbook()
     # The new sheet is the active sheet as no other sheet exists. It is set as value of variable - sheet.
-    sheet = pandlwb.active
+    sheet = wb.active
+    DEFAULT_FONT.name = "Liberation Serif"
+    sheet.merge_cells("A1:H2")
+    sheet["A1"].font = Font(size="16", bold=True)
+    sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
+    sheet.merge_cells("A3:H3")
     # Title of the sheet and width of columns are set.
     if orgtype == "Profit Making":
-        sheet.title = "Profit and Loss"
+        title = "Profit and Loss"
     else:
-        sheet.title = "Income and Expenditure"
+        title = "Income and Expenditure"
+
+    sheet.title = title
+    sheet["A3"] = f"{title} from {fystart} to {fyend}"
+    sheet["A3"].alignment = Alignment(horizontal="center", vertical="center")
+    sheet["A3"].font = Font(size="13", bold=True)
     sheet.column_dimensions["A"].width = 50
     sheet.column_dimensions["B"].width = 16
-    sheet.column_dimensions["C"].width = 50
-    sheet.column_dimensions["D"].width = 16
-    # Cells of first two rows are merged to display organisation details properly.
-    sheet.merge_cells("A1:D2")
-    # Font and Alignment of cells are set. Each cell can be identified using the cell index - column name and row number.
-    sheet["A1"].font = Font(name="Liberation Serif", size="16", bold=True)
-    sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
-    # Organisation name and financial year are displayed.
-    sheet["A1"] = orgname + " (FY: " + fystart + " to " + fyend + ")"
-    sheet.merge_cells("A3:D3")
-    sheet["A3"].font = Font(name="Liberation Serif", size="14", bold=True)
-    sheet["A3"].alignment = Alignment(horizontal="center", vertical="center")
-    # Setting heading of spreadsheet
-    if orgtype == "Profit Making":
-        sheet["A3"] = "Profit and Loss (" + calculatefrom + " to " + calculateto + ")"
-    else:
-        sheet["A3"] = (
-            "Income and Expenditure (" + calculatefrom + " to " + calculateto + ")"
-        )
-    # Setting title for columns.
-    sheet["A4"] = "Particulars"
-    sheet["B4"] = "Amount"
-    sheet["B4"].alignment = Alignment(horizontal="right")
-    sheet["A4"].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["B4"].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["C4"] = "Particulars"
-    sheet["D4"] = "Amount"
-    sheet["D4"].alignment = Alignment(horizontal="right")
-    sheet["C4"].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["D4"].font = Font(name="Liberation Serif", size=12, bold=True)
-    """
-    Conventions for presenting data:-
-    Group - Bold, Capitals
-    Subgroup - Normal, Capitals
-    Account - Normal, Italics
-    Spaces are used for indentation.
-    """
-    # Loiading data for Direct Expense group
-    sheet["A5"] = "DIRECT EXPENSE"
-    sheet["B5"] = DirectExpense["direxpbal"]
-    sheet["B5"] = float("%.2f" % float(DirectExpense["direxpbal"]))
-    sheet["B5"].number_format = "0.00"
-    sheet["B5"].alignment = Alignment(horizontal="right")
-    sheet["A5"].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["B5"].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = 6
-    # If Purchase accounts are there they are displayed on the top
-    if "Purchase" in DirectExpense:
-        sheet["A" + str(row)] = "        PURCHASE"
-        sheet["A" + str(row)].font = Font(
-            name="Liberation Serif", size=12, italic=False
-        )
-        sheet["B" + str(row)] = DirectExpense["Purchase"]["balance"]
-        sheet["B" + str(row)] = float(
-            "%.2f" % float(DirectExpense["Purchase"]["balance"])
-        )
-        sheet["B" + str(row)].number_format = "0.00"
-        sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-        row = row + 1
-        # Purchase accounts
-        for purchaseaccount in DirectExpense["Purchase"]:
-            if purchaseaccount != "balance":
-                sheet["A" + str(row)] = "                " + purchaseaccount
-                sheet["A" + str(row)].font = Font(
-                    name="Liberation Serif", size=12, italic=True
-                )
-                sheet["B" + str(row)] = DirectExpense["Purchase"][purchaseaccount]
-                sheet["B" + str(row)] = float(
-                    "%.2f" % float(DirectExpense["Purchase"][purchaseaccount])
-                )
-                sheet["B" + str(row)].number_format = "0.00"
-                sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-                row = row + 1
-    # Loading other subgroups
-    for subgroup in DirectExpense:
-        if subgroup != "Purchase" and "balance" in DirectExpense[subgroup]:
-            try:
-                sheet["A" + str(row)] = "        " + subgroup.upper()
-            except:
-                sheet["A" + str(row)] = "        " + subgroup
-            sheet["A" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=False
-            )
-            sheet["B" + str(row)] = DirectExpense[subgroup]["balance"]
-            sheet["B" + str(row)] = float(
-                "%.2f" % float(DirectExpense[subgroup]["balance"])
-            )
-            sheet["B" + str(row)].number_format = "0.00"
-            sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
-            # Loading accounts of each subgroup
-            for subgroupaccount in DirectExpense[subgroup]:
-                if subgroupaccount != "balance":
-                    sheet["A" + str(row)] = "                " + subgroupaccount
-                    sheet["A" + str(row)].font = Font(
-                        name="Liberation Serif", size=12, italic=True
-                    )
-                    sheet["B" + str(row)] = DirectExpense[subgroup][subgroupaccount]
-                    sheet["B" + str(row)] = float(
-                        "%.2f" % float(DirectExpense[subgroup][subgroupaccount])
-                    )
-                    sheet["B" + str(row)].number_format = "0.00"
-                    sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-                    row = row + 1
-        # Loading accounts that are not part of any subgroup
-        if (
-            subgroup != "Purchase"
-            and subgroup != "direxpbal"
-            and "balance" not in DirectExpense[subgroup]
-        ):
-            sheet["A" + str(row)] = "        " + subgroup
-            sheet["A" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=True
-            )
-            sheet["B" + str(row)] = DirectExpense[subgroup]
-            sheet["B" + str(row)] = float("%.2f" % float(DirectExpense[subgroup]))
-            sheet["B" + str(row)].number_format = "0.00"
-            sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
+    sheet.column_dimensions["C"].width = 16
+    sheet.column_dimensions["D"].width = 50
+    sheet.column_dimensions["E"].width = 16
+    sheet.column_dimensions["F"].width = 16
 
-    # If there is Gross Profit it is shown in Expense side
-    if "gspCF" in gross:
-        sheet["A" + str(row)] = "Gross Profit C/F"
-        sheet["A" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        sheet["B" + str(row)] = gross["gspCF"]
-        sheet["B" + str(row)] = float("%.2f" % float(gross["gspCF"]))
-        sheet["B" + str(row)].number_format = "0.00"
-        sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-        sheet["B" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        row = row + 1
+    trading_left = format_list(result["trading_left"])
+    trading_right = format_list(result["trading_right"])
+    pnl_left = format_list(result["pnl_left"])
+    pnl_right = format_list(result["pnl_right"])
 
-    # Loading data for Indirect Expense group.
-    sheet["A" + str(row)] = "INDIRECT EXPENSE"
-    sheet["B" + str(row)] = InDirectExpense["indirexpbal"]
-    sheet["B" + str(row)] = float("%.2f" % float(InDirectExpense["indirexpbal"]))
-    sheet["B" + str(row)].number_format = "0.00"
-    sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-    sheet["A" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["B" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = row + 1
+    trading_start_row = 5
 
-    for subgroup in InDirectExpense:
-        if "balance" in InDirectExpense[subgroup]:
-            try:
-                sheet["A" + str(row)] = "        " + subgroup.upper()
-            except:
-                sheet["A" + str(row)] = "        " + subgroup
-            sheet["A" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=False
-            )
-            sheet["B" + str(row)] = InDirectExpense[subgroup]["balance"]
-            sheet["B" + str(row)] = float(
-                "%.2f" % float(InDirectExpense[subgroup]["balance"])
-            )
-            sheet["B" + str(row)].number_format = "0.00"
-            sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
-            for subgroupaccount in InDirectExpense[subgroup]:
-                if subgroupaccount != "balance":
-                    sheet["A" + str(row)] = "                " + subgroupaccount
-                    sheet["A" + str(row)].font = Font(
-                        name="Liberation Serif", size=12, italic=True
-                    )
-                    sheet["B" + str(row)] = InDirectExpense[subgroup][subgroupaccount]
-                    sheet["B" + str(row)] = float(
-                        "%.2f" % float(InDirectExpense[subgroup][subgroupaccount])
-                    )
-                    sheet["B" + str(row)].number_format = "0.00"
-                    sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-                    row = row + 1
-        if subgroup != "indirexpbal" and "balance" not in InDirectExpense[subgroup]:
-            sheet["A" + str(row)] = "        " + subgroup
-            sheet["A" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=True
-            )
-            sheet["B" + str(row)] = InDirectExpense[subgroup]
-            sheet["B" + str(row)] = float("%.2f" % float(InDirectExpense[subgroup]))
-            sheet["B" + str(row)].number_format = "0.00"
-            sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
+    sheet[f"A{trading_start_row}"] = "Particulars"
+    sheet[f"A{trading_start_row}"].alignment = Alignment(horizontal="left")
+    sheet[f"A{trading_start_row}"].font = Font(size="12", bold=True)
+    sheet[f"D{trading_start_row}"] = "Particulars"
+    sheet[f"D{trading_start_row}"].alignment = Alignment(horizontal="left")
+    sheet[f"D{trading_start_row}"].font = Font(size="12", bold=True)
 
-    # If there is Net Profit it is shown in Expense side
-    if "netprofit" in net:
-        sheet["A" + str(row)] = "Net Profit"
-        sheet["A" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        sheet["B" + str(row)] = float("%.2f" % float(net["netprofit"]))
-        sheet["B" + str(row)].number_format = "0.00"
-        sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-        sheet["B" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = row + 1
-    sheet["A" + str(row)] = "Total"
-    sheet["A" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["B" + str(row)] = Total
-    sheet["B" + str(row)] = float("%.2f" % float(Total))
-    sheet["B" + str(row)].number_format = "0.00"
-    sheet["B" + str(row)].alignment = Alignment(horizontal="right")
-    sheet["B" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-
-    # Loading data for Direct Income group
-    sheet["C5"] = "DIRECT INCOME"
-    sheet["D5"] = DirectIncome["dirincmbal"]
-    sheet["D5"] = float("%.2f" % float(DirectIncome["dirincmbal"]))
-    sheet["D5"].number_format = "0.00"
-    sheet["D5"].alignment = Alignment(horizontal="right")
-    sheet["C5"].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["D5"].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = 6
-    # If Sales accounts are there they are displayed on the top
-    if "Sales" in DirectIncome:
-        sheet["C" + str(row)] = "        SALES"
-        sheet["C" + str(row)].font = Font(
-            name="Liberation Serif", size=12, italic=False
-        )
-        sheet["D" + str(row)] = DirectIncome["Sales"]["balance"]
-        sheet["D" + str(row)] = float("%.2f" % float(DirectIncome["Sales"]["balance"]))
-        sheet["D" + str(row)].number_format = "0.00"
-        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-        row = row + 1
-
-        for salesaccount in DirectIncome["Sales"]:
-            if salesaccount != "balance":
-                sheet["C" + str(row)] = "                " + salesaccount
-                sheet["C" + str(row)].font = Font(
-                    name="Liberation Serif", size=12, italic=True
-                )
-                sheet["D" + str(row)] = DirectIncome["Sales"][salesaccount]
-                sheet["D" + str(row)] = float(
-                    "%.2f" % float(DirectIncome["Sales"][salesaccount])
-                )
-                sheet["D" + str(row)].number_format = "0.00"
-                sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-                row = row + 1
-
-    for subgroup in DirectIncome:
-        if subgroup != "Sales" and "balance" in DirectIncome[subgroup]:
-            try:
-                sheet["C" + str(row)] = "        " + subgroup.upper()
-            except:
-                sheet["C" + str(row)] = "        " + subgroup
-            sheet["C" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=False
-            )
-            sheet["D" + str(row)] = DirectIncome[subgroup]["balance"]
-            sheet["D" + str(row)] = float(
-                "%.2f" % float(DirectIncome[subgroup]["balance"])
-            )
-            sheet["D" + str(row)].number_format = "0.00"
-            sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
-            for subgroupaccount in DirectIncome[subgroup]:
-                if subgroupaccount != "balance":
-                    sheet["C" + str(row)] = "                " + subgroupaccount
-                    sheet["C" + str(row)].font = Font(
-                        name="Liberation Serif", size=12, italic=True
-                    )
-                    sheet["D" + str(row)] = DirectIncome[subgroup][subgroupaccount]
-                    sheet["D" + str(row)] = float(
-                        "%.2f" % float(DirectIncome[subgroup][subgroupaccount])
-                    )
-                    sheet["D" + str(row)].number_format = "0.00"
-                    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-                    row = row + 1
-        if (
-            subgroup != "Sales"
-            and subgroup != "dirincmbal"
-            and "balance" not in DirectIncome[subgroup]
-        ):
-            sheet["C" + str(row)] = "        " + subgroup
-            sheet["C" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=True
-            )
-            sheet["D" + str(row)] = DirectIncome[subgroup]
-            sheet["D" + str(row)] = float("%.2f" % float(DirectIncome[subgroup]))
-            sheet["D" + str(row)].number_format = "0.00"
-            sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
-    # If there is Gross Loss it is shown in Expense side
-    if "gslCF" in gross:
-        sheet["C" + str(row)] = "Gross Loss C/F"
-        sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        sheet["D" + str(row)] = gross["gslCF"]
-        sheet["D" + str(row)] = float("%.2f" % float(gross["gslCF"]))
-        sheet["D" + str(row)].number_format = "0.00"
-        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-        sheet["D" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        row = row + 1
-    sheet["C" + str(row)] = "Closing Stock"
-    sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, italic=True)
-    sheet["D" + str(row)] = float(
-        "%.2f" % float(result["gkresult"]["Closing Stock"]["total"])
+    trading_left_last_row, trading_left_total = update_sheet(
+        sheet, trading_left, trading_start_row+1, "left"
     )
-    sheet["D" + str(row)].number_format = "0.00"
-    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-    row = row + 1
+    trading_right_last_row, trading_right_total = update_sheet(
+        sheet, trading_right, trading_start_row+1, "right"
+    )
+    trading_last_row = max(trading_left_last_row, trading_right_last_row)
 
-    # Loading data for Indirect Income group.
-    sheet["C" + str(row)] = "INDIRECT INCOME"
-    sheet["D" + str(row)] = InDirectIncome["indirincmbal"]
-    sheet["D" + str(row)] = float("%.2f" % float(InDirectIncome["indirincmbal"]))
-    sheet["D" + str(row)].number_format = "0.00"
-    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-    sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["D" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = row + 1
+    sheet[f"A{trading_last_row}"] = sheet[f"D{trading_last_row}"] = "TOTAL"
+    sheet[f"C{trading_last_row}"] = trading_left_total
+    sheet[f"C{trading_last_row}"] = trading_left_total
+    sheet[f"F{trading_last_row}"] = trading_right_total
+    for cell in [sheet[f"A{trading_last_row}"], sheet[f"D{trading_last_row}"]]:
+        cell.font = Font(size="13", bold=True)
+    for cell in [sheet[f"C{trading_last_row}"], sheet[f"F{trading_last_row}"]]:
+        cell.font = Font(size="13", bold=True, u="doubleAccounting")
 
-    for subgroup in InDirectIncome:
-        if "balance" in InDirectIncome[subgroup]:
-            try:
-                sheet["C" + str(row)] = "        " + subgroup.upper()
-            except:
-                sheet["C" + str(row)] = "        " + subgroup
-            sheet["C" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=False
-            )
-            sheet["D" + str(row)] = InDirectIncome[subgroup]["balance"]
-            sheet["D" + str(row)] = float(
-                "%.2f" % float(InDirectIncome[subgroup]["balance"])
-            )
-            sheet["D" + str(row)].number_format = "0.00"
-            sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
-            for subgroupaccount in InDirectIncome[subgroup]:
-                if subgroupaccount != "balance":
-                    sheet["C" + str(row)] = "                " + subgroupaccount
-                    sheet["C" + str(row)].font = Font(
-                        name="Liberation Serif", size=12, italic=True
-                    )
-                    sheet["D" + str(row)] = InDirectIncome[subgroup][subgroupaccount]
-                    sheet["D" + str(row)] = float(
-                        "%.2f" % float(InDirectIncome[subgroup][subgroupaccount])
-                    )
-                    sheet["D" + str(row)].number_format = "0.00"
-                    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-                    row = row + 1
-        if subgroup != "indirincmbal" and "balance" not in InDirectIncome[subgroup]:
-            sheet["C" + str(row)] = "        " + subgroup
-            sheet["C" + str(row)].font = Font(
-                name="Liberation Serif", size=12, italic=True
-            )
-            sheet["D" + str(row)] = InDirectIncome[subgroup]
-            sheet["D" + str(row)] = float("%.2f" % float(InDirectIncome[subgroup]))
-            sheet["D" + str(row)].number_format = "0.00"
-            sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-            row = row + 1
+    pnl_start_row = trading_last_row + 2
 
-    # If there is Net Loss it is shown in Income side
-    if "netloss" in net:
-        sheet["C" + str(row)] = "Net Loss"
-        sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-        sheet["D" + str(row)] = float("%.2f" % float(net["netloss"]))
-        sheet["D" + str(row)].number_format = "0.00"
-        sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-        sheet["D" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    row = row + 1
-    sheet["C" + str(row)] = "Total"
-    sheet["C" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
-    sheet["D" + str(row)] = Total
-    sheet["D" + str(row)] = float("%.2f" % float(Total))
-    sheet["D" + str(row)].number_format = "0.00"
-    sheet["D" + str(row)].alignment = Alignment(horizontal="right")
-    sheet["D" + str(row)].font = Font(name="Liberation Serif", size=12, bold=True)
+    sheet[f"A{pnl_start_row}"] = "Particulars"
+    sheet[f"A{pnl_start_row}"].alignment = Alignment(horizontal="left")
+    sheet[f"A{pnl_start_row}"].font = Font(size="12", bold=True)
+    sheet[f"D{pnl_start_row}"] = "Particulars"
+    sheet[f"D{pnl_start_row}"].alignment = Alignment(horizontal="left")
+    sheet[f"D{pnl_start_row}"].font = Font(size="12", bold=True)
+
+    pnl_left_last_row, pnl_left_total = update_sheet(
+        sheet, pnl_left, pnl_start_row+1, "left"
+    )
+    pnl_right_last_row, pnl_right_total = update_sheet(
+        sheet, pnl_right, pnl_start_row+1, "right"
+    )
+    pnl_last_row = max(pnl_left_last_row, pnl_right_last_row)
+
+    sheet[f"A{pnl_last_row}"] = sheet[f"D{pnl_last_row}"] = "TOTAL"
+    sheet[f"C{pnl_last_row}"] = pnl_left_total
+    sheet[f"F{pnl_last_row}"] = pnl_right_total
+    for cell in [sheet[f"A{pnl_last_row}"], sheet[f"D{pnl_last_row}"]]:
+        cell.font = Font(size="13", bold=True)
+    for cell in [sheet[f"C{pnl_last_row}"], sheet[f"F{pnl_last_row}"]]:
+        cell.font = Font(size="13", bold=True, u="doubleAccounting")
+
+    for row in range(1, pnl_last_row+2):
+        sheet["B{}".format(row)].number_format = '#,##0.00'
+        sheet["C{}".format(row)].number_format = '#,##0.00'
+        sheet["E{}".format(row)].number_format = '#,##0.00'
+        sheet["F{}".format(row)].number_format = '#,##0.00'
+
     output = io.BytesIO()
-    pandlwb.save(output)
+    wb.save(output)
     contents = output.getvalue()
     output.close()
     headerList = {
@@ -473,6 +175,44 @@ def print_profit_loss(self):
         "X-Content-Type-Options": "nosniff",
         "Set-Cookie": "fileDownload=true; path=/ [;HttpOnly]",
     }
-    # headerList = {'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ,'Content-Length': len(contents),'Content-Disposition': 'attachment; filename=report.xlsx','Set-Cookie':'fileDownload=true; path=/'}
 
     return Response(contents, headerlist=list(headerList.items()))
+
+
+def update_sheet(sheet, report_rows, start_row, report_side):
+    if report_side == "left":
+        label_column = "A"
+        sub_value_column = "B"
+        value_column = "C"
+    else:
+        label_column = "D"
+        sub_value_column = "E"
+        value_column = "F"
+    row_no = start_row
+    total = 0
+    for row in report_rows:
+        if row["type"] == "total":
+            total = row["amount"]
+            continue
+        row_no += 1
+        sheet[f"{label_column}{row_no}"] = row["name"]
+        sheet[f"{value_column}{row_no}"] = row["amount"]
+        sheet[f"{value_column}{row_no}"].font = Font(
+            name="Liberation Serif", size="12", bold=True
+        )
+
+        if row.get("accounts"):
+            for account in row["accounts"]:
+                row_no += 1
+                sheet[f"{label_column}{row_no}"] = "    " + account["accountname"]
+                sheet[f"{sub_value_column}{row_no}"] = account["amount"]
+    return row_no, total
+
+
+def format_list(rows):
+    formated_list = []
+    for row in rows:
+        if row["type"] == "account" and row["subgroupcode"]:
+            continue
+        formated_list.append(row)
+    return formated_list
