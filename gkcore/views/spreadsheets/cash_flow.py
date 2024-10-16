@@ -63,7 +63,7 @@ def print_cash_flow(self):
         orgtype = self.request.params["orgtype"]
         header = {"gktoken": self.request.headers["gktoken"]}
         result = gk_api(
-            f"/report?type=cashflow&calculateto={calculateto}&financialstart={financialstart}&calculatefrom={calculatefrom}",
+            f"/reports/cash-flow?calculateto={calculateto}&financialstart={financialstart}&calculatefrom={calculatefrom}",
             header,
             self.request,
         )
