@@ -40,8 +40,9 @@ def add_table(sheet, org_title, page_title, fields, values, table_first_row):
         row = table_first_row
         for item in values:
             row += 1
-            sheet[f"{column}{row}"] = item[field["key"]]
-        table_last_row = row+1
+            if item.get(field["key"]):
+                sheet[f"{column}{row}"] = item[field["key"]]
+        table_last_row = row
     return sheet, table_last_row
 
 
