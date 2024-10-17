@@ -1,6 +1,6 @@
 import json
 
-from gkcore.views.spreadsheets.helpers.tables import add_table
+from gkcore.views.spreadsheets.helpers.tables import add_table, convert_number_to_column
 from pyramid.response import Response
 from pyramid.request import Request
 
@@ -39,28 +39,58 @@ def view_register_xlsx_generator(request):
     wb = openpyxl.Workbook()
     sheet = wb.active
     table_first_row = 4
-    sheet, last_row = add_table(
-        sheet,
-        org_title,
-        page_title,
-        [
+
+    fields = [
             {"key":"document_no", "label": "Voucher No.", "width": 16},
             {"key":"custname", "label": "Customer", "width": 50},
             {"key":"narration", "label": "Narration", "width": 70},
             {"key":"voucherdate", "label": "Voucher Date", "width": 20},
             {"key":"amount", "label": "Voucher Amount", "width": 20},
-        ],
+        ]
+
+    tax_fields = [
+        {"key": string, "label": string, "width": 16} for string in response["tax_strings"]
+    ]
+    fields += tax_fields
+    fields.append({"key": "taxed", "label": "Total", "width": 20})
+
+    tax_totals = response["tax_totals"]
+    totals = {
+        "narration": "TOTAL",
+        **tax_totals,
+        "amount": response["voucher_total"],
+        "taxed": response["taxed_total"],
+    }
+
+    # Adding tax values to dictionary root
+    vouchers = [
+       {
+           **voucher,
+           **{tax['tax_str']:tax["tax_amount"] for tax in voucher["tax_data"]}
+       } for voucher in vouchers
+    ]
+
+    vouchers.append(totals)
+
+    sheet, last_row = add_table(
+        sheet,
+        org_title,
+        page_title,
+        fields,
         vouchers,
         table_first_row,
     )
 
-    sheet[f"C{last_row+1}"] = "TOTAL"
-    sheet[f"C{last_row+1}"].font = Font(size="13", bold=True)
-    sheet[f"E{last_row+1}"] = response["voucher_total"]
-    sheet[f"E{last_row+1}"].font = Font(size="13", bold=True, u="doubleAccounting")
+    column = ""
+    for column_no in range(5, len(tax_fields)+7):
+        column = convert_number_to_column(column_no)
+        for row in range(1, last_row+1):
+            sheet[f"{column}{row}"].number_format = '#,##0.00'
 
-    for row in range(1, last_row+2):
-        sheet["E{}".format(row)].number_format = '#,##0.00'
+    sheet[f"C{last_row}"].font = Font(size="13", bold=True)
+    sheet[f"E{last_row}"] = response["voucher_total"]
+    sheet[f"E{last_row}"].font = Font(size="13", bold=True, u="doubleAccounting")
+    sheet[f"{column}{last_row}"].font = Font(size="13", bold=True, u="doubleAccounting")
 
     output = io.BytesIO()
     wb.save(output)
