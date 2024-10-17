@@ -141,8 +141,8 @@ def ledger_report(self):
                 sheet["A4"] = "Project :" + headerrow["projectname"]
                 row += 1
         sheet["A5"] = "Date"
-        sheet["B5"] = "V. No."
-        sheet["C5"] = "Voucher Type"
+        sheet["B5"] = "Voucher No."
+        sheet["C5"] = "Type"
         sheet["D5"] = "Particulars"
         sheet["E5"] = "Debit"
         sheet["F5"] = "Credit"
