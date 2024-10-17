@@ -33,9 +33,8 @@ def add_table(sheet, org_title, page_title, fields, values, table_first_row):
         if not field.get("key"):
             continue
         column = convert_number_to_column(position+1)
-        if field.get("width"):
-            sheet.column_dimensions[column].width = field["width"]
-        sheet[f"{column}{table_first_row}"] = field["label"]
+        sheet.column_dimensions[column].width = field.get("width") or 20
+        sheet[f"{column}{table_first_row}"] = field.get("label") or field["key"].title()
         sheet[f"{column}{table_first_row}"].font = Font(size="13", bold=True)
         row = table_first_row
         for item in values:
