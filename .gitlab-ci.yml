@@ -14,15 +14,15 @@ api_tests:
   stage: test
   # this job runs with a delay to make sure the dev server
   # is updated to latest commit
-  when: delayed
-  start_in: 2 minutes
   script: |
     cd tests/artifact
     nexial.sh -plan plan/GNUKhata-plan.xlsx || true
   allow_failure: true
   # this job runs only on the master branch
-  only:
-    - master
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'master'
+      when: delayed
+      start_in: 2 minutes
   artifacts:
     paths:
       - /builds/gnukhata/gkcore/tests/output
@@ -36,8 +36,8 @@ docker-devel:
     - docker login -u digitalfreedom -p $DOCKERHUB_PWD
     - docker build -t digitalfreedom/gkcore:devel --build-arg VERSION=$CI_COMMIT_SHORT_SHA .
     - docker push digitalfreedom/gkcore:devel
-  only:
-    - devel
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'devel'
 
 # build gkcore docker image on a release/tags & push it to the docker hub
 docker-prod:
@@ -51,8 +51,8 @@ docker-prod:
     # create alias for the latest tag
     - docker tag digitalfreedom/gkcore:$CI_COMMIT_TAG digitalfreedom/gkcore:latest
     - docker push digitalfreedom/gkcore:latest
-  only:
-    - tags
+  rules:
+    - if: $CI_COMMIT_TAG
 
 # deploy devel branch changes to gkcore test server
 update_test_server:
@@ -60,5 +60,5 @@ update_test_server:
   image: curlimages/curl:latest
   script:
     - curl -f $TEST_SERVER_HOOK
-  only:
-    - devel
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'devel'
