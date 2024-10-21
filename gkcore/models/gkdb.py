@@ -314,11 +314,11 @@ customerandsupplier = Table(
         nullable=False,
     ),
     UniqueConstraint("orgcode", "custname"),
-    UniqueConstraint("orgcode", "custname", "custemail", "csflag"),
-    UniqueConstraint("orgcode", "custname", "custpan", "csflag"),
-    UniqueConstraint("orgcode", "custname", "custtan", "csflag"),
-    UniqueConstraint("orgcode", "custname", "gstin"),
-    UniqueConstraint("orgcode", "custname", "tin"),
+    UniqueConstraint("orgcode", "custemail"),
+    UniqueConstraint("orgcode", "custpan"),
+    UniqueConstraint("orgcode", "custtan"),
+    UniqueConstraint("orgcode", "gstin"),
+    UniqueConstraint("orgcode", "tin"),
     Index("customer_supplier_orgcodeindex", "orgcode"),
 )
 """

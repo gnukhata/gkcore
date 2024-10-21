@@ -32,6 +32,7 @@ import json
 from Crypto.PublicKey import RSA
 from gkcore.models.meta import (
     does_foreignkey_exist,
+    does_unique_constraint_exist,
     inventoryMigration,
     addFields,
     columnExists,
@@ -2017,6 +2018,90 @@ class Migrate:
                 conn.execute("alter table transfernote add column if not exists recieveddate date")
                 conn.execute("alter table delchal add column if not exists noofpackages int")
                 conn.execute("alter table delchal add column if not exists modeoftransport text")
+
+            with eng.begin() as conn:
+                if does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custname_custemail_csflag_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custemail_csflag_key"
+                    )
+                if does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custname_custpan_csflag_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custpan_csflag_key"
+                    )
+                if does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custname_custtan_csflag_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custtan_csflag_key"
+                    )
+                if does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custname_gstin_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_gstin_key"
+                    )
+                if does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custname_tin_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_tin_key"
+                    )
+
+                if not does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custemail_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier add constraint customerandsupplier_orgcode_custemail_key unique (orgcode, custemail)"
+                    )
+                if not does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custpan_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier add constraint customerandsupplier_orgcode_custpan_key unique (orgcode, custpan)"
+                    )
+                if not does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_custtan_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier add constraint customerandsupplier_orgcode_custtan_key unique (orgcode, custtan)"
+                    )
+                if not does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_gstin_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier add constraint customerandsupplier_orgcode_gstin_key unique (orgcode, gstin)"
+                    )
+                if not does_unique_constraint_exist(
+                        eng,
+                        "customerandsupplier",
+                        "customerandsupplier_orgcode_tin_key"
+                ):
+                    conn.execute(
+                        "alter table customerandsupplier add constraint customerandsupplier_orgcode_tin_key unique (orgcode, tin)"
+                    )
+
 
 
             print("Database migration successful")
