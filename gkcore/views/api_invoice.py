@@ -1577,12 +1577,12 @@ class api_invoice(object):
         else:
             with eng.begin() as con:
                 dtset = self.request.json_body
-                inv = create_delivery_note(
+                delivery_note_id = create_delivery_note(
                     con,
                     dtset,
                     authDetails["orgcode"],
                 )
-                if not inv["gkresult"]:
+                if not delivery_note_id:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
                 dcinvdataset = {}
@@ -1593,7 +1593,7 @@ class api_invoice(object):
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
-                invdataset["dcid"] = inv["gkresult"]
+                invdataset["dcid"] = delivery_note_id
                 queryParams = {}
                 voucherData = {}
                 pricedetails = []
