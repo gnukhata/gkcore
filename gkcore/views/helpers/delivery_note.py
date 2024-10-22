@@ -8,6 +8,71 @@ from gkcore.models.gkdb import (
 )
 
 
+def create_delivery_note(con, payload, org_code):
+    delchaldata = payload['delchalPayload']["delchaldata"]
+    stockdata = payload['delchalPayload']["stockdata"]
+    discount = payload["payload"]["invoice"]["discount"]
+    freeqty = delchaldata["freeqty"]
+    inoutflag = stockdata["inout"]
+    items = delchaldata["contents"]
+    delchaldata["orgcode"] = org_code
+    stockdata["orgcode"] = org_code
+    if delchaldata["dcflag"] == 19:
+        delchaldata["issuerid"] = org_code
+    result = con.execute(delchal.insert(), [delchaldata])
+    if result.rowcount == 1:
+        dciddata = con.execute(
+            select([delchal.c.dcid, delchal.c.dcdate]).where(
+                and_(
+                    delchal.c.orgcode == org_code,
+                    delchal.c.dcno == delchaldata["dcno"],
+                    delchal.c.custid == delchaldata["custid"],
+                )
+            )
+        )
+        dcidrow = dciddata.fetchone()
+        stockdata["dcinvtnid"] = dcidrow["dcid"]
+        stockdata["dcinvtnflag"] = 4
+        stockdata["stockdate"] = dcidrow["dcdate"]
+
+        for key in list(items.keys()):
+            itemQty = float(list(items[key].values())[0])
+            itemRate = float(list(items[key].keys())[0])
+            itemTotalDiscount = float(discount.get(key, 0))
+            itemDiscount = 0
+            if itemQty:
+                itemDiscount = itemTotalDiscount / itemQty
+            stockdata["rate"] = itemRate - itemDiscount
+            stockdata["productcode"] = key
+            stockdata["qty"] = itemQty + float(freeqty[key])
+            result = con.execute(stock.insert(), [stockdata])
+            if "goid" in stockdata:
+                resultgoprod = con.execute(
+                    select([goprod]).where(
+                        and_(
+                            goprod.c.goid == stockdata["goid"],
+                            goprod.c.productcode == key,
+                        )
+                    )
+                )
+                if resultgoprod.rowcount == 0:
+                    result = con.execute(
+                        goprod.insert(),
+                        [
+                            {
+                                "goid": stockdata["goid"],
+                                "productcode": key,
+                                "goopeningstock": 0.00,
+                                "orgcode": org_code,
+                            }
+                        ],
+                    )
+        return {
+            "gkstatus": enumdict["Success"],
+            "gkresult": dcidrow["dcid"],
+        }
+
+
 def move_delivery_note_to_bin(con, delivery_note_id, org_code):
     """Soft delete delivery note record with the given id by removing it
     from delchal table and adding to delchalbin table.
