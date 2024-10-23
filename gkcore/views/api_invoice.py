@@ -1559,69 +1559,69 @@ def rename_inv_no_uniquely(con, orgcode):
         print(traceback.format_exc())
         return 0
 
-def getDelchalId(con, orgCode, requestBody):
+def add_delivery_note(con, orgCode, requestBody):
+    """ This function will,
+    1. Add entry in `delchal` table (Delivery Note table).
+    2. Add entry in `goprod` table with product opening balances if it is not already
+       listed in the table.
+
+    Arguments:
+    con: For database connection
+    orgCode: Organisation ID
+    requestBody: data from invoice API response
+
+    This function will return id of the created delivery note (`dcid`).
+    """
     delchaldata = requestBody['delchalPayload']["delchaldata"]
     stockdata = requestBody['delchalPayload']["stockdata"]
     discount = requestBody["payload"]["invoice"]["discount"]
     freeqty = delchaldata["freeqty"]
-    inoutflag = stockdata["inout"]
     items = delchaldata["contents"]
     delchaldata["orgcode"] = orgCode
     stockdata["orgcode"] = orgCode
     if delchaldata["dcflag"] == 19:
         delchaldata["issuerid"] = orgCode
-    result = con.execute(delchal.insert(), [delchaldata])
-    if result.rowcount == 1:
-        dciddata = con.execute(
-            select([delchal.c.dcid, delchal.c.dcdate]).where(
-                and_(
-                    delchal.c.orgcode == orgCode,
-                    delchal.c.dcno == delchaldata["dcno"],
-                    delchal.c.custid == delchaldata["custid"],
+    dcidrow = con.execute(
+        delchal.insert(delchaldata).returning(delchal.c.dcid, delchal.c.dcdate)
+    ).fetchone()
+
+    stockdata["dcinvtnid"] = dcidrow["dcid"]
+    stockdata["dcinvtnflag"] = 4
+    stockdata["stockdate"] = dcidrow["dcdate"]
+
+    for key in list(items.keys()):
+        itemQty = float(list(items[key].values())[0])
+        itemRate = float(list(items[key].keys())[0])
+        itemTotalDiscount = float(discount.get(key, 0))
+        itemDiscount = 0
+        if itemQty:
+            itemDiscount = itemTotalDiscount / itemQty
+        stockdata["rate"] = itemRate - itemDiscount
+        stockdata["productcode"] = key
+        stockdata["qty"] = itemQty + float(freeqty[key])
+        result = con.execute(stock.insert(), [stockdata])
+        if "goid" in stockdata:
+            resultgoprod = con.execute(
+                select([goprod]).where(
+                    and_(
+                        goprod.c.goid == stockdata["goid"],
+                        goprod.c.productcode == key,
+                    )
                 )
             )
-        )
-        dcidrow = dciddata.fetchone()
-        stockdata["dcinvtnid"] = dcidrow["dcid"]
-        stockdata["dcinvtnflag"] = 4
-        stockdata["stockdate"] = dcidrow["dcdate"]
-
-        for key in list(items.keys()):
-            itemQty = float(list(items[key].values())[0])
-            itemRate = float(list(items[key].keys())[0])
-            itemTotalDiscount = float(discount.get(key, 0))
-            itemDiscount = 0
-            if itemQty:
-                itemDiscount = itemTotalDiscount / itemQty
-            stockdata["rate"] = itemRate - itemDiscount
-            stockdata["productcode"] = key
-            stockdata["qty"] = itemQty + float(freeqty[key])
-            result = con.execute(stock.insert(), [stockdata])
-            if "goid" in stockdata:
-                resultgoprod = con.execute(
-                    select([goprod]).where(
-                        and_(
-                            goprod.c.goid == stockdata["goid"],
-                            goprod.c.productcode == key,
-                        )
-                    )
+            if resultgoprod.rowcount == 0:
+                result = con.execute(
+                    goprod.insert(),
+                    [
+                        {
+                            "goid": stockdata["goid"],
+                            "productcode": key,
+                            "goopeningstock": 0.00,
+                            "orgcode": orgCode,
+                        }
+                    ],
                 )
-                if resultgoprod.rowcount == 0:
-                    result = con.execute(
-                        goprod.insert(),
-                        [
-                            {
-                                "goid": stockdata["goid"],
-                                "productcode": key,
-                                "goopeningstock": 0.00,
-                                "orgcode": orgCode,
-                            }
-                        ],
-                    )
-        return {
-            "gkstatus": enumdict["Success"],
-            "gkresult": dcidrow["dcid"],
-        }
+    return dcidrow["dcid"]
 
 
 @view_defaults(route_name="invoice")
