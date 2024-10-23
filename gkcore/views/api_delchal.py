@@ -684,6 +684,7 @@ class api_delchal(object):
                         )
                     )
                     goidrow = goid_result.fetchall()
+                    goid = goidrow[0][0] if goidrow else None
                     # For 'Goods'
                     if int(prodrow["gsflag"]) == 7:
                         um = con.execute(
@@ -746,7 +747,7 @@ class api_delchal(object):
                             "taxamount": "%.2f" % (float(taxAmount)),
                             "productCode": prodrow["productcode"],
                             "gsflag": prodrow["gsflag"],
-                            "goid": goidrow[0][0],
+                            "goid": goid,
                         }
 
                     else:
@@ -802,7 +803,7 @@ class api_delchal(object):
                             "cessrate": "%.2f" % (float(cessVal)),
                             "productCode": prodrow["productcode"],
                             "gsflag": prodrow["gsflag"],
-                            "goid": goidrow[0][0],
+                            "goid": goid,
                         }
                 singledelchal["totaldiscount"] = "%.2f" % (float(totalDisc))
                 singledelchal["totaltaxablevalue"] = "%.2f" % (
