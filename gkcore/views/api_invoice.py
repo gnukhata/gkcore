@@ -983,10 +983,11 @@ def getInvoiceData(con, orgcode, params):
                     delchal.c.dcid == dcid["dcid"]
                 )
             )
-            delchalData = dc.fetchone()
             inv["dcid"] = dcid["dcid"]
-            inv["dcno"] = delchalData["dcno"]
-            inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
+            delchalData = dc.fetchone()
+            if delchalData:
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
         custandsup = con.execute(
             select(
                 [
@@ -1086,10 +1087,11 @@ def getInvoiceData(con, orgcode, params):
                     delchal.c.dcid == dcid["dcid"]
                 )
             )
-            delchalData = dc.fetchone()
             inv["dcid"] = dcid["dcid"]
-            inv["dcno"] = delchalData["dcno"]
-            inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
+            delchalData = dc.fetchone()
+            if delchalData:
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
     # contents is a nested dictionary from invoice table.
     # It contains productcode as the key with a value as a dictionary.
     # this dictionary has two key value pairs, priceperunit and quantity.
@@ -1295,6 +1297,8 @@ def getInvoiceList(con, orgcode, reqParams):
         i = 1
         # fetch all delivery challans for an invoice.
         for dc in dcresult:
+            if not dc["dcid"]:
+                continue
             godownres = con.execute(
                 "select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"
                 % int(dc["dcid"])
@@ -1582,8 +1586,6 @@ class api_invoice(object):
                     dtset,
                     authDetails["orgcode"],
                 )
-                if not delivery_note_id:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
                 dcinvdataset = {}
                 invdataset = dtset["payload"]["invoice"]

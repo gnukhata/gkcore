@@ -4,6 +4,7 @@ from gkcore.models.gkdb import (
     dcinv,
     delchal,
     delchalbin,
+    product,
     stock,
 )
 
@@ -13,6 +14,25 @@ def create_delivery_note(con, payload, org_code):
 
     delivery_note_details = payload['delchalPayload']["delchaldata"]
     delivery_note_details["orgcode"] = org_code
+    items = delivery_note_details["contents"]
+    item_id_values = list(items.keys())
+
+    # Fetch gsflag of invoice items.
+    # gsflag 7 represents goods (products), 13 represents services.
+    gsflag_values = con.execute(
+        select([product.c.productcode, product.c.gsflag])
+        .where(product.c.productcode.in_(item_id_values))
+    ).fetchall()
+
+    # Proceed only if invoice items contain products since services won't have
+    # delivery note.
+    product_id_values = [id for id, flag in gsflag_values if flag == 7]
+    if not product_id_values:
+        return
+
+    # Remove services, if any, from delivery note details
+    products = {id: val for id, val in items.items() if int(id) in product_id_values}
+    delivery_note_details["contents"] = products
 
     # Create delivery note and fetch its id
     delivery_note_id = con.execute(
@@ -28,19 +48,20 @@ def create_delivery_note(con, payload, org_code):
     stock_details["stockdate"] = delivery_note_details["dcdate"]
     stock_details["orgcode"] = org_code
 
-    items = delivery_note_details["contents"]
     item_wise_discount = payload["payload"]["invoice"]["discount"]
     item_wise_free_qty = delivery_note_details["freeqty"]
-    for key in list(items.keys()):
-        qty = float(list(items[key].values())[0])
-        rate = float(list(items[key].keys())[0])
-        total_discount = float(item_wise_discount.get(key, 0))
+
+    for product_id, transaction_details in products.items():
+        # transaction_details is a dictionary with product rate as key and qty as value
+        rate = float(list(transaction_details.keys())[0])
+        qty = float(list(transaction_details.values())[0])
+        total_discount = float(item_wise_discount.get(product_id, 0))
         discount = 0
         if qty:
             discount = total_discount / qty
         stock_details["rate"] = rate - discount
-        stock_details["productcode"] = key
-        stock_details["qty"] = qty + float(item_wise_free_qty[key])
+        stock_details["productcode"] = product_id
+        stock_details["qty"] = qty + float(item_wise_free_qty[product_id])
         result = con.execute(stock.insert(), [stock_details])
 
     return delivery_note_id
