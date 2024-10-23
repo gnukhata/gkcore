@@ -1641,13 +1641,11 @@ class api_invoice(object):
         else:
             with eng.begin() as con:
                 dtset = self.request.json_body
-                inv = getDelchalId(
+                dcid = add_delivery_note(
                     con,
                     authDetails["orgcode"],
                     dtset,
                 )
-                if not inv["gkresult"]:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
                 dcinvdataset = {}
                 invdataset = dtset["payload"]["invoice"]
@@ -1657,7 +1655,6 @@ class api_invoice(object):
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
-                invdataset["dcid"] = inv["gkresult"]
                 queryParams = {}
                 voucherData = {}
                 pricedetails = []
@@ -1678,7 +1675,12 @@ class api_invoice(object):
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
                     invdataset.pop("pricedetails", pricedetails)
-                result = con.execute(invoice.insert(), [invdataset])
+                avData = invdataset.pop("av", None)
+                invdataset.pop("dcid", None)
+                result = con.execute(
+                    invoice.insert(invdataset).returning(invoice.c.invid)
+                )
+                invoiceid = result.scalar()
                 if len(pricedetails) > 0:
                     for price in pricedetails:
                         price["orgcode"] = authDetails["orgcode"]
@@ -1706,118 +1708,95 @@ class api_invoice(object):
                         else:
                             con.execute(cslastprice.insert(), [price])
                 # when delivery note is selected
-                if "dcid" in invdataset:
-                    if result.rowcount == 1:
-                        icflag = (
-                            int(invdataset["icflag"]) if "icflag" in invdataset else 9
-                        )
-                        result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = %d"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                                icflag,
-                            )
-                        )
-                        invoiceid = result.fetchone()
-                        dcinvdataset["dcid"] = invdataset["dcid"]
-                        dcinvdataset["invid"] = invoiceid["invid"]
-                        dcinvdataset["orgcode"] = invdataset["orgcode"]
-                        dcinvdataset["invprods"] = stockdataset["items"]
-                        result = con.execute(dcinv.insert(), [dcinvdataset])
-                        if result.rowcount != 1:
-                            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                if dcid:
+                    dcinvdataset["dcid"] = dcid
+                    dcinvdataset["invid"] = invoiceid
+                    dcinvdataset["orgcode"] = invdataset["orgcode"]
+                    dcinvdataset["invprods"] = stockdataset["items"]
+                    result = con.execute(dcinv.insert(), [dcinvdataset])
+                    if result.rowcount != 1:
+                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
-                        # check automatic voucher flag if it is 1 get maflag
-                        avfl = con.execute(
-                            select([organisation.c.avflag]).where(
+                    # check automatic voucher flag if it is 1 get maflag
+                    avfl = con.execute(
+                        select([organisation.c.avflag]).where(
+                            organisation.c.orgcode == invdataset["orgcode"]
+                        )
+                    )
+                    av = avfl.fetchone()
+                    if av["avflag"] == 1:
+                        mafl = con.execute(
+                            select([organisation.c.maflag]).where(
                                 organisation.c.orgcode == invdataset["orgcode"]
                             )
                         )
-                        av = avfl.fetchone()
-                        if av["avflag"] == 1:
-                            avData = invdataset["av"]
-                            mafl = con.execute(
-                                select([organisation.c.maflag]).where(
-                                    organisation.c.orgcode == invdataset["orgcode"]
+                        maFlag = mafl.fetchone()
+                        csName = con.execute(
+                            select([customerandsupplier.c.custname]).where(
+                                and_(
+                                    customerandsupplier.c.orgcode
+                                    == invdataset["orgcode"],
+                                    customerandsupplier.c.custid
+                                    == int(invdataset["custid"]),
                                 )
                             )
-                            maFlag = mafl.fetchone()
-                            csName = con.execute(
-                                select([customerandsupplier.c.custname]).where(
-                                    and_(
-                                        customerandsupplier.c.orgcode
-                                        == invdataset["orgcode"],
-                                        customerandsupplier.c.custid
-                                        == int(invdataset["custid"]),
-                                    )
-                                )
-                            )
-                            CSname = csName.fetchone()
-                            queryParams = {
-                                "invtype": invdataset["inoutflag"],
-                                "pmtmode": invdataset["paymentmode"],
-                                "taxType": invdataset["taxflag"],
-                                "destinationstate": invdataset["taxstate"],
-                                "totaltaxablevalue": avData["totaltaxable"],
-                                "maflag": maFlag["maflag"],
-                                "totalAmount": (invdataset["invoicetotal"]),
-                                "invoicedate": invdataset["invoicedate"],
-                                "invid": invoiceid["invid"],
-                                "invoiceno": invdataset["invoiceno"],
-                                "csname": CSname["custname"],
-                                "taxes": invdataset["tax"],
-                                "cess": invdataset["cess"],
-                                "products": avData["product"],
-                                "prodData": avData["prodData"],
-                            }
-                            # when invoice total is rounded off
-                            if invdataset["roundoffflag"] == 1:
-                                roundOffAmount = float(
-                                    invdataset["invoicetotal"]
-                                ) - round(float(invdataset["invoicetotal"]))
-                                if float(roundOffAmount) != 0.00:
-                                    queryParams["roundoffamt"] = float(
-                                        roundOffAmount
-                                    )
-
-                            if int(invdataset["taxflag"]) == 7:
-                                queryParams["gstname"] = avData["avtax"]["GSTName"]
-                                queryParams["cessname"] = avData["avtax"][
-                                    "CESSName"
-                                ]
-
-                            if int(invdataset["taxflag"]) == 22:
-                                queryParams["taxpayment"] = avData["taxpayment"]
-
-                            # call getDefaultAcc
-                            av_Result = getDefaultAcc(
-                                con, queryParams, int(invdataset["orgcode"])
-                            )
-                            if av_Result["gkstatus"] == 0:
-                                voucherData["status"] = 0
-                                voucherData["vchno"] = av_Result["vchNo"]
-                                voucherData["vchid"] = av_Result["vid"]
-                            else:
-                                voucherData["status"] = 1
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": invoiceid["invid"],
-                            "vchData": voucherData,
+                        )
+                        CSname = csName.fetchone()
+                        queryParams = {
+                            "invtype": invdataset["inoutflag"],
+                            "pmtmode": invdataset["paymentmode"],
+                            "taxType": invdataset["taxflag"],
+                            "destinationstate": invdataset["taxstate"],
+                            "totaltaxablevalue": avData["totaltaxable"],
+                            "maflag": maFlag["maflag"],
+                            "totalAmount": (invdataset["invoicetotal"]),
+                            "invoicedate": invdataset["invoicedate"],
+                            "invid": invoiceid,
+                            "invoiceno": invdataset["invoiceno"],
+                            "csname": CSname["custname"],
+                            "taxes": invdataset["tax"],
+                            "cess": invdataset["cess"],
+                            "products": avData["product"],
+                            "prodData": avData["prodData"],
                         }
+                        # when invoice total is rounded off
+                        if invdataset["roundoffflag"] == 1:
+                            roundOffAmount = float(
+                                invdataset["invoicetotal"]
+                            ) - round(float(invdataset["invoicetotal"]))
+                            if float(roundOffAmount) != 0.00:
+                                queryParams["roundoffamt"] = float(
+                                    roundOffAmount
+                                )
+
+                        if int(invdataset["taxflag"]) == 7:
+                            queryParams["gstname"] = avData["avtax"]["GSTName"]
+                            queryParams["cessname"] = avData["avtax"][
+                                "CESSName"
+                            ]
+
+                        if int(invdataset["taxflag"]) == 22:
+                            queryParams["taxpayment"] = avData["taxpayment"]
+
+                        # call getDefaultAcc
+                        av_Result = getDefaultAcc(
+                            con, queryParams, int(invdataset["orgcode"])
+                        )
+                        if av_Result["gkstatus"] == 0:
+                            voucherData["status"] = 0
+                            voucherData["vchno"] = av_Result["vchNo"]
+                            voucherData["vchid"] = av_Result["vid"]
+                        else:
+                            voucherData["status"] = 1
+                    return {
+                        "gkstatus": enumdict["Success"],
+                        "gkresult": invoiceid,
+                        "vchData": voucherData,
+                    }
                 else:
                     # if it is cash memo
                     if "icflag" in invdataset:
-                        result = con.execute(
-                            "select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"
-                            % (
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
-                        )
-                        invoiceid = result.fetchone()
-                        stockdataset["dcinvtnid"] = invoiceid["invid"]
+                        stockdataset["dcinvtnid"] = invoiceid
                         for item in list(items.keys()):
                             gstResult = gst(item, con)
                             if int(gstResult["gsflag"]) == 7:
@@ -1845,8 +1824,10 @@ class api_invoice(object):
                             )
                         )
                         av = avfl.fetchone()
+
+                        # if automatic voucher is enabled, voucher related entries are
+                        # added.
                         if av["avflag"] == 1:
-                            avData = invdataset["av"]
                             mafl = con.execute(
                                 select([organisation.c.maflag]).where(
                                     organisation.c.orgcode == invdataset["orgcode"]
@@ -1862,13 +1843,29 @@ class api_invoice(object):
                                 "maflag": maFlag["maflag"],
                                 "totalAmount": invdataset["invoicetotal"],
                                 "invoicedate": invdataset["invoicedate"],
-                                "invid": invoiceid["invid"],
+                                "invid": invoiceid,
                                 "invoiceno": invdataset["invoiceno"],
                                 "taxes": invdataset["tax"],
                                 "cess": invdataset["cess"],
                                 "products": avData["product"],
                                 "prodData": avData["prodData"],
                             }
+
+                            # if its invoice, adding customer details
+                            if int(invdataset["icflag"]) == 9:
+                                contact_name = con.execute(
+                                    select([customerandsupplier.c.custname]).where(
+                                        and_(
+                                            customerandsupplier.c.orgcode
+                                            == invdataset["orgcode"],
+                                            customerandsupplier.c.custid
+                                            == int(invdataset["custid"]),
+                                        )
+                                    )
+                                ).scalar()
+                                queryParams.update({"csname": contact_name})
+
+                            
                             # when invoice total rounded off
                             if int(invdataset["roundoffflag"]) == 1:
                                 roundOffAmount = float(
@@ -1898,112 +1895,10 @@ class api_invoice(object):
                                 voucherData["status"] = 1
                         return {
                             "gkstatus": enumdict["Success"],
-                            "gkresult": invoiceid["invid"],
+                            "gkresult": invoiceid,
                             "vchData": voucherData,
                         }
-                    else:
-                        result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
-                        )
-                        invoiceid = result.fetchone()
-                        stockdataset["dcinvtnid"] = invoiceid["invid"]
-                        stockdataset["stockdate"] = invdataset["invoicedate"]
-                        for item in list(items.keys()):
-                            gstResult = gst(item, con)
-                            if int(gstResult["gsflag"]) == 7:
-                                itemQty = float(list(items[item].values())[0])
-                                itemRate = float(list(items[item].keys())[0])
-                                itemTotalDiscount = float(discount.get(item, 0))
-                                itemDiscount = 0
-                                if itemQty:
-                                    itemDiscount = itemTotalDiscount / itemQty
-                                stockdataset["rate"] = itemRate - itemDiscount
-                                stockdataset["productcode"] = item
-                                stockdataset["qty"] = itemQty + float(freeqty[item])
-                                stockdataset["dcinvtnflag"] = "9"
-                                result = con.execute(
-                                    stock.insert(), [stockdataset]
-                                )
-                            # check automatic voucher flag if it is 1 get maflag
-                        avfl = con.execute(
-                            select([organisation.c.avflag]).where(
-                                organisation.c.orgcode == invdataset["orgcode"]
-                            )
-                        )
-                        av = avfl.fetchone()
-                        if av["avflag"] == 1:
-                            avData = invdataset["av"]
-                            mafl = con.execute(
-                                select([organisation.c.maflag]).where(
-                                    organisation.c.orgcode == invdataset["orgcode"]
-                                )
-                            )
-                            maFlag = mafl.fetchone()
-                            csName = con.execute(
-                                select([customerandsupplier.c.custname]).where(
-                                    and_(
-                                        customerandsupplier.c.orgcode
-                                        == invdataset["orgcode"],
-                                        customerandsupplier.c.custid
-                                        == int(invdataset["custid"]),
-                                    )
-                                )
-                            )
-                            CSname = csName.fetchone()
-                            queryParams = {
-                                "invtype": invdataset["inoutflag"],
-                                "pmtmode": invdataset["paymentmode"],
-                                "taxType": invdataset["taxflag"],
-                                "destinationstate": invdataset["taxstate"],
-                                "totaltaxablevalue": avData["totaltaxable"],
-                                "maflag": maFlag["maflag"],
-                                "totalAmount": invdataset["invoicetotal"],
-                                "invoicedate": invdataset["invoicedate"],
-                                "invid": invoiceid["invid"],
-                                "invoiceno": invdataset["invoiceno"],
-                                "csname": CSname["custname"],
-                                "taxes": invdataset["tax"],
-                                "cess": invdataset["cess"],
-                                "products": avData["product"],
-                                "prodData": avData["prodData"],
-                            }
-                            # when invoice total rounded off
-                            if invdataset["roundoffflag"] == 1:
-                                roundOffAmount = float(
-                                    invdataset["invoicetotal"]
-                                ) - round(float(invdataset["invoicetotal"]))
-                                if float(roundOffAmount) != float(0):
-                                    queryParams["roundoffamt"] = float(
-                                        roundOffAmount
-                                    )
 
-                            if int(invdataset["taxflag"]) == 7:
-                                queryParams["gstname"] = avData["avtax"]["GSTName"]
-                                queryParams["cessname"] = avData["avtax"][
-                                    "CESSName"
-                                ]
-                            if int(invdataset["taxflag"]) == 22:
-                                queryParams["taxpayment"] = avData["taxpayment"]
-                            # call getDefaultAcc
-                            av_Result = getDefaultAcc(
-                                con, queryParams, int(invdataset["orgcode"])
-                            )
-                            if av_Result["gkstatus"] == 0:
-                                voucherData["status"] = 0
-                                voucherData["vchno"] = av_Result["vchNo"]
-                                voucherData["vchid"] = av_Result["vid"]
-                            else:
-                                voucherData["status"] = 1
-                        return {
-                            "gkstatus": enumdict["Success"],
-                            "gkresult": invoiceid["invid"],
-                            "vchData": voucherData,
-                        }
 
     @view_config(request_method="GET", request_param="inv=all", renderer="json")
     def getAllinvoices(self):
