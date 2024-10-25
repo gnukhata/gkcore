@@ -73,7 +73,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.helpers.delivery_note import cancel_delivery_note
+from gkcore.views.helpers.delivery_note import create_delivery_note, cancel_delivery_note
 from gkcore.views.helpers.voucher import cancel_voucher
 import traceback  # for printing detailed exception logs
 
@@ -983,10 +983,11 @@ def getInvoiceData(con, orgcode, params):
                     delchal.c.dcid == dcid["dcid"]
                 )
             )
-            delchalData = dc.fetchone()
             inv["dcid"] = dcid["dcid"]
-            inv["dcno"] = delchalData["dcno"]
-            inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
+            delchalData = dc.fetchone()
+            if delchalData:
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
         custandsup = con.execute(
             select(
                 [
@@ -1086,10 +1087,11 @@ def getInvoiceData(con, orgcode, params):
                     delchal.c.dcid == dcid["dcid"]
                 )
             )
-            delchalData = dc.fetchone()
             inv["dcid"] = dcid["dcid"]
-            inv["dcno"] = delchalData["dcno"]
-            inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
+            delchalData = dc.fetchone()
+            if delchalData:
+                inv["dcno"] = delchalData["dcno"]
+                inv["dcdate"] = datetime.strftime(delchalData["dcdate"], "%d-%m-%Y")
     # contents is a nested dictionary from invoice table.
     # It contains productcode as the key with a value as a dictionary.
     # this dictionary has two key value pairs, priceperunit and quantity.
@@ -1295,6 +1297,8 @@ def getInvoiceList(con, orgcode, reqParams):
         i = 1
         # fetch all delivery challans for an invoice.
         for dc in dcresult:
+            if not dc["dcid"]:
+                continue
             godownres = con.execute(
                 "select goname, goaddr from godown where goid = (select distinct goid from stock where dcinvtnflag=4 and dcinvtnid=%d)"
                 % int(dc["dcid"])
@@ -1559,70 +1563,6 @@ def rename_inv_no_uniquely(con, orgcode):
         print(traceback.format_exc())
         return 0
 
-def getDelchalId(con, orgCode, requestBody):
-    delchaldata = requestBody['delchalPayload']["delchaldata"]
-    stockdata = requestBody['delchalPayload']["stockdata"]
-    discount = requestBody["payload"]["invoice"]["discount"]
-    freeqty = delchaldata["freeqty"]
-    inoutflag = stockdata["inout"]
-    items = delchaldata["contents"]
-    delchaldata["orgcode"] = orgCode
-    stockdata["orgcode"] = orgCode
-    if delchaldata["dcflag"] == 19:
-        delchaldata["issuerid"] = orgCode
-    result = con.execute(delchal.insert(), [delchaldata])
-    if result.rowcount == 1:
-        dciddata = con.execute(
-            select([delchal.c.dcid, delchal.c.dcdate]).where(
-                and_(
-                    delchal.c.orgcode == orgCode,
-                    delchal.c.dcno == delchaldata["dcno"],
-                    delchal.c.custid == delchaldata["custid"],
-                )
-            )
-        )
-        dcidrow = dciddata.fetchone()
-        stockdata["dcinvtnid"] = dcidrow["dcid"]
-        stockdata["dcinvtnflag"] = 4
-        stockdata["stockdate"] = dcidrow["dcdate"]
-
-        for key in list(items.keys()):
-            itemQty = float(list(items[key].values())[0])
-            itemRate = float(list(items[key].keys())[0])
-            itemTotalDiscount = float(discount.get(key, 0))
-            itemDiscount = 0
-            if itemQty:
-                itemDiscount = itemTotalDiscount / itemQty
-            stockdata["rate"] = itemRate - itemDiscount
-            stockdata["productcode"] = key
-            stockdata["qty"] = itemQty + float(freeqty[key])
-            result = con.execute(stock.insert(), [stockdata])
-            if "goid" in stockdata:
-                resultgoprod = con.execute(
-                    select([goprod]).where(
-                        and_(
-                            goprod.c.goid == stockdata["goid"],
-                            goprod.c.productcode == key,
-                        )
-                    )
-                )
-                if resultgoprod.rowcount == 0:
-                    result = con.execute(
-                        goprod.insert(),
-                        [
-                            {
-                                "goid": stockdata["goid"],
-                                "productcode": key,
-                                "goopeningstock": 0.00,
-                                "orgcode": orgCode,
-                            }
-                        ],
-                    )
-        return {
-            "gkstatus": enumdict["Success"],
-            "gkresult": dcidrow["dcid"],
-        }
-
 
 @view_defaults(route_name="invoice")
 class api_invoice(object):
@@ -1641,13 +1581,11 @@ class api_invoice(object):
         else:
             with eng.begin() as con:
                 dtset = self.request.json_body
-                inv = getDelchalId(
+                delivery_note_id = create_delivery_note(
                     con,
-                    authDetails["orgcode"],
                     dtset,
+                    authDetails["orgcode"],
                 )
-                if not inv["gkresult"]:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
 
                 dcinvdataset = {}
                 invdataset = dtset["payload"]["invoice"]
@@ -1657,7 +1595,7 @@ class api_invoice(object):
                 items = invdataset["contents"]
                 invdataset["orgcode"] = authDetails["orgcode"]
                 stockdataset["orgcode"] = authDetails["orgcode"]
-                invdataset["dcid"] = inv["gkresult"]
+                invdataset["dcid"] = delivery_note_id
                 queryParams = {}
                 voucherData = {}
                 pricedetails = []
