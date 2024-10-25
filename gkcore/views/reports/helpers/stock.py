@@ -20,8 +20,7 @@ from sqlalchemy.sql.functions import func
 import traceback  # for printing detailed exception logs
 
 def stockonhandfun(orgcode, productCode, endDate):
-    try:
-        con = eng.connect()
+    with eng.connect() as con:
         stockReport = []
         totalinward = 0.00
         totaloutward = 0.00
@@ -65,6 +64,10 @@ def stockonhandfun(orgcode, productCode, endDate):
             )
             stockData = stockRecords.fetchall()
             totalinward = totalinward + float(openingStock)
+
+            if not stockData:
+                return { "gkresult": stockReport }
+
             for finalRow in stockData:
                 if finalRow["dcinvtnflag"] == 3 or finalRow["dcinvtnflag"] == 9:
                     countresult = con.execute(
@@ -354,12 +357,7 @@ def stockonhandfun(orgcode, productCode, endDate):
                     }
                 )
                 srno = srno + 1
-        con.close()
         return {"gkresult": stockReport}
-
-    except Exception as e:
-        logging.warn(e)
-        return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
 def calculateOpeningStockValue(con, orgcode):
@@ -627,8 +625,7 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
 def godownwisestockonhandfun(
     con, orgcode, startDate, endDate, stocktype, productCode, godownCode
 ):
-    try:
-        con = eng.connect()
+    with eng.connect() as con:
         stockReport = []
         totalinward = 0.00
         totaloutward = 0.00
@@ -980,6 +977,3 @@ def godownwisestockonhandfun(
                 )
                 srno = srno + 1
             return stockReport
-    except:
-        # print(traceback.format_exc())
-        return {"gkstatus": enumdict["ConnectionFailed"]}
