@@ -310,6 +310,7 @@ class api_purchaseorder(object):
                         )
                     )
                 goidrow = goid_result.fetchall()
+                goid = goidrow[0][0] if goidrow else None
                 if int(prodrow["gsflag"]) == 7:
                     um = con.execute(
                         select([unitofmeasurement.c.unitname]).where(
@@ -403,7 +404,7 @@ class api_purchaseorder(object):
                         "cessrate": "%.2f" % (float(cessVal)),
                         "productCode": prodrow["productcode"],
                         "gsflag": prodrow["gsflag"],
-                        "goid": goidrow[0][0],
+                        "goid": goid,
                     }
                 if "staggered" in schedule[productCode]:
                     details[productCode]["staggered"] = schedule[productCode][
