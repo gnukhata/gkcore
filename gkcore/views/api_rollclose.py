@@ -1050,7 +1050,7 @@ class api_rollclose(object):
                 startEndRow = financialStartEnd.fetchone()
                 oldstartDate = startEndRow["yearstart"]
                 endDate = startEndRow["yearend"]
-                newYearStart = self.request.params["financialstart"]
+                newYearStart = (endDate + timedelta(1)).strftime("%Y-%m-%d")
                 newYearEnd = self.request.params["financialend"]
                 #               print newYearStart
                 #               print newYearEnd
@@ -1087,6 +1087,7 @@ class api_rollclose(object):
                     "ainvnoflag": startEndRow["ainvnoflag"],
                     "logo": startEndRow["logo"],
                     "gstin": startEndRow["gstin"],
+                    "tin": startEndRow["tin"],
                     "bankdetails": startEndRow["bankdetails"],
                     "users": startEndRow["users"],
                 }
@@ -1171,7 +1172,7 @@ class api_rollclose(object):
                             },
                         )
                 oldGroupAccounts = con.execute(
-                    "select accountname,accountcode,groupname,defaultflag from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
+                    "select accountname,accountcode,sysaccount,groupname,defaultflag from accounts,groupsubgroups where accounts.orgcode = %d and accounts.groupcode = groupsubgroups.groupcode and accountname not in ('Profit For The Year','Loss For The Year','Surplus For The Year','Deficit For The Year')"
                     % (orgCode)
                 )
                 for angn in oldGroupAccounts:
@@ -1229,6 +1230,7 @@ class api_rollclose(object):
                             "openingbal": float(opnbal),
                             "groupcode": newGroupCodeRow["groupcode"],
                             "orgcode": newOrgCode,
+                            "sysaccount": angn["sysaccount"],
                             "defaultflag": angn["defaultflag"],
                         },
                     )
@@ -1300,6 +1302,10 @@ class api_rollclose(object):
                             "pincode": row["pincode"],
                             "bankdetails": row["bankdetails"],
                             "orgcode": newOrgCode,
+                            "gst_reg_type": row["gst_reg_type"],
+                            "gst_party_type": row["gst_party_type"],
+                            "tin": row["tin"],
+                            "country": row["country"],
                         },
                     )
                 ## Category Migration
@@ -1426,6 +1432,7 @@ class api_rollclose(object):
                         {
                             "taxname": taxRow["taxname"],
                             "taxrate": taxRow["taxrate"],
+                            "taxfromdate": taxRow["taxfromdate"],
                             "state": taxRow["state"],
                             "productcode": newProdCode,
                             "categorycode": newCatCode,
