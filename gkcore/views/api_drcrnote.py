@@ -433,7 +433,7 @@ class api_drcr(object):
                         cessAmount = 0.00
                         cessVal = 0.00
                         taxname = ""
-                        if invrow["cess"] != None:
+                        if invrow["cess"]:
                             cessVal = float(invrow["cess"][pc])
                             cessAmount = reductprice * (cessVal / 100)
                             totalCessAmt = totalCessAmt + cessAmount
