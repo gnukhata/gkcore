@@ -361,7 +361,7 @@ class api_purchaseorder(object):
                     cessAmount = 0.00
                     cessVal = 0.00
                     taxname = ""
-                    if podata["cess"] != None:
+                    if podata["cess"]:
                         cessVal = float(podata["cess"][productCode])
                         cessAmount = taxableAmount * (cessVal / 100)
                         totalCessAmt = totalCessAmt + cessAmount
