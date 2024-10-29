@@ -29,19 +29,161 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
-from sqlalchemy.sql import select
-import json
+from gkcore.models.gkdb import groupsubgroups
+from gkcore.views.group_subgroup.schemas import GroupSubgroup, GroupSubgroupUpdate
+from sqlalchemy.sql import select, update, insert, delete
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, alias, or_
+from sqlalchemy import and_, or_
 from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-import jwt
 import gkcore
 from gkcore.utils import authCheck
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import groupsubgroups
 from gkcore.views.api_gkuser import getUserRole
+
+
+@view_defaults(route_name="groups_subgroups", renderer="json_extended")
+class api_groups_subgroups(object):
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(request_method="POST")
+    def add_group_subgroup(self):
+        """ API to add Groups and Subgroups.
+        Requried Fields: Group/sub group name
+        Optional Fields: Parent group
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = GroupSubgroup.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
+        with eng.begin() as conn:
+            dataset["orgcode"] = authDetails["orgcode"]
+            result = conn.execute(
+                insert(groupsubgroups)
+                .values(dataset)
+                .returning(groupsubgroups.c.groupcode)
+            )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": result.scalar(),
+            }
+
+
+    @view_config(request_method="PUT")
+    def update_group_subgroup(self):
+        """ API to udpate Groups and Subgroups.
+        Requried Fields: Group/sub group name, groupcode
+        Optional Fields: Parent group
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = GroupSubgroupUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump()
+        with eng.begin() as conn:
+            groupcode = dataset.pop("groupcode")
+            dataset["orgcode"] = authDetails["orgcode"]
+            result = conn.execute(
+                update(groupsubgroups)
+                .where(groupsubgroups.c.groupcode == groupcode)
+                .values(dataset)
+                .returning(groupsubgroups.c.groupcode)
+            )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": result.scalar(),
+            }
+
+
+    @view_config(request_method="DELETE")
+    def delete_group_subgroup(self):
+        """ API to delete Groups and Subgroups.
+        Requried Fields: groupcode
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        with eng.begin() as conn:
+            dataset = self.request.json_body
+            conn.execute(
+                delete(groupsubgroups).where(
+                    gkdb.groupsubgroups.c.groupcode == dataset["groupcode"]
+                )
+            )
+            return {"gkstatus": enumdict["Success"]}
+
+
+    @view_config(request_method="GET")
+    def get_groups_subgroups(self):
+        """ API to list Groups and Subgroups.
+        Optional Parameters:
+        - group_type: ["group", "subgroup"] `group_type` can be used to filter by groups
+        and subgroups. If `group_type` is not provided, both will be listed.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+        group_type = self.request.params.get("group_type")
+
+        with eng.connect() as conn:
+            groupsubgroups_alias = groupsubgroups.alias()
+            statement = (
+                select(
+                    [
+                        groupsubgroups,
+                        groupsubgroups_alias.c.groupname.label("parent_group_name")
+                    ]
+                )
+                .select_from(
+                    groupsubgroups.join(
+                        groupsubgroups_alias,
+                        groupsubgroups.c.subgroupof == groupsubgroups_alias.c.groupcode,
+                        isouter=True
+                    )
+                )
+                .where(
+                    groupsubgroups.c.orgcode == authDetails["orgcode"]
+                )
+            )
+            if group_type == "group":
+                statement = statement.where(groupsubgroups.c.subgroupof == None)
+            elif group_type == "subgroup":
+                statement = statement.where(groupsubgroups.c.subgroupof != None)
+
+            groups_subgroups = conn.execute(statement).fetchall()
+            groups_subgroups = [
+                dict(group_subgroup)
+                for group_subgroup in groups_subgroups
+            ]
+
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": groups_subgroups,
+            }
 
 
 @view_defaults(route_name="groupsubgroups")
