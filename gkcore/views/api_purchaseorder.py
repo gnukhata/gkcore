@@ -309,8 +309,7 @@ class api_purchaseorder(object):
                             )
                         )
                     )
-                goidrow = goid_result.fetchall()
-                goid = goidrow[0][0] if goidrow else None
+                goid = goid_result.scalar()
                 if int(prodrow["gsflag"]) == 7:
                     um = con.execute(
                         select([unitofmeasurement.c.unitname]).where(

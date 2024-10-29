@@ -683,8 +683,7 @@ class api_delchal(object):
                             )
                         )
                     )
-                    goidrow = goid_result.fetchall()
-                    goid = goidrow[0][0] if goidrow else None
+                    goid = goid_result.scalar()
                     # For 'Goods'
                     if int(prodrow["gsflag"]) == 7:
                         um = con.execute(

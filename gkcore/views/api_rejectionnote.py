@@ -596,7 +596,7 @@ class api_rejectionnote(object):
                                 )
                             )
                         )
-                        goidrow = goid_result.fetchall()
+                        goid = goid_result.scalar()
                         if int(prodrow["gsflag"]) == 7:
                             um = self.con.execute(
                                 select([unitofmeasurement.c.unitname]).where(
@@ -677,7 +677,7 @@ class api_rejectionnote(object):
                                 "cessrate": "%.2f" % (float(cessVal)),
                                 "productCode": prodrow["productcode"],
                                 "gsflag": prodrow["gsflag"],
-                                "goid": goidrow[0][0],
+                                "goid": goid,
                             }
                 rejectionnotedata["totaltaxablevalue"] = "%.2f" % (
                     float(totalTaxableVal)

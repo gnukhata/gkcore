@@ -345,12 +345,12 @@ class api_transfernote(object):
                             )
                         )
                     )
-                    goidrow = goid_result.fetchall()
+                    goid = goid_result.scalar()
                     items[stockrow["productcode"]] = {
                         "qty": "%.2f" % float(stockrow["qty"]),
                         "productdesc": productdesc["productdesc"],
                         "unitname": unitnamrrow["unitname"],
-                        "goid": goidrow[0][0],
+                        "goid": goid,
                         "gsflag": productdesc["gsflag"],
                         "productcode": productdesc["productcode"],
                     }
