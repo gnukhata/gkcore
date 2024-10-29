@@ -211,9 +211,8 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [
                             transfernote.c.transfernotedate,
@@ -235,13 +234,7 @@ class api_transfernote(object):
                             ),
                         }
                     )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="tn=single", renderer="json")
     def getTn(self):
