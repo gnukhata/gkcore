@@ -303,7 +303,7 @@ class api_account(object):
                     g = gkdb.groupsubgroups.alias("g")
                     sg = gkdb.groupsubgroups.alias("sg")
 
-                    defaultflag = default_acc[accrow["defaultflag"]]
+                    defaultflag_name = default_acc[accrow["defaultflag"]]
                     resultset = con.execute(
                         select(
                             [
@@ -346,7 +346,8 @@ class api_account(object):
                                 "subgroupcode": "",
                                 "subgroupname": "",
                                 "sysaccount": accrow["sysaccount"],
-                                "defaultflag": defaultflag,
+                                "defaultflag": accrow["defaultflag"],
+                                "defaultflag_name": defaultflag_name,
                                 "account_balance": account_balance or 0,
                             }
                         )
@@ -363,7 +364,7 @@ class api_account(object):
                                 "subgroupcode": grprow["subgroupcode"],
                                 "subgroupname": grprow["subgroupname"],
                                 "sysaccount": accrow["sysaccount"],
-                                "defaultflag": defaultflag,
+                                "defaultflag": defaultflag_name,
                                 "account_balance": account_balance or 0,
                             }
                         )
