@@ -210,31 +210,30 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                result = con.execute(
-                    select(
-                        [
-                            transfernote.c.transfernotedate,
-                            transfernote.c.transfernoteid,
-                            transfernote.c.transfernoteno,
-                        ]
-                    )
-                    .where(transfernote.c.orgcode == authDetails["orgcode"])
-                    .order_by(transfernote.c.transfernotedate)
+        with eng.connect() as con:
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernotedate,
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernoteno,
+                    ]
                 )
-                tn = []
-                for row in result:
-                    tn.append(
-                        {
-                            "transfernoteno": row["transfernoteno"],
-                            "transfernoteid": row["transfernoteid"],
-                            "transfernotedate": datetime.strftime(
-                                row["transfernotedate"], "%d-%m-%Y"
-                            ),
-                        }
-                    )
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
+                .where(transfernote.c.orgcode == authDetails["orgcode"])
+                .order_by(transfernote.c.transfernotedate)
+            )
+            tn = []
+            for row in result:
+                tn.append(
+                    {
+                        "transfernoteno": row["transfernoteno"],
+                        "transfernoteid": row["transfernoteid"],
+                        "transfernotedate": datetime.strftime(
+                            row["transfernotedate"], "%d-%m-%Y"
+                        ),
+                    }
+                )
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="tn=single", renderer="json")
     def getTn(self):
