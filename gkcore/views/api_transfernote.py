@@ -76,61 +76,60 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                transferdata = dataset["transferdata"]
-                stockdata = dataset["stockdata"]
-                transferdata["orgcode"] = authDetails["orgcode"]
-                stockdata["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = con.execute(
-                    select([transfernote.c.transfernoteno]).where(
-                        and_(
-                            transfernote.c.orgcode == authDetails["orgcode"],
-                            func.lower(transfernote.c.transfernoteno) == func.lower(transferdata["transfernoteno"]),
-                        )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            transferdata = dataset["transferdata"]
+            stockdata = dataset["stockdata"]
+            transferdata["orgcode"] = authDetails["orgcode"]
+            stockdata["orgcode"] = authDetails["orgcode"]
+            # Check for duplicate entry before insertion
+            result_duplicate_check = con.execute(
+                select([transfernote.c.transfernoteno]).where(
+                    and_(
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                        func.lower(transfernote.c.transfernoteno) == func.lower(transferdata["transfernoteno"]),
                     )
                 )
-                
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
-                result = con.execute(transfernote.insert(), [transferdata])
+            )
 
-                if result.rowcount != 1:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            if result_duplicate_check.rowcount > 0:
+                # Duplicate entry found, handle accordingly
+                return {"gkstatus": enumdict["DuplicateEntry"]}
+            result = con.execute(transfernote.insert(), [transferdata])
 
-                transfernoteiddata = con.execute(
-                    select(
-                        [
-                            transfernote.c.transfernoteid,
-                            transfernote.c.transfernotedate,
-                        ]
-                    ).where(
-                        and_(
-                            transfernote.c.orgcode == authDetails["orgcode"],
-                            transfernote.c.transfernoteno
-                            == transferdata["transfernoteno"],
-                        )
+            if result.rowcount != 1:
+                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+
+            transfernoteiddata = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernotedate,
+                    ]
+                ).where(
+                    and_(
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                        transfernote.c.transfernoteno
+                        == transferdata["transfernoteno"],
                     )
                 )
-                transfernoteidrow = transfernoteiddata.fetchone()
-                stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
-                stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
-                stockdata["goid"] = transferdata["fromgodown"]
-                stockdata["dcinvtnflag"] = 20
-                stockdata["inout"] = 15
-                items = stockdata.pop("items")
-                for key in list(items.keys()):
-                    stockdata["rate"] = 0
-                    stockdata["productcode"] = key
-                    stockdata["qty"] = items[key]
-                    result = con.execute(stock.insert(), [stockdata])
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": transfernoteidrow["transfernoteid"],
-                }
+            )
+            transfernoteidrow = transfernoteiddata.fetchone()
+            stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
+            stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
+            stockdata["goid"] = transferdata["fromgodown"]
+            stockdata["dcinvtnflag"] = 20
+            stockdata["inout"] = 15
+            items = stockdata.pop("items")
+            for key in list(items.keys()):
+                stockdata["rate"] = 0
+                stockdata["productcode"] = key
+                stockdata["qty"] = items[key]
+                result = con.execute(stock.insert(), [stockdata])
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": transfernoteidrow["transfernoteid"],
+            }
 
     @view_config(request_method="GET", request_param="tn=all", renderer="json")
     def getAllTransferNote(self):
