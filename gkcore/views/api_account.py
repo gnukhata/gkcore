@@ -31,6 +31,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
+from gkcore.views.reports.helpers.balance import get_account_vouchers_data
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -327,6 +328,12 @@ class api_account(object):
                         )
                     )
                     grprow = resultset.fetchone()
+                    account_balance = (
+                        float(accrow["openingbal"] or 0) + get_account_vouchers_data(
+                            con, authDetails["orgcode"], accrow["accountcode"]
+                        )
+                    )
+
                     if grprow["groupcode"] == grprow["subgroupcode"]:
                         accs.append(
                             {
@@ -340,6 +347,7 @@ class api_account(object):
                                 "subgroupname": "",
                                 "sysaccount": accrow["sysaccount"],
                                 "defaultflag": defaultflag,
+                                "account_balance": account_balance or 0,
                             }
                         )
 
@@ -356,6 +364,7 @@ class api_account(object):
                                 "subgroupname": grprow["subgroupname"],
                                 "sysaccount": accrow["sysaccount"],
                                 "defaultflag": defaultflag,
+                                "account_balance": account_balance or 0,
                             }
                         )
                     srno = srno + 1
