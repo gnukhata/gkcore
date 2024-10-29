@@ -77,15 +77,14 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 transferdata = dataset["transferdata"]
                 stockdata = dataset["stockdata"]
                 transferdata["orgcode"] = authDetails["orgcode"]
                 stockdata["orgcode"] = authDetails["orgcode"]
                 # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
+                result_duplicate_check = con.execute(
                     select([transfernote.c.transfernoteno]).where(
                         and_(
                             transfernote.c.orgcode == authDetails["orgcode"],
@@ -97,10 +96,10 @@ class api_transfernote(object):
                 if result_duplicate_check.rowcount > 0:
                     # Duplicate entry found, handle accordingly
                     return {"gkstatus": enumdict["DuplicateEntry"]}
-                result = self.con.execute(transfernote.insert(), [transferdata])
+                result = con.execute(transfernote.insert(), [transferdata])
 
                 if result.rowcount == 1:
-                    transfernoteiddata = self.con.execute(
+                    transfernoteiddata = con.execute(
                         select(
                             [
                                 transfernote.c.transfernoteid,
@@ -121,41 +120,17 @@ class api_transfernote(object):
                     stockdata["dcinvtnflag"] = 20
                     stockdata["inout"] = 15
                     items = stockdata.pop("items")
-                    try:
-                        for key in list(items.keys()):
-                            stockdata["rate"] = 0
-                            stockdata["productcode"] = key
-                            stockdata["qty"] = items[key]
-                            result = self.con.execute(stock.insert(), [stockdata])
-                    except:
-                        result = self.con.execute(
-                            stock.delete().where(
-                                and_(
-                                    stock.c.dcinvtnid
-                                    == transfernoteidrow["transfernoteid"],
-                                    stock.c.dcinvtnflag == 20,
-                                )
-                            )
-                        )
-                        result = self.con.execute(
-                            transfernote.delete().where(
-                                transfernote.c.transfernoteid
-                                == transfernoteidrow["transfernoteid"]
-                            )
-                        )
-                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+                    for key in list(items.keys()):
+                        stockdata["rate"] = 0
+                        stockdata["productcode"] = key
+                        stockdata["qty"] = items[key]
+                        result = con.execute(stock.insert(), [stockdata])
                     return {
                         "gkstatus": enumdict["Success"],
                         "gkresult": transfernoteidrow["transfernoteid"],
                     }
                 else:
                     return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="tn=all", renderer="json")
     def getAllTransferNote(self):
