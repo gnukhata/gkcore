@@ -141,55 +141,43 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                """
-                Retreiving date, id, number and togodown of all transfernotes.
-                """
-                result = con.execute(
-                    select(
-                        [
-                            transfernote.c.transfernotedate,
-                            transfernote.c.transfernoteid,
-                            transfernote.c.transfernoteno,
-                            transfernote.c.togodown,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            transfernote.c.recieved == False,
-                            transfernote.c.orgcode == authDetails["orgcode"],
-                        )
-                    )
-                    .order_by(transfernote.c.transfernotedate)
+        with eng.connect() as con:
+            """
+            Retreiving date, id, number and togodown of all transfernotes.
+            """
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernotedate,
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernoteno,
+                        transfernote.c.togodown,
+                    ]
                 )
-                """
-                A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
-                If user is not a godown keeper this list will be empty.
-                """
-                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
-                """
-                If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
-                Otherwise all transfernotes that have not been received are returned.
-                """
-                tn = []
-                if usergodowmns:
-                    godowns = []
-                    for godown in usergodowmns:
-                        godowns.append(godown["goid"])
-                    for row in result:
-                        if row["togodown"] in godowns:
-                            tn.append(
-                                {
-                                    "transfernoteno": row["transfernoteno"],
-                                    "transfernoteid": row["transfernoteid"],
-                                    "transfernotedate": datetime.strftime(
-                                        row["transfernotedate"], "%d-%m-%Y"
-                                    ),
-                                }
-                            )
-                else:
-                    for row in result:
+                .where(
+                    and_(
+                        transfernote.c.recieved == False,
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+                .order_by(transfernote.c.transfernotedate)
+            )
+            """
+            A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
+            If user is not a godown keeper this list will be empty.
+            """
+            usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+            """
+            If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
+            Otherwise all transfernotes that have not been received are returned.
+            """
+            tn = []
+            if usergodowmns:
+                godowns = []
+                for godown in usergodowmns:
+                    godowns.append(godown["goid"])
+                for row in result:
+                    if row["togodown"] in godowns:
                         tn.append(
                             {
                                 "transfernoteno": row["transfernoteno"],
@@ -199,7 +187,18 @@ class api_transfernote(object):
                                 ),
                             }
                         )
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
+            else:
+                for row in result:
+                    tn.append(
+                        {
+                            "transfernoteno": row["transfernoteno"],
+                            "transfernoteid": row["transfernoteid"],
+                            "transfernotedate": datetime.strftime(
+                                row["transfernotedate"], "%d-%m-%Y"
+                            ),
+                        }
+                    )
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="type=all", renderer="json")
     def getAllTransferNotes(self):
