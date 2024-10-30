@@ -518,73 +518,72 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                transferdata = self.request.json_body
-                stockdata = {}
-                stockdata["orgcode"] = authDetails["orgcode"]
-                result = con.execute(
-                    select(
-                        [
-                            transfernote.c.togodown,
-                            transfernote.c.recieved,
-                            transfernote.c.togodown,
-                        ]
-                    ).where(
-                        transfernote.c.transfernoteid == transferdata["transfernoteid"]
+        with eng.begin() as con:
+            transferdata = self.request.json_body
+            stockdata = {}
+            stockdata["orgcode"] = authDetails["orgcode"]
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.togodown,
+                        transfernote.c.recieved,
+                        transfernote.c.togodown,
+                    ]
+                ).where(
+                    transfernote.c.transfernoteid == transferdata["transfernoteid"]
+                )
+            )
+            row = result.fetchone()
+            if row["recieved"]:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            else:
+                stockdata["dcinvtnid"] = transferdata["transfernoteid"]
+                stockdata["stockdate"] = transferdata["recieveddate"]
+                stockdata["dcinvtnflag"] = 20
+                stockdata["inout"] = 9
+                stockdata["goid"] = row["togodown"]
+                stockresult = con.execute(
+                    select([stock.c.productcode, stock.c.qty]).where(
+                        and_(
+                            stock.c.dcinvtnid == transferdata["transfernoteid"],
+                            stock.c.dcinvtnflag == 20,
+                        )
                     )
                 )
-                row = result.fetchone()
-                if row["recieved"]:
-                    return {"gkstatus": enumdict["ActionDisallowed"]}
-                else:
-                    stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-                    stockdata["stockdate"] = transferdata["recieveddate"]
-                    stockdata["dcinvtnflag"] = 20
-                    stockdata["inout"] = 9
-                    stockdata["goid"] = row["togodown"]
-                    stockresult = con.execute(
-                        select([stock.c.productcode, stock.c.qty]).where(
+                for key in stockresult:
+                    resultgoprod = con.execute(
+                        select([goprod]).where(
                             and_(
-                                stock.c.dcinvtnid == transferdata["transfernoteid"],
-                                stock.c.dcinvtnflag == 20,
+                                goprod.c.goid == row["togodown"],
+                                goprod.c.productcode == key["productcode"],
                             )
                         )
                     )
-                    for key in stockresult:
-                        resultgoprod = con.execute(
-                            select([goprod]).where(
-                                and_(
-                                    goprod.c.goid == row["togodown"],
-                                    goprod.c.productcode == key["productcode"],
-                                )
-                            )
+                    if resultgoprod.rowcount == 0:
+                        result = con.execute(
+                            goprod.insert(),
+                            [
+                                {
+                                    "goid": row["togodown"],
+                                    "productcode": key["productcode"],
+                                    "goopeningstock": 0,
+                                    "orgcode": authDetails["orgcode"],
+                                }
+                            ],
                         )
-                        if resultgoprod.rowcount == 0:
-                            result = con.execute(
-                                goprod.insert(),
-                                [
-                                    {
-                                        "goid": row["togodown"],
-                                        "productcode": key["productcode"],
-                                        "goopeningstock": 0,
-                                        "orgcode": authDetails["orgcode"],
-                                    }
-                                ],
-                            )
-                        stockdata["productcode"] = key["productcode"]
-                        stockdata["qty"] = key["qty"]
-                        stockdata["rate"] = 0
-                        result = con.execute(stock.insert(), [stockdata])
+                    stockdata["productcode"] = key["productcode"]
+                    stockdata["qty"] = key["qty"]
+                    stockdata["rate"] = 0
+                    result = con.execute(stock.insert(), [stockdata])
 
-                    result = con.execute(
-                        transfernote.update()
-                        .where(
-                            transfernote.c.transfernoteid
-                            == transferdata["transfernoteid"]
-                        )
-                        .values(
-                            recieved=True, recieveddate=transferdata["recieveddate"]
-                        )
+                result = con.execute(
+                    transfernote.update()
+                    .where(
+                        transfernote.c.transfernoteid
+                        == transferdata["transfernoteid"]
                     )
-                return {"gkstatus": enumdict["Success"]}
+                    .values(
+                        recieved=True, recieveddate=transferdata["recieveddate"]
+                    )
+                )
+            return {"gkstatus": enumdict["Success"]}
