@@ -246,9 +246,9 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            with eng.connect() as con:
                 self.con = eng.connect()
-                result = self.con.execute(
+                result = con.execute(
                     select([transfernote]).where(
                         and_(
                             transfernote.c.transfernoteid
@@ -259,13 +259,13 @@ class api_transfernote(object):
                 )
                 row = result.fetchone()
 
-                togo = self.con.execute(
+                togo = con.execute(
                     select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
                         godown.c.goid == row["togodown"]
                     )
                 )
                 togodata = togo.fetchone()
-                fromgo = self.con.execute(
+                fromgo = con.execute(
                     select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
                         godown.c.goid == row["fromgodown"]
                     )
@@ -274,7 +274,7 @@ class api_transfernote(object):
 
                 items = {}
 
-                stockdata = self.con.execute(
+                stockdata = con.execute(
                     select([stock.c.productcode, stock.c.qty]).where(
                         and_(
                             stock.c.dcinvtnflag == 20,
@@ -283,19 +283,19 @@ class api_transfernote(object):
                     )
                 )
                 for stockrow in stockdata:
-                    productdata = self.con.execute(
+                    productdata = con.execute(
                         select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
                             product.c.productcode == stockrow["productcode"]
                         )
                     )
                     productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(
+                    uomresult = con.execute(
                         select([unitofmeasurement.c.unitname]).where(
                             unitofmeasurement.c.uomid == productdesc["uomid"]
                         )
                     )
                     unitnamrrow = uomresult.fetchone()
-                    goid_result = self.con.execute(
+                    goid_result = con.execute(
                         select([stock.c.goid]).where(
                             and_(
                                 stock.c.productcode == stockrow["productcode"],
@@ -346,11 +346,6 @@ class api_transfernote(object):
                     tn["recieved"] = row["recieved"]
 
                 return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_method="GET", request_param="type=list", renderer="json")
     def listofTransferNotes(self):
