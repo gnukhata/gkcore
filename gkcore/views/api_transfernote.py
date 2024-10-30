@@ -245,107 +245,105 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                self.con = eng.connect()
-                result = con.execute(
-                    select([transfernote]).where(
+        with eng.connect() as con:
+            self.con = eng.connect()
+            result = con.execute(
+                select([transfernote]).where(
+                    and_(
+                        transfernote.c.transfernoteid
+                        == self.request.params["transfernoteid"],
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            )
+            row = result.fetchone()
+
+            togo = con.execute(
+                select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
+                    godown.c.goid == row["togodown"]
+                )
+            )
+            togodata = togo.fetchone()
+            fromgo = con.execute(
+                select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
+                    godown.c.goid == row["fromgodown"]
+                )
+            )
+            fromgodata = fromgo.fetchone()
+
+            items = {}
+
+            stockdata = con.execute(
+                select([stock.c.productcode, stock.c.qty]).where(
+                    and_(
+                        stock.c.dcinvtnflag == 20,
+                        stock.c.dcinvtnid == self.request.params["transfernoteid"],
+                    )
+                )
+            )
+            for stockrow in stockdata:
+                productdata = con.execute(
+                    select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
+                        product.c.productcode == stockrow["productcode"]
+                    )
+                )
+                productdesc = productdata.fetchone()
+                uomresult = con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        unitofmeasurement.c.uomid == productdesc["uomid"]
+                    )
+                )
+                unitnamrrow = uomresult.fetchone()
+                goid_result = con.execute(
+                    select([stock.c.goid]).where(
                         and_(
-                            transfernote.c.transfernoteid
-                            == self.request.params["transfernoteid"],
-                            transfernote.c.orgcode == authDetails["orgcode"],
+                            stock.c.productcode == stockrow["productcode"],
+                            stock.c.orgcode == authDetails["orgcode"],
                         )
                     )
                 )
-                row = result.fetchone()
-
-                togo = con.execute(
-                    select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
-                        godown.c.goid == row["togodown"]
-                    )
-                )
-                togodata = togo.fetchone()
-                fromgo = con.execute(
-                    select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
-                        godown.c.goid == row["fromgodown"]
-                    )
-                )
-                fromgodata = fromgo.fetchone()
-
-                items = {}
-
-                stockdata = con.execute(
-                    select([stock.c.productcode, stock.c.qty]).where(
-                        and_(
-                            stock.c.dcinvtnflag == 20,
-                            stock.c.dcinvtnid == self.request.params["transfernoteid"],
-                        )
-                    )
-                )
-                for stockrow in stockdata:
-                    productdata = con.execute(
-                        select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
-                            product.c.productcode == stockrow["productcode"]
-                        )
-                    )
-                    productdesc = productdata.fetchone()
-                    uomresult = con.execute(
-                        select([unitofmeasurement.c.unitname]).where(
-                            unitofmeasurement.c.uomid == productdesc["uomid"]
-                        )
-                    )
-                    unitnamrrow = uomresult.fetchone()
-                    goid_result = con.execute(
-                        select([stock.c.goid]).where(
-                            and_(
-                                stock.c.productcode == stockrow["productcode"],
-                                stock.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                    )
-                    goid = goid_result.scalar()
-                    items[stockrow["productcode"]] = {
-                        "qty": "%.2f" % float(stockrow["qty"]),
-                        "productdesc": productdesc["productdesc"],
-                        "unitname": unitnamrrow["unitname"],
-                        "goid": goid,
-                        "gsflag": productdesc["gsflag"],
-                        "productcode": productdesc["productcode"],
-                    }
-
-                tn = {}
-                tn = {
-                    "transfernoteno": row["transfernoteno"],
-                    "transfernotedate": datetime.strftime(
-                        row["transfernotedate"], "%d-%m-%Y"
-                    ),
-                    "transportationmode": row["transportationmode"],
-                    "productdetails": items,
-                    "nopkt": row["nopkt"],
-                    "togodown": togodata["goname"],
-                    "togodownstate": togodata["state"],
-                    "togodownaddr": togodata["goaddr"],
-                    "togodownid": row["togodown"],
-                    "fromgodownid": row["fromgodown"],
-                    "fromgodown": fromgodata["goname"],
-                    "fromgodownstate": fromgodata["state"],
-                    "fromgodownaddr": fromgodata["goaddr"],
-                    "issuername": row["issuername"],
-                    "designation": row["designation"],
-                    "orgcode": row["orgcode"],
+                goid = goid_result.scalar()
+                items[stockrow["productcode"]] = {
+                    "qty": "%.2f" % float(stockrow["qty"]),
+                    "productdesc": productdesc["productdesc"],
+                    "unitname": unitnamrrow["unitname"],
+                    "goid": goid,
+                    "gsflag": productdesc["gsflag"],
+                    "productcode": productdesc["productcode"],
                 }
-                if row["duedate"] != None:
-                    tn["duedate"] = datetime.strftime(row["duedate"], "%d-%m-%Y")
-                    tn["grace"] = row["grace"]
-                if row["recieved"]:
-                    tn["recieved"] = (row["recieved"],)
-                    tn["receiveddate"] = datetime.strftime(
-                        row["recieveddate"], "%d-%m-%Y"
-                    )
-                else:
-                    tn["recieved"] = row["recieved"]
 
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
+            tn = {
+                "transfernoteno": row["transfernoteno"],
+                "transfernotedate": datetime.strftime(
+                    row["transfernotedate"], "%d-%m-%Y"
+                ),
+                "transportationmode": row["transportationmode"],
+                "productdetails": items,
+                "nopkt": row["nopkt"],
+                "togodown": togodata["goname"],
+                "togodownstate": togodata["state"],
+                "togodownaddr": togodata["goaddr"],
+                "togodownid": row["togodown"],
+                "fromgodownid": row["fromgodown"],
+                "fromgodown": fromgodata["goname"],
+                "fromgodownstate": fromgodata["state"],
+                "fromgodownaddr": fromgodata["goaddr"],
+                "issuername": row["issuername"],
+                "designation": row["designation"],
+                "orgcode": row["orgcode"],
+            }
+            if row["duedate"] != None:
+                tn["duedate"] = datetime.strftime(row["duedate"], "%d-%m-%Y")
+                tn["grace"] = row["grace"]
+            if row["recieved"]:
+                tn["recieved"] = (row["recieved"],)
+                tn["receiveddate"] = datetime.strftime(
+                    row["recieveddate"], "%d-%m-%Y"
+                )
+            else:
+                tn["recieved"] = row["recieved"]
+
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="type=list", renderer="json")
     def listofTransferNotes(self):
