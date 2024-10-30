@@ -363,8 +363,7 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 startDate = datetime.strptime(
                     str(self.request.params["startdate"]), "%d-%m-%Y"
                 ).strftime("%Y-%m-%d")
@@ -374,7 +373,7 @@ class api_transfernote(object):
                 if "goid" in self.request.params:
                     tngodown = int(self.request.params["goid"])
                     if "orderflag" in self.request.params:
-                        result = self.con.execute(
+                        result = con.execute(
                             select([transfernote])
                             .where(
                                 and_(
@@ -390,7 +389,7 @@ class api_transfernote(object):
                             .order_by(desc(transfernote.c.transfernotedate))
                         )
                     else:
-                        result = self.con.execute(
+                        result = con.execute(
                             select([transfernote])
                             .where(
                                 and_(
@@ -407,7 +406,7 @@ class api_transfernote(object):
                         )
                 else:
                     if "orderflag" in self.request.params:
-                        result = self.con.execute(
+                        result = con.execute(
                             select([transfernote])
                             .where(
                                 and_(
@@ -419,7 +418,7 @@ class api_transfernote(object):
                             .order_by(desc(transfernote.c.transfernotedate))
                         )
                     else:
-                        result = self.con.execute(
+                        result = con.execute(
                             select([transfernote])
                             .where(
                                 and_(
@@ -433,7 +432,7 @@ class api_transfernote(object):
                 tn = []
                 srno = 1
                 for row in result:
-                    stockdata = self.con.execute(
+                    stockdata = con.execute(
                         select([stock.c.productcode, stock.c.qty])
                         .where(
                             and_(
@@ -446,7 +445,7 @@ class api_transfernote(object):
                     )
                     productqty = []
                     for data in stockdata:
-                        productdata = self.con.execute(
+                        productdata = con.execute(
                             select([product.c.productdesc, product.c.uomid]).where(
                                 and_(
                                     product.c.productcode == data["productcode"],
@@ -455,7 +454,7 @@ class api_transfernote(object):
                             )
                         )
                         productdetails = productdata.fetchone()
-                        uomdata = self.con.execute(
+                        uomdata = con.execute(
                             select([unitofmeasurement.c.unitname]).where(
                                 unitofmeasurement.c.uomid == productdetails["uomid"]
                             )
@@ -468,7 +467,7 @@ class api_transfernote(object):
                                 "uom": uomdetails["unitname"],
                             }
                         )
-                    fromgodown = self.con.execute(
+                    fromgodown = con.execute(
                         select([godown.c.goname, godown.c.goaddr]).where(
                             and_(
                                 godown.c.goid == row["fromgodown"],
@@ -480,7 +479,7 @@ class api_transfernote(object):
                     fromgodowndesc = (
                         fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
                     )
-                    togodown = self.con.execute(
+                    togodown = con.execute(
                         select([godown.c.goname, godown.c.goaddr]).where(
                             and_(
                                 godown.c.goid == row["togodown"],
@@ -508,13 +507,7 @@ class api_transfernote(object):
                         }
                     )
                     srno = srno + 1
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_param="received=true", request_method="PUT", renderer="json")
     def editransfernote(self):
