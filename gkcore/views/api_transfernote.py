@@ -519,12 +519,11 @@ class api_transfernote(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 transferdata = self.request.json_body
                 stockdata = {}
                 stockdata["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             transfernote.c.togodown,
@@ -544,7 +543,7 @@ class api_transfernote(object):
                     stockdata["dcinvtnflag"] = 20
                     stockdata["inout"] = 9
                     stockdata["goid"] = row["togodown"]
-                    stockresult = self.con.execute(
+                    stockresult = con.execute(
                         select([stock.c.productcode, stock.c.qty]).where(
                             and_(
                                 stock.c.dcinvtnid == transferdata["transfernoteid"],
@@ -553,7 +552,7 @@ class api_transfernote(object):
                         )
                     )
                     for key in stockresult:
-                        resultgoprod = self.con.execute(
+                        resultgoprod = con.execute(
                             select([goprod]).where(
                                 and_(
                                     goprod.c.goid == row["togodown"],
@@ -562,7 +561,7 @@ class api_transfernote(object):
                             )
                         )
                         if resultgoprod.rowcount == 0:
-                            result = self.con.execute(
+                            result = con.execute(
                                 goprod.insert(),
                                 [
                                     {
@@ -576,9 +575,9 @@ class api_transfernote(object):
                         stockdata["productcode"] = key["productcode"]
                         stockdata["qty"] = key["qty"]
                         stockdata["rate"] = 0
-                        result = self.con.execute(stock.insert(), [stockdata])
+                        result = con.execute(stock.insert(), [stockdata])
 
-                    result = self.con.execute(
+                    result = con.execute(
                         transfernote.update()
                         .where(
                             transfernote.c.transfernoteid
@@ -589,7 +588,3 @@ class api_transfernote(object):
                         )
                     )
                 return {"gkstatus": enumdict["Success"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
