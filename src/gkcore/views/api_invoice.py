@@ -1260,6 +1260,11 @@ def getInvoiceData(con, orgcode, params):
     )
     vCount = voucherCount.fetchone()
     inv["vouchercount"] = vCount[0]
+    immutable_data = con.execute(
+        select([transaction.c.transaction_details])
+        .where(transaction.c.transaction_id == invrow["immutable_data_id"])
+    ).scalar()
+    inv["immutable_data"] = immutable_data
     return inv
 
 def getInvoiceList(con, orgcode, reqParams):
