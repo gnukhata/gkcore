@@ -37,6 +37,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
+    transaction,
     dcinv,
     delchal,
     stock,
@@ -1618,6 +1619,39 @@ class api_invoice(object):
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
                     invdataset.pop("pricedetails", pricedetails)
+                godown_id = dtset["delchalPayload"]["stockdata"]["goid"]
+                godown_details = con.execute(
+                    select([godown])
+                    .where(godown.c.goid==godown_id)
+                ).fetchone()
+                contact_id = invdataset["custid"]
+                contact_details = con.execute(
+                    select([customerandsupplier])
+                    .where(customerandsupplier.c.custid == contact_id)
+                ).fetchone()
+                product_id_values = list(items.keys())
+                products = con.execute(
+                    select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                    .where(product.c.productcode.in_(product_id_values))
+                ).fetchall()
+                product_details = {
+                    id: {
+                        "productcode": id,
+                        "productdesc": name,
+                        "gscode": hsn,
+                    }
+                    for id, name, hsn in products
+                }
+                transaction_details = {
+                    "godown": dict(godown_details),
+                    "contact": dict(contact_details),
+                    "products": product_details,
+                }
+                transaction_id = con.execute(
+                    transaction.insert()
+                    .values(transaction_details=transaction_details)
+                ).inserted_primary_key
+                invdataset["immutable_data_id"] = transaction_id[0]
                 result = con.execute(invoice.insert(), [invdataset])
                 if len(pricedetails) > 0:
                     for price in pricedetails:
