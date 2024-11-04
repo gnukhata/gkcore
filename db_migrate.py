@@ -2018,6 +2018,20 @@ class Migrate:
                 conn.execute("alter table delchal add column if not exists noofpackages int")
                 conn.execute("alter table delchal add column if not exists modeoftransport text")
 
+            with eng.begin() as conn:
+                if not tableExists("transaction"):
+                    query = """create table transaction(
+                        id serial,
+                        type text not null,
+                        orgcode integer not null,
+                        immutable_data jsonb,
+                        primary key (id),
+                        constraint transaction_orgcode_fkey foreign key (orgcode)
+                        references organisation(orgcode) on delete cascade,
+                        constraint transaction_id_type_orgcode_key unique (id, type, orgcode)
+                    )"""
+                    conn.execute(query)
+
 
             print("Database migration successful")
 

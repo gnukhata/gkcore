@@ -1217,3 +1217,18 @@ drcr = Table(
     UniqueConstraint("orgcode", "invid", "dctypeflag"),
     UniqueConstraint("orgcode", "rnid", "dctypeflag"),
 )
+
+transaction = Table(
+    "transaction",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("type", UnicodeText, nullable=False),
+    Column(
+        "orgcode",
+        Integer,
+        ForeignKey("organisation.orgcode", ondelete="CASCDE"),
+        nullable=False,
+    ),
+    Column("immutable_data", JSONB),
+    UniqueConstraint("id", "type", "orgcode"),
+)
