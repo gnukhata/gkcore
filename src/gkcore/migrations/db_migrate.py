@@ -2138,4 +2138,14 @@ def migrate():
                     "alter table unitofmeasurement add constraint unitofmeasurement_orgcode_unitname_key unique (orgcode, unitname)"
                 )
 
+        with eng.begin() as conn:
+            if not tableExists("transaction"):
+                query = """create table transaction(
+                    transaction_id serial,
+                    transaction_details jsonb,
+                    primary key (transaction_id)
+                )"""
+                conn.execute(query)
+
+
         print("Database migration successful")

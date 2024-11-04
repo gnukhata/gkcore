@@ -470,6 +470,26 @@ vouchers = Table(
     info={"key_related_json_fields": {"drs": "accounts", "crs": "accounts"}},
 )
 
+"""
+Table for storing immutable details of transactions. The following tables represent
+different types of transactions at the time of writing:
+- invoice (Both Invoices and Cash Memos)
+- delchal (Delivery Notes)
+- drcr (Debit/Credit Notes)
+- transfernote (Tranfer Notes)
+- purchaseorder (Purchase/Sales Orders).
+The `transaction_details` field of this table will store the transaction related
+details in textual form in addition to their IDs so that even if those details,
+like that of customers or products, change in future the data in the transaction
+records remain unchanged. This is necessary to keep the transaction records
+immutable.
+"""
+transaction = Table(
+    "transaction",
+    metadata,
+    Column("transaction_id", Integer, primary_key=True),
+    Column("transaction_details", JSONB),
+)
 
 """
 Table for storing invoice records.
