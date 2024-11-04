@@ -37,6 +37,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
+    transaction,
     dcinv,
     delchal,
     stock,
@@ -1616,7 +1617,24 @@ class api_invoice(object):
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
                     invdataset.pop("pricedetails", pricedetails)
-                result = con.execute(invoice.insert(), [invdataset])
+                result = con.execute(invoice.insert().returning(invoice.c.invid), [invdataset])
+                godown_id = dtset["delchalPayload"]["stockdata"]["goid"]
+                godown_name = con.execute(
+                    select([godown.c.goname])
+                    .where(godown.c.goid==godown_id)
+                ).scalar()
+                transaction_details = {
+                    "id": result.scalar(),
+                    "type": "invoice",
+                    "orgcode": authDetails["orgcode"],
+                    "immutable_data": {
+                        "godown": {
+                            "goid": godown_id,
+                            "goname": godown_name,
+                        },
+                    },
+                }
+                con.execute(transaction.insert(), transaction_details)
                 if len(pricedetails) > 0:
                     for price in pricedetails:
                         price["orgcode"] = authDetails["orgcode"]
