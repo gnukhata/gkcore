@@ -562,6 +562,7 @@ invoice = Table(
     Column("pincode", UnicodeText),
     Column("inoutflag", Integer),
     Column("invoicetotalword", UnicodeText),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     UniqueConstraint("orgcode", "invoiceno", name="invoice_orgcode_invoiceno_key"),
     Index("invoice_orgcodeindex", "orgcode"),
     Index("invoice_invoicenoindex", "invoiceno"),
