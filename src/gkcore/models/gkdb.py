@@ -1180,6 +1180,7 @@ transfernote = Table(
         ForeignKey("organisation.orgcode", ondelete="CASCADE"),
         nullable=False,
     ),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     UniqueConstraint("transfernoteno", "orgcode"),
     Index("transfernote_date", "transfernotedate"),
     Index("transfernote_togodown", "togodown"),
