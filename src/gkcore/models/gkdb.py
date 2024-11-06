@@ -1032,6 +1032,7 @@ purchaseorder = Table(
     Column("address", Text),
     Column("pincode", UnicodeText),
     Column("roundoffflag", Integer, default=0),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     Index("purchaseorder_orgcodeindex", "orgcode"),
     Index("purchaseorder_date", "orderdate"),
     Index("purchaseorder_togodown", "togodown"),

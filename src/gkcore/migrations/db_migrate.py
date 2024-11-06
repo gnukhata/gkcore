@@ -2156,5 +2156,16 @@ def migrate():
                         alter table invoice add foreign key (immutable_data_id)
                         references transaction(transaction_id)
                     """)
+                conn.execute("alter table purchaseorder add column if not exists immutable_data_id Integer")
+                if not does_foreignkey_exist(
+                    eng,
+                    "purchaseorder",
+                    "purchaseorder_transaction_id_fkey"
+                ):
+                    conn.execute("""
+                        alter table purchaseorder add foreign key (immutable_data_id)
+                        references transaction(transaction_id)
+                    """)
+
 
         print("Database migration successful")
