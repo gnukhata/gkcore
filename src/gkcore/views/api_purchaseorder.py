@@ -452,6 +452,11 @@ class api_purchaseorder(object):
             purchaseorderdetails["taxname"] = taxname
             purchaseorderdetails["schedule"] = details
             purchaseorderdetails["psnarration"] = podata["psnarration"]
+            immutable_data = con.execute(
+                select([transaction.c.transaction_details])
+                .where(transaction.c.transaction_id == podata["immutable_data_id"])
+            ).scalar()
+            purchaseorderdetails["immutable_data"] = immutable_data
             return {
                 "gkstatus": enumdict["Success"],
                 "gkresult": purchaseorderdetails,
