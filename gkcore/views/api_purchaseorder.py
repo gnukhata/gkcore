@@ -310,6 +310,7 @@ class api_purchaseorder(object):
                         )
                     )
                 goidrow = goid_result.fetchall()
+                goid = goidrow[0][0] if goidrow else None
                 if int(prodrow["gsflag"]) == 7:
                     um = con.execute(
                         select([unitofmeasurement.c.unitname]).where(
@@ -361,7 +362,7 @@ class api_purchaseorder(object):
                     cessAmount = 0.00
                     cessVal = 0.00
                     taxname = ""
-                    if podata["cess"] != None:
+                    if podata["cess"]:
                         cessVal = float(podata["cess"][productCode])
                         cessAmount = taxableAmount * (cessVal / 100)
                         totalCessAmt = totalCessAmt + cessAmount
@@ -403,7 +404,7 @@ class api_purchaseorder(object):
                         "cessrate": "%.2f" % (float(cessVal)),
                         "productCode": prodrow["productcode"],
                         "gsflag": prodrow["gsflag"],
-                        "goid": goidrow[0][0],
+                        "goid": goid,
                     }
                 if "staggered" in schedule[productCode]:
                     details[productCode]["staggered"] = schedule[productCode][
