@@ -293,14 +293,14 @@ def topfiveprodsev(orgcode):
                                 )
                             )
                         )
-            goidrow = goid_result.fetchall()
+            goid = goid_result.scalar()
             prodinfolist.append(
                 {
                     "prodcode": prodinfo["productcode"],
                     "count": prodinfo["numkeys"],
                     "purchase": f"{purchase:.2f}",
                     "proddesc": proddesclist["proddesc"],
-                    "goid": goidrow[0][0],
+                    "goid": goid,
                     "gsflag": proddesclist['gs'],
                 }
             )

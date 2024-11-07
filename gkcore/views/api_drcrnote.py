@@ -446,8 +446,7 @@ class api_drcr(object):
                                 )
                             )
 
-                        goidrow = goid_result.fetchall()
-                        goid = goidrow[0][0] if goidrow else None
+                        goid = goid_result.scalar()
                         if invrow["sourcestate"] != invrow["taxstate"]:
                             taxname = "IGST"
                             taxAmount = reductprice * (taxRate / 100)
